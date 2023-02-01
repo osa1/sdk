@@ -882,7 +882,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       if (emitGuard) {
         b.local_get(thrownException);
         types.emitTypeTest(
-            this, guard, translator.coreTypes.objectNonNullableRawType, node);
+            this, guard, translator.coreTypes.objectNonNullableRawType);
         b.i32_eqz();
         b.br_if(catchBlock);
       }
@@ -2762,7 +2762,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   @override
   w.ValueType visitIsExpression(IsExpression node, w.ValueType expectedType) {
     wrap(node.operand, translator.topInfo.nullableType);
-    types.emitTypeTest(this, node.type, dartTypeOf(node.operand), node);
+    types.emitTypeTest(this, node.type, dartTypeOf(node.operand));
     return w.NumType.i32;
   }
 
@@ -2779,7 +2779,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     // We lower an `as` expression to a type test, throwing a [TypeError] if
     // the type test fails.
-    types.emitTypeTest(this, node.type, dartTypeOf(node.operand), node);
+    types.emitTypeTest(this, node.type, dartTypeOf(node.operand));
     b.br_if(asCheckBlock);
     b.local_get(operand);
     types.makeType(this, node.type);

@@ -475,17 +475,18 @@ class Types {
   /// Test value against a Dart type. Expects the value on the stack as a
   /// (ref null #Top) and leaves the result on the stack as an i32.
   /// TODO(joshualitt): Remove dependency on [CodeGenerator]
-  void emitTypeTest(CodeGenerator codeGen, DartType type, DartType operandType,
-      TreeNode node) {
+  void emitTypeTest(
+      CodeGenerator codeGen, DartType type, DartType operandType) {
+    // Note: `type == operandType` case handled by front-end
     w.Instructions b = codeGen.b;
     if (type is! InterfaceType) {
       makeType(codeGen, type);
       codeGen.call(translator.isSubtype.reference);
       return;
     }
-    bool isPotentiallyNullable = operandType.isPotentiallyNullable;
+
     w.Label? resultLabel;
-    if (isPotentiallyNullable) {
+    if (operandType.isPotentiallyNullable) {
       // Store operand in a temporary variable, since Binaryen does not support
       // block inputs.
       w.Local operand = codeGen.addLocal(translator.topInfo.nullableType);
@@ -495,9 +496,10 @@ class Types {
       b.local_get(operand);
       b.br_on_null(nullLabel);
     }
+
     void _endPotentiallyNullableBlock() {
-      if (isPotentiallyNullable) {
-        b.br(resultLabel!);
+      if (resultLabel != null) {
+        b.br(resultLabel);
         b.end(); // nullLabel
         b.i32_const(encodedNullability(type));
         b.end(); // resultLabel
@@ -505,22 +507,14 @@ class Types {
     }
 
     if (type.typeArguments.any((t) => t is! DynamicType)) {
-      // If the tested-against type as an instance of the static operand type
-      // has the same type arguments as the static operand type, it is not
-      // necessary to test the type arguments.
-      Class cls = translator.classForType(operandType);
-      InterfaceType? base = translator.hierarchy
-          .getTypeAsInstanceOf(type, cls,
-              isNonNullableByDefault:
-                  codeGen.member.enclosingLibrary.isNonNullableByDefault)
-          ?.withDeclaredNullability(operandType.declaredNullability);
-      if (base != operandType) {
-        makeType(codeGen, type);
-        codeGen.call(translator.isSubtype.reference);
-        _endPotentiallyNullableBlock();
-        return;
-      }
+      makeType(codeGen, type);
+      codeGen.call(translator.isSubtype.reference);
+      _endPotentiallyNullableBlock();
+      return;
     }
+
+    // `x is T` where `T` either has no type arguments or all types arguments
+    // are `dynamic`. Type check can be implemented as class ID check.
     List<Class> concrete = _getConcreteSubtypes(type.classNode).toList();
     if (type.classNode == coreTypes.objectClass) {
       b.drop();
