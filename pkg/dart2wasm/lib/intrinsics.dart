@@ -949,7 +949,7 @@ class Intrinsifier {
           final maxI32 = 2147483647;
           b.local_tee(lengthLocal);
           b.i64_const(maxI32);
-          b.i64_lt_u();
+          b.i64_gt_u();
           b.if_();
           b.local_get(lengthLocal); // value
           b.i64_const(0); // minValue
