@@ -84,7 +84,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
   }
 
   void setAll(int index, Iterable<E> iterable) {
-    if (index < 0 || index > this.length) {
+    if (this.length._lt_u(index)) {
       throw new RangeError.range(index, 0, this.length, "index");
     }
     List<E> iterableAsList;

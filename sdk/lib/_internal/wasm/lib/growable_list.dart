@@ -7,7 +7,7 @@ part of "core_patch.dart";
 @pragma("wasm:entry-point")
 class _GrowableList<E> extends _ModifiableList<E> {
   void insert(int index, E element) {
-    if ((index < 0) || (index > length)) {
+    if (length._lt_u(index)) {
       throw new RangeError.range(index, 0, length);
     }
     int oldLength = this.length;
@@ -40,7 +40,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   void insertAll(int index, Iterable<E> iterable) {
-    if (index < 0 || index > length) {
+    if (length._lt_u(index)) {
       throw new RangeError.range(index, 0, length);
     }
     if (iterable is! _ListBase) {
