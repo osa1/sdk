@@ -231,3 +231,19 @@ class IntegerDivisionByZeroException {
     throw UnsupportedError('IntegerDivisionByZeroException._stackTrace');
   }
 }
+
+@patch
+class IndexError {
+  /// Specialized and inlined version of `IndexError.check` for use in internal
+  /// types like [_ListBase] and [_ModifiableList].
+  ///
+  /// With `--omit-bound-checks` we omit the check in this function.
+  external static void _checkInline(
+      int index, int length, _ListBase indexable, String name);
+
+  @pragma("wasm:entry-point")
+  static Never _throw(int index, int length, _ListBase indexable, String name) {
+    throw IndexError.withLength(index, length,
+        indexable: indexable, name: name, message: null);
+  }
+}

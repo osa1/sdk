@@ -35,6 +35,7 @@ class TranslatorOptions {
   bool importSharedMemory = false;
   bool inlining = true;
   bool nameSection = true;
+  bool omitBoundChecks = false;
   bool omitTypeChecks = false;
   bool polymorphicSpecialization = false;
   bool printKernel = false;

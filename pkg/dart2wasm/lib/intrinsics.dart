@@ -1058,6 +1058,61 @@ class Intrinsifier {
       }
     }
 
+    if (cls == translator.indexErrorClass) {
+      switch (name) {
+        case "_checkInline":
+          final args = node.arguments.positional;
+          final Expression index = args[0]; // int
+          final Expression length = args[1]; // int
+          final Expression indexable = args[2]; // _ListBase
+          final Expression name = args[3]; // String
+
+          if (translator.options.omitBoundChecks) {
+            codeGen.wrap(index, codeGen.voidMarker);
+            codeGen.wrap(length, codeGen.voidMarker);
+            codeGen.wrap(indexable, codeGen.voidMarker);
+            codeGen.wrap(name, codeGen.voidMarker);
+            b.ref_null(translator.topInfo.struct);
+            return translator.topInfo.nullableType;
+          }
+
+          final throwFunction = translator.functions
+              .getFunction(translator.throwIndexError.reference);
+
+          assert(throwFunction.type.inputs[0] == w.NumType.i64);
+          final indexLocal = codeGen.function.addLocal(w.NumType.i64);
+          codeGen.wrap(index, w.NumType.i64);
+          b.local_tee(indexLocal);
+
+          assert(throwFunction.type.inputs[1] == w.NumType.i64);
+          final lengthLocal = codeGen.function.addLocal(w.NumType.i64);
+          codeGen.wrap(length, w.NumType.i64);
+          b.local_tee(lengthLocal);
+
+          final indexableLocal =
+              codeGen.function.addLocal(throwFunction.type.inputs[2]);
+          codeGen.wrap(length, indexableLocal.type);
+          b.local_set(indexableLocal);
+
+          final nameLocal =
+              codeGen.function.addLocal(throwFunction.type.inputs[3]);
+          codeGen.wrap(name, nameLocal.type);
+          b.local_set(nameLocal);
+
+          b.i64_ge_u();
+          b.if_();
+          b.local_get(indexLocal);
+          b.local_get(lengthLocal);
+          b.local_get(indexableLocal);
+          b.local_get(nameLocal);
+          b.call(throwFunction);
+          b.unreachable();
+          b.end();
+          b.ref_null(translator.topInfo.struct);
+          return translator.topInfo.nullableType;
+      }
+    }
+
     return null;
   }
 
