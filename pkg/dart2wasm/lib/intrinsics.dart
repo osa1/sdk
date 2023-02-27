@@ -1091,7 +1091,7 @@ class Intrinsifier {
 
           final indexableLocal =
               codeGen.function.addLocal(throwFunction.type.inputs[2]);
-          codeGen.wrap(length, indexableLocal.type);
+          codeGen.wrap(indexable, indexableLocal.type);
           b.local_set(indexableLocal);
 
           final nameLocal =
