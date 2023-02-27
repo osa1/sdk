@@ -55,6 +55,7 @@ mixin KernelNodes {
   late final Class javaScriptErrorClass =
       index.getClass("dart:core", "_JavaScriptError");
   late final Class indexErrorClass = index.getClass("dart:core", "IndexError");
+  late final Class rangeErrorClass = index.getClass("dart:core", "RangeError");
 
   // dart:core runtime type classes
   late final Class typeClass = index.getClass("dart:core", "_Type");
@@ -215,6 +216,8 @@ mixin KernelNodes {
       index.getProcedure("dart:core", "IndexError", "_throw");
   late final Procedure throwRangeError =
       index.getProcedure("dart:core", "RangeError", "_throw");
+  late final Procedure throwRangeErrorWithName =
+      index.getProcedure("dart:core", "RangeError", "_throwWithName");
 
   // dart:core type procedures
   late final Procedure isSubtype =

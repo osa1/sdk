@@ -1131,6 +1131,26 @@ class Intrinsifier {
       }
     }
 
+    if (cls == translator.rangeErrorClass) {
+      switch (name) {
+        case "_checkValidRangeInline":
+          final args = node.arguments.positional;
+          final Expression start = args[0]; // int
+          final Expression end = args[1]; // int?
+          final Expression length = args[2]; // int
+
+          if (translator.options.omitBoundChecks) {
+            codeGen.wrap(start, codeGen.voidMarker);
+            codeGen.wrap(end, codeGen.voidMarker);
+            codeGen.wrap(length, codeGen.voidMarker);
+            b.ref_null(translator.topInfo.struct);
+            return translator.topInfo.nullableType;
+          }
+
+          throw '_checkVlaidRangeInline';
+      }
+    }
+
     return null;
   }
 

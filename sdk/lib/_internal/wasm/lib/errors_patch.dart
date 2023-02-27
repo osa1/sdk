@@ -234,7 +234,7 @@ class IntegerDivisionByZeroException {
 
 @patch
 class IndexError {
-  /// Specialized and inlined version of `IndexError.check` for use in internal
+  /// Specialized and inlined version of [IndexError.check] for use in internal
   /// types like [_ListBase] and [_ModifiableList].
   ///
   /// With `--omit-bound-checks` we omit the check in this function.
@@ -250,8 +250,19 @@ class IndexError {
 
 @patch
 class RangeError {
+  /// Specialized and inlined version of [RangeError.checkValidRange] for use
+  /// in internal types like [_ListBase] and [_ModifiableList].
+  ///
+  /// With `--omit-bound-checks` we omit the check in this function.
+  external static void _checkValidRangeInline(int start, int? end, int length);
+
   @pragma("wasm:entry-point")
   static Never _throw(int value, int minValue, int maxValue) {
     throw RangeError.range(value, minValue, maxValue, null, null);
+  }
+
+  @pragma("wasm:entry-point")
+  static Never _throwWithName(int value, int minValue, int maxValue, String name) {
+    throw RangeError.range(value, minValue, maxValue, name, null);
   }
 }
