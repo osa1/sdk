@@ -213,6 +213,8 @@ mixin KernelNodes {
       index.getProcedure("dart:core", "Error", "_throw");
   late final Procedure throwIndexError =
       index.getProcedure("dart:core", "IndexError", "_throw");
+  late final Procedure throwRangeError =
+      index.getProcedure("dart:core", "RangeError", "_throw");
 
   // dart:core type procedures
   late final Procedure isSubtype =

@@ -943,6 +943,24 @@ class Intrinsifier {
         w.ArrayType arrayType =
             translator.arrayTypeForDartType(node.arguments.types.single);
         codeGen.wrap(length, w.NumType.i64);
+
+        if (!translator.options.omitBoundChecks) {
+          final lengthLocal = codeGen.function.addLocal(w.NumType.i64);
+          final maxI32 = 2147483647;
+          b.local_tee(lengthLocal);
+          b.i64_const(maxI32);
+          b.i64_lt_u();
+          b.if_();
+          b.local_get(lengthLocal); // value
+          b.i64_const(0); // minValue
+          b.i64_const(maxI32); // maxValue
+          b.call(translator.functions
+              .getFunction(translator.throwRangeError.reference));
+          b.unreachable();
+          b.end();
+          b.local_get(lengthLocal);
+        }
+
         b.i32_wrap_i64();
         b.array_new_default(arrayType);
         return w.RefType.def(arrayType, nullable: false);

@@ -247,3 +247,11 @@ class IndexError {
         indexable: indexable, name: name, message: null);
   }
 }
+
+@patch
+class RangeError {
+  @pragma("wasm:entry-point")
+  static Never _throw(int value, int minValue, int maxValue) {
+    throw RangeError.range(value, minValue, maxValue, null, null);
+  }
+}

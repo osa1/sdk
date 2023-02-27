@@ -15,8 +15,7 @@ abstract class _ListBase<E> extends ListBase<E> {
 
   _ListBase(int length, int capacity)
       : _length = length,
-        _data = WasmObjectArray<Object?>(
-            RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
+        _data = WasmObjectArray<Object?>(capacity);
 
   _ListBase._withData(this._length, this._data);
 
