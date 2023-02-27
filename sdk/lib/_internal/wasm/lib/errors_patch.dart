@@ -262,7 +262,8 @@ class RangeError {
   }
 
   @pragma("wasm:entry-point")
-  static Never _throwWithName(int value, int minValue, int maxValue, String name) {
+  static Never _throwWithName(
+      int value, int minValue, int maxValue, String name) {
     throw RangeError.range(value, minValue, maxValue, name, null);
   }
 }
