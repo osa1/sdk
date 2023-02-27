@@ -63,7 +63,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   void removeRange(int start, int end) {
-    RangeError.checkValidRange(start, end, this.length);
+    RangeError._checkValidRangeInline(start, end, this.length);
     Lists.copy(this, end, this, start, this.length - end);
     this.length = this.length - (end - start);
   }

@@ -1147,7 +1147,69 @@ class Intrinsifier {
             return translator.topInfo.nullableType;
           }
 
-          throw '_checkVlaidRangeInline';
+          final startLocal = codeGen.function.addLocal(w.NumType.i64);
+          codeGen.wrap(start, startLocal.type);
+          b.local_tee(startLocal);
+
+          final endNullable = codeGen.dartTypeOf(end).isPotentiallyNullable;
+          final endLocalType =
+              endNullable ? translator.topInfo.nullableType : w.NumType.i64;
+          final endLocal = codeGen.function.addLocal(endLocalType);
+          codeGen.wrap(end, endLocalType);
+          b.local_set(endLocal);
+
+          final lengthLocal = codeGen.function.addLocal(w.NumType.i64);
+          codeGen.wrap(length, lengthLocal.type);
+          b.local_tee(lengthLocal);
+
+          b.i64_gt_u();
+          b.if_();
+          b.local_get(startLocal); // value
+          b.i64_const(0); // minValue
+          b.local_get(lengthLocal); // maxValue
+          codeGen.wrap(
+              StringLiteral("start"), translator.objectInfo.nonNullableType);
+          b.call(translator.functions
+              .getFunction(translator.throwRangeErrorWithName.reference));
+          b.unreachable();
+          b.end();
+
+          final endNonNullLocal =
+              endNullable ? codeGen.function.addLocal(w.NumType.i64) : endLocal;
+
+          if (endNullable) {
+            final nullableBlock = b.block();
+            b.local_get(endLocal);
+            b.br_on_null(nullableBlock);
+            translator.convertType(codeGen.function,
+                translator.topInfo.nonNullableType, w.NumType.i64);
+            b.local_set(endNonNullLocal);
+          }
+
+          b.local_get(startLocal);
+          b.local_get(endNonNullLocal);
+          b.i64_gt_u();
+          b.local_get(endNonNullLocal);
+          b.local_get(lengthLocal);
+          b.i64_gt_u();
+          b.i32_or();
+          b.if_();
+          b.local_get(endNonNullLocal); // value
+          b.local_get(startLocal); // minValue
+          b.local_get(lengthLocal); // maxValue
+          codeGen.wrap(
+              StringLiteral("end"), translator.objectInfo.nonNullableType);
+          b.call(translator.functions
+              .getFunction(translator.throwRangeErrorWithName.reference));
+          b.unreachable();
+          b.end();
+
+          if (endNullable) {
+            b.end(); // nullableBlock
+          }
+
+          b.ref_null(translator.topInfo.struct);
+          return translator.topInfo.nullableType;
       }
     }
 

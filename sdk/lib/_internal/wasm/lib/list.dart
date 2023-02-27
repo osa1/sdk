@@ -28,7 +28,8 @@ abstract class _ListBase<E> extends ListBase<E> {
 
   List<E> sublist(int start, [int? end]) {
     final int listLength = this.length;
-    final int actualEnd = RangeError.checkValidRange(start, end, listLength);
+    RangeError._checkValidRangeInline(start, end, listLength);
+    final int actualEnd = end ?? listLength;
     int length = actualEnd - start;
     if (length == 0) return <E>[];
     return _GrowableList<E>(length)..setRange(0, length, this, start);
@@ -61,7 +62,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
 
   // List interface.
   void setRange(int start, int end, Iterable<E> iterable, [int skipCount = 0]) {
-    RangeError.checkValidRange(start, end, this.length);
+    RangeError._checkValidRangeInline(start, end, this.length);
     int length = end - start;
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
