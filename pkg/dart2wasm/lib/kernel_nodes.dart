@@ -241,4 +241,8 @@ mixin KernelNodes {
       index.getProcedure("dart:wasm", "WasmFunction", "get:call");
   late final Procedure wasmTableCallIndirect =
       index.getProcedure("dart:wasm", "WasmTable", "callIndirect");
+
+  // Debugging
+  late final Procedure printToConsole =
+      index.getTopLevelProcedure("dart:_internal", "printToConsole");
 }
