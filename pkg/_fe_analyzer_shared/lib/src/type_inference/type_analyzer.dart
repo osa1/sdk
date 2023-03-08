@@ -203,8 +203,11 @@ class SwitchStatementMemberInfo<Node extends Object, Statement extends Node,
   /// might become not consistent.
   final Map<String, Variable> variables;
 
-  SwitchStatementMemberInfo(this.heads, this.body, this.variables,
-      {required this.hasLabels});
+  SwitchStatementMemberInfo(
+      {required this.heads,
+      required this.body,
+      required this.variables,
+      required this.hasLabels});
 }
 
 /// Type analysis logic to be shared between the analyzer and front end.  The
@@ -518,6 +521,10 @@ mixin TypeAnalyzer<
               requiredType: staticType);
     }
     flow.promoteForPattern(matchedType: matchedType, knownType: staticType);
+    // The promotion may have made the matched type even more specific than
+    // either `matchedType` or `staticType`, so fetch it again and use that
+    // in the call to `declaredVariablePattern` below.
+    matchedType = flow.getMatchedValueType();
     bool isImplicitlyTyped = declaredType == null;
     // TODO(paulberry): are we handling _isFinal correctly?
     int promotionKey = context.patternVariablePromotionKeys[variableName] =

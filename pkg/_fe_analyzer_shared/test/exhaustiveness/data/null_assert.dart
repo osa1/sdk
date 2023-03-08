@@ -14,7 +14,6 @@ class D extends B {}
 
 simpleAssert(o1, o2) {
   var a = /*
-   fields={},
    subtypes={Object,Null},
    type=Object?
   */switch (o1) {
@@ -26,7 +25,6 @@ simpleAssert(o1, o2) {
   };
 
   var b = /*
-   fields={},
    subtypes={Object,Null},
    type=Object?
   */switch (o2) {
@@ -38,28 +36,27 @@ restrictedCase(o1, o2) {
   // Null assert shouldn't match everything, because even though it doesn't
   // throw, it might not match.
   var a = /*
-   fields={},
+   fields={field:-},
    subtypes={Object,Null},
    type=Object?
   */switch (o1) {
-    A(field: 42)! /*cfe.space=A(field: IntConstant(42))|Null*//*analyzer.space=A(field: int (42))|Null*/=> 0,
+    A(field: 42)! /*space=A(field: 42)|Null*/=> 0,
     _ /*space=()*/=> 1
   };
 
   var b = /*
    error=non-exhaustive:Object,
-   fields={},
+   fields={field:-},
    subtypes={Object,Null},
    type=Object?
   */switch (o2) {
-    A(field: 42)! /*cfe.space=A(field: IntConstant(42))|Null*//*analyzer.space=A(field: int (42))|Null*/=> 0,
+    A(field: 42)! /*space=A(field: 42)|Null*/=> 0,
   };
 }
 
 nullableBool(bool? b1, bool? b2) {
   /*
    expandedSubtypes={true,false,Null},
-   fields={},
    subtypes={bool,Null},
    type=bool?
   */
@@ -74,7 +71,6 @@ nullableBool(bool? b1, bool? b2) {
   /*
    error=non-exhaustive:false,
    expandedSubtypes={true,false,Null},
-   fields={},
    subtypes={bool,Null},
    type=bool?
   */
@@ -87,14 +83,13 @@ nullableBool(bool? b1, bool? b2) {
 
 nullableA(A? a1, A? a2, A? a3) {
   var a = /*
-   fields={},
    subtypes={A,Null},
    type=A?
   */switch (a1) {
     A()! /*space=A?*/=> 0,
   };
   var b = /*
-   fields={},
+   fields={field:-},
    subtypes={A,Null},
    type=A?
   */switch (a2) {
@@ -102,13 +97,12 @@ nullableA(A? a1, A? a2, A? a3) {
   };
   var c = /*
    error=non-exhaustive:A(field: int),
-   fields={},
+   fields={field:-},
    subtypes={A,Null},
    type=A?
   */switch (a3) {
     A(field: 42)!
-      /*cfe.space=A(field: IntConstant(42))|Null*/
-      /*analyzer.space=A(field: int (42))|Null*/
+      /*space=A(field: 42)|Null*/
       => 0,
   };
 }
@@ -116,7 +110,6 @@ nullableA(A? a1, A? a2, A? a3) {
 nullableB(B? b1, B? b2, B? b3) {
   /*
    expandedSubtypes={C,D,Null},
-   fields={},
    subtypes={B,Null},
    type=B?
   */
@@ -127,7 +120,6 @@ nullableB(B? b1, B? b2, B? b3) {
   }
   /*
    expandedSubtypes={C,D,Null},
-   fields={},
    subtypes={B,Null},
    type=B?
   */
@@ -142,7 +134,6 @@ nullableB(B? b1, B? b2, B? b3) {
   /*
    error=non-exhaustive:D,
    expandedSubtypes={C,D,Null},
-   fields={},
    subtypes={B,Null},
    type=B?
   */

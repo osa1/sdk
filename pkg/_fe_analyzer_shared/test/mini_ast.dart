@@ -877,6 +877,7 @@ class MiniAstOperations
     'Object': false,
     'Object?': false,
     'String': false,
+    'String?': false,
   };
 
   static final Map<String, Type> _coreGlbs = {
@@ -921,6 +922,7 @@ class MiniAstOperations
     'int': Type('int'),
     'int?': Type('int?'),
     'num': Type('num'),
+    'String?': Type('String?'),
     'List<int>': Type('List<int>'),
   };
 
@@ -3669,7 +3671,7 @@ class _MiniAstTypeAnalyzer
           covariant _SwitchStatement node, int caseIndex) {
     _SwitchStatementMember case_ = node.cases[caseIndex];
     return SwitchStatementMemberInfo(
-      [
+      heads: [
         for (var element in case_.elements)
           if (element is _SwitchHeadCase)
             CaseHeadOrDefaultInfo(
@@ -3684,8 +3686,8 @@ class _MiniAstTypeAnalyzer
               guard: null,
             )
       ],
-      case_._body.statements,
-      case_._candidateVariables,
+      body: case_._body.statements,
+      variables: case_._candidateVariables,
       hasLabels: case_.hasLabels,
     );
   }
