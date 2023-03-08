@@ -977,13 +977,6 @@ class Translator with KernelNodes {
 
   ClassInfo getRecordClassInfo(RecordType recordType) =>
       classInfo[recordClasses[RecordShape.fromType(recordType)]!]!;
-
-  void debugRuntimePrint(CodeGenerator codeGen, String s) {
-    final printFunction = functions.getFunction(printToConsole.reference);
-    constants.instantiateConstant(codeGen.function, codeGen.function.body,
-        StringConstant(s), printFunction.type.inputs[0]);
-    codeGen.function.body.call(printFunction);
-  }
 }
 
 abstract class _FunctionGenerator {

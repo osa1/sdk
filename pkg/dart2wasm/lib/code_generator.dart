@@ -3282,6 +3282,14 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
   void _emitString(String str) => wrap(StringLiteral(str),
       translator.translateType(translator.coreTypes.stringNonNullableRawType));
+
+  void debugRuntimePrint(String s) {
+    final printFunction =
+        translator.functions.getFunction(translator.printToConsole.reference);
+    translator.constants.instantiateConstant(
+        function, b, StringConstant(s), printFunction.type.inputs[0]);
+    b.call(printFunction);
+  }
 }
 
 class TryBlockFinalizer {
