@@ -104,16 +104,39 @@ final class _BoxedDouble extends double {
   }
 
   static double _modulo(double a, double b) {
-    double rem = a - (a / b).truncateToDouble() * b;
-    if (rem == 0.0) return 0.0;
-    if (rem < 0.0) {
-      if (b < 0.0) {
-        return rem - b;
-      } else {
-        return rem + b;
-      }
+    if (b == 0 || a.isInfinite || a.isNaN || b.isNaN) {
+      return double.nan;
     }
-    return rem;
+
+    b = b.abs();
+
+    int fraction(double bits) => doubleToIntBits(bits) & _mantissaMask;
+    int exponent(double bits) =>
+        (doubleToIntBits(bits) & _exponentMask) >> _mantissaBits;
+
+    final int bFraction = fraction(b);
+    final int bExponent = exponent(b);
+
+    double r = a;
+    if (a < 0.0) {
+      r = -a;
+    }
+
+    while (r >= b) {
+      final int rFraction = fraction(r);
+      int rExponent = exponent(r);
+      if (rFraction < bFraction) {
+        rExponent -= 1;
+      }
+      int expDiff = rExponent - bExponent;
+      r -= b * (1 << expDiff);
+    }
+
+    if (a.isNegative) {
+      r = -r;
+    }
+
+    return r;
   }
 
   @pragma("wasm:prefer-inline")
