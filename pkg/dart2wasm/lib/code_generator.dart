@@ -1366,32 +1366,17 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return;
     }
 
-    // If all of case expressions have incompatible type with the switch
-    // expression, just evaluate the case expression and the default
-    // expression.
     final switchExprClass =
         translator.classForType(dartTypeOf(node.expression));
-
-    final casesCompatible = node.cases.expand((c) => c.expressions).every((e) =>
-        translator.hierarchy.isSubtypeOf(
-            translator.classForType(dartTypeOf(e)), switchExprClass));
-
-    if (!casesCompatible) {
-      wrap(node.expression, voidMarker);
-      for (final c in node.cases) {
-        if (c.isDefault) {
-          visitStatement(c.body);
-        }
-      }
-      return;
-    }
 
     bool check<L extends Expression, C extends Constant>() =>
         node.cases.expand((c) => c.expressions).every((e) =>
             e is L ||
             e is NullLiteral ||
             (e is ConstantExpression &&
-                (e.constant is C || e.constant is NullConstant)));
+                (e.constant is C || e.constant is NullConstant) &&
+                (translator.hierarchy.isSubtypeOf(
+                    translator.classForType(dartTypeOf(e)), switchExprClass))));
 
     // Identify kind of switch. One of `nullableType` or `nonNullableType` will
     // be the type for Wasm local that holds the switch value.
