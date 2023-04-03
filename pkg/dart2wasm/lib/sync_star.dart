@@ -207,9 +207,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
   @override
   void generate() {
     closures = Closures(this);
-
-    if (member.name.text == 'test') print(member.function?.body);
-
     setupParametersAndContexts(member);
     generateTypeChecks(member.function!.typeParameters, member.function!,
         translator.paramInfoFor(reference));
@@ -395,8 +392,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   void emitTargetLabel(_StateTarget target) {
     currentTargetIndex++;
-    assert(target.index == currentTargetIndex,
-        'target.index = ${target.index}, currentTargetIndex = $currentTargetIndex');
+    assert(target.index == currentTargetIndex);
     b.end();
   }
 
