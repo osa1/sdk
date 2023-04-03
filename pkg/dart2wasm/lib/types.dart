@@ -619,7 +619,7 @@ class Types {
       return;
     }
 
-    // `x is T` where `T` either has no type arguments or all types arguments
+    // `x is T` where `T` either has no type arguments or all type arguments
     // are `dynamic`. Type check can be implemented as class ID check.
     List<Class> concrete = _getConcreteSubtypes(type.classNode).toList();
     if (type.classNode == coreTypes.objectClass) {
