@@ -666,6 +666,11 @@ class SyncStarCodeGenerator extends CodeGenerator {
   }
 
   @override
+  void visitContinueSwitchStatement(ContinueSwitchStatement node) {
+    jumpToTarget(innerTargets[node.target]!);
+  }
+
+  @override
   void visitTryCatch(TryCatch node) {
     _StateTarget? after = afterTargets[node];
     if (after == null) return super.visitTryCatch(node);
