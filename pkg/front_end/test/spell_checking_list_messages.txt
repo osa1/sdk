@@ -23,6 +23,7 @@ augmentations
 augmented
 b
 c
+cast
 collide
 compilercontext.runincontext
 compilesdk
@@ -34,10 +35,12 @@ dart.dev
 dart2js_server
 dart:_internal
 dart:ffi
+dart:js_interop
 dart_runner
 dartbug.com
 dname
 e.g
+enclose
 exhaustively
 exportable
 f
@@ -79,6 +82,8 @@ part(s)
 patch(es)
 patterns
 placing
+pragma
+preexisting
 pubspec.yaml
 r
 re
@@ -89,6 +94,7 @@ solutions
 stacktrace
 stand
 staticinterop
+strict
 stringokempty
 struct<#name
 structs
@@ -97,6 +103,7 @@ superinterface
 supermixin
 t
 team
+tearoff
 this.namedconstructor
 this.x
 trusttypes

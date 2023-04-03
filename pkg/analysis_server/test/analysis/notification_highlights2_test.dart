@@ -7,8 +7,8 @@ import 'dart:async';
 import 'package:analysis_server/protocol/protocol.dart';
 import 'package:analysis_server/protocol/protocol_constants.dart';
 import 'package:analysis_server/protocol/protocol_generated.dart';
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/source/source_range.dart';
-import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/test_utilities/test_code_format.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart';
 import 'package:collection/collection.dart';
@@ -28,10 +28,8 @@ void main() {
 class AnalysisNotificationHighlightsTest extends HighlightsTestSupport {
   @override
   List<String> get experiments => [
+        Feature.inline_class.enableString,
         ...super.experiments,
-        EnableString.class_modifiers,
-        EnableString.patterns,
-        EnableString.sealed_class
       ];
 
   void assertHighlightText(TestCode testCode, int index, String expected) {
@@ -244,7 +242,6 @@ void f() {
   Future<void> test_BUILT_IN_final() async {
     addTestFile('''
 final class A {}
-final mixin M {}
 final class B = Object with M;
 void f() {
   var final = 42;
@@ -252,7 +249,6 @@ void f() {
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.BUILT_IN, 'final class A');
-    assertHasRegion(HighlightRegionType.BUILT_IN, 'final mixin M');
     assertHasRegion(HighlightRegionType.BUILT_IN, 'final class B');
     assertNoRegion(HighlightRegionType.BUILT_IN, 'final = 42');
   }
@@ -321,7 +317,6 @@ void f() {
   Future<void> test_BUILT_IN_interface() async {
     addTestFile('''
 interface class A {}
-interface mixin M {}
 interface class B = Object with M;
 void f() {
   var interface = 42;
@@ -329,7 +324,6 @@ void f() {
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.BUILT_IN, 'interface class A');
-    assertHasRegion(HighlightRegionType.BUILT_IN, 'interface mixin M');
     assertHasRegion(HighlightRegionType.BUILT_IN, 'interface class B');
     assertNoRegion(HighlightRegionType.BUILT_IN, 'interface = 42');
   }
@@ -439,7 +433,6 @@ void f() {
   Future<void> test_BUILT_IN_sealed() async {
     addTestFile('''
 sealed class A {}
-sealed mixin M {}
 sealed class B = Object with M;
 void f() {
   var sealed = 42;
@@ -447,7 +440,6 @@ void f() {
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.BUILT_IN, 'sealed class A');
-    assertHasRegion(HighlightRegionType.BUILT_IN, 'sealed mixin M');
     assertHasRegion(HighlightRegionType.BUILT_IN, 'sealed class B');
     assertNoRegion(HighlightRegionType.BUILT_IN, 'sealed = 42');
   }
@@ -569,10 +561,12 @@ void f(Object o) {
     addTestFile('''
 class AAA {}
 AAA aaa;
+Never nnn() => throw '';
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.CLASS, 'AAA {}');
     assertHasRegion(HighlightRegionType.CLASS, 'AAA aaa');
+    assertHasRegion(HighlightRegionType.CLASS, 'Never nnn');
   }
 
   Future<void> test_class_constructor_fieldFormalParameter() async {
@@ -1421,6 +1415,14 @@ f(a, b) {
     assertHasRegion(HighlightRegionType.KEYWORD, 'else');
   }
 
+  Future<void> test_KEYWORD_inline() async {
+    addTestFile('''
+inline class A {}
+''');
+    await prepareHighlights();
+    assertHasRegion(HighlightRegionType.KEYWORD, 'inline');
+  }
+
   Future<void> test_KEYWORD_late() async {
     addTestFile('''
 class C {
@@ -1429,14 +1431,6 @@ class C {
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.KEYWORD, 'late');
-  }
-
-  Future<void> test_KEYWORD_mixin() async {
-    addTestFile('''
-mixin M {}
-''');
-    await prepareHighlights();
-    assertHasRegion(HighlightRegionType.BUILT_IN, 'mixin');
   }
 
   Future<void> test_KEYWORD_required() async {
@@ -1586,6 +1580,33 @@ void f(p) {
 ''');
     await prepareHighlights();
     assertHasRegion(HighlightRegionType.INSTANCE_METHOD_REFERENCE, 'add(null)');
+  }
+
+  Future<void> test_mixin() async {
+    var testCode = TestCode.parse(r'''
+mixin M on int {}
+''');
+    addTestFile(testCode.code);
+    await prepareHighlights();
+    assertHighlightText(testCode, -1, r'''
+0 + 5 |mixin| BUILT_IN
+6 + 1 |M| MIXIN
+8 + 2 |on| BUILT_IN
+11 + 3 |int| CLASS
+''');
+  }
+
+  Future<void> test_mixin_base() async {
+    var testCode = TestCode.parse(r'''
+base mixin M {}
+''');
+    addTestFile(testCode.code);
+    await prepareHighlights();
+    assertHighlightText(testCode, -1, r'''
+0 + 4 |base| BUILT_IN
+5 + 5 |mixin| BUILT_IN
+11 + 1 |M| MIXIN
+''');
   }
 
   Future<void> test_namedExpression_namedParameter() async {

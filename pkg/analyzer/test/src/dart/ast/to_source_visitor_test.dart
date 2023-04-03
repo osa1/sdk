@@ -2700,36 +2700,6 @@ base mixin M {}
     );
   }
 
-  void test_visitMixinDeclaration_final() {
-    var findNode = _parseStringToFindNode(r'''
-final mixin M {}
-''');
-    _assertSource(
-      'final mixin M {}',
-      findNode.mixinDeclaration('mixin M'),
-    );
-  }
-
-  void test_visitMixinDeclaration_interface() {
-    var findNode = _parseStringToFindNode(r'''
-interface mixin M {}
-''');
-    _assertSource(
-      'interface mixin M {}',
-      findNode.mixinDeclaration('mixin M'),
-    );
-  }
-
-  void test_visitMixinDeclaration_sealed() {
-    var findNode = _parseStringToFindNode(r'''
-sealed mixin M {}
-''');
-    _assertSource(
-      'sealed mixin M {}',
-      findNode.mixinDeclaration('mixin M'),
-    );
-  }
-
   void test_visitNamedExpression() {
     final code = 'a: 0';
     final findNode = _parseStringToFindNode('''
@@ -2850,6 +2820,51 @@ void f(x) {
   void test_visitPatternAssignmentStatement() {
     // TODO(brianwilkerson) Test this when the parser allows.
     fail('Unable to parse patterns');
+  }
+
+  void test_visitPatternField_named() {
+    var findNode = _parseStringToFindNode('''
+void f(x) {
+  switch (x) {
+    case (a: 1):
+      break;
+  }
+}
+''');
+    _assertSource(
+      'a: 1',
+      findNode.patternField('1'),
+    );
+  }
+
+  void test_visitPatternField_positional() {
+    var findNode = _parseStringToFindNode('''
+void f(x) {
+  switch (x) {
+    case (1,):
+      break;
+  }
+}
+''');
+    _assertSource(
+      '1',
+      findNode.patternField('1'),
+    );
+  }
+
+  void test_visitPatternFieldName() {
+    var findNode = _parseStringToFindNode('''
+void f(x) {
+  switch (x) {
+    case (b: 2):
+      break;
+  }
+}
+''');
+    _assertSource(
+      'b:',
+      findNode.patternFieldName('b:'),
+    );
   }
 
   @failingTest
@@ -2988,51 +3003,6 @@ void f(x) {
     _assertSource(
       '(1, 2)',
       findNode.recordPattern('(1'),
-    );
-  }
-
-  void test_visitRecordPatternField_named() {
-    var findNode = _parseStringToFindNode('''
-void f(x) {
-  switch (x) {
-    case (a: 1):
-      break;
-  }
-}
-''');
-    _assertSource(
-      'a: 1',
-      findNode.recordPatternField('1'),
-    );
-  }
-
-  void test_visitRecordPatternField_positional() {
-    var findNode = _parseStringToFindNode('''
-void f(x) {
-  switch (x) {
-    case (1,):
-      break;
-  }
-}
-''');
-    _assertSource(
-      '1',
-      findNode.recordPatternField('1'),
-    );
-  }
-
-  void test_visitRecordPatternFieldName() {
-    var findNode = _parseStringToFindNode('''
-void f(x) {
-  switch (x) {
-    case (b: 2):
-      break;
-  }
-}
-''');
-    _assertSource(
-      'b:',
-      findNode.recordPatternFieldName('b:'),
     );
   }
 
@@ -3655,6 +3625,14 @@ $code
 
   void test_visitTopLevelVariableDeclaration_single() {
     final code = 'var a;';
+    final findNode = _parseStringToFindNode('''
+$code
+''');
+    _assertSource(code, findNode.topLevelVariableDeclaration(code));
+  }
+
+  void test_visitTopLevelVariableDeclaration_withMetadata() {
+    final code = '@deprecated var a;';
     final findNode = _parseStringToFindNode('''
 $code
 ''');

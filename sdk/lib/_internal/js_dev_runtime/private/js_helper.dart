@@ -21,10 +21,6 @@ import 'dart:_internal'
 import 'dart:_native_typed_data';
 import 'dart:_runtime' as dart;
 
-// Export `JSObject` so `dart:js_interop` can import a representation type
-// consistently across all backends.
-export 'dart:_interceptors' show JSObject;
-
 part 'annotations.dart';
 part 'linked_hash_map.dart';
 part 'identity_hash_map.dart';
@@ -161,6 +157,31 @@ class Primitives {
       return null;
     }
     return result;
+  }
+
+  static bool? parseBool(
+      @nullCheck String source, @nullCheck bool caseSensitive) {
+    if (caseSensitive) {
+      return JS('bool', r'# == "true" || # != "false" && null', source, source);
+    }
+    return _compareIgnoreCase(source, "true")
+        ? true
+        : _compareIgnoreCase(source, "false")
+            ? false
+            : null;
+  }
+
+  /// Compares a string against an ASCII lower-case letter-only string.
+  ///
+  /// Returns `true` if the [input] has the same length and same letters
+  /// as [lowerCaseTarget], `false` if not.
+  static bool _compareIgnoreCase(String input, String lowerCaseTarget) {
+    if (input.length != lowerCaseTarget.length) return false;
+    var delta = 0x20;
+    for (var i = 0; i < input.length; i++) {
+      delta |= input.codeUnitAt(i) ^ lowerCaseTarget.codeUnitAt(i);
+    }
+    return delta == 0x20;
   }
 
   /** `r"$".codeUnitAt(0)` */
@@ -828,4 +849,12 @@ void Function(T)? wrapZoneUnaryCallback<T>(void Function(T)? callback) {
 /// [createRecordTypePredicate] is currently unused by DDC.
 Object? createRecordTypePredicate(Object? partialShapeTag, Object? fieldRtis) {
   throw UnimplementedError('createRecordTypePredicate');
+}
+
+/// Entrypoint for rti library. Calls rti.evaluateRtiForRecord with components
+/// of the record.
+///
+/// [getRtiForRecord] is currently unused by DDC.
+Never getRtiForRecord(Object? record) {
+  throw UnimplementedError('getRtiForRecord');
 }

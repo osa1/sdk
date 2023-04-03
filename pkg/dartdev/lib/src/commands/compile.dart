@@ -10,6 +10,7 @@ import 'package:dart2native/generate.dart';
 import 'package:front_end/src/api_prototype/compiler_options.dart'
     show Verbosity;
 import 'package:path/path.dart' as path;
+import 'package:vm/target_os.dart'; // For possible --target-os values.
 
 import '../core.dart';
 import '../experiments.dart';
@@ -24,6 +25,7 @@ class Option {
   final String help;
   final String? abbr;
   final String? defaultsTo;
+  final bool? flagDefaultsTo;
   final String? valueHelp;
   final List<String>? allowed;
   final Map<String, String>? allowedHelp;
@@ -33,6 +35,7 @@ class Option {
     required this.help,
     this.abbr,
     this.defaultsTo,
+    this.flagDefaultsTo,
     this.valueHelp,
     this.allowed,
     this.allowedHelp,
@@ -69,16 +72,60 @@ class CompileJSCommand extends CompileSubcommandCommand {
 
     if (!Sdk.checkArtifactExists(librariesPath)) return 255;
 
+    // We need to find the single bare arg (argument that is not an option or
+    // flag).
+    //
+    // dart2js argument parsing is a bit idiosyncratic:
+    //
+    // The only options that can be separated from their value is --output, --out
+    // -o and --define. (But not the synonym -D).
+    //
+    // (see: /usr/local/google/home/sigurdm/projects/dart-sdk/sdk/pkg/compiler/lib/src/dart2js.dart
+    // those that allow separation are those defined with `_ManyOptions`).
+    //
+    // dart2js argument handling doesn't support the -- convention.
+    //
+    // TODO(sigurdm): try finding a cleaner solution.
+    var hasSeenPackages = false;
+    // Whether the `--pub` flag is enabled.
+    var pubArg = true; // default to true.
+    final arguments = argResults!.arguments.toList();
+    String? target;
+    for (int i = 0; i < arguments.length; i++) {
+      final arg = arguments[i];
+      if (arg == '--pub' || arg == '--no-pub') {
+        pubArg = (arg == '--pub');
+        // Don't pass this argument to dart2js.
+        arguments.removeAt(i);
+        i--;
+      } else if (arg.startsWith('-')) {
+        if (['-o', '--output', '--out', '--define'].contains(arg)) {
+          i++;
+        } else if (arg.startsWith('--packages=')) {
+          hasSeenPackages = true;
+        }
+      } else {
+        // Multiple bare arguments will be rejected by dart2js
+        target = arg;
+      }
+    }
+    if (pubArg &&
+        !hasSeenPackages &&
+        target != null &&
+        File(target).existsSync()) {
+      // Resolve the pubspec of the project surrounding [sourcePath].
+      await findEnclosingProjectAndResolveIfNeeded(path.dirname(target));
+    }
+
     VmInteropHandler.run(
       sdk.dart2jsSnapshot,
       [
         '--libraries-spec=$librariesPath',
         '--cfe-invocation-modes=compile',
         '--invoker=dart_cli',
-        ...argResults!.arguments,
+        ...arguments,
       ],
       packageConfigOverride: null,
-      forceNoSoundNullSafety: true,
     );
 
     return 0;
@@ -127,10 +174,17 @@ class CompileSnapshotCommand extends CompileSubcommandCommand {
         abbr: defineOption.abbr,
         valueHelp: defineOption.valueHelp,
       )
-      ..addFlag('sound-null-safety',
-          help: 'Respect the nullability of types at runtime.',
-          defaultsTo: true)
-      ..addExperimentalFlags(verbose: verbose);
+      ..addFlag(soundNullSafetyOption.flag,
+          help: soundNullSafetyOption.help,
+          defaultsTo: soundNullSafetyOption.flagDefaultsTo,
+          hide: true)
+      ..addExperimentalFlags(verbose: verbose)
+      ..addFlag(
+        'pub',
+        defaultsTo: true,
+        hide: !verbose,
+        help: 'Run an implicit `pub get` to resolve `pubspec.yaml` first.',
+      );
   }
 
   @override
@@ -188,10 +242,17 @@ class CompileSnapshotCommand extends CompileSubcommandCommand {
 
     final bool soundNullSafety = args['sound-null-safety'];
     if (!soundNullSafety) {
+      if (!shouldAllowNoSoundNullSafety()) {
+        return compileErrorExitCode;
+      }
       buildArgs.add('--no-sound-null-safety');
     }
 
     final String? packages = args[packagesOption.flag];
+    if (args['pub'] && packages == null) {
+      // Resolve the pubspec of the project surrounding [sourcePath].
+      await findEnclosingProjectAndResolveIfNeeded(path.dirname(sourcePath));
+    }
     if (packages != null) {
       buildArgs.add('--packages=$packages');
     }
@@ -269,9 +330,16 @@ class CompileNativeCommand extends CompileSubcommandCommand {
         valueHelp: packagesOption.valueHelp,
         help: packagesOption.help,
       )
-      ..addFlag('sound-null-safety',
-          help: 'Respect the nullability of types at runtime.',
-          defaultsTo: true)
+      ..addFlag(
+        'pub',
+        defaultsTo: true,
+        hide: !verbose,
+        help: 'Run an implicit `pub get` to resolve `pubspec.yaml` first.',
+      )
+      ..addFlag(soundNullSafetyOption.flag,
+          help: soundNullSafetyOption.help,
+          defaultsTo: soundNullSafetyOption.flagDefaultsTo,
+          hide: true)
       ..addOption('save-debugging-info', abbr: 'S', valueHelp: 'path', help: '''
 Remove debugging information from the output and save it separately to the specified file.
 <path> can be relative or absolute.''')
@@ -281,6 +349,9 @@ Remove debugging information from the output and save it separately to the speci
         hide: true,
         valueHelp: 'opt1,opt2,...',
       )
+      ..addOption('target-os',
+          help: 'Compile to a specific target operating system.',
+          allowed: TargetOS.names)
       ..addExperimentalFlags(verbose: verbose);
   }
 
@@ -312,13 +383,23 @@ Remove debugging information from the output and save it separately to the speci
       return -1;
     }
 
+    if (!args['sound-null-safety'] && !shouldAllowNoSoundNullSafety()) {
+      return compileErrorExitCode;
+    }
+
+    var packages = args['packages'];
+    if (args['pub'] && packages == null) {
+      // Resolve the pubspec of the project surrounding [sourcePath].
+      await findEnclosingProjectAndResolveIfNeeded(path.dirname(sourcePath));
+    }
+
     try {
       await generateNative(
         kind: format,
         sourceFile: sourcePath,
         outputFile: args['output'],
         defines: args['define'],
-        packages: args['packages'],
+        packages: packages,
         enableAsserts:
             commandName != exeCmdName ? args['enable-asserts'] : false,
         enableExperiment: args.enabledExperiments.join(','),
@@ -327,6 +408,7 @@ Remove debugging information from the output and save it separately to the speci
         verbose: verbose,
         verbosity: args['verbosity'],
         extraOptions: args['extra-gen-snapshot-options'],
+        targetOS: args['target-os'],
       );
       return 0;
     } catch (e, st) {
@@ -358,6 +440,11 @@ Sets the verbosity level of the compilation.
     allowed: Verbosity.allowedValues,
     allowedHelp: Verbosity.allowedValuesHelp,
   );
+  final soundNullSafetyOption = Option(
+    flag: 'sound-null-safety',
+    help: 'DEPRECATED: Respect the nullability of types at runtime.',
+    flagDefaultsTo: true,
+  );
 
   late final Option defineOption;
   late final Option packagesOption;
@@ -381,6 +468,23 @@ For example: dart compile $name -Da=1,b=2 main.dart''',
 <path> can be relative or absolute.
 For example: dart compile $name --packages=/tmp/pkgs.json main.dart'''),
         super(name, description, verbose, hidden: hidden);
+
+  bool shouldAllowNoSoundNullSafety() {
+    // We need to maintain support for generating AOT snapshots and kernel
+    // files with no-sound-null-safety internal Flutter aplications are
+    // fully null-safe.
+    //
+    // See https://github.com/dart-lang/sdk/issues/51513 for context.
+    if (name == CompileNativeCommand.aotSnapshotCmdName ||
+        name == CompileSnapshotCommand.kernelCmdName) {
+      log.stdout(
+          'Warning: the flag --no-sound-null-safety is deprecated and pending removal.');
+      return true;
+    }
+    log.stdout(
+        'Error: the flag --no-sound-null-safety is not supported in Dart 3.');
+    return false;
+  }
 }
 
 class CompileCommand extends DartdevCommand {

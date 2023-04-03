@@ -70,7 +70,7 @@ void _callAsyncBridge(WasmStructRef args, Completer<Object?> completer) =>
         "(args, completer) => asyncBridge(args, completer)", args, completer);
 
 @pragma("wasm:export", "\$asyncBridge")
-WasmAnyRef? _asyncBridge(
+WasmExternRef? _asyncBridge(
     WasmExternRef? stack, WasmStructRef args, Completer<Object?> completer) {
   try {
     Object? result = _asyncBridge2(args, stack);
@@ -95,7 +95,9 @@ Object? _awaitHelper(Object? operand, WasmExternRef? stack) {
   // ensure that the zone will be restored in the event of an exception by
   // restoring the original zone before we throw the exception.
   _Zone current = Zone._current;
-  if (operand is! Future) return operand;
+  if (operand is! Future) {
+    operand = Future.value(operand);
+  }
   Object? result = _futurePromise(stack, operand);
   Zone._leave(current);
   if (result is _FutureError) {
@@ -112,7 +114,7 @@ Object? _awaitHelper(Object? operand, WasmExternRef? stack) {
 
 Object? _futurePromise(WasmExternRef? stack, Future<Object?> future) =>
     JS<Object?>("""new WebAssembly.Function(
-            {parameters: ['externref', 'externref'], results: ['externref']},
+            {parameters: ['externref', 'anyref'], results: ['anyref']},
             function(future) {
                 return new Promise(function (resolve, reject) {
                     dartInstance.exports.\$awaitCallback(future, resolve);

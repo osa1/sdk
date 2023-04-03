@@ -56,7 +56,8 @@ class A1 extends A0 {
   static set s12(x) {}
 }
 ''');
-    assertResponse('''
+    if (isProtocolVersion2) {
+      assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -81,6 +82,33 @@ suggestions
   x0
     kind: parameter
 ''');
+    } else {
+      assertResponse(r'''
+suggestions
+  A0
+    kind: class
+  A0
+    kind: constructorInvocation
+  A1
+    kind: class
+  A1
+    kind: constructorInvocation
+  false
+    kind: keyword
+  null
+    kind: keyword
+  true
+    kind: keyword
+  x0
+    kind: parameter
+  const
+    kind: keyword
+  final
+    kind: keyword
+  var
+    kind: keyword
+''');
+    }
   }
 
   Future<void> test_pattern_second() async {
@@ -111,7 +139,8 @@ class A1 extends A0 {
   static set s12(x) {}
 }
 ''');
-    assertResponse('''
+    if (isProtocolVersion2) {
+      assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -136,6 +165,33 @@ suggestions
   x0
     kind: parameter
 ''');
+    } else {
+      assertResponse(r'''
+suggestions
+  A0
+    kind: class
+  A0
+    kind: constructorInvocation
+  A1
+    kind: class
+  A1
+    kind: constructorInvocation
+  false
+    kind: keyword
+  null
+    kind: keyword
+  true
+    kind: keyword
+  x0
+    kind: parameter
+  const
+    kind: keyword
+  final
+    kind: keyword
+  var
+    kind: keyword
+''');
+    }
   }
 
   Future<void> test_property_first() async {
@@ -166,7 +222,7 @@ class A1 extends A0 {
   static set s12(x) {}
 }
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   f01
     kind: field
@@ -212,7 +268,7 @@ class A1 extends A0 {
 }
 ''');
     if (isProtocolVersion2) {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -222,7 +278,7 @@ suggestions
     kind: field
 ''');
     } else {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -272,7 +328,7 @@ class A1 extends A0 {
 }
 ''');
     if (isProtocolVersion2) {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -282,7 +338,7 @@ suggestions
     kind: field
 ''');
     } else {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -331,7 +387,7 @@ class A1 extends A0 {
   static set s12(x) {}
 }
 ''');
-    assertResponse('''
+    assertResponse(r'''
 replacement
   right: 1
 suggestions
@@ -378,7 +434,7 @@ class A1 extends A0 {
   static set s12(x) {}
 }
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   f11
     kind: field

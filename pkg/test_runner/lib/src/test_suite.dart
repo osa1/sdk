@@ -60,7 +60,7 @@ abstract class TestSuite {
           if (Platform.isWindows) 'DART_SUPPRESS_WER': '1',
           if (Platform.isWindows && configuration.copyCoreDumps)
             'DART_CRASHPAD_HANDLER': Uri.base
-                .resolve(configuration.buildDirectory + '/crashpad_handler.exe')
+                .resolve('${configuration.buildDirectory}/crashpad_handler.exe')
                 .toFilePath(),
           if (configuration.chromePath != null)
             'CHROME_PATH':
@@ -175,8 +175,8 @@ abstract class TestSuite {
     if (testFile.isWebStaticErrorTest &&
         const {
           Compiler.dart2js,
-          Compiler.dartdevc,
-          Compiler.dartdevk,
+          Compiler.ddc,
+          Compiler.dart2wasm,
         }.contains(configuration.compiler)) {
       return true;
     }
@@ -289,6 +289,7 @@ class VMTestSuite extends TestSuite {
     }
   }
 
+  @override
   void findTestCases(TestCaseEvent onTest, Map testCache) {
     var statusFiles =
         statusFilePaths.map((statusFile) => "$dartDir/$statusFile").toList();
@@ -426,6 +427,7 @@ class FfiTestSuite extends TestSuite {
             '$buildDir/run_ffi_unit_tests_$config$binarySuffix'));
   }
 
+  @override
   void findTestCases(TestCaseEvent onTest, Map testCache) {
     final statusFiles =
         statusFilePaths.map((statusFile) => "$dartDir/$statusFile").toList();
@@ -601,7 +603,7 @@ class StandardTestSuite extends TestSuite {
   factory StandardTestSuite.forDirectory(
       TestConfiguration configuration, Path directory) {
     var name = directory.filename;
-    var status_paths = [
+    var statusPaths = [
       '$directory/$name.status',
       '$directory/.status',
       '$directory/${name}_app_jit.status',
@@ -616,7 +618,7 @@ class StandardTestSuite extends TestSuite {
       '$directory/${name}_vm.status',
     ];
 
-    return StandardTestSuite(configuration, name, directory, status_paths,
+    return StandardTestSuite(configuration, name, directory, statusPaths,
         recursive: true);
   }
 
@@ -628,6 +630,7 @@ class StandardTestSuite extends TestSuite {
 
   List<String> additionalOptions(Path? filePath) => [];
 
+  @override
   void findTestCases(
       TestCaseEvent onTest, Map<String, List<TestFile>> testCache) {
     var expectations = _readExpectations();
@@ -789,7 +792,7 @@ class StandardTestSuite extends TestSuite {
             commonArguments,
             isCrashExpected);
         var variantTestName =
-            testFile.name + '/${emitDdsTest ? 'dds' : 'service'}';
+            '${testFile.name}/${emitDdsTest ? 'dds' : 'service'}';
         if (vmOptionsList.length > 1) {
           variantTestName = "${variantTestName}_$vmOptionsVariant";
         }
@@ -946,7 +949,7 @@ class StandardTestSuite extends TestSuite {
             testFile.sharedOptions.contains('--null-assertions');
         var weakNullSafetyErrors =
             testFile.ddcOptions.contains('--weak-null-safety-errors');
-        content = dartdevcHtml(
+        content = ddcHtml(
             nameNoExt,
             nameFromModuleRootNoExt,
             jsDir,
@@ -966,8 +969,7 @@ class StandardTestSuite extends TestSuite {
     const supportedCompilers = {
       Compiler.dart2js,
       Compiler.dart2wasm,
-      Compiler.dartdevc,
-      Compiler.dartdevk
+      Compiler.ddc
     };
     assert(supportedCompilers.contains(configuration.compiler));
 
@@ -1054,6 +1056,7 @@ class PackageTestSuite extends StandardTestSuite {
             ["$directoryPath/.status"],
             recursive: true);
 
+  @override
   void _enqueueBrowserTest(
       TestFile testFile, Set<Expectation> expectations, TestCaseEvent onTest) {
     var dir = testFile.path.directoryPath;
@@ -1076,15 +1079,18 @@ class AnalyzeLibraryTestSuite extends StandardTestSuite {
           ? '${configuration.buildDirectory}/dart-sdk'
           : 'sdk');
 
+  @override
   bool get listRecursively => true;
 
   AnalyzeLibraryTestSuite(TestConfiguration configuration)
       : super(configuration, 'analyze_library', _libraryPath(configuration),
             ['tests/lib_2/analyzer/analyze_library.status']);
 
+  @override
   List<String> additionalOptions(Path? filePath, {bool? showSdkWarnings}) =>
       const ['--fatal-warnings', '--fatal-type-errors', '--sdk-warnings'];
 
+  @override
   Iterable<TestFile> findTests() {
     var dir = Directory(suiteDir.append('lib').toNativePath());
     if (dir.existsSync()) {
@@ -1094,6 +1100,7 @@ class AnalyzeLibraryTestSuite extends StandardTestSuite {
     return const [];
   }
 
+  @override
   bool isTestFile(String filename) {
     // NOTE: We exclude tests and patch files for now.
     return filename.endsWith(".dart") &&

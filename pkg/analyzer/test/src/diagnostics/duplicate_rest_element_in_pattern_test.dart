@@ -34,30 +34,8 @@ ListPattern
     RestPatternElement
       operator: ...
   rightBracket: ]
+  matchedValueType: List<int>
   requiredType: List<int>
-''');
-  }
-
-  test_mapPattern() async {
-    await assertErrorsInCode(r'''
-void f(Map<int, String> x) {
-  if (x case {..., ...}) {}
-}
-''', [
-      error(CompileTimeErrorCode.DUPLICATE_REST_ELEMENT_IN_PATTERN, 48, 3,
-          contextMessages: [message('/home/test/lib/test.dart', 43, 3)]),
-    ]);
-    final node = findNode.singleGuardedPattern.pattern;
-    assertResolvedNodeText(node, r'''
-MapPattern
-  leftBracket: {
-  elements
-    RestPatternElement
-      operator: ...
-    RestPatternElement
-      operator: ...
-  rightBracket: }
-  requiredType: Map<int, String>
 ''');
   }
 }

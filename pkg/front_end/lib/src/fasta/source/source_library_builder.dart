@@ -299,7 +299,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             packageUri,
             packageLanguageVersion,
             new TypeParameterScopeBuilder.library(),
-            scope ?? new Scope.top(),
+            scope ?? new Scope.top(kind: ScopeKind.library),
             origin,
             library,
             nameOrigin,
@@ -334,7 +334,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             fileUri,
             _libraryTypeParameterScopeBuilder.toScope(importScope,
                 omittedTypeDeclarationBuilders: omittedTypes),
-            new Scope.top()) {
+            new Scope.top(kind: ScopeKind.library)) {
     assert(
         _packageUri == null ||
             !importUri.isScheme('package') ||
@@ -1461,6 +1461,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             }
             if (memberLast is ClassBuilder) {
               library.additionalExports.add(memberLast.cls.reference);
+            } else if (memberLast is InlineClassBuilder) {
+              library.additionalExports.add(memberLast.inlineClass.reference);
             } else if (memberLast is TypeAliasBuilder) {
               library.additionalExports.add(memberLast.typedef.reference);
             } else if (memberLast is ExtensionBuilder) {
@@ -1833,10 +1835,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       int nameOffset,
       int endOffset,
       int supertypeOffset,
-      {required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
+      {required bool isBase,
       required bool isAugmentation}) {
     TypeBuilder? supertype;
     MixinApplicationBuilder? mixinApplication;
@@ -1863,10 +1862,10 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         endOffset,
         supertypeOffset,
         isMacro: false,
-        isSealed: isSealed,
+        isSealed: false,
         isBase: isBase,
-        isInterface: isInterface,
-        isFinal: isFinal,
+        isInterface: false,
+        isFinal: false,
         isAugmentation: isAugmentation,
         isMixinClass: false);
   }
@@ -1901,6 +1900,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     Map<String, MemberBuilder> setters = declaration.setters!;
 
     Scope classScope = new Scope(
+        kind: ScopeKind.declaration,
         local: members,
         setters: setters,
         parent: scope.withTypeVariables(typeVariables),
@@ -2143,6 +2143,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     Map<String, MemberBuilder> setters = declaration.setters!;
 
     Scope classScope = new Scope(
+        kind: ScopeKind.declaration,
         local: members,
         setters: setters,
         parent: scope.withTypeVariables(typeVariables),
@@ -2208,6 +2209,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       int modifiers,
       String name,
       List<TypeVariableBuilder>? typeVariables,
+      List<TypeBuilder>? interfaces,
       int startOffset,
       int nameOffset,
       int endOffset) {
@@ -2221,6 +2223,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     Map<String, MemberBuilder> setters = declaration.setters!;
 
     Scope memberScope = new Scope(
+        kind: ScopeKind.declaration,
         local: members,
         setters: setters,
         parent: scope.withTypeVariables(typeVariables),
@@ -2250,6 +2253,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         modifiers,
         declaration.name,
         typeVariables,
+        interfaces,
         memberScope,
         constructorScope,
         this,
@@ -2532,6 +2536,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
                     : null,
             null, // No `on` clause types.
             new Scope(
+                kind: ScopeKind.declaration,
                 local: <String, MemberBuilder>{},
                 setters: <String, MemberBuilder>{},
                 parent: scope.withTypeVariables(typeVariables),
@@ -3147,6 +3152,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         charEndOffset,
         referencesFromIndexedClass,
         new Scope(
+            kind: ScopeKind.declaration,
             local: members,
             setters: setters,
             parent: scope.withTypeVariables(typeVariables),
@@ -3955,11 +3961,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         if (!haveErroneousBounds) {
           List<NamedTypeBuilder> unboundTypes = [];
           List<TypeVariableBuilder> unboundTypeVariables = [];
-          List<TypeBuilder> calculatedBounds = calculateBounds(
-              variables,
-              dynamicType,
-              isNonNullableByDefault ? bottomType : nullType,
-              objectClass,
+          List<TypeBuilder> calculatedBounds = calculateBounds(variables,
+              dynamicType, isNonNullableByDefault ? bottomType : nullType,
               unboundTypes: unboundTypes,
               unboundTypeVariables: unboundTypeVariables);
           for (NamedTypeBuilder unboundType in unboundTypes) {
@@ -5011,6 +5014,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         case TypeUse.returnType:
         case TypeUse.isType:
         case TypeUse.asType:
+        case TypeUse.objectPatternType:
         case TypeUse.catchType:
         case TypeUse.constructorTypeArgument:
         case TypeUse.redirectionTypeArgument:
@@ -5473,12 +5477,14 @@ class TypeParameterScopeBuilder {
     if (omittedTypeDeclarationBuilders != null &&
         omittedTypeDeclarationBuilders.isNotEmpty) {
       parent = new Scope(
+          kind: ScopeKind.typeParameters,
           local: omittedTypeDeclarationBuilders,
           parent: parent,
           debugName: 'omitted-types',
           isModifiable: false);
     }
     return new Scope(
+        kind: ScopeKind.typeParameters,
         local: members ?? const {},
         setters: setters,
         extensions: extensions,

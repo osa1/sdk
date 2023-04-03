@@ -4,7 +4,6 @@
 
 import 'dart:io';
 
-import 'package:cli_util/cli_logging.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
@@ -14,19 +13,24 @@ void main() {
   group('fix', defineFix, timeout: longTimeout);
 }
 
-/// Enable to run from local source (useful in development).
-const runFromSource = false;
+final bullet = '•';
+final nonAnsiBullet = '-';
+
+/// Allow for different bullets; depending on how the test harness is run,
+/// subprocesses may decide to give us ansi bullets or normal bullets.
+/// TODO(jcollins): find a way to detect which one we should be expecting.
+Matcher stringContainsInOrderWithVariableBullets(List<String> substrings) {
+  var substitutedSubstrings = substrings;
+  if (substrings.any((s) => s.contains(bullet))) {
+    substitutedSubstrings =
+        substrings.map((s) => s.replaceAll(bullet, nonAnsiBullet)).toList();
+  }
+  return anyOf(stringContainsInOrder(substrings),
+      stringContainsInOrder(substitutedSubstrings));
+}
 
 void defineFix() {
-  TestProject? p;
-
   late ProcessResult result;
-
-  final bullet = Logger.standard().ansi.bullet;
-
-  setUp(() => p = null);
-
-  tearDown(() async => await p?.dispose());
 
   void assertResult({int exitCode = 0}) {
     String message;
@@ -52,19 +56,11 @@ ${result.stderr}
 ''');
   }
 
-  Future<ProcessResult> runFix(List<String> args, {String? workingDir}) async {
-    if (runFromSource) {
-      var binary = path.join(Directory.current.path, 'bin', 'dartdev.dart');
-      return await p!.run([binary, 'fix', ...args], workingDir: workingDir);
-    }
-    return await p!.run(['fix', ...args], workingDir: workingDir);
-  }
-
   group('usage', () {
     test('--help', () async {
-      p = project(mainSrc: 'int get foo => 1;\n');
+      final p = project(mainSrc: 'int get foo => 1;\n');
 
-      var result = await runFix([p!.dirPath, '--help']);
+      var result = await p.runFix([p.dirPath, '--help']);
 
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
@@ -78,9 +74,9 @@ ${result.stderr}
     });
 
     test('--help --verbose', () async {
-      p = project(mainSrc: 'int get foo => 1;\n');
+      final p = project(mainSrc: 'int get foo => 1;\n');
 
-      var result = await runFix([p!.dirPath, '--help', '--verbose']);
+      var result = await p.runFix([p.dirPath, '--help', '--verbose']);
 
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
@@ -97,9 +93,9 @@ ${result.stderr}
     });
 
     test('no args', () async {
-      p = project(mainSrc: 'int get foo => 1;\n');
+      final p = project(mainSrc: 'int get foo => 1;\n');
 
-      var result = await runFix([p!.dirPath]);
+      var result = await p.runFix([p.dirPath]);
 
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
@@ -110,9 +106,9 @@ ${result.stderr}
 
   group('perform', () {
     test('--apply (nothing to fix)', () async {
-      p = project(mainSrc: 'int get foo => 1;\n');
+      final p = project(mainSrc: 'int get foo => 1;\n');
 
-      var result = await runFix(['--apply', p!.dirPath]);
+      var result = await p.runFix(['--apply', p.dirPath]);
 
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
@@ -120,7 +116,7 @@ ${result.stderr}
     });
 
     test('--apply (no args)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 var x = "";
 ''',
@@ -131,12 +127,12 @@ linter:
 ''',
       );
 
-      var result = await runFix(['--apply'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -144,7 +140,7 @@ linter:
     });
 
     test('--dry-run', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -161,26 +157,26 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--dry-run', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--dry-run', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             '3 proposed fixes in 1 file.',
             'lib${Platform.pathSeparator}main.dart',
             '  annotate_overrides $bullet 1 fix',
             '  prefer_single_quotes $bullet 2 fixes',
-            'To fix an individual diagnostic, run one of the following commands:',
-            '  dart fix --apply --code annotate_overrides .',
-            '  dart fix --apply --code prefer_single_quotes .',
+            'To fix an individual diagnostic, run one of:',
+            '  dart fix --apply --code=annotate_overrides .',
+            '  dart fix --apply --code=prefer_single_quotes .',
             'To fix all diagnostics, run:',
             '  dart fix --apply .',
           ]));
     });
 
-    test('--dry-run --code (single)', () async {
-      p = project(
+    test('--dry-run --code=(single)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -194,22 +190,22 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix(
+      var result = await p.runFix(
           ['--dry-run', '--code', 'prefer_single_quotes', '.'],
-          workingDir: p!.dirPath);
+          workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             '1 proposed fix in 1 file.',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
           ]));
     });
 
-    test('--dry-run --code (single: undefined)', () async {
-      p = project(
+    test('--dry-run --code=(single: undefined)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -223,19 +219,19 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix(['--dry-run', '--code', '_undefined_', '.'],
-          workingDir: p!.dirPath);
+      var result = await p.runFix(['--dry-run', '--code', '_undefined_', '.'],
+          workingDir: p.dirPath);
       expect(result.exitCode, 3);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             "Unable to compute fixes: The diagnostic '_undefined_' is not defined by the analyzer.",
           ]));
     });
 
     test('--apply lib/main.dart', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 var x = "";
 ''',
@@ -245,22 +241,22 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', path.join('lib', 'main.dart')],
-          workingDir: p!.dirPath);
-      expect(result.exitCode, 0);
+      var result = await p.runFix(['--apply', path.join('lib', 'main.dart')],
+          workingDir: p.dirPath);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'main.dart',
             '  prefer_single_quotes $bullet 1 fix',
             '1 fix made in 1 file.',
           ]));
+      expect(result.exitCode, 0);
     });
 
-    test('--apply --code (single)', () async {
-      p = project(
+    test('--apply --code=(single)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -274,14 +270,14 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix(
+      var result = await p.runFix(
           ['--apply', '--code', 'prefer_single_quotes', '.'],
-          workingDir: p!.dirPath);
+          workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -289,23 +285,23 @@ linter:
           ]));
     });
 
-    test('--apply --code (undefined)', () async {
-      p = project(
+    test('--apply --code=(undefined)', () async {
+      final p = project(
         mainSrc: '',
       );
-      var result = await runFix(['--apply', '--code', '_undefined_', '.'],
-          workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '--code', '_undefined_', '.'],
+          workingDir: p.dirPath);
       expect(result.exitCode, 3);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             "Unable to compute fixes: The diagnostic '_undefined_' is not defined by the analyzer.",
           ]));
     });
 
-    test('--apply --code (not enabled)', () async {
-      p = project(
+    test('--apply --code=(not enabled)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -318,20 +314,17 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix(
+      var result = await p.runFix(
           ['--apply', '--code', 'prefer_single_quotes', '.'],
-          workingDir: p!.dirPath);
-      expect(result.exitCode, 3);
+          workingDir: p.dirPath);
+      expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
-      expect(
-          result.stdout,
-          stringContainsInOrder([
-            "Unable to compute fixes: The lint 'prefer_single_quotes' is not enabled; add it to your analysis options and try again.",
-          ]));
+      expect(result.stdout,
+          stringContainsInOrderWithVariableBullets(['Nothing to fix!']));
     });
 
-    test('--apply --code (multiple: one undefined)', () async {
-      p = project(
+    test('--apply --code=(multiple: one undefined)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -345,25 +338,25 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix([
+      var result = await p.runFix([
         '--apply',
         '--code',
         '_undefined_',
         '--code',
         'unnecessary_new',
         '.'
-      ], workingDir: p!.dirPath);
+      ], workingDir: p.dirPath);
       expect(result.exitCode, 3);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             "Unable to compute fixes: The diagnostic '_undefined_' is not defined by the analyzer.",
           ]));
     });
 
-    test('--apply --code (multiple)', () async {
-      p = project(
+    test('--apply --code=(multiple)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -377,19 +370,19 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix([
+      var result = await p.runFix([
         '--apply',
         '--code',
         'prefer_single_quotes',
         '--code',
         'unnecessary_new',
         '.'
-      ], workingDir: p!.dirPath);
+      ], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -398,8 +391,8 @@ linter:
           ]));
     });
 
-    test('--apply --code (multiple: comma-delimited)', () async {
-      p = project(
+    test('--apply --code=(multiple: comma-delimited)', () async {
+      final p = project(
         mainSrc: '''
 var x = "";
 class A {
@@ -413,14 +406,14 @@ linter:
     - unnecessary_new
 ''',
       );
-      var result = await runFix(
+      var result = await p.runFix(
           ['--apply', '--code=prefer_single_quotes,unnecessary_new', '.'],
-          workingDir: p!.dirPath);
+          workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -430,7 +423,7 @@ linter:
     });
 
     test('--apply (.)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 var x = "";
 ''',
@@ -440,12 +433,12 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -454,7 +447,7 @@ linter:
     });
 
     test('--apply (contradictory lints do not loop infinitely)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 var x = "";
 ''',
@@ -465,12 +458,12 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_double_quotes $bullet 2 fixes',
@@ -480,7 +473,7 @@ linter:
     });
 
     test('--apply (excludes)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 var x = "";
 ''',
@@ -493,14 +486,14 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(result.stdout, contains('Nothing to fix!'));
     });
 
     test('--apply (ignores)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 // ignore: prefer_single_quotes
 var x = "";
@@ -511,14 +504,14 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(result.stdout, contains('Nothing to fix!'));
     });
 
     test('--apply (unused imports require a second pass)', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 import 'dart:math';
 
@@ -530,12 +523,12 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      var result = await runFix(['--apply', '.'], workingDir: p!.dirPath);
+      var result = await p.runFix(['--apply', '.'], workingDir: p.dirPath);
       expect(result.exitCode, 0);
       expect(result.stderr, isEmpty);
       expect(
           result.stdout,
-          stringContainsInOrder([
+          stringContainsInOrderWithVariableBullets([
             'Applying fixes...',
             'lib${Platform.pathSeparator}main.dart',
             '  prefer_single_quotes $bullet 1 fix',
@@ -547,7 +540,7 @@ linter:
 
   group('compare-to-golden', () {
     test('target is not a directory', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -564,7 +557,7 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      p!.file('lib/main.dart.expect', '''
+      p.file('lib/main.dart.expect', '''
 class A {
   String a() => '';
 }
@@ -574,15 +567,15 @@ class B extends A {
   String a() => '';
 }
 ''');
-      result = await runFix(['--compare-to-golden', 'lib/main.dart.expect'],
-          workingDir: p!.dirPath);
+      result = await p.runFix(['--compare-to-golden', 'lib/main.dart.expect'],
+          workingDir: p.dirPath);
       expect(result.exitCode, 64);
       expect(result.stderr,
           startsWith('Golden comparison requires a directory argument.'));
     });
 
     test('applied fixes do not match expected', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -599,7 +592,7 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      p!.file('lib/main.dart.expect', '''
+      p.file('lib/main.dart.expect', '''
 class A {
   String a() => '';
 }
@@ -609,12 +602,12 @@ class B extends A {
 }
 ''');
       result =
-          await runFix(['--compare-to-golden', '.'], workingDir: p!.dirPath);
+          await p.runFix(['--compare-to-golden', '.'], workingDir: p.dirPath);
       assertResult(exitCode: 1);
     });
 
     test('applied fixes match expected', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -631,7 +624,7 @@ linter:
     - prefer_single_quotes
 ''',
       );
-      p!.file('lib/main.dart.expect', '''
+      p.file('lib/main.dart.expect', '''
 class A {
   String a() => '';
 }
@@ -642,12 +635,12 @@ class B extends A {
 }
 ''');
       result =
-          await runFix(['--compare-to-golden', '.'], workingDir: p!.dirPath);
+          await p.runFix(['--compare-to-golden', '.'], workingDir: p.dirPath);
       assertResult();
     });
 
     test('missing expect', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -665,27 +658,27 @@ linter:
 ''',
       );
       result =
-          await runFix(['--compare-to-golden', '.'], workingDir: p!.dirPath);
+          await p.runFix(['--compare-to-golden', '.'], workingDir: p.dirPath);
       assertResult(exitCode: 1);
     });
 
     test('missing original', () async {
-      p = project(mainSrc: '''
+      final p = project(mainSrc: '''
 class C {}
 ''');
-      p!.file('lib/main.dart.expect', '''
+      p.file('lib/main.dart.expect', '''
 class C {}
 ''');
-      p!.file('lib/secondary.dart.expect', '''
+      p.file('lib/secondary.dart.expect', '''
 class A {}
 ''');
       result =
-          await runFix(['--compare-to-golden', '.'], workingDir: p!.dirPath);
+          await p.runFix(['--compare-to-golden', '.'], workingDir: p.dirPath);
       assertResult(exitCode: 1);
     });
 
     test('no fixes to apply does not match expected', () async {
-      p = project(
+      final p = project(
         mainSrc: '''
 class A {
   String a() => "";
@@ -697,14 +690,42 @@ linter:
     - annotate_overrides
 ''',
       );
-      p!.file('lib/main.dart.expect', '''
+      p.file('lib/main.dart.expect', '''
 class A {
   String a() => '';
 }
 ''');
       result =
-          await runFix(['--compare-to-golden', '.'], workingDir: p!.dirPath);
+          await p.runFix(['--compare-to-golden', '.'], workingDir: p.dirPath);
       assertResult(exitCode: 1);
     });
+  });
+
+  test('Will resolve pubspec of project containing target', () async {
+    final p = project(
+      mainSrc: '''
+import 'package:bar/main.dart';
+
+final a = "";
+''',
+      analysisOptions: '''
+linter:
+  rules:
+    - prefer_single_quotes
+''',
+    );
+    p.file('lib/main.dart.expect', '''
+import 'package:bar/main.dart';
+
+final a = '';
+''');
+    // Run in a sibling-dir to the project with a relative path to the main.
+    // The pubspec should be resolved.
+    final siblingDir = path.join(p.root.path, 'sibling');
+    Directory(siblingDir).createSync();
+    final target = path.relative(path.join(p.dirPath, 'lib'), from: siblingDir);
+    result =
+        await p.runFix(['--compare-to-golden', target], workingDir: siblingDir);
+    assertResult(exitCode: 0);
   });
 }

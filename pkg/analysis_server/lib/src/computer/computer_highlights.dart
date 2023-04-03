@@ -694,6 +694,7 @@ class _DartUnitHighlightsComputerVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
+    computer._addRegion_token(node.inlineKeyword, HighlightRegionType.KEYWORD);
     computer._addRegion_token(
         node.abstractKeyword, HighlightRegionType.BUILT_IN);
     computer._addRegion_token(node.sealedKeyword, HighlightRegionType.BUILT_IN);
@@ -1143,12 +1144,9 @@ class _DartUnitHighlightsComputerVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitMixinDeclaration(MixinDeclaration node) {
-    computer._addRegion_token(node.sealedKeyword, HighlightRegionType.BUILT_IN);
     computer._addRegion_token(node.baseKeyword, HighlightRegionType.BUILT_IN);
-    computer._addRegion_token(
-        node.interfaceKeyword, HighlightRegionType.BUILT_IN);
-    computer._addRegion_token(node.finalKeyword, HighlightRegionType.BUILT_IN);
     computer._addRegion_token(node.mixinKeyword, HighlightRegionType.BUILT_IN);
+    computer._addRegion_token(node.name, HighlightRegionType.MIXIN);
     super.visitMixinDeclaration(node);
   }
 
@@ -1156,8 +1154,16 @@ class _DartUnitHighlightsComputerVisitor extends RecursiveAstVisitor<void> {
   void visitNamedType(NamedType node) {
     var type = node.type;
     if (type != null) {
-      if (type.isDynamic && node.name.name == 'dynamic') {
-        computer._addRegion_node(node, HighlightRegionType.TYPE_NAME_DYNAMIC);
+      var isDynamic = type.isDynamic && node.name.name == 'dynamic';
+      var isNever = type is NeverType;
+      if (isDynamic || isNever) {
+        computer._addRegion_node(
+          node.name,
+          isDynamic
+              ? HighlightRegionType.TYPE_NAME_DYNAMIC
+              : HighlightRegionType.CLASS,
+          semanticTokenType: SemanticTokenTypes.type,
+        );
         return;
       }
     }
@@ -1204,6 +1210,16 @@ class _DartUnitHighlightsComputerVisitor extends RecursiveAstVisitor<void> {
   }
 
   @override
+  void visitPatternFieldName(PatternFieldName node) {
+    final name = node.name;
+    if (name != null) {
+      computer._addRegion_token(
+          node.name, HighlightRegionType.INSTANCE_GETTER_REFERENCE);
+    }
+    super.visitPatternFieldName(node);
+  }
+
+  @override
   void visitPatternVariableDeclaration(PatternVariableDeclaration node) {
     computer._addRegion_token(node.keyword, HighlightRegionType.KEYWORD);
     super.visitPatternVariableDeclaration(node);
@@ -1225,16 +1241,6 @@ class _DartUnitHighlightsComputerVisitor extends RecursiveAstVisitor<void> {
         field.accept(this);
       }
     }
-  }
-
-  @override
-  void visitRecordPatternFieldName(RecordPatternFieldName node) {
-    final name = node.name;
-    if (name != null) {
-      computer._addRegion_token(
-          node.name, HighlightRegionType.INSTANCE_GETTER_REFERENCE);
-    }
-    super.visitRecordPatternFieldName(node);
   }
 
   @override

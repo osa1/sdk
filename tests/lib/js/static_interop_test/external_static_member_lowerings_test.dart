@@ -5,8 +5,7 @@
 @JS()
 library external_static_member_lowerings_test;
 
-// ignore: IMPORT_INTERNAL_LIBRARY
-import 'dart:_js_interop';
+import 'dart:js_interop';
 
 import 'package:expect/minitest.dart';
 import 'package:js/js.dart' show staticInterop;
@@ -41,7 +40,7 @@ class ExternalStatic {
 }
 
 extension on ExternalStatic {
-  external String get initialValue;
+  external String? get initialValue;
 }
 
 // Top-level fields.
@@ -121,7 +120,7 @@ void testClassStaticMembers() {
   // Methods and tear-offs.
   expect(ExternalStatic.method(), 'method');
   expect((ExternalStatic.method)(), 'method');
-  expect(ExternalStatic.differentArgsMethod('method'), 'method');
+  expect(ExternalStatic.differentArgsMethod('method'), 'methodundefined');
   expect((ExternalStatic.differentArgsMethod)('optional', 'method'),
       'optionalmethod');
   expect(ExternalStatic.renamedMethod(), 'method');
@@ -149,7 +148,7 @@ void testTopLevelMembers() {
   // Methods and tear-offs.
   expect(method(), 'method');
   expect((method)(), 'method');
-  expect(differentArgsMethod('method'), 'method');
+  expect(differentArgsMethod('method'), 'methodundefined');
   expect((differentArgsMethod)('optional', 'method'), 'optionalmethod');
   expect(renamedMethod(), 'method');
   expect((renamedMethod)(), 'method');
@@ -158,12 +157,11 @@ void testTopLevelMembers() {
 void testFactories() {
   // Non-object literal factories and their tear-offs.
   var initialized = 'initialized';
-  var uninitialized = 'uninitialized';
 
   var externalStatic = ExternalStatic(initialized);
   expect(externalStatic.initialValue, initialized);
   externalStatic = ExternalStatic.named();
-  expect(externalStatic.initialValue, uninitialized);
+  expect(externalStatic.initialValue, null);
 
   externalStatic = (ExternalStatic.new)(initialized);
   expect(externalStatic.initialValue, initialized);

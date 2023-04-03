@@ -16,11 +16,17 @@ library dart.wasm;
 // TODO(askesc): Give an error message if any of these constraints are violated.
 
 @pragma("wasm:entry-point")
-abstract class _WasmBase {}
+abstract class _WasmBase {
+  const _WasmBase();
+}
 
-abstract class _WasmInt extends _WasmBase {}
+abstract class _WasmInt extends _WasmBase {
+  const _WasmInt();
+}
 
-abstract class _WasmFloat extends _WasmBase {}
+abstract class _WasmFloat extends _WasmBase {
+  const _WasmFloat();
+}
 
 /// The Wasm `anyref` type.
 @pragma("wasm:entry-point")
@@ -35,7 +41,9 @@ class WasmAnyRef extends _WasmBase {
   ///
   /// Will throw if the reference is not a Dart object.
   external Object toObject();
+}
 
+extension ExternalizeNonNullable on WasmAnyRef {
   WasmExternRef externalize() => _externalizeNonNullable(this);
 }
 
@@ -46,10 +54,17 @@ extension ExternalizeNullable on WasmAnyRef? {
 /// The Wasm `externref` type.
 @pragma("wasm:entry-point")
 class WasmExternRef extends _WasmBase {
+  // To avoid conflating the null externref with Dart's null, we provide a
+  // special getter for the null externref.
+  external static WasmExternRef? get nullRef;
+}
+
+extension InternalizeNonNullable on WasmExternRef {
   WasmAnyRef internalize() => _internalizeNonNullable(this);
 }
 
 extension InternalizeNullable on WasmExternRef? {
+  bool get isNull => _wasmExternRefIsNull(this);
   WasmAnyRef? internalize() => _internalizeNullable(this);
 }
 
@@ -57,6 +72,7 @@ external WasmExternRef _externalizeNonNullable(WasmAnyRef ref);
 external WasmExternRef? _externalizeNullable(WasmAnyRef? ref);
 external WasmAnyRef _internalizeNonNullable(WasmExternRef ref);
 external WasmAnyRef? _internalizeNullable(WasmExternRef? ref);
+external bool _wasmExternRefIsNull(WasmExternRef? ref);
 
 /// The Wasm `funcref` type.
 @pragma("wasm:entry-point")
@@ -100,6 +116,12 @@ class WasmI16 extends _WasmInt {}
 /// The Wasm `i32` type.
 @pragma("wasm:entry-point")
 class WasmI32 extends _WasmInt {
+  /// Dummy value field to contain the value for constant instances.
+  final int _value;
+
+  /// Constructor for constant instances.
+  const WasmI32(this._value);
+
   external factory WasmI32.fromInt(int value);
   external factory WasmI32.int8FromInt(int value);
   external factory WasmI32.uint8FromInt(int value);
@@ -114,6 +136,12 @@ class WasmI32 extends _WasmInt {
 /// The Wasm `i64` type.
 @pragma("wasm:entry-point")
 class WasmI64 extends _WasmInt {
+  /// Dummy value field to contain the value for constant instances.
+  final int _value;
+
+  /// Constructor for constant instances.
+  const WasmI64(this._value);
+
   external factory WasmI64.fromInt(int value);
   external int toInt();
 }
@@ -121,6 +149,12 @@ class WasmI64 extends _WasmInt {
 /// The Wasm `f32` type.
 @pragma("wasm:entry-point")
 class WasmF32 extends _WasmFloat {
+  /// Dummy value field to contain the value for constant instances.
+  final double _value;
+
+  /// Constructor for constant instances.
+  const WasmF32(this._value);
+
   external factory WasmF32.fromDouble(double value);
   external double toDouble();
 }
@@ -128,6 +162,12 @@ class WasmF32 extends _WasmFloat {
 /// The Wasm `f64` type.
 @pragma("wasm:entry-point")
 class WasmF64 extends _WasmFloat {
+  /// Dummy value field to contain the value for constant instances.
+  final double _value;
+
+  /// Constructor for constant instances.
+  const WasmF64(this._value);
+
   external factory WasmF64.fromDouble(double value);
   external double toDouble();
 }
@@ -178,6 +218,11 @@ class WasmFunction<F extends Function> extends WasmFuncRef {
   @pragma("wasm:entry-point")
   external F get call;
 }
+
+/// A marker type for the return type of functions and the type argument to
+/// [WasmFunction] to indicate that the function type should have no outputs.
+@pragma("wasm:entry-point")
+class WasmVoid extends _WasmBase {}
 
 /// A Wasm table.
 @pragma("wasm:entry-point")

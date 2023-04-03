@@ -98,6 +98,12 @@ class DapTestClient {
       events('dart.testNotification')
           .map((e) => e.body as Map<String, Object?>);
 
+  /// Waits for a 'breakpoint' event that changes the breakpoint with [id].
+  Stream<BreakpointEventBody> get breakpointChangeEvents => events('breakpoint')
+      .map((event) =>
+          BreakpointEventBody.fromJson(event.body as Map<String, Object?>))
+      .where((body) => body.reason == 'changed');
+
   /// Send an attachRequest to the server, asking it to attach to an existing
   /// Dart program.
   Future<Response> attach({
@@ -483,14 +489,11 @@ class DapTestClient {
   ///
   /// Returns [future].
   Future<T> _logIfSlow<T>(String name, Future<T> future) {
-    var didComplete = false;
-    Future.delayed(_requestWarningDuration).then((_) {
-      if (!didComplete) {
-        print(
-            '$name has taken longer than ${_requestWarningDuration.inSeconds}s');
-      }
+    final timer = Timer(_requestWarningDuration, () {
+      print(
+          '$name has taken longer than ${_requestWarningDuration.inSeconds}s');
     });
-    return future.whenComplete(() => didComplete = true);
+    return future.whenComplete(timer.cancel);
   }
 
   /// Creates a [DapTestClient] that connects the server listening on
@@ -571,12 +574,17 @@ extension DapTestClientExtension on DapTestClient {
   }
 
   /// Sets a breakpoint at [line] in [file].
-  Future<void> setBreakpoint(File file, int line, {String? condition}) async {
-    await sendRequest(
+  Future<SetBreakpointsResponseBody> setBreakpoint(File file, int line,
+      {String? condition}) async {
+    final response = await sendRequest(
       SetBreakpointsArguments(
         source: Source(path: _normalizeBreakpointPath(file.path)),
         breakpoints: [SourceBreakpoint(line: line, condition: condition)],
       ),
+    );
+
+    return SetBreakpointsResponseBody.fromJson(
+      response.body as Map<String, Object?>,
     );
   }
 
@@ -888,18 +896,7 @@ extension DapTestClientExtension on DapTestClient {
     bool ignorePrivate = true,
     Set<String>? ignore,
   }) async {
-    final stack = await getValidStack(
-      threadId,
-      startFrame: 0,
-      numFrames: 1,
-    );
-    final topFrame = stack.stackFrames.first;
-
-    final variablesScope = await getValidScope(topFrame.id, 'Locals');
-    final variables =
-        await getValidVariables(variablesScope.variablesReference);
-    final expectedVariable = variables.variables
-        .singleWhere((variable) => variable.name == expectedName);
+    final expectedVariable = await getLocalVariable(threadId, expectedName);
 
     // Check basic variable values.
     expect(expectedVariable.value, equals(expectedDisplayString));
@@ -913,6 +910,31 @@ extension DapTestClientExtension on DapTestClient {
       count: count,
       ignorePrivate: ignorePrivate,
       ignore: ignore,
+    );
+  }
+
+  /// A helper that finds a named variable in the Variables scope for the top
+  /// frame.
+  Future<Variable> getLocalVariable(int threadId, String name) async {
+    final stack = await getValidStack(
+      threadId,
+      startFrame: 0,
+      numFrames: 1,
+    );
+    final topFrame = stack.stackFrames.first;
+
+    final variablesScope = await getValidScope(topFrame.id, 'Locals');
+    return getChildVariable(variablesScope.variablesReference, name);
+  }
+
+  /// A helper that finds a named variable in the child variables for
+  /// [variablesReference].
+  Future<Variable> getChildVariable(int variablesReference, String name) async {
+    final variables = await getValidVariables(variablesReference);
+    return variables.variables.singleWhere(
+      (variable) => variable.name == name,
+      orElse: () =>
+          throw 'Did not find $name in ${variables.variables.map((v) => v.name).join(', ')}',
     );
   }
 

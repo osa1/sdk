@@ -31,7 +31,9 @@ NullCheckPattern
     name: y
     declaredElement: hasImplicitType y@34
       type: int
+    matchedValueType: int
   operator: ?
+  matchedValueType: int?
 ''');
   }
 
@@ -54,7 +56,9 @@ NullCheckPattern
     name: y
     declaredElement: hasImplicitType y@45
       type: int
+    matchedValueType: int
   operator: ?
+  matchedValueType: int?
 ''');
   }
 
@@ -79,13 +83,17 @@ PatternVariableDeclaration
         name: a
         declaredElement: hasImplicitType a@24
           type: int
+        matchedValueType: int
       operator: ?
+      matchedValueType: int?
     rightParenthesis: )
+    matchedValueType: int?
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: int?
+  patternTypeSchema: _
 ''');
   }
 }

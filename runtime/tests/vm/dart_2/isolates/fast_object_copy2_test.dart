@@ -10,10 +10,12 @@
 // VMOptions=--enable-fast-object-copy --gc-on-foc-slow-path --force-evacuation
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:expect/expect.dart';
+import 'package:ffi/ffi.dart';
 
 import 'fast_object_copy_test.dart'
     show UserObject, SendReceiveTestBase, notAllocatableInTLAB;

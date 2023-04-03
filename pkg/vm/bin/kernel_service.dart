@@ -101,13 +101,13 @@ CompilerOptions setupCompilerOptions(
   return new CompilerOptions()
     ..fileSystem = fileSystem
     ..target = new VmTarget(new TargetFlags(
-        enableNullSafety: nullSafety, supportMirrors: enableMirrors))
+        soundNullSafety: nullSafety, supportMirrors: enableMirrors))
     ..packagesFileUri = packagesUri
     ..sdkSummary = platformKernelPath
     ..verbose = verbose
     ..omitPlatform = false // so that compilation results can be rejected,
-                           // which potentially is only relevant for
-                           // incremental, rather than single-shot compilter
+    // which potentially is only relevant for
+    // incremental, rather than single-shot compilter
     ..explicitExperimentalFlags = parseExperimentalFlags(
         parseExperimentalArguments(expFlags), onError: (msg) {
       errorsPlain.add(msg);
@@ -829,10 +829,15 @@ Future _processLoadRequest(request) async {
     // request a reload, meaning that we won't have a compiler for this isolate.
     if (compiler != null) {
       final wrapper = compiler as IncrementalCompilerWrapper;
-      if (tag == kAcceptTag) {
-        wrapper.accept();
-      } else {
-        await wrapper.reject();
+      try {
+        if (tag == kAcceptTag) {
+          wrapper.accept();
+        } else {
+          await wrapper.reject();
+        }
+      } catch (e, st) {
+        port.send(CompilationResult.crash(e, st).toResponse());
+        return;
       }
     }
     port.send(new CompilationResult.ok(null).toResponse());
@@ -1013,7 +1018,7 @@ Future<String?> findNativeAssets({
       if (found != null) {
         return found;
       }
-      final parentUri = script.resolve('..');
+      final parentUri = folderUri.resolve('..');
       if (parentUri.path == folderUri.path) {
         return null;
       }

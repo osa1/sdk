@@ -84,6 +84,12 @@ class AnalyzeCommand extends DartdevCommand {
             'supplies a mapping of package names\ninto paths.',
         hide: !verbose,
       )
+      ..addFlag(
+        'pub',
+        defaultsTo: true,
+        hide: !verbose,
+        help: 'Run an implicit `pub get` to resolve `pubspec.yaml` first.',
+      )
       ..addOption(
         'sdk-path',
         valueHelp: 'path',
@@ -99,10 +105,26 @@ class AnalyzeCommand extends DartdevCommand {
   @override
   Future<int> run() async {
     final args = argResults!;
+    final globalArgs = globalResults!;
+    final suppressAnalytics =
+        !globalArgs['analytics'] || globalArgs['suppress-analytics'];
+
     // Find targets from the 'rest' params.
     final List<io.FileSystemEntity> targets = [];
     if (args.rest.isEmpty) {
-      targets.add(io.Directory.current);
+      if (args['pub']) {
+        // If there was no specified targets, we analyze the surrounding project,
+        // and make sure that the pubspec.yaml (if it exists) is resolved.
+        final target = await findEnclosingProjectAndResolveIfNeeded(
+            io.Directory.current.path);
+        if (target == null) {
+          usageException('No dart project found.\n'
+              'Run from inside a dart project, or pass the path to the files to analyze');
+        }
+        targets.add(io.Directory(target));
+      } else {
+        targets.add(io.Directory.current);
+      }
     } else {
       for (String targetPath in args.rest) {
         if (io.Directory(targetPath).existsSync()) {
@@ -170,6 +192,7 @@ class AnalyzeCommand extends DartdevCommand {
       commandName: 'analyze',
       argResults: args,
       enabledExperiments: args.enabledExperiments,
+      suppressAnalytics: suppressAnalytics,
     );
 
     server.onErrors.listen((FileAnalysisErrors fileErrors) {

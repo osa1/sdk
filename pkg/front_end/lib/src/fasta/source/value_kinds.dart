@@ -34,7 +34,6 @@ import '../kernel/body_builder.dart' as type
         JumpTarget,
         Label;
 import '../kernel/expression_generator.dart' as type;
-import '../kernel/internal_ast.dart' as type;
 
 import '../modifier.dart' as type;
 
@@ -60,6 +59,8 @@ class ValueKinds {
       const SingleValueKind<type.AsyncMarker>();
   static const ValueKind AsyncModifier =
       const SingleValueKind<type.AsyncMarker>();
+  static const ValueKind AwaitTokenOrNull =
+      const SingleValueKind<type.Token>(NullValues.AwaitToken);
   static const ValueKind BreakTarget =
       const SingleValueKind<type.JumpTarget>(NullValues.BreakTarget);
   static const ValueKind Bool = const SingleValueKind<bool>();

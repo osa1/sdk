@@ -678,6 +678,9 @@ class AssignedVariablePatternImpl extends VariablePatternImpl
   Token get endToken => name;
 
   @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
+
+  @override
   ChildEntities get _childEntities => ChildEntities()..addToken('name', name);
 
   @override
@@ -1525,6 +1528,9 @@ class CastPatternImpl extends DartPatternImpl implements CastPattern {
   Token get endToken => type.endToken;
 
   @override
+  PatternPrecedence get precedence => PatternPrecedence.postfix;
+
+  @override
   VariablePatternImpl? get variablePattern => pattern.variablePattern;
 
   @override
@@ -1547,7 +1553,12 @@ class CastPatternImpl extends DartPatternImpl implements CastPattern {
     SharedMatchContext context,
   ) {
     type.accept(resolverVisitor);
-    resolverVisitor.analyzeCastPattern(context, pattern, type.typeOrThrow);
+    resolverVisitor.analyzeCastPattern(
+      context: context,
+      pattern: this,
+      innerPattern: pattern,
+      requiredType: type.typeOrThrow,
+    );
   }
 
   @override
@@ -1837,6 +1848,7 @@ class ClassDeclarationImpl extends NamedCompilationUnitMemberImpl
   final Token? macroKeyword;
 
   /// The 'inline' keyword, or `null` if the keyword was absent.
+  @override
   final Token? inlineKeyword;
 
   /// The 'sealed' keyword, or `null` if the keyword was absent.
@@ -2848,7 +2860,7 @@ class ConstantPatternImpl extends DartPatternImpl implements ConstantPattern {
   }
 
   @override
-  Token get beginToken => expression.beginToken;
+  Token get beginToken => constKeyword ?? expression.beginToken;
 
   @override
   Token get endToken => expression.endToken;
@@ -2859,6 +2871,9 @@ class ConstantPatternImpl extends DartPatternImpl implements ConstantPattern {
   set expression(ExpressionImpl expression) {
     _expression = _becomeParentOf(expression);
   }
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -3030,6 +3045,16 @@ class ConstructorDeclarationImpl extends ClassMemberImpl
 
   @override
   NodeListImpl<ConstructorInitializerImpl> get initializers => _initializers;
+
+  // A trivial constructor is a generative constructor that is not a
+  // redirecting constructor, declares no parameters, has no
+  // initializer list, has no body, and is not external.
+  bool get isTrivial =>
+      redirectedConstructor == null &&
+      parameters.parameters.isEmpty &&
+      initializers.isEmpty &&
+      body is EmptyFunctionBody &&
+      externalKeyword == null;
 
   @Deprecated('Use name instead')
   @override
@@ -3415,20 +3440,17 @@ class ContinueStatementImpl extends StatementImpl implements ContinueStatement {
 ///      | [LogicalAndPattern]
 ///      | [LogicalOrPattern]
 ///      | [MapPattern]
+///      | [NullAssertPattern]
+///      | [NullCheckPattern]
 ///      | [ObjectPattern]
 ///      | [ParenthesizedPattern]
-///      | [PostfixPattern]
 ///      | [RecordPattern]
 ///      | [RelationalPattern]
 @experimental
 abstract class DartPatternImpl extends AstNodeImpl
     implements DartPattern, ListPatternElementImpl {
-  DartPatternImpl();
-
   @override
-  // TODO(brianwilkerson) Remove this and implement it in subclasses when we
-  //  have constants for pattern-related precedence values.
-  Precedence get precedence => throw UnimplementedError();
+  DartType? matchedValueType;
 
   @override
   DartPattern get unParenthesized => this;
@@ -3597,7 +3619,7 @@ class DeclaredVariablePatternImpl extends VariablePatternImpl
       var parent = current.parent;
       if (parent is MapPatternEntry) {
         parent = parent.parent;
-      } else if (parent is RecordPatternFieldImpl) {
+      } else if (parent is PatternFieldImpl) {
         parent = parent.parent;
       } else if (parent is RestPatternElementImpl) {
         parent = parent.parent;
@@ -3617,6 +3639,9 @@ class DeclaredVariablePatternImpl extends VariablePatternImpl
       }
     }
   }
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => ChildEntities()
@@ -3639,12 +3664,10 @@ class DeclaredVariablePatternImpl extends VariablePatternImpl
     ResolverVisitor resolverVisitor,
     SharedMatchContext context,
   ) {
-    declaredElement!.type = resolverVisitor.analyzeDeclaredVariablePattern(
-        context,
-        this,
-        declaredElement!,
-        declaredElement!.name,
-        type?.typeOrThrow);
+    declaredElement!.type = resolverVisitor
+        .analyzeDeclaredVariablePattern(context, this, declaredElement!,
+            declaredElement!.name, type?.typeOrThrow)
+        .staticType;
   }
 
   @override
@@ -4459,7 +4482,7 @@ abstract class ExpressionImpl extends AstNodeImpl
       if (parent is ConstantContextForExpressionImpl) {
         return true;
       } else if (parent is ConstantPatternImpl) {
-        return true;
+        return parent.constKeyword != null;
       } else if (parent is EnumConstantArguments) {
         return true;
       } else if (parent is TypedLiteralImpl && parent.constKeyword != null) {
@@ -5824,6 +5847,7 @@ abstract class FunctionBodyImpl extends AstNodeImpl implements FunctionBody {
   @override
   Token? get star => null;
 
+  @Deprecated('Not used by clients')
   @override
   bool isPotentiallyMutatedInClosure(VariableElement variable) {
     if (localVariableInfo == null) {
@@ -8310,6 +8334,9 @@ class ListPatternImpl extends DartPatternImpl implements ListPattern {
   Token get endToken => rightBracket;
 
   @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
+
+  @override
   ChildEntities get _childEntities => super._childEntities
     ..addNode('typeArguments', typeArguments)
     ..addToken('leftBracket', leftBracket)
@@ -8364,6 +8391,7 @@ class LocalVariableInfo {
   /// The set of local variables and parameters that are potentially mutated
   /// within a local function other than the function in which they are
   /// declared.
+  @Deprecated('Not used by clients')
   final Set<VariableElement> potentiallyMutatedInClosure = <VariableElement>{};
 
   /// The set of local variables and parameters that are potentially mutated
@@ -8401,6 +8429,9 @@ class LogicalAndPatternImpl extends DartPatternImpl
 
   @override
   Token get endToken => rightOperand.endToken;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.logicalAnd;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -8464,6 +8495,9 @@ class LogicalOrPatternImpl extends DartPatternImpl implements LogicalOrPattern {
   Token get endToken => rightOperand.endToken;
 
   @override
+  PatternPrecedence get precedence => PatternPrecedence.logicalOr;
+
+  @override
   ChildEntities get _childEntities => super._childEntities
     ..addNode('leftOperand', leftOperand)
     ..addToken('operator', operator)
@@ -8485,6 +8519,7 @@ class LogicalOrPatternImpl extends DartPatternImpl implements LogicalOrPattern {
   ) {
     resolverVisitor.analyzeLogicalOrPattern(
         context, this, leftOperand, rightOperand);
+    resolverVisitor.nullSafetyDeadCodeVerifier.flowEnd(rightOperand);
   }
 
   @override
@@ -8660,6 +8695,9 @@ class MapPatternImpl extends DartPatternImpl implements MapPattern {
 
   @override
   Token get endToken => rightBracket;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -9045,31 +9083,17 @@ class MethodInvocationImpl extends InvocationExpressionImpl
 /// The declaration of a mixin.
 ///
 ///    mixinDeclaration ::=
-///        metadata? mixinModifiers? 'mixin' [SimpleIdentifier]
+///        metadata? 'base'? 'mixin' [SimpleIdentifier]
 ///        [TypeParameterList]? [RequiresClause]? [ImplementsClause]?
 ///        '{' [ClassMember]* '}'
-///
-///    mixinModifiers ::= 'sealed' | 'base' | 'interface' | 'final'
 class MixinDeclarationImpl extends NamedCompilationUnitMemberImpl
     implements MixinDeclaration {
   /// Return the 'augment' keyword, or `null` if the keyword was absent.
   final Token? augmentKeyword;
 
-  /// Return the 'sealed' keyword, or `null` if the keyword was absent.
-  @override
-  final Token? sealedKeyword;
-
   /// Return the 'base' keyword, or `null` if the keyword was absent.
   @override
   final Token? baseKeyword;
-
-  /// Return the 'interface' keyword, or `null` if the keyword was absent.
-  @override
-  final Token? interfaceKeyword;
-
-  /// Return the 'final' keyword, or `null` if the keyword was absent.
-  @override
-  final Token? finalKeyword;
 
   @override
   final Token mixinKeyword;
@@ -9111,10 +9135,7 @@ class MixinDeclarationImpl extends NamedCompilationUnitMemberImpl
     required super.comment,
     required super.metadata,
     required this.augmentKeyword,
-    required this.sealedKeyword,
     required this.baseKeyword,
-    required this.interfaceKeyword,
-    required this.finalKeyword,
     required this.mixinKeyword,
     required super.name,
     required TypeParameterListImpl? typeParameters,
@@ -9141,11 +9162,7 @@ class MixinDeclarationImpl extends NamedCompilationUnitMemberImpl
 
   @override
   Token get firstTokenAfterCommentAndMetadata {
-    return sealedKeyword ??
-        baseKeyword ??
-        interfaceKeyword ??
-        finalKeyword ??
-        mixinKeyword;
+    return baseKeyword ?? mixinKeyword;
   }
 
   @override
@@ -9174,10 +9191,7 @@ class MixinDeclarationImpl extends NamedCompilationUnitMemberImpl
 
   @override
   ChildEntities get _childEntities => super._childEntities
-    ..addToken('sealedKeyword', sealedKeyword)
     ..addToken('baseKeyword', baseKeyword)
-    ..addToken('interfaceKeyword', interfaceKeyword)
-    ..addToken('finalKeyword', finalKeyword)
     ..addToken('mixinKeyword', mixinKeyword)
     ..addToken('name', name)
     ..addNode('typeParameters', typeParameters)
@@ -9768,6 +9782,9 @@ class NullAssertPatternImpl extends DartPatternImpl
   Token get endToken => operator;
 
   @override
+  PatternPrecedence get precedence => PatternPrecedence.postfix;
+
+  @override
   VariablePatternImpl? get variablePattern => pattern.variablePattern;
 
   @override
@@ -9825,6 +9842,9 @@ class NullCheckPatternImpl extends DartPatternImpl implements NullCheckPattern {
 
   @override
   Token get endToken => operator;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.postfix;
 
   @override
   VariablePatternImpl? get variablePattern => pattern.variablePattern;
@@ -9928,10 +9948,10 @@ mixin NullShortableExpressionImpl implements NullShortableExpression {
 /// An object pattern.
 ///
 ///    objectPattern ::=
-///        [Identifier] [TypeArgumentList]? '(' [RecordPatternField] ')'
+///        [Identifier] [TypeArgumentList]? '(' [PatternField] ')'
 @experimental
 class ObjectPatternImpl extends DartPatternImpl implements ObjectPattern {
-  final NodeListImpl<RecordPatternFieldImpl> _fields = NodeListImpl._();
+  final NodeListImpl<PatternFieldImpl> _fields = NodeListImpl._();
 
   @override
   final Token leftParenthesis;
@@ -9945,7 +9965,7 @@ class ObjectPatternImpl extends DartPatternImpl implements ObjectPattern {
   ObjectPatternImpl({
     required this.type,
     required this.leftParenthesis,
-    required List<RecordPatternFieldImpl> fields,
+    required List<PatternFieldImpl> fields,
     required this.rightParenthesis,
   }) {
     _becomeParentOf(type);
@@ -9959,7 +9979,10 @@ class ObjectPatternImpl extends DartPatternImpl implements ObjectPattern {
   Token get endToken => rightParenthesis;
 
   @override
-  NodeList<RecordPatternFieldImpl> get fields => _fields;
+  NodeList<PatternFieldImpl> get fields => _fields;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -9984,7 +10007,7 @@ class ObjectPatternImpl extends DartPatternImpl implements ObjectPattern {
     resolverVisitor.analyzeObjectPattern(
       context,
       this,
-      fields: resolverVisitor.buildSharedRecordPatternFields(fields),
+      fields: resolverVisitor.buildSharedPatternFields(fields),
     );
   }
 
@@ -10142,6 +10165,9 @@ class ParenthesizedPatternImpl extends DartPatternImpl
 
   @override
   Token get endToken => rightParenthesis;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   DartPattern get unParenthesized {
@@ -10332,6 +10358,10 @@ class PatternAssignmentImpl extends ExpressionImpl
   @override
   final DartPatternImpl pattern;
 
+  /// The pattern type schema, used for downward inference of [expression];
+  /// or `null` if the node is not resolved yet.
+  DartType? patternTypeSchema;
+
   PatternAssignmentImpl({
     required this.pattern,
     required this.equals,
@@ -10380,6 +10410,91 @@ class PatternAssignmentImpl extends ExpressionImpl
   }
 }
 
+/// A field in a record pattern.
+///
+///    patternField ::=
+///        [PatternFieldName]? [DartPattern]
+@experimental
+class PatternFieldImpl extends AstNodeImpl implements PatternField {
+  @override
+  Element? element;
+
+  @override
+  final PatternFieldNameImpl? name;
+
+  @override
+  final DartPatternImpl pattern;
+
+  PatternFieldImpl({required this.name, required this.pattern}) {
+    _becomeParentOf(name);
+    _becomeParentOf(pattern);
+  }
+
+  @override
+  Token get beginToken => name?.beginToken ?? pattern.beginToken;
+
+  @override
+  String? get effectiveName {
+    final nameNode = name;
+    if (nameNode != null) {
+      final nameToken = nameNode.name ?? pattern.variablePattern?.name;
+      return nameToken?.lexeme;
+    }
+    return null;
+  }
+
+  @override
+  Token get endToken => pattern.endToken;
+
+  @override
+  ChildEntities get _childEntities => super._childEntities
+    ..addNode('name', name)
+    ..addNode('pattern', pattern);
+
+  @override
+  E? accept<E>(AstVisitor<E> visitor) => visitor.visitPatternField(this);
+
+  @override
+  void visitChildren(AstVisitor visitor) {
+    name?.accept(visitor);
+    pattern.accept(visitor);
+  }
+}
+
+/// A field name in a record pattern field.
+///
+///    patternFieldName ::=
+///        [Token]? ':'
+@experimental
+class PatternFieldNameImpl extends AstNodeImpl implements PatternFieldName {
+  @override
+  final Token colon;
+
+  @override
+  final Token? name;
+
+  PatternFieldNameImpl({required this.name, required this.colon});
+
+  @override
+  Token get beginToken => name ?? colon;
+
+  @override
+  Token get endToken => colon;
+
+  @override
+  ChildEntities get _childEntities => super._childEntities
+    ..addToken('name', name)
+    ..addToken('colon', colon);
+
+  @override
+  E? accept<E>(AstVisitor<E> visitor) => visitor.visitPatternFieldName(this);
+
+  @override
+  void visitChildren(AstVisitor visitor) {
+    // There are no children to visit.
+  }
+}
+
 /// A pattern variable declaration.
 ///
 ///    patternDeclaration ::=
@@ -10397,6 +10512,10 @@ class PatternVariableDeclarationImpl extends AnnotatedNodeImpl
 
   @override
   final DartPatternImpl pattern;
+
+  /// The pattern type schema, used for downward inference of [expression];
+  /// or `null` if the node is not resolved yet.
+  DartType? patternTypeSchema;
 
   /// Variables declared in [pattern].
   late final List<BindPatternVariableElementImpl> elements;
@@ -10939,90 +11058,13 @@ class RecordLiteralImpl extends LiteralImpl implements RecordLiteral {
   }
 }
 
-/// A field in a record pattern.
-///
-///    recordPatternField ::=
-///        [RecordPatternFieldName]? [DartPattern]
-@experimental
-class RecordPatternFieldImpl extends AstNodeImpl implements RecordPatternField {
-  @override
-  Element? fieldElement;
-
-  @override
-  final RecordPatternFieldNameImpl? fieldName;
-
-  @override
-  final DartPatternImpl pattern;
-
-  RecordPatternFieldImpl({required this.fieldName, required this.pattern}) {
-    _becomeParentOf(fieldName);
-    _becomeParentOf(pattern);
-  }
-
-  @override
-  Token get beginToken => fieldName?.beginToken ?? pattern.beginToken;
-
-  @override
-  Token get endToken => pattern.endToken;
-
-  @override
-  ChildEntities get _childEntities => super._childEntities
-    ..addNode('fieldName', fieldName)
-    ..addNode('pattern', pattern);
-
-  @override
-  E? accept<E>(AstVisitor<E> visitor) => visitor.visitRecordPatternField(this);
-
-  @override
-  void visitChildren(AstVisitor visitor) {
-    fieldName?.accept(visitor);
-    pattern.accept(visitor);
-  }
-}
-
-/// A field name in a record pattern field.
-///
-///    recordPatternField ::=
-///        [Token]? ':'
-@experimental
-class RecordPatternFieldNameImpl extends AstNodeImpl
-    implements RecordPatternFieldName {
-  @override
-  final Token colon;
-
-  @override
-  final Token? name;
-
-  RecordPatternFieldNameImpl({required this.name, required this.colon});
-
-  @override
-  Token get beginToken => name ?? colon;
-
-  @override
-  Token get endToken => colon;
-
-  @override
-  ChildEntities get _childEntities => super._childEntities
-    ..addToken('name', name)
-    ..addToken('colon', colon);
-
-  @override
-  E? accept<E>(AstVisitor<E> visitor) =>
-      visitor.visitRecordPatternFieldName(this);
-
-  @override
-  void visitChildren(AstVisitor visitor) {
-    // There are no children to visit.
-  }
-}
-
 /// A record pattern.
 ///
 ///    recordPattern ::=
-///        '(' [RecordPatternField] (',' [RecordPatternField])* ')'
+///        '(' [PatternField] (',' [PatternField])* ')'
 @experimental
 class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
-  final NodeListImpl<RecordPatternFieldImpl> _fields = NodeListImpl._();
+  final NodeListImpl<PatternFieldImpl> _fields = NodeListImpl._();
 
   @override
   final Token leftParenthesis;
@@ -11032,7 +11074,7 @@ class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
 
   RecordPatternImpl({
     required this.leftParenthesis,
-    required List<RecordPatternFieldImpl> fields,
+    required List<PatternFieldImpl> fields,
     required this.rightParenthesis,
   }) {
     _fields._initialize(this, fields);
@@ -11045,7 +11087,10 @@ class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
   Token get endToken => rightParenthesis;
 
   @override
-  NodeList<RecordPatternFieldImpl> get fields => _fields;
+  NodeList<PatternFieldImpl> get fields => _fields;
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -11059,7 +11104,7 @@ class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
   @override
   DartType computePatternSchema(ResolverVisitor resolverVisitor) {
     return resolverVisitor.analyzeRecordPatternSchema(
-      fields: resolverVisitor.buildSharedRecordPatternFields(fields),
+      fields: resolverVisitor.buildSharedPatternFields(fields),
     );
   }
 
@@ -11071,7 +11116,7 @@ class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
     resolverVisitor.analyzeRecordPattern(
       context,
       this,
-      fields: resolverVisitor.buildSharedRecordPatternFields(fields),
+      fields: resolverVisitor.buildSharedPatternFields(fields),
     );
   }
 
@@ -11368,6 +11413,9 @@ class RelationalPatternImpl extends DartPatternImpl
   set operand(ExpressionImpl operand) {
     _operand = _becomeParentOf(operand);
   }
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.relational;
 
   @override
   ChildEntities get _childEntities => super._childEntities
@@ -12851,10 +12899,12 @@ class SwitchExpressionImpl extends ExpressionImpl implements SwitchExpression {
 
   @override
   void resolveExpression(ResolverVisitor resolver, DartType contextType) {
+    var previousExhaustiveness = resolver.legacySwitchExhaustiveness;
     staticType = resolver
         .analyzeSwitchExpression(this, expression, cases.length, contextType)
         .type;
     resolver.popRewrite();
+    resolver.legacySwitchExhaustiveness = previousExhaustiveness;
   }
 
   @override
@@ -14223,6 +14273,9 @@ class WildcardPatternImpl extends DartPatternImpl implements WildcardPattern {
     }
     return null;
   }
+
+  @override
+  PatternPrecedence get precedence => PatternPrecedence.primary;
 
   @override
   ChildEntities get _childEntities => super._childEntities

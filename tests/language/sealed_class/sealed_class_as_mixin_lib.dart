@@ -4,12 +4,15 @@
 
 // SharedOptions=--enable-experiment=sealed-class,class-modifiers
 
+// Other-library declarations used by sealed_class_as_mixin_error_test.dart.
+
 sealed class SealedClass {
   int nonAbstractFoo = 0;
   abstract int foo;
   int nonAbstractBar(int value) => value + 100;
   int bar(int value);
 }
-sealed mixin SealedMixin {}
+
 class Class {}
+
 mixin Mixin {}

@@ -23,11 +23,19 @@ import 'package:vm/transformations/ffi/definitions.dart'
     as transformFfiDefinitions show transformLibraries;
 import 'package:vm/transformations/ffi/use_sites.dart' as transformFfiUseSites
     show transformLibraries;
+import 'package:front_end/src/api_prototype/constant_evaluator.dart'
+    as constantEvaluator show EvaluationMode;
+import 'package:front_end/src/api_prototype/const_conditional_simplifier.dart'
+    show ConstConditionalSimplifier;
 
 import 'package:dart2wasm/ffi_native_transformer.dart' as wasmFfiNativeTrans;
 import 'package:dart2wasm/transformers.dart' as wasmTrans;
+import 'package:dart2wasm/records.dart' show RecordShape;
 
 class WasmTarget extends Target {
+  WasmTarget({this.constantBranchPruning = true});
+
+  bool constantBranchPruning;
   Class? _growableList;
   Class? _immutableList;
   Class? _wasmDefaultMap;
@@ -48,7 +56,7 @@ class WasmTarget extends Target {
   String get name => 'wasm';
 
   @override
-  TargetFlags get flags => TargetFlags(enableNullSafety: true);
+  TargetFlags get flags => TargetFlags();
 
   @override
   List<String> get extraRequiredLibraries => const <String>[
@@ -57,10 +65,10 @@ class WasmTarget extends Target {
         'dart:_internal',
         'dart:_http',
         'dart:_js_helper',
-        'dart:_js_interop',
         'dart:typed_data',
         'dart:nativewrappers',
         'dart:io',
+        'dart:js_interop',
         'dart:js',
         'dart:js_util',
         'dart:wasm',
@@ -72,27 +80,10 @@ class WasmTarget extends Target {
         'dart:_js_helper',
         'dart:collection',
         'dart:typed_data',
-        'dart:js',
+        'dart:js_interop',
         'dart:js_util',
         'dart:wasm',
       ];
-
-  @override
-  bool allowPlatformPrivateLibraryAccess(Uri importer, Uri imported) =>
-      super.allowPlatformPrivateLibraryAccess(importer, imported) ||
-      _allowedTestLibrary(importer, imported);
-
-  /// Returns whether [importer] is a script that is allowed to import
-  /// [imported] for testing purposes.
-  bool _allowedTestLibrary(Uri importer, Uri imported) {
-    // TODO(srujzs): This enables using `dart:_js_interop` in these tests.
-    // Remove `allowPlatformPrivateLibraryAccess` once we make it public.
-    return imported.toString() == 'dart:_js_interop' &&
-        [
-          'tests/lib/js/static_interop_test',
-          'tests/lib_2/js/static_interop_test',
-        ].any((pattern) => importer.path.contains(pattern));
-  }
 
   void _patchHostEndian(CoreTypes coreTypes) {
     // Fix Endian.host to be a const field equal to Endian.little instead of
@@ -119,9 +110,11 @@ class WasmTarget extends Target {
     _nativeClasses ??= JsInteropChecks.getNativeClasses(component);
     final jsInteropChecks = JsInteropChecks(
         coreTypes,
+        hierarchy,
         diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>,
         _nativeClasses!,
-        enableDisallowedExternalCheck: false);
+        enableDisallowedExternalCheck: false,
+        enableStrictMode: true);
     // Process and validate first before doing anything with exports.
     for (Library library in interopDependentLibraries) {
       jsInteropChecks.visitLibrary(library);
@@ -167,6 +160,31 @@ class WasmTarget extends Target {
       _performJSInteropTransformations(component, coreTypes, hierarchy,
           transitiveImportingJSInterop, diagnosticReporter, referenceFromIndex);
       logger?.call("Transformed JS interop classes");
+    }
+
+    if (constantBranchPruning) {
+      final reportError =
+          (LocatedMessage message, [List<LocatedMessage>? context]) {
+        diagnosticReporter.report(message.messageObject, message.charOffset,
+            message.length, message.uri);
+        if (context != null) {
+          for (final m in context) {
+            diagnosticReporter.report(
+                m.messageObject, m.charOffset, m.length, m.uri);
+          }
+        }
+      };
+
+      ConstConditionalSimplifier(
+        dartLibrarySupport,
+        constantsBackend,
+        component,
+        reportError,
+        environmentDefines: environmentDefines ?? {},
+        evaluationMode: constantEvaluator.EvaluationMode.strong,
+        coreTypes: coreTypes,
+        classHierarchy: hierarchy,
+      ).run();
     }
     transformMixins.transformLibraries(
         this, coreTypes, hierarchy, libraries, referenceFromIndex);
@@ -348,4 +366,11 @@ class WasmTarget extends Target {
 
   @override
   bool isSupportedPragma(String pragmaName) => pragmaName.startsWith("wasm:");
+
+  late final Map<RecordShape, Class> recordClasses;
+
+  @override
+  Class getRecordImplementationClass(CoreTypes coreTypes,
+          int numPositionalFields, List<String> namedFields) =>
+      recordClasses[RecordShape(numPositionalFields, namedFields)]!;
 }

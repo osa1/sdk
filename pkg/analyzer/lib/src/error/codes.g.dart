@@ -235,6 +235,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
     "The class '{0}' can't be implemented outside of its library because it's "
         "a base class.",
+    hasPublishedDocs: true,
     uniqueName: 'BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY',
   );
 
@@ -245,6 +246,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
     "The mixin '{0}' can't be implemented outside of its library because it's "
         "a base mixin.",
+    hasPublishedDocs: true,
     uniqueName: 'BASE_MIXIN_IMPLEMENTED_OUTSIDE_OF_LIBRARY',
   );
 
@@ -415,8 +417,9 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   ///  0: the name of the class being used as a mixin
   static const CompileTimeErrorCode CLASS_USED_AS_MIXIN = CompileTimeErrorCode(
     'CLASS_USED_AS_MIXIN',
-    "The class '{0}' can't be used as a mixin because it isn't a mixin class "
-        "nor a mixin.",
+    "The class '{0}' can't be used as a mixin because it's neither a mixin "
+        "class nor a mixin.",
+    hasPublishedDocs: true,
   );
 
   static const CompileTimeErrorCode CONCRETE_CLASS_HAS_ENUM_SUPERINTERFACE =
@@ -655,6 +658,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'CONSTANT_PATTERN_WITH_NON_CONSTANT_EXPRESSION',
     "The expression of a constant pattern must be a valid constant.",
     correctionMessage: "Try making the expression a valid constant.",
+    hasPublishedDocs: true,
   );
 
   ///  16.12.2 Const: It is a compile-time error if evaluation of a constant
@@ -903,11 +907,11 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
 
   ///  Parameters:
   ///  0: the type of the entry's key
-  static const CompileTimeErrorCode
-      CONST_MAP_KEY_EXPRESSION_TYPE_IMPLEMENTS_EQUALS = CompileTimeErrorCode(
-    'CONST_MAP_KEY_EXPRESSION_TYPE_IMPLEMENTS_EQUALS',
-    "The type of a key in a constant map can't override the '==' operator, but "
-        "the class '{0}' does.",
+  static const CompileTimeErrorCode CONST_MAP_KEY_NOT_PRIMITIVE_EQUALITY =
+      CompileTimeErrorCode(
+    'CONST_MAP_KEY_NOT_PRIMITIVE_EQUALITY',
+    "The type of a key in a constant map can't override the '==' operator, or "
+        "'hashCode', but the class '{0}' does.",
     correctionMessage:
         "Try using a different value for the key, or removing the keyword "
         "'const' from the map.",
@@ -926,11 +930,11 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
 
   ///  Parameters:
   ///  0: the type of the element
-  static const CompileTimeErrorCode CONST_SET_ELEMENT_TYPE_IMPLEMENTS_EQUALS =
+  static const CompileTimeErrorCode CONST_SET_ELEMENT_NOT_PRIMITIVE_EQUALITY =
       CompileTimeErrorCode(
-    'CONST_SET_ELEMENT_TYPE_IMPLEMENTS_EQUALS',
-    "The type of an element in a constant set can't override the '==' "
-        "operator, but the type '{0}' does.",
+    'CONST_SET_ELEMENT_NOT_PRIMITIVE_EQUALITY',
+    "An element in a constant set can't override the '==' operator, or "
+        "'hashCode', but the type '{0}' does.",
     correctionMessage:
         "Try using a different value for the element, or removing the keyword "
         "'const' from the set.",
@@ -1184,6 +1188,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'DUPLICATE_FIELD_NAME',
     "The field name '{0}' is already used in this record.",
     correctionMessage: "Try renaming the field.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -1215,22 +1220,26 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'DUPLICATE_PATTERN_ASSIGNMENT_VARIABLE',
     "The variable '{0}' is already assigned in this pattern.",
     correctionMessage: "Try renaming the variable.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
   ///  0: the name of the field
-  static const CompileTimeErrorCode DUPLICATE_RECORD_PATTERN_FIELD =
+  static const CompileTimeErrorCode DUPLICATE_PATTERN_FIELD =
       CompileTimeErrorCode(
-    'DUPLICATE_RECORD_PATTERN_FIELD',
+    'DUPLICATE_PATTERN_FIELD',
     "The field '{0}' is already matched in this pattern.",
     correctionMessage: "Try removing the duplicate field.",
+    hasPublishedDocs: true,
   );
 
+  ///  No parameters.
   static const CompileTimeErrorCode DUPLICATE_REST_ELEMENT_IN_PATTERN =
       CompileTimeErrorCode(
     'DUPLICATE_REST_ELEMENT_IN_PATTERN',
     "At most one rest element is allowed in a list or map pattern.",
     correctionMessage: "Try removing the duplicate rest element.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -1240,6 +1249,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'DUPLICATE_VARIABLE_PATTERN',
     "The variable '{0}' is already defined in this pattern.",
     correctionMessage: "Try renaming the variable.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode EMPTY_MAP_PATTERN = CompileTimeErrorCode(
+    'EMPTY_MAP_PATTERN',
+    "A map pattern must have at least one entry.",
+    correctionMessage: "Try replacing it with an object pattern 'Map()'.",
   );
 
   static const CompileTimeErrorCode ENUM_CONSTANT_SAME_NAME_AS_ENCLOSING =
@@ -1316,6 +1333,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EQUAL_KEYS_IN_MAP_PATTERN',
     "Two keys in a map pattern can't be equal.",
     correctionMessage: "Change or remove the duplicate key.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -1325,6 +1343,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EXPECTED_ONE_LIST_PATTERN_TYPE_ARGUMENTS',
     "List patterns require one type argument or none, but {0} found.",
     correctionMessage: "Try adjusting the number of type arguments.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -1354,6 +1373,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EXPECTED_TWO_MAP_PATTERN_TYPE_ARGUMENTS',
     "Map patterns require two type arguments or none, but {0} found.",
     correctionMessage: "Try adjusting the number of type arguments.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -1660,6 +1680,40 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "Try changing or removing the parameter's type, or changing the "
         "field's type.",
     hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the final class being extended.
+  static const CompileTimeErrorCode FINAL_CLASS_EXTENDED_OUTSIDE_OF_LIBRARY =
+      CompileTimeErrorCode(
+    'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
+    "The class '{0}' can't be extended outside of its library because it's a "
+        "final class.",
+    hasPublishedDocs: true,
+    uniqueName: 'FINAL_CLASS_EXTENDED_OUTSIDE_OF_LIBRARY',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the final class being implemented.
+  static const CompileTimeErrorCode FINAL_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY =
+      CompileTimeErrorCode(
+    'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
+    "The class '{0}' can't be implemented outside of its library because it's "
+        "a final class.",
+    hasPublishedDocs: true,
+    uniqueName: 'FINAL_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the final class being used as a mixin superclass constraint.
+  static const CompileTimeErrorCode
+      FINAL_CLASS_USED_AS_MIXIN_CONSTRAINT_OUTSIDE_OF_LIBRARY =
+      CompileTimeErrorCode(
+    'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
+    "The class '{0}' can't be used as a mixin superclass constraint outside of "
+        "its library because it's a final class.",
+    hasPublishedDocs: true,
+    uniqueName: 'FINAL_CLASS_USED_AS_MIXIN_CONSTRAINT_OUTSIDE_OF_LIBRARY',
   );
 
   ///  Parameters:
@@ -2097,18 +2151,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try declaring the variable pattern with the same type and finality in "
         "both branches.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the pattern variable
-  static const CompileTimeErrorCode
-      INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE = CompileTimeErrorCode(
-    'INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE',
-    "The variable '{0}' doesn't have the same type and/or finality in all "
-        "cases that share this body.",
-    correctionMessage:
-        "Try declaring the variable pattern with the same type and finality in "
-        "all cases.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -2253,17 +2296,8 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
     "The class '{0}' can't be extended outside of its library because it's an "
         "interface class.",
+    hasPublishedDocs: true,
     uniqueName: 'INTERFACE_CLASS_EXTENDED_OUTSIDE_OF_LIBRARY',
-  );
-
-  ///  Parameters:
-  ///  0: the name of the interface mixin being mixed in.
-  static const CompileTimeErrorCode
-      INTERFACE_MIXIN_MIXED_IN_OUTSIDE_OF_LIBRARY = CompileTimeErrorCode(
-    'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
-    "The mixin '{0}' can't be mixed-in outside of its library because it's an "
-        "interface mixin.",
-    uniqueName: 'INTERFACE_MIXIN_MIXED_IN_OUTSIDE_OF_LIBRARY',
   );
 
   ///  No parameters.
@@ -2444,6 +2478,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_FIELD_NAME',
     "Record field names can't be the same as a member from 'Object'.",
     correctionMessage: "Try using a different name for the field.",
+    hasPublishedDocs: true,
     uniqueName: 'INVALID_FIELD_NAME_FROM_OBJECT',
   );
 
@@ -2454,6 +2489,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     "Record field names can't be a dollar sign followed by an integer when the "
         "integer is the index of a positional field.",
     correctionMessage: "Try using a different name for the field.",
+    hasPublishedDocs: true,
     uniqueName: 'INVALID_FIELD_NAME_POSITIONAL',
   );
 
@@ -2463,6 +2499,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_FIELD_NAME',
     "Record field names can't be private.",
     correctionMessage: "Try removing the leading underscore.",
+    hasPublishedDocs: true,
     uniqueName: 'INVALID_FIELD_NAME_PRIVATE',
   );
 
@@ -2888,6 +2925,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     uniqueName: 'MISSING_DEFAULT_VALUE_FOR_PARAMETER_WITH_ANNOTATION',
   );
 
+  ///  No parameters.
   static const CompileTimeErrorCode MISSING_OBJECT_PATTERN_GETTER_NAME =
       CompileTimeErrorCode(
     'MISSING_OBJECT_PATTERN_GETTER_NAME',
@@ -2896,6 +2934,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try specifying the getter name explicitly, or using a variable "
         "pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -2917,6 +2956,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     "Variable pattern '{0}' is missing in this branch of the logical-or "
         "pattern.",
     correctionMessage: "Try declaring this variable pattern in the branch.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -2973,6 +3013,19 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "setter '{0}'.",
     hasPublishedDocs: true,
     uniqueName: 'MIXIN_APPLICATION_NO_CONCRETE_SUPER_INVOKED_SETTER',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the mixin class that is invalid
+  static const CompileTimeErrorCode MIXIN_CLASS_DECLARATION_EXTENDS_NOT_OBJECT =
+      CompileTimeErrorCode(
+    'MIXIN_CLASS_DECLARATION_EXTENDS_NOT_OBJECT',
+    "The class '{0}' can't be declared a mixin because it extends a class "
+        "other than 'Object'.",
+    correctionMessage:
+        "Try removing the 'mixin' modifier or changing the superclass to "
+        "'Object'.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -3364,6 +3417,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'NON_CONSTANT_MAP_PATTERN_KEY',
     "Key expressions in map patterns must be constants.",
     correctionMessage: "Try using constants instead.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -3394,6 +3448,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'NON_CONSTANT_RELATIONAL_PATTERN_EXPRESSION',
     "The relational pattern expression must be a constant.",
     correctionMessage: "Try using a constant instead.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -3430,7 +3485,8 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
       CompileTimeErrorCode(
     'NON_EXHAUSTIVE_SWITCH',
     "The type '{0}' is not exhaustively matched by the switch cases.",
-    correctionMessage: "Try adding a default case or cases that match {1}.",
+    correctionMessage: "Try adding a default case or cases that match '{1}'.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -3836,12 +3892,13 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  No parameters.
   static const CompileTimeErrorCode PATTERN_ASSIGNMENT_NOT_LOCAL_VARIABLE =
       CompileTimeErrorCode(
     'PATTERN_ASSIGNMENT_NOT_LOCAL_VARIABLE',
-    "Only local variables or formal parameters can be used in pattern "
-        "assignments.",
+    "Only local variables can be assigned in pattern assignments.",
     correctionMessage: "Try assigning to a local variable.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -3850,6 +3907,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'PATTERN_CONSTANT_FROM_DEFERRED_LIBRARY',
     "Constant values from a deferred library can't be used in patterns.",
     correctionMessage: "Try removing the keyword 'deferred' from the import.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -3863,14 +3921,60 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try changing the required type of the pattern, or the matched value "
         "type.",
+    hasPublishedDocs: true,
   );
 
+  ///  No parameters.
   static const CompileTimeErrorCode PATTERN_VARIABLE_ASSIGNMENT_INSIDE_GUARD =
       CompileTimeErrorCode(
     'PATTERN_VARIABLE_ASSIGNMENT_INSIDE_GUARD',
     "Pattern variables can't be assigned inside the guard of the enclosing "
         "guarded pattern.",
     correctionMessage: "Try assigning to a different variable.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the pattern variable
+  static const CompileTimeErrorCode
+      PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE =
+      CompileTimeErrorCode(
+    'INVALID_PATTERN_VARIABLE_IN_SHARED_CASE_SCOPE',
+    "The variable '{0}' doesn't have the same type and/or finality in all "
+        "cases that share this body.",
+    correctionMessage:
+        "Try declaring the variable pattern with the same type and finality in "
+        "all cases.",
+    hasPublishedDocs: true,
+    uniqueName: 'PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the pattern variable
+  static const CompileTimeErrorCode
+      PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL = CompileTimeErrorCode(
+    'INVALID_PATTERN_VARIABLE_IN_SHARED_CASE_SCOPE',
+    "The variable '{0}' is not available because there is a label or 'default' "
+        "case.",
+    correctionMessage:
+        "Try removing the label, or providing the 'default' case with its own "
+        "body.",
+    hasPublishedDocs: true,
+    uniqueName: 'PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the pattern variable
+  static const CompileTimeErrorCode
+      PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES = CompileTimeErrorCode(
+    'INVALID_PATTERN_VARIABLE_IN_SHARED_CASE_SCOPE',
+    "The variable '{0}' is available in some, but not all cases that share "
+        "this body.",
+    correctionMessage:
+        "Try declaring the variable pattern with the same type and finality in "
+        "all cases.",
+    hasPublishedDocs: true,
+    uniqueName: 'PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES',
   );
 
   ///  No parameters.
@@ -4191,6 +4295,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  No parameters.
   static const CompileTimeErrorCode REFUTABLE_PATTERN_IN_IRREFUTABLE_CONTEXT =
       CompileTimeErrorCode(
     'REFUTABLE_PATTERN_IN_IRREFUTABLE_CONTEXT',
@@ -4198,8 +4303,22 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try using an if-case, a 'switch' statement, or a 'switch' expression "
         "instead.",
+    hasPublishedDocs: true,
   );
 
+  ///  Parameters:
+  ///  0: the operand type
+  ///  1: the parameter type of the invoked operator
+  ///  2: the name of the invoked operator
+  static const CompileTimeErrorCode
+      RELATIONAL_PATTERN_OPERAND_TYPE_NOT_ASSIGNABLE = CompileTimeErrorCode(
+    'RELATIONAL_PATTERN_OPERAND_TYPE_NOT_ASSIGNABLE',
+    "The constant expression type '{0}' is not assignable to the parameter "
+        "type '{1}' of the '{2}' operator.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
   static const CompileTimeErrorCode
       RELATIONAL_PATTERN_OPERATOR_RETURN_TYPE_NOT_ASSIGNABLE_TO_BOOL =
       CompileTimeErrorCode(
@@ -4208,20 +4327,15 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "assignable to 'bool'.",
     correctionMessage:
         "Try updating the operator declaration to return 'bool'.",
+    hasPublishedDocs: true,
   );
 
-  static const CompileTimeErrorCode REST_ELEMENT_NOT_LAST_IN_MAP_PATTERN =
+  ///  No parameters.
+  static const CompileTimeErrorCode REST_ELEMENT_IN_MAP_PATTERN =
       CompileTimeErrorCode(
-    'REST_ELEMENT_NOT_LAST_IN_MAP_PATTERN',
-    "A rest element in a map pattern must be the last element.",
-    correctionMessage: "Try moving the rest element to be the last element.",
-  );
-
-  static const CompileTimeErrorCode
-      REST_ELEMENT_WITH_SUBPATTERN_IN_MAP_PATTERN = CompileTimeErrorCode(
-    'REST_ELEMENT_WITH_SUBPATTERN_IN_MAP_PATTERN',
-    "A rest element in a map pattern can't have a subpattern.",
-    correctionMessage: "Try removing the subpattern.",
+    'REST_ELEMENT_IN_MAP_PATTERN',
+    "A map pattern can't contain a rest pattern.",
+    correctionMessage: "Try removing the rest pattern.",
   );
 
   ///  No parameters.
@@ -4320,17 +4434,8 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
     "The class '{0}' can't be extended, implemented, or mixed in outside of "
         "its library because it's a sealed class.",
+    hasPublishedDocs: true,
     uniqueName: 'SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY',
-  );
-
-  ///  Parameters:
-  ///  0: the name of the sealed mixin being mixed in
-  static const CompileTimeErrorCode SEALED_MIXIN_SUBTYPE_OUTSIDE_OF_LIBRARY =
-      CompileTimeErrorCode(
-    'INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY',
-    "The mixin '{0}' can't be mixed in outside of its library because it's a "
-        "sealed mixin.",
-    uniqueName: 'SEALED_MIXIN_SUBTYPE_OUTSIDE_OF_LIBRARY',
   );
 
   ///  No parameters.
@@ -4380,6 +4485,30 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'STATIC_ACCESS_TO_INSTANCE_MEMBER',
     "Instance member '{0}' can't be accessed using static access.",
     hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the subtype that is not 'base', 'final', or 'sealed'
+  ///  1: the name of the 'base' supertype
+  static const CompileTimeErrorCode
+      SUBTYPE_OF_BASE_IS_NOT_BASE_FINAL_OR_SEALED = CompileTimeErrorCode(
+    'SUBTYPE_OF_BASE_OR_FINAL_IS_NOT_BASE_FINAL_OR_SEALED',
+    "The type '{0}' must be 'base', 'final' or 'sealed' because the supertype "
+        "'{1}' is 'base'.",
+    hasPublishedDocs: true,
+    uniqueName: 'SUBTYPE_OF_BASE_IS_NOT_BASE_FINAL_OR_SEALED',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the subtype that is not 'base', 'final', or 'sealed'
+  ///  1: the name of the 'final' supertype
+  static const CompileTimeErrorCode
+      SUBTYPE_OF_FINAL_IS_NOT_BASE_FINAL_OR_SEALED = CompileTimeErrorCode(
+    'SUBTYPE_OF_BASE_OR_FINAL_IS_NOT_BASE_FINAL_OR_SEALED',
+    "The type '{0}' must be 'base', 'final' or 'sealed' because the supertype "
+        "'{1}' is 'final'.",
+    hasPublishedDocs: true,
+    uniqueName: 'SUBTYPE_OF_FINAL_IS_NOT_BASE_FINAL_OR_SEALED',
   );
 
   ///  Parameters:
@@ -5141,14 +5270,6 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
-  static const CompileTimeErrorCode
-      VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT = CompileTimeErrorCode(
-    'VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT',
-    "Variable patterns in declaration context can't specify 'var' or 'final' "
-        "keyword.",
-    correctionMessage: "Try removing the keyword.",
-  );
-
   ///  Parameters:
   ///  0: the type of the object being assigned.
   ///  1: the type of the variable being assigned to
@@ -5606,6 +5727,7 @@ class StaticWarningCode extends AnalyzerErrorCode {
         "isn't nullable.",
     correctionMessage:
         "Try replacing the null-assert pattern with its nested pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -5616,6 +5738,7 @@ class StaticWarningCode extends AnalyzerErrorCode {
         "nullable.",
     correctionMessage:
         "Try replacing the null-check pattern with its nested pattern.",
+    hasPublishedDocs: true,
   );
 
   /// Initialize a newly created error code to have the given [name].
@@ -5651,6 +5774,18 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  Users should not assign values marked `@doNotStore`.
+  ///
+  ///  Parameters:
+  ///  0: the name of the field or variable
+  static const WarningCode ASSIGNMENT_OF_DO_NOT_STORE = WarningCode(
+    'ASSIGNMENT_OF_DO_NOT_STORE',
+    "'{0}' is marked 'doNotStore' and shouldn't be assigned to a field or "
+        "top-level variable.",
+    correctionMessage: "Try removing the assignment.",
+    hasPublishedDocs: true,
+  );
+
   ///  Parameters:
   ///  0: the return type as derived by the type of the [Future].
   static const WarningCode BODY_MIGHT_COMPLETE_NORMALLY_CATCH_ERROR =
@@ -5671,10 +5806,85 @@ class WarningCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try adding a return statement, or if no value is ever returned, try "
         "changing the return type to 'void'.",
+    hasPublishedDocs: true,
   );
 
-  ///  This is the new replacement for [HintCode.DEAD_CODE].
-  static const HintCode DEAD_CODE = HintCode.DEAD_CODE;
+  ///  Parameters:
+  ///  0: the name of the unassigned variable
+  static const WarningCode CAST_FROM_NULLABLE_ALWAYS_FAILS = WarningCode(
+    'CAST_FROM_NULLABLE_ALWAYS_FAILS',
+    "This cast will always throw an exception because the nullable local "
+        "variable '{0}' is not assigned.",
+    correctionMessage:
+        "Try giving it an initializer expression, or ensure that it's assigned "
+        "on every execution path.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode CAST_FROM_NULL_ALWAYS_FAILS = WarningCode(
+    'CAST_FROM_NULL_ALWAYS_FAILS',
+    "This cast always throws an exception because the expression always "
+        "evaluates to 'null'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the matched value type
+  ///  1: the constant value type
+  static const WarningCode CONSTANT_PATTERN_NEVER_MATCHES_VALUE_TYPE =
+      WarningCode(
+    'CONSTANT_PATTERN_NEVER_MATCHES_VALUE_TYPE',
+    "The matched value type '{0}' can never be equal to this constant of type "
+        "'{1}'.",
+    correctionMessage:
+        "Try a constant of the same type as the matched value type.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Dead code is code that is never reached, this can happen for instance if a
+  ///  statement follows a return statement.
+  ///
+  ///  No parameters.
+  static const WarningCode DEAD_CODE = WarningCode(
+    'DEAD_CODE',
+    "Dead code.",
+    correctionMessage:
+        "Try removing the code, or fixing the code before it so that it can be "
+        "reached.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Dead code is code that is never reached. This case covers cases where the
+  ///  user has catch clauses after `catch (e)` or `on Object catch (e)`.
+  ///
+  ///  No parameters.
+  static const WarningCode DEAD_CODE_CATCH_FOLLOWING_CATCH = WarningCode(
+    'DEAD_CODE_CATCH_FOLLOWING_CATCH',
+    "Dead code: Catch clauses after a 'catch (e)' or an 'on Object catch (e)' "
+        "are never reached.",
+    correctionMessage:
+        "Try reordering the catch clauses so that they can be reached, or "
+        "removing the unreachable catch clauses.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Dead code is code that is never reached. This case covers cases where the
+  ///  user has an on-catch clause such as `on A catch (e)`, where a supertype of
+  ///  `A` was already caught.
+  ///
+  ///  Parameters:
+  ///  0: name of the subtype
+  ///  1: name of the supertype
+  static const WarningCode DEAD_CODE_ON_CATCH_SUBTYPE = WarningCode(
+    'DEAD_CODE_ON_CATCH_SUBTYPE',
+    "Dead code: This on-catch block won't be executed because '{0}' is a "
+        "subtype of '{1}' and hence will have been caught already.",
+    correctionMessage:
+        "Try reordering the catch clauses so that this block can be reached, "
+        "or removing the unreachable catch clause.",
+    hasPublishedDocs: true,
+  );
 
   ///  No parameters.
   static const WarningCode DEPRECATED_EXTENDS_FUNCTION = WarningCode(
@@ -5777,6 +5987,93 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  When "strict-inference" is enabled, collection literal types must be
+  ///  inferred via the context type, or have type arguments.
+  ///
+  ///  Parameters:
+  ///  0: the name of the collection
+  static const WarningCode INFERENCE_FAILURE_ON_COLLECTION_LITERAL =
+      WarningCode(
+    'INFERENCE_FAILURE_ON_COLLECTION_LITERAL',
+    "The type argument(s) of '{0}' can't be inferred.",
+    correctionMessage: "Use explicit type argument(s) for '{0}'.",
+  );
+
+  ///  When "strict-inference" is enabled, types in function invocations must be
+  ///  inferred via the context type, or have type arguments.
+  ///
+  ///  Parameters:
+  ///  0: the name of the function
+  static const WarningCode INFERENCE_FAILURE_ON_FUNCTION_INVOCATION =
+      WarningCode(
+    'INFERENCE_FAILURE_ON_FUNCTION_INVOCATION',
+    "The type argument(s) of the function '{0}' can't be inferred.",
+    correctionMessage: "Use explicit type argument(s) for '{0}'.",
+  );
+
+  ///  When "strict-inference" is enabled, recursive local functions, top-level
+  ///  functions, methods, and function-typed function parameters must all
+  ///  specify a return type. See the strict-inference resource:
+  ///
+  ///  https://github.com/dart-lang/language/blob/master/resources/type-system/strict-inference.md
+  ///
+  ///  Parameters:
+  ///  0: the name of the function or method
+  static const WarningCode INFERENCE_FAILURE_ON_FUNCTION_RETURN_TYPE =
+      WarningCode(
+    'INFERENCE_FAILURE_ON_FUNCTION_RETURN_TYPE',
+    "The return type of '{0}' cannot be inferred.",
+    correctionMessage: "Declare the return type of '{0}'.",
+  );
+
+  ///  When "strict-inference" is enabled, types in function invocations must be
+  ///  inferred via the context type, or have type arguments.
+  ///
+  ///  Parameters:
+  ///  0: the name of the type
+  static const WarningCode INFERENCE_FAILURE_ON_GENERIC_INVOCATION =
+      WarningCode(
+    'INFERENCE_FAILURE_ON_GENERIC_INVOCATION',
+    "The type argument(s) of the generic function type '{0}' can't be "
+        "inferred.",
+    correctionMessage: "Use explicit type argument(s) for '{0}'.",
+  );
+
+  ///  When "strict-inference" is enabled, types in instance creation
+  ///  (constructor calls) must be inferred via the context type, or have type
+  ///  arguments.
+  ///
+  ///  Parameters:
+  ///  0: the name of the constructor
+  static const WarningCode INFERENCE_FAILURE_ON_INSTANCE_CREATION = WarningCode(
+    'INFERENCE_FAILURE_ON_INSTANCE_CREATION',
+    "The type argument(s) of the constructor '{0}' can't be inferred.",
+    correctionMessage: "Use explicit type argument(s) for '{0}'.",
+  );
+
+  ///  When "strict-inference" in enabled, uninitialized variables must be
+  ///  declared with a specific type.
+  ///
+  ///  Parameters:
+  ///  0: the name of the variable
+  static const WarningCode INFERENCE_FAILURE_ON_UNINITIALIZED_VARIABLE =
+      WarningCode(
+    'INFERENCE_FAILURE_ON_UNINITIALIZED_VARIABLE',
+    "The type of {0} can't be inferred without either a type or initializer.",
+    correctionMessage: "Try specifying the type of the variable.",
+  );
+
+  ///  When "strict-inference" in enabled, function parameters must be
+  ///  declared with a specific type, or inherit a type.
+  ///
+  ///  Parameters:
+  ///  0: the name of the parameter
+  static const WarningCode INFERENCE_FAILURE_ON_UNTYPED_PARAMETER = WarningCode(
+    'INFERENCE_FAILURE_ON_UNTYPED_PARAMETER',
+    "The type of {0} can't be inferred; a type must be explicitly provided.",
+    correctionMessage: "Try specifying the type of the parameter.",
+  );
+
   ///  Parameters:
   ///  0: the name of the annotation
   ///  1: the list of valid targets
@@ -5807,8 +6104,8 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
-  ///  This hint is generated anywhere a @factory annotation is associated with
-  ///  anything other than a method.
+  ///  This warning is generated anywhere a @factory annotation is associated
+  ///  with anything other than a method.
   static const WarningCode INVALID_FACTORY_ANNOTATION = WarningCode(
     'INVALID_FACTORY_ANNOTATION',
     "Only methods can be annotated as factories.",
@@ -5827,6 +6124,21 @@ class WarningCode extends AnalyzerErrorCode {
   static const WarningCode INVALID_FACTORY_METHOD_IMPL = WarningCode(
     'INVALID_FACTORY_METHOD_IMPL',
     "Factory method '{0}' doesn't return a newly allocated object.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere an @immutable annotation is associated
+  ///  with anything other than a class.
+  static const WarningCode INVALID_IMMUTABLE_ANNOTATION = WarningCode(
+    'INVALID_IMMUTABLE_ANNOTATION',
+    "Only classes can be annotated as being immutable.",
+  );
+
+  ///  No parameters.
+  static const WarningCode INVALID_INTERNAL_ANNOTATION = WarningCode(
+    'INVALID_INTERNAL_ANNOTATION',
+    "Only public elements in a package's private API can be annotated as being "
+        "internal.",
     hasPublishedDocs: true,
   );
 
@@ -5944,13 +6256,500 @@ class WarningCode extends AnalyzerErrorCode {
     uniqueName: 'INVALID_LANGUAGE_VERSION_OVERRIDE_TWO_SLASHES',
   );
 
-  ///  This is the new replacement for [HintCode.NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR].
-  static const HintCode NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR =
-      HintCode.NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR;
+  ///  No parameters.
+  static const WarningCode INVALID_LITERAL_ANNOTATION = WarningCode(
+    'INVALID_LITERAL_ANNOTATION',
+    "Only const constructors can have the `@literal` annotation.",
+    hasPublishedDocs: true,
+  );
 
-  ///  This is the new replacement for [HintCode.OVERRIDE_ON_NON_OVERRIDING_FIELD].
-  static const HintCode OVERRIDE_ON_NON_OVERRIDING_FIELD =
-      HintCode.OVERRIDE_ON_NON_OVERRIDING_FIELD;
+  ///  This warning is generated anywhere where `@nonVirtual` annotates something
+  ///  other than a non-abstract instance member in a class or mixin.
+  ///
+  ///  No Parameters.
+  static const WarningCode INVALID_NON_VIRTUAL_ANNOTATION = WarningCode(
+    'INVALID_NON_VIRTUAL_ANNOTATION',
+    "The annotation '@nonVirtual' can only be applied to a concrete instance "
+        "member.",
+    correctionMessage: "Try removing '@nonVirtual'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where an instance member annotated with
+  ///  `@nonVirtual` is overridden in a subclass.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  ///  1: the name of the defining class
+  static const WarningCode INVALID_OVERRIDE_OF_NON_VIRTUAL_MEMBER = WarningCode(
+    'INVALID_OVERRIDE_OF_NON_VIRTUAL_MEMBER',
+    "The member '{0}' is declared non-virtual in '{1}' and can't be overridden "
+        "in subclasses.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where `@reopen` annotates a class which
+  ///  did not reopen any type.
+  ///
+  ///  No parameters.
+  static const WarningCode INVALID_REOPEN_ANNOTATION = WarningCode(
+    'INVALID_REOPEN_ANNOTATION',
+    "The annotation '@reopen' can only be applied to a class that opens "
+        "capabilities that the supertype intentionally disallows.",
+    correctionMessage: "Try removing the '@reopen' annotation.",
+  );
+
+  ///  This warning is generated anywhere where `@required` annotates a named
+  ///  parameter with a default value.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode INVALID_REQUIRED_NAMED_PARAM = WarningCode(
+    'INVALID_REQUIRED_NAMED_PARAM',
+    "The type parameter '{0}' is annotated with @required but only named "
+        "parameters without a default value can be annotated with it.",
+    correctionMessage: "Remove @required.",
+  );
+
+  ///  This warning is generated anywhere where `@required` annotates an optional
+  ///  positional parameter.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode INVALID_REQUIRED_OPTIONAL_POSITIONAL_PARAM =
+      WarningCode(
+    'INVALID_REQUIRED_OPTIONAL_POSITIONAL_PARAM',
+    "Incorrect use of the annotation @required on the optional positional "
+        "parameter '{0}'. Optional positional parameters cannot be required.",
+    correctionMessage: "Remove @required.",
+  );
+
+  ///  This warning is generated anywhere where `@required` annotates a
+  ///  non-optional positional parameter.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode INVALID_REQUIRED_POSITIONAL_PARAM = WarningCode(
+    'INVALID_REQUIRED_POSITIONAL_PARAM',
+    "Redundant use of the annotation @required on the required positional "
+        "parameter '{0}'.",
+    correctionMessage: "Remove @required.",
+  );
+
+  ///  This warning is generated anywhere where `@sealed` annotates something
+  ///  other than a class.
+  ///
+  ///  No parameters.
+  static const WarningCode INVALID_SEALED_ANNOTATION = WarningCode(
+    'INVALID_SEALED_ANNOTATION',
+    "The annotation '@sealed' can only be applied to classes.",
+    correctionMessage: "Try removing the '@sealed' annotation.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode INVALID_USE_OF_INTERNAL_MEMBER = WarningCode(
+    'INVALID_USE_OF_INTERNAL_MEMBER',
+    "The member '{0}' can only be used within its package.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where a member annotated with
+  ///  `@protected` is used outside of an instance member of a subclass.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  ///  1: the name of the defining class
+  static const WarningCode INVALID_USE_OF_PROTECTED_MEMBER = WarningCode(
+    'INVALID_USE_OF_PROTECTED_MEMBER',
+    "The member '{0}' can only be used within instance members of subclasses "
+        "of '{1}'.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode INVALID_USE_OF_VISIBLE_FOR_OVERRIDING_MEMBER =
+      WarningCode(
+    'INVALID_USE_OF_VISIBLE_FOR_OVERRIDING_MEMBER',
+    "The member '{0}' can only be used for overriding.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where a member annotated with
+  ///  `@visibleForTemplate` is used outside of a "template" Dart file.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  ///  1: the name of the defining class
+  static const WarningCode INVALID_USE_OF_VISIBLE_FOR_TEMPLATE_MEMBER =
+      WarningCode(
+    'INVALID_USE_OF_VISIBLE_FOR_TEMPLATE_MEMBER',
+    "The member '{0}' can only be used within '{1}' or a template library.",
+  );
+
+  ///  This warning is generated anywhere where a member annotated with
+  ///  `@visibleForTesting` is used outside the defining library, or a test.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  ///  1: the name of the defining class
+  static const WarningCode INVALID_USE_OF_VISIBLE_FOR_TESTING_MEMBER =
+      WarningCode(
+    'INVALID_USE_OF_VISIBLE_FOR_TESTING_MEMBER',
+    "The member '{0}' can only be used within '{1}' or a test.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where a private declaration is
+  ///  annotated with `@visibleForTemplate` or `@visibleForTesting`.
+  ///
+  ///  Parameters:
+  ///  0: the name of the member
+  ///  1: the name of the annotation
+  static const WarningCode INVALID_VISIBILITY_ANNOTATION = WarningCode(
+    'INVALID_VISIBILITY_ANNOTATION',
+    "The member '{0}' is annotated with '{1}', but this annotation is only "
+        "meaningful on declarations of public members.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode INVALID_VISIBLE_FOR_OVERRIDING_ANNOTATION =
+      WarningCode(
+    'INVALID_VISIBLE_FOR_OVERRIDING_ANNOTATION',
+    "The annotation 'visibleForOverriding' can only be applied to a public "
+        "instance member that can be overridden.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the member
+  static const WarningCode MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_ONE =
+      WarningCode(
+    'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN',
+    "Missing concrete implementation of '{0}'.",
+    correctionMessage: "Try overriding the missing member.",
+    hasPublishedDocs: true,
+    uniqueName: 'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_ONE',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the first member
+  ///  1: the name of the second member
+  ///  2: the number of additional missing members that aren't listed
+  static const WarningCode MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_THREE_PLUS =
+      WarningCode(
+    'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN',
+    "Missing concrete implementations of '{0}', '{1}', and {2} more.",
+    correctionMessage: "Try overriding the missing members.",
+    hasPublishedDocs: true,
+    uniqueName: 'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_THREE_PLUS',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the first member
+  ///  1: the name of the second member
+  static const WarningCode MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_TWO =
+      WarningCode(
+    'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN',
+    "Missing concrete implementations of '{0}' and '{1}'.",
+    correctionMessage: "Try overriding the missing members.",
+    hasPublishedDocs: true,
+    uniqueName: 'MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_TWO',
+  );
+
+  ///  Generates a warning for a constructor, function or method invocation where
+  ///  a required parameter is missing.
+  ///
+  ///  Parameters:
+  ///  0: the name of the parameter
+  static const WarningCode MISSING_REQUIRED_PARAM = WarningCode(
+    'MISSING_REQUIRED_PARAM',
+    "The parameter '{0}' is required.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Generates a warning for a constructor, function or method invocation where
+  ///  a required parameter is missing.
+  ///
+  ///  Parameters:
+  ///  0: the name of the parameter
+  ///  1: message details
+  static const WarningCode MISSING_REQUIRED_PARAM_WITH_DETAILS = WarningCode(
+    'MISSING_REQUIRED_PARAM',
+    "The parameter '{0}' is required. {1}.",
+    hasPublishedDocs: true,
+    uniqueName: 'MISSING_REQUIRED_PARAM_WITH_DETAILS',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the declared return type
+  static const WarningCode MISSING_RETURN = WarningCode(
+    'MISSING_RETURN',
+    "This function has a return type of '{0}', but doesn't end with a return "
+        "statement.",
+    correctionMessage:
+        "Try adding a return statement, or changing the return type to 'void'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  This warning is generated anywhere where a `@sealed` class is used as a
+  ///  a superclass constraint of a mixin.
+  ///
+  ///  Parameters:
+  ///  0: the name of the sealed class
+  static const WarningCode MIXIN_ON_SEALED_CLASS = WarningCode(
+    'MIXIN_ON_SEALED_CLASS',
+    "The class '{0}' shouldn't be used as a mixin constraint because it is "
+        "sealed, and any class mixing in this mixin must have '{0}' as a "
+        "superclass.",
+    correctionMessage:
+        "Try composing with this class, or refer to its documentation for more "
+        "information.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Generates a warning for classes that inherit from classes annotated with
+  ///  `@immutable` but that are not immutable.
+  ///
+  ///  Parameters:
+  ///  0: the name of the class
+  static const WarningCode MUST_BE_IMMUTABLE = WarningCode(
+    'MUST_BE_IMMUTABLE',
+    "This class (or a class that this class inherits from) is marked as "
+        "'@immutable', but one or more of its instance fields aren't final: "
+        "{0}",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the class declaring the overridden method
+  static const WarningCode MUST_CALL_SUPER = WarningCode(
+    'MUST_CALL_SUPER',
+    "This method overrides a method annotated as '@mustCallSuper' in '{0}', "
+        "but doesn't invoke the overridden method.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Generates a warning for non-const instance creation using a constructor
+  ///  annotated with `@literal`.
+  ///
+  ///  Parameters:
+  ///  0: the name of the class defining the annotated constructor
+  static const WarningCode NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR = WarningCode(
+    'NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR',
+    "This instance creation must be 'const', because the {0} constructor is "
+        "marked as '@literal'.",
+    correctionMessage: "Try adding a 'const' keyword.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Generate a warning for non-const instance creation (with the `new` keyword)
+  ///  using a constructor annotated with `@literal`.
+  ///
+  ///  Parameters:
+  ///  0: the name of the class defining the annotated constructor
+  static const WarningCode NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR_USING_NEW =
+      WarningCode(
+    'NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR',
+    "This instance creation must be 'const', because the {0} constructor is "
+        "marked as '@literal'.",
+    correctionMessage: "Try replacing the 'new' keyword with 'const'.",
+    hasPublishedDocs: true,
+    uniqueName: 'NON_CONST_CALL_TO_LITERAL_CONSTRUCTOR_USING_NEW',
+  );
+
+  ///  No parameters.
+  static const WarningCode NULLABLE_TYPE_IN_CATCH_CLAUSE = WarningCode(
+    'NULLABLE_TYPE_IN_CATCH_CLAUSE',
+    "A potentially nullable type can't be used in an 'on' clause because it "
+        "isn't valid to throw a nullable expression.",
+    correctionMessage: "Try using a non-nullable type.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the method being invoked
+  ///  1: the type argument associated with the method
+  static const WarningCode NULL_ARGUMENT_TO_NON_NULL_TYPE = WarningCode(
+    'NULL_ARGUMENT_TO_NON_NULL_TYPE',
+    "'{0}' shouldn't be called with a null argument for the non-nullable type "
+        "argument '{1}'.",
+    correctionMessage: "Try adding a non-null argument.",
+    hasPublishedDocs: true,
+  );
+
+  ///  When the left operand of a binary expression uses '?.' operator, it can be
+  ///  `null`.
+  static const WarningCode NULL_AWARE_BEFORE_OPERATOR = WarningCode(
+    'NULL_AWARE_BEFORE_OPERATOR',
+    "The left operand uses '?.', so its value can be null.",
+  );
+
+  ///  A condition in a control flow statement could evaluate to `null` because it
+  ///  uses the null-aware '?.' operator.
+  static const WarningCode NULL_AWARE_IN_CONDITION = WarningCode(
+    'NULL_AWARE_IN_CONDITION',
+    "The value of the '?.' operator can be 'null', which isn't appropriate in "
+        "a condition.",
+    correctionMessage:
+        "Try replacing the '?.' with a '.', testing the left-hand side for "
+        "null if necessary.",
+  );
+
+  ///  A condition in operands of a logical operator could evaluate to `null`
+  ///  because it uses the null-aware '?.' operator.
+  static const WarningCode NULL_AWARE_IN_LOGICAL_OPERATOR = WarningCode(
+    'NULL_AWARE_IN_LOGICAL_OPERATOR',
+    "The value of the '?.' operator can be 'null', which isn't appropriate as "
+        "an operand of a logical operator.",
+  );
+
+  ///  No parameters.
+  static const WarningCode NULL_CHECK_ALWAYS_FAILS = WarningCode(
+    'NULL_CHECK_ALWAYS_FAILS',
+    "This null-check will always throw an exception because the expression "
+        "will always evaluate to 'null'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  A field with the override annotation does not override a getter or setter.
+  ///
+  ///  No parameters.
+  static const WarningCode OVERRIDE_ON_NON_OVERRIDING_FIELD = WarningCode(
+    'OVERRIDE_ON_NON_OVERRIDING_MEMBER',
+    "The field doesn't override an inherited getter or setter.",
+    correctionMessage:
+        "Try updating this class to match the superclass, or removing the "
+        "override annotation.",
+    hasPublishedDocs: true,
+    uniqueName: 'OVERRIDE_ON_NON_OVERRIDING_FIELD',
+  );
+
+  ///  A getter with the override annotation does not override an existing getter.
+  ///
+  ///  No parameters.
+  static const WarningCode OVERRIDE_ON_NON_OVERRIDING_GETTER = WarningCode(
+    'OVERRIDE_ON_NON_OVERRIDING_MEMBER',
+    "The getter doesn't override an inherited getter.",
+    correctionMessage:
+        "Try updating this class to match the superclass, or removing the "
+        "override annotation.",
+    hasPublishedDocs: true,
+    uniqueName: 'OVERRIDE_ON_NON_OVERRIDING_GETTER',
+  );
+
+  ///  A method with the override annotation does not override an existing method.
+  ///
+  ///  No parameters.
+  static const WarningCode OVERRIDE_ON_NON_OVERRIDING_METHOD = WarningCode(
+    'OVERRIDE_ON_NON_OVERRIDING_MEMBER',
+    "The method doesn't override an inherited method.",
+    correctionMessage:
+        "Try updating this class to match the superclass, or removing the "
+        "override annotation.",
+    hasPublishedDocs: true,
+    uniqueName: 'OVERRIDE_ON_NON_OVERRIDING_METHOD',
+  );
+
+  ///  A setter with the override annotation does not override an existing setter.
+  ///
+  ///  No parameters.
+  static const WarningCode OVERRIDE_ON_NON_OVERRIDING_SETTER = WarningCode(
+    'OVERRIDE_ON_NON_OVERRIDING_MEMBER',
+    "The setter doesn't override an inherited setter.",
+    correctionMessage:
+        "Try updating this class to match the superclass, or removing the "
+        "override annotation.",
+    hasPublishedDocs: true,
+    uniqueName: 'OVERRIDE_ON_NON_OVERRIDING_SETTER',
+  );
+
+  ///  It is not an error to call or tear-off a method, setter, or getter, or to
+  ///  read or write a field, on a receiver of static type `Never`.
+  ///  Implementations that provide feedback about dead or unreachable code are
+  ///  encouraged to indicate that any arguments to the invocation are
+  ///  unreachable.
+  ///
+  ///  It is not an error to apply an expression of type `Never` in the function
+  ///  position of a function call. Implementations that provide feedback about
+  ///  dead or unreachable code are encouraged to indicate that any arguments to
+  ///  the call are unreachable.
+  ///
+  ///  Parameters: none
+  static const WarningCode RECEIVER_OF_TYPE_NEVER = WarningCode(
+    'RECEIVER_OF_TYPE_NEVER',
+    "The receiver is of type 'Never', and will never complete with a value.",
+    correctionMessage:
+        "Try checking for throw expressions or type errors in the receiver",
+  );
+
+  static const WarningCode RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA =
+      WarningCode(
+    'RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA',
+    "A record literal with exactly one positional field requires a trailing "
+        "comma.",
+    correctionMessage: "Try adding a trailing comma.",
+    hasPublishedDocs: true,
+  );
+
+  ///  An error code indicating use of a removed lint rule.
+  ///
+  ///  Parameters:
+  ///  0: the rule name
+  ///  1: the SDK version in which the lint was removed
+  static const WarningCode REMOVED_LINT_USE = WarningCode(
+    'REMOVED_LINT_USE',
+    "'{0}' was removed in Dart '{1}'",
+    correctionMessage: "Remove the reference to '{0}'.",
+  );
+
+  ///  An error code indicating use of a removed lint rule.
+  ///
+  ///  Parameters:
+  ///  0: the rule name
+  ///  1: the SDK version in which the lint was removed
+  ///  2: the name of a replacing lint
+  static const WarningCode REPLACED_LINT_USE = WarningCode(
+    'REPLACED_LINT_USE',
+    "'{0}' was replaced by '{2}' in Dart '{1}'.",
+    correctionMessage: "Replace '{0}' with '{1}'.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the annotated function being invoked
+  ///  1: the name of the function containing the return
+  static const WarningCode RETURN_OF_DO_NOT_STORE = WarningCode(
+    'RETURN_OF_DO_NOT_STORE',
+    "'{0}' is annotated with 'doNotStore' and shouldn't be returned unless "
+        "'{1}' is also annotated.",
+    correctionMessage: "Annotate '{1}' with 'doNotStore'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the return type as declared in the return statement
+  ///  1: the expected return type as defined by the type of the Future
+  static const WarningCode RETURN_OF_INVALID_TYPE_FROM_CATCH_ERROR =
+      WarningCode(
+    'INVALID_RETURN_TYPE_FOR_CATCH_ERROR',
+    "A value of type '{0}' can't be returned by the 'onError' handler because "
+        "it must be assignable to '{1}'.",
+    hasPublishedDocs: true,
+    uniqueName: 'RETURN_OF_INVALID_TYPE_FROM_CATCH_ERROR',
+  );
+
+  ///  Parameters:
+  ///  0: the return type of the function
+  ///  1: the expected return type as defined by the type of the Future
+  static const WarningCode RETURN_TYPE_INVALID_FOR_CATCH_ERROR = WarningCode(
+    'INVALID_RETURN_TYPE_FOR_CATCH_ERROR',
+    "The return type '{0}' isn't assignable to '{1}', as required by "
+        "'Future.catchError'.",
+    hasPublishedDocs: true,
+    uniqueName: 'RETURN_TYPE_INVALID_FOR_CATCH_ERROR',
+  );
 
   ///  Parameters:
   ///  0: the name of the class
@@ -6060,6 +6859,16 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  Parameters:
+  ///  0: the version specified in the `@Since()` annotation
+  ///  1: the SDK version constraints
+  static const WarningCode SDK_VERSION_SINCE = WarningCode(
+    'SDK_VERSION_SINCE',
+    "This API is available since SDK {0}, but constraints '{1}' don't "
+        "guarantee it.",
+    correctionMessage: "Try updating the SDK constraints.",
+  );
+
   ///  No parameters.
   static const WarningCode SDK_VERSION_UI_AS_CODE = WarningCode(
     'SDK_VERSION_UI_AS_CODE',
@@ -6080,6 +6889,73 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  When "strict-raw-types" is enabled, "raw types" must have type arguments.
+  ///
+  ///  A "raw type" is a type name that does not use inference to fill in missing
+  ///  type arguments; instead, each type argument is instantiated to its bound.
+  ///
+  ///  Parameters:
+  ///  0: the name of the generic type
+  static const WarningCode STRICT_RAW_TYPE = WarningCode(
+    'STRICT_RAW_TYPE',
+    "The generic type '{0}' should have explicit type arguments but doesn't.",
+    correctionMessage: "Use explicit type arguments for '{0}'.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the sealed class
+  static const WarningCode SUBTYPE_OF_SEALED_CLASS = WarningCode(
+    'SUBTYPE_OF_SEALED_CLASS',
+    "The class '{0}' shouldn't be extended, mixed in, or implemented because "
+        "it's sealed.",
+    correctionMessage:
+        "Try composing instead of inheriting, or refer to the documentation of "
+        "'{0}' for more information.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the unicode sequence of the code point.
+  static const WarningCode TEXT_DIRECTION_CODE_POINT_IN_COMMENT = WarningCode(
+    'TEXT_DIRECTION_CODE_POINT_IN_COMMENT',
+    "The Unicode code point 'U+{0}' changes the appearance of text from how "
+        "it's interpreted by the compiler.",
+    correctionMessage:
+        "Try removing the code point or using the Unicode escape sequence "
+        "'\\u{0}'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the unicode sequence of the code point.
+  static const WarningCode TEXT_DIRECTION_CODE_POINT_IN_LITERAL = WarningCode(
+    'TEXT_DIRECTION_CODE_POINT_IN_LITERAL',
+    "The Unicode code point 'U+{0}' changes the appearance of text from how "
+        "it's interpreted by the compiler.",
+    correctionMessage:
+        "Try removing the code point or using the Unicode escape sequence "
+        "'\\u{0}'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode TYPE_CHECK_IS_NOT_NULL = WarningCode(
+    'TYPE_CHECK_WITH_NULL',
+    "Tests for non-null should be done with '!= null'.",
+    correctionMessage: "Try replacing the 'is! Null' check with '!= null'.",
+    hasPublishedDocs: true,
+    uniqueName: 'TYPE_CHECK_IS_NOT_NULL',
+  );
+
+  ///  No parameters.
+  static const WarningCode TYPE_CHECK_IS_NULL = WarningCode(
+    'TYPE_CHECK_WITH_NULL',
+    "Tests for null should be done with '== null'.",
+    correctionMessage: "Try replacing the 'is Null' check with '== null'.",
+    hasPublishedDocs: true,
+    uniqueName: 'TYPE_CHECK_IS_NULL',
+  );
+
   ///  Parameters:
   ///  0: the name of the library being imported
   ///  1: the name in the hide clause that isn't defined in the library
@@ -6087,6 +6963,15 @@ class WarningCode extends AnalyzerErrorCode {
     'UNDEFINED_HIDDEN_NAME',
     "The library '{0}' doesn't export a member with the hidden name '{1}'.",
     correctionMessage: "Try removing the name from the list of hidden members.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the undefined parameter
+  ///  1: the name of the targeted member
+  static const WarningCode UNDEFINED_REFERENCED_PARAMETER = WarningCode(
+    'UNDEFINED_REFERENCED_PARAMETER',
+    "The parameter '{0}' isn't defined by '{1}'.",
     hasPublishedDocs: true,
   );
 
@@ -6103,8 +6988,108 @@ class WarningCode extends AnalyzerErrorCode {
   ///  This is the new replacement for [HintCode.UNNECESSARY_CAST].
   static const HintCode UNNECESSARY_CAST = HintCode.UNNECESSARY_CAST;
 
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_CAST_PATTERN = WarningCode(
+    'UNNECESSARY_CAST_PATTERN',
+    "Unnecessary cast pattern.",
+    correctionMessage: "Try removing the cast pattern.",
+  );
+
   ///  This is the new replacement for [HintCode.UNNECESSARY_FINAL].
   static const HintCode UNNECESSARY_FINAL = HintCode.UNNECESSARY_FINAL;
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_NAN_COMPARISON_FALSE = WarningCode(
+    'UNNECESSARY_NAN_COMPARISON',
+    "A double can't equal 'double.nan', so the condition is always 'false'.",
+    correctionMessage: "Try using 'double.isNan', or removing the condition.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_NAN_COMPARISON_FALSE',
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_NAN_COMPARISON_TRUE = WarningCode(
+    'UNNECESSARY_NAN_COMPARISON',
+    "A double can't equal 'double.nan', so the condition is always 'true'.",
+    correctionMessage: "Try using 'double.isNan', or removing the condition.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_NAN_COMPARISON_TRUE',
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_NO_SUCH_METHOD = WarningCode(
+    'UNNECESSARY_NO_SUCH_METHOD',
+    "Unnecessary 'noSuchMethod' declaration.",
+    correctionMessage: "Try removing the declaration of 'noSuchMethod'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_NULL_COMPARISON_FALSE = WarningCode(
+    'UNNECESSARY_NULL_COMPARISON',
+    "The operand can't be null, so the condition is always 'false'.",
+    correctionMessage:
+        "Try removing the condition, an enclosing condition, or the whole "
+        "conditional statement.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_NULL_COMPARISON_FALSE',
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_NULL_COMPARISON_TRUE = WarningCode(
+    'UNNECESSARY_NULL_COMPARISON',
+    "The operand can't be null, so the condition is always 'true'.",
+    correctionMessage: "Remove the condition.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_NULL_COMPARISON_TRUE',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the type
+  static const WarningCode UNNECESSARY_QUESTION_MARK = WarningCode(
+    'UNNECESSARY_QUESTION_MARK',
+    "The '?' is unnecessary because '{0}' is nullable without it.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_SET_LITERAL = WarningCode(
+    'UNNECESSARY_SET_LITERAL',
+    "Braces unnecessarily wrap this expression in a set literal.",
+    correctionMessage: "Try removing the set literal around the expression.",
+    hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_TYPE_CHECK_FALSE = WarningCode(
+    'UNNECESSARY_TYPE_CHECK',
+    "Unnecessary type check; the result is always 'false'.",
+    correctionMessage:
+        "Try correcting the type check, or removing the type check.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_TYPE_CHECK_FALSE',
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_TYPE_CHECK_TRUE = WarningCode(
+    'UNNECESSARY_TYPE_CHECK',
+    "Unnecessary type check; the result is always 'true'.",
+    correctionMessage:
+        "Try correcting the type check, or removing the type check.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNNECESSARY_TYPE_CHECK_TRUE',
+  );
+
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_WILDCARD_PATTERN = WarningCode(
+    'UNNECESSARY_WILDCARD_PATTERN',
+    "Unnecessary wildcard pattern.",
+    correctionMessage: "Try removing the wildcard pattern.",
+  );
+
+  ///  This is the new replacement for [HintCode.UNREACHABLE_SWITCH_CASE].
+  static const HintCode UNREACHABLE_SWITCH_CASE =
+      HintCode.UNREACHABLE_SWITCH_CASE;
 
   ///  Parameters:
   ///  0: the name of the exception variable
@@ -6132,14 +7117,80 @@ class WarningCode extends AnalyzerErrorCode {
   static const HintCode UNUSED_ELEMENT_PARAMETER =
       HintCode.UNUSED_ELEMENT_PARAMETER;
 
-  ///  This is the new replacement for [HintCode.UNUSED_FIELD].
-  static const HintCode UNUSED_FIELD = HintCode.UNUSED_FIELD;
+  ///  Parameters:
+  ///  0: the name of the unused field
+  static const WarningCode UNUSED_FIELD = WarningCode(
+    'UNUSED_FIELD',
+    "The value of the field '{0}' isn't used.",
+    correctionMessage: "Try removing the field, or using it.",
+    hasPublishedDocs: true,
+  );
 
-  ///  This is the new replacement for [HintCode.UNUSED_IMPORT].
-  static const HintCode UNUSED_IMPORT = HintCode.UNUSED_IMPORT;
+  ///  Parameters:
+  ///  0: the content of the unused import's URI
+  static const WarningCode UNUSED_IMPORT = WarningCode(
+    'UNUSED_IMPORT',
+    "Unused import: '{0}'.",
+    correctionMessage: "Try removing the import directive.",
+    hasPublishedDocs: true,
+  );
 
-  ///  This is the new replacement for [HintCode.UNUSED_LOCAL_VARIABLE].
-  static const HintCode UNUSED_LOCAL_VARIABLE = HintCode.UNUSED_LOCAL_VARIABLE;
+  ///  Parameters:
+  ///  0: the label that isn't used
+  static const WarningCode UNUSED_LABEL = WarningCode(
+    'UNUSED_LABEL',
+    "The label '{0}' isn't used.",
+    correctionMessage:
+        "Try removing the label, or using it in either a 'break' or 'continue' "
+        "statement.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the unused variable
+  static const WarningCode UNUSED_LOCAL_VARIABLE = WarningCode(
+    'UNUSED_LOCAL_VARIABLE',
+    "The value of the local variable '{0}' isn't used.",
+    correctionMessage: "Try removing the variable or using it.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the annotated method, property or function
+  static const WarningCode UNUSED_RESULT = WarningCode(
+    'UNUSED_RESULT',
+    "The value of '{0}' should be used.",
+    correctionMessage:
+        "Try using the result by invoking a member, passing it to a function, "
+        "or returning it from this function.",
+    hasPublishedDocs: true,
+  );
+
+  ///  The result of invoking a method, property, or function annotated with
+  ///  `@useResult` must be used (assigned, passed to a function as an argument,
+  ///  or returned by a function).
+  ///
+  ///  Parameters:
+  ///  0: the name of the annotated method, property or function
+  ///  1: message details
+  static const WarningCode UNUSED_RESULT_WITH_MESSAGE = WarningCode(
+    'UNUSED_RESULT',
+    "'{0}' should be used. {1}.",
+    correctionMessage:
+        "Try using the result by invoking a member, passing it to a function, "
+        "or returning it from this function.",
+    hasPublishedDocs: true,
+    uniqueName: 'UNUSED_RESULT_WITH_MESSAGE',
+  );
+
+  ///  Parameters:
+  ///  0: the name that is shown but not used
+  static const WarningCode UNUSED_SHOWN_NAME = WarningCode(
+    'UNUSED_SHOWN_NAME',
+    "The name {0} is shown, but isn't used.",
+    correctionMessage: "Try removing the name from the list of shown members.",
+    hasPublishedDocs: true,
+  );
 
   /// Initialize a newly created error code to have the given [name].
   const WarningCode(

@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
+    as shared;
 import 'package:_fe_analyzer_shared/src/type_inference/variable_bindings.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -413,13 +415,6 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
       element.isFinal = patternContext.finalKeyword != null;
     } else if (patternContext is PatternVariableDeclarationImpl) {
       element.isFinal = patternContext.finalKeyword != null;
-      var keyword = node.keyword;
-      if (keyword != null) {
-        _errorReporter.reportErrorForToken(
-          CompileTimeErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT,
-          keyword,
-        );
-      }
     } else {
       element.isFinal = node.finalKeyword != null;
     }
@@ -616,6 +611,13 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
     node.variables = variablesMap.values
         .whereType<BindPatternVariableElementImpl>()
         .toList();
+  }
+
+  @override
+  void visitForElement(covariant ForElementImpl node) {
+    _withNameScope(() {
+      super.visitForElement(node);
+    });
   }
 
   @override
@@ -861,7 +863,9 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
 
   @override
   void visitIfElement(covariant IfElementImpl node) {
-    _visitIf(node);
+    _withNameScope(() {
+      _visitIf(node);
+    });
   }
 
   @override
@@ -1060,6 +1064,17 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
   }
 
   @override
+  void visitPatternAssignment(PatternAssignment node) {
+    // We need to call `casePatternStart` and `casePatternFinish` in case there
+    // are any declared variable patterns inside the pattern assignment (this
+    // could happen due to error recovery).  But we don't need to keep the
+    // variables map that `casePatternFinish` returns.
+    _patternVariables.casePatternStart();
+    super.visitPatternAssignment(node);
+    _patternVariables.casePatternFinish();
+  }
+
+  @override
   void visitPatternVariableDeclaration(
     covariant PatternVariableDeclarationImpl node,
   ) {
@@ -1143,6 +1158,16 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
     }
 
     _setOrCreateMetadataElements(element, node.metadata);
+  }
+
+  @override
+  void visitSimpleIdentifier(covariant SimpleIdentifierImpl node) {
+    final newNode = _astRewriter.simpleIdentifier(_nameScope, node);
+    if (newNode != node) {
+      return newNode.accept(this);
+    }
+
+    super.visitSimpleIdentifier(node);
   }
 
   @override
@@ -1690,7 +1715,7 @@ class _VariableBinder
   JoinPatternVariableElementImpl joinPatternVariables({
     required Object key,
     required List<PromotableElement> components,
-    required bool isConsistent,
+    required shared.JoinedPatternVariableInconsistency inconsistency,
   }) {
     var first = components.first;
     List<PatternVariableElementImpl> expandedVariables;
@@ -1714,10 +1739,11 @@ class _VariableBinder
       first.name,
       -1,
       expandedVariables,
-      isConsistent &&
-          components.every((element) =>
-              element is! JoinPatternVariableElementImpl ||
-              element.isConsistent),
+      inconsistency.maxWithAll(
+        components
+            .whereType<JoinPatternVariableElementImpl>()
+            .map((e) => e.inconsistency),
+      ),
     )..enclosingElement = first.enclosingElement;
   }
 }
@@ -1749,6 +1775,7 @@ class _VariableBinderErrors
         [name],
       ),
     );
+    duplicate.isDuplicate = true;
   }
 
   @override

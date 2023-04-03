@@ -139,8 +139,9 @@ abstract class CommonElements {
   late final LibraryEntity internalLibrary =
       _env.lookupLibrary(Uris.dart__internal, required: true)!;
 
-  /// The dart:js library.
-  late final LibraryEntity? dartJsLibrary = _env.lookupLibrary(Uris.dart_js);
+  /// The dart:js_util library.
+  late final LibraryEntity? dartJsUtilLibrary =
+      _env.lookupLibrary(Uris.dart_js_util);
 
   /// The package:js library.
   late final LibraryEntity? packageJsLibrary =
@@ -195,7 +196,6 @@ abstract class CommonElements {
   /// Used to check for the constructor without computing it until it is likely
   /// to be seen.
   bool isSymbolConstructor(ConstructorEntity element) {
-    assert((element as dynamic) != null); // TODO(48820): Remove.
     _ensureSymbolConstructorDependencies();
     return element == _symbolConstructorImplementationTarget ||
         element == _symbolConstructorTarget;
@@ -367,27 +367,24 @@ abstract class CommonElements {
     return _env.createInterfaceType(cls, typeArguments);
   }
 
-  InterfaceType getConstantListTypeFor(InterfaceType sourceType) =>
-      dartTypes.treatAsRawType(sourceType)
-          ? _env.getRawType(jsArrayClass)
-          : _env.createInterfaceType(jsArrayClass, sourceType.typeArguments);
+  InterfaceType getConstantListTypeFor(InterfaceType sourceType) {
+    // TODO(51534): Use CONST_CANONICAL_TYPE(T_i) for arguments.
+    return _env.createInterfaceType(jsArrayClass, sourceType.typeArguments);
+  }
 
   InterfaceType getConstantMapTypeFor(InterfaceType sourceType,
       {bool onlyStringKeys = false}) {
+    // TODO(51534): Use CONST_CANONICAL_TYPE(T_i) for arguments.
     ClassEntity classElement =
         onlyStringKeys ? constantStringMapClass : generalConstantMapClass;
-    if (dartTypes.treatAsRawType(sourceType)) {
-      return _env.getRawType(classElement);
-    } else {
-      return _env.createInterfaceType(classElement, sourceType.typeArguments);
-    }
+    return _env.createInterfaceType(classElement, sourceType.typeArguments);
   }
 
-  InterfaceType getConstantSetTypeFor(InterfaceType sourceType) =>
-      dartTypes.treatAsRawType(sourceType)
-          ? _env.getRawType(constSetLiteralClass)
-          : _env.createInterfaceType(
-              constSetLiteralClass, sourceType.typeArguments);
+  InterfaceType getConstantSetTypeFor(InterfaceType sourceType) {
+    // TODO(51534): Use CONST_CANONICAL_TYPE(T_i) for arguments.
+    return _env.createInterfaceType(
+        constSetLiteralClass, sourceType.typeArguments);
+  }
 
   /// Returns the field that holds the internal name in the implementation class
   /// for `Symbol`.
@@ -560,6 +557,9 @@ abstract class CommonElements {
 
   late final ClassEntity jsJavaScriptObjectClass =
       _findInterceptorsClass('JavaScriptObject');
+
+  InterfaceType get jsJavaScriptObjectType =>
+      _getRawType(jsJavaScriptObjectClass);
 
   late final ClassEntity jsIndexableClass =
       _findInterceptorsClass('JSIndexable');
@@ -1039,21 +1039,9 @@ abstract class CommonElements {
         : objectClass;
   }
 
-  // From package:js
-  late final FunctionEntity? jsAllowInterop1 =
-      _findLibraryMember(dartJsLibrary, 'allowInterop', required: false);
-
-  // From dart:_js_annotations;
-  late final FunctionEntity? jsAllowInterop2 = _findLibraryMember(
-      dartJsAnnotationsLibrary, 'allowInterop',
-      required: false);
-
-  /// Returns `true` if [function] is `allowInterop`.
-  ///
-  /// This function can come from either `package:js` or `dart:_js_annotations`.
-  bool isJsAllowInterop(FunctionEntity function) {
-    return function == jsAllowInterop1 || function == jsAllowInterop2;
-  }
+  // From dart:js_util
+  late final FunctionEntity? jsAllowInterop =
+      _findLibraryMember(dartJsUtilLibrary, 'allowInterop', required: false);
 
   bool isCreateInvocationMirrorHelper(MemberEntity member) {
     return member.isTopLevel &&

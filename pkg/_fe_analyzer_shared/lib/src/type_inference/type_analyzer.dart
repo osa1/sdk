@@ -33,6 +33,47 @@ class CaseHeadOrDefaultInfo<Node extends Object, Expression extends Node,
   });
 }
 
+/// The kind of inconsistency identified for a variable.
+enum JoinedPatternVariableInconsistency {
+  /// No inconsistency.
+  none(0),
+
+  /// Only one branch of a logical-or pattern has the variable.
+  logicalOr(4),
+
+  /// Not every case of a shared case scope has the variable.
+  sharedCaseAbsent(3),
+
+  /// The shared case scope has a label or `default` case.
+  sharedCaseHasLabel(2),
+
+  /// The finality or type of the variable components is not the same.
+  /// This is reported for both logical-or and shared cases.
+  differentFinalityOrType(1);
+
+  final int _severity;
+
+  const JoinedPatternVariableInconsistency(this._severity);
+
+  /// Returns the most serious inconsistency for `this` or [other].
+  JoinedPatternVariableInconsistency maxWith(
+    JoinedPatternVariableInconsistency other,
+  ) {
+    return _severity > other._severity ? this : other;
+  }
+
+  /// Returns the most serious inconsistency for `this` or [others].
+  JoinedPatternVariableInconsistency maxWithAll(
+    Iterable<JoinedPatternVariableInconsistency> others,
+  ) {
+    JoinedPatternVariableInconsistency result = this;
+    for (JoinedPatternVariableInconsistency other in others) {
+      result = result.maxWith(other);
+    }
+    return result;
+  }
+}
+
 /// The location where the join of a pattern variable happens.
 enum JoinedPatternVariableLocation {
   /// A single pattern, from `logical-or` patterns.
@@ -91,15 +132,27 @@ class RecordType<Type extends Object> {
   });
 }
 
+/// Kinds of relational pattern operators that shared analysis needs to
+/// distinguish.
+enum RelationalOperatorKind {
+  /// The operator `==`
+  equals,
+
+  /// The operator `!=`
+  notEquals,
+
+  /// Any relational pattern operator other than `==` or `!=`
+  other,
+}
+
 /// Information about a relational operator.
 class RelationalOperatorResolution<Type extends Object> {
-  /// Is `true` when the operator is `==` or `!=`.
-  final bool isEquality;
+  final RelationalOperatorKind kind;
   final Type parameterType;
   final Type returnType;
 
   RelationalOperatorResolution({
-    required this.isEquality,
+    required this.kind,
     required this.parameterType,
     required this.returnType,
   });
@@ -149,8 +202,11 @@ class SwitchStatementMemberInfo<Node extends Object, Statement extends Node,
   /// might become not consistent.
   final Map<String, Variable> variables;
 
-  SwitchStatementMemberInfo(this.heads, this.body, this.variables,
-      {required this.hasLabels});
+  SwitchStatementMemberInfo(
+      {required this.heads,
+      required this.body,
+      required this.variables,
+      required this.hasLabels});
 }
 
 /// Type analysis logic to be shared between the analyzer and front end.  The
@@ -226,7 +282,8 @@ mixin TypeAnalyzer<
     Expression extends Node,
     Variable extends Object,
     Type extends Object,
-    Pattern extends Node> {
+    Pattern extends Node,
+    Error> {
   /// Returns the type `bool`.
   Type get boolType;
 
@@ -236,14 +293,20 @@ mixin TypeAnalyzer<
   /// Returns the type `dynamic`.
   Type get dynamicType;
 
-  TypeAnalyzerErrors<Node, Statement, Expression, Variable, Type, Pattern>?
-      get errors;
+  TypeAnalyzerErrors<Node, Statement, Expression, Variable, Type, Pattern,
+      Error> get errors;
+
+  /// Returns the type used by the client in the case of errors.
+  Type get errorType;
 
   /// Returns the client's [FlowAnalysis] object.
   FlowAnalysis<Node, Statement, Expression, Variable, Type> get flow;
 
   /// Returns the type `int`.
   Type get intType;
+
+  /// Returns the type `Never`.
+  Type get neverType;
 
   /// Returns the type `Object?`.
   Type get objectQuestionType;
@@ -262,23 +325,28 @@ mixin TypeAnalyzer<
   /// context.  [node] is the pattern itself, and [variable] is the variable
   /// being referenced.
   ///
+  /// Returns an [AssignedVariablePatternResult] with information about reported
+  /// errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// For wildcard patterns in an assignment context,
   /// [analyzeDeclaredVariablePattern] should be used instead.
   ///
   /// Stack effect: none.
-  void analyzeAssignedVariablePattern(
+  AssignedVariablePatternResult<Error> analyzeAssignedVariablePattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Pattern node,
       Variable variable) {
+    Error? duplicateAssignmentPatternVariableError;
     Map<Variable, Pattern>? assignedVariables = context.assignedVariables;
     if (assignedVariables != null) {
       Pattern? original = assignedVariables[variable];
       if (original == null) {
         assignedVariables[variable] = node;
       } else {
-        errors?.duplicateAssignmentPatternVariable(
+        duplicateAssignmentPatternVariableError =
+            errors.duplicateAssignmentPatternVariable(
           variable: variable,
           original: original,
           duplicate: node,
@@ -291,15 +359,25 @@ mixin TypeAnalyzer<
     assert(irrefutableContext != null,
         'Assigned variables must only appear in irrefutable pattern contexts');
     Type matchedType = flow.getMatchedValueType();
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
-        !operations.isAssignableTo(matchedType, variableDeclaredType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
-          pattern: node,
-          context: irrefutableContext,
-          matchedType: matchedType,
-          requiredType: variableDeclaredType);
+        !operations.isDynamic(matchedType) &&
+        !operations.isSubtypeOf(matchedType, variableDeclaredType)) {
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
+              pattern: node,
+              context: irrefutableContext,
+              matchedType: matchedType,
+              requiredType: variableDeclaredType);
     }
-    flow.write(node, variable, matchedType, context.getInitializer(node));
+    flow.promoteForPattern(
+        matchedType: matchedType, knownType: variableDeclaredType);
+    flow.assignedVariablePattern(node, variable, matchedType);
+    return new AssignedVariablePatternResult(
+        duplicateAssignmentPatternVariableError:
+            duplicateAssignmentPatternVariableError,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a variable pattern appearing in an assignment
@@ -307,23 +385,38 @@ mixin TypeAnalyzer<
   Type analyzeAssignedVariablePatternSchema(Variable variable) =>
       flow.promotedType(variable) ?? operations.variableType(variable);
 
-  /// Analyzes a cast pattern.  [innerPattern] is the sub-pattern] and [type] is
-  /// the type to cast to.
+  /// Analyzes a cast pattern.  [innerPattern] is the sub-pattern] and
+  /// [requiredType] is the type to cast to.
   ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (Pattern innerPattern).
-  void analyzeCastPattern(
-      MatchContext<Node, Expression, Pattern, Type, Variable> context,
-      Pattern innerPattern,
-      Type type) {
-    // TODO(paulberry): using `patternRequiredType` here doesn't quite match the
-    // spec, because if `type` isn't a subtype of the matched value type,
-    // promotion won't occur.  Fix this.
-    flow.patternRequiredType(
-        matchedType: flow.getMatchedValueType(), requiredType: type);
-    flow.pushSubpattern(type, isDistinctValue: false);
-    dispatchPattern(context, innerPattern);
+  void analyzeCastPattern({
+    required MatchContext<Node, Expression, Pattern, Type, Variable> context,
+    required Pattern pattern,
+    required Pattern innerPattern,
+    required Type requiredType,
+  }) {
+    Type matchedValueType = flow.getMatchedValueType();
+    bool matchedTypeIsSubtypeOfRequired = flow.promoteForPattern(
+        matchedType: matchedValueType,
+        knownType: requiredType,
+        matchFailsIfWrongType: false);
+    if (matchedTypeIsSubtypeOfRequired) {
+      errors.matchedTypeIsSubtypeOfRequired(
+        pattern: pattern,
+        matchedType: matchedValueType,
+        requiredType: requiredType,
+      );
+    }
+    // Note: although technically the inner pattern match of a cast-pattern
+    // operates on the same value as the cast pattern does, we analyze it as
+    // though it's a different value; this ensures that (a) the matched value
+    // type when matching the inner pattern is precisely the cast type, and (b)
+    // promotions triggered by the inner pattern have no effect outside the
+    // cast.
+    flow.pushSubpattern(requiredType);
+    dispatchPattern(context.withUnnecessaryWildcardKind(null), innerPattern);
     // Stack: (Pattern)
     flow.popSubpattern();
   }
@@ -339,39 +432,50 @@ mixin TypeAnalyzer<
   ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
+  /// Returns a [ConstantPatternResult] with the static type of [expression]
+  /// and information about reported errors.
+  ///
   /// Stack effect: pushes (Expression).
-  void analyzeConstantPattern(
+  ConstantPatternResult<Type, Error> analyzeConstantPattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Node node,
       Expression expression) {
     // Stack: ()
-    TypeAnalyzerErrors<Node, Node, Expression, Variable, Type, Pattern>?
-        errors = this.errors;
     Node? irrefutableContext = context.irrefutableContext;
+    Error? refutablePatternInIrrefutableContextError;
     if (irrefutableContext != null) {
-      errors?.refutablePatternInIrrefutableContext(node, irrefutableContext);
+      refutablePatternInIrrefutableContextError =
+          errors.refutablePatternInIrrefutableContext(
+              pattern: node, context: irrefutableContext);
     }
     Type matchedType = flow.getMatchedValueType();
-    Type staticType = analyzeExpression(expression, matchedType);
-    flow.constantPattern_end(expression);
+    Type expressionType = analyzeExpression(expression, matchedType);
+    flow.constantPattern_end(expression, expressionType,
+        patternsEnabled: options.patternsEnabled);
     // Stack: (Expression)
-    if (errors != null && !options.patternsEnabled) {
-      Expression? switchScrutinee = context.getSwitchScrutinee(node);
+    Error? caseExpressionTypeMismatchError;
+    if (!options.patternsEnabled) {
+      Expression? switchScrutinee = context.switchScrutinee;
       if (switchScrutinee != null) {
         bool nullSafetyEnabled = options.nullSafetyEnabled;
         bool matches = nullSafetyEnabled
-            ? operations.isSubtypeOf(staticType, matchedType)
-            : operations.isAssignableTo(staticType, matchedType);
+            ? operations.isSubtypeOf(expressionType, matchedType)
+            : operations.isAssignableTo(expressionType, matchedType);
         if (!matches) {
-          errors.caseExpressionTypeMismatch(
+          caseExpressionTypeMismatchError = errors.caseExpressionTypeMismatch(
               caseExpression: expression,
               scrutinee: switchScrutinee,
-              caseExpressionType: staticType,
+              caseExpressionType: expressionType,
               scrutineeType: matchedType,
               nullSafetyEnabled: nullSafetyEnabled);
         }
       }
     }
+    return new ConstantPatternResult(
+        expressionType: expressionType,
+        refutablePatternInIrrefutableContextError:
+            refutablePatternInIrrefutableContextError,
+        caseExpressionTypeMismatchError: caseExpressionTypeMismatchError);
   }
 
   /// Computes the type schema for a constant pattern.
@@ -381,7 +485,7 @@ mixin TypeAnalyzer<
     // Constant patterns are only allowed in refutable contexts, and refutable
     // contexts don't propagate a type schema into the scrutinee.  So this
     // code path is only reachable if the user's code contains errors.
-    errors?.assertInErrorRecovery();
+    errors.assertInErrorRecovery();
     return unknownType;
   }
 
@@ -394,10 +498,11 @@ mixin TypeAnalyzer<
   ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
-  /// Returns the static type of the variable (possibly inferred).
+  /// Returns a [DeclaredVariablePatternResult] with the static type of the
+  /// variable (possibly inferred) and information about reported errors.
   ///
   /// Stack effect: none.
-  Type analyzeDeclaredVariablePattern(
+  DeclaredVariablePatternResult<Type, Error> analyzeDeclaredVariablePattern(
     MatchContext<Node, Expression, Pattern, Type, Variable> context,
     Pattern node,
     Variable variable,
@@ -408,30 +513,38 @@ mixin TypeAnalyzer<
     Type staticType =
         declaredType ?? variableTypeFromInitializerType(matchedType);
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
-        !operations.isAssignableTo(matchedType, staticType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
-          pattern: node,
-          context: irrefutableContext,
-          matchedType: matchedType,
-          requiredType: staticType);
+        !operations.isDynamic(matchedType) &&
+        !operations.isSubtypeOf(matchedType, staticType)) {
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
+              pattern: node,
+              context: irrefutableContext,
+              matchedType: matchedType,
+              requiredType: staticType);
     }
-    flow.patternRequiredType(
-        matchedType: matchedType, requiredType: staticType);
+    flow.promoteForPattern(matchedType: matchedType, knownType: staticType);
+    // The promotion may have made the matched type even more specific than
+    // either `matchedType` or `staticType`, so fetch it again and use that
+    // in the call to `declaredVariablePattern` below.
+    matchedType = flow.getMatchedValueType();
     bool isImplicitlyTyped = declaredType == null;
     // TODO(paulberry): are we handling _isFinal correctly?
-    int promotionKey = flow.declaredVariablePattern(
-        matchedType: matchedType,
-        staticType: staticType,
-        initializerExpression: context.getInitializer(node),
-        isFinal: context.isFinal || isVariableFinal(variable),
-        isLate: context.isLate,
-        isImplicitlyTyped: isImplicitlyTyped);
+    int promotionKey = context.patternVariablePromotionKeys[variableName] =
+        flow.declaredVariablePattern(
+            matchedType: matchedType,
+            staticType: staticType,
+            isFinal: context.isFinal || isVariableFinal(variable),
+            isLate: context.isLate,
+            isImplicitlyTyped: isImplicitlyTyped);
     setVariableType(variable, staticType);
     (context.componentVariables[variableName] ??= []).add(variable);
-    flow.declare(variable, staticType, initialized: false);
     flow.assignMatchedPatternVariable(variable, promotionKey);
-    return staticType;
+    return new DeclaredVariablePatternResult(
+        staticType: staticType,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a variable pattern in a non-assignment
@@ -473,12 +586,15 @@ mixin TypeAnalyzer<
   /// wishes to use to represent that variable.  This is used to join together
   /// variables that appear in different branches of logical-or patterns.
   ///
+  /// Returns a [IfCaseStatementResult] with the static type of [expression] and
+  /// information about reported errors.
+  ///
   /// Stack effect: pushes (Expression scrutinee, Pattern, Expression guard,
   /// CollectionElement ifTrue, CollectionElement ifFalse).  If there is no
   /// `else` clause, the representation for `ifFalse` will be pushed by
   /// [handleNoCollectionElement].  If there is no guard, the representation
   /// for `guard` will be pushed by [handleNoGuard].
-  void analyzeIfCaseElement({
+  IfCaseStatementResult<Type, Error> analyzeIfCaseElement({
     required Node node,
     required Expression expression,
     required Pattern pattern,
@@ -494,24 +610,35 @@ mixin TypeAnalyzer<
     flow.ifCaseStatement_afterExpression(expression, initializerType);
     // Stack: (Expression)
     Map<String, List<Variable>> componentVariables = {};
+    Map<String, int> patternVariablePromotionKeys = {};
     // TODO(paulberry): rework handling of isFinal
     dispatchPattern(
-        new MatchContext<Node, Expression, Pattern, Type, Variable>(
-            isFinal: false,
-            topPattern: pattern,
-            componentVariables: componentVariables),
-        pattern);
+      new MatchContext<Node, Expression, Pattern, Type, Variable>(
+        isFinal: false,
+        componentVariables: componentVariables,
+        patternVariablePromotionKeys: patternVariablePromotionKeys,
+      ),
+      pattern,
+    );
     // Stack: (Expression, Pattern)
-    _finishJoinedPatternVariables(variables, componentVariables,
+    _finishJoinedPatternVariables(
+        variables, componentVariables, patternVariablePromotionKeys,
         location: JoinedPatternVariableLocation.singlePattern);
+    Error? nonBooleanGuardError;
+    Type? guardType;
     if (guard != null) {
-      _checkGuardType(guard, analyzeExpression(guard, boolType));
+      guardType = analyzeExpression(guard, boolType);
+      nonBooleanGuardError = _checkGuardType(guard, guardType);
     } else {
       handleNoGuard(node, 0);
     }
     // Stack: (Expression, Pattern, Guard)
     flow.ifCaseStatement_thenBegin(guard);
     _analyzeIfElementCommon(node, ifTrue, ifFalse, context);
+    return new IfCaseStatementResult(
+        matchedExpressionType: initializerType,
+        nonBooleanGuardError: nonBooleanGuardError,
+        guardType: guardType);
   }
 
   /// Analyzes a statement of the form `if (expression case pattern) ifTrue` or
@@ -521,14 +648,15 @@ mixin TypeAnalyzer<
   /// the expression, [pattern] for the pattern to match, [ifTrue] for the
   /// "then" branch, and [ifFalse] for the "else" branch (if present).
   ///
-  /// Returns the static type of [expression].
+  /// Returns a [IfCaseStatementResult] with the static type of [expression] and
+  /// information about reported errors.
   ///
   /// Stack effect: pushes (Expression scrutinee, Pattern, Expression guard,
   /// Statement ifTrue, Statement ifFalse).  If there is no `else` clause, the
   /// representation for `ifFalse` will be pushed by [handleNoStatement].  If
   /// there is no guard, the representation for `guard` will be pushed by
   /// [handleNoGuard].
-  Type analyzeIfCaseStatement(
+  IfCaseStatementResult<Type, Error> analyzeIfCaseStatement(
     Statement node,
     Expression expression,
     Pattern pattern,
@@ -543,12 +671,13 @@ mixin TypeAnalyzer<
     flow.ifCaseStatement_afterExpression(expression, initializerType);
     // Stack: (Expression)
     Map<String, List<Variable>> componentVariables = {};
+    Map<String, int> patternVariablePromotionKeys = {};
     // TODO(paulberry): rework handling of isFinal
     dispatchPattern(
       new MatchContext<Node, Expression, Pattern, Type, Variable>(
         isFinal: false,
-        topPattern: pattern,
         componentVariables: componentVariables,
+        patternVariablePromotionKeys: patternVariablePromotionKeys,
       ),
       pattern,
     );
@@ -556,20 +685,27 @@ mixin TypeAnalyzer<
     _finishJoinedPatternVariables(
       variables,
       componentVariables,
+      patternVariablePromotionKeys,
       location: JoinedPatternVariableLocation.singlePattern,
     );
 
     handle_ifCaseStatement_afterPattern(node: node);
     // Stack: (Expression, Pattern)
+    Error? nonBooleanGuardError;
+    Type? guardType;
     if (guard != null) {
-      _checkGuardType(guard, analyzeExpression(guard, boolType));
+      guardType = analyzeExpression(guard, boolType);
+      nonBooleanGuardError = _checkGuardType(guard, guardType);
     } else {
       handleNoGuard(node, 0);
     }
     // Stack: (Expression, Pattern, Guard)
     flow.ifCaseStatement_thenBegin(guard);
     _analyzeIfCommon(node, ifTrue, ifFalse);
-    return initializerType;
+    return new IfCaseStatementResult(
+        matchedExpressionType: initializerType,
+        nonBooleanGuardError: nonBooleanGuardError,
+        guardType: guardType);
   }
 
   /// Analyzes a collection element of the form `if (condition) ifTrue` or
@@ -635,10 +771,13 @@ mixin TypeAnalyzer<
   /// the list element type (if explicitly supplied), and [elements] is the
   /// list of subpatterns.
   ///
+  /// Returns a [ListPatternResult] with the required type and information about
+  /// reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (n * Pattern) where n = elements.length.
-  Type analyzeListPattern(
+  ListPatternResult<Type, Error> analyzeListPattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Pattern node,
       {Type? elementType,
@@ -658,14 +797,18 @@ mixin TypeAnalyzer<
       }
     }
     Type requiredType = listType(valueType);
-    flow.patternRequiredType(
-        matchedType: matchedType, requiredType: requiredType);
+    flow.promoteForPattern(
+        matchedType: matchedType,
+        knownType: requiredType,
+        matchMayFailEvenIfCorrectType: true);
     // Stack: ()
     Node? previousRestPattern;
-    for (Node element in elements) {
+    Map<int, Error>? duplicateRestPatternErrors;
+    for (int i = 0; i < elements.length; i++) {
+      Node element = elements[i];
       if (isRestPatternElement(element)) {
         if (previousRestPattern != null) {
-          errors?.duplicateRestPattern(
+          (duplicateRestPatternErrors ??= {})[i] = errors.duplicateRestPattern(
             mapOrListPattern: node,
             original: previousRestPattern,
             duplicate: element,
@@ -675,28 +818,35 @@ mixin TypeAnalyzer<
         Pattern? subPattern = getRestPatternElementPattern(element);
         if (subPattern != null) {
           Type subPatternMatchedType = requiredType;
-          flow.pushSubpattern(subPatternMatchedType, isDistinctValue: true);
-          dispatchPattern(context, subPattern);
+          flow.pushSubpattern(subPatternMatchedType);
+          dispatchPattern(
+              context.withUnnecessaryWildcardKind(null), subPattern);
           flow.popSubpattern();
         }
         handleListPatternRestElement(node, element);
       } else {
-        flow.pushSubpattern(valueType, isDistinctValue: true);
-        dispatchPattern(context, element);
+        flow.pushSubpattern(valueType);
+        dispatchPattern(context.withUnnecessaryWildcardKind(null), element);
         flow.popSubpattern();
       }
     }
     // Stack: (n * Pattern) where n = elements.length
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isAssignableTo(matchedType, requiredType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
-          pattern: node,
-          context: irrefutableContext,
-          matchedType: matchedType,
-          requiredType: requiredType);
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
+              pattern: node,
+              context: irrefutableContext,
+              matchedType: matchedType,
+              requiredType: requiredType);
     }
-    return requiredType;
+    return new ListPatternResult(
+        requiredType: requiredType,
+        duplicateRestPatternErrors: duplicateRestPatternErrors,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a list pattern.  [elementType] is the list
@@ -752,9 +902,19 @@ mixin TypeAnalyzer<
       Node lhs,
       Node rhs) {
     // Stack: ()
-    dispatchPattern(context, lhs);
+    dispatchPattern(
+      context.withUnnecessaryWildcardKind(
+        UnnecessaryWildcardKind.logicalAndPatternOperand,
+      ),
+      lhs,
+    );
     // Stack: (Pattern left)
-    dispatchPattern(context, rhs);
+    dispatchPattern(
+      context.withUnnecessaryWildcardKind(
+        UnnecessaryWildcardKind.logicalAndPatternOperand,
+      ),
+      rhs,
+    );
     // Stack: (Pattern left, Pattern right)
   }
 
@@ -770,28 +930,80 @@ mixin TypeAnalyzer<
   /// Analyzes a logical-or pattern.  [node] is the pattern itself, and [lhs]
   /// and [rhs] are the left and right sides of the `||` operator.
   ///
+  /// Returns a [LogicalOrPatternResult] with information about reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (Pattern left, Pattern right)
-  void analyzeLogicalOrPattern(
+  LogicalOrPatternResult<Error> analyzeLogicalOrPattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Pattern node,
       Node lhs,
       Node rhs) {
     Node? irrefutableContext = context.irrefutableContext;
+    Error? refutablePatternInIrrefutableContextError;
     if (irrefutableContext != null) {
-      errors?.refutablePatternInIrrefutableContext(node, irrefutableContext);
+      refutablePatternInIrrefutableContextError =
+          errors.refutablePatternInIrrefutableContext(
+              pattern: node, context: irrefutableContext);
       // Avoid cascading errors
       context = context.makeRefutable();
     }
     // Stack: ()
     flow.logicalOrPattern_begin();
-    dispatchPattern(context, lhs);
+    Map<String, int> leftPromotionKeys = {};
+    dispatchPattern(
+      context
+          .withPromotionKeys(leftPromotionKeys)
+          .withUnnecessaryWildcardKind(null),
+      lhs,
+    );
     // Stack: (Pattern left)
+    // We'll use the promotion keys allocated during processing of the LHS as
+    // the merged keys.
+    for (MapEntry<String, int> entry in leftPromotionKeys.entries) {
+      String variableName = entry.key;
+      int promotionKey = entry.value;
+      assert(!context.patternVariablePromotionKeys.containsKey(variableName));
+      context.patternVariablePromotionKeys[variableName] = promotionKey;
+    }
     flow.logicalOrPattern_afterLhs();
-    dispatchPattern(context, rhs);
+    handle_logicalOrPattern_afterLhs(node);
+    Map<String, int> rightPromotionKeys = {};
+    dispatchPattern(
+      context
+          .withPromotionKeys(rightPromotionKeys)
+          .withUnnecessaryWildcardKind(null),
+      rhs,
+    );
     // Stack: (Pattern left, Pattern right)
+    for (MapEntry<String, int> entry in rightPromotionKeys.entries) {
+      String variableName = entry.key;
+      int rightPromotionKey = entry.value;
+      int? mergedPromotionKey = leftPromotionKeys[variableName];
+      if (mergedPromotionKey == null) {
+        // No matching variable on the LHS.  This is an error condition (which
+        // has already been reported by VariableBinder).  For error recovery,
+        // we still need to add the variable to
+        // context.patternVariablePromotionKeys so that later analysis still
+        // accounts for the presence of this variable.  So we just use the
+        // promotion key from the RHS as the merged key.
+        mergedPromotionKey = rightPromotionKey;
+        assert(!context.patternVariablePromotionKeys.containsKey(variableName));
+        context.patternVariablePromotionKeys[variableName] = mergedPromotionKey;
+      } else {
+        // Copy the promotion data over to the merged key.
+        flow.copyPromotionData(
+            sourceKey: rightPromotionKey, destinationKey: mergedPromotionKey);
+      }
+    }
+    // Since the promotion data is now all stored in the merged keys in both
+    // flow control branches, the normal join process will combine promotions
+    // accordingly.
     flow.logicalOrPattern_end();
+    return new LogicalOrPatternResult(
+        refutablePatternInIrrefutableContextError:
+            refutablePatternInIrrefutableContextError);
   }
 
   /// Computes the type schema for a logical-or pattern.  [lhs] and [rhs] are
@@ -802,7 +1014,7 @@ mixin TypeAnalyzer<
     // Logical-or patterns are only allowed in refutable contexts, and
     // refutable contexts don't propagate a type schema into the scrutinee.
     // So this code path is only reachable if the user's code contains errors.
-    errors?.assertInErrorRecovery();
+    errors.assertInErrorRecovery();
     return unknownType;
   }
 
@@ -810,10 +1022,13 @@ mixin TypeAnalyzer<
   /// contain explicit type arguments (if specified), and [elements] is the
   /// list of subpatterns.
   ///
+  /// Returns a [MapPatternResult] with the required type and information about
+  /// reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (n * MapPatternElement) where n = elements.length.
-  Type analyzeMapPattern(
+  MapPatternResult<Type, Error> analyzeMapPattern(
     MatchContext<Node, Expression, Pattern, Type, Variable> context,
     Pattern node, {
     required MapPatternTypeArguments<Type>? typeArguments,
@@ -847,23 +1062,16 @@ mixin TypeAnalyzer<
       keyType: keyType,
       valueType: valueType,
     );
-    flow.patternRequiredType(
-        matchedType: matchedType, requiredType: requiredType);
+    flow.promoteForPattern(
+        matchedType: matchedType,
+        knownType: requiredType,
+        matchMayFailEvenIfCorrectType: true);
     // Stack: ()
 
-    bool hasDuplicateRestPatternReported = false;
-    Node? previousRestPattern;
-    for (Node element in elements) {
+    for (int i = 0; i < elements.length; i++) {
+      Node element = elements[i];
       if (isRestPatternElement(element)) {
-        if (previousRestPattern != null) {
-          errors?.duplicateRestPattern(
-            mapOrListPattern: node,
-            original: previousRestPattern,
-            duplicate: element,
-          );
-          hasDuplicateRestPatternReported = true;
-        }
-        previousRestPattern = element;
+        errors.restPatternInMap(node: node, element: element);
       }
     }
 
@@ -871,23 +1079,23 @@ mixin TypeAnalyzer<
       Node element = elements[i];
       MapPatternEntry<Expression, Pattern>? entry = getMapPatternEntry(element);
       if (entry != null) {
-        analyzeExpression(entry.key, keyContext);
-        flow.pushSubpattern(valueType, isDistinctValue: true);
-        dispatchPattern(context, entry.value);
-        handleMapPatternEntry(node, element);
+        Type keyType = analyzeExpression(entry.key, keyContext);
+        flow.pushSubpattern(valueType);
+        dispatchPattern(
+          context.withUnnecessaryWildcardKind(null),
+          entry.value,
+        );
+        handleMapPatternEntry(node, element, keyType);
         flow.popSubpattern();
       } else {
         assert(isRestPatternElement(element));
-        if (!hasDuplicateRestPatternReported) {
-          if (i != elements.length - 1) {
-            errors?.restPatternNotLastInMap(node, element);
-          }
-        }
         Pattern? subPattern = getRestPatternElementPattern(element);
         if (subPattern != null) {
-          errors?.restPatternWithSubPatternInMap(node, element);
-          flow.pushSubpattern(dynamicType, isDistinctValue: true);
-          dispatchPattern(context, subPattern);
+          flow.pushSubpattern(dynamicType);
+          dispatchPattern(
+            context.withUnnecessaryWildcardKind(null),
+            subPattern,
+          );
           flow.popSubpattern();
         }
         handleMapPatternRestElement(node, element);
@@ -895,16 +1103,24 @@ mixin TypeAnalyzer<
     }
     // Stack: (n * MapPatternElement) where n = elements.length
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isAssignableTo(matchedType, requiredType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
         pattern: node,
         context: irrefutableContext,
         matchedType: matchedType,
         requiredType: requiredType,
       );
     }
-    return requiredType;
+    if (elements.isEmpty) {
+      errors.emptyMapPattern(pattern: node);
+    }
+    return new MapPatternResult(
+        requiredType: requiredType,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a map pattern.  [typeArguments] contain
@@ -945,31 +1161,48 @@ mixin TypeAnalyzer<
   /// itself, [innerPattern] is the sub-pattern, and [isAssert] indicates
   /// whether this is a null-check or a null-assert pattern.
   ///
+  /// Returns a [NullCheckOrAssertPatternResult] with information about
+  /// reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (Pattern innerPattern).
-  void analyzeNullCheckOrAssertPattern(
+  NullCheckOrAssertPatternResult<Error> analyzeNullCheckOrAssertPattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Pattern node,
       Pattern innerPattern,
       {required bool isAssert}) {
     // Stack: ()
+    Error? refutablePatternInIrrefutableContextError;
+    Error? matchedTypeIsStrictlyNonNullableError;
     Node? irrefutableContext = context.irrefutableContext;
     bool matchedTypeIsStrictlyNonNullable =
         flow.nullCheckOrAssertPattern_begin(isAssert: isAssert);
     if (irrefutableContext != null && !isAssert) {
-      errors?.refutablePatternInIrrefutableContext(node, irrefutableContext);
+      refutablePatternInIrrefutableContextError =
+          errors.refutablePatternInIrrefutableContext(
+              pattern: node, context: irrefutableContext);
       // Avoid cascading errors
       context = context.makeRefutable();
     } else if (matchedTypeIsStrictlyNonNullable) {
-      errors?.matchedTypeIsStrictlyNonNullable(
+      matchedTypeIsStrictlyNonNullableError =
+          errors.matchedTypeIsStrictlyNonNullable(
         pattern: node,
         matchedType: flow.getMatchedValueType(),
       );
     }
-    dispatchPattern(context, innerPattern);
+    dispatchPattern(
+      context.withUnnecessaryWildcardKind(null),
+      innerPattern,
+    );
     // Stack: (Pattern)
     flow.nullCheckOrAssertPattern_end();
+
+    return new NullCheckOrAssertPatternResult(
+        refutablePatternInIrrefutableContextError:
+            refutablePatternInIrrefutableContextError,
+        matchedTypeIsStrictlyNonNullableError:
+            matchedTypeIsStrictlyNonNullableError);
   }
 
   /// Computes the type schema for a null-check or null-assert pattern.
@@ -985,7 +1218,7 @@ mixin TypeAnalyzer<
       // Null-check patterns are only allowed in refutable contexts, and
       // refutable contexts don't propagate a type schema into the scrutinee.
       // So this code path is only reachable if the user's code contains errors.
-      errors?.assertInErrorRecovery();
+      errors.assertInErrorRecovery();
       return unknownType;
     }
   }
@@ -995,23 +1228,26 @@ mixin TypeAnalyzer<
   /// irrefutable contexts, but can be `null` in refutable contexts, then
   /// [downwardInferObjectPatternRequiredType] is invoked to infer the type.
   ///
+  /// Returns a [ObjectPatternResult] with the required type and information
+  /// about reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (n * Pattern) where n = fields.length.
-  Type analyzeObjectPattern(
+  ObjectPatternResult<Type, Error> analyzeObjectPattern(
     MatchContext<Node, Expression, Pattern, Type, Variable> context,
     Pattern node, {
     required List<RecordPatternField<Node, Pattern>> fields,
   }) {
-    _reportDuplicateRecordPatternFields(node, fields);
+    Map<int, Error>? duplicateRecordPatternFieldErrors =
+        _reportDuplicateRecordPatternFields(node, fields);
 
     Type matchedType = flow.getMatchedValueType();
     Type requiredType = downwardInferObjectPatternRequiredType(
       matchedType: matchedType,
       pattern: node,
     );
-    flow.patternRequiredType(
-        matchedType: matchedType, requiredType: requiredType);
+    flow.promoteForPattern(matchedType: matchedType, knownType: requiredType);
 
     // If the required type is `dynamic` or `Never`, then every getter is
     // treated as having the same type.
@@ -1022,9 +1258,11 @@ mixin TypeAnalyzer<
     }
 
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isAssignableTo(matchedType, requiredType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
         pattern: node,
         context: irrefutableContext,
         matchedType: matchedType,
@@ -1039,13 +1277,20 @@ mixin TypeAnalyzer<
             receiverType: requiredType,
             field: field,
           );
-      flow.pushSubpattern(propertyType, isDistinctValue: true);
-      dispatchPattern(context, field.pattern);
+      flow.pushSubpattern(propertyType);
+      dispatchPattern(
+        context.withUnnecessaryWildcardKind(null),
+        field.pattern,
+      );
       flow.popSubpattern();
     }
     // Stack: (n * Pattern) where n = fields.length
 
-    return requiredType;
+    return new ObjectPatternResult(
+        requiredType: requiredType,
+        duplicateRecordPatternFieldErrors: duplicateRecordPatternFieldErrors,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for an object pattern.  [type] is the type
@@ -1062,32 +1307,36 @@ mixin TypeAnalyzer<
   /// the pattern, and [rhs] for the right hand side.
   ///
   /// Stack effect: pushes (Expression, Pattern).
-  ExpressionTypeAnalysisResult<Type> analyzePatternAssignment(
+  PatternAssignmentAnalysisResult<Type> analyzePatternAssignment(
       Expression node, Pattern pattern, Expression rhs) {
     // Stack: ()
-    Type rhsType = analyzeExpression(rhs, dispatchPatternSchema(pattern));
+    Type patternSchema = dispatchPatternSchema(pattern);
+    Type rhsType = analyzeExpression(rhs, patternSchema);
     // Stack: (Expression)
     flow.patternAssignment_afterRhs(rhs, rhsType);
     Map<String, List<Variable>> componentVariables = {};
+    Map<String, int> patternVariablePromotionKeys = {};
     dispatchPattern(
       new MatchContext<Node, Expression, Pattern, Type, Variable>(
         isFinal: false,
-        initializer: rhs,
         irrefutableContext: node,
-        topPattern: pattern,
         assignedVariables: <Variable, Pattern>{},
         componentVariables: componentVariables,
+        patternVariablePromotionKeys: patternVariablePromotionKeys,
       ),
       pattern,
     );
     if (componentVariables.isNotEmpty) {
       // Declared pattern variables should never appear in a pattern assignment
       // so this should never happen.
-      errors?.assertInErrorRecovery();
+      errors.assertInErrorRecovery();
     }
     flow.patternAssignment_end();
     // Stack: (Expression, Pattern)
-    return new SimpleTypeAnalysisResult<Type>(type: rhsType);
+    return new PatternAssignmentAnalysisResult<Type>(
+      patternSchema: patternSchema,
+      type: rhsType,
+    );
   }
 
   /// Analyzes a `pattern-for-in` statement or element.
@@ -1099,22 +1348,33 @@ mixin TypeAnalyzer<
   /// `for (<keyword> <pattern> in <expression>) <body>`
   ///
   /// Stack effect: pushes (Expression, Pattern).
-  void analyzePatternForIn({
+  ///
+  /// Returns a [PatternForInResult] containing information on reported errors.
+  PatternForInResult<Error> analyzePatternForIn({
     required Node node,
+    required bool hasAwait,
     required Pattern pattern,
     required Expression expression,
     required void Function() dispatchBody,
   }) {
     // Stack: ()
-    Type expressionType = analyzeExpression(expression, unknownType);
+    Type patternTypeSchema = dispatchPatternSchema(pattern);
+    Type expressionTypeSchema = hasAwait
+        ? streamType(patternTypeSchema)
+        : iterableType(patternTypeSchema);
+    Type expressionType = analyzeExpression(expression, expressionTypeSchema);
     // Stack: (Expression)
 
-    Type? elementType = operations.matchIterableType(expressionType);
+    Error? patternForInExpressionIsNotIterableError;
+    Type? elementType = hasAwait
+        ? operations.matchStreamType(expressionType)
+        : operations.matchIterableType(expressionType);
     if (elementType == null) {
       if (operations.isDynamic(expressionType)) {
         elementType = dynamicType;
       } else {
-        errors?.patternForInExpressionIsNotIterable(
+        patternForInExpressionIsNotIterableError =
+            errors.patternForInExpressionIsNotIterable(
           node: node,
           expression: expression,
           expressionType: expressionType,
@@ -1125,12 +1385,13 @@ mixin TypeAnalyzer<
     flow.patternForIn_afterExpression(elementType);
 
     Map<String, List<Variable>> componentVariables = {};
+    Map<String, int> patternVariablePromotionKeys = {};
     dispatchPattern(
       new MatchContext<Node, Expression, Pattern, Type, Variable>(
         isFinal: false,
         irrefutableContext: node,
-        topPattern: pattern,
         componentVariables: componentVariables,
+        patternVariablePromotionKeys: patternVariablePromotionKeys,
       ),
       pattern,
     );
@@ -1140,6 +1401,10 @@ mixin TypeAnalyzer<
     dispatchBody();
     flow.forEach_end();
     flow.patternForIn_end();
+
+    return new PatternForInResult(
+        patternForInExpressionIsNotIterableError:
+            patternForInExpressionIsNotIterableError);
   }
 
   /// Analyzes a patternVariableDeclaration node of the form
@@ -1154,19 +1419,21 @@ mixin TypeAnalyzer<
   /// variable pattern; [TypeAnalyzerErrors.patternDoesNotAllowLate] will be
   /// reported if any other kind of pattern is used.
   ///
+  /// Returns the type schema of the [pattern].
+  ///
   /// Stack effect: pushes (Expression, Pattern).
-  void analyzePatternVariableDeclaration(
+  Type analyzePatternVariableDeclaration(
       Node node, Pattern pattern, Expression initializer,
       {required bool isFinal, required bool isLate}) {
     // Stack: ()
     if (isLate && !isVariablePattern(pattern)) {
-      errors?.patternDoesNotAllowLate(pattern);
+      errors.patternDoesNotAllowLate(pattern: pattern);
     }
     if (isLate) {
       flow.lateInitializer_begin(node);
     }
-    Type initializerType =
-        analyzeExpression(initializer, dispatchPatternSchema(pattern));
+    Type patternSchema = dispatchPatternSchema(pattern);
+    Type initializerType = analyzeExpression(initializer, patternSchema);
     // Stack: (Expression)
     if (isLate) {
       flow.lateInitializer_end();
@@ -1174,40 +1441,57 @@ mixin TypeAnalyzer<
     flow.patternVariableDeclaration_afterInitializer(
         initializer, initializerType);
     Map<String, List<Variable>> componentVariables = {};
+    Map<String, int> patternVariablePromotionKeys = {};
     dispatchPattern(
       new MatchContext<Node, Expression, Pattern, Type, Variable>(
         isFinal: isFinal,
         isLate: isLate,
-        initializer: initializer,
         irrefutableContext: node,
-        topPattern: pattern,
         componentVariables: componentVariables,
+        patternVariablePromotionKeys: patternVariablePromotionKeys,
       ),
       pattern,
     );
-    _finishJoinedPatternVariables({}, componentVariables,
+    _finishJoinedPatternVariables(
+        {}, componentVariables, patternVariablePromotionKeys,
         location: JoinedPatternVariableLocation.singlePattern);
     flow.patternVariableDeclaration_end();
     // Stack: (Expression, Pattern)
+    return patternSchema;
   }
 
   /// Analyzes a record pattern.  [node] is the pattern itself, and [fields]
   /// is the list of subpatterns.
   ///
+  /// Returns a [RecordPatternResult] with the required type and information
+  /// about reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (n * Pattern) where n = fields.length.
-  Type analyzeRecordPattern(
+  RecordPatternResult<Type, Error> analyzeRecordPattern(
     MatchContext<Node, Expression, Pattern, Type, Variable> context,
     Pattern node, {
     required List<RecordPatternField<Node, Pattern>> fields,
   }) {
+    List<Type> demonstratedPositionalTypes = [];
+    List<NamedType<Type>> demonstratedNamedTypes = [];
     void dispatchField(
       RecordPatternField<Node, Pattern> field,
       Type matchedType,
     ) {
-      flow.pushSubpattern(matchedType, isDistinctValue: true);
-      dispatchPattern(context, field.pattern);
+      flow.pushSubpattern(matchedType);
+      dispatchPattern(
+        context.withUnnecessaryWildcardKind(null),
+        field.pattern,
+      );
+      Type demonstratedType = flow.getMatchedValueType();
+      String? name = field.name;
+      if (name == null) {
+        demonstratedPositionalTypes.add(demonstratedType);
+      } else {
+        demonstratedNamedTypes.add(new NamedType(name, demonstratedType));
+      }
       flow.popSubpattern();
     }
 
@@ -1217,7 +1501,8 @@ mixin TypeAnalyzer<
       }
     }
 
-    _reportDuplicateRecordPatternFields(node, fields);
+    Map<int, Error>? duplicateRecordPatternFieldErrors =
+        _reportDuplicateRecordPatternFields(node, fields);
 
     // Build the required type.
     int requiredTypePositionalCount = 0;
@@ -1240,8 +1525,7 @@ mixin TypeAnalyzer<
       named: requiredTypeNamedTypes,
     );
     Type matchedType = flow.getMatchedValueType();
-    flow.patternRequiredType(
-        matchedType: matchedType, requiredType: requiredType);
+    flow.promoteForPattern(matchedType: matchedType, knownType: requiredType);
 
     // Stack: ()
     RecordType<Type>? matchedRecordType = asRecordType(matchedType);
@@ -1263,16 +1547,29 @@ mixin TypeAnalyzer<
     // Stack: (n * Pattern) where n = fields.length
 
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isAssignableTo(matchedType, requiredType)) {
-      errors?.patternTypeMismatchInIrrefutableContext(
+      patternTypeMismatchInIrrefutableContextError =
+          errors.patternTypeMismatchInIrrefutableContext(
         pattern: node,
         context: irrefutableContext,
         matchedType: matchedType,
         requiredType: requiredType,
       );
     }
-    return requiredType;
+
+    Type demonstratedType = recordType(
+        positional: demonstratedPositionalTypes, named: demonstratedNamedTypes);
+    flow.promoteForPattern(
+        matchedType: matchedType,
+        knownType: demonstratedType,
+        matchFailsIfWrongType: false);
+    return new RecordPatternResult(
+        requiredType: requiredType,
+        duplicateRecordPatternFieldErrors: duplicateRecordPatternFieldErrors,
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a record pattern.
@@ -1302,49 +1599,75 @@ mixin TypeAnalyzer<
   /// This method will invoke [resolveRelationalPatternOperator] to obtain
   /// information about the operator.
   ///
-  /// Returns the type of the [operand].
+  /// Returns a [RelationalPatternResult] with the type of the [operand] and
+  /// information about reported errors.
   ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: pushes (Expression).
-  Type analyzeRelationalPattern(
+  RelationalPatternResult<Type, Error> analyzeRelationalPattern(
       MatchContext<Node, Expression, Pattern, Type, Variable> context,
       Pattern node,
       Expression operand) {
     // Stack: ()
-    TypeAnalyzerErrors<Node, Node, Expression, Variable, Type, Pattern>?
-        errors = this.errors;
+    Error? refutablePatternInIrrefutableContextError;
     Node? irrefutableContext = context.irrefutableContext;
     if (irrefutableContext != null) {
-      errors?.refutablePatternInIrrefutableContext(node, irrefutableContext);
+      refutablePatternInIrrefutableContextError =
+          errors.refutablePatternInIrrefutableContext(
+              pattern: node, context: irrefutableContext);
     }
     Type matchedValueType = flow.getMatchedValueType();
     RelationalOperatorResolution<Type>? operator =
         resolveRelationalPatternOperator(node, matchedValueType);
     Type operandContext = operator?.parameterType ?? unknownType;
     Type operandType = analyzeExpression(operand, operandContext);
+    bool isEquality;
+    switch (operator?.kind) {
+      case RelationalOperatorKind.equals:
+        isEquality = true;
+        flow.equalityRelationalPattern_end(operand, operandType,
+            notEqual: false);
+        break;
+      case RelationalOperatorKind.notEquals:
+        isEquality = true;
+        flow.equalityRelationalPattern_end(operand, operandType,
+            notEqual: true);
+        break;
+      default:
+        isEquality = false;
+        flow.nonEqualityRelationalPattern_end();
+        break;
+    }
     // Stack: (Expression)
-    if (errors != null && operator != null) {
-      Type argumentType = operator.isEquality
-          ? operations.promoteToNonNull(operandType)
-          : operandType;
+    Error? argumentTypeNotAssignableError;
+    Error? operatorReturnTypeNotAssignableToBoolError;
+    if (operator != null) {
+      Type argumentType =
+          isEquality ? operations.promoteToNonNull(operandType) : operandType;
       if (!operations.isAssignableTo(argumentType, operator.parameterType)) {
-        errors.argumentTypeNotAssignable(
-          argument: operand,
-          argumentType: argumentType,
+        argumentTypeNotAssignableError =
+            errors.relationalPatternOperandTypeNotAssignable(
+          pattern: node,
+          operandType: argumentType,
           parameterType: operator.parameterType,
         );
       }
       if (!operations.isAssignableTo(operator.returnType, boolType)) {
-        errors.relationalPatternOperatorReturnTypeNotAssignableToBool(
+        operatorReturnTypeNotAssignableToBoolError =
+            errors.relationalPatternOperatorReturnTypeNotAssignableToBool(
           pattern: node,
           returnType: operator.returnType,
         );
       }
     }
-    // TODO(johnniwinther): This doesn't scale. We probably need to pass more
-    // information, for instance whether this was an erroneous case.
-    return operandType;
+    return new RelationalPatternResult(
+        operandType: operandType,
+        refutablePatternInIrrefutableContextError:
+            refutablePatternInIrrefutableContextError,
+        operatorReturnTypeNotAssignableToBoolError:
+            operatorReturnTypeNotAssignableToBoolError,
+        argumentTypeNotAssignableError: argumentTypeNotAssignableError);
   }
 
   /// Computes the type schema for a relational pattern.
@@ -1354,15 +1677,18 @@ mixin TypeAnalyzer<
     // Relational patterns are only allowed in refutable contexts, and refutable
     // contexts don't propagate a type schema into the scrutinee.  So this
     // code path is only reachable if the user's code contains errors.
-    errors?.assertInErrorRecovery();
+    errors.assertInErrorRecovery();
     return unknownType;
   }
 
   /// Analyzes an expression of the form `switch (expression) { cases }`.
   ///
+  /// Returns a [SwitchExpressionResult] with the static type of the switch
+  /// expression and information about reported errors.
+  ///
   /// Stack effect: pushes (Expression, n * ExpressionCase), where n is the
   /// number of cases.
-  SimpleTypeAnalysisResult<Type> analyzeSwitchExpression(
+  SwitchExpressionResult<Type, Error> analyzeSwitchExpression(
       Expression node, Expression scrutinee, int numCases, Type context) {
     // Stack: ()
     Type expressionType = analyzeExpression(scrutinee, unknownType);
@@ -1370,45 +1696,55 @@ mixin TypeAnalyzer<
     handleSwitchScrutinee(expressionType);
     flow.switchStatement_expressionEnd(null, scrutinee, expressionType);
     Type? lubType;
+    Map<int, Error>? nonBooleanGuardErrors;
+    Map<int, Type>? guardTypes;
     for (int i = 0; i < numCases; i++) {
       // Stack: (Expression, i * ExpressionCase)
       SwitchExpressionMemberInfo<Node, Expression, Variable> memberInfo =
           getSwitchExpressionMemberInfo(node, i);
       flow.switchStatement_beginAlternatives();
       flow.switchStatement_beginAlternative();
+      handleSwitchBeforeAlternative(node, caseIndex: i, subIndex: 0);
       Node? pattern = memberInfo.head.pattern;
       Expression? guard;
       if (pattern != null) {
         Map<String, List<Variable>> componentVariables = {};
+        Map<String, int> patternVariablePromotionKeys = {};
         dispatchPattern(
           new MatchContext<Node, Expression, Pattern, Type, Variable>(
             isFinal: false,
             switchScrutinee: scrutinee,
-            topPattern: pattern,
             componentVariables: componentVariables,
+            patternVariablePromotionKeys: patternVariablePromotionKeys,
           ),
           pattern,
         );
         _finishJoinedPatternVariables(
           memberInfo.head.variables,
           componentVariables,
+          patternVariablePromotionKeys,
           location: JoinedPatternVariableLocation.singlePattern,
         );
         // Stack: (Expression, i * ExpressionCase, Pattern)
         guard = memberInfo.head.guard;
         bool hasGuard = guard != null;
         if (hasGuard) {
-          _checkGuardType(guard, analyzeExpression(guard, boolType));
+          Type guardType = analyzeExpression(guard, boolType);
+          Error? nonBooleanGuardError = _checkGuardType(guard, guardType);
+          (guardTypes ??= {})[i] = guardType;
+          if (nonBooleanGuardError != null) {
+            (nonBooleanGuardErrors ??= {})[i] = nonBooleanGuardError;
+          }
           // Stack: (Expression, i * ExpressionCase, Pattern, Expression)
         } else {
           handleNoGuard(node, i);
           // Stack: (Expression, i * ExpressionCase, Pattern, Expression)
         }
-        handleCaseHead(node, caseIndex: i, subIndex: 0);
+        handleCaseHead(node, memberInfo.head, caseIndex: i, subIndex: 0);
       } else {
-        handleDefault(node, i);
+        handleDefault(node, caseIndex: i, subIndex: 0);
       }
-      flow.switchStatement_endAlternative(guard);
+      flow.switchStatement_endAlternative(guard, {});
       flow.switchStatement_endAlternatives(null, hasLabels: false);
       // Stack: (Expression, i * ExpressionCase, CaseHead)
       Type type = analyzeExpression(memberInfo.expression, context);
@@ -1422,17 +1758,20 @@ mixin TypeAnalyzer<
       finishExpressionCase(node, i);
       // Stack: (Expression, (i + 1) * ExpressionCase)
     }
-    lubType ??= dynamicType;
+    lubType ??= neverType;
     // Stack: (Expression, numCases * ExpressionCase)
     flow.switchStatement_end(true);
-    return new SimpleTypeAnalysisResult<Type>(type: lubType);
+    return new SwitchExpressionResult(
+        type: lubType,
+        nonBooleanGuardErrors: nonBooleanGuardErrors,
+        guardTypes: guardTypes);
   }
 
   /// Analyzes a statement of the form `switch (expression) { cases }`.
   ///
   /// Stack effect: pushes (Expression, n * StatementCase), where n is the
   /// number of cases after merging together cases that share a body.
-  SwitchStatementTypeAnalysisResult<Type> analyzeSwitchStatement(
+  SwitchStatementTypeAnalysisResult<Type, Error> analyzeSwitchStatement(
       Statement node, Expression scrutinee, final int numCases) {
     // Stack: ()
     Type scrutineeType = analyzeExpression(scrutinee, unknownType);
@@ -1441,6 +1780,9 @@ mixin TypeAnalyzer<
     flow.switchStatement_expressionEnd(node, scrutinee, scrutineeType);
     bool hasDefault = false;
     bool lastCaseTerminates = true;
+    Map<int, Error>? switchCaseCompletesNormallyErrors;
+    Map<int, Map<int, Error>>? nonBooleanGuardErrors;
+    Map<int, Map<int, Type>>? guardTypes;
     for (int caseIndex = 0; caseIndex < numCases; caseIndex++) {
       // Stack: (Expression, numExecutionPaths * StatementCase)
       flow.switchStatement_beginAlternatives();
@@ -1455,52 +1797,65 @@ mixin TypeAnalyzer<
             heads[headIndex];
         Node? pattern = head.pattern;
         flow.switchStatement_beginAlternative();
+        handleSwitchBeforeAlternative(node,
+            caseIndex: caseIndex, subIndex: headIndex);
         Expression? guard;
         if (pattern != null) {
           Map<String, List<Variable>> componentVariables = {};
+          Map<String, int> patternVariablePromotionKeys = {};
           dispatchPattern(
             new MatchContext<Node, Expression, Pattern, Type, Variable>(
               isFinal: false,
               switchScrutinee: scrutinee,
-              topPattern: pattern,
               componentVariables: componentVariables,
+              patternVariablePromotionKeys: patternVariablePromotionKeys,
             ),
             pattern,
           );
           _finishJoinedPatternVariables(
             head.variables,
             componentVariables,
+            patternVariablePromotionKeys,
             location: JoinedPatternVariableLocation.singlePattern,
           );
           // Stack: (Expression, numExecutionPaths * StatementCase,
           //         numHeads * CaseHead, Pattern),
           guard = head.guard;
           if (guard != null) {
-            _checkGuardType(guard, analyzeExpression(guard, boolType));
+            Type guardType = analyzeExpression(guard, boolType);
+            Error? nonBooleanGuardError = _checkGuardType(guard, guardType);
+            ((guardTypes ??= {})[caseIndex] ??= {})[headIndex] = guardType;
+            if (nonBooleanGuardError != null) {
+              ((nonBooleanGuardErrors ??= {})[caseIndex] ??= {})[headIndex] =
+                  nonBooleanGuardError;
+            }
             // Stack: (Expression, numExecutionPaths * StatementCase,
             //         numHeads * CaseHead, Pattern, Expression),
           } else {
             handleNoGuard(node, caseIndex);
           }
-          handleCaseHead(node, caseIndex: caseIndex, subIndex: headIndex);
+          head = handleCaseHead(node, head,
+              caseIndex: caseIndex, subIndex: headIndex);
+          guard = head.guard;
         } else {
           hasDefault = true;
-          handleDefault(node, caseIndex);
+          handleDefault(node, caseIndex: caseIndex, subIndex: headIndex);
         }
         // Stack: (Expression, numExecutionPaths * StatementCase,
         //         numHeads * CaseHead),
-        flow.switchStatement_endAlternative(guard);
+        flow.switchStatement_endAlternative(guard, head.variables);
       }
       // Stack: (Expression, numExecutionPaths * StatementCase,
       //         numHeads * CaseHead)
-      flow.switchStatement_endAlternatives(node,
-          hasLabels: memberInfo.hasLabels);
+      PatternVariableInfo<Variable> patternVariableInfo =
+          flow.switchStatement_endAlternatives(node,
+              hasLabels: memberInfo.hasLabels);
       Map<String, Variable> variables = memberInfo.variables;
       if (memberInfo.hasLabels || heads.length > 1) {
-        // TODO(paulberry): pass the proper value for componentVariables.
         _finishJoinedPatternVariables(
           variables,
-          {},
+          patternVariableInfo.componentVariables,
+          patternVariableInfo.patternVariablePromotionKeys,
           location: JoinedPatternVariableLocation.sharedCaseScope,
         );
       }
@@ -1517,7 +1872,8 @@ mixin TypeAnalyzer<
           options.nullSafetyEnabled &&
           !options.patternsEnabled &&
           !lastCaseTerminates) {
-        errors?.switchCaseCompletesNormally(node, caseIndex, 1);
+        (switchCaseCompletesNormallyErrors ??= {})[caseIndex] = errors
+            .switchCaseCompletesNormally(node: node, caseIndex: caseIndex);
       }
       handleMergedStatementCase(node,
           caseIndex: caseIndex, isTerminating: lastCaseTerminates);
@@ -1537,12 +1893,15 @@ mixin TypeAnalyzer<
       requiresExhaustivenessValidation = false;
     }
     flow.switchStatement_end(isExhaustive);
-    return new SwitchStatementTypeAnalysisResult<Type>(
+    return new SwitchStatementTypeAnalysisResult(
       hasDefault: hasDefault,
       isExhaustive: isExhaustive,
       lastCaseTerminates: lastCaseTerminates,
       requiresExhaustivenessValidation: requiresExhaustivenessValidation,
       scrutineeType: scrutineeType,
+      switchCaseCompletesNormallyErrors: switchCaseCompletesNormallyErrors,
+      nonBooleanGuardErrors: nonBooleanGuardErrors,
+      guardTypes: guardTypes,
     );
   }
 
@@ -1568,19 +1927,23 @@ mixin TypeAnalyzer<
 
   /// Analyzes a wildcard pattern.  [node] is the pattern.
   ///
+  /// Returns a [WildcardPattern] with information about reported errors.
+  ///
   /// See [dispatchPattern] for the meaning of [context].
   ///
   /// Stack effect: none.
-  void analyzeWildcardPattern({
+  WildcardPatternResult<Error> analyzeWildcardPattern({
     required MatchContext<Node, Expression, Pattern, Type, Variable> context,
     required Pattern node,
     required Type? declaredType,
   }) {
     Type matchedType = flow.getMatchedValueType();
     Node? irrefutableContext = context.irrefutableContext;
+    Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null && declaredType != null) {
       if (!operations.isAssignableTo(matchedType, declaredType)) {
-        errors?.patternTypeMismatchInIrrefutableContext(
+        patternTypeMismatchInIrrefutableContextError =
+            errors.patternTypeMismatchInIrrefutableContext(
           pattern: node,
           context: irrefutableContext,
           matchedType: matchedType,
@@ -1588,10 +1951,26 @@ mixin TypeAnalyzer<
         );
       }
     }
+
+    bool isAlwaysMatching;
     if (declaredType != null) {
-      flow.patternRequiredType(
-          matchedType: matchedType, requiredType: declaredType);
+      isAlwaysMatching = flow.promoteForPattern(
+          matchedType: matchedType, knownType: declaredType);
+    } else {
+      isAlwaysMatching = true;
     }
+
+    UnnecessaryWildcardKind? unnecessaryWildcardKind =
+        context.unnecessaryWildcardKind;
+    if (isAlwaysMatching && unnecessaryWildcardKind != null) {
+      errors.unnecessaryWildcardPattern(
+        pattern: node,
+        kind: unnecessaryWildcardKind,
+      );
+    }
+    return new WildcardPatternResult(
+        patternTypeMismatchInIrrefutableContextError:
+            patternTypeMismatchInIrrefutableContextError);
   }
 
   /// Computes the type schema for a wildcard pattern.  [declaredType] is the
@@ -1670,12 +2049,10 @@ mixin TypeAnalyzer<
   void finishJoinedPatternVariable(
     Variable variable, {
     required JoinedPatternVariableLocation location,
-    required bool isConsistent,
+    required JoinedPatternVariableInconsistency inconsistency,
     required bool isFinal,
     required Type type,
   });
-
-  List<Variable>? getJoinedVariableComponents(Variable variable);
 
   /// If the [element] is a map pattern entry, returns it.
   MapPatternEntry<Expression, Pattern>? getMapPatternEntry(Node element);
@@ -1729,6 +2106,9 @@ mixin TypeAnalyzer<
   /// Called after visiting the `then` statement of an `if` statement.
   void handle_ifStatement_thenEnd(Statement node, Statement ifTrue) {}
 
+  /// Called after visiting the left hand side of a logical-or (`||`) pattern.
+  void handle_logicalOrPattern_afterLhs(Pattern node) {}
+
   /// Called after visiting a merged set of `case` / `default` clauses.
   ///
   /// [node] is the enclosing switch statement, [caseIndex] is the index of the
@@ -1741,20 +2121,29 @@ mixin TypeAnalyzer<
   /// Called after visiting a single `case` clause, consisting of a pattern and
   /// an optional guard.
   ///
-  /// [node] is the enclosing switch statement or switch expression and
+  /// [node] is the enclosing switch statement or switch expression,
+  /// [head] is the head to be handled, and
   /// [caseIndex] is the index of the `case` clause.
   ///
+  /// Returns the updated case head.
+  ///
   /// Stack effect: pops (Pattern, Expression) and pushes (CaseHead).
-  void handleCaseHead(Node node,
+  CaseHeadOrDefaultInfo<Node, Expression, Variable> handleCaseHead(
+      Node node, CaseHeadOrDefaultInfo<Node, Expression, Variable> head,
       {required int caseIndex, required int subIndex});
 
   /// Called after visiting a `default` clause.
   ///
   /// [node] is the enclosing switch statement or switch expression and
   /// [caseIndex] is the index of the `default` clause.
+  /// [subIndex] is the index of the case head.
   ///
   /// Stack effect: pushes (CaseHead).
-  void handleDefault(Node node, int caseIndex);
+  void handleDefault(
+    Node node, {
+    required int caseIndex,
+    required int subIndex,
+  });
 
   /// Called after visiting a rest element in a list pattern.
   ///
@@ -1764,7 +2153,8 @@ mixin TypeAnalyzer<
   /// Called after visiting an entry element in a map pattern.
   ///
   /// Stack effect: pushes (MapPatternElement).
-  void handleMapPatternEntry(Pattern container, Node entryElement);
+  void handleMapPatternEntry(
+      Pattern container, Node entryElement, Type keyType);
 
   /// Called after visiting a rest element in a map pattern.
   ///
@@ -1810,6 +2200,14 @@ mixin TypeAnalyzer<
   /// Stack effect: pushes (Statement).
   void handleNoStatement(Statement node);
 
+  /// Called before visiting a single `case` or `default` clause.
+  ///
+  /// [node] is the enclosing switch statement or switch expression and
+  /// [caseIndex] is the index of the `case` or `default` clause.
+  /// [subIndex] is the index of the case head.
+  void handleSwitchBeforeAlternative(Node node,
+      {required int caseIndex, required int subIndex});
+
   /// Called after visiting the scrutinee part of a switch statement or switch
   /// expression.  This is a hook to allow the client to start exhaustiveness
   /// analysis.
@@ -1842,6 +2240,9 @@ mixin TypeAnalyzer<
 
   /// Queries whether [pattern] is a variable pattern.
   bool isVariablePattern(Node pattern);
+
+  /// Returns the type `Iterable`, with type argument [elementType].
+  Type iterableType(Type elementType);
 
   /// Returns the type `List`, with type argument [elementType].
   Type listType(Type elementType);
@@ -1877,6 +2278,9 @@ mixin TypeAnalyzer<
   /// is called once per variable, regardless of whether the variable's type is
   /// explicit or inferred.
   void setVariableType(Variable variable, Type type);
+
+  /// Returns the type `Stream`, with type argument [elementType].
+  Type streamType(Type elementType);
 
   /// Computes the type that should be inferred for an implicitly typed variable
   /// whose initializer expression has static type [type].
@@ -1926,72 +2330,82 @@ mixin TypeAnalyzer<
     // Stack: (CollectionElement ifTrue, CollectionElement ifFalse)
   }
 
-  void _checkGuardType(Expression expression, Type type) {
+  Error? _checkGuardType(Expression expression, Type type) {
     // TODO(paulberry): harmonize this with analyzer's checkForNonBoolExpression
     // TODO(paulberry): spec says the type must be `bool` or `dynamic`.  This
     // logic permits `T extends bool`, `T promoted to bool`, or `Never`.  What
     // do we want?
     if (!operations.isAssignableTo(type, boolType)) {
-      errors?.nonBooleanCondition(expression);
+      return errors.nonBooleanCondition(node: expression);
     }
+    return null;
   }
 
   void _finishJoinedPatternVariables(
     Map<String, Variable> variables,
-    Map<String, List<Variable>> componentVariables, {
+    Map<String, List<Variable>> componentVariables,
+    Map<String, int> patternVariablePromotionKeys, {
     required JoinedPatternVariableLocation location,
   }) {
     assert(() {
       // Every entry in `variables` should match a variable we know about.
       for (String variableName in variables.keys) {
-        // TODO(paulberry): make this work properly when location is
-        // `sharedCaseScope`.
-        assert(componentVariables.containsKey(variableName) ||
-            location == JoinedPatternVariableLocation.sharedCaseScope);
+        assert(patternVariablePromotionKeys.containsKey(variableName));
       }
       return true;
     }());
-    for (MapEntry<String, Variable> entry in variables.entries) {
-      Variable variable = entry.value;
-      List<Variable>? components = getJoinedVariableComponents(variable);
-      if (components != null) {
-        bool isConsistent = true;
-        bool? resultIsFinal;
-        Type? resultType;
-        for (Variable component in components) {
-          bool componentIsFinal = isVariableFinal(component);
-          Type componentType = getVariableType(component);
-          if (resultIsFinal == null || resultType == null) {
-            resultIsFinal = componentIsFinal;
-            resultType = componentType;
-          } else {
-            bool sameFinality = resultIsFinal == componentIsFinal;
-            bool sameType =
-                _structurallyEqualAfterNormTypes(resultType, componentType);
-            if (!sameFinality || !sameType) {
-              if (location == JoinedPatternVariableLocation.singlePattern) {
-                errors?.inconsistentJoinedPatternVariable(
-                  variable: variable,
-                  component: component,
-                );
-              }
-              isConsistent = false;
-              resultIsFinal = null;
-              resultType = null;
-              break;
-            }
+    for (MapEntry<String, int> entry in patternVariablePromotionKeys.entries) {
+      String variableName = entry.key;
+      int promotionKey = entry.value;
+      Variable? variable = variables[variableName];
+      List<Variable> components = componentVariables[variableName] ?? [];
+      bool isFirst = true;
+      Type? typeIfConsistent;
+      bool? isFinalIfConsistent;
+      bool isIdenticalToComponent = false;
+      for (Variable component in components) {
+        if (identical(variable, component)) {
+          isIdenticalToComponent = true;
+        }
+        Type componentType = getVariableType(component);
+        bool isComponentFinal = isVariableFinal(component);
+        if (isFirst) {
+          typeIfConsistent = componentType;
+          isFinalIfConsistent = isComponentFinal;
+          isFirst = false;
+        } else {
+          bool inconsistencyFound = false;
+          if (typeIfConsistent != null &&
+              !_structurallyEqualAfterNormTypes(
+                  typeIfConsistent, componentType)) {
+            typeIfConsistent = null;
+            inconsistencyFound = true;
+          }
+          if (isFinalIfConsistent != null &&
+              isFinalIfConsistent != isComponentFinal) {
+            isFinalIfConsistent = null;
+            inconsistencyFound = true;
+          }
+          if (inconsistencyFound &&
+              location == JoinedPatternVariableLocation.singlePattern &&
+              variable != null) {
+            errors.inconsistentJoinedPatternVariable(
+                variable: variable, component: component);
           }
         }
-        resultIsFinal ??= false;
-        resultType ??= dynamicType;
-        finishJoinedPatternVariable(
-          variable,
-          location: location,
-          isConsistent: isConsistent,
-          isFinal: resultIsFinal,
-          type: resultType,
-        );
-        flow.declare(variable, resultType, initialized: true);
+      }
+      if (variable != null) {
+        if (!isIdenticalToComponent) {
+          finishJoinedPatternVariable(variable,
+              location: location,
+              inconsistency: typeIfConsistent != null &&
+                      isFinalIfConsistent != null
+                  ? JoinedPatternVariableInconsistency.none
+                  : JoinedPatternVariableInconsistency.differentFinalityOrType,
+              isFinal: isFinalIfConsistent ?? false,
+              type: typeIfConsistent ?? errorType);
+          flow.assignMatchedPatternVariable(variable, promotionKey);
+        }
       }
     }
   }
@@ -2040,17 +2454,17 @@ mixin TypeAnalyzer<
   }
 
   /// Reports errors for duplicate named record fields.
-  void _reportDuplicateRecordPatternFields(
-    Pattern pattern,
-    List<RecordPatternField<Node, Pattern>> fields,
-  ) {
+  Map<int, Error>? _reportDuplicateRecordPatternFields(
+      Pattern pattern, List<RecordPatternField<Node, Pattern>> fields) {
+    Map<int, Error>? errorResults;
     Map<String, RecordPatternField<Node, Pattern>> nameToField = {};
-    for (RecordPatternField<Node, Pattern> field in fields) {
+    for (int i = 0; i < fields.length; i++) {
+      RecordPatternField<Node, Pattern> field = fields[i];
       String? name = field.name;
       if (name != null) {
         RecordPatternField<Node, Pattern>? original = nameToField[name];
         if (original != null) {
-          errors?.duplicateRecordPatternField(
+          (errorResults ??= {})[i] = errors.duplicateRecordPatternField(
             objectOrRecordPattern: pattern,
             name: name,
             original: original,
@@ -2061,6 +2475,7 @@ mixin TypeAnalyzer<
         }
       }
     }
+    return errorResults;
   }
 
   bool _structurallyEqualAfterNormTypes(Type type1, Type type2) {
@@ -2078,18 +2493,11 @@ abstract class TypeAnalyzerErrors<
     Expression extends Node,
     Variable extends Object,
     Type extends Object,
-    Pattern extends Node> implements TypeAnalyzerErrorsBase {
-  /// Called if [argument] has type [argumentType], which is not assignable
-  /// to [parameterType].
-  void argumentTypeNotAssignable({
-    required Expression argument,
-    required Type argumentType,
-    required Type parameterType,
-  });
-
+    Pattern extends Node,
+    Error> implements TypeAnalyzerErrorsBase {
   /// Called if pattern support is disabled and a case constant's static type
   /// doesn't properly match the scrutinee's static type.
-  void caseExpressionTypeMismatch(
+  Error caseExpressionTypeMismatch(
       {required Expression scrutinee,
       required Expression caseExpression,
       required Type scrutineeType,
@@ -2097,14 +2505,16 @@ abstract class TypeAnalyzerErrors<
       required bool nullSafetyEnabled});
 
   /// Called for variable that is assigned more than once.
-  void duplicateAssignmentPatternVariable({
+  ///
+  /// Returns an error object that is passed on the the caller.
+  Error duplicateAssignmentPatternVariable({
     required Variable variable,
     required Pattern original,
     required Pattern duplicate,
   });
 
   /// Called for a pair of named fields have the same name.
-  void duplicateRecordPatternField({
+  Error duplicateRecordPatternField({
     required Pattern objectOrRecordPattern,
     required String name,
     required RecordPatternField<Node, Pattern> original,
@@ -2112,10 +2522,17 @@ abstract class TypeAnalyzerErrors<
   });
 
   /// Called for a duplicate rest pattern found in a list or map pattern.
-  void duplicateRestPattern({
+  Error duplicateRestPattern({
     required Pattern mapOrListPattern,
     required Node original,
     required Node duplicate,
+  });
+
+  /// Called if a map pattern does not have elements.
+  ///
+  /// [pattern] is the map pattern.
+  void emptyMapPattern({
+    required Pattern pattern,
   });
 
   /// Called when both branches have variables with the same name, but these
@@ -2128,13 +2545,21 @@ abstract class TypeAnalyzerErrors<
 
   /// Called when a null-assert or null-check pattern is used with the matched
   /// type that is strictly non-nullable, so the null check is not necessary.
-  void matchedTypeIsStrictlyNonNullable({
+  Error matchedTypeIsStrictlyNonNullable({
     required Pattern pattern,
     required Type matchedType,
   });
 
+  /// Called when the matched type of a cast pattern is a subtype of the
+  /// required type, so the cast is not necessary.
+  void matchedTypeIsSubtypeOfRequired({
+    required Pattern pattern,
+    required Type matchedType,
+    required Type requiredType,
+  });
+
   /// Called if the static type of a condition is not assignable to `bool`.
-  void nonBooleanCondition(Expression node);
+  Error nonBooleanCondition({required Expression node});
 
   /// Called if a pattern is illegally used in a variable declaration statement
   /// that is marked `late`, and that pattern is not allowed in such a
@@ -2142,13 +2567,13 @@ abstract class TypeAnalyzerErrors<
   /// declaration is a variable pattern.
   ///
   /// [pattern] is the AST node of the illegal pattern.
-  void patternDoesNotAllowLate(Node pattern);
+  void patternDoesNotAllowLate({required Node pattern});
 
   /// Called if in a pattern `for-in` statement or element, the [expression]
   /// that should be an `Iterable` (or dynamic) is actually not.
   ///
   /// [expressionType] is the actual type of the [expression].
-  void patternForInExpressionIsNotIterable({
+  Error patternForInExpressionIsNotIterable({
     required Node node,
     required Expression expression,
     required Type expressionType,
@@ -2161,7 +2586,7 @@ abstract class TypeAnalyzerErrors<
   /// the containing AST node that established an irrefutable context,
   /// [matchedType] is the matched type, and [requiredType] is the required
   /// type.
-  void patternTypeMismatchInIrrefutableContext(
+  Error patternTypeMismatchInIrrefutableContext(
       {required Pattern pattern,
       required Node context,
       required Type matchedType,
@@ -2173,34 +2598,45 @@ abstract class TypeAnalyzerErrors<
   /// containing AST node that established an irrefutable context.
   ///
   /// TODO(paulberry): move this error reporting to the parser.
-  void refutablePatternInIrrefutableContext(Node pattern, Node context);
+  Error refutablePatternInIrrefutableContext(
+      {required Node pattern, required Node context});
+
+  /// Called if the operand of the [pattern] has the type [operandType], which
+  /// is not assignable to [parameterType] of the invoked relational operator.
+  Error relationalPatternOperandTypeNotAssignable({
+    required Pattern pattern,
+    required Type operandType,
+    required Type parameterType,
+  });
 
   /// Called if the [returnType] of the invoked relational operator is not
   /// assignable to `bool`.
-  void relationalPatternOperatorReturnTypeNotAssignableToBool({
+  Error relationalPatternOperatorReturnTypeNotAssignableToBool({
     required Pattern pattern,
     required Type returnType,
   });
 
-  /// Called if a rest pattern inside a map pattern is not the last element.
+  /// Called if a rest pattern found inside a map pattern.
   ///
   /// [node] is the map pattern.  [element] is the rest pattern.
-  void restPatternNotLastInMap(Pattern node, Node element);
-
-  /// Called if a rest pattern inside a map pattern has a subpattern.
-  ///
-  /// [node] is the map pattern.  [element] is the rest pattern.
-  void restPatternWithSubPatternInMap(Pattern node, Node element);
+  void restPatternInMap({required Pattern node, required Node element});
 
   /// Called if one of the case bodies of a switch statement completes normally
   /// (other than the last case body), and the "patterns" feature is not
   /// enabled.
   ///
   /// [node] is the AST node of the switch statement.  [caseIndex] is the index
-  /// of the first case sharing the erroneous case body.  [numMergedCases] is
-  /// the number of case heads sharing the erroneous case body.
-  void switchCaseCompletesNormally(
-      Statement node, int caseIndex, int numMergedCases);
+  /// of the merged case with the erroneous case body.
+  Error switchCaseCompletesNormally(
+      {required Statement node, required int caseIndex});
+
+  /// Called when a wildcard pattern appears in the context where it is not
+  /// necessary, e.g. `0 && var _` vs. `[var _]`, and does not add anything
+  /// to type promotion, e.g. `final x = 0; if (x case int _ && > 0) {}`.
+  void unnecessaryWildcardPattern({
+    required Pattern pattern,
+    required UnnecessaryWildcardKind kind,
+  });
 }
 
 /// Base class for error reporting callbacks that might be reported either in

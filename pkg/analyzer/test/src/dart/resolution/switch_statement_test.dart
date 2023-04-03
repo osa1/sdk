@@ -48,7 +48,9 @@ SwitchStatement
             expression: IntegerLiteral
               literal: 0
               staticType: int
+            matchedValueType: Object
           operator: ?
+          matchedValueType: Object?
       colon: :
       statements
         BreakStatement
@@ -98,7 +100,9 @@ SwitchStatement
             expression: IntegerLiteral
               literal: 0
               staticType: int
+            matchedValueType: Object
           operator: ?
+          matchedValueType: Object?
       colon: :
     SwitchPatternCase
       keyword: case
@@ -108,7 +112,9 @@ SwitchStatement
             expression: IntegerLiteral
               literal: 1
               staticType: int
+            matchedValueType: Object
           operator: ?
+          matchedValueType: Object?
       colon: :
       statements
         BreakStatement
@@ -122,7 +128,9 @@ SwitchStatement
             expression: IntegerLiteral
               literal: 2
               staticType: int
+            matchedValueType: Object
           operator: ?
+          matchedValueType: Object?
       colon: :
       statements
         BreakStatement
@@ -176,6 +184,7 @@ SwitchStatement
               leftParenthesis: (
               rightParenthesis: )
             staticType: A
+          matchedValueType: Object?
       colon: :
       statements
         BreakStatement
@@ -214,6 +223,7 @@ SwitchStatement
           expression: IntegerLiteral
             literal: 0
             staticType: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: FunctionExpressionInvocation
@@ -272,6 +282,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -301,6 +312,7 @@ SwitchStatement
           name: a
           declaredElement: a@75
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -365,6 +377,7 @@ SwitchStatement
           name: a
           declaredElement: isFinal a@54
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -395,6 +408,7 @@ SwitchStatement
           name: a
           declaredElement: isFinal a@87
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -459,6 +473,7 @@ SwitchStatement
             name: a
             declaredElement: a@48
               type: int
+            matchedValueType: Object?
           operator: ||
           rightOperand: ListPattern
             leftBracket: [
@@ -473,8 +488,11 @@ SwitchStatement
                 name: a
                 declaredElement: a@58
                   type: int
+                matchedValueType: Object?
             rightBracket: ]
+            matchedValueType: Object?
             requiredType: List<Object?>
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -505,6 +523,7 @@ SwitchStatement
             name: a
             declaredElement: a@86
               type: int
+            matchedValueType: Object?
           operator: ||
           rightOperand: ListPattern
             leftBracket: [
@@ -519,8 +538,11 @@ SwitchStatement
                 name: a
                 declaredElement: a@96
                   type: int
+                matchedValueType: Object?
             rightBracket: ]
+            matchedValueType: Object?
             requiredType: List<Object?>
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -559,7 +581,8 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode
+              .PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE,
           101,
           1),
     ]);
@@ -590,6 +613,7 @@ SwitchStatement
           name: a
           declaredElement: isFinal a@54
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -619,6 +643,7 @@ SwitchStatement
           name: a
           declaredElement: a@81
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -640,7 +665,7 @@ SwitchStatement
           expression: SimpleIdentifier
             token: a
             staticElement: notConsistent a[a@54, a@81]
-            staticType: dynamic
+            staticType: int
           semicolon: ;
   rightBracket: }
 ''');
@@ -657,7 +682,8 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode
+              .PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE,
           101,
           1),
     ]);
@@ -688,6 +714,7 @@ SwitchStatement
           name: a
           declaredElement: isFinal a@54
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -717,6 +744,7 @@ SwitchStatement
           name: a
           declaredElement: a@81
             type: num
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -755,7 +783,8 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode
+              .PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE,
           95,
           1),
     ]);
@@ -785,6 +814,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -814,6 +844,7 @@ SwitchStatement
           name: a
           declaredElement: a@75
             type: num
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -852,7 +883,7 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
           80,
           1),
     ]);
@@ -876,6 +907,7 @@ SwitchStatement
           expression: IntegerLiteral
             literal: 0
             staticType: int
+          matchedValueType: Object?
       colon: :
     SwitchPatternCase
       keyword: case
@@ -890,6 +922,7 @@ SwitchStatement
           name: a
           declaredElement: a@60
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -928,7 +961,7 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
           80,
           1),
     ]);
@@ -958,6 +991,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -981,6 +1015,7 @@ SwitchStatement
           expression: IntegerLiteral
             literal: 0
             staticType: int
+          matchedValueType: Object?
       colon: :
       statements
         ExpressionStatement
@@ -1003,10 +1038,8 @@ void f(Object? x) {
   }
 }
 ''', [
-      error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
-          81,
-          1),
+      error(CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL,
+          81, 1),
     ]);
 
     final node = findNode.switchStatement('switch');
@@ -1034,6 +1067,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -1075,11 +1109,11 @@ void f(Object? x) {
   }
 }
 ''', [
+      error(WarningCode.DEAD_CODE, 55, 4),
       error(HintCode.UNREACHABLE_SWITCH_CASE, 55, 4),
-      error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
-          86,
-          1),
+      error(WarningCode.DEAD_CODE, 71, 7),
+      error(CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL,
+          86, 1),
     ]);
 
     final node = findNode.switchStatement('switch');
@@ -1102,6 +1136,7 @@ SwitchStatement
           name: a
           declaredElement: hasImplicitType a@48
             type: Object?
+          matchedValueType: Object?
       colon: :
     SwitchPatternCase
       keyword: case
@@ -1111,6 +1146,7 @@ SwitchStatement
           name: a
           declaredElement: hasImplicitType a@64
             type: Object?
+          matchedValueType: Object?
       colon: :
     SwitchDefault
       keyword: default
@@ -1136,11 +1172,9 @@ void f(Object? x) {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LABEL, 39, 8),
-      error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
-          81,
-          1),
+      error(WarningCode.UNUSED_LABEL, 39, 8),
+      error(CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL,
+          81, 1),
     ]);
 
     final node = findNode.switchStatement('switch');
@@ -1175,6 +1209,7 @@ SwitchStatement
           name: a
           declaredElement: a@61
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -1216,15 +1251,15 @@ void f(Object? x) {
 }
 ''', [
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
           95,
           1),
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
           104,
           1),
       error(
-          CompileTimeErrorCode.INCONSISTENT_PATTERN_VARIABLE_SHARED_CASE_SCOPE,
+          CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
           113,
           1),
     ]);
@@ -1254,6 +1289,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
       colon: :
     SwitchPatternCase
       keyword: case
@@ -1268,6 +1304,7 @@ SwitchStatement
           name: b
           declaredElement: b@67
             type: double
+          matchedValueType: Object?
       colon: :
     SwitchPatternCase
       keyword: case
@@ -1282,6 +1319,7 @@ SwitchStatement
           name: c
           declaredElement: c@86
             type: String
+          matchedValueType: Object?
       colon: :
       statements
         ExpressionStatement
@@ -1307,14 +1345,16 @@ SwitchStatement
   }
 
   test_variables_logicalOr() async {
-    await assertNoErrorsInCode(r'''
+    await assertErrorsInCode(r'''
 void f(Object? x) {
   switch (x) {
     case <int>[var a || var a]:
       a;
   }
 }
-''');
+''', [
+      error(WarningCode.DEAD_CODE, 56, 8),
+    ]);
 
     final node = findNode.switchStatement('switch');
     assertResolvedNodeText(node, r'''
@@ -1350,13 +1390,17 @@ SwitchStatement
                 name: a
                 declaredElement: hasImplicitType a@54
                   type: int
+                matchedValueType: int
               operator: ||
               rightOperand: DeclaredVariablePattern
                 keyword: var
                 name: a
                 declaredElement: hasImplicitType a@63
                   type: int
+                matchedValueType: int
+              matchedValueType: int
           rightBracket: ]
+          matchedValueType: Object?
           requiredType: List<int>
       colon: :
       statements
@@ -1414,6 +1458,7 @@ SwitchStatement
               name: a
               declaredElement: a@62
                 type: int
+              matchedValueType: Object?
             RelationalPattern
               operator: ==
               operand: SimpleIdentifier
@@ -1421,7 +1466,9 @@ SwitchStatement
                 staticElement: a@62
                 staticType: int
               element: dart:core::@class::Object::@method::==
+              matchedValueType: Object?
           rightBracket: ]
+          matchedValueType: Object?
           requiredType: List<Object?>
         whenClause: WhenClause
           whenKeyword: when
@@ -1485,6 +1532,7 @@ SwitchStatement
           name: a
           declaredElement: a@48
             type: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BinaryExpression
@@ -1541,6 +1589,7 @@ SwitchStatement
           expression: IntegerLiteral
             literal: 0
             staticType: int
+          matchedValueType: Object?
         whenClause: WhenClause
           whenKeyword: when
           expression: BooleanLiteral

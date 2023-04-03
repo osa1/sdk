@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-enum Enum {a, b}
+enum Enum { a, b }
 
 sealed class A {
   final Enum a;
@@ -17,67 +17,53 @@ class B extends A {
 
 void exhaustiveSwitch1(A r) {
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=∅,
+   checkingOrder={A,B},
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
   }
 }
 
 void exhaustiveSwitch2(A r) {
-      /*
-       fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-       remaining=∅,
-       subtypes={B},
-       type=A
-      */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  /*
+   checkingOrder={A,B},
+   fields={a:Enum,b:bool},
+   subtypes={B},
+   type=A
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(b: true, a: Enum.b),
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
   }
@@ -85,27 +71,23 @@ void exhaustiveSwitch2(A r) {
 
 void nonExhaustiveSwitch1(A r) {
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=B(a: Enum.b, b: false),
+   checkingOrder={A,B},
+   error=non-exhaustive:B(a: Enum.b, b: false),
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(b: true, a: Enum.b),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
   }
@@ -113,27 +95,23 @@ void nonExhaustiveSwitch1(A r) {
 
 void nonExhaustiveSwitch2(A r) {
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=B(a: Enum.a, b: false),
+   checkingOrder={A,B},
+   error=non-exhaustive:B(a: Enum.a, b: false),
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.a, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.a, b: false)|B(b: true, a: Enum.b),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
   }
@@ -141,15 +119,14 @@ void nonExhaustiveSwitch2(A r) {
 
 void nonExhaustiveSwitchWithDefault(A r) {
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
+   checkingOrder={A,B},
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
     default:
@@ -160,39 +137,31 @@ void nonExhaustiveSwitchWithDefault(A r) {
 
 void exhaustiveNullableSwitch(A? r) {
   /*
-   fields={},
-   remaining=∅,
+   checkingOrder={A?,A,Null,B},
+   expandedSubtypes={B,Null},
+   fields={a:-,b:-},
    subtypes={A,Null},
    type=A?
-  */switch (r) {
-    /*
-     remaining=A?,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|Null,
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
-    /*
-     remaining=Null,
-     space=Null
-    */case null:
+    /*space=Null*/
+    case null:
       print('null');
       break;
   }
@@ -200,33 +169,28 @@ void exhaustiveNullableSwitch(A? r) {
 
 void nonExhaustiveNullableSwitch1(A? r) {
   /*
-   fields={},
-   remaining=Null,
+   checkingOrder={A?,A,Null,B},
+   error=non-exhaustive:null,
+   expandedSubtypes={B,Null},
+   fields={a:-,b:-},
    subtypes={A,Null},
    type=A?
-  */switch (r) {
-    /*
-     remaining=A?,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|Null,
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
   }
@@ -234,33 +198,28 @@ void nonExhaustiveNullableSwitch1(A? r) {
 
 void nonExhaustiveNullableSwitch2(A? r) {
   /*
-   fields={},
-   remaining=B(a: Enum.b, b: false),
+   checkingOrder={A?,A,Null,B},
+   error=non-exhaustive:B(a: Enum.b, b: false),
+   expandedSubtypes={B,Null},
+   fields={a:-,b:-},
    subtypes={A,Null},
    type=A?
-  */switch (r) {
-    /*
-     remaining=A?,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(b: true, a: Enum.b)|Null,
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: false)|Null,
-     space=Null
-    */case null:
+    /*space=Null*/
+    case null:
       print('null');
       break;
   }
@@ -268,39 +227,33 @@ void nonExhaustiveNullableSwitch2(A? r) {
 
 void unreachableCase1(A r) {
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=∅,
+   checkingOrder={A,B},
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false) #1');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
     /*
-     remaining=∅,
+     error=unreachable,
      space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+    */
+    case A(a: Enum.a, b: false):
       print('(a, false) #2');
       break;
   }
@@ -309,39 +262,30 @@ void unreachableCase1(A r) {
 void unreachableCase2(A r) {
   // TODO(johnniwinther): Should we avoid the unreachable error here?
   /*
-   fields={a:Enum,b:bool,hashCode:int,runtimeType:Type},
-   remaining=∅,
+   checkingOrder={A,B},
+   fields={a:Enum,b:bool},
    subtypes={B},
    type=A
-  */switch (r) {
-    /*
-     remaining=A,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true),
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true),
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true),
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
-    /*
-     remaining=∅,
-     space=Null
-    */case null:
+    /*space=Null*/
+    case null:
       print('null');
       break;
   }
@@ -349,45 +293,37 @@ void unreachableCase2(A r) {
 
 void unreachableCase3(A? r) {
   /*
-   fields={},
-   remaining=∅,
+   checkingOrder={A?,A,Null,B},
+   expandedSubtypes={B,Null},
+   fields={a:-,b:-},
    subtypes={A,Null},
    type=A?
-  */switch (r) {
-    /*
-     remaining=A?,
-     space=A(a: Enum.a, b: false)
-    */case A(a: Enum.a, b: false):
+  */
+  switch (r) {
+    /*space=A(a: Enum.a, b: false)*/
+    case A(a: Enum.a, b: false):
       print('A(a, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: bool)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.b, b: false)
-    */case A(a: Enum.b, b: false):
+    /*space=A(a: Enum.b, b: false)*/
+    case A(a: Enum.b, b: false):
       print('A(b, false)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|B(a: Enum, b: true)|Null,
-     space=A(a: Enum.a, b: true)
-    */case A(a: Enum.a, b: true):
+    /*space=A(a: Enum.a, b: true)*/
+    case A(a: Enum.a, b: true):
       print('A(a, true)');
       break;
-    /*
-     remaining=B(a: Enum.b, b: true)|Null,
-     space=A(a: Enum.b, b: true)
-    */case A(a: Enum.b, b: true):
+    /*space=A(a: Enum.b, b: true)*/
+    case A(a: Enum.b, b: true):
       print('A(b, true)');
       break;
-    /*
-     remaining=Null,
-     space=Null
-    */case null:
+    /*space=Null*/ case null:
       print('null #1');
       break;
     /*
-     remaining=∅,
+     error=unreachable,
      space=Null
-    */case null:
+    */
+    case null:
       print('null #2');
       break;
   }

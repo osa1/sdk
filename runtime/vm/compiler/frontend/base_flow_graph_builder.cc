@@ -46,9 +46,9 @@ Fragment& Fragment::operator+=(const Fragment& other) {
 }
 
 Fragment& Fragment::operator<<=(Instruction* next) {
-  if (entry == NULL) {
+  if (entry == nullptr) {
     entry = current = next;
-  } else if (current != NULL) {
+  } else if (current != nullptr) {
     current->LinkTo(next);
     current = next;
   }
@@ -56,7 +56,7 @@ Fragment& Fragment::operator<<=(Instruction* next) {
 }
 
 void Fragment::Prepend(Instruction* start) {
-  if (entry == NULL) {
+  if (entry == nullptr) {
     entry = current = start;
   } else {
     start->LinkTo(entry);
@@ -65,8 +65,8 @@ void Fragment::Prepend(Instruction* start) {
 }
 
 Fragment Fragment::closed() {
-  ASSERT(entry != NULL);
-  return Fragment(entry, NULL);
+  ASSERT(entry != nullptr);
+  return Fragment(entry, nullptr);
 }
 
 Fragment operator+(const Fragment& first, const Fragment& second) {
@@ -264,14 +264,15 @@ Fragment BaseFlowGraphBuilder::UnboxedIntConstant(
 }
 
 Fragment BaseFlowGraphBuilder::MemoryCopy(classid_t src_cid,
-                                          classid_t dest_cid) {
+                                          classid_t dest_cid,
+                                          bool unboxed_length) {
   Value* length = Pop();
   Value* dest_start = Pop();
   Value* src_start = Pop();
   Value* dest = Pop();
   Value* src = Pop();
   auto copy = new (Z) MemoryCopyInstr(src, dest, src_start, dest_start, length,
-                                      src_cid, dest_cid);
+                                      src_cid, dest_cid, unboxed_length);
   return Fragment(copy);
 }
 
@@ -712,7 +713,7 @@ Fragment BaseFlowGraphBuilder::DropTemporary(LocalVariable** temp) {
 
 void BaseFlowGraphBuilder::SetTempIndex(Definition* definition) {
   definition->set_temp_index(
-      stack_ == NULL ? 0 : stack_->definition()->temp_index() + 1);
+      stack_ == nullptr ? 0 : stack_->definition()->temp_index() + 1);
 }
 
 void BaseFlowGraphBuilder::Push(Definition* definition) {
@@ -731,25 +732,25 @@ Definition* BaseFlowGraphBuilder::Peek(intptr_t depth) {
 }
 
 Value* BaseFlowGraphBuilder::Pop() {
-  ASSERT(stack_ != NULL);
+  ASSERT(stack_ != nullptr);
   Value* value = stack_;
   stack_ = value->next_use();
-  if (stack_ != NULL) stack_->set_previous_use(NULL);
+  if (stack_ != nullptr) stack_->set_previous_use(nullptr);
 
-  value->set_next_use(NULL);
-  value->set_previous_use(NULL);
+  value->set_next_use(nullptr);
+  value->set_previous_use(nullptr);
   value->definition()->ClearSSATempIndex();
   return value;
 }
 
 Fragment BaseFlowGraphBuilder::Drop() {
-  ASSERT(stack_ != NULL);
+  ASSERT(stack_ != nullptr);
   Fragment instructions;
   Definition* definition = stack_->definition();
   // The SSA renaming implementation doesn't like [LoadLocal]s without a
   // tempindex.
   if (definition->HasSSATemp() || definition->IsLoadLocal()) {
-    instructions <<= new (Z) DropTempsInstr(1, NULL);
+    instructions <<= new (Z) DropTempsInstr(1, nullptr);
   } else {
     definition->ClearTempIndex();
   }
@@ -1086,8 +1087,7 @@ Fragment BaseFlowGraphBuilder::DebugStepCheck(TokenPosition position) {
 
 Fragment BaseFlowGraphBuilder::CheckNull(TokenPosition position,
                                          LocalVariable* receiver,
-                                         const String& function_name,
-                                         bool clear_the_temp /* = true */) {
+                                         const String& function_name) {
   Fragment instructions = LoadLocal(receiver);
 
   CheckNullInstr* check_null = new (Z) CheckNullInstr(
@@ -1097,14 +1097,6 @@ Fragment BaseFlowGraphBuilder::CheckNull(TokenPosition position,
 
   // Does not use the redefinition, no `Push(check_null)`.
   instructions <<= check_null;
-
-  if (clear_the_temp) {
-    // Null out receiver to make sure it is not saved into the frame before
-    // doing the call.
-    instructions += NullConstant();
-    instructions += StoreLocal(TokenPosition::kNoSource, receiver);
-    instructions += Drop();
-  }
 
   return instructions;
 }

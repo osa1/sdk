@@ -8,13 +8,13 @@
 
 import 'final_class_extend_lib.dart';
 
-abstract class AOutside extends FinalClass {}
-// ^
-// [analyzer] unspecified
-// [cfe] unspecified
+abstract final class AOutside extends FinalClass {}
+//                                    ^^^^^^^^^^
+// [analyzer] COMPILE_TIME_ERROR.INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY
+// [cfe] The class 'FinalClass' can't be extended outside of its library because it's a final class.
 
-class BOutside extends FinalClass {
-// ^
-// [analyzer] unspecified
-// [cfe] unspecified
+final class BOutside extends FinalClass {
+//                           ^^^^^^^^^^
+// [analyzer] COMPILE_TIME_ERROR.INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY
+// [cfe] The class 'FinalClass' can't be extended outside of its library because it's a final class.
 }

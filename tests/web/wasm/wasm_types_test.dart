@@ -22,9 +22,22 @@ WasmStructRef? structRef;
 
 int funCount = 0;
 
-void fun(WasmEqRef arg) {
+WasmVoid? fun(WasmEqRef arg) {
   funCount++;
   Expect.equals("Dart object", arg.toObject());
+}
+
+class WasmFields {
+  final WasmI32 i32;
+  final WasmI64 i64;
+  final WasmF32 f32;
+  final WasmF64 f64;
+
+  const WasmFields(this.i32, this.i64, this.f32, this.f64);
+
+  @override
+  String toString() => "${i32.toIntSigned()} ${i64.toInt()} "
+      "${f32.toDouble()} ${f64.toDouble()}";
 }
 
 test() {
@@ -32,7 +45,7 @@ test() {
   Object dartObject1 = "1";
   Object dartObject2 = true;
   Object dartObject3 = Object();
-  WasmAnyRef jsObject1 = createObject(null)!.internalize();
+  WasmAnyRef jsObject1 = createObject(WasmExternRef.nullRef)!.internalize();
 
   // A JS object is not a Dart object.
   Expect.isFalse(jsObject1.isObject);
@@ -72,6 +85,18 @@ test() {
   Expect.notEquals(7.1, 7.1.toWasmF32().toDouble());
   Expect.equals(8.0, 8.0.toWasmF64().toDouble());
 
+  const wasmConst = const WasmFields(
+      const WasmI32(2), const WasmI64(3), const WasmF32(4), const WasmF64(5));
+  Expect.isFalse(wasmConst.i32 == const WasmI32(1));
+  Expect.isFalse(wasmConst.i64 == const WasmI64(1));
+  Expect.isFalse(wasmConst.f32 == const WasmF32(1));
+  Expect.isFalse(wasmConst.f64 == const WasmF64(1));
+  Expect.isTrue(wasmConst.i32 == const WasmI32(2));
+  Expect.isTrue(wasmConst.i64 == const WasmI64(3));
+  Expect.isTrue(wasmConst.f32 == const WasmF32(4));
+  Expect.isTrue(wasmConst.f64 == const WasmF64(5));
+  Expect.equals("2 3 4.0 5.0", wasmConst.toString());
+
   // Create a typed function reference for a Dart function and call it, both
   // directly and from JS.
   var dartObjectRef = WasmEqRef.fromObject("Dart object");
@@ -81,12 +106,13 @@ test() {
 
   // Cast a typed function reference to a `funcref` and back.
   WasmFuncRef funcref = WasmFuncRef.fromWasmFunction(ff);
-  var ff2 = WasmFunction<void Function(WasmEqRef)>.fromFuncRef(funcref);
+  var ff2 = WasmFunction<WasmVoid? Function(WasmEqRef)>.fromFuncRef(funcref);
   ff2.call(dartObjectRef);
 
   // Create a typed function reference from an import and call it.
   var createObjectFun = WasmFunction.fromFunction(createObject);
-  WasmAnyRef jsObject3 = createObjectFun.call(null).internalize()!;
+  WasmAnyRef jsObject3 =
+      createObjectFun.call(WasmExternRef.nullRef).internalize()!;
   Expect.isFalse(jsObject3.isObject);
 
   Expect.equals(3, funCount);

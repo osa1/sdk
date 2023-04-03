@@ -121,6 +121,24 @@ class A<E> extends B<E> implements D<E> {
 ''');
   }
 
+  test_mixinDeclaresConstructor() async {
+    await assertNoErrorsInCode(r'''
+mixin class A {
+  m() {}
+}
+class B extends Object with A {}
+''');
+  }
+
+  test_mixinDeclaresConstructor_factory() async {
+    await assertNoErrorsInCode(r'''
+mixin class A {
+  factory A() => throw 0;
+}
+class B extends Object with A {}
+''');
+  }
+
   test_no_call_tearoff_on_promoted_var() async {
     await assertNoErrorsInCode('''
 class B {
@@ -277,7 +295,7 @@ main() {
   new N2();
 }
 ''', [
-      error(HintCode.UNUSED_SHOWN_NAME, 44, 1),
+      error(WarningCode.UNUSED_SHOWN_NAME, 44, 1),
     ]);
   }
 
@@ -475,7 +493,7 @@ f() {
   -x;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 14, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 14, 1),
     ]);
   }
 
@@ -549,7 +567,7 @@ main() {
   F f = (int i) async => i;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 43, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 43, 1),
     ]);
   }
 
@@ -676,7 +694,7 @@ f(list) async {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 33, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 33, 1),
     ]);
   }
 
@@ -687,7 +705,7 @@ f(list) async* {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 34, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 34, 1),
     ]);
   }
 
@@ -770,7 +788,7 @@ f() {
   dynamic x;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 16, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 16, 1),
     ]);
   }
 
@@ -782,7 +800,7 @@ f() {
 class C = D with E;
 
 class D {}
-class E {}
+mixin E {}
 ''');
     CompilationUnit unit = result.unit;
     ClassElement classC = unit.declaredElement!.getClass('C')!;
@@ -1036,7 +1054,7 @@ main() {
   const int x = 0;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 21, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 21, 1),
     ]);
   }
 
@@ -1153,7 +1171,7 @@ main() {
   var v = dynamic;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 15, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 15, 1),
     ]);
   }
 
@@ -1647,8 +1665,8 @@ library test;
 import 'lib.dart';
 import 'lib.dart';
 ''', [
-      error(HintCode.UNUSED_IMPORT, 21, 10),
-      error(HintCode.UNUSED_IMPORT, 40, 10),
+      error(WarningCode.UNUSED_IMPORT, 21, 10),
+      error(WarningCode.UNUSED_IMPORT, 40, 10),
       error(WarningCode.DUPLICATE_IMPORT, 40, 10),
     ]);
   }
@@ -1662,8 +1680,8 @@ library test;
 import 'lib1.dart';
 import 'lib2.dart';
 ''', [
-      error(HintCode.UNUSED_IMPORT, 21, 11),
-      error(HintCode.UNUSED_IMPORT, 41, 11),
+      error(WarningCode.UNUSED_IMPORT, 21, 11),
+      error(WarningCode.UNUSED_IMPORT, 41, 11),
     ]);
   }
 
@@ -1974,9 +1992,9 @@ class A {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 26, 5),
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 41, 5),
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 56, 5),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 26, 5),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 41, 5),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 56, 5),
     ]);
   }
 
@@ -2050,7 +2068,7 @@ class C implements B {
 
   test_invalidOverrideReturnType_returnType_mixin() async {
     await assertNoErrorsInCode(r'''
-class A {
+mixin A {
   num m() { return 0; }
 }
 class B extends Object with A {
@@ -2170,7 +2188,7 @@ void main() {
   String p = z;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 93, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 93, 1),
       error(CompileTimeErrorCode.INVALID_ASSIGNMENT, 97, 1),
     ]);
     var z = result.unit.declaredElement!.topLevelVariables
@@ -2227,7 +2245,7 @@ h(bool b) {
   Map<num, String> m = (b ? f : g)('x');
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 104, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 104, 1),
     ]);
     var parameter = findNode.stringLiteral("'x'").staticParameterElement;
     expect(parameter!.library, isNull);
@@ -2387,24 +2405,6 @@ class C {
 ''');
   }
 
-  test_mixinDeclaresConstructor() async {
-    await assertNoErrorsInCode(r'''
-class A {
-  m() {}
-}
-class B extends Object with A {}
-''');
-  }
-
-  test_mixinDeclaresConstructor_factory() async {
-    await assertNoErrorsInCode(r'''
-class A {
-  factory A() => throw 0;
-}
-class B extends Object with A {}
-''');
-  }
-
   test_multipleSuperInitializers_no() async {
     await assertNoErrorsInCode(r'''
 class A {}
@@ -2466,7 +2466,7 @@ f2() {
   !dynamic;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 47, 7),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 47, 7),
     ]);
   }
 
@@ -2598,7 +2598,7 @@ f() {
   var m = {'a' : 0, 'b' : 1};
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 12, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 12, 1),
     ]);
   }
 
@@ -2628,7 +2628,7 @@ class A {
   const A.b2(bool p) : v = true || p;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 167, 4),
+      error(WarningCode.DEAD_CODE, 167, 4),
     ]);
   }
 
@@ -2949,7 +2949,7 @@ f() {
   var x = new A.x();
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 35, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 35, 1),
     ]);
   }
 
@@ -2962,7 +2962,7 @@ f(A a) {
   var x = a.x();
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 36, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 36, 1),
     ]);
   }
 
@@ -2975,7 +2975,7 @@ f(A a) {
   var x = a.x;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 36, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 36, 1),
     ]);
   }
 
@@ -3273,7 +3273,7 @@ void testNewSet(Set<C> setEls) {
       newSet: <T>() => customNewSet = new Set<T>());
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 51, 12),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 51, 12),
     ]);
   }
 
@@ -3322,6 +3322,24 @@ main(p) {
     ]);
   }
 
+  test_mixinDeclaresConstructor() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  m() {}
+}
+class B extends Object with A {}
+''');
+  }
+
+  test_mixinDeclaresConstructor_factory() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  factory A() => throw 0;
+}
+class B extends Object with A {}
+''');
+  }
+
   test_typePromotion_conditional_issue14655() async {
     await assertNoErrorsInCode(r'''
 class A {}
@@ -3361,7 +3379,7 @@ main(FuncAtoDyn f) {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 115, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 115, 1),
     ]);
   }
 
@@ -3376,7 +3394,7 @@ main(FuncDynToVoid f) {
   }
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 124, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 124, 1),
     ]);
   }
 

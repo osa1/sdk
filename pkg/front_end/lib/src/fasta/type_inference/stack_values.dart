@@ -5,11 +5,12 @@
 import 'package:_fe_analyzer_shared/src/util/null_value.dart';
 import 'package:_fe_analyzer_shared/src/util/value_kind.dart';
 import 'package:kernel/ast.dart' as type;
-import '../kernel/internal_ast.dart' as type;
 
 class NullValues {
   static const NullValue<type.Expression> Expression =
       const NullValue<type.Expression>();
+  static const NullValue<type.MapLiteralEntry> MapLiteralEntry =
+      const NullValue<type.MapLiteralEntry>();
   static const NullValue<type.Pattern> Pattern =
       const NullValue<type.Pattern>();
   static const NullValue<type.Statement> Statement =
@@ -23,6 +24,10 @@ class ValueKinds {
       const SingleValueKind<type.Expression>();
   static const SingleValueKind<type.Expression> ExpressionOrNull =
       const SingleValueKind<type.Expression>(NullValues.Expression);
+  static const SingleValueKind<type.MapLiteralEntry> MapLiteralEntry =
+      const SingleValueKind<type.MapLiteralEntry>();
+  static const SingleValueKind<type.MapLiteralEntry> MapLiteralEntryOrNull =
+      const SingleValueKind<type.MapLiteralEntry>(NullValues.MapLiteralEntry);
   static const SingleValueKind<type.MapPatternEntry> MapPatternEntry =
       const SingleValueKind<type.MapPatternEntry>();
   static const SingleValueKind<type.Pattern> Pattern =

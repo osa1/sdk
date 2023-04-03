@@ -83,7 +83,6 @@ import 'constant_evaluator.dart' as constants
         transformProcedure,
         ConstantCoverage,
         ConstantEvaluationData;
-import 'exhaustiveness.dart';
 import 'kernel_constants.dart' show KernelConstantErrorReporter;
 import 'kernel_helper.dart';
 import 'macro/macro.dart';
@@ -162,8 +161,6 @@ class KernelTarget extends TargetImplementation {
   final ProcessedOptions _options;
 
   final Benchmarker? benchmarker;
-
-  final ExhaustivenessInfo exhaustivenessInfo = new ExhaustivenessInfo();
 
   KernelTarget(this.fileSystem, this.includeComments, DillTarget dillTarget,
       this.uriTranslator)
@@ -1539,7 +1536,6 @@ class KernelTarget extends TargetImplementation {
             environment,
             new KernelConstantErrorReporter(loader),
             evaluationMode,
-            exhaustivenessInfo,
             evaluateAnnotations: true,
             enableTripleShift: globalFeatures.tripleShift.isEnabled,
             enableConstFunctions: globalFeatures.constFunctions.isEnabled,
@@ -1548,8 +1544,6 @@ class KernelTarget extends TargetImplementation {
             errorOnUnevaluatedConstant: errorOnUnevaluatedConstant,
             exhaustivenessDataForTesting:
                 loader.dataForTesting?.exhaustivenessData);
-    assert(exhaustivenessInfo.isEmpty,
-        "Unhandled exhaustiveness for ${exhaustivenessInfo.nodes}.");
     ticker.logMs("Evaluated constants");
 
     markLibrariesUsed(constantEvaluationData.visitedLibraries);
@@ -1598,15 +1592,12 @@ class KernelTarget extends TargetImplementation {
       environment,
       new KernelConstantErrorReporter(loader),
       evaluationMode,
-      exhaustivenessInfo,
       evaluateAnnotations: true,
       enableTripleShift: globalFeatures.tripleShift.isEnabled,
       enableConstFunctions: globalFeatures.constFunctions.isEnabled,
       enableConstructorTearOff: globalFeatures.constructorTearoffs.isEnabled,
       errorOnUnevaluatedConstant: errorOnUnevaluatedConstant,
     );
-    assert(exhaustivenessInfo.isEmpty,
-        "Unhandled exhaustiveness for ${exhaustivenessInfo.nodes}.");
     ticker.logMs("Evaluated constants");
 
     backendTarget.performTransformationsOnProcedure(
@@ -1618,7 +1609,6 @@ class KernelTarget extends TargetImplementation {
       _getConstantEvaluationMode();
 
   constants.EvaluationMode _getConstantEvaluationMode() {
-    constants.EvaluationMode evaluationMode;
     // If nnbd is not enabled we will use weak evaluation mode. This is needed
     // because the SDK might be agnostic and therefore needs to be weakened
     // for legacy mode.
@@ -1627,18 +1617,7 @@ class KernelTarget extends TargetImplementation {
             loader.nnbdMode == NnbdMode.Weak,
         "Non-weak nnbd mode found without experiment enabled: "
         "${loader.nnbdMode}.");
-    switch (loader.nnbdMode) {
-      case NnbdMode.Weak:
-        evaluationMode = constants.EvaluationMode.weak;
-        break;
-      case NnbdMode.Strong:
-        evaluationMode = constants.EvaluationMode.strong;
-        break;
-      case NnbdMode.Agnostic:
-        evaluationMode = constants.EvaluationMode.agnostic;
-        break;
-    }
-    return evaluationMode;
+    return constants.EvaluationMode.fromNnbdMode(loader.nnbdMode);
   }
 
   void verify() {

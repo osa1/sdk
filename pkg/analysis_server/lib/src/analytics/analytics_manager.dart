@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:analysis_server/lsp_protocol/protocol.dart';
 import 'package:analysis_server/protocol/protocol_constants.dart';
 import 'package:analysis_server/src/analytics/active_request_data.dart';
+import 'package:analysis_server/src/analytics/context_structure.dart';
 import 'package:analysis_server/src/analytics/notification_data.dart';
 import 'package:analysis_server/src/analytics/plugin_data.dart';
 import 'package:analysis_server/src/analytics/request_data.dart';
@@ -17,7 +18,7 @@ import 'package:analysis_server/src/protocol_server.dart';
 import 'package:analysis_server/src/status/pages.dart';
 import 'package:analyzer/dart/analysis/analysis_context.dart';
 import 'package:collection/collection.dart';
-import 'package:telemetry/telemetry.dart';
+import 'package:unified_analytics/unified_analytics.dart';
 
 /// An interface for managing and reporting analytics.
 ///
@@ -26,6 +27,10 @@ import 'package:telemetry/telemetry.dart';
 /// required to invoke the [shutdown] method before the server shuts down in
 /// order to send any cached data.
 class AnalyticsManager {
+  /// A flag set during development to allow experimental data to be sent to a
+  /// development-time analytics account.
+  static const bool sendExperimentalData = false;
+
   /// The object used to send analytics.
   final Analytics analytics;
 
@@ -34,6 +39,9 @@ class AnalyticsManager {
   SessionData? _sessionData;
 
   final PluginData _pluginData = PluginData();
+
+  /// The data about analysis, or `null` if no analysis has been performed.
+  ContextStructure? _contextStructure;
 
   /// A map from the id of a request to data about the request.
   final Map<String, ActiveRequestData> _activeRequests = {};
@@ -58,6 +66,40 @@ class AnalyticsManager {
   /// Initialize a newly created analytics manager to report to the [analytics]
   /// service.
   AnalyticsManager(this.analytics);
+
+  /// Record information about the number of files and the numer of lines of
+  /// code in those files, for both immediate files, transitive files, and the
+  /// number of unique transitive files.
+  void analysisComplete({
+    required int numberOfContexts,
+    required int contextsWithoutFiles,
+    required int contextsFromPackagesFiles,
+    required int contextsFromOptionsFiles,
+    required int contextsFromBothFiles,
+    required int immediateFileCount,
+    required int immediateFileLineCount,
+    required int transitiveFileCount,
+    required int transitiveFileLineCount,
+    required int transitiveFileUniqueCount,
+    required int transitiveFileUniqueLineCount,
+  }) {
+    // This is currently keeping the first report of completed analysis, but we
+    // might want to consider alternatives, such as keeping the "largest"
+    // analysis or keeping all of the data and sending back percentile.
+    _contextStructure ??= ContextStructure(
+      numberOfContexts: numberOfContexts,
+      contextsWithoutFiles: contextsWithoutFiles,
+      contextsFromPackagesFiles: contextsFromPackagesFiles,
+      contextsFromOptionsFiles: contextsFromOptionsFiles,
+      contextsFromBothFiles: contextsFromBothFiles,
+      immediateFileCount: immediateFileCount,
+      immediateFileLineCount: immediateFileLineCount,
+      transitiveFileCount: transitiveFileCount,
+      transitiveFileLineCount: transitiveFileLineCount,
+      transitiveFileUniqueCount: transitiveFileUniqueCount,
+      transitiveFileUniqueLineCount: transitiveFileUniqueLineCount,
+    );
+  }
 
   /// Record that the set of plugins known to the [pluginManager] has changed.
   void changedPlugins(PluginManager pluginManager) {
@@ -153,21 +195,16 @@ class AnalyticsManager {
   }
 
   /// The server is shutting down. Report any accumulated analytics data.
-  void shutdown() {
+  Future<void> shutdown() async {
     final sessionData = _sessionData;
     if (sessionData == null) {
       return;
     }
-    _sendSessionData(sessionData);
-    _sendServerResponseTimes();
-    _sendPluginResponseTimes();
-    _sendNotificationHandlingTimes();
-    _sendLintUsageCounts();
-    _sendSeverityAdjustments();
+    await _sendSessionData(sessionData);
+    await _sendPeriodicData();
+    await _sendAnalysisData();
 
-    analytics.waitForLastPing(timeout: Duration(milliseconds: 200)).then((_) {
-      analytics.close();
-    });
+    analytics.close();
   }
 
   /// Record data from the given [params].
@@ -211,20 +248,17 @@ class AnalyticsManager {
 
   /// Record that the server was started at the given [time], that it was passed
   /// the given command-line [arguments], that it was started by the client with
-  /// the given [clientId] and [clientVersion], and that it was invoked from an
-  /// SDK with the given [sdkVersion].
+  /// the given [clientId] and [clientVersion].
   void startUp(
       {required DateTime time,
       required List<String> arguments,
       required String clientId,
-      required String? clientVersion,
-      required String sdkVersion}) {
+      required String? clientVersion}) {
     _sessionData = SessionData(
         startTime: time,
         commandLineArguments: arguments.join(','),
         clientId: clientId,
-        clientVersion: clientVersion ?? '',
-        sdkVersion: sdkVersion);
+        clientVersion: clientVersion ?? '');
   }
 
   /// Return an HTML representation of the data that has been recorded.
@@ -265,7 +299,6 @@ class AnalyticsManager {
     li('duration: ${duration.toString()}');
     li('flags: ${sessionData.commandLineArguments}');
     li('parameters: ${sessionData.initializeParams}');
-    li('sdkVersion: ${sessionData.sdkVersion}');
     li('plugins: ${_pluginData.usageCountData}');
     buffer.writeln('</ul>');
 
@@ -330,6 +363,24 @@ class AnalyticsManager {
       buffer.writeln('</ul>');
     }
 
+    var analysisData = _contextStructure;
+    if (analysisData != null) {
+      h3('Analysis data');
+      buffer.writeln('<ul>');
+      li('numberOfContexts: ${json.encode(analysisData.numberOfContexts)}');
+      li('contextsWithoutFiles: ${json.encode(analysisData.contextsWithoutFiles)}');
+      li('contextsFromPackagesFiles: ${json.encode(analysisData.contextsFromPackagesFiles)}');
+      li('contextsFromOptionsFiles: ${json.encode(analysisData.contextsFromOptionsFiles)}');
+      li('contextsFromBothFiles: ${json.encode(analysisData.contextsFromBothFiles)}');
+      li('immediateFileCount: ${json.encode(analysisData.immediateFileCount)}');
+      li('immediateFileLineCount: ${json.encode(analysisData.immediateFileLineCount)}');
+      li('transitiveFileCount: ${json.encode(analysisData.transitiveFileCount)}');
+      li('transitiveFileLineCount: ${json.encode(analysisData.transitiveFileLineCount)}');
+      li('transitiveFileUniqueCount: ${json.encode(analysisData.transitiveFileUniqueCount)}');
+      li('transitiveFileUniqueLineCount: ${json.encode(analysisData.transitiveFileUniqueLineCount)}');
+      buffer.writeln('</ul>');
+    }
+
     return buffer.toString();
   }
 
@@ -361,18 +412,45 @@ class AnalyticsManager {
     requestData.responseTimes.addValue(responseTime);
   }
 
-  void _sendLintUsageCounts() {
+  /// Send information about the number of files and the numer of lines of code
+  /// in those files.
+  Future<void> _sendAnalysisData() async {
+    var contextStructure = _contextStructure;
+    if (contextStructure != null) {
+      await analytics
+          .sendEvent(eventName: DashEvent.contextStructure, eventData: {
+        'numberOfContexts': contextStructure.numberOfContexts,
+        'contextsWithoutFiles': contextStructure.contextsWithoutFiles,
+        'contextsFromPackagesFiles': contextStructure.contextsFromPackagesFiles,
+        'contextsFromOptionsFiles': contextStructure.contextsFromOptionsFiles,
+        'contextsFromBothFiles': contextStructure.contextsFromBothFiles,
+        'immediateFileCount': contextStructure.immediateFileCount,
+        'immediateFileLineCount': contextStructure.immediateFileLineCount,
+        'transitiveFileCount': contextStructure.transitiveFileCount,
+        'transitiveFileLineCount': contextStructure.transitiveFileLineCount,
+        'transitiveFileUniqueCount': contextStructure.transitiveFileUniqueCount,
+        'transitiveFileUniqueLineCount':
+            contextStructure.transitiveFileUniqueLineCount,
+      });
+    }
+  }
+
+  /// Send information about the number of times each lint is enabled in an
+  /// analysis options file.
+  Future<void> _sendLintUsageCounts() async {
     if (_lintUsageCounts.isNotEmpty) {
-      analytics.sendEvent('language_server', 'lintUsageCounts', parameters: {
+      await analytics
+          .sendEvent(eventName: DashEvent.lintUsageCounts, eventData: {
         'usageCounts': json.encode(_lintUsageCounts),
       });
     }
   }
 
   /// Send information about the notifications handled by the server.
-  void _sendNotificationHandlingTimes() {
+  Future<void> _sendNotificationHandlingTimes() async {
     for (var data in _completedNotifications.values) {
-      analytics.sendEvent('language_server', 'notification', parameters: {
+      await analytics
+          .sendEvent(eventName: DashEvent.clientNotification, eventData: {
         'latency': data.latencyTimes.toAnalyticsString(),
         'method': data.method,
         'duration': data.handlingTimes.toAnalyticsString(),
@@ -380,12 +458,23 @@ class AnalyticsManager {
     }
   }
 
+  /// Send the information that is sent periodically, which is everything other
+  /// than the session data.
+  Future<void> _sendPeriodicData() async {
+    await _sendServerResponseTimes();
+    await _sendPluginResponseTimes();
+    await _sendNotificationHandlingTimes();
+    await _sendLintUsageCounts();
+    await _sendSeverityAdjustments();
+  }
+
   /// Send information about the response times of plugins.
-  void _sendPluginResponseTimes() {
+  Future<void> _sendPluginResponseTimes() async {
     var responseTimes = PluginManager.pluginResponseTimes;
     for (var pluginEntry in responseTimes.entries) {
       for (var responseEntry in pluginEntry.value.entries) {
-        analytics.sendEvent('language_server', 'pluginRequest', parameters: {
+        await analytics
+            .sendEvent(eventName: DashEvent.pluginRequest, eventData: {
           'pluginId': pluginEntry.key.pluginId,
           'method': responseEntry.key,
           'duration': responseEntry.value.toAnalyticsString(),
@@ -395,9 +484,9 @@ class AnalyticsManager {
   }
 
   /// Send information about the response times of server.
-  void _sendServerResponseTimes() {
+  Future<void> _sendServerResponseTimes() async {
     for (var data in _completedRequests.values) {
-      analytics.sendEvent('language_server', 'request', parameters: {
+      await analytics.sendEvent(eventName: DashEvent.clientRequest, eventData: {
         'latency': data.latencyTimes.toAnalyticsString(),
         'method': data.method,
         'duration': data.responseTimes.toAnalyticsString(),
@@ -410,24 +499,25 @@ class AnalyticsManager {
   }
 
   /// Send information about the session.
-  void _sendSessionData(SessionData sessionData) {
+  Future<void> _sendSessionData(SessionData sessionData) async {
     var endTime = DateTime.now().millisecondsSinceEpoch;
     var duration = endTime - sessionData.startTime.millisecondsSinceEpoch;
-    analytics.sendEvent('language_server', 'session', parameters: {
+    await analytics.sendEvent(eventName: DashEvent.serverSession, eventData: {
       'flags': sessionData.commandLineArguments,
       'parameters': sessionData.initializeParams,
       'clientId': sessionData.clientId,
       'clientVersion': sessionData.clientVersion,
-      'sdkVersion': sessionData.sdkVersion,
       'duration': duration.toString(),
       'plugins': _pluginData.usageCountData,
     });
   }
 
-  void _sendSeverityAdjustments() {
+  /// Send information about the number of times that the severity of a
+  /// diagnostic is changed in an analysis options file.
+  Future<void> _sendSeverityAdjustments() async {
     if (_severityAdjustments.isNotEmpty) {
-      analytics
-          .sendEvent('language_server', 'severityAdjustments', parameters: {
+      await analytics
+          .sendEvent(eventName: DashEvent.severityAdjustments, eventData: {
         'adjustmentCounts': json.encode(_severityAdjustments),
       });
     }

@@ -26,7 +26,7 @@ f(var message, var dynamic_) {
   int s = message;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 94, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 94, 1),
     ]);
   }
 
@@ -43,7 +43,7 @@ f(var message) {
   int s = message;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 119, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 119, 1),
     ]);
   }
 
@@ -59,7 +59,7 @@ f(var message) {
   String s = message;
 }
 ''', [
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 100, 1),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 100, 1),
     ]);
   }
 
@@ -152,46 +152,10 @@ import 'package:somepackage/other.dart';
     ]);
   }
 
-  test_import_packageWithDotDot() async {
-    await assertErrorsInCode('''
-import 'package:somepackage/../other.dart';
-''', [
-      error(CompileTimeErrorCode.URI_DOES_NOT_EXIST, 0, 0),
-      error(HintCode.PACKAGE_IMPORT_CONTAINS_DOT_DOT, 0, 0),
-    ]);
-  }
-
-  test_import_packageWithLeadingDotDot() async {
-    await assertErrorsInCode('''
-import 'package:../other.dart';
-''', [
-      error(CompileTimeErrorCode.URI_DOES_NOT_EXIST, 0, 0),
-      error(HintCode.PACKAGE_IMPORT_CONTAINS_DOT_DOT, 0, 0),
-    ]);
-  }
-
-  test_import_referenceIntoLibDirectory() async {
-    newFile("/myproj/pubspec.yaml", '');
-    newFile("/myproj/lib/other.dart", '');
-    await _assertErrorsInCodeInFile(
-        "/myproj/web/test.dart", "import '../lib/other.dart';", [
-      error(HintCode.FILE_IMPORT_OUTSIDE_LIB_REFERENCES_FILE_INSIDE, 0, 0),
-    ]);
-  }
-
   test_import_referenceIntoLibDirectory_no_pubspec() async {
     newFile("/myproj/lib/other.dart", '');
     await _assertErrorsInCodeInFile(
         "/myproj/web/test.dart", "import '../lib/other.dart';", []);
-  }
-
-  test_import_referenceOutOfLibDirectory() async {
-    newFile("/myproj/pubspec.yaml", '');
-    newFile("/myproj/web/other.dart", '');
-    await _assertErrorsInCodeInFile(
-        "/myproj/lib/test.dart", "import '../web/other.dart';", [
-      error(HintCode.FILE_IMPORT_INSIDE_LIB_REFERENCES_FILE_OUTSIDE, 0, 0),
-    ]);
   }
 
   test_import_referenceOutOfLibDirectory_no_pubspec() async {

@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:front_end/src/api_prototype/static_weak_references.dart' as ir
+    show StaticWeakReferences;
 import 'package:js_runtime/synced/embedded_names.dart';
 import 'package:js_shared/synced/embedded_names.dart'
     show JsBuiltin, JsGetName, TYPES;
@@ -23,7 +25,6 @@ import '../elements/types.dart';
 import '../inferrer/abstract_value_domain.dart';
 import '../inferrer/types.dart';
 import '../io/source_information.dart';
-import '../ir/class_relation.dart';
 import '../ir/static_type.dart';
 import '../ir/static_type_provider.dart';
 import '../ir/util.dart';
@@ -44,7 +45,7 @@ import '../js_model/js_strategy.dart';
 import '../js_model/js_world.dart' show JClosedWorld;
 import '../js_model/locals.dart' show GlobalLocalsMap, JumpVisitor;
 import '../js_model/type_recipe.dart';
-import '../js_model/records.dart' show RecordData;
+import '../js_model/records.dart' show RecordData, JRecordGetter;
 import '../kernel/invocation_mirror_constants.dart';
 import '../native/behavior.dart';
 import '../native/js.dart';
@@ -76,7 +77,7 @@ class StackFrame {
   final Map<ir.VariableDeclaration, HInstruction> letBindings;
   final KernelToTypeInferenceMap typeInferenceMap;
   final SourceInformationBuilder sourceInformationBuilder;
-  final StaticTypeProvider staticTypeProvider;
+  final StaticTypeProvider? staticTypeProvider;
 
   StackFrame(
       this.parent,
@@ -305,6 +306,17 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     from.addSuccessor(to);
   }
 
+  void _prepareEntryBlock() {
+    HBasicBlock block = graph.addNewBlock();
+    // Create `graph.entry` as an initially empty block. `graph.entry` is
+    // treated specially (holding parameters, local variables and constants)
+    // but cannot receive constants before it has been closed. By closing it
+    // here, we can use constants in the code that sets up the function.
+    open(graph.entry);
+    close(HGoto(_abstractValueDomain)).addSuccessor(block);
+    open(block);
+  }
+
   bool isAborted() {
     return current == null;
   }
@@ -369,6 +381,8 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   /// concrete SSA builder reports an error.
   bool? _getFlagValue(String flagName) {
     switch (flagName) {
+      case 'FALSE':
+        return false;
       case 'DEV_COMPILER':
         return false;
       case 'MINIFIED':
@@ -391,7 +405,7 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   StaticType _getStaticType(ir.Expression node) {
     // TODO(johnniwinther): Substitute the type by the this type and type
     // arguments of the current frame.
-    ir.DartType type = _currentFrame!.staticTypeProvider.getStaticType(node);
+    ir.DartType type = _currentFrame!.staticTypeProvider!.getStaticType(node);
     return StaticType(
         _elementMap.getDartType(type), computeClassRelationFromType(type));
   }
@@ -400,7 +414,7 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     // TODO(johnniwinther): Substitute the type by the this type and type
     // arguments of the current frame.
     ir.DartType type =
-        _currentFrame!.staticTypeProvider.getForInIteratorType(node);
+        _currentFrame!.staticTypeProvider!.getForInIteratorType(node);
     return StaticType(
         _elementMap.getDartType(type), computeClassRelationFromType(type));
   }
@@ -529,6 +543,10 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
         case MemberKind.generatorBody:
           _buildGeneratorBody(_initialTargetElement as JGeneratorBody,
               _functionNodeOf(definition.node)!);
+          break;
+        case MemberKind.recordGetter:
+          _buildRecordGetter(_initialTargetElement as JRecordGetter,
+              definition as RecordGetterDefinition);
           break;
       }
       assert(graph.isValid(), "Invalid graph for $_initialTargetElement.");
@@ -1229,6 +1247,73 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     _closeFunction();
   }
 
+  void _buildRecordGetter(
+      JRecordGetter getter, RecordGetterDefinition definition) {
+    ClassEntity getterClass = getter.enclosingClass!;
+    int indexInShape = definition.indexInShape;
+    final representation = _recordData.representationForClass(getterClass)!;
+    final path = _recordData.pathForAccess(representation.shape, indexInShape);
+
+    // TODO(50081): Attribute all synthetic records code to the nearest class
+    // declared in Dart. Worst case, it can all be attributed to the `Record`
+    // interface.
+    SourceInformation? sourceInformation;
+
+    // Manually set up entry. This does not work...
+    //
+    //     _openFunction(getter, checks: TargetChecks.none);
+    //
+    // ...since we don't have a scope model for the localsHandler. What we
+    // should have is a lightweight localsHandler for synthetic methods.
+    //
+    // TODO(51310): Split [_openFunction] into parts which can be used for
+    // synthetic methods.
+
+    _prepareEntryBlock();
+
+    // Create a 'this' parameter.
+    //
+    // Intercepted getters have two parameters (this, receiver) and other
+    // getters have one (this). Add them at the beginning of the entry block.
+
+    final typeOfThis = _abstractValueDomain.createNonNullSubclass(getterClass);
+    HThis thisInstruction = HThis(null, typeOfThis);
+    graph.thisInstruction = thisInstruction;
+    graph.entry.addAtEntry(thisInstruction);
+    lastAddedParameter = thisInstruction;
+
+    if (_interceptorData.isInterceptedMethod(getter)) {
+      SyntheticLocal parameter = localsHandler.createLocal('receiver');
+      HParameterValue value = HParameterValue(parameter, typeOfThis);
+      graph.explicitReceiverParameter = value;
+      graph.entry.addAfter(thisInstruction, value);
+      lastAddedParameter = value;
+    }
+
+    HInstruction receiver = thisInstruction;
+
+    AbstractValue resultType = _abstractValueDomain.dynamicType;
+
+    if (path.index == null) {
+      HFieldGet fieldGet = HFieldGet(
+          path.field, receiver, resultType, sourceInformation,
+          isAssignable: false);
+      push(fieldGet);
+    } else {
+      HFieldGet fieldGet = HFieldGet(path.field, receiver,
+          _abstractValueDomain.constListType, sourceInformation,
+          isAssignable: false);
+      push(fieldGet);
+      final list = pop();
+      push(HIndex(
+          list, graph.addConstantInt(path.index!, closedWorld), resultType));
+    }
+
+    HInstruction value = pop();
+    _closeAndGotoExit(HReturn(_abstractValueDomain, value, sourceInformation));
+    _closeFunction();
+  }
+
   /// Builds an SSA graph for FunctionNodes, found in FunctionExpressions and
   /// Procedures.
   void _buildFunctionNode(
@@ -1679,14 +1764,7 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       _returnType = _elementMap.getDartType(functionNode.returnType);
     }
 
-    HBasicBlock block = graph.addNewBlock();
-    // Create `graph.entry` as an initially empty block. `graph.entry` is
-    // treated specially (holding parameters, local variables and constants)
-    // but cannot receive constants before it has been closed. By closing it
-    // here, we can use constants in the code that sets up the function.
-    open(graph.entry);
-    close(HGoto(_abstractValueDomain)).addSuccessor(block);
-    open(block);
+    _prepareEntryBlock();
 
     localsHandler.startFunction(targetElement, parameterMap, elidedParameterSet,
         _sourceInformationBuilder.buildDeclaration(targetElement),
@@ -1769,11 +1847,13 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     String loadId = closedWorld.outputUnitData.getImportDeferName(
         _elementMap.getSpannable(targetElement, loadLibrary),
         _elementMap.getImport(loadLibrary.import));
-    // TODO(efortuna): Source information!
 
     final priority =
         closedWorld.annotationsData.getLoadLibraryPriorityAt(loadLibrary);
     final flag = priority.index;
+
+    final sourceInformation =
+        _sourceInformationBuilder.buildCall(loadLibrary, loadLibrary);
 
     push(HInvokeStatic(
         _commonElements.loadDeferredLibrary,
@@ -1783,7 +1863,8 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
         ],
         _abstractValueDomain.nonNullType,
         const <DartType>[],
-        targetCanThrow: false));
+        targetCanThrow: false)
+      ..sourceInformation = sourceInformation);
   }
 
   @override
@@ -2861,6 +2942,9 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     // This is because JS does not have this same "continue label" semantics so
     // we encode it in the form of a state machine.
 
+    // TODO(https://dartbug.com/51777): Consider alternative with single switch
+    // statement.
+
     JumpTarget switchTarget =
         _localsMap.getJumpTargetForSwitch(switchStatement)!;
     localsHandler.updateLocal(switchTarget, graph.addConstantNull(closedWorld));
@@ -3426,16 +3510,16 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       inputs = [pop()];
     }
 
-    AbstractValue type = _abstractValueDomain.createNonNullExact(recordClass);
+    AbstractValue type =
+        _typeInferenceMap.typeOfRecordLiteral(node, _abstractValueDomain) ??
+            _abstractValueDomain
+                .createFromStaticType(dartType, nullable: true)
+                .abstractValue;
 
     final allocation = HCreate(recordClass, inputs, type, sourceInformation);
 
     // TODO(50701): With traced record types there might be a better type.
-    //     AbstractValue type =
-    //        _typeInferenceMap.typeOfRecordLiteral(node, _abstractValueDomain);
-    //     if (_abstractValueDomain.containsAll(type).isDefinitelyFalse) {
-    //       allocation.instructionType = type;
-    //     }
+
     push(allocation);
   }
 
@@ -3448,7 +3532,7 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   @override
   void visitRecordNameGet(ir.RecordNameGet node) {
     final shape = recordShapeOfRecordType(node.receiverType);
-    int index = shape.indexOfName(node.name);
+    int index = shape.indexOfFieldName(node.name);
     return _handleRecordFieldGet(node, node.receiver, shape, index);
   }
 
@@ -3460,28 +3544,36 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     SourceInformation? sourceInformation =
         _sourceInformationBuilder.buildGet(node);
 
-    // TODO(50701): Type inference should improve on the static type.
-    //     AbstractValue type =
-    //         _typeInferenceMap.typeOfRecordGet(node, _abstractValueDomain);
-    StaticType staticType = _getStaticType(node);
-    AbstractValue type = _abstractValueDomain
-        .createFromStaticType(staticType.type,
-            classRelation: staticType.relation, nullable: true)
-        .abstractValue;
+    if (_recordData.representationForShape(shape) != null) {
+      final recordType = _typeInferenceMap.receiverTypeOfGet(node) ??
+          _abstractValueDomain
+              .createFromStaticType(_getStaticType(node).type, nullable: true)
+              .abstractValue;
+      final fieldType = _abstractValueDomain.getGetterTypeInRecord(
+          recordType, shape.getterNameOfIndex(indexInShape));
 
-    final path = _recordData.pathForAccess(shape, indexInShape);
-    if (path.index == null) {
-      HFieldGet fieldGet = HFieldGet(
-          path.field, receiver, type, sourceInformation,
-          isAssignable: false);
-      push(fieldGet);
+      final path = _recordData.pathForAccess(shape, indexInShape);
+      if (path.index == null) {
+        HFieldGet fieldGet = HFieldGet(
+            path.field, receiver, fieldType, sourceInformation,
+            isAssignable: false);
+        push(fieldGet);
+      } else {
+        HFieldGet fieldGet = HFieldGet(path.field, receiver,
+            _abstractValueDomain.constListType, sourceInformation,
+            isAssignable: false);
+        push(fieldGet);
+        final list = pop();
+        push(HIndex(
+            list, graph.addConstantInt(indexInShape, closedWorld), fieldType));
+      }
     } else {
-      HFieldGet fieldGet = HFieldGet(path.field, receiver,
-          _abstractValueDomain.constListType, sourceInformation,
-          isAssignable: false);
-      push(fieldGet);
-      final list = pop();
-      push(HIndex(list, graph.addConstantInt(indexInShape, closedWorld), type));
+      // There are no records with this shape, so the path here must be
+      // infeasible.
+      push(HInvokeStatic(_commonElements.assertUnreachableMethod, [],
+          _abstractValueDomain.emptyType, const [])
+        ..sourceInformation = sourceInformation);
+      // TODO(50081): Should we make subsequent code unreachable?
     }
   }
 
@@ -3831,11 +3923,16 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
         List.from(_visitPositionalArguments(arguments));
 
     if (target.namedParameters.isNotEmpty) {
-      // Only anonymous factory constructors involving JS interop are allowed to
-      // have named parameters. Otherwise, throw an error.
+      // Only anonymous factory or inline class literal constructors involving
+      // JS interop are allowed to have named parameters. Otherwise, throw an
+      // error.
       final function =
           _elementMap.getMember(target.parent as ir.Member) as FunctionEntity;
-      if (function is ConstructorEntity && function.isFactoryConstructor) {
+      if (function is ConstructorEntity &&
+              function.isFactoryConstructor &&
+              _nativeData.isAnonymousJsInteropClass(function.enclosingClass) ||
+          function.isTopLevel &&
+              _nativeData.isJsInteropObjectLiteral(function)) {
         // TODO(sra): Have a "CompiledArguments" structure to just update with
         // what values we have rather than creating a map and de-populating it.
         Map<String, HInstruction> namedValues = _visitNamedArguments(arguments);
@@ -3971,6 +4068,16 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
 
   @override
   void visitStaticInvocation(ir.StaticInvocation node) {
+    if (ir.StaticWeakReferences.isWeakReference(node)) {
+      final weakTarget = ir.StaticWeakReferences.getWeakReferenceTarget(node);
+      if (_elementMap.containsMethod(weakTarget)) {
+        final argument = ir.StaticWeakReferences.getWeakReferenceArgument(node);
+        argument.accept(this);
+        return;
+      }
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
     ir.Procedure target = node.target;
     final sourceInformation = _sourceInformationBuilder.buildCall(node, node);
     final function = _elementMap.getMember(target) as FunctionEntity;
@@ -5342,11 +5449,11 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     assert(closedWorld.nativeData.isJsInteropMember(element));
 
     if (element is ConstructorEntity &&
-        element.isFactoryConstructor &&
-        _nativeData.isAnonymousJsInteropClass(element.enclosingClass)) {
-      // Factory constructor that is syntactic sugar for creating a JavaScript
-      // object literal.
-      ConstructorEntity constructor = element;
+            element.isFactoryConstructor &&
+            _nativeData.isAnonymousJsInteropClass(element.enclosingClass) ||
+        element.isTopLevel && _nativeData.isJsInteropObjectLiteral(element)) {
+      // Constructor that is syntactic sugar for creating a JavaScript object
+      // literal.
       int i = 0;
       int positions = 0;
       List<HInstruction> filteredArguments = [];
@@ -5358,7 +5465,7 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       // TODO(johnniwinther): can we elide those parameters? This should be
       // consistent with what we do with instance methods.
       final node =
-          _elementMap.getMemberDefinition(constructor).node as ir.Procedure;
+          _elementMap.getMemberDefinition(element).node as ir.Procedure;
       List<ir.VariableDeclaration> namedParameters =
           node.function.namedParameters.toList();
       namedParameters.sort(nativeOrdering);
@@ -6113,6 +6220,10 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
           return false;
         }
       }
+
+      // Record getters are synthetic and have no bodies so we cannot inline
+      // them at this point.
+      if (function is JRecordGetter) return false;
 
       return true;
     }
@@ -7057,6 +7168,7 @@ class InlineData {
   bool hasArgumentDefaulting = false;
   bool hasCast = false;
   bool hasIf = false;
+  bool hasLabel = false; // TODO(51652): Remove when inlining works with labels.
   List<int> argumentCounts = [];
   int regularNodeCount = 0;
   int callCount = 0;
@@ -7086,6 +7198,7 @@ class InlineData {
         regularNodeCount - 1 > maxInliningNodes) {
       return 'too many nodes (${regularNodeCount - 1}>$maxInliningNodes)';
     }
+    if (hasLabel) return 'has label';
     return null;
   }
 
@@ -7121,6 +7234,7 @@ class InlineData {
     } else if (isConstructor) {
       return 'constructor';
     }
+    if (hasLabel) return 'has label';
     for (int count in argumentCounts) {
       if (count > argumentCount) {
         return 'increasing arguments';
@@ -7204,6 +7318,11 @@ class InlineData {
     if (hasIf) {
       sb.write(comma);
       sb.write('hasIf');
+      comma = ',';
+    }
+    if (hasLabel) {
+      sb.write(comma);
+      sb.write('hasLabel');
       comma = ',';
     }
     if (argumentCounts.isNotEmpty) {
@@ -7498,6 +7617,13 @@ class InlineWeeder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   @override
   visitExpressionStatement(ir.ExpressionStatement node) {
     registerRegularNode();
+    node.visitChildren(this);
+  }
+
+  @override
+  visitLabeledStatement(ir.LabeledStatement node) {
+    registerRegularNode();
+    data.hasLabel = true;
     node.visitChildren(this);
   }
 

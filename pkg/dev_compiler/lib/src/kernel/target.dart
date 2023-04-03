@@ -11,7 +11,7 @@ import 'package:_js_interop_checks/src/transformations/export_creator.dart';
 import 'package:_js_interop_checks/src/transformations/js_util_optimizer.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
-import 'package:kernel/kernel.dart';
+import 'package:kernel/kernel.dart' hide Pattern;
 import 'package:kernel/reference_from_index.dart';
 import 'package:kernel/target/changed_structure_notifier.dart';
 import 'package:kernel/target/targets.dart';
@@ -31,9 +31,6 @@ class DevCompilerTarget extends Target {
   WidgetCreatorTracker? _widgetTracker;
 
   Map<String, Class>? _nativeClasses;
-
-  @override
-  bool get enableSuperMixins => true;
 
   @override
   int get enabledLateLowerings => LateLowering.all;
@@ -69,9 +66,9 @@ class DevCompilerTarget extends Target {
         'dart:_isolate_helper',
         'dart:_js_annotations',
         'dart:_js_helper',
-        'dart:_js_interop',
         'dart:_js_names',
         'dart:_js_primitives',
+        'dart:_js_types',
         'dart:_metadata',
         'dart:_native_typed_data',
         'dart:async',
@@ -81,6 +78,7 @@ class DevCompilerTarget extends Target {
         'dart:io',
         'dart:isolate',
         'dart:js',
+        'dart:js_interop',
         'dart:js_util',
         'dart:math',
         'dart:typed_data',
@@ -101,6 +99,7 @@ class DevCompilerTarget extends Target {
         'dart:indexed_db',
         'dart:js',
         'dart:js_util',
+        'dart:js_interop',
         'dart:math',
         'dart:svg',
         'dart:web_audio',
@@ -170,6 +169,7 @@ class DevCompilerTarget extends Target {
     _nativeClasses ??= JsInteropChecks.getNativeClasses(component);
     var jsInteropChecks = JsInteropChecks(
         coreTypes,
+        hierarchy,
         diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>,
         _nativeClasses!);
     // Process and validate first before doing anything with exports.
@@ -461,10 +461,6 @@ class _CovarianceTransformer extends RecursiveVisitor {
 
 List<Pattern> _allowedNativeTestPatterns = [
   'tests/dartdevc',
-  // TODO(srujzs): This enables using `dart:_js_interop` in these tests. Remove
-  // once we make it public.
-  'tests/lib/js/static_interop_test',
-  'tests/lib_2/js/static_interop_test',
   'tests/web/native',
   'tests/web_2/native',
   'tests/web/internal',

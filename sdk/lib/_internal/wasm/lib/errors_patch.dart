@@ -4,14 +4,10 @@
 
 part of 'core_patch.dart';
 
-external Never _throwObjectWithStackTrace(Object error, StackTrace stacktrace);
-
 @patch
 class Error {
   @patch
-  static String _objectToString(Object object) {
-    return "Instance of '${object._runtimeType}'";
-  }
+  static String _objectToString(Object object) => Object._toString(object);
 
   @patch
   static String _stringToSafeString(String string) {
@@ -22,14 +18,6 @@ class Error {
   StackTrace? get stackTrace => _stackTrace;
 
   StackTrace? _stackTrace;
-
-  @patch
-  static Never _throw(Object error, StackTrace stackTrace) {
-    if (error is Error && error._stackTrace == null) {
-      error._stackTrace = stackTrace;
-    }
-    return _throwObjectWithStackTrace(error, stackTrace);
-  }
 }
 
 class _Error extends Error {
@@ -68,7 +56,7 @@ class _TypeError extends _Error implements TypeError {
   static Never _throwNullCheckError(StackTrace stackTrace) {
     final typeError = _TypeError.fromMessageAndStackTrace(
         "Null check operator used on a null value", stackTrace);
-    return _throwObjectWithStackTrace(typeError, stackTrace);
+    return Error._throw(typeError, stackTrace);
   }
 
   @pragma("wasm:entry-point")
@@ -78,14 +66,14 @@ class _TypeError extends _Error implements TypeError {
         "Type '${operand.runtimeType}' is not a subtype of type '$type'"
         " in type cast",
         stackTrace);
-    return _throwObjectWithStackTrace(typeError, stackTrace);
+    return Error._throw(typeError, stackTrace);
   }
 
   @pragma("wasm:entry-point")
   static Never _throwWasmRefError(String expected, StackTrace stackTrace) {
     final typeError = _TypeError.fromMessageAndStackTrace(
         "The Wasm reference is not $expected", stackTrace);
-    return _throwObjectWithStackTrace(typeError, stackTrace);
+    return Error._throw(typeError, stackTrace);
   }
 
   @pragma("wasm:entry-point")
@@ -95,7 +83,16 @@ class _TypeError extends _Error implements TypeError {
         "type '${arg.runtimeType}' is not a subtype of "
         "type '$param' of '$paramName'",
         stackTrace);
-    return _throwObjectWithStackTrace(typeError, stackTrace);
+    return Error._throw(typeError, stackTrace);
+  }
+
+  @pragma("wasm:entry-point")
+  static Never _throwTypeArgumentBoundCheckError(
+      _Type param, _Type bound, String paramName, StackTrace stackTrace) {
+    final typeError = _TypeError.fromMessageAndStackTrace(
+        "type '$param' is not a subtype of type '$bound' of '$paramName'",
+        stackTrace);
+    return Error._throw(typeError, stackTrace);
   }
 }
 
@@ -126,6 +123,12 @@ class NoSuchMethodError {
   @pragma("wasm:entry-point")
   static Never _throwWithInvocation(Object? receiver, Invocation invocation) {
     throw NoSuchMethodError.withInvocation(receiver, invocation);
+  }
+
+  @pragma("wasm:entry-point")
+  static Never _throwUnimplementedExternalMemberError(
+      Object? receiver, Symbol memberName) {
+    throw NoSuchMethodError(receiver, memberName, null, null);
   }
 
   @patch

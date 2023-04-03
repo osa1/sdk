@@ -349,7 +349,7 @@ uword MakeTagWordForNewSpaceObject(classid_t cid, uword instance_size) {
          dart::UntaggedObject::ClassIdTag::encode(cid) |
          dart::UntaggedObject::NewBit::encode(true) |
          dart::UntaggedObject::ImmutableBit::encode(
-             IsUnmodifiableTypedDataViewClassId(cid));
+             ShouldHaveImmutabilityBitSet(cid));
 }
 
 word Object::tags_offset() {
@@ -487,9 +487,9 @@ static uword GetInstanceSizeImpl(const dart::Class& handle) {
         return handle.target_instance_size();
       }
   }
-  FATAL3("Unsupported class for size translation: %s (id=%" Pd
-         ", kNumPredefinedCids=%" Pd ")\n",
-         handle.ToCString(), handle.id(), kNumPredefinedCids);
+  FATAL("Unsupported class for size translation: %s (id=%" Pd
+        ", kNumPredefinedCids=%" Pd ")\n",
+        handle.ToCString(), handle.id(), kNumPredefinedCids);
   return -1;
 }
 

@@ -11,33 +11,19 @@ import 'package:expect/expect.dart';
 final class FinalClass {
   int foo = 0;
 }
-final class A extends FinalClass {}
-final class B implements FinalClass {
-  @override
-  int foo = 1;
-}
 
-final mixin FinalMixin {
-  int foo = 0;
-}
-final class C implements FinalMixin {
-  @override
+final class A extends FinalClass {}
+
+final class B implements FinalClass {
   int foo = 1;
 }
-final class AMixin with FinalMixin {}
-final class BMixin = Object with FinalMixin;
 
 // Used for trivial runtime tests of the final subtypes.
-class AConcrete extends A {}
-class BConcrete extends B {}
-class CConcrete extends C {}
-class AMixinConcrete extends AMixin {}
-class BMixinConcrete extends BMixin {}
+final class AConcrete extends A {}
+
+final class BConcrete extends B {}
 
 main() {
   Expect.equals(0, AConcrete().foo);
   Expect.equals(1, BConcrete().foo);
-  Expect.equals(1, CConcrete().foo);
-  Expect.equals(0, AMixinConcrete().foo);
-  Expect.equals(0, BMixinConcrete().foo);
 }

@@ -4,7 +4,10 @@
 
 // File is compiled with checked in SDK, update [FfiNative]s to [Native] when
 // SDK is rolled.
+
+// ignore_for_file: camel_case_types
 // ignore_for_file: deprecated_member_use
+// ignore_for_file: non_constant_identifier_names
 
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -12,11 +15,11 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 // int open(const char *path, int oflag, ...);
-@FfiNative<Int32 Function(Pointer<Utf8>, Int32)>("open")
+@Native<Int32 Function(Pointer<Utf8>, Int32)>(symbol: "open")
 external int open(Pointer<Utf8> filename, int flags);
 
 // int close(int fd);
-@FfiNative<Int32 Function(Int32)>("close")
+@Native<Int32 Function(Int32)>(symbol: "close")
 external int close(int fd);
 
 // void* mmap(void* addr, size_t length,
@@ -29,7 +32,7 @@ external Pointer<Uint8> mmap(
     Pointer<Uint8> address, int len, int prot, int flags, int fd, int offset);
 
 // int munmap(void *addr, size_t length)
-@FfiNative<IntPtr Function(Pointer<Uint8> address, IntPtr len)>("munmap")
+@Native<IntPtr Function(Pointer<Uint8> address, IntPtr len)>(symbol: "munmap")
 external int munmap(Pointer<Uint8> address, int len);
 
 final DynamicLibrary processSymbols = DynamicLibrary.process();
@@ -38,7 +41,7 @@ final closeNative = processSymbols.lookup<Void>('close');
 final freeNative = processSymbols.lookup<Void>('free');
 
 // int mprotect(void *addr, size_t len, int prot)
-@FfiNative<Int32 Function(Pointer<Uint8>, IntPtr, Int32)>("mprotect")
+@Native<Int32 Function(Pointer<Uint8>, IntPtr, Int32)>(symbol: "mprotect")
 external int mprotect(Pointer<Uint8> addr, int len, int prot);
 
 // DART_EXPORT Dart_Handle

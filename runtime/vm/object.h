@@ -150,8 +150,8 @@ class BaseTextBuffer;
     object* obj = reinterpret_cast<object*>(VMHandles::AllocateHandle(zone));  \
     initializeHandle(obj, ptr);                                                \
     if (!obj->Is##object()) {                                                  \
-      FATAL2("Handle check failed: saw %s expected %s", obj->ToCString(),      \
-             #object);                                                         \
+      FATAL("Handle check failed: saw %s expected %s", obj->ToCString(),       \
+            #object);                                                          \
     }                                                                          \
     return *obj;                                                               \
   }                                                                            \
@@ -160,8 +160,8 @@ class BaseTextBuffer;
         reinterpret_cast<object*>(VMHandles::AllocateZoneHandle(zone));        \
     initializeHandle(obj, ptr);                                                \
     if (!obj->Is##object()) {                                                  \
-      FATAL2("Handle check failed: saw %s expected %s", obj->ToCString(),      \
-             #object);                                                         \
+      FATAL("Handle check failed: saw %s expected %s", obj->ToCString(),       \
+            #object);                                                          \
     }                                                                          \
     return *obj;                                                               \
   }                                                                            \
@@ -395,41 +395,31 @@ class Object {
   bool IsNotTemporaryScopedHandle() const;
 #endif
 
-  static Object& Handle(Zone* zone, ObjectPtr ptr) {
-    Object* obj = reinterpret_cast<Object*>(VMHandles::AllocateHandle(zone));
-    initializeHandle(obj, ptr);
-    return *obj;
+  static Object& Handle() {
+    return HandleImpl(Thread::Current()->zone(), null_, kObjectCid);
   }
-  static Object* ReadOnlyHandle() {
-    Object* obj = reinterpret_cast<Object*>(Dart::AllocateReadOnlyHandle());
-    initializeHandle(obj, Object::null());
-    return obj;
+  static Object& Handle(Zone* zone) {
+    return HandleImpl(zone, null_, kObjectCid);
   }
-
-  static Object& Handle() { return Handle(Thread::Current()->zone(), null_); }
-
-  static Object& Handle(Zone* zone) { return Handle(zone, null_); }
-
   static Object& Handle(ObjectPtr ptr) {
-    return Handle(Thread::Current()->zone(), ptr);
+    return HandleImpl(Thread::Current()->zone(), ptr, kObjectCid);
   }
-
-  static Object& ZoneHandle(Zone* zone, ObjectPtr ptr) {
-    Object* obj =
-        reinterpret_cast<Object*>(VMHandles::AllocateZoneHandle(zone));
-    initializeHandle(obj, ptr);
-    return *obj;
+  static Object& Handle(Zone* zone, ObjectPtr ptr) {
+    return HandleImpl(zone, ptr, kObjectCid);
   }
-
-  static Object& ZoneHandle(Zone* zone) { return ZoneHandle(zone, null_); }
-
   static Object& ZoneHandle() {
-    return ZoneHandle(Thread::Current()->zone(), null_);
+    return ZoneHandleImpl(Thread::Current()->zone(), null_, kObjectCid);
   }
-
+  static Object& ZoneHandle(Zone* zone) {
+    return ZoneHandleImpl(zone, null_, kObjectCid);
+  }
   static Object& ZoneHandle(ObjectPtr ptr) {
-    return ZoneHandle(Thread::Current()->zone(), ptr);
+    return ZoneHandleImpl(Thread::Current()->zone(), ptr, kObjectCid);
   }
+  static Object& ZoneHandle(Zone* zone, ObjectPtr ptr) {
+    return ZoneHandleImpl(zone, ptr, kObjectCid);
+  }
+  static Object* ReadOnlyHandle() { return ReadOnlyHandleImpl(kObjectCid); }
 
   static ObjectPtr null() { return null_; }
 
@@ -1653,6 +1643,23 @@ class Class : public Object {
   }
   void set_is_transformed_mixin_application() const;
 
+  bool is_sealed() const { return SealedBit::decode(state_bits()); }
+  void set_is_sealed() const;
+
+  bool is_mixin_class() const { return MixinClassBit::decode(state_bits()); }
+  void set_is_mixin_class() const;
+
+  bool is_base_class() const { return BaseClassBit::decode(state_bits()); }
+  void set_is_base_class() const;
+
+  bool is_interface_class() const {
+    return InterfaceClassBit::decode(state_bits());
+  }
+  void set_is_interface_class() const;
+
+  bool is_final() const { return FinalBit::decode(state_bits()); }
+  void set_is_final() const;
+
   bool is_fields_marked_nullable() const {
     return FieldsMarkedNullableBit::decode(state_bits());
   }
@@ -1672,9 +1679,8 @@ class Class : public Object {
   static uint16_t NumNativeFieldsOf(ClassPtr clazz) {
     return clazz->untag()->num_native_fields_;
   }
-  static bool ImplementsFinalizable(ClassPtr clazz) {
-    ASSERT(Class::Handle(clazz).is_type_finalized());
-    return ImplementsFinalizableBit::decode(clazz->untag()->state_bits_);
+  static bool IsIsolateUnsendable(ClassPtr clazz) {
+    return IsIsolateUnsendableBit::decode(clazz->untag()->state_bits_);
   }
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
@@ -1807,8 +1813,6 @@ class Class : public Object {
   bool TraceAllocation(IsolateGroup* isolate_group) const;
   void SetTraceAllocation(bool trace_allocation) const;
 
-  void ReplaceEnum(ProgramReloadContext* reload_context,
-                   const Class& old_enum) const;
   void CopyStaticFieldValues(ProgramReloadContext* reload_context,
                              const Class& old_cls) const;
   void PatchFieldsAndFunctions() const;
@@ -1864,9 +1868,9 @@ class Class : public Object {
   void MarkFieldBoxedDuringReload(ClassTable* class_table,
                                   const Field& field) const;
 
-#if !defined(PRODUCT)
+#if !defined(PRODUCT) || defined(FORCE_INCLUDE_SAMPLING_HEAP_PROFILER)
   void SetUserVisibleNameInClassTable();
-#endif  // !defined(PRODUCT)
+#endif  // !defined(PRODUCT) || defined(FORCE_INCLUDE_SAMPLING_HEAP_PROFILER)
 
  private:
   TypePtr declaration_type() const {
@@ -1913,7 +1917,17 @@ class Class : public Object {
     kIsAllocatedBit,
     kIsLoadedBit,
     kHasPragmaBit,
-    kImplementsFinalizableBit,
+    kSealedBit,
+    kMixinClassBit,
+    kBaseClassBit,
+    kInterfaceClassBit,
+    kFinalBit,
+    // Whether instances of the class cannot be sent across ports.
+    //
+    // Will be true iff
+    //    - class is marked with `@pramga('vm:isolate-unsendable')
+    //    - super class / super interface classes are marked as unsendable.
+    kIsIsolateUnsendableBit,
   };
   class ConstBit : public BitField<uint32_t, bool, kConstBit, 1> {};
   class ImplementedBit : public BitField<uint32_t, bool, kImplementedBit, 1> {};
@@ -1936,8 +1950,14 @@ class Class : public Object {
   class IsAllocatedBit : public BitField<uint32_t, bool, kIsAllocatedBit, 1> {};
   class IsLoadedBit : public BitField<uint32_t, bool, kIsLoadedBit, 1> {};
   class HasPragmaBit : public BitField<uint32_t, bool, kHasPragmaBit, 1> {};
-  class ImplementsFinalizableBit
-      : public BitField<uint32_t, bool, kImplementsFinalizableBit, 1> {};
+  class SealedBit : public BitField<uint32_t, bool, kSealedBit, 1> {};
+  class MixinClassBit : public BitField<uint32_t, bool, kMixinClassBit, 1> {};
+  class BaseClassBit : public BitField<uint32_t, bool, kBaseClassBit, 1> {};
+  class InterfaceClassBit
+      : public BitField<uint32_t, bool, kInterfaceClassBit, 1> {};
+  class FinalBit : public BitField<uint32_t, bool, kFinalBit, 1> {};
+  class IsIsolateUnsendableBit
+      : public BitField<uint32_t, bool, kIsIsolateUnsendableBit, 1> {};
 
   void set_name(const String& value) const;
   void set_user_name(const String& value) const;
@@ -1977,13 +1997,13 @@ class Class : public Object {
   void set_num_type_arguments_unsafe(intptr_t value) const;
 
   bool has_pragma() const { return HasPragmaBit::decode(state_bits()); }
-  void set_has_pragma(bool has_pragma) const;
+  void set_has_pragma(bool value) const;
 
-  bool implements_finalizable() const {
-    ASSERT(is_type_finalized());
-    return ImplementsFinalizable(ptr());
+  void set_is_isolate_unsendable(bool value) const;
+  bool is_isolate_unsendable() const {
+    return IsIsolateUnsendableBit::decode(state_bits());
   }
-  void set_implements_finalizable(bool value) const;
+
 
  private:
   void set_functions(const Array& value) const;
@@ -3817,14 +3837,14 @@ class Function : public Object {
 // VM instantiation. It is independent from presence of type feedback
 // (ic_data_array) and code, which may be loaded from a snapshot.
 // 'WasExecuted' is true if the usage counter has ever been positive.
-// 'ProhibitsHoistingCheckClass' is true if this function deoptimized before on
-// a hoisted check class instruction.
+// 'ProhibitsInstructionHoisting' is true if this function deoptimized before on
+// a hoisted instruction.
 // 'ProhibitsBoundsCheckGeneralization' is true if this function deoptimized
 // before on a generalized bounds check.
 #define STATE_BITS_LIST(V)                                                     \
   V(WasCompiled)                                                               \
   V(WasExecutedBit)                                                            \
-  V(ProhibitsHoistingCheckClass)                                               \
+  V(ProhibitsInstructionHoisting)                                              \
   V(ProhibitsBoundsCheckGeneralization)
 
   enum StateBits {
@@ -3989,6 +4009,11 @@ class Function : public Object {
 #undef DEFINE_BIT
 
  private:
+  enum NativeFunctionData {
+    kNativeName,
+    kTearOff,
+    kLength,
+  };
   // Given the provided defaults type arguments, determines which
   // DefaultTypeArgumentsKind applies.
   DefaultTypeArgumentsKind DefaultTypeArgumentsKindFor(
@@ -5243,22 +5268,6 @@ class KernelProgramInfo : public Object {
 
   ArrayPtr constants() const { return untag()->constants(); }
   void set_constants(const Array& constants) const;
-
-  // If we load a kernel blob with evaluated constants, then we delay setting
-  // the native names of [Function] objects until we've read the constant table
-  // (since native names are encoded as constants).
-  //
-  // This array will hold the functions which might need their native name set.
-  GrowableObjectArrayPtr potential_natives() const {
-    return untag()->potential_natives();
-  }
-  void set_potential_natives(const GrowableObjectArray& candidates) const;
-
-  GrowableObjectArrayPtr potential_pragma_functions() const {
-    return untag()->potential_pragma_functions();
-  }
-  void set_potential_pragma_functions(
-      const GrowableObjectArray& candidates) const;
 
   ScriptPtr ScriptAt(intptr_t index) const;
 
@@ -7208,6 +7217,9 @@ class ContextScope : public Object {
   bool IsConstAt(intptr_t scope_index) const;
   void SetIsConstAt(intptr_t scope_index, bool is_const) const;
 
+  bool IsInvisibleAt(intptr_t scope_index) const;
+  void SetIsInvisibleAt(intptr_t scope_index, bool is_invisible) const;
+
   AbstractTypePtr TypeAt(intptr_t scope_index) const;
   void SetTypeAt(intptr_t scope_index, const AbstractType& type) const;
 
@@ -7886,10 +7898,6 @@ class Instance : public Object {
   void RawSetUnboxedFieldAtOffset(intptr_t offset, const T& value) const {
     *RawUnboxedFieldAddrAtOffset<T>(offset) = value;
   }
-
-  static InstancePtr NewFromCidAndSize(ClassTable* class_table,
-                                       classid_t cid,
-                                       Heap::Space heap = Heap::kNew);
 
   // TODO(iposva): Determine if this gets in the way of Smi.
   HEAP_OBJECT_IMPLEMENTATION(Instance, Object);
@@ -10245,6 +10253,7 @@ class OneByteString : public AllStatic {
   friend class Utf8;
   friend class OneByteStringMessageSerializationCluster;
   friend class Deserializer;
+  friend class JSONWriter;
 };
 
 class TwoByteString : public AllStatic {
@@ -10363,6 +10372,7 @@ class TwoByteString : public AllStatic {
   friend class StringHasher;
   friend class Symbols;
   friend class TwoByteStringMessageSerializationCluster;
+  friend class JSONWriter;
 };
 
 class ExternalOneByteString : public AllStatic {
@@ -10455,6 +10465,7 @@ class ExternalOneByteString : public AllStatic {
   friend class StringHasher;
   friend class Symbols;
   friend class Utf8;
+  friend class JSONWriter;
 };
 
 class ExternalTwoByteString : public AllStatic {
@@ -10542,6 +10553,7 @@ class ExternalTwoByteString : public AllStatic {
   friend class String;
   friend class StringHasher;
   friend class Symbols;
+  friend class JSONWriter;
 };
 
 // Matches null_patch.dart / bool_patch.dart.
@@ -12149,10 +12161,18 @@ class Capability : public Instance {
 class ReceivePort : public Instance {
  public:
   SendPortPtr send_port() const { return untag()->send_port(); }
+  static intptr_t send_port_offset() {
+    return OFFSET_OF(UntaggedReceivePort, send_port_);
+  }
   Dart_Port Id() const { return send_port()->untag()->id_; }
 
   InstancePtr handler() const { return untag()->handler(); }
-  void set_handler(const Instance& value) const;
+  void set_handler(const Instance& value) const {
+    untag()->set_handler(value.ptr());
+  }
+  static intptr_t handler_offset() {
+    return OFFSET_OF(UntaggedReceivePort, handler_);
+  }
 
 #if !defined(PRODUCT)
   StackTracePtr allocation_location() const {
@@ -12436,8 +12456,12 @@ class RegExpFlags {
 
   int value() const { return value_; }
 
-  bool operator==(const RegExpFlags& other) { return value_ == other.value_; }
-  bool operator!=(const RegExpFlags& other) { return value_ != other.value_; }
+  bool operator==(const RegExpFlags& other) const {
+    return value_ == other.value_;
+  }
+  bool operator!=(const RegExpFlags& other) const {
+    return value_ != other.value_;
+  }
 
  private:
   int value_;
@@ -12480,8 +12504,9 @@ class RegExp : public Instance {
   bool is_complex() const { return (type() == kComplex); }
 
   intptr_t num_registers(bool is_one_byte) const {
-    return is_one_byte ? untag()->num_one_byte_registers_
-                       : untag()->num_two_byte_registers_;
+    return LoadNonPointer<intptr_t, std::memory_order_relaxed>(
+        is_one_byte ? &untag()->num_one_byte_registers_
+                    : &untag()->num_two_byte_registers_);
   }
 
   StringPtr pattern() const { return untag()->pattern(); }
@@ -12492,11 +12517,13 @@ class RegExp : public Instance {
 
   TypedDataPtr bytecode(bool is_one_byte, bool sticky) const {
     if (sticky) {
-      return TypedData::RawCast(is_one_byte ? untag()->one_byte_sticky()
-                                            : untag()->two_byte_sticky());
+      return TypedData::RawCast(
+          is_one_byte ? untag()->one_byte_sticky<std::memory_order_acquire>()
+                      : untag()->two_byte_sticky<std::memory_order_acquire>());
     } else {
-      return TypedData::RawCast(is_one_byte ? untag()->one_byte()
-                                            : untag()->two_byte());
+      return TypedData::RawCast(
+          is_one_byte ? untag()->one_byte<std::memory_order_acquire>()
+                      : untag()->two_byte<std::memory_order_acquire>());
     }
   }
 
@@ -12586,11 +12613,10 @@ class RegExp : public Instance {
   void set_is_simple() const { set_type(kSimple); }
   void set_is_complex() const { set_type(kComplex); }
   void set_num_registers(bool is_one_byte, intptr_t value) const {
-    if (is_one_byte) {
-      StoreNonPointer(&untag()->num_one_byte_registers_, value);
-    } else {
-      StoreNonPointer(&untag()->num_two_byte_registers_, value);
-    }
+    StoreNonPointer<intptr_t, intptr_t, std::memory_order_relaxed>(
+        is_one_byte ? &untag()->num_one_byte_registers_
+                    : &untag()->num_two_byte_registers_,
+        value);
   }
 
   RegExpFlags flags() const {
@@ -12601,6 +12627,7 @@ class RegExp : public Instance {
   }
 
   virtual bool CanonicalizeEquals(const Instance& other) const;
+  virtual uint32_t CanonicalizeHash() const;
 
   static intptr_t InstanceSize() {
     return RoundedAllocationSize(sizeof(UntaggedRegExp));
@@ -12932,7 +12959,6 @@ ClassPtr Object::clazz() const {
   if ((raw_value & kSmiTagMask) == kSmiTag) {
     return Smi::Class();
   }
-  ASSERT(!IsolateGroup::Current()->compaction_in_progress());
   return IsolateGroup::Current()->class_table()->At(ptr()->GetClassId());
 }
 

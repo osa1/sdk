@@ -18,13 +18,123 @@ main() {
 @reflectiveTest
 class DeadCodeTest extends PubPackageResolutionTest
     with DeadCodeTestCases, DeadCodeTestCases_Language212 {
+  test_deadPattern_ifCase_logicalOrPattern_leftAlwaysMatches() async {
+    await assertErrorsInCode(r'''
+void f(int x) {
+  if (x case int() || 0) {}
+}
+''', [
+      error(WarningCode.DEAD_CODE, 35, 4),
+    ]);
+  }
+
+  test_deadPattern_ifCase_logicalOrPattern_leftAlwaysMatches_nested() async {
+    await assertErrorsInCode(r'''
+void f(int x) {
+  if (x case (int() || 0) && 1) {}
+}
+''', [
+      error(WarningCode.DEAD_CODE, 36, 4),
+    ]);
+  }
+
+  test_deadPattern_ifCase_logicalOrPattern_leftAlwaysMatches_nested2() async {
+    await assertErrorsInCode(r'''
+void f(Object? x) {
+  if (x case <int>[int() || 0, 1]) {}
+}
+''', [
+      error(WarningCode.DEAD_CODE, 45, 4),
+    ]);
+  }
+
+  test_deadPattern_switchExpression_logicalOrPattern() async {
+    await assertErrorsInCode(r'''
+Object f(int x) {
+  return switch (x) {
+    int() || 0 => 0,
+  };
+}
+''', [
+      error(WarningCode.DEAD_CODE, 50, 4),
+    ]);
+  }
+
+  test_deadPattern_switchExpression_logicalOrPattern_nextCases() async {
+    await assertErrorsInCode(r'''
+Object f(int x) {
+  return switch (x) {
+    int() || 0 => 0,
+    int() => 1,
+    _ => 2,
+  };
+}
+''', [
+      error(WarningCode.DEAD_CODE, 50, 4),
+      error(WarningCode.DEAD_CODE, 65, 10),
+      error(HintCode.UNREACHABLE_SWITCH_CASE, 71, 2),
+      error(WarningCode.DEAD_CODE, 81, 6),
+      error(HintCode.UNREACHABLE_SWITCH_CASE, 83, 2),
+    ]);
+  }
+
+  test_deadPattern_switchStatement_logicalOrPattern() async {
+    await assertErrorsInCode(r'''
+void f(int x) {
+  switch (x) {
+    case int() || 0:
+      break;
+  }
+}
+''', [
+      error(WarningCode.DEAD_CODE, 46, 4),
+    ]);
+  }
+
+  test_deadPattern_switchStatement_nextCases() async {
+    await assertErrorsInCode(r'''
+void f(int x) {
+  switch (x) {
+    case int() || 0:
+    case 1:
+    default:
+      break;
+  }
+}
+''', [
+      error(WarningCode.DEAD_CODE, 46, 4),
+      error(WarningCode.DEAD_CODE, 56, 4),
+      error(HintCode.UNREACHABLE_SWITCH_CASE, 56, 4),
+      error(WarningCode.DEAD_CODE, 68, 7),
+    ]);
+  }
+
+  test_deadPattern_switchStatement_nextCases2() async {
+    await assertErrorsInCode(r'''
+void f(int x) {
+  switch (x) {
+    case int() || 42:
+    case int() || 1:
+    case 2:
+      break;
+  }
+}
+''', [
+      error(WarningCode.DEAD_CODE, 46, 5),
+      error(WarningCode.DEAD_CODE, 57, 4),
+      error(HintCode.UNREACHABLE_SWITCH_CASE, 57, 4),
+      error(WarningCode.DEAD_CODE, 78, 4),
+      error(HintCode.UNREACHABLE_SWITCH_CASE, 78, 4),
+    ]);
+  }
+
   test_ifElement_patternAssignment() async {
     await assertErrorsInCode(r'''
 void f(int a) {
   [if (false) (a) = 0];
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 7),
+      error(WarningCode.DEAD_CODE, 30, 7),
     ]);
   }
 }
@@ -97,7 +207,7 @@ void f() {
   assert (true);
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 14),
+      error(WarningCode.DEAD_CODE, 23, 14),
     ]);
   }
 
@@ -111,7 +221,7 @@ class C {
   static final x = [1, 2, f(), 4];
 }
 ''',
-      isNullSafetyEnabled ? [error(HintCode.DEAD_CODE, 66, 2)] : [],
+      isNullSafetyEnabled ? [error(WarningCode.DEAD_CODE, 66, 2)] : [],
     );
   }
 
@@ -133,7 +243,7 @@ void f(int i) {
 f() {
   true ? 1 : 2;
 }''', [
-      error(HintCode.DEAD_CODE, 19, 1),
+      error(WarningCode.DEAD_CODE, 19, 1),
     ]);
   }
 
@@ -151,7 +261,7 @@ f() {
 f() {
   true ? true : false && false;
 }''', [
-      error(HintCode.DEAD_CODE, 22, 14),
+      error(WarningCode.DEAD_CODE, 22, 14),
     ]);
   }
 
@@ -160,7 +270,7 @@ f() {
 f() {
   false ? 1 : 2;
 }''', [
-      error(HintCode.DEAD_CODE, 16, 1),
+      error(WarningCode.DEAD_CODE, 16, 1),
     ]);
   }
 
@@ -178,7 +288,7 @@ f() {
 f() {
   false ? false && false : true;
 }''', [
-      error(HintCode.DEAD_CODE, 16, 14),
+      error(WarningCode.DEAD_CODE, 16, 14),
     ]);
   }
 
@@ -187,7 +297,7 @@ f() {
 f() {
   if(true) {} else {}
 }''', [
-      error(HintCode.DEAD_CODE, 25, 2),
+      error(WarningCode.DEAD_CODE, 25, 2),
     ]);
   }
 
@@ -205,7 +315,7 @@ f() {
 f() {
   if(true) {} else {if (false) {}}
 }''', [
-      error(HintCode.DEAD_CODE, 25, 15),
+      error(WarningCode.DEAD_CODE, 25, 15),
     ]);
   }
 
@@ -214,7 +324,7 @@ f() {
 f() {
   if(false) {}
 }''', [
-      error(HintCode.DEAD_CODE, 18, 2),
+      error(WarningCode.DEAD_CODE, 18, 2),
     ]);
   }
 
@@ -266,7 +376,7 @@ f() {
 f() {
   if(false) {if(false) {}}
 }''', [
-      error(HintCode.DEAD_CODE, 18, 14),
+      error(WarningCode.DEAD_CODE, 18, 14),
     ]);
   }
 
@@ -277,7 +387,7 @@ f() {
     if (false) 2,
   ];
 }''', [
-      error(HintCode.DEAD_CODE, 25, 1),
+      error(WarningCode.DEAD_CODE, 25, 1),
     ]);
   }
 
@@ -289,7 +399,7 @@ f() {
     else 3,
   ];
 }''', [
-      error(HintCode.DEAD_CODE, 35, 1),
+      error(WarningCode.DEAD_CODE, 35, 1),
     ]);
   }
 
@@ -298,7 +408,7 @@ f() {
 f() {
   while(false) {}
 }''', [
-      error(HintCode.DEAD_CODE, 21, 2),
+      error(WarningCode.DEAD_CODE, 21, 2),
     ]);
   }
 
@@ -316,7 +426,7 @@ f() {
 f() {
   while(false) {if(false) {}}
 }''', [
-      error(HintCode.DEAD_CODE, 21, 14),
+      error(WarningCode.DEAD_CODE, 21, 14),
     ]);
   }
 
@@ -326,7 +436,7 @@ class A {}
 f() {
   try {} catch (e) {} catch (e) {}
 }''', [
-      error(HintCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 39, 12),
+      error(WarningCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 39, 12),
     ]);
   }
 
@@ -337,7 +447,7 @@ class A {}
 f() {
   try {} catch (e) {} catch (e) {if(false) {}}
 }''', [
-      error(HintCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 39, 24),
+      error(WarningCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 39, 24),
     ]);
   }
 
@@ -347,7 +457,7 @@ f() {
   try {} on Object catch (e) {} catch (e) {}
 }''', [
       error(WarningCode.UNUSED_CATCH_CLAUSE, 32, 1),
-      error(HintCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 38, 12),
+      error(WarningCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 38, 12),
     ]);
   }
 
@@ -358,7 +468,7 @@ f() {
   try {} on Object catch (e) {} catch (e) {if(false) {}}
 }''', [
       error(WarningCode.UNUSED_CATCH_CLAUSE, 32, 1),
-      error(HintCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 38, 24),
+      error(WarningCode.DEAD_CODE_CATCH_FOLLOWING_CATCH, 38, 24),
     ]);
   }
 
@@ -370,7 +480,7 @@ f() {
   try {} on A catch (e) {} on B catch (e) {}
 }''', [
       error(WarningCode.UNUSED_CATCH_CLAUSE, 59, 1),
-      error(HintCode.DEAD_CODE_ON_CATCH_SUBTYPE, 65, 17),
+      error(WarningCode.DEAD_CODE_ON_CATCH_SUBTYPE, 65, 17),
       error(WarningCode.UNUSED_CATCH_CLAUSE, 77, 1),
     ]);
   }
@@ -384,7 +494,7 @@ f() {
   try {} on A catch (e) {} on B catch (e) {if(false) {}}
 }''', [
       error(WarningCode.UNUSED_CATCH_CLAUSE, 59, 1),
-      error(HintCode.DEAD_CODE_ON_CATCH_SUBTYPE, 65, 29),
+      error(WarningCode.DEAD_CODE_ON_CATCH_SUBTYPE, 65, 29),
       error(WarningCode.UNUSED_CATCH_CLAUSE, 77, 1),
     ]);
   }
@@ -408,7 +518,7 @@ f() {
   bool b = false && false;
   print(b);
 }''', [
-      error(HintCode.DEAD_CODE, 23, 8),
+      error(WarningCode.DEAD_CODE, 23, 8),
     ]);
   }
 
@@ -427,7 +537,7 @@ f() {
   bool b = false && (false && false);
   print(b);
 }''', [
-      error(HintCode.DEAD_CODE, 23, 19),
+      error(WarningCode.DEAD_CODE, 23, 19),
     ]);
   }
 
@@ -437,7 +547,7 @@ f() {
   bool b = true || true;
   print(b);
 }''', [
-      error(HintCode.DEAD_CODE, 22, 7),
+      error(WarningCode.DEAD_CODE, 22, 7),
     ]);
   }
 
@@ -458,7 +568,7 @@ f() {
   bool b = true || (false && false);
   print(b);
 }''', [
-      error(HintCode.DEAD_CODE, 22, 19),
+      error(WarningCode.DEAD_CODE, 22, 19),
     ]);
   }
 
@@ -480,7 +590,7 @@ main() {
   2;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 61, 2),
+      error(WarningCode.DEAD_CODE, 61, 2),
     ]);
   }
 
@@ -494,7 +604,7 @@ void f(bool a) {
   2;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 44, 2),
+      error(WarningCode.DEAD_CODE, 44, 2),
     ]);
   }
 
@@ -510,18 +620,18 @@ main() {
   3;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 56, 2),
+      error(WarningCode.DEAD_CODE, 56, 2),
     ]);
   }
 
   test_flowEnd_tryStatement_finally() async {
     var expectedErrors = expectedErrorsByNullability(
       nullable: [
-        error(HintCode.DEAD_CODE, 61, 11),
+        error(WarningCode.DEAD_CODE, 61, 11),
       ],
       legacy: [
-        error(HintCode.DEAD_CODE, 61, 2),
-        error(HintCode.DEAD_CODE, 70, 2),
+        error(WarningCode.DEAD_CODE, 61, 2),
+        error(WarningCode.DEAD_CODE, 70, 2),
       ],
     );
     await assertErrorsInCode(r'''
@@ -545,7 +655,7 @@ void f() {
   for (;;) {}
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 11),
+      error(WarningCode.DEAD_CODE, 23, 11),
     ]);
   }
 
@@ -560,7 +670,7 @@ void f() {
   3;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 24, 12),
+      error(WarningCode.DEAD_CODE, 24, 12),
     ]);
   }
 
@@ -575,7 +685,7 @@ void f() {
   3;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 41, 12),
+      error(WarningCode.DEAD_CODE, 41, 12),
     ]);
   }
 
@@ -593,7 +703,7 @@ f() {
   a();
   print(2);
 }''', [
-      error(HintCode.DEAD_CODE, 104, 9),
+      error(WarningCode.DEAD_CODE, 104, 9),
     ]);
   }
 
@@ -613,7 +723,7 @@ f() {
   new C().a;
   print(2);
 }''', [
-      error(HintCode.DEAD_CODE, 129, 9),
+      error(WarningCode.DEAD_CODE, 129, 9),
     ]);
   }
 
@@ -633,7 +743,7 @@ f() {
   new C().a();
   print(2);
 }''', [
-      error(HintCode.DEAD_CODE, 132, 9),
+      error(WarningCode.DEAD_CODE, 132, 9),
     ]);
   }
 
@@ -647,7 +757,7 @@ f(v) {
       print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 65, 9),
+      error(WarningCode.DEAD_CODE, 65, 9),
     ]);
   }
 
@@ -660,7 +770,7 @@ f() {
     print(l);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 56, 9),
+      error(WarningCode.DEAD_CODE, 56, 9),
     ]);
   }
 
@@ -672,7 +782,7 @@ f() {
     print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 33, 9),
+      error(WarningCode.DEAD_CODE, 33, 9),
     ]);
   }
 
@@ -685,7 +795,7 @@ f(v) {
       print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 52, 9),
+      error(WarningCode.DEAD_CODE, 52, 9),
     ]);
   }
 
@@ -697,7 +807,7 @@ f(v) {
     print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 35, 9),
+      error(WarningCode.DEAD_CODE, 35, 9),
     ]);
   }
 
@@ -710,7 +820,7 @@ f() {
     print(l);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 59, 9),
+      error(WarningCode.DEAD_CODE, 59, 9),
     ]);
   }
 
@@ -722,7 +832,7 @@ f() {
     print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 36, 9),
+      error(WarningCode.DEAD_CODE, 36, 9),
     ]);
   }
 
@@ -734,7 +844,7 @@ f(v) {
     print(1);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 38, 9),
+      error(WarningCode.DEAD_CODE, 38, 9),
     ]);
   }
 
@@ -748,7 +858,7 @@ f() {
   }
   print(1);
 }''', [
-      error(HintCode.DEAD_CODE, 62, 9),
+      error(WarningCode.DEAD_CODE, 62, 9),
     ]);
   }
 
@@ -772,7 +882,7 @@ f() {
     print(2);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 61, 9),
+      error(WarningCode.DEAD_CODE, 61, 9),
     ]);
   }
 
@@ -783,7 +893,7 @@ f() {
   return;
   print(2);
 }''', [
-      error(HintCode.DEAD_CODE, 30, 9),
+      error(WarningCode.DEAD_CODE, 30, 9),
     ]);
   }
 
@@ -797,7 +907,7 @@ f() {
   }
   g();
 }''', [
-      error(HintCode.DEAD_CODE, 49, 9),
+      error(WarningCode.DEAD_CODE, 49, 9),
     ]);
   }
 
@@ -810,7 +920,7 @@ f() {
     print(2);
   };
 }''', [
-      error(HintCode.DEAD_CODE, 43, 9),
+      error(WarningCode.DEAD_CODE, 43, 9),
     ]);
   }
 
@@ -823,7 +933,7 @@ f(bool b) {
     print(2);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 52, 9),
+      error(WarningCode.DEAD_CODE, 52, 9),
     ]);
   }
 
@@ -836,7 +946,7 @@ class A {
     print(2);
   }
 }''', [
-      error(HintCode.DEAD_CODE, 48, 9),
+      error(WarningCode.DEAD_CODE, 48, 9),
     ]);
   }
 
@@ -847,7 +957,7 @@ f() {
   return;
   if(false) {}
 }''', [
-      error(HintCode.DEAD_CODE, 30, 12),
+      error(WarningCode.DEAD_CODE, 30, 12),
     ]);
   }
 
@@ -860,7 +970,7 @@ f() {
   return;
   print(3);
 }''', [
-      error(HintCode.DEAD_CODE, 30, 31),
+      error(WarningCode.DEAD_CODE, 30, 31),
     ]);
   }
 
@@ -871,13 +981,13 @@ f() {
   throw 'Stop here';
   print(2);
 }''', [
-      error(HintCode.DEAD_CODE, 41, 9),
+      error(WarningCode.DEAD_CODE, 41, 9),
     ]);
   }
 
   test_switchCase_final_break() async {
     var expectedErrors = expectedErrorsByNullability(nullable: [
-      error(HintCode.DEAD_CODE, 96, 6),
+      error(WarningCode.DEAD_CODE, 96, 6),
     ], legacy: []);
     await assertErrorsInCode(r'''
 void f(int a) {
@@ -894,7 +1004,7 @@ void f(int a) {
 
   test_switchCase_final_continue() async {
     var expectedErrors = expectedErrorsByNullability(nullable: [
-      error(HintCode.DEAD_CODE, 140, 9),
+      error(WarningCode.DEAD_CODE, 140, 9),
     ], legacy: []);
     await assertErrorsInCode(r'''
 void f(int a) {
@@ -913,7 +1023,7 @@ void f(int a) {
 
   test_switchCase_final_rethrow() async {
     var expectedErrors = expectedErrorsByNullability(nullable: [
-      error(HintCode.DEAD_CODE, 142, 8),
+      error(WarningCode.DEAD_CODE, 142, 8),
     ], legacy: []);
     await assertErrorsInCode(r'''
 void f(int a) {
@@ -934,7 +1044,7 @@ void f(int a) {
 
   test_switchCase_final_return() async {
     var expectedErrors = expectedErrorsByNullability(nullable: [
-      error(HintCode.DEAD_CODE, 96, 7),
+      error(WarningCode.DEAD_CODE, 96, 7),
     ], legacy: []);
     await assertErrorsInCode(r'''
 void f(int a) {
@@ -951,7 +1061,7 @@ void f(int a) {
 
   test_switchCase_final_throw() async {
     var expectedErrors = expectedErrorsByNullability(nullable: [
-      error(HintCode.DEAD_CODE, 96, 8),
+      error(WarningCode.DEAD_CODE, 96, 8),
     ], legacy: []);
     await assertErrorsInCode(r'''
 void f(int a) {
@@ -974,7 +1084,7 @@ Never f() { throw ''; }
 
 var x = [1, 2, f(), 4];
 ''',
-      isNullSafetyEnabled ? [error(HintCode.DEAD_CODE, 45, 2)] : [],
+      isNullSafetyEnabled ? [error(WarningCode.DEAD_CODE, 45, 2)] : [],
     );
   }
 
@@ -984,7 +1094,7 @@ Iterable<int> f() sync* {
   return;
   yield 1;
 }''', [
-      error(HintCode.DEAD_CODE, 38, 8),
+      error(WarningCode.DEAD_CODE, 38, 8),
     ]);
   }
 }
@@ -1003,7 +1113,7 @@ void f(Object waldo) {
   assert(waldo != null, "Where's Waldo?");
 }
 ''', [
-      error(HintCode.UNNECESSARY_NULL_COMPARISON_TRUE, 38, 7),
+      error(WarningCode.UNNECESSARY_NULL_COMPARISON_TRUE, 38, 7),
     ]);
   }
 
@@ -1027,8 +1137,8 @@ void f(bool c) {
   } while (c);
 }
 ''', [
-      error(HintCode.DEAD_CODE, 19, 4),
-      error(HintCode.DEAD_CODE, 52, 12),
+      error(WarningCode.DEAD_CODE, 19, 4),
+      error(WarningCode.DEAD_CODE, 52, 12),
     ]);
   }
 
@@ -1044,8 +1154,8 @@ void f(bool c) {
   print('');
 }
 ''', [
-      error(HintCode.DEAD_CODE, 19, 4),
-      error(HintCode.DEAD_CODE, 69, 12),
+      error(WarningCode.DEAD_CODE, 19, 4),
+      error(WarningCode.DEAD_CODE, 69, 12),
     ]);
   }
 
@@ -1062,8 +1172,8 @@ void f(bool c) {
   print('');
 }
 ''', [
-      error(HintCode.DEAD_CODE, 28, 4),
-      error(HintCode.DEAD_CODE, 85, 12),
+      error(WarningCode.DEAD_CODE, 28, 4),
+      error(WarningCode.DEAD_CODE, 85, 12),
     ]);
   }
 
@@ -1079,9 +1189,9 @@ void f(bool c) {
   print('');
 }
 ''', [
-      error(HintCode.DEAD_CODE, 19, 4),
-      error(HintCode.DEAD_CODE, 73, 12),
-      error(HintCode.DEAD_CODE, 88, 10),
+      error(WarningCode.DEAD_CODE, 19, 4),
+      error(WarningCode.DEAD_CODE, 73, 12),
+      error(WarningCode.DEAD_CODE, 88, 10),
     ]);
   }
 
@@ -1101,9 +1211,9 @@ void f(bool c) {
   print('');
 }
 ''', [
-      error(HintCode.DEAD_CODE, 37, 4),
-      error(HintCode.DEAD_CODE, 104, 12),
-      error(HintCode.DEAD_CODE, 121, 38),
+      error(WarningCode.DEAD_CODE, 37, 4),
+      error(WarningCode.DEAD_CODE, 104, 12),
+      error(WarningCode.DEAD_CODE, 121, 38),
     ]);
   }
 
@@ -1121,9 +1231,9 @@ void f(bool c) {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 32, 4),
-      error(HintCode.DEAD_CODE, 98, 12),
-      error(HintCode.DEAD_CODE, 115, 14),
+      error(WarningCode.DEAD_CODE, 32, 4),
+      error(WarningCode.DEAD_CODE, 98, 12),
+      error(WarningCode.DEAD_CODE, 115, 14),
     ]);
   }
 
@@ -1137,9 +1247,9 @@ void f(bool c) {
   print('2');
 }
 ''', [
-      error(HintCode.DEAD_CODE, 19, 4),
-      error(HintCode.DEAD_CODE, 52, 12),
-      error(HintCode.DEAD_CODE, 67, 11),
+      error(WarningCode.DEAD_CODE, 19, 4),
+      error(WarningCode.DEAD_CODE, 52, 12),
+      error(WarningCode.DEAD_CODE, 67, 11),
     ]);
   }
 
@@ -1152,8 +1262,8 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 21, 1),
-      error(HintCode.DEAD_CODE, 42, 2),
+      error(WarningCode.DEAD_CODE, 21, 1),
+      error(WarningCode.DEAD_CODE, 42, 2),
     ]);
   }
 
@@ -1165,7 +1275,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 21, 4),
+      error(WarningCode.DEAD_CODE, 21, 4),
     ]);
   }
 
@@ -1175,8 +1285,8 @@ void f() {
   for (; throw 0; 1) {}
 }
 ''', [
-      error(HintCode.DEAD_CODE, 29, 1),
-      error(HintCode.DEAD_CODE, 32, 2),
+      error(WarningCode.DEAD_CODE, 29, 1),
+      error(WarningCode.DEAD_CODE, 32, 2),
     ]);
   }
 
@@ -1188,7 +1298,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 9),
+      error(WarningCode.DEAD_CODE, 30, 9),
     ]);
   }
 
@@ -1200,7 +1310,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 5),
+      error(WarningCode.DEAD_CODE, 30, 5),
     ]);
   }
 
@@ -1212,7 +1322,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 7),
+      error(WarningCode.DEAD_CODE, 30, 7),
     ]);
   }
 
@@ -1224,7 +1334,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 13),
+      error(WarningCode.DEAD_CODE, 30, 13),
     ]);
   }
 
@@ -1236,7 +1346,7 @@ void f(List<int> values) {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 37, 9),
+      error(WarningCode.DEAD_CODE, 37, 9),
     ]);
   }
 
@@ -1249,7 +1359,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 32, 3),
+      error(WarningCode.DEAD_CODE, 32, 3),
     ]);
   }
 
@@ -1261,7 +1371,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 12),
+      error(WarningCode.DEAD_CODE, 30, 12),
     ]);
   }
 
@@ -1273,7 +1383,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 3),
+      error(WarningCode.DEAD_CODE, 30, 3),
     ]);
   }
 
@@ -1287,7 +1397,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 47, 7),
+      error(WarningCode.DEAD_CODE, 47, 7),
     ]);
   }
 
@@ -1299,7 +1409,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 3),
+      error(WarningCode.DEAD_CODE, 30, 3),
     ]);
   }
 
@@ -1311,7 +1421,7 @@ void f() {
   }
 }
 ''', [
-      error(HintCode.DEAD_CODE, 30, 8),
+      error(WarningCode.DEAD_CODE, 30, 8),
     ]);
   }
 
@@ -1321,7 +1431,7 @@ void f() {
   for (;; 0, throw 1, 2) {}
 }
 ''', [
-      error(HintCode.DEAD_CODE, 33, 1),
+      error(WarningCode.DEAD_CODE, 33, 1),
     ]);
   }
 
@@ -1339,7 +1449,7 @@ main() {
   3;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 57, 2),
+      error(WarningCode.DEAD_CODE, 57, 2),
     ]);
   }
 
@@ -1353,8 +1463,8 @@ void g(A a) {
   print(1);
 }
 ''', [
-      error(HintCode.RECEIVER_OF_TYPE_NEVER, 54, 3),
-      error(HintCode.DEAD_CODE, 57, 16),
+      error(WarningCode.RECEIVER_OF_TYPE_NEVER, 54, 3),
+      error(WarningCode.DEAD_CODE, 57, 16),
     ]);
   }
 
@@ -1365,8 +1475,8 @@ void g(Never f) {
   print(1);
 }
 ''', [
-      error(HintCode.RECEIVER_OF_TYPE_NEVER, 20, 3),
-      error(HintCode.DEAD_CODE, 23, 16),
+      error(WarningCode.RECEIVER_OF_TYPE_NEVER, 20, 3),
+      error(WarningCode.DEAD_CODE, 23, 16),
     ]);
   }
 
@@ -1377,8 +1487,8 @@ void g(Never f) {
   print(1);
 }
 ''', [
-      error(HintCode.RECEIVER_OF_TYPE_NEVER, 20, 1),
-      error(HintCode.DEAD_CODE, 21, 16),
+      error(WarningCode.RECEIVER_OF_TYPE_NEVER, 20, 1),
+      error(WarningCode.DEAD_CODE, 21, 16),
     ]);
   }
 
@@ -1411,7 +1521,7 @@ main() {
   1;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 45, 2),
+      error(WarningCode.DEAD_CODE, 45, 2),
     ]);
   }
 
@@ -1424,7 +1534,7 @@ main() {
   2;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 45, 2),
+      error(WarningCode.DEAD_CODE, 45, 2),
     ]);
   }
 
@@ -1452,7 +1562,7 @@ int f(Foo foo) {
   return -1;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 111, 10),
+      error(WarningCode.DEAD_CODE, 111, 10),
     ]);
   }
 
@@ -1469,8 +1579,8 @@ main() {
 }
 Never foo() => throw 'exception';
 ''', [
-      error(HintCode.DEAD_CODE, 32, 14),
-      error(HintCode.DEAD_CODE, 87, 14),
+      error(WarningCode.DEAD_CODE, 32, 14),
+      error(WarningCode.DEAD_CODE, 87, 14),
     ]);
   }
 
@@ -1481,7 +1591,7 @@ void f() {
   l?..[0]..length;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 29, 15),
+      error(WarningCode.DEAD_CODE, 29, 15),
     ]);
   }
 
@@ -1492,7 +1602,7 @@ void f() {
   i?..toInt()..isEven;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 19),
+      error(WarningCode.DEAD_CODE, 23, 19),
     ]);
   }
 
@@ -1503,7 +1613,7 @@ void f() {
   i?..sign..isEven;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 16),
+      error(WarningCode.DEAD_CODE, 23, 16),
     ]);
   }
 
@@ -1514,7 +1624,7 @@ void f() {
   l?[0];
 }
 ''', [
-      error(HintCode.DEAD_CODE, 29, 5),
+      error(WarningCode.DEAD_CODE, 29, 5),
     ]);
   }
 
@@ -1525,7 +1635,7 @@ void f() {
   l?[0][0];
 }
 ''', [
-      error(HintCode.DEAD_CODE, 35, 8),
+      error(WarningCode.DEAD_CODE, 35, 8),
     ]);
   }
 
@@ -1536,7 +1646,7 @@ void f() {
   i?.truncate();
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 13),
+      error(WarningCode.DEAD_CODE, 23, 13),
     ]);
   }
 
@@ -1547,7 +1657,7 @@ void f() {
   i?.truncate().truncate();
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 24),
+      error(WarningCode.DEAD_CODE, 23, 24),
     ]);
   }
 
@@ -1558,7 +1668,7 @@ void f() {
   i?.truncate().sign;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 18),
+      error(WarningCode.DEAD_CODE, 23, 18),
     ]);
   }
 
@@ -1569,7 +1679,7 @@ void f() {
   (i)?.sign;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 9),
+      error(WarningCode.DEAD_CODE, 23, 9),
     ]);
   }
 
@@ -1580,7 +1690,7 @@ void f() {
   (i)?.sign.sign;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 23, 14),
+      error(WarningCode.DEAD_CODE, 23, 14),
     ]);
   }
 }

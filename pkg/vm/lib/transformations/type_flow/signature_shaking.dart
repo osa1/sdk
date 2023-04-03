@@ -190,7 +190,7 @@ class _ParameterInfo {
     // When run in weak mode with null assertions enabled, parameters with
     // non-nullable types have implicit null checks, which count as reads.
     if ((param.isCovariantByDeclaration || param.isCovariantByClass) ||
-        (!shaker.typeFlowAnalysis.target.flags.enableNullSafety &&
+        (!shaker.typeFlowAnalysis.target.flags.soundNullSafety &&
             param.type.nullability == Nullability.nonNullable &&
             (type == null || type is NullableType))) {
       isChecked = true;
@@ -554,7 +554,8 @@ class _Transform extends RecursiveVisitor {
             VariableDeclaration argVar = VariableDeclaration(null,
                 initializer: arg,
                 type: arg.getStaticType(typeContext),
-                isFinal: true);
+                isFinal: true,
+                isSynthesized: true);
             addedInitializers
                 .add(LocalInitializer(argVar)..parent = constructor);
             hoisted[arg] = argVar;
@@ -568,7 +569,8 @@ class _Transform extends RecursiveVisitor {
             VariableDeclaration argVar = VariableDeclaration(null,
                 initializer: arg,
                 type: arg.getStaticType(typeContext),
-                isFinal: true);
+                isFinal: true,
+                isSynthesized: true);
             current = Let(argVar, current);
             hoisted[arg] = argVar;
           }
@@ -579,7 +581,8 @@ class _Transform extends RecursiveVisitor {
           final VariableDeclaration receiverVar = VariableDeclaration(null,
               initializer: receiver,
               type: receiver.getStaticType(typeContext),
-              isFinal: true);
+              isFinal: true,
+              isSynthesized: true);
           current = Let(receiverVar, current);
           call.replaceChild(receiver, VariableGet(receiverVar));
         }

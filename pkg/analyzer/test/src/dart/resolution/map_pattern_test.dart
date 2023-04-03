@@ -46,7 +46,9 @@ MapPattern
         name: a
         declaredElement: a@47
           type: String
+        matchedValueType: dynamic
   rightBracket: }
+  matchedValueType: dynamic
   requiredType: Map<dynamic, dynamic>
 ''');
   }
@@ -77,7 +79,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@44
           type: dynamic
+        matchedValueType: dynamic
   rightBracket: }
+  matchedValueType: dynamic
   requiredType: Map<dynamic, dynamic>
 ''');
   }
@@ -124,22 +128,46 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@57
           type: String
+        matchedValueType: String
   rightBracket: }
+  matchedValueType: dynamic
   requiredType: Map<int, String>
 ''');
   }
 
-  test_matchMap_noTypeArguments_restElement_noPattern() async {
-    await assertNoErrorsInCode(r'''
+  test_matchMap_noTypeArguments_empty() async {
+    await assertErrorsInCode(r'''
 void f(Map<int, String> x) {
-  if (x case {0: '', ...}) {}
+  if (x case {}) {}
 }
+''', [
+      error(CompileTimeErrorCode.EMPTY_MAP_PATTERN, 42, 2),
+    ]);
+    final node = findNode.singleGuardedPattern.pattern;
+    assertResolvedNodeText(node, r'''
+MapPattern
+  leftBracket: {
+  rightBracket: }
+  matchedValueType: Map<int, String>
+  requiredType: Map<int, String>
 ''');
+  }
+
+  test_matchMap_noTypeArguments_restElement_first() async {
+    await assertErrorsInCode(r'''
+void f(Map<int, String> x) {
+  if (x case {..., 0: ''}) {}
+}
+''', [
+      error(CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN, 43, 3),
+    ]);
     final node = findNode.singleGuardedPattern.pattern;
     assertResolvedNodeText(node, r'''
 MapPattern
   leftBracket: {
   elements
+    RestPatternElement
+      operator: ...
     MapPatternEntry
       key: IntegerLiteral
         literal: 0
@@ -148,22 +176,20 @@ MapPattern
       value: ConstantPattern
         expression: SimpleStringLiteral
           literal: ''
-    RestPatternElement
-      operator: ...
+        matchedValueType: String
   rightBracket: }
+  matchedValueType: Map<int, String>
   requiredType: Map<int, String>
 ''');
   }
 
-  test_matchMap_noTypeArguments_restElement_withPattern() async {
+  test_matchMap_noTypeArguments_restElement_last() async {
     await assertErrorsInCode(r'''
 void f(Map<int, String> x) {
-  if (x case {0: '', ...var rest}) {}
+  if (x case {0: '', ...}) {}
 }
 ''', [
-      error(CompileTimeErrorCode.REST_ELEMENT_WITH_SUBPATTERN_IN_MAP_PATTERN,
-          57, 4),
-      error(HintCode.UNUSED_LOCAL_VARIABLE, 57, 4),
+      error(CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN, 50, 3),
     ]);
     final node = findNode.singleGuardedPattern.pattern;
     assertResolvedNodeText(node, r'''
@@ -178,6 +204,71 @@ MapPattern
       value: ConstantPattern
         expression: SimpleStringLiteral
           literal: ''
+        matchedValueType: String
+    RestPatternElement
+      operator: ...
+  rightBracket: }
+  matchedValueType: Map<int, String>
+  requiredType: Map<int, String>
+''');
+  }
+
+  test_matchMap_noTypeArguments_restElement_multiple() async {
+    await assertErrorsInCode(r'''
+void f(Map<int, String> x) {
+  if (x case {..., 0: '', ...}) {}
+}
+''', [
+      error(CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN, 43, 3),
+      error(CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN, 55, 3),
+    ]);
+    final node = findNode.singleGuardedPattern.pattern;
+    assertResolvedNodeText(node, r'''
+MapPattern
+  leftBracket: {
+  elements
+    RestPatternElement
+      operator: ...
+    MapPatternEntry
+      key: IntegerLiteral
+        literal: 0
+        staticType: int
+      separator: :
+      value: ConstantPattern
+        expression: SimpleStringLiteral
+          literal: ''
+        matchedValueType: String
+    RestPatternElement
+      operator: ...
+  rightBracket: }
+  matchedValueType: Map<int, String>
+  requiredType: Map<int, String>
+''');
+  }
+
+  test_matchMap_noTypeArguments_restElement_withPattern() async {
+    await assertErrorsInCode(r'''
+void f(Map<int, String> x) {
+  if (x case {0: '', ...var rest}) {}
+}
+''', [
+      error(CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN, 50, 11),
+      error(WarningCode.UNUSED_LOCAL_VARIABLE, 57, 4),
+    ]);
+    final node = findNode.singleGuardedPattern.pattern;
+    assertResolvedNodeText(node, r'''
+MapPattern
+  leftBracket: {
+  elements
+    MapPatternEntry
+      key: IntegerLiteral
+        literal: 0
+        staticType: int
+      separator: :
+      value: ConstantPattern
+        expression: SimpleStringLiteral
+          literal: ''
+        matchedValueType: String
     RestPatternElement
       operator: ...
       pattern: DeclaredVariablePattern
@@ -185,7 +276,9 @@ MapPattern
         name: rest
         declaredElement: hasImplicitType rest@57
           type: dynamic
+        matchedValueType: dynamic
   rightBracket: }
+  matchedValueType: Map<int, String>
   requiredType: Map<int, String>
 ''');
   }
@@ -213,7 +306,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@50
           type: String
+        matchedValueType: String
   rightBracket: }
+  matchedValueType: Map<int, String>
   requiredType: Map<int, String>
 ''');
   }
@@ -257,7 +352,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@62
           type: int
+        matchedValueType: int
   rightBracket: }
+  matchedValueType: Map<bool, num>
   requiredType: Map<bool, int>
 ''');
   }
@@ -282,22 +379,27 @@ MapPattern
         expression: IntegerLiteral
           literal: 0
           staticType: int
+        matchedValueType: Object?
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<Object?, Object?>
 ''');
   }
 
   test_matchObject_noTypeArguments_empty() async {
-    await assertNoErrorsInCode(r'''
+    await assertErrorsInCode(r'''
 void f(Object x) {
   if (x case {}) {}
 }
-''');
+''', [
+      error(CompileTimeErrorCode.EMPTY_MAP_PATTERN, 32, 2),
+    ]);
     final node = findNode.singleGuardedPattern.pattern;
     assertResolvedNodeText(node, r'''
 MapPattern
   leftBracket: {
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<Object?, Object?>
 ''');
   }
@@ -330,7 +432,9 @@ MapPattern
         name: a
         declaredElement: a@43
           type: int
+        matchedValueType: Object?
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<Object?, Object?>
 ''');
   }
@@ -358,7 +462,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@43
           type: Object?
+        matchedValueType: Object?
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<Object?, Object?>
 ''');
   }
@@ -399,7 +505,9 @@ MapPattern
         expression: IntegerLiteral
           literal: 0
           staticType: int
+        matchedValueType: int
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<bool, int>
 ''');
   }
@@ -443,7 +551,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType a@54
           type: int
+        matchedValueType: int
   rightBracket: }
+  matchedValueType: Object
   requiredType: Map<bool, int>
 ''');
   }
@@ -478,7 +588,9 @@ MapPattern
         expression: IntegerLiteral
           literal: 0
           staticType: int
+        matchedValueType: dynamic
   rightBracket: }
+  matchedValueType: dynamic
   requiredType: Map<dynamic, dynamic>
 ''');
   }
@@ -507,13 +619,16 @@ PatternVariableDeclaration
           name: a
           declaredElement: hasImplicitType a@40
             type: int
+          matchedValueType: int
     rightBracket: }
+    matchedValueType: Map<bool, int>
     requiredType: Map<bool, int>
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: Map<bool, int>
+  patternTypeSchema: Map<_, _>
 ''');
   }
 
@@ -559,7 +674,9 @@ PatternVariableDeclaration
           name: a
           declaredElement: hasImplicitType a@35
             type: int
+          matchedValueType: int
     rightBracket: }
+    matchedValueType: Map<bool, int>
     requiredType: Map<bool, int>
   equals: =
   expression: MethodInvocation
@@ -574,6 +691,7 @@ PatternVariableDeclaration
     staticType: Map<bool, int>
     typeArgumentTypes
       Map<bool, int>
+  patternTypeSchema: Map<bool, int>
 ''');
   }
 
@@ -609,7 +727,9 @@ PatternVariableDeclaration
           name: a
           declaredElement: a@28
             type: int
+          matchedValueType: int
     rightBracket: }
+    matchedValueType: Map<Object?, int>
     requiredType: Map<Object?, int>
   equals: =
   expression: MethodInvocation
@@ -624,6 +744,7 @@ PatternVariableDeclaration
     staticType: Map<Object?, int>
     typeArgumentTypes
       Map<Object?, int>
+  patternTypeSchema: Map<_, int>
 ''');
   }
 }

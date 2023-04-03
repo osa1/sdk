@@ -133,11 +133,11 @@ dynamic a;
 
   Future<void> test_withClause_class() async {
     await resolveTestCode('''
-class A {}
+mixin class A {}
 class B with A? {}
 ''');
     await assertHasFix('''
-class A {}
+mixin class A {}
 class B with A {}
 ''');
   }
@@ -219,6 +219,36 @@ final int? zero = 0;
 ''');
     await assertHasFix('''
 final int zero = 0;
+''');
+  }
+
+  Future<void> test_record() async {
+    await resolveTestCode('''
+f() {
+  final (List<int>? a, num c) = ([], 1);
+  print(a); print(c);
+}
+''');
+    await assertHasFix('''
+f() {
+  final (List<int> a, num c) = ([], 1);
+  print(a); print(c);
+}
+''');
+  }
+
+  Future<void> test_variable_declaration_pattern() async {
+    await resolveTestCode('''
+f() {
+  final [int a, num? c] = [0, 1];
+  print(a); print(c);
+}
+''');
+    await assertHasFix('''
+f() {
+  final [int a, num c] = [0, 1];
+  print(a); print(c);
+}
 ''');
   }
 }

@@ -867,6 +867,16 @@ class DartFixKind {
     DartFixKindPriority.DEFAULT,
     "Make '{0}' nullable",
   );
+  static const MATCH_ANY_MAP = FixKind(
+    'dart.fix.matchAnyMap',
+    DartFixKindPriority.DEFAULT,
+    "Match any map",
+  );
+  static const MATCH_EMPTY_MAP = FixKind(
+    'dart.fix.matchEmptyMap',
+    DartFixKindPriority.DEFAULT,
+    "Match an empty map",
+  );
   static const MOVE_ANNOTATION_TO_LIBRARY_DIRECTIVE = FixKind(
     'dart.fix.moveAnnotationToLibraryDirective',
     DartFixKindPriority.DEFAULT,
@@ -943,6 +953,16 @@ class DartFixKind {
     'dart.fix.remove.await.multi',
     DartFixKindPriority.IN_FILE,
     'Remove awaits in file',
+  );
+  static const REMOVE_BREAK = FixKind(
+    'dart.fix.remove.break',
+    DartFixKindPriority.DEFAULT,
+    'Remove break',
+  );
+  static const REMOVE_BREAK_MULTI = FixKind(
+    'dart.fix.remove.break.multi',
+    DartFixKindPriority.IN_FILE,
+    'Remove unnecessary breaks in file',
   );
   static const REMOVE_CHARACTER = FixKind(
     'dart.fix.remove.character',
@@ -1056,6 +1076,16 @@ class DartFixKind {
     DartFixKindPriority.IN_FILE,
     "Remove unnecessary '??' operators everywhere in file",
   );
+  static const REMOVE_INVOCATION = FixKind(
+    'dart.fix.remove.invocation',
+    DartFixKindPriority.DEFAULT,
+    'Remove unnecessary invocation of {0}',
+  );
+  static const REMOVE_INVOCATION_MULTI = FixKind(
+    'dart.fix.remove.invocation.multi',
+    DartFixKindPriority.IN_FILE,
+    'Remove unnecessary invocations of {0} in file',
+  );
   static const REMOVE_INITIALIZER = FixKind(
     'dart.fix.remove.initializer',
     DartFixKindPriority.DEFAULT,
@@ -1107,6 +1137,11 @@ class DartFixKind {
     'dart.fix.remove.nameFromDeclarationClause',
     DartFixKindPriority.DEFAULT,
     '{0}',
+  );
+  static const REMOVE_NEW = FixKind(
+    'dart.fix.remove.new',
+    DartFixKindPriority.DEFAULT,
+    "Remove 'new' keyword",
   );
   static const REMOVE_NON_NULL_ASSERTION = FixKind(
     'dart.fix.remove.nonNullAssertion',
@@ -1172,6 +1207,16 @@ class DartFixKind {
     'dart.fix.remove.returnedValue.multi',
     DartFixKindPriority.IN_FILE,
     'Remove invalid returned values in file',
+  );
+  static const REMOVE_SET_LITERAL = FixKind(
+    'dart.fix.remove.setLiteral',
+    DartFixKindPriority.DEFAULT,
+    'Remove set literal',
+  );
+  static const REMOVE_SET_LITERAL_MULTI = FixKind(
+    'dart.fix.remove.setLiteral.multi',
+    DartFixKindPriority.IN_FILE,
+    'Remove set literal everywhere in file',
   );
   static const REMOVE_THIS_EXPRESSION = FixKind(
     'dart.fix.remove.thisExpression',
@@ -1523,16 +1568,6 @@ class DartFixKind {
     DartFixKindPriority.DEFAULT,
     "Replace 'var' with 'dynamic'",
   );
-  static const REPLACE_WITH_EIGHT_DIGIT_HEX = FixKind(
-    'dart.fix.replace.withEightDigitHex',
-    DartFixKindPriority.DEFAULT,
-    "Replace with '{0}'",
-  );
-  static const REPLACE_WITH_EIGHT_DIGIT_HEX_MULTI = FixKind(
-    'dart.fix.replace.withEightDigitHex.multi',
-    DartFixKindPriority.IN_FILE,
-    'Replace with hex digits everywhere in file',
-  );
   static const REPLACE_WITH_BRACKETS = FixKind(
     'dart.fix.replace.withBrackets',
     DartFixKindPriority.DEFAULT,
@@ -1552,6 +1587,26 @@ class DartFixKind {
     'dart.fix.replace.withConditionalAssignment.multi',
     DartFixKindPriority.IN_FILE,
     'Replace with ??= everywhere in file',
+  );
+  static const REPLACE_WITH_DECORATED_BOX = FixKind(
+    'dart.fix.replace.withDecoratedBox',
+    DartFixKindPriority.DEFAULT,
+    "Replace with 'DecoratedBox'",
+  );
+  static const REPLACE_WITH_DECORATED_BOX_MULTI = FixKind(
+    'dart.fix.replace.withDecoratedBox.multi',
+    DartFixKindPriority.IN_FILE,
+    "Replace with 'DecoratedBox' everywhere in file",
+  );
+  static const REPLACE_WITH_EIGHT_DIGIT_HEX = FixKind(
+    'dart.fix.replace.withEightDigitHex',
+    DartFixKindPriority.DEFAULT,
+    "Replace with '{0}'",
+  );
+  static const REPLACE_WITH_EIGHT_DIGIT_HEX_MULTI = FixKind(
+    'dart.fix.replace.withEightDigitHex.multi',
+    DartFixKindPriority.IN_FILE,
+    'Replace with hex digits everywhere in file',
   );
   static const REPLACE_WITH_EXTENSION_NAME = FixKind(
     'dart.fix.replace.withExtensionName',
@@ -1689,11 +1744,6 @@ class DartFixKind {
     'dart.fix.updateSdkConstraints',
     DartFixKindPriority.DEFAULT,
     'Update the SDK constraints',
-  );
-  static const USE_CONST = FixKind(
-    'dart.fix.use.const',
-    DartFixKindPriority.DEFAULT,
-    'Change to constant',
   );
   static const USE_EFFECTIVE_INTEGER_DIVISION = FixKind(
     'dart.fix.use.effectiveIntegerDivision',

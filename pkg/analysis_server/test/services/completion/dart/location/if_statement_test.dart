@@ -28,13 +28,95 @@ class IfStatementTest2 extends AbstractCompletionDriverTest
 }
 
 mixin IfStatementTestCases on AbstractCompletionDriverTest {
+  Future<void> test_afterPattern() async {
+    await computeSuggestions('''
+void f(Object o) {
+  if (o case var x ^)
+}
+''');
+    assertResponse(r'''
+suggestions
+  when
+    kind: keyword
+''');
+  }
+
+  Future<void> test_afterPattern_partial() async {
+    await computeSuggestions('''
+void f(Object o) {
+  if (o case var x w^)
+}
+''');
+    assertResponse(r'''
+replacement
+  left: 1
+suggestions
+  when
+    kind: keyword
+''');
+  }
+
+  Future<void> test_afterWhen() async {
+    await computeSuggestions('''
+void f(Object o) {
+  if (o case var x when ^)
+}
+''');
+    assertResponse(r'''
+suggestions
+  false
+    kind: keyword
+  true
+    kind: keyword
+  null
+    kind: keyword
+  const
+    kind: keyword
+  switch
+    kind: keyword
+''');
+  }
+
+  Future<void> test_afterWhen_partial() async {
+    await computeSuggestions('''
+void f(Object o) {
+  if (o case var x when c^)
+}
+''');
+    if (isProtocolVersion2) {
+      assertResponse(r'''
+replacement
+  left: 1
+suggestions
+  const
+    kind: keyword
+''');
+    } else {
+      assertResponse(r'''
+replacement
+  left: 1
+suggestions
+  false
+    kind: keyword
+  true
+    kind: keyword
+  null
+    kind: keyword
+  const
+    kind: keyword
+  switch
+    kind: keyword
+''');
+    }
+  }
+
   Future<void> test_rightParen_withCondition_withoutCase() async {
     await computeSuggestions('''
 void f(Object o) {
   if (o ^) {}
 }
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   case
     kind: keyword
@@ -49,7 +131,7 @@ void f() {
   if (^) {}
 }
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   false
     kind: keyword

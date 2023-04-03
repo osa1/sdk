@@ -14,7 +14,7 @@ const _ListConstructorSentinel = const _Growable();
 /// class as an interceptor, and changes references to [:this:] to
 /// actually use the receiver of the method, which is generated as an extra
 /// argument added to each member.
-class JSArray<E> extends Interceptor implements List<E>, JSIndexable<E> {
+class JSArray<E> extends JavaScriptObject implements List<E>, JSIndexable<E> {
   const JSArray();
 
   // This factory constructor is the redirection target of the List() factory
@@ -762,6 +762,10 @@ class JSArray<E> extends Interceptor implements List<E>, JSIndexable<E> {
     if (this.isEmpty) throw IterableElementError.noElement();
     this[this.length - 1] = element;
   }
+
+  // Specialized version of `get runtimeType` is needed here so that
+  // `Interceptor.runtimeType` can avoid testing for `JSArray`.
+  Type get runtimeType => getRuntimeTypeOfArray(this);
 }
 
 /// Dummy subclasses that allow the backend to track more precise

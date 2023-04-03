@@ -67,6 +67,9 @@ abstract class JsToElementMap {
   /// Returns the [FunctionEntity] corresponding to the procedure [node].
   FunctionEntity getMethod(ir.Procedure node);
 
+  /// Returns `true` if [node] has been included into this map.
+  bool containsMethod(ir.Procedure node);
+
   /// Returns the [ConstructorEntity] corresponding to the generative or factory
   /// constructor [node].
   ConstructorEntity getConstructor(ir.Member node);
@@ -185,6 +188,10 @@ abstract class KernelToTypeInferenceMap {
   /// Returns the inferred type of [listLiteral].
   AbstractValue typeOfListLiteral(
       ir.ListLiteral listLiteral, AbstractValueDomain abstractValueDomain);
+
+  /// Returns the inferred type of [recordLiteral].
+  AbstractValue? typeOfRecordLiteral(
+      ir.RecordLiteral recordLiteral, AbstractValueDomain abstractValueDomain);
 
   /// Returns the inferred type of iterator in [forInStatement].
   AbstractValue? typeOfIterator(ir.ForInStatement forInStatement);
@@ -341,6 +348,9 @@ enum MemberKind {
 
   /// A separated body of a generator (sync*/async/async*) function.
   generatorBody,
+
+  /// A dynamic getter for a field of a record.
+  recordGetter,
 }
 
 /// Definition information for a [MemberEntity].
@@ -372,6 +382,8 @@ abstract class MemberDefinition {
       case MemberKind.closureCall:
       case MemberKind.closureField:
         return ClosureMemberDefinition.readFromDataSource(source, kind);
+      case MemberKind.recordGetter:
+        return RecordGetterDefinition.readFromDataSource(source);
     }
   }
 
@@ -508,29 +520,28 @@ class ClosureMemberDefinition implements MemberDefinition {
   String toString() => 'ClosureMemberDefinition(kind:$kind,location:$location)';
 }
 
-/// Definition for a Record member. This is almost useless, since there is no
-/// location or corresponding ir.Node.
-class RecordMemberDefinition implements MemberDefinition {
+/// Definition for a record getter member.
+class RecordGetterDefinition implements MemberDefinition {
   /// Tag used for identifying serialized [RecordMemberDefinition] objects in a
   /// debugging data stream.
-  static const String tag = 'record-member-definition';
+  static const String tag = 'record-getter-definition';
 
   @override
   final SourceSpan location;
-  @override
-  final MemberKind kind;
+
+  final int indexInShape;
 
   @override
-  ir.TreeNode get node => throw UnsupportedError('RecordMemberDefinition.node');
+  ir.TreeNode get node => throw UnsupportedError('RecordGetterDefinition.node');
 
-  RecordMemberDefinition(this.location, this.kind);
+  RecordGetterDefinition(this.location, this.indexInShape);
 
-  factory RecordMemberDefinition.readFromDataSource(
-      DataSourceReader source, MemberKind kind) {
+  factory RecordGetterDefinition.readFromDataSource(DataSourceReader source) {
     source.begin(tag);
     SourceSpan location = source.readSourceSpan();
+    int indexInShape = source.readInt();
     source.end(tag);
-    return RecordMemberDefinition(location, kind);
+    return RecordGetterDefinition(location, indexInShape);
   }
 
   @override
@@ -538,11 +549,16 @@ class RecordMemberDefinition implements MemberDefinition {
     sink.writeEnum(kind);
     sink.begin(tag);
     sink.writeSourceSpan(location);
+    sink.writeInt(indexInShape);
     sink.end(tag);
   }
 
   @override
-  String toString() => 'RecordMemberDefinition(kind:$kind,location:$location)';
+  MemberKind get kind => MemberKind.recordGetter;
+
+  @override
+  String toString() =>
+      'RecordGetterDefinition(indexInShape:$indexInShape,location:$location)';
 }
 
 void forEachOrderedParameterByFunctionNode(

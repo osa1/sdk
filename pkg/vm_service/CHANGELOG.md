@@ -1,4 +1,38 @@
-# Changelog
+## 11.3.0
+- Update to version `4.4` of the spec.
+- Add `label` property to `InstanceRef`.
+- Add `kUserTag` to `InstanceKind`.
+
+## 11.2.1
+- Prevent `VmServerConnection` from converting `SentinelException`s into
+  `RPCError`s.
+
+## 11.2.0
+- Update to version `4.3` of the spec.
+- Add `isSealed`, `isMixinClass`, `isBaseClass`, `isInterfaceClass`, and
+  `isFinal` properties to `Class`.
+
+## 11.1.0
+- Reduce number of type checks in `toJson()` methods.
+- Update to version `4.2` of the spec.
+- Add `getInstancesAsList` RPC.
+
+## 11.0.1
+- Fix bug where code would try to call `.toJson()` on `int`s.
+
+## 11.0.0
+- Change `HttpProfileRequestRef.id` type from `int` to `String`.
+- Change `SocketStatistic.id` type from `int` to `String`.
+- Change `ext.dart.io.getHttpProfileRequest` `id` parameter type from `int` to `String`.
+- Change `ext.dart.io.socketProfilingEnabled` parameter from 'enable' to 'enabled'.
+
+## 10.1.2
+- Fix bug where code would try to call `.toJson()` on `String`s.
+
+## 10.1.0
+- Update to version `4.1` of the spec.
+- Add optional `includeSubclasses` and `includeImplementers` parameters to
+  `getInstances`.
 
 ## 10.0.0
 - Update to version `4.0` of the spec.

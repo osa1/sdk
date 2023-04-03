@@ -11,7 +11,7 @@ import 'context_collection_resolution.dart';
 main() {
   defineReflectiveSuite(() {
     defineReflectiveTests(PrefixExpressionResolutionTest);
-    defineReflectiveTests(PrefixExpressionResolutionWithoutNullSafetyTest);
+    defineReflectiveTests(PrefixExpressionResolutionTest_WithoutNullSafety);
   });
 }
 
@@ -176,6 +176,7 @@ PrefixExpression
         guardedPattern: GuardedPattern
           pattern: WildcardPattern
             name: _
+            matchedValueType: Object?
         arrow: =>
         expression: IntegerLiteral
           literal: 0
@@ -224,6 +225,11 @@ PrefixExpression
 ''');
   }
 }
+
+@reflectiveTest
+class PrefixExpressionResolutionTest_WithoutNullSafety
+    extends PubPackageResolutionTest
+    with PrefixExpressionResolutionTestCases, WithoutNullSafetyMixin {}
 
 mixin PrefixExpressionResolutionTestCases on PubPackageResolutionTest {
   test_bang_bool_context() async {
@@ -1471,8 +1477,3 @@ PrefixExpression
     }
   }
 }
-
-@reflectiveTest
-class PrefixExpressionResolutionWithoutNullSafetyTest
-    extends PubPackageResolutionTest
-    with PrefixExpressionResolutionTestCases, WithoutNullSafetyMixin {}

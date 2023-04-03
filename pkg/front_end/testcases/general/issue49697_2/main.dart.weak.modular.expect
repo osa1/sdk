@@ -4,37 +4,37 @@ library /*isNonNullableByDefault*/;
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:17:11: Error: The type 'A?' is not exhaustively matched by the switch cases.
 //  - 'A' is from 'pkg/front_end/testcases/general/issue49697_2/main.dart'.
-// Try adding a default case or cases that match A.b?.
+// Try adding a default case or cases that match 'null'.
 //   switch (a) {
 //           ^
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:24:11: Error: The type 'A?' is not exhaustively matched by the switch cases.
 //  - 'A' is from 'pkg/front_end/testcases/general/issue49697_2/main.dart'.
-// Try adding a default case or cases that match A.b.
+// Try adding a default case or cases that match 'A.b'.
 //   switch (a) {
 //           ^
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:42:11: Error: The type 'B?' is not exhaustively matched by the switch cases.
 //  - 'B' is from 'pkg/front_end/testcases/general/issue49697_2/main.dart'.
-// Try adding a default case or cases that match B.b.
+// Try adding a default case or cases that match 'B.b'.
 //   switch (b) {
 //           ^
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:51:11: Error: The type 'C?' is not exhaustively matched by the switch cases.
 //  - 'C' is from 'pkg/front_end/testcases/general/issue49697_2/main_lib.dart'.
-// Try adding a default case or cases that match C.b?.
+// Try adding a default case or cases that match 'null'.
 //   switch (c) {
 //           ^
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:58:11: Error: The type 'C?' is not exhaustively matched by the switch cases.
 //  - 'C' is from 'pkg/front_end/testcases/general/issue49697_2/main_lib.dart'.
-// Try adding a default case or cases that match C.b.
+// Try adding a default case or cases that match 'C.b'.
 //   switch (c) {
 //           ^
 //
 // pkg/front_end/testcases/general/issue49697_2/main.dart:76:11: Error: The type 'D?' is not exhaustively matched by the switch cases.
 //  - 'D' is from 'pkg/front_end/testcases/general/issue49697_2/main_lib.dart'.
-// Try adding a default case or cases that match D.b.
+// Try adding a default case or cases that match 'D.b'.
 //   switch (d) {
 //           ^
 //
@@ -76,7 +76,7 @@ static method a1(self::A? a) → core::int? {
       }
     #L3:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method a2(self::A? a) → core::int? {
@@ -94,7 +94,7 @@ static method a2(self::A? a) → core::int? {
       }
     #L7:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method b1(self::B b) → core::int {
@@ -112,7 +112,7 @@ static method b1(self::B b) → core::int {
       }
     #L11:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method b2(self::B? b) → core::int? {
@@ -130,7 +130,7 @@ static method b2(self::B? b) → core::int? {
       }
     #L15:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method c1(mai::C? c) → core::int? {
@@ -143,7 +143,7 @@ static method c1(mai::C? c) → core::int? {
       }
     #L18:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method c2(mai::C? c) → core::int? {
@@ -161,7 +161,7 @@ static method c2(mai::C? c) → core::int? {
       }
     #L22:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method d1(mai::D d) → core::int {
@@ -179,7 +179,7 @@ static method d1(mai::D d) → core::int {
       }
     #L26:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method d2(mai::D? d) → core::int? {
@@ -197,10 +197,10 @@ static method d2(mai::D? d) → core::int? {
       }
     #L30:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
-static method main() → void {
+static method test() → void {
   self::a1(#C6);
   self::a2(#C6);
   self::b1(#C9);

@@ -16,6 +16,7 @@ import '../elements/entities.dart';
 import '../environment.dart';
 import '../inferrer/abstract_value_strategy.dart';
 import '../inferrer/types.dart';
+import '../io/source_information.dart';
 import '../ir/modular.dart';
 import '../js_backend/codegen_inputs.dart';
 import '../js_backend/inferred_data.dart';
@@ -146,9 +147,9 @@ class SerializationTask extends CompilerTask {
       // Consider using a strategy like we do for the global data, so we can also
       // test it with the objectSink/objectSource:
       //   List<Object> encoding = [];
-      //   DataSink sink = new ObjectSink(encoding, useDataKinds: true);
+      //   DataSink sink = ObjectSink(encoding, useDataKinds: true);
       //   data.toDataSink(sink);
-      //   DataSource source = new ObjectSource(encoding, useDataKinds: true);
+      //   DataSource source = ObjectSource(encoding, useDataKinds: true);
       //   source.registerComponentLookup(new ComponentLookup(component));
       //   ModuleData.fromDataSource(source);
       BytesSink bytes = BytesSink();
@@ -215,9 +216,11 @@ class SerializationTask extends CompilerTask {
 
   void serializeGlobalTypeInference(
       GlobalTypeInferenceResults results, DataSourceIndices indices) {
-    JClosedWorld closedWorld = results.closedWorld;
-    ir.Component component = closedWorld.elementMap.programEnv.mainComponent;
-    serializeComponent(component);
+    if (_options.outputUri != null) {
+      JClosedWorld closedWorld = results.closedWorld;
+      ir.Component component = closedWorld.elementMap.programEnv.mainComponent;
+      serializeComponent(component);
+    }
 
     measureSubtask('serialize data', () {
       _reporter.log('Writing data to ${_options.writeDataUri}');
@@ -301,7 +304,8 @@ class SerializationTask extends CompilerTask {
       GlobalTypeInferenceResults globalTypeInferenceResults,
       CodegenInputs codegenInputs,
       DataSourceIndices indices,
-      bool useDeferredSourceReads) async {
+      bool useDeferredSourceReads,
+      SourceLookup sourceLookup) async {
     int shards = _options.codegenShards!;
     JClosedWorld closedWorld = globalTypeInferenceResults.closedWorld;
     Map<MemberEntity, CodegenResult> results = {};
@@ -314,7 +318,7 @@ class SerializationTask extends CompilerTask {
         // TODO(36983): This code is extracted because there appeared to be a
         // memory leak for large buffer held by `source`.
         _deserializeCodegenInput(backendStrategy, closedWorld, uri, dataInput,
-            indices, results, useDeferredSourceReads);
+            indices, results, useDeferredSourceReads, sourceLookup);
         dataInput.release();
       });
     }
@@ -329,7 +333,8 @@ class SerializationTask extends CompilerTask {
       api.Input<List<int>> dataInput,
       DataSourceIndices importedIndices,
       Map<MemberEntity, CodegenResult> results,
-      bool useDeferredSourceReads) {
+      bool useDeferredSourceReads,
+      SourceLookup sourceLookup) {
     DataSourceReader source = DataSourceReader(
         BinaryDataSource(dataInput.data, stringInterner: _stringInterner),
         _options,
@@ -337,6 +342,7 @@ class SerializationTask extends CompilerTask {
         importedIndices: importedIndices,
         useDeferredStrategy: useDeferredSourceReads);
     backendStrategy.prepareCodegenReader(source);
+    source.registerSourceLookup(sourceLookup);
     Map<MemberEntity, CodegenResult> codegenResults =
         source.readMemberMap((MemberEntity member) {
       List<ModularName> modularNames = [];

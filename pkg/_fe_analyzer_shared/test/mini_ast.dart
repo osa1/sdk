@@ -321,11 +321,15 @@ Pattern objectPattern({
 ///       for (var (a, b) in iterable) { ... }
 ///     }
 Statement patternForIn(
-    Pattern pattern, Expression expression, List<Statement> body) {
+  Pattern pattern,
+  Expression expression,
+  List<Statement> body, {
+  bool hasAwait = false,
+}) {
   var location = computeLocation();
   return new _PatternForIn(
       pattern, expression, _Block(body, location: location),
-      location: location);
+      hasAwait: hasAwait, location: location);
 }
 
 /// Creates a "pattern-for-in" element.
@@ -335,10 +339,14 @@ Statement patternForIn(
 ///       [for (var (a, b) in iterable) '$a $b']
 ///     }
 CollectionElement patternForInElement(
-    Pattern pattern, Expression expression, CollectionElement body) {
+  Pattern pattern,
+  Expression expression,
+  CollectionElement body, {
+  bool hasAwait = false,
+}) {
   var location = computeLocation();
   return new _PatternForInElement(pattern, expression, body,
-      location: location);
+      hasAwait: hasAwait, location: location);
 }
 
 Pattern recordPattern(List<RecordPatternField> fields) =>
@@ -741,7 +749,9 @@ class Harness {
       Type matchedValueType, String operator) {
     if (operator == '==' || operator == '!=') {
       return RelationalOperatorResolution(
-          isEquality: true,
+          kind: operator == '=='
+              ? RelationalOperatorKind.equals
+              : RelationalOperatorKind.notEquals,
           parameterType: Type('Object'),
           returnType: Type('bool'));
     }
@@ -757,7 +767,7 @@ class Harness {
           'must accept a parameter');
     }
     return RelationalOperatorResolution(
-        isEquality: operator == '==' || operator == '!=',
+        kind: RelationalOperatorKind.other,
         parameterType: memberType.positionalParameters[0],
         returnType: memberType.returnType);
   }
@@ -851,22 +861,30 @@ class MiniAstOperations
     implements Operations<Var, Type> {
   static const Map<String, bool> _coreExhaustiveness = const {
     '()': true,
+    '(int, int?)': false,
+    'bool': true,
     'dynamic': false,
     'int': false,
+    'int?': false,
     'List<int>': false,
     'Never': false,
     'num': false,
     'Object': false,
     'Object?': false,
     'String': false,
+    'String?': false,
   };
 
   static final Map<String, Type> _coreGlbs = {
+    '?, int': Type('int'),
+    '(int,), ?': Type('(int,)'),
+    '(num,), ?': Type('(num,)'),
     'Object?, double': Type('double'),
     'Object?, int': Type('int'),
     'double, int': Type('Never'),
     'double?, int?': Type('Null'),
     'int?, num': Type('int'),
+    'Null, int': Type('Never'),
   };
 
   static final Map<String, Type> _coreLubs = {
@@ -881,13 +899,17 @@ class MiniAstOperations
   };
 
   static final Map<String, Type> _coreDownwardInferenceResults = {
+    'bool <: bool': Type('bool'),
     'dynamic <: int': Type('dynamic'),
+    'int <: dynamic': Type('int'),
     'int <: num': Type('int'),
     'int <: Object?': Type('int'),
     'List <: Iterable<int>': Type('List<int>'),
     'Never <: int': Type('Never'),
     'num <: int': Type('num'),
     'num <: Object': Type('num'),
+    'Object <: num': Type('Object'),
+    'String <: num': Type('String'),
   };
 
   static final Map<String, Type> _coreNormalizeResults = {
@@ -895,7 +917,9 @@ class MiniAstOperations
     'FutureOr<Object>': Type('Object'),
     'double': Type('double'),
     'int': Type('int'),
+    'int?': Type('int?'),
     'num': Type('num'),
+    'String?': Type('String?'),
     'List<int>': Type('List<int>'),
   };
 
@@ -1063,10 +1087,10 @@ class MiniAstOperations
 
   @override
   Type? matchIterableType(Type type) {
-    if (type is PrimaryType &&
-        type.name == 'Iterable' &&
-        type.args.length == 1) {
-      return type.args[0];
+    if (type is PrimaryType && type.args.length == 1) {
+      if (type.name == 'Iterable' || type.name == 'List') {
+        return type.args[0];
+      }
     }
     return null;
   }
@@ -1086,6 +1110,16 @@ class MiniAstOperations
         keyType: type.args[0],
         valueType: type.args[1],
       );
+    }
+    return null;
+  }
+
+  @override
+  Type? matchStreamType(Type type) {
+    if (type is PrimaryType && type.args.length == 1) {
+      if (type.name == 'Stream') {
+        return type.args[0];
+      }
     }
     return null;
   }
@@ -1199,6 +1233,9 @@ abstract class Pattern extends Node
   Pattern get nullCheck =>
       _NullCheckOrAssertPattern(this, false, location: computeLocation());
 
+  Pattern get parenthesized =>
+      _ParenthesizedPattern(this, location: computeLocation());
+
   @override
   GuardedPattern get _asGuardedPattern {
     return GuardedPattern._(
@@ -1261,7 +1298,8 @@ class PatternVariableJoin extends Var {
   /// of `true` either means that the variable is consistent or that analysis
   /// has not yet completed.
   @override
-  bool isConsistent = true;
+  JoinedPatternVariableInconsistency inconsistency =
+      JoinedPatternVariableInconsistency.none;
 
   /// Indicates whether [VariableBinder.joinPatternVariables] has been called
   /// for this variable join yet.
@@ -1283,10 +1321,10 @@ class PatternVariableJoin extends Var {
 
   @override
   String toString() {
-    var isConsistent = this.isConsistent;
     var declarationStr = <String>[
       if (_type != null) ...[
-        if (!isConsistent) 'notConsistent',
+        if (inconsistency != JoinedPatternVariableInconsistency.none)
+          'notConsistent:${inconsistency.name}',
         if (isFinal) 'final',
         type.type,
       ],
@@ -1298,14 +1336,16 @@ class PatternVariableJoin extends Var {
   }
 
   /// Called by [VariableBinder.joinPatternVariables].
-  void _handleJoin(
-      {required List<Var> components, required bool isConsistent}) {
+  void _handleJoin({
+    required List<Var> components,
+    required JoinedPatternVariableInconsistency inconsistency,
+  }) {
     expect(isJoined, false);
     expect(components.map((c) => c.identity),
         expectedComponents.map((c) => c.identity),
         reason: 'at $location');
     expect(components, expectedComponents, reason: 'at $location');
-    this.isConsistent = isConsistent;
+    this.inconsistency = inconsistency;
     this.isJoined = true;
   }
 }
@@ -1460,7 +1500,9 @@ class Var extends Node implements Promotable {
   LValue get expr =>
       new _VariableReference(this, null, location: computeLocation());
 
-  bool get isConsistent => true;
+  JoinedPatternVariableInconsistency get inconsistency {
+    return JoinedPatternVariableInconsistency.none;
+  }
 
   /// The string that should be used to check variables in a set.
   String get stringToCheckVariables => identity;
@@ -1672,7 +1714,12 @@ class _CastPattern extends Pattern {
   @override
   void visit(Harness h, SharedMatchContext context) {
     var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-    h.typeAnalyzer.analyzeCastPattern(context, _inner, _type);
+    h.typeAnalyzer.analyzeCastPattern(
+      context: context,
+      pattern: this,
+      innerPattern: _inner,
+      requiredType: _type,
+    );
     h.irBuilder.atom(_type.type, Kind.type, location: location);
     h.irBuilder.atom(matchedType.type, Kind.type, location: location);
     h.irBuilder.apply(
@@ -2689,8 +2736,9 @@ class _ListPattern extends Pattern {
   @override
   void visit(Harness h, SharedMatchContext context) {
     var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-    var requiredType = h.typeAnalyzer.analyzeListPattern(context, this,
+    var listPatternResult = h.typeAnalyzer.analyzeListPattern(context, this,
         elementType: _elementType, elements: _elements);
+    var requiredType = listPatternResult.requiredType;
     h.irBuilder.atom(matchedType.type, Kind.type, location: location);
     h.irBuilder.atom(requiredType.type, Kind.type, location: location);
     h.irBuilder.apply(
@@ -2881,8 +2929,9 @@ class _MapPattern extends Pattern {
   @override
   void visit(Harness h, SharedMatchContext context) {
     var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-    var requiredType = h.typeAnalyzer.analyzeMapPattern(context, this,
+    var mapPatternResult = h.typeAnalyzer.analyzeMapPattern(context, this,
         typeArguments: _typeArguments, elements: _elements);
+    var requiredType = mapPatternResult.requiredType;
     h.irBuilder.atom(matchedType.type, Kind.type, location: location);
     h.irBuilder.atom(requiredType.type, Kind.type, location: location);
     h.irBuilder.apply(
@@ -2928,7 +2977,8 @@ class _MapPatternEntry extends Node implements MapPatternElement {
 
 class _MiniAstErrors
     implements
-        TypeAnalyzerErrors<Node, Statement, Expression, Var, Type, Pattern>,
+        TypeAnalyzerErrors<Node, Statement, Expression, Var, Type, Pattern,
+            void>,
         VariableBinderErrors<Node, Var> {
   final Set<String> _accumulatedErrors = {};
 
@@ -2937,19 +2987,6 @@ class _MiniAstErrors
   /// errors are reported by the end of running the test, we can use it to
   /// highlight the point of failure.
   StackTrace? _assertInErrorRecoveryStack;
-
-  @override
-  void argumentTypeNotAssignable({
-    required Expression argument,
-    required Type argumentType,
-    required Type parameterType,
-  }) {
-    _recordError('argumentTypeNotAssignable', {
-      'argument': argument,
-      'argumentType': argumentType,
-      'parameterType': parameterType,
-    });
-  }
 
   @override
   void assertInErrorRecovery() {
@@ -3066,13 +3103,26 @@ class _MiniAstErrors
   }
 
   @override
-  void nonBooleanCondition(Expression node) {
-    _recordError('nonBooleanCondition', {}, unnamed: [node]);
+  void matchedTypeIsSubtypeOfRequired({
+    required Pattern pattern,
+    required Type matchedType,
+    required Type requiredType,
+  }) {
+    _recordError('matchedTypeIsSubtypeOfRequired', {
+      'pattern': pattern,
+      'matchedType': matchedType,
+      'requiredType': requiredType,
+    });
   }
 
   @override
-  void patternDoesNotAllowLate(Node pattern) {
-    _recordError('patternDoesNotAllowLate', {}, unnamed: [pattern]);
+  void nonBooleanCondition({required Expression node}) {
+    _recordError('nonBooleanCondition', {'node': node});
+  }
+
+  @override
+  void patternDoesNotAllowLate({required Node pattern}) {
+    _recordError('patternDoesNotAllowLate', {'pattern': pattern});
   }
 
   @override
@@ -3103,12 +3153,23 @@ class _MiniAstErrors
   }
 
   @override
-  void refutablePatternInIrrefutableContext(Node pattern, Node context) {
-    _recordError(
-      'refutablePatternInIrrefutableContext',
-      const {},
-      unnamed: [pattern, context],
-    );
+  void refutablePatternInIrrefutableContext(
+      {required Node pattern, required Node context}) {
+    _recordError('refutablePatternInIrrefutableContext',
+        {'pattern': pattern, 'context': context});
+  }
+
+  @override
+  void relationalPatternOperandTypeNotAssignable({
+    required Pattern pattern,
+    required Type operandType,
+    required Type parameterType,
+  }) {
+    _recordError('relationalPatternOperandTypeNotAssignable', {
+      'pattern': pattern,
+      'operandType': operandType,
+      'parameterType': parameterType,
+    });
   }
 
   @override
@@ -3123,43 +3184,36 @@ class _MiniAstErrors
   }
 
   @override
-  void restPatternNotLastInMap(Pattern node, Node element) {
-    _recordError(
-      'restPatternNotLastInMap',
-      const {},
-      unnamed: [node, element],
-    );
-  }
-
-  @override
-  void restPatternWithSubPatternInMap(Pattern node, Node element) {
-    _recordError(
-      'restPatternWithSubPatternInMap',
-      const {},
-      unnamed: [node, element],
-    );
+  void restPatternInMap({required Pattern node, required Node element}) {
+    _recordError('restPatternInMap', {'node': node, 'element': element});
   }
 
   @override
   void switchCaseCompletesNormally(
-      covariant _SwitchStatement node, int caseIndex, int numHeads) {
+      {required covariant _SwitchStatement node, required int caseIndex}) {
     _recordError(
-      'switchCaseCompletesNormally',
-      const {},
-      unnamed: [node, caseIndex, numHeads],
-    );
+        'switchCaseCompletesNormally', {'node': node, 'caseIndex': caseIndex});
   }
 
-  void _recordError(
-    String name,
-    Map<String, Object?> namedArguments, {
-    List<Object?>? unnamed,
+  @override
+  void unnecessaryWildcardPattern({
+    required Pattern pattern,
+    required UnnecessaryWildcardKind kind,
   }) {
+    _recordError('unnecessaryWildcardPattern', {
+      'pattern': pattern,
+      'kind': kind,
+    });
+  }
+
+  void _recordError(String name, Map<String, Object?> namedArguments) {
     String argumentStr(Object? argument) {
       if (argument is bool) {
         return '$argument';
       } else if (argument is int) {
         return '$argument';
+      } else if (argument is Enum) {
+        return argument.name;
       } else if (argument is Node) {
         return argument.errorId;
       } else if (argument is Type) {
@@ -3169,14 +3223,9 @@ class _MiniAstErrors
       }
     }
 
-    String argumentsStr;
-    if (unnamed != null) {
-      argumentsStr = unnamed.map(argumentStr).join(', ');
-    } else {
-      argumentsStr = namedArguments.entries.map((entry) {
-        return '${entry.key}: ${argumentStr(entry.value)}';
-      }).join(', ');
-    }
+    String argumentsStr = namedArguments.entries.map((entry) {
+      return '${entry.key}: ${argumentStr(entry.value)}';
+    }).join(', ');
 
     var errorText = '$name($argumentsStr)';
 
@@ -3185,10 +3234,19 @@ class _MiniAstErrors
       fail('Same error reported twice: $errorText');
     }
   }
+
+  @override
+  void emptyMapPattern({
+    required Pattern pattern,
+  }) {
+    _recordError('emptyMapPattern', {
+      'pattern': pattern,
+    });
+  }
 }
 
 class _MiniAstTypeAnalyzer
-    with TypeAnalyzer<Node, Statement, Expression, Var, Type, Pattern> {
+    with TypeAnalyzer<Node, Statement, Expression, Var, Type, Pattern, void> {
   final Harness _harness;
 
   @override
@@ -3212,6 +3270,7 @@ class _MiniAstTypeAnalyzer
   @override
   late final Type intType = Type('int');
 
+  @override
   late final Type neverType = Type('Never');
 
   late final Type nullType = Type('Null');
@@ -3226,6 +3285,9 @@ class _MiniAstTypeAnalyzer
   final TypeAnalyzerOptions options;
 
   _MiniAstTypeAnalyzer(this._harness, this.options);
+
+  @override
+  Type get errorType => Type('error');
 
   @override
   FlowAnalysis<Node, Statement, Expression, Var, Type> get flow =>
@@ -3556,23 +3618,13 @@ class _MiniAstTypeAnalyzer
   void finishJoinedPatternVariable(
     covariant PatternVariableJoin variable, {
     required JoinedPatternVariableLocation location,
-    required bool isConsistent,
+    required JoinedPatternVariableInconsistency inconsistency,
     required bool isFinal,
     required Type type,
   }) {
     variable.isFinal = isFinal;
     variable.type = type;
-    if (!isConsistent) {
-      variable.isConsistent = false;
-    }
-  }
-
-  @override
-  List<Var>? getJoinedVariableComponents(Var variable) {
-    if (variable is PatternVariableJoin) {
-      return variable.expectedComponents;
-    }
-    return null;
+    variable.inconsistency = variable.inconsistency.maxWith(inconsistency);
   }
 
   @override
@@ -3613,7 +3665,7 @@ class _MiniAstTypeAnalyzer
           covariant _SwitchStatement node, int caseIndex) {
     _SwitchStatementMember case_ = node.cases[caseIndex];
     return SwitchStatementMemberInfo(
-      [
+      heads: [
         for (var element in case_.elements)
           if (element is _SwitchHeadCase)
             CaseHeadOrDefaultInfo(
@@ -3628,8 +3680,8 @@ class _MiniAstTypeAnalyzer
               guard: null,
             )
       ],
-      case_._body.statements,
-      case_._candidateVariables,
+      body: case_._body.statements,
+      variables: case_._candidateVariables,
       hasLabels: case_.hasLabels,
     );
   }
@@ -3669,7 +3721,8 @@ class _MiniAstTypeAnalyzer
   }
 
   @override
-  void handleCaseHead(Node node,
+  CaseHeadOrDefaultInfo<Node, Expression, Var> handleCaseHead(
+      Node node, CaseHeadOrDefaultInfo<Node, Expression, Var> head,
       {required int caseIndex, required int subIndex}) {
     Iterable<Var> variables = [];
     if (node is _SwitchExpression) {
@@ -3690,6 +3743,8 @@ class _MiniAstTypeAnalyzer
     _irBuilder.apply(
         'head', [Kind.pattern, Kind.expression, Kind.variables], Kind.caseHead,
         location: node.location);
+
+    return head;
   }
 
   void handleDeclaredVariablePattern(covariant _VariablePattern node,
@@ -3707,7 +3762,11 @@ class _MiniAstTypeAnalyzer
   }
 
   @override
-  void handleDefault(Node node, int caseIndex) {
+  void handleDefault(
+    Node node, {
+    required int caseIndex,
+    required int subIndex,
+  }) {
     _irBuilder.atom('default', Kind.caseHead, location: node.location);
   }
 
@@ -3725,7 +3784,8 @@ class _MiniAstTypeAnalyzer
   }
 
   @override
-  void handleMapPatternEntry(Pattern container, Node entryElement) {
+  void handleMapPatternEntry(
+      Pattern container, Node entryElement, Type keyType) {
     _irBuilder.apply('mapPatternEntry', [Kind.expression, Kind.pattern],
         Kind.mapPatternElement,
         location: entryElement.location);
@@ -3790,6 +3850,13 @@ class _MiniAstTypeAnalyzer
   }
 
   @override
+  void handleSwitchBeforeAlternative(
+    Node node, {
+    required int caseIndex,
+    required int subIndex,
+  }) {}
+
+  @override
   void handleSwitchScrutinee(Type type) {}
 
   @override
@@ -3814,6 +3881,11 @@ class _MiniAstTypeAnalyzer
 
   @override
   bool isVariablePattern(Node pattern) => pattern is _VariablePattern;
+
+  @override
+  Type iterableType(Type elementType) {
+    return PrimaryType('Iterable', args: [elementType]);
+  }
 
   Type leastUpperBound(Type t1, Type t2) => _harness._operations._lub(t1, t2);
 
@@ -3861,6 +3933,11 @@ class _MiniAstTypeAnalyzer
   @override
   void setVariableType(Var variable, Type type) {
     variable.type = type;
+  }
+
+  @override
+  Type streamType(Type elementType) {
+    return PrimaryType('Stream', args: [elementType]);
   }
 
   @override
@@ -4064,8 +4141,9 @@ class _ObjectPattern extends Pattern {
   @override
   void visit(Harness h, SharedMatchContext context) {
     var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-    var requiredType =
+    var objectPatternResult =
         h.typeAnalyzer.analyzeObjectPattern(context, this, fields: fields);
+    var requiredType = objectPatternResult.requiredType;
     h.irBuilder.atom(matchedType.type, Kind.type, location: location);
     h.irBuilder.atom(requiredType.type, Kind.type, location: location);
     h.irBuilder.apply(
@@ -4107,6 +4185,29 @@ class _ParenthesizedExpression extends Expression {
   }
 }
 
+class _ParenthesizedPattern extends Pattern {
+  final Pattern _inner;
+
+  _ParenthesizedPattern(this._inner, {required super.location}) : super._();
+
+  @override
+  Type computeSchema(Harness h) => _inner.computeSchema(h);
+
+  @override
+  void preVisit(PreVisitor visitor, VariableBinder<Node, Var> variableBinder,
+          {required bool isInAssignment}) =>
+      _inner.preVisit(visitor, variableBinder, isInAssignment: isInAssignment);
+
+  @override
+  void visit(Harness h, SharedMatchContext context) {
+    _inner.visit(h, context);
+  }
+
+  @override
+  String _debugString({required bool needsKeywordOrType}) =>
+      '(${_inner._debugString(needsKeywordOrType: false)})';
+}
+
 class _PatternAssignment extends Expression {
   final Pattern _pattern;
   final Expression _rhs;
@@ -4134,12 +4235,13 @@ class _PatternAssignment extends Expression {
 }
 
 class _PatternForIn extends Statement {
+  final bool hasAwait;
   final Pattern pattern;
   final Expression expression;
   final Statement body;
 
   _PatternForIn(this.pattern, this.expression, this.body,
-      {required super.location});
+      {required this.hasAwait, required super.location});
 
   @override
   void preVisit(PreVisitor visitor) {
@@ -4165,6 +4267,7 @@ class _PatternForIn extends Statement {
   void visit(Harness h) {
     h.typeAnalyzer.analyzePatternForIn(
         node: this,
+        hasAwait: hasAwait,
         pattern: pattern,
         expression: expression,
         dispatchBody: () {
@@ -4180,12 +4283,13 @@ class _PatternForIn extends Statement {
 }
 
 class _PatternForInElement extends CollectionElement {
+  final bool hasAwait;
   final Pattern pattern;
   final Expression expression;
   final CollectionElement body;
 
   _PatternForInElement(this.pattern, this.expression, this.body,
-      {required super.location});
+      {required this.hasAwait, required super.location});
 
   @override
   void preVisit(PreVisitor visitor) {
@@ -4206,6 +4310,7 @@ class _PatternForInElement extends CollectionElement {
   void visit(Harness h, covariant _CollectionElementContext context) {
     h.typeAnalyzer.analyzePatternForIn(
         node: this,
+        hasAwait: hasAwait,
         pattern: pattern,
         expression: expression,
         dispatchBody: () {
@@ -4307,8 +4412,9 @@ class _RecordPattern extends Pattern {
   @override
   void visit(Harness h, SharedMatchContext context) {
     var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-    var requiredType =
+    var recordPatternResult =
         h.typeAnalyzer.analyzeRecordPattern(context, this, fields: fields);
+    var requiredType = recordPatternResult.requiredType;
     h.irBuilder.atom(matchedType.type, Kind.type, location: location);
     h.irBuilder.atom(requiredType.type, Kind.type, location: location);
     h.irBuilder.apply(
@@ -4504,12 +4610,11 @@ class _SwitchStatement extends Statement {
 
   @override
   void visit(Harness h) {
-    if (h.patternsEnabled && isLegacyExhaustive != null) {
-      fail('isExhaustive should not be specified when patterns enabled, '
-          'at $location');
-    } else if (!h.patternsEnabled && isLegacyExhaustive == null) {
-      fail('isExhaustive should be specified when patterns disabled, '
-          'at $location');
+    bool needsLegacyExhaustive = !h.patternsEnabled;
+    if (!needsLegacyExhaustive && isLegacyExhaustive != null) {
+      fail('isLegacyExhaustive should not be specified at $location');
+    } else if (needsLegacyExhaustive && isLegacyExhaustive == null) {
+      fail('isLegacyExhaustive should be specified at $location');
     }
     var previousBreakTarget = h.typeAnalyzer._currentBreakTarget;
     h.typeAnalyzer._currentBreakTarget = this;
@@ -4744,14 +4849,16 @@ class _VariableBinder extends VariableBinder<Node, Var> {
   Var joinPatternVariables({
     required Object? key,
     required List<Var> components,
-    required bool isConsistent,
+    required JoinedPatternVariableInconsistency inconsistency,
   }) {
     var joinedVariable = components[0]._joinedVar;
     if (joinedVariable == null) {
       fail('No joined variable for ${components[0].location}');
     }
     joinedVariable._handleJoin(
-        components: components, isConsistent: isConsistent);
+      components: components,
+      inconsistency: inconsistency,
+    );
     return joinedVariable;
   }
 }
@@ -4799,8 +4906,10 @@ class _VariablePattern extends Pattern {
       h.typeAnalyzer.handleAssignedVariablePattern(this);
     } else {
       var matchedType = h.typeAnalyzer.flow.getMatchedValueType();
-      var staticType = h.typeAnalyzer.analyzeDeclaredVariablePattern(
-          context, this, variable, variable.name, declaredType);
+      var declaredVariablePatternResult = h.typeAnalyzer
+          .analyzeDeclaredVariablePattern(
+              context, this, variable, variable.name, declaredType);
+      var staticType = declaredVariablePatternResult.staticType;
       h.typeAnalyzer.handleDeclaredVariablePattern(this,
           matchedType: matchedType, staticType: staticType);
     }
@@ -4914,7 +5023,7 @@ class _WildcardPattern extends Pattern {
         names: ['matchedType'], location: location);
     var expectInferredType = this.expectInferredType;
     if (expectInferredType != null) {
-      expect(matchedType.type, expectInferredType);
+      expect(matchedType.type, expectInferredType, reason: 'at $location');
     }
   }
 

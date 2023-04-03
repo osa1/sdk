@@ -15,14 +15,14 @@ main() {
 
 @reflectiveTest
 class SealedClassSubtypeOutsideOfLibraryTest extends PubPackageResolutionTest {
-  test_class_extends_sealed_inside() async {
+  test_extends_sealed_inside() async {
     await assertNoErrorsInCode(r'''
 sealed class Foo {}
 class Bar extends Foo {}
 ''');
   }
 
-  test_class_extends_sealed_outside() async {
+  test_extends_sealed_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 ''');
@@ -36,7 +36,7 @@ class Bar extends Foo {}
     ]);
   }
 
-  test_class_extends_sealed_outside_viaTypedef_inside() async {
+  test_extends_sealed_outside_viaTypedef_inside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 typedef FooTypedef = Foo;
@@ -51,7 +51,7 @@ class Bar extends FooTypedef {}
     ]);
   }
 
-  test_class_extends_sealed_outside_viaTypedef_outside() async {
+  test_extends_sealed_outside_viaTypedef_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 ''');
@@ -66,7 +66,7 @@ class Bar extends FooTypedef {}
     ]);
   }
 
-  test_class_extends_subtypeOfSealed_outside() async {
+  test_extends_subtypeOfSealed_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 class Bar extends Foo {}
@@ -78,14 +78,14 @@ class Bar2 extends Bar {}
 ''');
   }
 
-  test_class_implements_sealed_inside() async {
+  test_implements_sealed_inside() async {
     await assertNoErrorsInCode(r'''
 sealed class Foo {}
 class Bar implements Foo {}
 ''');
   }
 
-  test_class_implements_sealed_outside() async {
+  test_implements_sealed_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 ''');
@@ -99,7 +99,21 @@ class Bar implements Foo {}
     ]);
   }
 
-  test_class_implements_sealed_outside_viaTypedef_inside() async {
+  test_implements_sealed_outside_mixin() async {
+    newFile('$testPackageLibPath/foo.dart', r'''
+sealed class Foo {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'foo.dart';
+mixin Bar implements Foo {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 40, 3),
+    ]);
+  }
+
+  test_implements_sealed_outside_viaTypedef_inside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 typedef FooTypedef = Foo;
@@ -114,7 +128,7 @@ class Bar implements FooTypedef {}
     ]);
   }
 
-  test_class_implements_sealed_outside_viaTypedef_outside() async {
+  test_implements_sealed_outside_viaTypedef_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 ''');
@@ -129,7 +143,7 @@ class Bar implements FooTypedef {}
     ]);
   }
 
-  test_class_implements_subtypeOfSealed_outside() async {
+  test_implements_subtypeOfSealed_outside() async {
     newFile('$testPackageLibPath/foo.dart', r'''
 sealed class Foo {}
 class Bar implements Foo {}
@@ -141,83 +155,109 @@ class Bar2 implements Bar {}
 ''');
   }
 
-  test_class_with_sealed_inside() async {
+  test_induced_base_implements() async {
+    newFile('$testPackageLibPath/foo.dart', r'''
+base class Foo {}
+sealed class B extends Foo {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'foo.dart';
+base class Bar extends B {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 42, 1),
+    ]);
+  }
+
+  test_induced_final_extends() async {
+    newFile('$testPackageLibPath/foo.dart', r'''
+final class Foo {}
+sealed class B extends Foo {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'foo.dart';
+final class Bar extends B {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 43, 1),
+    ]);
+  }
+
+  test_induced_final_implements() async {
+    newFile('$testPackageLibPath/foo.dart', r'''
+final class Foo {}
+sealed class B extends Foo {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'foo.dart';
+final class Bar implements B {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 46, 1),
+    ]);
+  }
+
+  test_induced_interface_extends() async {
+    newFile('$testPackageLibPath/foo.dart', r'''
+interface class Foo {}
+sealed class B extends Foo {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'foo.dart';
+class Bar extends B {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 37, 1),
+    ]);
+  }
+
+  test_on_inside() async {
     await assertNoErrorsInCode(r'''
-sealed class Foo {}
-class Bar with Foo {}
+sealed class A {}
+mixin B on A {}
 ''');
   }
 
-  test_class_with_sealed_outside() async {
-    newFile('$testPackageLibPath/foo.dart', r'''
-sealed class Foo {}
-''');
-
-    await assertErrorsInCode(r'''
-import 'foo.dart';
-class Bar with Foo {}
-''', [
-      error(CompileTimeErrorCode.CLASS_USED_AS_MIXIN, 34, 3),
-      error(
-          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 34, 3),
-    ]);
-  }
-
-  test_class_with_sealed_outside_viaTypedef_inside() async {
-    newFile('$testPackageLibPath/foo.dart', r'''
-sealed class Foo {}
-typedef FooTypedef = Foo;
-''');
-
-    await assertErrorsInCode(r'''
-import 'foo.dart';
-class Bar with FooTypedef {}
-''', [
-      error(CompileTimeErrorCode.CLASS_USED_AS_MIXIN, 34, 10),
-      error(
-          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 34, 10),
-    ]);
-  }
-
-  test_class_with_sealed_outside_viaTypedef_outside() async {
-    newFile('$testPackageLibPath/foo.dart', r'''
-sealed class Foo {}
-''');
-
-    await assertErrorsInCode(r'''
-import 'foo.dart';
-typedef FooTypedef = Foo;
-class Bar with FooTypedef {}
-''', [
-      error(CompileTimeErrorCode.CLASS_USED_AS_MIXIN, 60, 10),
-      error(
-          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 60, 10),
-    ]);
-  }
-
-  test_class_with_subtypeOfSealed_outside() async {
-    newFile('$testPackageLibPath/foo.dart', r'''
-sealed class Foo {}
-class Bar with Foo {}
-''');
-
+  test_on_inside_multiple() async {
     await assertNoErrorsInCode(r'''
-import 'foo.dart';
-class Bar2 extends Bar {}
+sealed class A {}
+sealed class B {}
+mixin C on A, B {}
 ''');
   }
 
-  test_mixin_implements_sealed_outside() async {
-    newFile('$testPackageLibPath/foo.dart', r'''
-sealed class Foo {}
+  test_on_outside() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+sealed class A {}
 ''');
 
     await assertErrorsInCode(r'''
-import 'foo.dart';
-mixin Bar implements Foo {}
+import 'a.dart';
+mixin B on A {}
 ''', [
       error(
-          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 40, 3),
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 28, 1),
+    ]);
+  }
+
+  test_on_outside_multiple() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+sealed class A {}
+sealed class B {}
+''');
+
+    await assertErrorsInCode(r'''
+import 'a.dart';
+mixin C on A, B {}
+''', [
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 28, 1),
+      error(
+          CompileTimeErrorCode.SEALED_CLASS_SUBTYPE_OUTSIDE_OF_LIBRARY, 31, 1),
     ]);
   }
 }

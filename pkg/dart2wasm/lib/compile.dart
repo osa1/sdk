@@ -21,8 +21,6 @@ import 'package:front_end/src/api_unstable/vm.dart'
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
-import 'package:kernel/target/targets.dart';
-import 'package:kernel/type_environment.dart';
 import 'package:kernel/verifier.dart';
 
 import 'package:vm/kernel_front_end.dart' show writeDepfile;
@@ -32,6 +30,8 @@ import 'package:vm/transformations/type_flow/transformer.dart' as globalTypeFlow
 
 import 'package:dart2wasm/compiler_options.dart' as compiler;
 import 'package:dart2wasm/js_runtime_generator.dart';
+import 'package:dart2wasm/record_class_generator.dart';
+import 'package:dart2wasm/records.dart';
 import 'package:dart2wasm/target.dart';
 import 'package:dart2wasm/translator.dart';
 
@@ -57,7 +57,8 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
     handleDiagnosticMessage(message);
   }
 
-  Target target = WasmTarget();
+  final WasmTarget target =
+      WasmTarget(constantBranchPruning: options.constantBranchPruning);
   CompilerOptions compilerOptions = CompilerOptions()
     ..target = target
     ..sdkRoot = options.sdkPath
@@ -92,6 +93,10 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
   JSRuntimeFinalizer jsRuntimeFinalizer =
       createJSRuntimeFinalizer(component, coreTypes, classHierarchy);
 
+  final Map<RecordShape, Class> recordClasses =
+      generateRecordClasses(component, coreTypes);
+  target.recordClasses = recordClasses;
+
   globalTypeFlow.transformComponent(target, coreTypes, component,
       treeShakeSignatures: true,
       treeShakeWriteOnlyFields: true,
@@ -104,10 +109,7 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
   }());
 
   var translator = Translator(
-      component,
-      coreTypes,
-      TypeEnvironment(coreTypes, compilerResult.classHierarchy!),
-      options.translatorOptions);
+      component, coreTypes, recordClasses, options.translatorOptions);
 
   String? depFile = options.depFile;
   if (depFile != null) {

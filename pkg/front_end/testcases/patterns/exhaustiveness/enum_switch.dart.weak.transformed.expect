@@ -4,57 +4,45 @@ library /*isNonNullableByDefault*/;
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:22:11: Error: The type 'Enum' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.c.
+// Try adding a default case or cases that match 'Enum.c'.
 //   switch (e) /* Error */ {
 //           ^
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:33:11: Error: The type 'Enum' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.b.
+// Try adding a default case or cases that match 'Enum.b'.
 //   switch (e) /* Error */ {
 //           ^
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:44:11: Error: The type 'Enum' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.a.
+// Try adding a default case or cases that match 'Enum.a'.
 //   switch (e) /* Error */ {
 //           ^
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:55:11: Error: The type 'Enum' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.a|Enum.c.
+// Try adding a default case or cases that match 'Enum.a'.
 //   switch (e) /* Error */ {
 //           ^
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:91:11: Error: The type 'Enum?' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Null.
+// Try adding a default case or cases that match 'null'.
 //   switch (e) /* Error */ {
 //           ^
 //
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:105:11: Error: The type 'Enum?' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.b.
+// Try adding a default case or cases that match 'Enum.b'.
 //   switch (e) /* Error */ {
 //           ^
 //
-// pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:126:5: Warning: This case is covered by the previous cases.
-//     case Enum.a: // Unreachable
-//     ^
-//
-// pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:143:5: Warning: This case is covered by the previous cases.
-//     case Enum.a: // Unreachable
-//     ^
-//
 // pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:136:11: Error: The type 'Enum' is not exhaustively matched by the switch cases.
 //  - 'Enum' is from 'pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart'.
-// Try adding a default case or cases that match Enum.c.
+// Try adding a default case or cases that match 'Enum.c'.
 //   switch (e) /* Non-exhaustive */ {
 //           ^
-//
-// pkg/front_end/testcases/patterns/exhaustiveness/enum_switch.dart:181:5: Warning: This case is covered by the previous cases.
-//     case null: // Unreachable
-//     ^
 //
 import self as self;
 import "dart:core" as core;
@@ -105,7 +93,7 @@ static method exhaustiveSwitch(self::Enum e) → void {
       }
     #L5:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveSwitch1(self::Enum e) → void {
@@ -125,7 +113,7 @@ static method nonExhaustiveSwitch1(self::Enum e) → void {
       }
     #L9:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveSwitch2(self::Enum e) → void {
@@ -145,7 +133,7 @@ static method nonExhaustiveSwitch2(self::Enum e) → void {
       }
     #L13:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveSwitch3(self::Enum e) → void {
@@ -165,7 +153,7 @@ static method nonExhaustiveSwitch3(self::Enum e) → void {
       }
     #L17:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveSwitch4(self::Enum e) → void {
@@ -179,7 +167,7 @@ static method nonExhaustiveSwitch4(self::Enum e) → void {
       }
     #L20:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveSwitchWithDefault(self::Enum e) → void {
@@ -228,7 +216,7 @@ static method exhaustiveNullableSwitch(self::Enum? e) → void {
       }
     #L29:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveNullableSwitch1(self::Enum? e) → void {
@@ -254,7 +242,7 @@ static method nonExhaustiveNullableSwitch1(self::Enum? e) → void {
       }
     #L34:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method nonExhaustiveNullableSwitch2(self::Enum? e) → void {
@@ -280,7 +268,7 @@ static method nonExhaustiveNullableSwitch2(self::Enum? e) → void {
       }
     #L39:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method unreachableCase1(self::Enum e) → void {
@@ -312,7 +300,7 @@ static method unreachableCase1(self::Enum e) → void {
       }
     #L45:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method unreachableCase2(self::Enum e) → void {
@@ -338,7 +326,7 @@ static method unreachableCase2(self::Enum e) → void {
       }
     #L50:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method unreachableCase3(self::Enum e) → void {
@@ -370,7 +358,7 @@ static method unreachableCase3(self::Enum e) → void {
       }
     #L56:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method unreachableCase4(self::Enum? e) → void {
@@ -408,7 +396,7 @@ static method unreachableCase4(self::Enum? e) → void {
       }
     #L63:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method exhaustiveGenericSwitch(self::GenericEnum<dynamic> e) → void {
@@ -434,7 +422,7 @@ static method exhaustiveGenericSwitch(self::GenericEnum<dynamic> e) → void {
       }
     #L68:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 static method exhaustiveGenericSwitchTyped(self::GenericEnum<core::int> e) → void {
@@ -448,7 +436,7 @@ static method exhaustiveGenericSwitchTyped(self::GenericEnum<core::int> e) → v
       }
     #L71:
     default:
-      throw new _in::ReachabilityError::•("`null` encountered as case in a switch expression with a non-nullable enum type.");
+      throw new _in::ReachabilityError::•("`null` encountered as case in a switch statement with a non-nullable type.");
   }
 }
 

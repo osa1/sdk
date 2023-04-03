@@ -8,10 +8,12 @@
 // VMOptions=--enable-fast-object-copy --gc-on-foc-slow-path --force-evacuation
 
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:expect/expect.dart';
+import 'package:ffi/ffi.dart';
 
 import 'fast_object_copy_test.dart'
     show UserObject, SendReceiveTestBase, notAllocatableInTLAB;
@@ -108,6 +110,7 @@ class SendReceiveTest extends SendReceiveTestBase {
     await testSharable();
     await testSharable2();
     await testCopyableClosures();
+    await testSharableTypedData();
   }
 
   Future testSharable() async {
@@ -155,8 +158,47 @@ class SendReceiveTest extends SendReceiveTestBase {
       Expect.equals(copyableClosures[i].runtimeType, copy2[i].runtimeType);
     }
   }
+
+  Future testSharableTypedData() async {
+    print('testSharableTypedData');
+    const int Dart_TypedData_kUint8 = 2;
+    const int count = 10;
+    final bytes = malloc.allocate<Uint8>(count);
+    msanUnpoison(bytes, count);
+    final td = createUnmodifiableTypedData(
+        Dart_TypedData_kUint8, bytes, count, nullptr, 0, nullptr);
+    Expect.equals(count, td.length);
+
+    {
+      final copiedTd = await sendReceive(td);
+      Expect.identical(td, copiedTd);
+    }
+
+    malloc.free(bytes);
+  }
 }
 
 main() async {
   await SendReceiveTest().run();
+}
+
+@Native<
+        Handle Function(
+            Int, Pointer<Uint8>, IntPtr, Pointer<Void>, IntPtr, Pointer<Void>)>(
+    symbol: "Dart_NewUnmodifiableExternalTypedDataWithFinalizer")
+external Uint8List createUnmodifiableTypedData(int type, Pointer<Uint8> data,
+    int length, Pointer<Void> peer, int externalSize, Pointer<Void> callback);
+
+final msanUnpoisonPointer =
+    DynamicLibrary.process().providesSymbol("__msan_unpoison")
+        ? DynamicLibrary.process()
+            .lookup<NativeFunction<Void Function(Pointer<Void>, Size)>>(
+                "__msan_unpoison")
+        : nullptr;
+
+void msanUnpoison(Pointer<Uint8> pointer, int size) {
+  if (msanUnpoisonPointer != nullptr) {
+    msanUnpoisonPointer.asFunction<void Function(Pointer<Void>, int)>()(
+        pointer.cast(), size);
+  }
 }

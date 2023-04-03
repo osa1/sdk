@@ -6,6 +6,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
@@ -98,13 +99,6 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
           _validateAbiSpecificIntegerAnnotation(node);
           _validateAbiSpecificIntegerMappingAnnotation(
               node.name, node.metadata);
-        } else if (className != _allocatorClassName &&
-            className != _opaqueClassName &&
-            className != _abiSpecificIntegerClassName) {
-          _errorReporter.reportErrorForNode(
-              FfiCode.SUBTYPE_OF_FFI_CLASS_IN_EXTENDS,
-              superclass.name,
-              [node.name.lexeme, superclass.name.name]);
         }
       } else if (superclass.isCompoundSubtype ||
           superclass.isAbiSpecificIntegerSubtype) {
@@ -116,18 +110,13 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
     }
 
     // No classes from the FFI may be explicitly implemented.
-    void checkSupertype(NamedType typename, FfiCode subtypeOfFfiCode,
-        FfiCode subtypeOfStructCode) {
+    void checkSupertype(NamedType typename, FfiCode subtypeOfStructCode) {
       final superName = typename.name.staticElement?.name;
       if (superName == _allocatorClassName ||
           superName == _finalizableClassName) {
         return;
       }
-      if (typename.ffiClass != null) {
-        _errorReporter.reportErrorForNode(subtypeOfFfiCode, typename,
-            [node.name.lexeme, typename.name.toSource()]);
-      } else if (typename.isCompoundSubtype ||
-          typename.isAbiSpecificIntegerSubtype) {
+      if (typename.isCompoundSubtype || typename.isAbiSpecificIntegerSubtype) {
         _errorReporter.reportErrorForNode(subtypeOfStructCode, typename,
             [node.name.lexeme, typename.name.toSource()]);
       }
@@ -136,15 +125,13 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
     var implementsClause = node.implementsClause;
     if (implementsClause != null) {
       for (NamedType type in implementsClause.interfaces) {
-        checkSupertype(type, FfiCode.SUBTYPE_OF_FFI_CLASS_IN_IMPLEMENTS,
-            FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_IMPLEMENTS);
+        checkSupertype(type, FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_IMPLEMENTS);
       }
     }
     var withClause = node.withClause;
     if (withClause != null) {
       for (NamedType type in withClause.mixinTypes) {
-        checkSupertype(type, FfiCode.SUBTYPE_OF_FFI_CLASS_IN_WITH,
-            FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_WITH);
+        checkSupertype(type, FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_WITH);
       }
     }
 
@@ -898,8 +885,8 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
     } else if (nativeReturnType == _PrimitiveDartType.bool) {
       return dartType.isDartCoreBool;
     } else if (nativeReturnType == _PrimitiveDartType.void_) {
-      return dartType.isVoid;
-    } else if (dartType.isVoid) {
+      return dartType is VoidType;
+    } else if (dartType is VoidType) {
       // Don't allow other native subtypes if the Dart return type is void.
       return nativeReturnType == _PrimitiveDartType.void_;
     } else if (nativeReturnType == _PrimitiveDartType.handle) {
@@ -992,7 +979,10 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
           FfiCode.MISSING_FIELD_TYPE_IN_STRUCT, fields.variables[0].name);
     } else {
       DartType declaredType = fieldType.typeOrThrow;
-      if (declaredType.isDartCoreInt) {
+      if (declaredType.nullabilitySuffix == NullabilitySuffix.question) {
+        _errorReporter.reportErrorForNode(FfiCode.INVALID_FIELD_TYPE_IN_STRUCT,
+            fieldType, [fieldType.toSource()]);
+      } else if (declaredType.isDartCoreInt) {
         _validateAnnotations(fieldType, annotations, _PrimitiveDartType.int);
       } else if (declaredType.isDartCoreDouble) {
         _validateAnnotations(fieldType, annotations, _PrimitiveDartType.double);
@@ -1073,7 +1063,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
 
     // TODO(brianwilkerson) Validate that `f` is a top-level function.
     final DartType R = (T as FunctionType).returnType;
-    if ((FT as FunctionType).returnType.isVoid ||
+    if ((FT as FunctionType).returnType is VoidType ||
         R.isPointer ||
         R.isHandle ||
         R.isCompoundSubtype) {

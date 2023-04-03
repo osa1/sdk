@@ -160,8 +160,12 @@ abstract class LaunchingVMServiceHelper extends VMServiceHelper {
     _started = true;
     _process = await Process.start(
         Platform.resolvedExecutable,
-        ["--pause_isolates_on_start", "--enable-vm-service=0"]
-          ..addAll(scriptAndArgs));
+        [
+          "--pause_isolates_on_start",
+          "--enable-vm-service=0",
+          "run",
+          "--no-pub", // We don't want to resolve the local pubspec here.
+        ]..addAll(scriptAndArgs));
     _process.stdout
         .transform(utf8.decoder)
         .transform(new LineSplitter())
@@ -198,6 +202,12 @@ abstract class LaunchingVMServiceHelper extends VMServiceHelper {
     _process.exitCode.then((value) {
       processExited(value);
     });
+  }
+
+  Future<void> startWithoutRunning(Uri observatoryUri) async {
+    if (_started) throw "Already started";
+    _started = true;
+    await _setupAndRun(observatoryUri);
   }
 
   void processExited(int exitCode) {}

@@ -152,6 +152,9 @@ class TestConfiguration {
   /// Extra dart2js options passed to the testing script.
   List<String> get dart2jsOptions => configuration.dart2jsOptions;
 
+  /// Extra ddc options passed to the testing script.
+  List<String> get ddcOptions => configuration.ddcOptions;
+
   /// Extra gen_kernel options passed to the testing script.
   List<String> get genKernelOptions => configuration.genKernelOptions;
 
@@ -192,8 +195,7 @@ class TestConfiguration {
   bool get usesFasta {
     var fastaCompilers = const [
       Compiler.appJitk,
-      Compiler.dartdevc,
-      Compiler.dartdevk,
+      Compiler.ddc,
       Compiler.dartk,
       Compiler.dartkp,
       Compiler.fasta,
@@ -482,5 +484,6 @@ class Progress {
 
   const Progress._(this.name);
 
+  @override
   String toString() => "Progress($name)";
 }

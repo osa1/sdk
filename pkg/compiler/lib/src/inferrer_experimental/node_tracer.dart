@@ -228,6 +228,12 @@ abstract class TracerVisitor implements TypeInformationVisitor {
   }
 
   @override
+  void visitRecordFieldAccessTypeInformation(
+      RecordFieldAccessTypeInformation info) {
+    addNewEscapeInformation(info);
+  }
+
+  @override
   void visitValueInMapTypeInformation(ValueInMapTypeInformation info) {
     addNewEscapeInformation(info);
   }
@@ -245,6 +251,12 @@ abstract class TracerVisitor implements TypeInformationVisitor {
   @override
   void visitMapTypeInformation(MapTypeInformation info) {
     mapsToAnalyze.add(info);
+  }
+
+  @override
+  void visitRecordTypeInformation(RecordTypeInformation info) {
+    // TODO(50701): Implement better inference for records.
+    bailout('Used as field of Record');
   }
 
   @override
@@ -345,7 +357,7 @@ abstract class TracerVisitor implements TypeInformationVisitor {
     List<TypeInformation> positionalArguments = arguments.positional;
     if (positionalArguments.length == 1) {
       return (selectorName == 'add' && currentUser == positionalArguments[0]);
-    } else if (arguments.length == 2) {
+    } else if (positionalArguments.length == 2) {
       return (selectorName == 'insert' &&
           currentUser == positionalArguments[1]);
     }
@@ -475,9 +487,15 @@ abstract class TracerVisitor implements TypeInformationVisitor {
 
     final user = currentUser;
     if (user is MemberTypeInformation) {
-      if (info.callees.contains(user.member)) {
-        addNewEscapeInformation(info);
+      bool checkMember(MemberEntity member) {
+        if (member == user.member) {
+          addNewEscapeInformation(info);
+          return false;
+        }
+        return true;
       }
+
+      info.forEachConcreteTarget(inferrer.memberHierarchyBuilder, checkMember);
     }
   }
 
@@ -555,5 +573,10 @@ abstract class TracerVisitor implements TypeInformationVisitor {
       return;
     }
     addNewEscapeInformation(info);
+  }
+
+  bool dynamicCallTargetsNonFunction(DynamicCallSiteTypeInformation info) {
+    return info.targets.any((target) => inferrer.memberHierarchyBuilder
+        .anyTargetMember(target, (element) => !element.isFunction));
   }
 }

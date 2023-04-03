@@ -15,6 +15,8 @@ main() {
     defineReflectiveTests(
         ForStatementResolutionTest_ForEachPartsWithIdentifier);
     defineReflectiveTests(ForStatementResolutionTest_ForEachPartsWithPattern);
+    defineReflectiveTests(
+        ForStatementResolutionTest_ForEachPartsWithPattern_await);
     defineReflectiveTests(ForStatementResolutionTest_ForPartsWithExpression);
     defineReflectiveTests(ForStatementResolutionTest_ForPartsWithPattern);
   });
@@ -49,6 +51,7 @@ ForStatement
         type: int
       name: v
       declaredElement: v@56
+        type: int
     inKeyword: in
     iterable: MethodInvocation
       methodName: SimpleIdentifier
@@ -89,7 +92,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: v
-      declaredElement: v@22
+      declaredElement: hasImplicitType v@22
+        type: dynamic
     inKeyword: in
     iterable: SimpleIdentifier
       token: <empty> <synthetic>
@@ -131,6 +135,7 @@ ForStatement
         type: dynamic
       name: v
       declaredElement: v@42
+        type: dynamic
     inKeyword: in
     iterable: SimpleIdentifier
       token: values
@@ -169,7 +174,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: v
-      declaredElement: v@56
+      declaredElement: hasImplicitType v@56
+        type: Object?
     inKeyword: in
     iterable: MethodInvocation
       methodName: SimpleIdentifier
@@ -207,7 +213,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: v
-      declaredElement: v@42
+      declaredElement: hasImplicitType v@42
+        type: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: values
@@ -244,7 +251,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: v
-      declaredElement: v@38
+      declaredElement: hasImplicitType v@38
+        type: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: values
@@ -281,7 +289,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: v
-      declaredElement: v@52
+      declaredElement: hasImplicitType v@52
+        type: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: values
@@ -320,7 +329,8 @@ ForStatement
     loopVariable: DeclaredIdentifier
       keyword: var
       name: x
-      declaredElement: x@39
+      declaredElement: hasImplicitType x@39
+        type: int
     inKeyword: in
     iterable: PrefixedIdentifier
       prefix: SimpleIdentifier
@@ -428,7 +438,9 @@ ForStatement
         name: a
         declaredElement: hasImplicitType a@24
           type: dynamic
+        matchedValueType: dynamic
       rightParenthesis: )
+      matchedValueType: dynamic
     inKeyword: in
     iterable: SimpleIdentifier
       token: x
@@ -469,7 +481,9 @@ ForStatement
         name: a
         declaredElement: hasImplicitType a@34
           type: int
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: x
@@ -512,7 +526,9 @@ ForStatement
         name: a
         declaredElement: hasImplicitType a@31
           type: dynamic
+        matchedValueType: dynamic
       rightParenthesis: )
+      matchedValueType: dynamic
     inKeyword: in
     iterable: SimpleIdentifier
       token: x
@@ -528,6 +544,104 @@ ForStatement
           staticElement: a@31
           staticType: dynamic
         semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_iterableContextType_patternVariable_typed() async {
+    await assertErrorsInCode(r'''
+void f() {
+  for (var (int a) in g()) {}
+}
+
+T g<T>() => throw 0;
+''', [
+      error(HintCode.UNUSED_LOCAL_VARIABLE, 27, 1),
+    ]);
+    var node = findNode.forStatement('for');
+    assertResolvedNodeText(node, r'''
+ForStatement
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+            staticElement: dart:core::@class::int
+            staticType: null
+          type: int
+        name: a
+        declaredElement: a@27
+          type: int
+        matchedValueType: int
+      rightParenthesis: )
+      matchedValueType: int
+    inKeyword: in
+    iterable: MethodInvocation
+      methodName: SimpleIdentifier
+        token: g
+        staticElement: self::@function::g
+        staticType: T Function<T>()
+      argumentList: ArgumentList
+        leftParenthesis: (
+        rightParenthesis: )
+      staticInvokeType: Iterable<int> Function()
+      staticType: Iterable<int>
+      typeArgumentTypes
+        Iterable<int>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    rightBracket: }
+''');
+  }
+
+  test_iterableContextType_patternVariable_untyped() async {
+    await assertErrorsInCode(r'''
+void f() {
+  for (var (a) in g()) {}
+}
+
+T g<T>() => throw 0;
+''', [
+      error(HintCode.UNUSED_LOCAL_VARIABLE, 23, 1),
+    ]);
+    var node = findNode.forStatement('for');
+    assertResolvedNodeText(node, r'''
+ForStatement
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType a@23
+          type: Object?
+        matchedValueType: Object?
+      rightParenthesis: )
+      matchedValueType: Object?
+    inKeyword: in
+    iterable: MethodInvocation
+      methodName: SimpleIdentifier
+        token: g
+        staticElement: self::@function::g
+        staticType: T Function<T>()
+      argumentList: ArgumentList
+        leftParenthesis: (
+        rightParenthesis: )
+      staticInvokeType: Iterable<Object?> Function()
+      staticType: Iterable<Object?>
+      typeArgumentTypes
+        Iterable<Object?>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
     rightBracket: }
 ''');
   }
@@ -553,7 +667,9 @@ ForStatement
         name: a
         declaredElement: hasImplicitType isFinal a@36
           type: int
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: x
@@ -600,7 +716,9 @@ ForStatement
         name: a
         declaredElement: a@38
           type: num
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     inKeyword: in
     iterable: SimpleIdentifier
       token: x
@@ -614,6 +732,352 @@ ForStatement
         expression: SimpleIdentifier
           token: a
           staticElement: a@38
+          staticType: num
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+}
+
+@reflectiveTest
+class ForStatementResolutionTest_ForEachPartsWithPattern_await
+    extends PubPackageResolutionTest {
+  test_iterable_dynamic() async {
+    await assertNoErrorsInCode(r'''
+void f(x) async {
+  await for (var (a) in x) {
+    a;
+  }
+}
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType a@36
+          type: dynamic
+        matchedValueType: dynamic
+      rightParenthesis: )
+      matchedValueType: dynamic
+    inKeyword: in
+    iterable: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: dynamic
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@36
+          staticType: dynamic
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_iterable_Object() async {
+    await assertErrorsInCode(r'''
+void f(Object x) async {
+  await for (var (a) in x) {
+    a;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.FOR_IN_OF_INVALID_TYPE, 49, 1),
+    ]);
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType a@43
+          type: dynamic
+        matchedValueType: dynamic
+      rightParenthesis: )
+      matchedValueType: dynamic
+    inKeyword: in
+    iterable: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: Object
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@43
+          staticType: dynamic
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_iterable_Stream() async {
+    await assertNoErrorsInCode(r'''
+void f(Stream<int> x) async {
+  await for (var (a) in x) {
+    a;
+  }
+}
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType a@48
+          type: int
+        matchedValueType: int
+      rightParenthesis: )
+      matchedValueType: int
+    inKeyword: in
+    iterable: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: Stream<int>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@48
+          staticType: int
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_iterableContextType_patternVariable_typed() async {
+    await assertNoErrorsInCode(r'''
+void f() async {
+  await for (var (int a) in g()) {
+    a;
+  }
+}
+
+T g<T>() => throw 0;
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+            staticElement: dart:core::@class::int
+            staticType: null
+          type: int
+        name: a
+        declaredElement: a@39
+          type: int
+        matchedValueType: int
+      rightParenthesis: )
+      matchedValueType: int
+    inKeyword: in
+    iterable: MethodInvocation
+      methodName: SimpleIdentifier
+        token: g
+        staticElement: self::@function::g
+        staticType: T Function<T>()
+      argumentList: ArgumentList
+        leftParenthesis: (
+        rightParenthesis: )
+      staticInvokeType: Stream<int> Function()
+      staticType: Stream<int>
+      typeArgumentTypes
+        Stream<int>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@39
+          staticType: int
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_iterableContextType_patternVariable_untyped() async {
+    await assertNoErrorsInCode(r'''
+void f() async {
+  await for (var (a) in g()) {
+    a;
+  }
+}
+
+T g<T>() => throw 0;
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType a@35
+          type: Object?
+        matchedValueType: Object?
+      rightParenthesis: )
+      matchedValueType: Object?
+    inKeyword: in
+    iterable: MethodInvocation
+      methodName: SimpleIdentifier
+        token: g
+        staticElement: self::@function::g
+        staticType: T Function<T>()
+      argumentList: ArgumentList
+        leftParenthesis: (
+        rightParenthesis: )
+      staticInvokeType: Stream<Object?> Function()
+      staticType: Stream<Object?>
+      typeArgumentTypes
+        Stream<Object?>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@35
+          staticType: Object?
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_keyword_final_patternVariable() async {
+    await assertNoErrorsInCode(r'''
+void f(Stream<int> x) async {
+  await for (final (a) in x) {
+    a;
+  }
+}
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: final
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        name: a
+        declaredElement: hasImplicitType isFinal a@50
+          type: int
+        matchedValueType: int
+      rightParenthesis: )
+      matchedValueType: int
+    inKeyword: in
+    iterable: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: Stream<int>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@50
+          staticType: int
+        semicolon: ;
+    rightBracket: }
+''');
+  }
+
+  test_pattern_patternVariable_typed() async {
+    await assertNoErrorsInCode(r'''
+void f(Stream<int> x) async {
+  await for (var (num a) in x) {
+    a;
+  }
+}
+''');
+    var node = findNode.singleForStatement;
+    assertResolvedNodeText(node, r'''
+ForStatement
+  awaitKeyword: await
+  forKeyword: for
+  leftParenthesis: (
+  forLoopParts: ForEachPartsWithPattern
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: DeclaredVariablePattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: num
+            staticElement: dart:core::@class::num
+            staticType: null
+          type: num
+        name: a
+        declaredElement: a@52
+          type: num
+        matchedValueType: int
+      rightParenthesis: )
+      matchedValueType: int
+    inKeyword: in
+    iterable: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: Stream<int>
+  rightParenthesis: )
+  body: Block
+    leftBracket: {
+    statements
+      ExpressionStatement
+        expression: SimpleIdentifier
+          token: a
+          staticElement: a@52
           staticType: num
         semicolon: ;
     rightBracket: }
@@ -679,11 +1143,14 @@ ForStatement
         pattern: AssignedVariablePattern
           name: a
           element: a@17
+          matchedValueType: int
         rightParenthesis: )
+        matchedValueType: int
       equals: =
       expression: IntegerLiteral
         literal: 0
         staticType: int
+      patternTypeSchema: int
       staticType: int
     leftSeparator: ;
     rightSeparator: ;
@@ -726,24 +1193,28 @@ ForStatement
       pattern: RecordPattern
         leftParenthesis: (
         fields
-          RecordPatternField
+          PatternField
             pattern: DeclaredVariablePattern
               name: a
               declaredElement: hasImplicitType a@36
                 type: int
-            fieldElement: <null>
-          RecordPatternField
+              matchedValueType: int
+            element: <null>
+          PatternField
             pattern: DeclaredVariablePattern
               name: b
               declaredElement: hasImplicitType b@39
                 type: bool
-            fieldElement: <null>
+              matchedValueType: bool
+            element: <null>
         rightParenthesis: )
+        matchedValueType: (int, bool)
       equals: =
       expression: SimpleIdentifier
         token: x
         staticElement: self::@function::f::@parameter::x
         staticType: (int, bool)
+      patternTypeSchema: (_, _)
     leftSeparator: ;
     condition: SimpleIdentifier
       token: b

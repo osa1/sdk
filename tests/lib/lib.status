@@ -8,6 +8,7 @@ wasm/*: Skip # dart:wasm is currently behind a Dart SDK build flag.
 convert/utf85_test: Skip # Pass, Slow Issue 12644.
 
 [ $compiler == dart2wasm ]
+async/stream_periodic3_test: Skip # Flaky, issue 50901
 developer/*: SkipByDesign
 fix_data_tests/*: SkipByDesign
 html/*: SkipByDesign # dart:html not supported on dart2wasm
@@ -72,10 +73,17 @@ js/parameters_test: SkipByDesign # Issue 42085.
 js/static_interop_test/external_static_member_lowerings_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
 js/static_interop_test/external_static_member_lowerings_trusttypes_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
 js/static_interop_test/external_static_member_lowerings_with_namespaces_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/inline_class/external_extension_member_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/inline_class/external_member_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/inline_class/external_static_member_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/inline_class/external_static_member_with_namespaces_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/js_array_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
 js/static_interop_test/jsobject_type_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/native_error_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
+js/static_interop_test/typed_data_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
 js/trust_types_test: SkipByDesign # Issue 42085. CSP policy disallows injected JS code
 
-[ $compiler != dart2js && $compiler != dartdevc && $compiler != dartdevk ]
+[ $compiler != dart2js && $compiler != ddc ]
 web/*: SkipByDesign
 
 [ $runtime == chrome && $system == macos ]

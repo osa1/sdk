@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import 'package:analysis_server/lsp_protocol/protocol.dart';
+import 'package:analysis_server/lsp_protocol/protocol.dart' hide MessageType;
 import 'package:analysis_server/src/analysis_server.dart';
 import 'package:analysis_server/src/analytics/analytics_manager.dart';
 import 'package:analysis_server/src/computer/computer_closingLabels.dart';
@@ -31,6 +31,7 @@ import 'package:analysis_server/src/server/diagnostic_server.dart';
 import 'package:analysis_server/src/server/error_notifier.dart';
 import 'package:analysis_server/src/server/performance.dart';
 import 'package:analysis_server/src/services/refactoring/legacy/refactoring.dart';
+import 'package:analysis_server/src/services/user_prompts/dart_fix_prompt_manager.dart';
 import 'package:analysis_server/src/utilities/flutter.dart';
 import 'package:analysis_server/src/utilities/process.dart';
 import 'package:analyzer/dart/analysis/context_locator.dart';
@@ -60,6 +61,10 @@ import 'package:watcher/watcher.dart';
 class LspAnalysisServer extends AnalysisServer {
   /// The capabilities of the LSP client. Will be null prior to initialization.
   LspClientCapabilities? _clientCapabilities;
+
+  /// Information about the connected client. Will be null prior to
+  /// initialization or if the client did not provide it.
+  InitializeParamsClientInfo? _clientInfo;
 
   /// Initialization options provided by the LSP client. Allows opting in/out of
   /// specific server functionality. Will be null prior to initialization.
@@ -102,7 +107,7 @@ class LspAnalysisServer extends AnalysisServer {
   /// automatically.
   bool willExit = false;
 
-  StreamSubscription? _pluginChangeSubscription;
+  StreamSubscription<void>? _pluginChangeSubscription;
 
   /// The current workspace folders provided by the client. Used as analysis roots.
   final _workspaceFolders = <String>{};
@@ -126,6 +131,10 @@ class LspAnalysisServer extends AnalysisServer {
   /// available.
   final DetachableFileSystemManager? detachableFileSystemManager;
 
+  /// A flag indicating whether analysis was being performed the last time
+  /// `sendStatusNotification` was invoked.
+  bool wasAnalyzing = false;
+
   /// Initialize a newly created server to send and receive messages to the
   /// given [channel].
   LspAnalysisServer(
@@ -142,6 +151,7 @@ class LspAnalysisServer extends AnalysisServer {
     this.detachableFileSystemManager,
     // Disable to avoid using this in unit tests.
     bool enableBlazeWatcher = false,
+    DartFixPromptManager? dartFixPromptManager,
   }) : super(
           options,
           sdkManager,
@@ -154,6 +164,7 @@ class LspAnalysisServer extends AnalysisServer {
           processRunner,
           LspNotificationManager(channel, baseResourceProvider.pathContext),
           enableBlazeWatcher: enableBlazeWatcher,
+          dartFixPromptManager: dartFixPromptManager,
         ) {
     notificationManager.server = this;
     messageHandler = UninitializedStateMessageHandler(this);
@@ -163,7 +174,7 @@ class LspAnalysisServer extends AnalysisServer {
         LspServerContextManagerCallbacks(this, resourceProvider);
     contextManager.callbacks = contextManagerCallbacks;
 
-    analysisDriverScheduler.status.listen(sendStatusNotification);
+    analysisDriverScheduler.status.listen(handleAnalysisStatusChange);
     analysisDriverScheduler.start();
 
     _channelSubscription =
@@ -182,13 +193,40 @@ class LspAnalysisServer extends AnalysisServer {
   Future<void> get analysisContextsRebuilt =>
       _analysisContextRebuildCompleter.future;
 
+  /// The hosted location of the client application.
+  ///
+  /// This information is not part of the LSP spec so is only provided for
+  /// clients extensions that add it to initialization options explicitly
+  /// (such as Dart-Code for VS Code where it comes from 'env.appHost').
+  ///
+  /// This value is usually 'desktop' for desktop installs and for web will be
+  /// the name of the web embedder if provided (such as 'github.dev' or
+  /// 'codespaces'), else 'web'.
+  String? get clientAppHost => _initializationOptions?.appHost;
+
   /// The capabilities of the LSP client. Will be null prior to initialization.
   LspClientCapabilities? get clientCapabilities => _clientCapabilities;
+
+  /// The capabilities of the LSP client. Will be null prior to initialization.
+  InitializeParamsClientInfo? get clientInfo => _clientInfo;
+
+  /// The name of the remote when the client is running using a remote workspace.
+  ///
+  /// This information is not part of the LSP spec so is only provided for
+  /// clients extensions that add it to initialization options explicitly
+  /// (such as Dart-Code for VS Code where it comes from 'env.remoteName').
+  ///
+  /// This value is `null` for local workspaces and will contain a string such
+  /// as 'ssh-remote' or 'wsl' for remote workspaces.
+  String? get clientRemoteName => _initializationOptions?.remoteName;
 
   Future<void> get exited => channel.closed;
 
   /// Initialization options provided by the LSP client. Allows opting in/out of
-  /// specific server functionality. Will be null prior to initialization.
+  /// specific server functionality. This getter is for convenience and will
+  /// throw if accessed prior to initialization.
+  /// TODO(dantup): Make this nullable and review all uses of it to ensure
+  ///  there aren't potential errors here.
   LspInitializationOptions get initializationOptions =>
       _initializationOptions as LspInitializationOptions;
 
@@ -210,6 +248,16 @@ class LspAnalysisServer extends AnalysisServer {
 
   RefactoringWorkspace get refactoringWorkspace => _refactoringWorkspace ??=
       RefactoringWorkspace(driverMap.values, searchEngine);
+
+  /// Whether or not the client supports openUri notifications.
+  @override
+  bool get supportsOpenUriNotification => initializationOptions.allowOpenUri;
+
+  /// Whether or not the client has advertised support for
+  /// 'window/showMessageRequest'.
+  @override
+  bool get supportsShowMessageRequest =>
+      clientCapabilities?.supportsShowMessageRequest ?? false;
 
   Future<void> addPriorityFile(String filePath) async {
     // When pubspecs are opened, trigger pre-loading of pub package names and
@@ -321,13 +369,26 @@ class LspAnalysisServer extends AnalysisServer {
         uri: Uri.file(path), version: documentVersions[path]?.version);
   }
 
+  @override
+  FutureOr<void> handleAnalysisStatusChange(
+      analysis.AnalysisStatus status) async {
+    super.handleAnalysisStatusChange(status);
+    await sendStatusNotification(status);
+  }
+
   void handleClientConnection(
-      ClientCapabilities capabilities, dynamic initializationOptions) {
+    ClientCapabilities capabilities,
+    InitializeParamsClientInfo? clientInfo,
+    Object? initializationOptions,
+  ) {
     _clientCapabilities = LspClientCapabilities(capabilities);
+    _clientInfo = clientInfo;
     _initializationOptions = LspInitializationOptions(initializationOptions);
 
     performanceAfterStartup = ServerPerformance();
     performance = performanceAfterStartup!;
+
+    _checkAnalytics();
   }
 
   /// Handles a response from the client by invoking the completer that the
@@ -469,7 +530,8 @@ class LspAnalysisServer extends AnalysisServer {
   void logErrorToClient(String message) {
     channel.sendNotification(NotificationMessage(
       method: Method.window_logMessage,
-      params: LogMessageParams(type: MessageType.Error, message: message),
+      params:
+          LogMessageParams(type: MessageType.error.forLsp, message: message),
       jsonrpc: jsonRpcVersion,
     ));
   }
@@ -513,28 +575,21 @@ class LspAnalysisServer extends AnalysisServer {
   }
 
   void onOverlayCreated(String path, String content) {
-    final currentFile = resourceProvider.getFile(path);
-    String? currentContent;
-
-    try {
-      currentContent = currentFile.readAsStringSync();
-    } on FileSystemException {
-      // It's possible we're creating an overlay for a file that doesn't yet
-      // exist on disk so must handle missing file exceptions. Checking for
-      // exists first would introduce a race.
-    }
-
     resourceProvider.setOverlay(path,
         content: content, modificationStamp: overlayModificationStamp++);
 
     // If the overlay is exactly the same as the previous content we can skip
     // notifying drivers which avoids re-analyzing the same content.
-    if (content != currentContent) {
+    final driver = contextManager.getDriverFor(path);
+    final contentIsUpdated =
+        driver?.fsState.getExistingFromPath(path)?.content != content;
+
+    if (contentIsUpdated) {
       _afterOverlayChanged(path, plugin.AddContentOverlay(content));
 
       // If the file did not exist, and is "overlay only", it still should be
       // analyzed. Add it to driver to which it should have been added.
-      contextManager.getDriverFor(path)?.addFile(path);
+      driver?.addFile(path);
     } else {
       // If we skip the work above, we still need to ensure plugins are notified
       // of the new overlay (which usually happens in `_afterOverlayChanged`).
@@ -643,13 +698,25 @@ class LspAnalysisServer extends AnalysisServer {
       logErrorToClient(
           '$message\n\n${error.message}\n\n${error.code}\n\n${error.data}');
 
-      shutdown();
+      unawaited(shutdown());
     }
   }
 
   /// Send the given [notification] to the client.
   void sendNotification(NotificationMessage notification) {
     channel.sendNotification(notification);
+  }
+
+  @override
+  void sendOpenUriNotification(Uri uri) {
+    assert(supportsOpenUriNotification);
+    final params = OpenUriParams(uri: uri);
+    final message = NotificationMessage(
+      method: CustomMethods.openUri,
+      params: params,
+      jsonrpc: jsonRpcVersion,
+    );
+    sendNotification(message);
   }
 
   /// Send the given [request] to the client and wait for a response. Completes
@@ -693,16 +760,23 @@ class LspAnalysisServer extends AnalysisServer {
     // Send old custom notifications to clients that do not support $/progress.
     // TODO(dantup): Remove this custom notification (and related classes) when
     // it's unlikely to be in use by any clients.
+    var isAnalyzing = status.isAnalyzing;
+    if (wasAnalyzing && !isAnalyzing) {
+      wasAnalyzing = isAnalyzing;
+      // Only send analysis analytics after analysis is complete.
+      reportAnalysisAnalytics();
+    }
+
     if (clientCapabilities?.workDoneProgress != true) {
       channel.sendNotification(NotificationMessage(
         method: CustomMethods.analyzerStatus,
-        params: AnalyzerStatusParams(isAnalyzing: status.isAnalyzing),
+        params: AnalyzerStatusParams(isAnalyzing: isAnalyzing),
         jsonrpc: jsonRpcVersion,
       ));
       return;
     }
 
-    if (status.isAnalyzing) {
+    if (isAnalyzing) {
       analyzingProgressReporter ??=
           ProgressReporter.serverCreated(this, analyzingProgressToken)
             ..begin('Analyzing…');
@@ -743,42 +817,80 @@ class LspAnalysisServer extends AnalysisServer {
   }
 
   void showErrorMessageToUser(String message) {
-    showMessageToUser(MessageType.Error, message);
+    showMessageToUser(MessageType.error, message);
   }
 
   void showMessageToUser(MessageType type, String message) {
     channel.sendNotification(NotificationMessage(
       method: Method.window_showMessage,
-      params: ShowMessageParams(type: type, message: message),
+      params: ShowMessageParams(type: type.forLsp, message: message),
       jsonrpc: jsonRpcVersion,
     ));
   }
 
-  /// Shows the user a prompt with some actions to select using ShowMessageRequest.
-  Future<MessageActionItem> showUserPrompt(
-      MessageType type, String message, List<MessageActionItem> actions) async {
+  /// Shows the user a prompt with some actions to select from using
+  /// 'window/showMessageRequest'.
+  ///
+  /// Callers should verify the client supports 'window/showMessageRequest' with
+  /// [supportsShowMessageRequest] before calling this, and handle cases where
+  /// it is not appropriately.
+  ///
+  /// This is just a convenience method over [showUserPromptItems] where only
+  /// title strings are used.
+  @override
+  Future<String?> showUserPrompt(
+    MessageType type,
+    String message,
+    List<String> actions,
+  ) async {
+    assert(supportsShowMessageRequest);
+    final response = await showUserPromptItems(
+      type,
+      message,
+      actions.map((title) => MessageActionItem(title: title)).toList(),
+    );
+    return response?.title;
+  }
+
+  /// Shows the user a prompt with some actions to select from using
+  /// 'window/showMessageRequest'.
+  ///
+  /// Callers should verify the client supports 'window/showMessageRequest' with
+  /// [supportsShowMessageRequest] before calling this, and handle cases where
+  /// it is not appropriately.
+  ///
+  /// For simple cases, [showUserPrompt] provides a slightly simpler API using
+  /// [String]s instead of [MessageActionItem]s.
+  Future<MessageActionItem?> showUserPromptItems(
+    MessageType type,
+    String message,
+    List<MessageActionItem> actions,
+  ) async {
+    assert(supportsShowMessageRequest);
     final response = await sendRequest(
       Method.window_showMessageRequest,
-      ShowMessageRequestParams(type: type, message: message, actions: actions),
+      ShowMessageRequestParams(
+          type: type.forLsp, message: message, actions: actions),
     );
 
-    return MessageActionItem.fromJson(response.result as Map<String, Object?>);
+    final result = response.result;
+    return result != null
+        ? MessageActionItem.fromJson(response.result as Map<String, Object?>)
+        : null;
   }
 
   @override
-  Future<void> shutdown() {
-    super.shutdown();
+  Future<void> shutdown() async {
+    await super.shutdown();
 
     detachableFileSystemManager?.dispose();
 
     // Defer closing the channel so that the shutdown response can be sent and
     // logged.
-    Future(() {
+    unawaited(Future(() {
       channel.close();
-    });
-    _pluginChangeSubscription?.cancel();
-
-    return Future.value();
+    }));
+    unawaited(_pluginChangeSubscription?.cancel());
   }
 
   /// There was an error related to the socket from which messages are being
@@ -816,6 +928,17 @@ class LspAnalysisServer extends AnalysisServer {
 
     notifyDeclarationsTracker(path);
     notifyFlutterWidgetDescriptions(path);
+  }
+
+  /// Display a message that will allow us to enable analytics on the next run.
+  void _checkAnalytics() {
+    // TODO(dantup): This code should move to base server.
+    var unifiedAnalytics = analyticsManager.analytics;
+    if (supportsShowMessageRequest && unifiedAnalytics.shouldShowMessage) {
+      unawaited(showUserPrompt(
+          MessageType.info, unifiedAnalytics.getConsentMessage, ['Ok']));
+      unifiedAnalytics.clientShowedMessage();
+    }
   }
 
   /// Computes analysis roots for a set of open files.
@@ -961,26 +1084,38 @@ class LspAnalysisServer extends AnalysisServer {
 }
 
 class LspInitializationOptions {
+  final Map<String, Object?> raw;
+  final String? appHost;
+  final String? remoteName;
   final bool onlyAnalyzeProjectsWithOpenFiles;
   final bool suggestFromUnimportedLibraries;
   final bool closingLabels;
   final bool outline;
   final bool flutterOutline;
   final int? completionBudgetMilliseconds;
+  final bool allowOpenUri;
 
-  LspInitializationOptions(dynamic options)
-      : onlyAnalyzeProjectsWithOpenFiles = options != null &&
+  factory LspInitializationOptions(Object? options) =>
+      LspInitializationOptions._(
+        options is Map<String, Object?> ? options : const {},
+      );
+
+  LspInitializationOptions._(Map<String, Object?> options)
+      : raw = options,
+        appHost = options['appHost'] as String?,
+        remoteName = options['remoteName'] as String?,
+        onlyAnalyzeProjectsWithOpenFiles =
             options['onlyAnalyzeProjectsWithOpenFiles'] == true,
         // suggestFromUnimportedLibraries defaults to true, so must be
         // explicitly passed as false to disable.
-        suggestFromUnimportedLibraries = options == null ||
+        suggestFromUnimportedLibraries =
             options['suggestFromUnimportedLibraries'] != false,
-        closingLabels = options != null && options['closingLabels'] == true,
-        outline = options != null && options['outline'] == true,
-        flutterOutline = options != null && options['flutterOutline'] == true,
-        completionBudgetMilliseconds = options != null
-            ? options['completionBudgetMilliseconds'] as int?
-            : null;
+        closingLabels = options['closingLabels'] == true,
+        outline = options['outline'] == true,
+        flutterOutline = options['flutterOutline'] == true,
+        completionBudgetMilliseconds =
+            options['completionBudgetMilliseconds'] as int?,
+        allowOpenUri = options['allowOpenUri'] == true;
 }
 
 class LspServerContextManagerCallbacks extends ContextManagerCallbacks {
@@ -998,8 +1133,8 @@ class LspServerContextManagerCallbacks extends ContextManagerCallbacks {
 
   @override
   void afterContextsCreated() {
+    analysisServer.afterContextsCreated();
     analysisServer.contextBuilds++;
-    analysisServer.addContextsToDeclarationsTracker();
   }
 
   @override

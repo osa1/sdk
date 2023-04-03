@@ -8,6 +8,7 @@ import 'package:compiler/compiler_api.dart' as api;
 import 'package:compiler/src/commandline_options.dart';
 import 'package:compiler/src/common/codegen.dart';
 import 'package:compiler/src/compiler.dart';
+import 'package:compiler/src/io/source_information.dart';
 import 'package:compiler/src/js_model/js_world.dart';
 import 'package:compiler/src/inferrer/types.dart';
 import 'package:compiler/src/serialization/serialization.dart';
@@ -31,7 +32,8 @@ Future<void> generateJavaScriptCode(Compiler compiler,
   final codegenInputs = compiler.initializeCodegen(globalTypeInferenceResults);
   final codegenResults = OnDemandCodegenResults(globalTypeInferenceResults,
       codegenInputs, compiler.backendStrategy.functionCompiler);
-  final programSize = compiler.runCodegenEnqueuer(codegenResults);
+  final programSize = compiler.runCodegenEnqueuer(
+      codegenResults, SourceLookup(compiler.componentForTesting));
   if (compiler.options.dumpInfo) {
     await compiler.runDumpInfo(codegenResults, programSize);
   }
@@ -107,7 +109,7 @@ runTest(
     SerializationStrategy strategy = const BytesInMemorySerializationStrategy(),
     bool useDataKinds = false}) async {
   var commonOptions = options + ['--out=out.js'];
-  OutputCollector collector = new OutputCollector();
+  OutputCollector collector = OutputCollector();
   CompilationResult result = await runCompiler(
       entryPoint: entryPoint,
       memorySourceFiles: memorySourceFiles,
@@ -121,7 +123,7 @@ runTest(
   Expect.isTrue(result.isSuccess);
   Map<api.OutputType, Map<String, String>> expectedOutput = collector.clear();
 
-  OutputCollector collector2 = new OutputCollector();
+  OutputCollector collector2 = OutputCollector();
   CompilationResult result2 = await runCompiler(
       entryPoint: entryPoint,
       memorySourceFiles: memorySourceFiles,
@@ -137,7 +139,7 @@ runTest(
 
   var dillUri = Uri.parse('out.dill');
   var closedWorldUri = Uri.parse('world.data');
-  OutputCollector collector3a = new OutputCollector();
+  OutputCollector collector3a = OutputCollector();
   CompilationResult result3a = await runCompiler(
       entryPoint: entryPoint,
       memorySourceFiles: memorySourceFiles,
@@ -162,7 +164,7 @@ runTest(
   final closedWorldBytes = collector3a.binaryOutputMap[closedWorldUri]!.list;
   File(dillFileUri.path).writeAsBytesSync(dillBytes);
   File(closedWorldFileUri.path).writeAsBytesSync(closedWorldBytes);
-  OutputCollector collector3b = new OutputCollector();
+  OutputCollector collector3b = OutputCollector();
   CompilationResult result3b = await runCompiler(
       entryPoint: entryPoint,
       memorySourceFiles: memorySourceFiles,
@@ -198,7 +200,7 @@ runTest(
       stoppedAfterTypeInference: true);
 
   final jsOutUri = Uri.parse('out.js');
-  OutputCollector collector4 = new OutputCollector();
+  OutputCollector collector4 = OutputCollector();
   CompilationResult result4 = await runCompiler(
       entryPoint: entryPoint,
       memorySourceFiles: memorySourceFiles,

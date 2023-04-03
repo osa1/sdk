@@ -8,7 +8,7 @@ import '../common/names.dart' show Identifiers, Names;
 import '../constants/values.dart';
 import '../elements/entities.dart';
 import '../elements/types.dart';
-import '../ir/class_relation.dart';
+import '../ir/static_type.dart';
 import '../js_backend/annotations.dart';
 import '../js_backend/field_analysis.dart' show KFieldAnalysis;
 import '../js_backend/backend_usage.dart'
@@ -78,7 +78,7 @@ class InstantiationInfo {
   ///
   ///    abstract class AbstractClass<S> {
   ///      factory AbstractClass.a() = Class<S>.a;
-  ///      factory AbstractClass.b() => new Class<S>.b();
+  ///      factory AbstractClass.b() => Class<S>.b();
   ///    }
   ///    class Class<T> implements AbstractClass<T> {
   ///      Class.a();
@@ -88,13 +88,13 @@ class InstantiationInfo {
   ///
   ///
   ///    main() {
-  ///      new Class.a();
-  ///      new Class<int>.a();
-  ///      new Class<String>.b();
-  ///      new Class<num>.c();
-  ///      new AbstractClass<double>.a();
-  ///      new AbstractClass<bool>.b();
-  ///      new DivElement(); // native instantiation
+  ///      Class.a();
+  ///      Class<int>.a();
+  ///      Class<String>.b();
+  ///      Class<num>.c();
+  ///      AbstractClass<double>.a();
+  ///      AbstractClass<bool>.b();
+  ///      DivElement(); // native instantiation
   ///    }
   ///
   /// will generate the mappings
@@ -273,6 +273,8 @@ class ResolutionWorldBuilder extends WorldBuilder implements World {
   final Set<ConstantValue> _constantValues = {};
 
   final Set<Local> _genericLocalFunctions = {};
+
+  final Set<MemberEntity> _pendingWeakTearOffs = {};
 
   final Set<MemberEntity> _processedMembers = {};
 
@@ -593,6 +595,13 @@ class ResolutionWorldBuilder extends WorldBuilder implements World {
       case StaticUseKind.STATIC_TEAR_OFF:
         useSet.addAll(usage.read(Accesses.staticAccess));
         break;
+      case StaticUseKind.WEAK_STATIC_TEAR_OFF:
+        if (usage.hasUse) {
+          useSet.addAll(usage.read(Accesses.staticAccess));
+        } else {
+          _pendingWeakTearOffs.add(element);
+        }
+        break;
       case StaticUseKind.SUPER_SETTER_SET:
         useSet.addAll(usage.write(Accesses.superAccess));
         break;
@@ -614,6 +623,9 @@ class ResolutionWorldBuilder extends WorldBuilder implements World {
         registerStaticInvocation(staticUse);
         useSet.addAll(
             usage.invoke(Accesses.staticAccess, staticUse.callStructure!));
+        if (_pendingWeakTearOffs.remove(element)) {
+          useSet.addAll(usage.read(Accesses.staticAccess));
+        }
         break;
       case StaticUseKind.CONSTRUCTOR_INVOKE:
       case StaticUseKind.CONST_CONSTRUCTOR_INVOKE:

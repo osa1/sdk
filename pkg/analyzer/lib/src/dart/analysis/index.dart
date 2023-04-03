@@ -294,9 +294,22 @@ class _IndexAssembler {
     nameRelations.add(_NameRelationInfo(nameId, kind, offset, isQualified));
   }
 
-  void addPrefixForElement(PrefixElement prefixElement, Element element) {
+  /// Adds a prefix (or empty string for unprefixed) for an element.
+  void addPrefixForElement(Element element, {PrefixElement? prefix}) {
+    if (element is MultiplyDefinedElementImpl ||
+        // TODO(brianwilkerson) The last two conditions are here because the
+        //  elements for `dynamic` and `Never` are singletons and hence don't have
+        //  a parent element for which we can find an `_ElementInfo`. This means
+        //  that any reference to either type via a prefix can't be stored in the
+        //  index. The solution is to make those elements be normal (not unique)
+        //  elements.
+        element is DynamicElementImpl ||
+        element is NeverElementImpl) {
+      return;
+    }
+
     _ElementInfo elementInfo = _getElementInfo(element);
-    elementInfo.importPrefixes.add(prefixElement.name);
+    elementInfo.importPrefixes.add(prefix?.name ?? '');
   }
 
   void addSubtype(String name, List<String> members, List<String> supertypes) {
@@ -548,9 +561,6 @@ class _IndexContributor extends GeneralizingAstVisitor {
       relNode = name as SimpleIdentifier;
     }
     recordRelation(element, kind, relNode, isQualified);
-    recordRelation(
-        element, IndexRelationKind.IS_REFERENCED_BY, relNode, isQualified);
-    namedType.typeArguments?.accept(this);
   }
 
   void recordUriReference(Element? element, StringLiteral uri) {
@@ -586,10 +596,7 @@ class _IndexContributor extends GeneralizingAstVisitor {
   void visitClassTypeAlias(ClassTypeAlias node) {
     _addSubtypeForClassTypeAlis(node);
     recordIsAncestorOf(node.declaredElement!);
-    var superclassName = node.superclass.name;
-    if (superclassName is PrefixedIdentifier) {
-      visitPrefixedIdentifier(superclassName);
-    }
+    recordSuperType(node.superclass, IndexRelationKind.IS_EXTENDED_BY);
     super.visitClassTypeAlias(node);
   }
 
@@ -721,10 +728,7 @@ class _IndexContributor extends GeneralizingAstVisitor {
   @override
   void visitExtendsClause(ExtendsClause node) {
     recordSuperType(node.superclass, IndexRelationKind.IS_EXTENDED_BY);
-    var superclassName = node.superclass.name;
-    if (superclassName is PrefixedIdentifier) {
-      visitPrefixedIdentifier(superclassName);
-    }
+    node.superclass.accept(this);
   }
 
   @override
@@ -744,10 +748,7 @@ class _IndexContributor extends GeneralizingAstVisitor {
   void visitImplementsClause(ImplementsClause node) {
     for (NamedType namedType in node.interfaces) {
       recordSuperType(namedType, IndexRelationKind.IS_IMPLEMENTED_BY);
-      var supertypeName = namedType.name;
-      if (supertypeName is PrefixedIdentifier) {
-        visitPrefixedIdentifier(supertypeName);
-      }
+      namedType.accept(this);
     }
   }
 
@@ -798,19 +799,10 @@ class _IndexContributor extends GeneralizingAstVisitor {
   }
 
   @override
-  void visitNamedType(NamedType node) {
-    AstNode parent = node.parent!;
-    if (parent is ClassTypeAlias && parent.superclass == node) {
-      recordSuperType(node, IndexRelationKind.IS_EXTENDED_BY);
-    } else {
-      super.visitNamedType(node);
-    }
-  }
-
-  @override
   void visitOnClause(OnClause node) {
     for (NamedType namedType in node.superclassConstraints) {
       recordSuperType(namedType, IndexRelationKind.CONSTRAINS);
+      namedType.accept(this);
     }
   }
 
@@ -827,6 +819,26 @@ class _IndexContributor extends GeneralizingAstVisitor {
   }
 
   @override
+  visitPatternField(PatternField node) {
+    final nameNode = node.name;
+    if (nameNode != null) {
+      final nameToken = nameNode.name;
+      final int offset;
+      final int length;
+      if (nameToken != null) {
+        offset = nameToken.offset;
+        length = nameToken.length;
+      } else {
+        offset = nameNode.offset;
+        length = 0;
+      }
+      recordRelationOffset(node.element, IndexRelationKind.IS_REFERENCED_BY,
+          offset, length, true);
+    }
+    return super.visitPatternField(node);
+  }
+
+  @override
   void visitPostfixExpression(PostfixExpression node) {
     recordOperatorReference(node.operator, node.staticElement);
     super.visitPostfixExpression(node);
@@ -834,20 +846,10 @@ class _IndexContributor extends GeneralizingAstVisitor {
 
   @override
   void visitPrefixedIdentifier(PrefixedIdentifier node) {
-    var prefixElement = node.prefix.staticElement;
     var element = node.staticElement;
-    if (element != null &&
-        prefixElement is PrefixElement &&
-        element is! MultiplyDefinedElementImpl &&
-        element is! DynamicElementImpl &&
-        element is! NeverElementImpl) {
-      // TODO(brianwilkerson) The last two conditions are here because the
-      //  elements for `dynamic` and `Never` are singletons and hence don't have
-      //  a parent element for which we can find an `_ElementInfo`. This means
-      //  that any reference to either type via a prefix can't be stored in the
-      //  index. The solution is to make those elements be normal (not unique)
-      //  elements.
-      assembler.addPrefixForElement(prefixElement, element);
+    var prefixElement = node.prefix.staticElement;
+    if (element != null && prefixElement is PrefixElement) {
+      assembler.addPrefixForElement(element, prefix: prefixElement);
     }
     super.visitPrefixedIdentifier(node);
   }
@@ -885,6 +887,15 @@ class _IndexContributor extends GeneralizingAstVisitor {
     Element? element = node.writeOrReadElement;
     if (element is ParameterElement) {
       element = declaredParameterElement(node, element);
+    }
+
+    final parent = node.parent;
+    if (element != null &&
+        element.enclosingElement is CompilationUnitElement &&
+        // We're only unprefixed when part of a PrefixedIdentifier if we're
+        // the left side.
+        (parent is! PrefixedIdentifier || parent.prefix == node)) {
+      assembler.addPrefixForElement(element);
     }
 
     // record unresolved name reference
@@ -945,10 +956,7 @@ class _IndexContributor extends GeneralizingAstVisitor {
   void visitWithClause(WithClause node) {
     for (NamedType namedType in node.mixinTypes) {
       recordSuperType(namedType, IndexRelationKind.IS_MIXED_IN_BY);
-      var supertypeName = namedType.name;
-      if (supertypeName is PrefixedIdentifier) {
-        visitPrefixedIdentifier(supertypeName);
-      }
+      namedType.accept(this);
     }
   }
 

@@ -11,7 +11,7 @@ import 'context_collection_resolution.dart';
 main() {
   defineReflectiveSuite(() {
     defineReflectiveTests(PrefixedIdentifierResolutionTest);
-    defineReflectiveTests(PrefixedIdentifierResolutionWithoutNullSafetyTest);
+    defineReflectiveTests(PrefixedIdentifierResolutionTest_WithoutNullSafety);
   });
 }
 
@@ -32,7 +32,7 @@ main() {
   a.loadLibrary;
 }
 ''', [
-      error(HintCode.UNUSED_IMPORT, 22, 8),
+      error(WarningCode.UNUSED_IMPORT, 22, 8),
     ]);
 
     var import = findElement.importFind('package:test/a.dart');
@@ -209,6 +209,11 @@ void f() {
     );
   }
 }
+
+@reflectiveTest
+class PrefixedIdentifierResolutionTest_WithoutNullSafety
+    extends PubPackageResolutionTest
+    with PrefixedIdentifierResolutionTestCases, WithoutNullSafetyMixin {}
 
 mixin PrefixedIdentifierResolutionTestCases on PubPackageResolutionTest {
   test_class_read() async {
@@ -532,8 +537,3 @@ int Function() foo() {
     assertType(identifier, 'A');
   }
 }
-
-@reflectiveTest
-class PrefixedIdentifierResolutionWithoutNullSafetyTest
-    extends PubPackageResolutionTest
-    with PrefixedIdentifierResolutionTestCases, WithoutNullSafetyMixin {}

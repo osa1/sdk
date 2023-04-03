@@ -139,6 +139,8 @@ Future<CompilerResult> _compile(List<String> args,
   }
 
   var options = SharedCompilerOptions.fromArguments(argResults);
+  addGeneratedVariables(declaredVariables,
+      enableAsserts: options.enableAsserts);
 
   Uri toCustomUri(Uri uri) {
     if (!uri.hasScheme) {
@@ -281,7 +283,7 @@ Future<CompilerResult> _compile(List<String> args,
         additionalDills,
         DevCompilerTarget(TargetFlags(
             trackWidgetCreation: trackWidgetCreation,
-            enableNullSafety: options.soundNullSafety)),
+            soundNullSafety: options.soundNullSafety)),
         fileSystem: fileSystem,
         explicitExperimentalFlags: explicitExperimentalFlags,
         environmentDefines: declaredVariables,
@@ -322,7 +324,7 @@ Future<CompilerResult> _compile(List<String> args,
         inputDigests,
         DevCompilerTarget(TargetFlags(
             trackWidgetCreation: trackWidgetCreation,
-            enableNullSafety: options.soundNullSafety)),
+            soundNullSafety: options.soundNullSafety)),
         fileSystem: fileSystem,
         explicitExperimentalFlags: explicitExperimentalFlags,
         environmentDefines: declaredVariables,
@@ -831,6 +833,13 @@ Map<String, String> parseAndRemoveDeclaredVariables(List<String> args) {
   }
 
   return declaredVariables;
+}
+
+/// Adds all synthesized environment variables to [variables].
+Map<String, String> addGeneratedVariables(Map<String, String> variables,
+    {required bool enableAsserts}) {
+  variables['dart.web.assertions_enabled'] = '$enableAsserts';
+  return variables;
 }
 
 /// The default path of the kernel summary for the Dart SDK.

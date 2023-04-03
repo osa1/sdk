@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:_fe_analyzer_shared/src/type_inference/type_analysis_result.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
     as shared;
 import 'package:analyzer/dart/ast/ast.dart';
@@ -13,31 +14,18 @@ import 'package:analyzer/src/diagnostic/diagnostic_factory.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:collection/collection.dart';
 
-typedef SharedRecordPatternField
-    = shared.RecordPatternField<RecordPatternFieldImpl, DartPattern>;
+typedef SharedPatternField
+    = shared.RecordPatternField<PatternFieldImpl, DartPatternImpl>;
 
 /// Implementation of [shared.TypeAnalyzerErrors] that reports errors using the
 /// analyzer's [ErrorReporter] class.
 class SharedTypeAnalyzerErrors
     implements
         shared.TypeAnalyzerErrors<AstNode, Statement, Expression,
-            PromotableElement, DartType, DartPattern> {
+            PromotableElement, DartType, DartPattern, void> {
   final ErrorReporter _errorReporter;
 
   SharedTypeAnalyzerErrors(this._errorReporter);
-
-  @override
-  void argumentTypeNotAssignable({
-    required Expression argument,
-    required DartType argumentType,
-    required DartType parameterType,
-  }) {
-    _errorReporter.reportErrorForNode(
-      CompileTimeErrorCode.ARGUMENT_TYPE_NOT_ASSIGNABLE,
-      argument,
-      [argumentType, parameterType],
-    );
-  }
 
   @override
   void assertInErrorRecovery() {}
@@ -93,11 +81,11 @@ class SharedTypeAnalyzerErrors
   void duplicateRecordPatternField({
     required DartPattern objectOrRecordPattern,
     required String name,
-    required covariant SharedRecordPatternField original,
-    required covariant SharedRecordPatternField duplicate,
+    required covariant SharedPatternField original,
+    required covariant SharedPatternField duplicate,
   }) {
     _errorReporter.reportError(
-      DiagnosticFactory().duplicateRecordPatternField(
+      DiagnosticFactory().duplicatePatternField(
         source: _errorReporter.source,
         name: name,
         duplicateField: duplicate.node,
@@ -118,6 +106,16 @@ class SharedTypeAnalyzerErrors
         originalElement: original,
         duplicateElement: duplicate,
       ),
+    );
+  }
+
+  @override
+  void emptyMapPattern({
+    required DartPattern pattern,
+  }) {
+    _errorReporter.reportErrorForNode(
+      CompileTimeErrorCode.EMPTY_MAP_PATTERN,
+      pattern,
     );
   }
 
@@ -154,7 +152,19 @@ class SharedTypeAnalyzerErrors
   }
 
   @override
-  void nonBooleanCondition(Expression node) {
+  void matchedTypeIsSubtypeOfRequired({
+    required covariant CastPatternImpl pattern,
+    required DartType matchedType,
+    required DartType requiredType,
+  }) {
+    _errorReporter.reportErrorForToken(
+      WarningCode.UNNECESSARY_CAST_PATTERN,
+      pattern.asToken,
+    );
+  }
+
+  @override
+  void nonBooleanCondition({required Expression node}) {
     _errorReporter.reportErrorForNode(
       CompileTimeErrorCode.NON_BOOL_CONDITION,
       node,
@@ -162,7 +172,7 @@ class SharedTypeAnalyzerErrors
   }
 
   @override
-  void patternDoesNotAllowLate(AstNode pattern) {
+  void patternDoesNotAllowLate({required AstNode pattern}) {
     throw UnimplementedError('TODO(paulberry)');
   }
 
@@ -194,10 +204,24 @@ class SharedTypeAnalyzerErrors
   }
 
   @override
-  void refutablePatternInIrrefutableContext(AstNode pattern, AstNode context) {
+  void refutablePatternInIrrefutableContext(
+      {required AstNode pattern, required AstNode context}) {
     _errorReporter.reportErrorForNode(
       CompileTimeErrorCode.REFUTABLE_PATTERN_IN_IRREFUTABLE_CONTEXT,
       pattern,
+    );
+  }
+
+  @override
+  void relationalPatternOperandTypeNotAssignable({
+    required covariant RelationalPatternImpl pattern,
+    required DartType operandType,
+    required DartType parameterType,
+  }) {
+    _errorReporter.reportErrorForNode(
+      CompileTimeErrorCode.RELATIONAL_PATTERN_OPERAND_TYPE_NOT_ASSIGNABLE,
+      pattern.operand,
+      [operandType, parameterType, pattern.operator.lexeme],
     );
   }
 
@@ -214,32 +238,36 @@ class SharedTypeAnalyzerErrors
   }
 
   @override
-  void restPatternNotLastInMap(
-    covariant MapPatternImpl node,
-    covariant RestPatternElementImpl element,
-  ) {
+  void restPatternInMap({
+    required covariant MapPatternImpl node,
+    required covariant RestPatternElementImpl element,
+  }) {
     _errorReporter.reportErrorForNode(
-      CompileTimeErrorCode.REST_ELEMENT_NOT_LAST_IN_MAP_PATTERN,
+      CompileTimeErrorCode.REST_ELEMENT_IN_MAP_PATTERN,
       element,
     );
   }
 
   @override
-  void restPatternWithSubPatternInMap(
-    covariant MapPatternImpl node,
-    covariant RestPatternElementImpl element,
-  ) {
-    _errorReporter.reportErrorForNode(
-      CompileTimeErrorCode.REST_ELEMENT_WITH_SUBPATTERN_IN_MAP_PATTERN,
-      element.pattern!,
-    );
+  void switchCaseCompletesNormally(
+      {required covariant SwitchStatement node, required int caseIndex}) {
+    _errorReporter.reportErrorForToken(
+        CompileTimeErrorCode.SWITCH_CASE_COMPLETES_NORMALLY,
+        node.members[caseIndex].keyword);
   }
 
   @override
-  void switchCaseCompletesNormally(
-      covariant SwitchStatement node, int caseIndex, int numHeads) {
-    _errorReporter.reportErrorForToken(
-        CompileTimeErrorCode.SWITCH_CASE_COMPLETES_NORMALLY,
-        node.members[caseIndex + numHeads - 1].keyword);
+  void unnecessaryWildcardPattern({
+    required covariant WildcardPatternImpl pattern,
+    required UnnecessaryWildcardKind kind,
+  }) {
+    switch (kind) {
+      case UnnecessaryWildcardKind.logicalAndPatternOperand:
+        _errorReporter.reportErrorForNode(
+          WarningCode.UNNECESSARY_WILDCARD_PATTERN,
+          pattern,
+        );
+        break;
+    }
   }
 }

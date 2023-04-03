@@ -3,6 +3,16 @@
 // BSD-style license that can be found in the LICENSE file.
 
 // CHANGES:
+// v0.32 Remove unused non-terminal `patterns`.
+//
+// v0.31 Inline `identifierNotFUNCTION` into `identifier`. Replace all
+// other references with `identifier` to match the spec.
+//
+// v0.30 Add support for the class modifiers `sealed`, `final`, `base`,
+// `interface`, and for `mixin class` declarations. Also add support for
+// unnamed libraries (`library;`). Introduce `otherIdentifier` to help
+// maintaining consistency when the grammar is modified to mention any words
+// that weren't previously mentioned, yet are not reserved or built-in.
 //
 // v0.29 Add an alternative in the `primary` rule to enable method invocations
 // of the form `super(...)` and `super<...>(...)`. This was added to the
@@ -274,7 +284,7 @@ initializedIdentifierList
     ;
 
 functionSignature
-    :    type? identifierNotFUNCTION formalParameterPart
+    :    type? identifier formalParameterPart
     ;
 
 functionBody
@@ -331,7 +341,7 @@ normalFormalParameterNoMetadata
 
 // NB: It is an anomaly that a functionFormalParameter cannot be FINAL.
 functionFormalParameter
-    :    COVARIANT? type? identifierNotFUNCTION formalParameterPart '?'?
+    :    COVARIANT? type? identifier formalParameterPart '?'?
     ;
 
 simpleFormalParameter
@@ -361,13 +371,24 @@ typeWithParameters
     ;
 
 classDeclaration
-    :    ABSTRACT? CLASS typeWithParameters superclass? mixins? interfaces?
-         LBRACE (metadata classMemberDefinition)* RBRACE
-    |    ABSTRACT? CLASS mixinApplicationClass
+    :    (classModifiers | mixinClassModifiers)
+         CLASS typeWithParameters superclass? interfaces?
+         LBRACE (metadata classMemberDeclaration)* RBRACE
+    |    classModifiers CLASS mixinApplicationClass
+    ;
+
+classModifiers
+    :    SEALED
+    |    ABSTRACT? (BASE | INTERFACE | FINAL)?
+    ;
+
+mixinClassModifiers
+    :    ABSTRACT? BASE? MIXIN
     ;
 
 superclass
-    :    EXTENDS typeNotVoidNotFunction
+    :    EXTENDS typeNotVoidNotFunction mixins?
+    |    mixins
     ;
 
 mixins
@@ -378,7 +399,7 @@ interfaces
     :    IMPLEMENTS typeNotVoidNotFunctionList
     ;
 
-classMemberDefinition
+classMemberDeclaration
     :    methodSignature functionBody
     |    declaration ';'
     ;
@@ -388,14 +409,21 @@ mixinApplicationClass
     ;
 
 mixinDeclaration
-    :    MIXIN typeIdentifier typeParameters?
+    :    mixinModifier? MIXIN typeIdentifier typeParameters?
          (ON typeNotVoidNotFunctionList)? interfaces?
-         LBRACE (metadata mixinMemberDefinition)* RBRACE
+         LBRACE (metadata mixinMemberDeclaration)* RBRACE
     ;
 
-// TODO: We will probably want to make this more strict.
-mixinMemberDefinition
-    :    classMemberDefinition
+mixinModifier
+    :    SEALED
+    |    BASE
+    |    INTERFACE
+    |    FINAL
+    ;
+
+// TODO: We might want to make this more strict.
+mixinMemberDeclaration
+    :    classMemberDeclaration
     ;
 
 extensionDeclaration
@@ -405,7 +433,7 @@ extensionDeclaration
 
 // TODO: We might want to make this more strict.
 extensionMemberDefinition
-    :    classMemberDefinition
+    :    classMemberDeclaration
     ;
 
 methodSignature
@@ -533,7 +561,7 @@ mixinApplication
 enumType
     :    ENUM typeIdentifier typeParameters? mixins? interfaces? LBRACE
          enumEntry (',' enumEntry)* (',')?
-         (';' (metadata classMemberDefinition)*)?
+         (';' (metadata classMemberDeclaration)*)?
          RBRACE
     ;
 
@@ -973,21 +1001,11 @@ assignableSelector
     |    '?' '[' expression ']'
     ;
 
-identifierNotFUNCTION
+identifier
     :    IDENTIFIER
     |    builtInIdentifier
-    |    ASYNC // Not a built-in identifier.
-    |    HIDE // Not a built-in identifier.
-    |    OF // Not a built-in identifier.
-    |    ON // Not a built-in identifier.
-    |    SHOW // Not a built-in identifier.
-    |    SYNC // Not a built-in identifier.
+    |    otherIdentifier
     |    { asyncEtcPredicate(getCurrentToken().getType()) }? (AWAIT|YIELD)
-    ;
-
-identifier
-    :    identifierNotFUNCTION
-    |    FUNCTION // Built-in identifier that can be used as a type.
     ;
 
 qualifiedName
@@ -998,12 +1016,7 @@ qualifiedName
 typeIdentifier
     :    IDENTIFIER
     |    DYNAMIC // Built-in identifier that can be used as a type.
-    |    ASYNC // Not a built-in identifier.
-    |    HIDE // Not a built-in identifier.
-    |    OF // Not a built-in identifier.
-    |    ON // Not a built-in identifier.
-    |    SHOW // Not a built-in identifier.
-    |    SYNC // Not a built-in identifier.
+    |    otherIdentifier // Occur in grammar rules, are not built-in.
     |    { asyncEtcPredicate(getCurrentToken().getType()) }? (AWAIT|YIELD)
     ;
 
@@ -1025,10 +1038,6 @@ asOperator
 
 pattern
     :    logicalOrPattern
-    ;
-
-patterns
-    :    pattern (',' pattern)* ','?
     ;
 
 logicalOrPattern
@@ -1319,7 +1328,7 @@ assertion
     ;
 
 libraryName
-    :    metadata LIBRARY dottedIdentifierList ';'
+    :    metadata LIBRARY dottedIdentifierList? ';'
     ;
 
 dottedIdentifierList
@@ -1388,18 +1397,18 @@ type
 typeNotVoid
     :    functionType '?'?
     |    recordType '?'?
-    |    typeNotVoidNotFunction
+    |    typeNotVoidNotFunction '?'?
     ;
 
 typeNotFunction
-    :    typeNotVoidNotFunction
+    :    typeNotVoidNotFunction '?'?
     |    recordType '?'?
     |    VOID
     ;
 
 typeNotVoidNotFunction
-    :    typeName typeArguments? '?'?
-    |    FUNCTION '?'?
+    :    typeName typeArguments?
+    |    FUNCTION
     ;
 
 typeName
@@ -1602,6 +1611,18 @@ builtInIdentifier
     |    TYPEDEF
     ;
 
+otherIdentifier
+    :    ASYNC
+    |    BASE
+    |    HIDE
+    |    OF
+    |    ON
+    |    SEALED
+    |    SHOW
+    |    SYNC
+    |    WHEN
+    ;
+
 // ---------------------------------------- Lexer rules.
 
 fragment
@@ -1627,7 +1648,7 @@ HEX_DIGIT
     |    DIGIT
     ;
 
-// Reserved words.
+// Reserved words (if updated, update `reservedWord` as well).
 
 ASSERT
     :    'assert'
@@ -1761,7 +1782,7 @@ WITH
     :    'with'
     ;
 
-// Built-in identifiers.
+// Built-in identifiers (if updated, update `builtInIdentifier` as well).
 
 ABSTRACT
     :    'abstract'
@@ -1865,10 +1886,14 @@ YIELD
     :    'yield'
     ;
 
-// Other words used in the grammar.
+// Other words used in the grammar (if updated, update `otherIdentifier`, too).
 
 ASYNC
     :    'async'
+    ;
+
+BASE
+    :    'base'
     ;
 
 HIDE
@@ -1881,6 +1906,10 @@ OF
 
 ON
     :    'on'
+    ;
+
+SEALED
+    :    'sealed'
     ;
 
 SHOW

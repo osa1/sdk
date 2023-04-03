@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/src/dart/error/hint_codes.dart';
+import 'package:analyzer/src/error/codes.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
 import 'context_collection_resolution.dart';
@@ -33,6 +33,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType isFinal y@46
     type: int
+  matchedValueType: int
 ''');
   }
 
@@ -60,6 +61,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: isFinal y@46
     type: int
+  matchedValueType: dynamic
 ''');
   }
 
@@ -79,7 +81,9 @@ ListPattern
       name: a
       declaredElement: hasImplicitType isFinal a@54
         type: int
+      matchedValueType: int
   rightBracket: ]
+  matchedValueType: List<int>
   requiredType: List<int>
 ''');
   }
@@ -102,7 +106,9 @@ ListPattern
         name: a
         declaredElement: hasImplicitType isFinal a@57
           type: List<int>
+        matchedValueType: List<int>
   rightBracket: ]
+  matchedValueType: List<int>
   requiredType: List<int>
 ''');
   }
@@ -128,7 +134,9 @@ MapPattern
         name: a
         declaredElement: hasImplicitType isFinal a@57
           type: int
+        matchedValueType: int
   rightBracket: }
+  matchedValueType: Map<int, int>
   requiredType: Map<int, int>
 ''');
   }
@@ -151,16 +159,18 @@ ObjectPattern
     type: int
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: sign
         colon: :
       pattern: DeclaredVariablePattern
         name: a
         declaredElement: hasImplicitType isFinal a@63
           type: int
-      fieldElement: dart:core::@class::int::@getter::sign
+        matchedValueType: int
+      element: dart:core::@class::int::@getter::sign
   rightParenthesis: )
+  matchedValueType: int
 ''');
   }
 
@@ -179,7 +189,9 @@ ParenthesizedPattern
     name: a
     declaredElement: hasImplicitType isFinal a@54
       type: int
+    matchedValueType: int
   rightParenthesis: )
+  matchedValueType: int
 ''');
   }
 
@@ -195,13 +207,15 @@ void f() {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: DeclaredVariablePattern
         name: a
         declaredElement: hasImplicitType isFinal a@54
           type: int
-      fieldElement: <null>
+        matchedValueType: int
+      element: <null>
   rightParenthesis: )
+  matchedValueType: (int)
 ''');
   }
 
@@ -228,6 +242,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: y@40
     type: int
+  matchedValueType: dynamic
 ''');
   }
 
@@ -249,6 +264,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@54
     type: T
+  matchedValueType: T & int
 ''');
   }
 
@@ -273,6 +289,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@95
     type: List<int>
+  matchedValueType: List<int*>*
 ''');
   }
 
@@ -291,6 +308,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@33
     type: int
+  matchedValueType: int
 ''');
   }
 
@@ -309,6 +327,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@36
     type: dynamic
+  matchedValueType: Never?
 ''');
   }
 
@@ -327,6 +346,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@34
     type: dynamic
+  matchedValueType: Null
 ''');
   }
 
@@ -351,6 +371,7 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@95
     type: dynamic
+  matchedValueType: Null*
 ''');
   }
 
@@ -372,14 +393,15 @@ DeclaredVariablePattern
   name: y
   declaredElement: hasImplicitType y@44
     type: int
+  matchedValueType: int
 ''');
   }
 
   test_var_switchCase_cast() async {
     await assertErrorsInCode(r'''
-void f(int x) {
+void f(num x) {
   switch (x) {
-    case var y as Object:
+    case var y as int:
       break;
   }
 }
@@ -393,14 +415,16 @@ CastPattern
     keyword: var
     name: y
     declaredElement: hasImplicitType y@44
-      type: Object
+      type: int
+    matchedValueType: int
   asToken: as
   type: NamedType
     name: SimpleIdentifier
-      token: Object
-      staticElement: dart:core::@class::Object
+      token: int
+      staticElement: dart:core::@class::int
       staticType: null
-    type: Object
+    type: int
+  matchedValueType: num
 ''');
   }
 }

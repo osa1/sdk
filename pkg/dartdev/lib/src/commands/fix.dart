@@ -59,6 +59,12 @@ To use the tool, run either ['dart fix --dry-run'] for a preview of the proposed
           'Compare the result of applying fixes to a golden file for testing.',
       hide: !verbose,
     );
+    argParser.addFlag(
+      'pub',
+      defaultsTo: true,
+      hide: !verbose,
+      help: 'Run an implicit `pub get` to resolve `pubspec.yaml` first.',
+    );
   }
 
   @override
@@ -75,6 +81,10 @@ To use the tool, run either ['dart fix --dry-run'] for a preview of the proposed
   @override
   Future<int> run() async {
     final args = argResults!;
+    final globalArgs = globalResults!;
+    final suppressAnalytics =
+        !globalArgs['analytics'] || globalArgs['suppress-analytics'];
+
     var dryRun = args['dry-run'];
     var inTestMode = args['compare-to-golden'];
     var apply = args['apply'];
@@ -102,6 +112,11 @@ To use the tool, run either ['dart fix --dry-run'] for a preview of the proposed
     var modeText = dryRun ? ' (dry run)' : '';
 
     final targetName = path.basename(fixPath);
+    if (args['pub']) {
+      await findEnclosingProjectAndResolveIfNeeded(
+          target.isDirectory ? target.path : target.parent.path);
+    }
+
     Progress? computeFixesProgress = log.progress(
         'Computing fixes in ${log.ansi.emphasized(targetName)}$modeText');
 
@@ -111,6 +126,7 @@ To use the tool, run either ['dart fix --dry-run'] for a preview of the proposed
       [target],
       commandName: 'fix',
       argResults: argResults,
+      suppressAnalytics: suppressAnalytics,
     );
 
     await server.start(setAnalysisRoots: false);
@@ -347,12 +363,12 @@ To use the tool, run either ['dart fix --dry-run'] for a preview of the proposed
       }
     }
 
-    log.stdout(
-        'To fix an individual diagnostic, run one of the following commands:');
+    log.stdout('To fix an individual diagnostic, run one of:');
     for (var code in codes.sorted()) {
-      log.stdout('  dart fix --apply --code $code $argsTarget');
+      log.stdout('  dart fix --apply --code=$code $argsTarget');
     }
 
+    log.stdout('');
     log.stdout('To fix all diagnostics, run:');
     log.stdout('  dart fix --apply $argsTarget');
   }

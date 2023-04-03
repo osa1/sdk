@@ -7,7 +7,7 @@ part of dart._http;
 abstract class HttpProfiler {
   static const _kType = 'HttpProfile';
 
-  static final Map<int, _HttpProfileData> _profile = {};
+  static final Map<String, _HttpProfileData> _profile = {};
 
   static _HttpProfileData startRequest(
     String method,
@@ -19,7 +19,7 @@ abstract class HttpProfiler {
     return data;
   }
 
-  static _HttpProfileData? getHttpProfileRequest(int id) => _profile[id];
+  static _HttpProfileData? getHttpProfileRequest(String id) => _profile[id];
 
   static void clear() => _profile.clear();
 
@@ -63,7 +63,7 @@ class _HttpProfileData {
         ) {
     // Grab the ID from the timeline event so HTTP profile IDs can be matched
     // to the timeline.
-    id = _timeline.pass();
+    id = _timeline.pass().toString();
     requestInProgress = true;
     requestStartTimestamp = Timeline.now;
     _timeline.start('HTTP CLIENT $method', arguments: {
@@ -261,7 +261,7 @@ class _HttpProfileData {
   bool requestInProgress = true;
   bool? responseInProgress;
 
-  late final int id;
+  late final String id;
   final String method;
   final Uri uri;
 
@@ -289,7 +289,7 @@ class _HttpProfileData {
 int _nextServiceId = 1;
 
 // TODO(ajohnsen): Use other way of getting a unique id.
-abstract class _ServiceObject {
+mixin _ServiceObject {
   int __serviceId = 0;
   int get _serviceId {
     if (__serviceId == 0) __serviceId = _nextServiceId++;
@@ -2077,13 +2077,19 @@ class _HttpClientConnection {
             message = error.message;
           } else if (error is SocketException) {
             message = error.message;
+          } else if (error is TlsException) {
+            message = error.message;
           } else {
             throw error;
           }
           _nextResponseCompleter!.completeError(
               HttpException(message, uri: _currentUri), stackTrace);
           _nextResponseCompleter = null;
-        }, test: (error) => error is HttpException || error is SocketException);
+        },
+            test: (error) =>
+                error is HttpException ||
+                error is SocketException ||
+                error is TlsException);
       } else {
         _nextResponseCompleter!.complete(incoming);
         _nextResponseCompleter = null;
@@ -2093,6 +2099,8 @@ class _HttpClientConnection {
       if (error is HttpException) {
         message = error.message;
       } else if (error is SocketException) {
+        message = error.message;
+      } else if (error is TlsException) {
         message = error.message;
       } else {
         throw error;
@@ -3030,7 +3038,7 @@ class _HttpClient implements HttpClient {
       Platform.environment;
 }
 
-class _HttpConnection extends LinkedListEntry<_HttpConnection>
+final class _HttpConnection extends LinkedListEntry<_HttpConnection>
     with _ServiceObject {
   static const _ACTIVE = 0;
   static const _IDLE = 1;

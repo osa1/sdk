@@ -183,12 +183,11 @@ void main() {
       });
 
       test("runtime defaults to compiler's default runtime", () {
-        expect(Configuration.parse("dartdevc", {}).runtime,
-            equals(Runtime.chrome));
+        expect(Configuration.parse("ddc", {}).runtime, equals(Runtime.chrome));
       });
 
       test("runtime defaults to compiler's default runtime from option", () {
-        expect(Configuration.parse("wat", {"compiler": "dartdevc"}).runtime,
+        expect(Configuration.parse("wat", {"compiler": "ddc"}).runtime,
             equals(Runtime.chrome));
       });
 
@@ -354,11 +353,12 @@ void main() {
     });
 
     group("visualCompare()", () {
-      var a = Configuration("dartdevc", Architecture.ia32, Compiler.dartdevc,
-          Mode.debug, Runtime.chrome, System.android,
+      var a = Configuration("ddc", Architecture.ia32, Compiler.ddc, Mode.debug,
+          Runtime.chrome, System.android,
           builderTag: "a tag",
           vmOptions: ["vm a1", "vm a2"],
           dart2jsOptions: ["dart2js a1", "dart2js a2"],
+          ddcOptions: ["ddc a1", "ddc a2"],
           experiments: ["experiment a1", "experiment a2"],
           timeout: 1);
 
@@ -373,6 +373,7 @@ void main() {
         builderTag: "b tag",
         vmOptions: ["vm b1", "vm b2"],
         dart2jsOptions: ["dart2js b1", "dart2js b2"],
+        ddcOptions: ["ddc b1", "ddc b2"],
         experiments: ["experiment b1", "experiment b2"],
         timeout: 2,
         enableAsserts: true,
@@ -390,10 +391,10 @@ void main() {
 
       test("everything different", () {
         expect(a.visualCompare(b), equals("""
-dartdevc
+ddc
 dart2js
 architecture: ia32 x64
-   compiler: dartdevc dart2js
+   compiler: ddc dart2js
    mode: debug release
    runtime: chrome d8
    system: android fuchsia
@@ -402,6 +403,7 @@ architecture: ia32 x64
    builder-tag: a tag b tag
    vm-options: [vm a1, vm a2] [vm b1, vm b2]
    dart2js-options: [dart2js a1, dart2js a2] [dart2js b1, dart2js b2]
+   ddc-options: [ddc a1, ddc a2] [ddc b1, ddc b2]
    experiments: [experiment a1, experiment a2] [experiment b1, experiment b2]
    timeout: 1 2
    enable-asserts: false true
@@ -420,10 +422,10 @@ architecture: ia32 x64
 
       test("everything the same", () {
         expect(a.visualCompare(a), equals("""
-dartdevc
-dartdevc
+ddc
+ddc
 architecture: ia32 ia32
-   compiler: dartdevc dartdevc
+   compiler: ddc ddc
    mode: debug debug
    runtime: chrome chrome
    system: android android
@@ -432,6 +434,7 @@ architecture: ia32 ia32
    builder-tag: a tag a tag
    vm-options: [vm a1, vm a2] [vm a1, vm a2]
    dart2js-options: [dart2js a1, dart2js a2] [dart2js a1, dart2js a2]
+   ddc-options: [ddc a1, ddc a2] [ddc a1, ddc a2]
    experiments: [experiment a1, experiment a2] [experiment a1, experiment a2]
    timeout: 1 1
 """));

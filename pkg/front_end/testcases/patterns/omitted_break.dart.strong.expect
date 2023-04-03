@@ -36,26 +36,30 @@ static method method(dynamic e) → dynamic {
   }
   #L5:
   {
-    final dynamic #0#0 = e;
-    if(#0#0 is{ForNonNullableByDefault} core::int && e =={core::Object::==}{(core::Object) → core::bool} 0) {
-      {
-        core::print(0);
-        break #L5;
+    final synthesized dynamic #0#0 = e;
+    {
+      if(#0#0 is{ForNonNullableByDefault} core::int && e{core::int} =={core::num::==}{(core::Object) → core::bool} 0) {
+        {
+          core::print(0);
+          break #L5;
+        }
       }
     }
-    else
-      if(#0#0 is{ForNonNullableByDefault} core::int && e =={core::Object::==}{(core::Object) → core::bool} 1) {
+    {
+      if(#0#0 is{ForNonNullableByDefault} core::int && e{core::int} =={core::num::==}{(core::Object) → core::bool} 1) {
         {
           core::print(1);
           break #L5;
         }
       }
-      else
-        if(#0#0 is{ForNonNullableByDefault} core::int && e =={core::Object::==}{(core::Object) → core::bool} 2) {
-          {
-            core::print(2);
-          }
+    }
+    {
+      if(#0#0 is{ForNonNullableByDefault} core::int && e{core::int} =={core::num::==}{(core::Object) → core::bool} 2) {
+        {
+          core::print(2);
         }
+      }
+    }
   }
 }
 static method method2(self::Enum e) → dynamic {

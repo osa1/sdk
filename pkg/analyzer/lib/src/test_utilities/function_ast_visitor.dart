@@ -7,14 +7,17 @@ import 'package:analyzer/dart/ast/visitor.dart';
 
 /// [RecursiveAstVisitor] that delegates visit methods to functions.
 class FunctionAstVisitor extends RecursiveAstVisitor<void> {
+  final void Function(Block)? block;
   final void Function(CatchClauseParameter)? catchClauseParameter;
   final void Function(DeclaredIdentifier)? declaredIdentifier;
+  final void Function(DeclaredVariablePattern)? declaredVariablePattern;
   final void Function(ForElement)? forElement;
   final void Function(ForStatement)? forStatement;
   final void Function(FunctionDeclarationStatement)?
       functionDeclarationStatement;
   final void Function(FunctionExpression, bool)? functionExpression;
   final void Function(GuardedPattern)? guardedPattern;
+  final void Function(IfElement)? ifElement;
   final void Function(IfStatement)? ifStatement;
   final void Function(Label)? label;
   final void Function(MethodInvocation)? methodInvocation;
@@ -26,16 +29,20 @@ class FunctionAstVisitor extends RecursiveAstVisitor<void> {
   final void Function(SwitchExpression)? switchExpression;
   final void Function(SwitchExpressionCase)? switchExpressionCase;
   final void Function(SwitchPatternCase)? switchPatternCase;
+  final void Function(TypeParameter)? typeParameter;
   final void Function(VariableDeclaration)? variableDeclaration;
 
   FunctionAstVisitor({
+    this.block,
     this.catchClauseParameter,
     this.declaredIdentifier,
+    this.declaredVariablePattern,
     this.forElement,
     this.forStatement,
     this.functionDeclarationStatement,
     this.functionExpression,
     this.guardedPattern,
+    this.ifElement,
     this.ifStatement,
     this.label,
     this.methodInvocation,
@@ -46,8 +53,15 @@ class FunctionAstVisitor extends RecursiveAstVisitor<void> {
     this.switchExpression,
     this.switchExpressionCase,
     this.switchPatternCase,
+    this.typeParameter,
     this.variableDeclaration,
   });
+
+  @override
+  void visitBlock(Block node) {
+    block?.call(node);
+    super.visitBlock(node);
+  }
 
   @override
   void visitCatchClauseParameter(CatchClauseParameter node) {
@@ -61,6 +75,12 @@ class FunctionAstVisitor extends RecursiveAstVisitor<void> {
       declaredIdentifier!(node);
     }
     super.visitDeclaredIdentifier(node);
+  }
+
+  @override
+  void visitDeclaredVariablePattern(DeclaredVariablePattern node) {
+    declaredVariablePattern?.call(node);
+    super.visitDeclaredVariablePattern(node);
   }
 
   @override
@@ -101,6 +121,12 @@ class FunctionAstVisitor extends RecursiveAstVisitor<void> {
   void visitGuardedPattern(GuardedPattern node) {
     guardedPattern?.call(node);
     super.visitGuardedPattern(node);
+  }
+
+  @override
+  void visitIfElement(IfElement node) {
+    ifElement?.call(node);
+    super.visitIfElement(node);
   }
 
   @override
@@ -168,6 +194,12 @@ class FunctionAstVisitor extends RecursiveAstVisitor<void> {
   void visitSwitchPatternCase(SwitchPatternCase node) {
     switchPatternCase?.call(node);
     super.visitSwitchPatternCase(node);
+  }
+
+  @override
+  void visitTypeParameter(TypeParameter node) {
+    typeParameter?.call(node);
+    super.visitTypeParameter(node);
   }
 
   @override

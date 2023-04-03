@@ -702,6 +702,18 @@ class LinterVisitor implements AstVisitor<void> {
   }
 
   @override
+  void visitPatternField(PatternField node) {
+    _runSubscriptions(node, registry._forPatternField);
+    node.visitChildren(this);
+  }
+
+  @override
+  void visitPatternFieldName(PatternFieldName node) {
+    _runSubscriptions(node, registry._forPatternFieldName);
+    node.visitChildren(this);
+  }
+
+  @override
   void visitPatternVariableDeclaration(PatternVariableDeclaration node) {
     _runSubscriptions(node, registry._forPatternVariableDeclaration);
     node.visitChildren(this);
@@ -747,18 +759,6 @@ class LinterVisitor implements AstVisitor<void> {
   @override
   void visitRecordPattern(RecordPattern node) {
     _runSubscriptions(node, registry._forRecordPattern);
-    node.visitChildren(this);
-  }
-
-  @override
-  void visitRecordPatternField(RecordPatternField node) {
-    _runSubscriptions(node, registry._forRecordPatternField);
-    node.visitChildren(this);
-  }
-
-  @override
-  void visitRecordPatternFieldName(RecordPatternFieldName node) {
-    _runSubscriptions(node, registry._forRecordPatternFieldName);
     node.visitChildren(this);
   }
 
@@ -1191,9 +1191,8 @@ class NodeLintRegistry {
   final List<_Subscription<PrefixExpression>> _forPrefixExpression = [];
   final List<_Subscription<PropertyAccess>> _forPropertyAccess = [];
   final List<_Subscription<RecordLiteral>> _forRecordLiterals = [];
-  final List<_Subscription<RecordPatternField>> _forRecordPatternField = [];
-  final List<_Subscription<RecordPatternFieldName>> _forRecordPatternFieldName =
-      [];
+  final List<_Subscription<PatternField>> _forPatternField = [];
+  final List<_Subscription<PatternFieldName>> _forPatternFieldName = [];
   final List<_Subscription<RecordPattern>> _forRecordPattern = [];
   final List<_Subscription<RecordTypeAnnotation>> _forRecordTypeAnnotation = [];
   final List<_Subscription<RecordTypeAnnotationNamedField>>
@@ -1754,6 +1753,14 @@ class NodeLintRegistry {
         .add(_Subscription(linter, visitor, _getTimer(linter)));
   }
 
+  void addPatternField(LintRule linter, AstVisitor visitor) {
+    _forPatternField.add(_Subscription(linter, visitor, _getTimer(linter)));
+  }
+
+  void addPatternFieldName(LintRule linter, AstVisitor visitor) {
+    _forPatternFieldName.add(_Subscription(linter, visitor, _getTimer(linter)));
+  }
+
   void addPatternVariableDeclaration(LintRule linter, AstVisitor visitor) {
     _forPatternVariableDeclaration
         .add(_Subscription(linter, visitor, _getTimer(linter)));
@@ -1789,16 +1796,6 @@ class NodeLintRegistry {
 
   void addRecordPattern(LintRule linter, AstVisitor visitor) {
     _forRecordPattern.add(_Subscription(linter, visitor, _getTimer(linter)));
-  }
-
-  void addRecordPatternField(LintRule linter, AstVisitor visitor) {
-    _forRecordPatternField
-        .add(_Subscription(linter, visitor, _getTimer(linter)));
-  }
-
-  void addRecordPatternFieldName(LintRule linter, AstVisitor visitor) {
-    _forRecordPatternFieldName
-        .add(_Subscription(linter, visitor, _getTimer(linter)));
   }
 
   void addRecordTypeAnnotation(LintRule linter, AstVisitor visitor) {

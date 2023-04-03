@@ -43,6 +43,7 @@ BinaryExpression
         guardedPattern: GuardedPattern
           pattern: WildcardPattern
             name: _
+            matchedValueType: Object?
         arrow: =>
         expression: IntegerLiteral
           literal: 1
@@ -90,6 +91,7 @@ BinaryExpression
         guardedPattern: GuardedPattern
           pattern: WildcardPattern
             name: _
+            matchedValueType: Object?
         arrow: =>
         expression: IntegerLiteral
           literal: 1
@@ -100,6 +102,62 @@ BinaryExpression
   staticElement: dart:core::@class::num::@method::==
   staticInvokeType: bool Function(Object)
   staticType: bool
+''');
+  }
+
+  test_expression_recordType_hasOperator() async {
+    await assertNoErrorsInCode(r'''
+void f((String,) a) {
+  a + 0;
+}
+
+extension on (String,) {
+  int operator +(int other) => 0;
+}
+''');
+
+    final node = findNode.binary('+ 0');
+    assertResolvedNodeText(node, r'''
+BinaryExpression
+  leftOperand: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: (String)
+  operator: +
+  rightOperand: IntegerLiteral
+    literal: 0
+    parameter: self::@extension::0::@method::+::@parameter::other
+    staticType: int
+  staticElement: self::@extension::0::@method::+
+  staticInvokeType: int Function(int)
+  staticType: int
+''');
+  }
+
+  test_expression_recordType_noOperator() async {
+    await assertErrorsInCode(r'''
+void f((String,) a) {
+  a + 0;
+}
+''', [
+      error(CompileTimeErrorCode.UNDEFINED_OPERATOR, 26, 1),
+    ]);
+
+    final node = findNode.binary('+ 0');
+    assertResolvedNodeText(node, r'''
+BinaryExpression
+  leftOperand: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: (String)
+  operator: +
+  rightOperand: IntegerLiteral
+    literal: 0
+    parameter: <null>
+    staticType: int
+  staticElement: <null>
+  staticInvokeType: null
+  staticType: dynamic
 ''');
   }
 
@@ -248,8 +306,8 @@ f(Never a, int b) {
   a + b;
 }
 ''', [
-      error(HintCode.RECEIVER_OF_TYPE_NEVER, 22, 1),
-      error(HintCode.DEAD_CODE, 26, 2),
+      error(WarningCode.RECEIVER_OF_TYPE_NEVER, 22, 1),
+      error(WarningCode.DEAD_CODE, 26, 2),
     ]);
 
     assertResolvedNodeText(findNode.binary('a + b'), r'''
@@ -296,6 +354,7 @@ BinaryExpression
         guardedPattern: GuardedPattern
           pattern: WildcardPattern
             name: _
+            matchedValueType: Object?
         arrow: =>
         expression: IntegerLiteral
           literal: 1
@@ -343,6 +402,7 @@ BinaryExpression
         guardedPattern: GuardedPattern
           pattern: WildcardPattern
             name: _
+            matchedValueType: Object?
         arrow: =>
         expression: IntegerLiteral
           literal: 1

@@ -30,15 +30,19 @@
 library dart2js.js_model.records;
 
 import '../common.dart';
+import '../constants/values.dart' show ConstantValue;
 import '../elements/entities.dart';
 import '../elements/names.dart';
 import '../elements/types.dart';
-
+import '../ir/element_map.dart' show IrToElementMap;
+import '../ir/static_type_cache.dart';
 import '../js_backend/annotations.dart';
-import '../js_model/element_map.dart';
 import '../ordered_typeset.dart';
 import '../serialization/serialization.dart';
 import '../universe/record_shape.dart';
+import 'class_type_variable_access.dart';
+import 'element_map.dart';
+import 'element_map_impl.dart' show JsKernelToElementMap;
 import 'elements.dart';
 import 'env.dart';
 import 'js_world_builder.dart' show JClosedWorldBuilder;
@@ -51,10 +55,11 @@ class RecordData {
   final JsToElementMap _elementMap;
   final List<RecordRepresentation> _representations;
 
+  final Map<RecordShape, List<MemberEntity>> _gettersByShape;
   final Map<ClassEntity, RecordRepresentation> _classToRepresentation = {};
   final Map<RecordShape, RecordRepresentation> _shapeToRepresentation = {};
 
-  RecordData._(this._elementMap, this._representations) {
+  RecordData._(this._elementMap, this._representations, this._gettersByShape) {
     // Unpack representations into lookup maps.
     for (final info in _representations) {
       _classToRepresentation[info.cls] = info;
@@ -62,13 +67,23 @@ class RecordData {
     }
   }
 
+  Iterable<MemberEntity> get allGetters =>
+      _gettersByShape.values.expand((e) => e);
+
+  List<MemberEntity> gettersForShape(RecordShape shape) =>
+      _gettersByShape[shape]!;
+
   factory RecordData.readFromDataSource(
       JsToElementMap elementMap, DataSourceReader source) {
     source.begin(tag);
     List<RecordRepresentation> representations =
         source.readList(() => RecordRepresentation.readFromDataSource(source));
+    final shapes =
+        source.readList(() => RecordShape.readFromDataSource(source));
+    final getters = source.readList(source.readMembers);
     source.end(tag);
-    return RecordData._(elementMap, representations);
+    return RecordData._(
+        elementMap, representations, Map.fromIterables(shapes, getters));
   }
 
   /// Serializes this [RecordData] to [sink].
@@ -76,6 +91,9 @@ class RecordData {
     sink.begin(tag);
     sink.writeList<RecordRepresentation>(
         _representations, (info) => info.writeToDataSink(sink));
+    sink.writeList(
+        _gettersByShape.keys, (RecordShape v) => v.writeToDataSink(sink));
+    sink.writeList(_gettersByShape.values, sink.writeMembers);
     sink.end(tag);
   }
 
@@ -83,11 +101,14 @@ class RecordData {
   List<RecordRepresentation> representationsForShapes() =>
       [..._shapeToRepresentation.values];
 
-  RecordRepresentation representationForShape(RecordShape shape) {
-    return _shapeToRepresentation[shape] ??
-        (throw StateError('representationForShape $shape'));
+  /// Returns the representation for a shape.  Returns `null` if the record
+  /// shape is not instantiated.
+  RecordRepresentation? representationForShape(RecordShape shape) {
+    return _shapeToRepresentation[shape];
   }
 
+  /// This should only be called at record creation sites, ensuring that there
+  /// is a representation.
   RecordRepresentation representationForStaticType(RecordType type) {
     // TODO(49718): Implement specialization when fields have types that allow
     // better code for `==` and `.hashCode`.
@@ -96,7 +117,9 @@ class RecordData {
     // 'static' type of a constant record where the type is generated from the
     // field values.
 
-    return representationForShape(type.shape);
+    return representationForShape(type.shape) ??
+        (throw StateError('representationForStaticType $type '
+            'for uninstantiated shape ${type.shape}'));
   }
 
   /// Returns `null` if [cls] is not a record representation.
@@ -104,10 +127,13 @@ class RecordData {
     return _classToRepresentation[cls];
   }
 
-  /// Returns field and possibly index for accessing into a shape.
+  /// Returns field and possibly index for accessing into a shape. The shape
+  /// needs to have a representation, so calls may need to be guarded by
+  /// checking that there is a representation for the shape
+  /// ([representationForShape]).
   RecordAccessPath pathForAccess(RecordShape shape, int indexInShape) {
     // TODO(sra): Cache lookup.
-    final representation = representationForShape(shape);
+    final representation = representationForShape(shape)!;
     final cls = representation.cls;
     if (representation.usesList) {
       final field = _elementMap.elementEnvironment
@@ -218,6 +244,7 @@ class RecordDataBuilder {
   final DiagnosticReporter _reporter;
   final JsToElementMap _elementMap;
   final AnnotationsData _annotationsData;
+  final Map<RecordShape, List<MemberEntity>> _gettersByShape = {};
 
   RecordDataBuilder(this._reporter, this._elementMap, this._annotationsData);
 
@@ -234,9 +261,11 @@ class RecordDataBuilder {
     List<RecordRepresentation> representations = [];
     for (int i = 0; i < shapes.length; i++) {
       final shape = shapes[i];
+      final getters = <MemberEntity>[];
       final cls = shape.fieldCount == 0
           ? _elementMap.commonElements.emptyRecordClass
-          : closedWorldBuilder.buildRecordShapeClass(shape);
+          : closedWorldBuilder.buildRecordShapeClass(shape, getters);
+      _gettersByShape[shape] = getters;
       int shapeTag = i;
       bool usesList = _computeUsesGeneralClass(cls);
       final info =
@@ -244,10 +273,7 @@ class RecordDataBuilder {
       representations.add(info);
     }
 
-    return RecordData._(
-      _elementMap,
-      representations,
-    );
+    return RecordData._(_elementMap, representations, _gettersByShape);
   }
 
   bool _computeUsesGeneralClass(ClassEntity? cls) {
@@ -357,4 +383,125 @@ class RecordClassData implements JClassData {
 
   @override
   List<Variance> getVariances() => [];
+}
+
+class JRecordGetter extends JFunction {
+  /// Tag used for identifying serialized [JRecordGetter] objects in a
+  /// debugging data stream.
+  static const String tag = 'record-getter';
+
+  JRecordGetter(JClass enclosingClass, Name name)
+      : super(enclosingClass.library, enclosingClass, name,
+            ParameterStructure.getter, AsyncMarker.SYNC,
+            isStatic: false, isExternal: false);
+
+  factory JRecordGetter.readFromDataSource(DataSourceReader source) {
+    source.begin(tag);
+    JClass enclosingClass = source.readClass() as JClass;
+    Name memberName = source.readMemberName();
+    source.end(tag);
+    return JRecordGetter(enclosingClass, memberName);
+  }
+
+  @override
+  void writeToDataSink(DataSinkWriter sink) {
+    sink.writeEnum(JMemberKind.recordGetter);
+    sink.begin(tag);
+    sink.writeClass(enclosingClass!);
+    sink.writeMemberName(memberName);
+    sink.end(tag);
+  }
+
+  @override
+  bool get isAbstract => false;
+
+  @override
+  bool get isGetter => true;
+
+  @override
+  String toString() => '${jsElementPrefix}record_getter'
+      '(${enclosingClass!.name}.$name)';
+}
+
+abstract class RecordMemberData implements JMemberData {
+  @override
+  final MemberDefinition definition;
+  final InterfaceType? memberThisType;
+
+  RecordMemberData(this.definition, this.memberThisType);
+
+  @override
+  StaticTypeCache get staticTypes {
+    // The cached types are stored in the data for enclosing member.
+    throw UnsupportedError('RecordMemberData.staticTypes');
+  }
+
+  @override
+  InterfaceType? getMemberThisType(covariant JsToElementMap elementMap) {
+    return memberThisType;
+  }
+}
+
+class RecordGetterData extends RecordMemberData implements FunctionData {
+  /// Tag used for identifying serialized [RecordGetterData] objects in a
+  /// debugging data stream.
+  static const String tag = 'record-getter-data';
+
+  final FunctionType functionType;
+
+  RecordGetterData(super.definition, super.memberThisType, this.functionType);
+
+  RecordGetterData._deserialized(
+      super.definition, super.memberThisType, this.functionType);
+
+  factory RecordGetterData.readFromDataSource(DataSourceReader source) {
+    source.begin(tag);
+    MemberDefinition definition = MemberDefinition.readFromDataSource(source);
+    InterfaceType? memberThisType =
+        source.readDartTypeOrNull() as InterfaceType?;
+    FunctionType functionType = source.readDartType() as FunctionType;
+    source.end(tag);
+    return RecordGetterData._deserialized(
+        definition, memberThisType, functionType);
+  }
+
+  @override
+  void writeToDataSink(DataSinkWriter sink) {
+    sink.writeEnum(JMemberDataKind.recordGetter);
+    sink.begin(tag);
+    definition.writeToDataSink(sink);
+    sink.writeDartTypeOrNull(memberThisType);
+    sink.writeDartType(functionType);
+    sink.end(tag);
+  }
+
+  @override
+  ClassTypeVariableAccess get classTypeVariableAccess =>
+      ClassTypeVariableAccess.none;
+
+  @override
+  List<TypeVariableType> getFunctionTypeVariables(
+      covariant JsKernelToElementMap unusedElementMap) {
+    return const <TypeVariableType>[];
+  }
+
+  @override
+  void forEachParameter(
+      JsToElementMap elementMap,
+      ParameterStructure parameterStructure,
+      void f(DartType type, String? name, ConstantValue? defaultValue),
+      {bool isNative = false}) {
+    // This `throw` can be removed if `RecordGetterData.forEachParameter` is
+    // used from general code via `FunctionData.forEachParameter`.
+    throw UnsupportedError('${runtimeType}.forEachParameter');
+  }
+
+  @override
+  // It is a bit of a code-smell here that an synthetic element introduced
+  // during creation of the K-world depends on Kernel. Perhaps it would be
+  // better to compute this type and serialize it for all functions, although
+  // that is redundant with the Kernel IR for most functions.
+  FunctionType getFunctionType(IrToElementMap unusedElementMap) {
+    return functionType;
+  }
 }

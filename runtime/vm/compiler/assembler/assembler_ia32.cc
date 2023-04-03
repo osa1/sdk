@@ -1826,6 +1826,19 @@ void Assembler::StoreToOffset(Register reg,
   }
 }
 
+void Assembler::StoreToOffset(const Object& object, const Address& dst) {
+  if (target::CanEmbedAsRawPointerInGeneratedCode(object)) {
+    movl(dst, Immediate(target::ToRawPointer(object)));
+  } else {
+    DEBUG_ASSERT(IsNotTemporaryScopedHandle(object));
+    ASSERT(IsInOldSpace(object));
+    AssemblerBuffer::EnsureCapacity ensured(&buffer_);
+    EmitUint8(0xC7);
+    EmitOperand(0, dst);
+    buffer_.EmitObject(object);
+  }
+}
+
 void Assembler::ArithmeticShiftRightImmediate(Register reg, intptr_t shift) {
   sarl(reg, Immediate(shift));
 }
@@ -2755,7 +2768,7 @@ void Assembler::TryAllocateObject(intptr_t cid,
                                   JumpDistance distance,
                                   Register instance_reg,
                                   Register temp_reg) {
-  ASSERT(failure != NULL);
+  ASSERT(failure != nullptr);
   ASSERT(instance_size != 0);
   ASSERT(Utils::IsAligned(instance_size,
                           target::ObjectAlignment::kObjectAlignment));
@@ -2790,7 +2803,7 @@ void Assembler::TryAllocateArray(intptr_t cid,
                                  Register instance,
                                  Register end_address,
                                  Register temp_reg) {
-  ASSERT(failure != NULL);
+  ASSERT(failure != nullptr);
   ASSERT(temp_reg != kNoRegister);
   if (FLAG_inline_alloc &&
       target::Heap::IsAllocatableInNewSpace(instance_size)) {

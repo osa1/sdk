@@ -2,17 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:_fe_analyzer_shared/src/util/link.dart';
 import 'package:kernel/ast.dart';
+import 'package:kernel/type_environment.dart';
 
 import '../kernel/internal_ast.dart';
-import '../names.dart';
 import '../type_inference/external_ast_helper.dart';
-import '../type_inference/inference_visitor_base.dart';
-import 'inference_results.dart';
 import 'matching_cache.dart';
-import 'object_access_target.dart';
-import 'type_schema.dart';
 
 /// Interface for delayed creating [Expression]s.
 ///
@@ -21,10 +16,15 @@ import 'type_schema.dart';
 /// determined by the use count of each expression.
 abstract class DelayedExpression {
   /// Creates the resulting [Expression].
-  Expression createExpression(InferenceVisitorBase base);
+  ///
+  /// If the expression has side effects that need to occur when the expression
+  /// evaluates to `true`, then these should be added to [effects]. If this is
+  /// not supported by the calling context, [effect] is `null`.
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]);
 
   /// Returns the type of the resulting expression.
-  DartType getType(InferenceVisitorBase base);
+  DartType getType(TypeEnvironment typeEnvironment);
 
   /// Registers that this expression is used.
   ///
@@ -61,7 +61,8 @@ class FixedExpression implements DelayedExpression {
   FixedExpression(this._expression, this._type);
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
     return _expression;
   }
 
@@ -72,7 +73,7 @@ class FixedExpression implements DelayedExpression {
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) => _type;
+  DartType getType(TypeEnvironment typeEnvironment) => _type;
 
   @override
   bool uses(DelayedExpression expression) => identical(this, expression);
@@ -86,13 +87,14 @@ class BooleanExpression implements DelayedExpression {
   BooleanExpression(this.value, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
     return createBoolLiteral(value, fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) =>
-      base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) =>
+      typeEnvironment.coreTypes.boolNonNullableRawType;
 
   @override
   void registerUse() {}
@@ -109,13 +111,15 @@ class IntegerExpression implements DelayedExpression {
   IntegerExpression(this.value, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createIntLiteral(value, fileOffset: fileOffset);
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createIntLiteral(typeEnvironment.coreTypes, value,
+        fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) =>
-      base.coreTypes.intNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) =>
+      typeEnvironment.coreTypes.intNonNullableRawType;
 
   @override
   void registerUse() {}
@@ -133,15 +137,16 @@ class DelayedAndExpression implements DelayedExpression {
   DelayedAndExpression(this._left, this._right, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createAndExpression(
-        _left.createExpression(base), _right.createExpression(base),
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createAndExpression(_left.createExpression(typeEnvironment, effects),
+        _right.createExpression(typeEnvironment, effects),
         fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) =>
-      base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) =>
+      typeEnvironment.coreTypes.boolNonNullableRawType;
 
   @override
   void registerUse() {
@@ -159,7 +164,13 @@ class DelayedAndExpression implements DelayedExpression {
       DelayedExpression? left, DelayedExpression right,
       {required int fileOffset}) {
     if (left != null) {
-      return new DelayedAndExpression(left, right, fileOffset: fileOffset);
+      if (left is BooleanExpression && left.value) {
+        return right;
+      } else if (right is BooleanExpression && right.value) {
+        return left;
+      } else {
+        return new DelayedAndExpression(left, right, fileOffset: fileOffset);
+      }
     } else {
       return right;
     }
@@ -175,15 +186,16 @@ class DelayedOrExpression implements DelayedExpression {
   DelayedOrExpression(this._left, this._right, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createOrExpression(
-        _left.createExpression(base), _right.createExpression(base),
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createOrExpression(_left.createExpression(typeEnvironment, effects),
+        _right.createExpression(typeEnvironment, effects),
         fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) =>
-      base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) =>
+      typeEnvironment.coreTypes.boolNonNullableRawType;
 
   @override
   void registerUse() {
@@ -200,24 +212,27 @@ class DelayedOrExpression implements DelayedExpression {
 
 /// A conditional expression of the [_condition], [_then] and [_otherwise]
 /// expressions.
-class DelayedConditionExpression implements DelayedExpression {
+class DelayedConditionalExpression implements DelayedExpression {
   final DelayedExpression _condition;
   final DelayedExpression _then;
   final DelayedExpression _otherwise;
   final int fileOffset;
 
-  DelayedConditionExpression(this._condition, this._then, this._otherwise,
+  DelayedConditionalExpression(this._condition, this._then, this._otherwise,
       {required this.fileOffset});
 
   @override
-  DartType getType(InferenceVisitorBase base) =>
-      base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) =>
+      typeEnvironment.coreTypes.boolNonNullableRawType;
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createConditionalExpression(_condition.createExpression(base),
-        _then.createExpression(base), _otherwise.createExpression(base),
-        staticType: base.coreTypes.boolNonNullableRawType,
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createConditionalExpression(
+        _condition.createExpression(typeEnvironment, effects),
+        _then.createExpression(typeEnvironment, effects),
+        _otherwise.createExpression(typeEnvironment, effects),
+        staticType: typeEnvironment.coreTypes.boolNonNullableRawType,
         fileOffset: fileOffset);
   }
 
@@ -236,6 +251,38 @@ class DelayedConditionExpression implements DelayedExpression {
       _otherwise.uses(expression);
 }
 
+/// A read of [_variable].
+class VariableGetExpression implements DelayedExpression {
+  final VariableDeclaration _variable;
+  final int fileOffset;
+
+  VariableGetExpression(this._variable, {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    VariableDeclaration variable = _variable;
+    if (variable is VariableDeclarationImpl && variable.lateGetter != null) {
+      return createLocalFunctionInvocation(variable.lateGetter!,
+          arguments: createArguments([], fileOffset: fileOffset),
+          fileOffset: fileOffset);
+    } else {
+      return createVariableGet(_variable);
+    }
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _variable.type;
+  }
+
+  @override
+  void registerUse() {}
+
+  @override
+  bool uses(DelayedExpression expression) => identical(this, expression);
+}
+
 /// An assignment of [_variable] with [_value].
 ///
 /// If [allowFinalAssignment] is `true`, the created [VariableSet] is allowed to
@@ -244,7 +291,7 @@ class DelayedConditionExpression implements DelayedExpression {
 // TODO(johnniwinther): Should we instead mark the variable as non-final?
 class VariableSetExpression implements DelayedExpression {
   final VariableDeclaration _variable;
-  final CacheableExpression _value;
+  final DelayedExpression _value;
   final bool allowFinalAssignment;
   final int fileOffset;
 
@@ -252,14 +299,25 @@ class VariableSetExpression implements DelayedExpression {
       {this.allowFinalAssignment = false, required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createVariableSet(_variable, _value.createExpression(base),
-        allowFinalAssignment: allowFinalAssignment, fileOffset: fileOffset);
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    VariableDeclaration variable = _variable;
+    if (variable is VariableDeclarationImpl && variable.lateSetter != null) {
+      return createLocalFunctionInvocation(variable.lateSetter!,
+          arguments: createArguments(
+              [_value.createExpression(typeEnvironment, effects)],
+              fileOffset: fileOffset),
+          fileOffset: fileOffset);
+    } else {
+      return createVariableSet(
+          _variable, _value.createExpression(typeEnvironment, effects),
+          allowFinalAssignment: allowFinalAssignment, fileOffset: fileOffset);
+    }
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _value.getType(base);
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _value.getType(typeEnvironment);
   }
 
   @override
@@ -275,35 +333,58 @@ class VariableSetExpression implements DelayedExpression {
 /// A expression that executes [_effect] for effect and results in [_result].
 ///
 /// This is encoded as `let # = effect in result`.
+///
+/// An optional [_lateEffect] can be passed. This is registered as an effect
+/// in [createExpression] if the `effects` argument is supplied. Otherwise it
+/// is included in the created expression through this encoding:
+///
+///   let #1 = (let #2 = effect in late-effect) in result
+///
 class EffectExpression implements DelayedExpression {
   final DelayedExpression _effect;
   final DelayedExpression _result;
+  final DelayedExpression? _lateEffect;
 
-  EffectExpression(this._effect, this._result);
+  EffectExpression(this._effect, this._result, [this._lateEffect]);
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    DelayedExpression? lateEffect = _lateEffect;
+    if (lateEffect != null) {
+      if (effects != null) {
+        effects.add(lateEffect.createExpression(typeEnvironment, effects));
+      } else {
+        return createLetEffect(
+            effect: createLetEffect(
+                effect: _effect.createExpression(typeEnvironment, effects),
+                result: lateEffect.createExpression(typeEnvironment, effects)),
+            result: _result.createExpression(typeEnvironment, effects));
+      }
+    }
     return createLetEffect(
-        effect: _effect.createExpression(base),
-        result: _result.createExpression(base));
+        effect: _effect.createExpression(typeEnvironment, effects),
+        result: _result.createExpression(typeEnvironment, effects));
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _result.getType(base);
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _result.getType(typeEnvironment);
   }
 
   @override
   void registerUse() {
     _effect.registerUse();
     _result.registerUse();
+    _lateEffect?.registerUse();
   }
 
   @override
   bool uses(DelayedExpression expression) =>
       identical(this, expression) ||
       _effect.uses(expression) ||
-      _result.uses(expression);
+      _result.uses(expression) ||
+      (_lateEffect != null && _lateEffect!.uses(expression));
 }
 
 /// An is-test of [_operand] against [_type].
@@ -315,15 +396,16 @@ class DelayedIsExpression implements DelayedExpression {
   DelayedIsExpression(this._operand, this._type, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createIsExpression(_operand.createExpression(base), _type,
-        forNonNullableByDefault: base.isNonNullableByDefault,
-        fileOffset: fileOffset);
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createIsExpression(
+        _operand.createExpression(typeEnvironment, effects), _type,
+        forNonNullableByDefault: true, fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return typeEnvironment.coreTypes.boolNonNullableRawType;
   }
 
   @override
@@ -341,21 +423,33 @@ class DelayedAsExpression implements DelayedExpression {
   final DelayedExpression _operand;
   final DartType _type;
   final bool isUnchecked;
+  final bool isImplicit;
   final int fileOffset;
 
   DelayedAsExpression(this._operand, this._type,
-      {this.isUnchecked = false, required this.fileOffset});
+      {this.isUnchecked = false,
+      this.isImplicit = false,
+      required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createAsExpression(_operand.createExpression(base), _type,
-        forNonNullableByDefault: base.isNonNullableByDefault,
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    Expression operand = _operand.createExpression(typeEnvironment, effects);
+    if (isImplicit) {
+      DartType operandType = _operand.getType(typeEnvironment);
+      if (typeEnvironment.isSubtypeOf(
+          operandType, _type, SubtypeCheckMode.withNullabilities)) {
+        return operand;
+      }
+    }
+    return createAsExpression(operand, _type,
+        forNonNullableByDefault: true,
         isUnchecked: isUnchecked,
         fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
+  DartType getType(TypeEnvironment typeEnvironment) {
     return _type;
   }
 
@@ -377,14 +471,15 @@ class DelayedNullAssertExpression implements DelayedExpression {
   DelayedNullAssertExpression(this._operand, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createNullCheck(_operand.createExpression(base),
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createNullCheck(_operand.createExpression(typeEnvironment, effects),
         fileOffset: fileOffset);
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _operand.getType(base).toNonNull();
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _operand.getType(typeEnvironment).toNonNull();
   }
 
   @override
@@ -405,14 +500,16 @@ class DelayedNullCheckExpression implements DelayedExpression {
   DelayedNullCheckExpression(this._operand, {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createNot(createEqualsNull(_operand.createExpression(base),
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createNot(createEqualsNull(
+        _operand.createExpression(typeEnvironment, effects),
         fileOffset: fileOffset));
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return typeEnvironment.coreTypes.boolNonNullableRawType;
   }
 
   @override
@@ -425,38 +522,51 @@ class DelayedNullCheckExpression implements DelayedExpression {
       identical(this, expression) || _operand.uses(expression);
 }
 
-/// An access to [_propertyName] on [_receiver] of type [_receiverType].
+/// An access to [_target] on [_receiver].
 ///
-/// The accessed [_readTarget] known upon creation of this delayed expression.
-class DelayedPropertyGetExpression implements DelayedExpression {
-  final DartType _receiverType;
+/// The [_resultType] is the static type of expression. If [isObjectAccess] is
+/// `true`, the [_target] is an Object member accessed on a non-Object type,
+/// for instance a nullable access to `hashCode`.
+class DelayedInstanceGet implements DelayedExpression {
   final CacheableExpression _receiver;
-  final ObjectAccessTarget _readTarget;
-  final Name _propertyName;
+  final Member _target;
+  final DartType _resultType;
+  final bool isObjectAccess;
   final int fileOffset;
 
-  DelayedPropertyGetExpression(
-      this._receiverType, this._receiver, this._readTarget, this._propertyName,
-      {required this.fileOffset});
+  DelayedInstanceGet(this._receiver, this._target, this._resultType,
+      {required this.fileOffset, this.isObjectAccess = false});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    PropertyGetInferenceResult propertyGet = base.createPropertyGet(
-        fileOffset: fileOffset,
-        receiver: _receiver.createExpression(base),
-        receiverType: _receiverType,
-        readTarget: _readTarget,
-        propertyName: _propertyName,
-        // TODO(johnniwinther): What is the type context?
-        typeContext: const UnknownType(),
-        // TODO(johnniwinther): Handle access on `this`.
-        isThisReceiver: false);
-    return propertyGet.expressionInferenceResult.expression;
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    Member target = _target;
+    if (target is Procedure && !target.isGetter) {
+      return new InstanceTearOff(
+          isObjectAccess
+              ? InstanceAccessKind.Object
+              : InstanceAccessKind.Instance,
+          _receiver.createExpression(typeEnvironment, effects),
+          _target.name,
+          interfaceTarget: target,
+          resultType: _resultType)
+        ..fileOffset = fileOffset;
+    } else {
+      return new InstanceGet(
+          isObjectAccess
+              ? InstanceAccessKind.Object
+              : InstanceAccessKind.Instance,
+          _receiver.createExpression(typeEnvironment, effects),
+          _target.name,
+          interfaceTarget: target,
+          resultType: _resultType)
+        ..fileOffset = fileOffset;
+    }
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _readTarget.getGetterType(base);
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _resultType;
   }
 
   @override
@@ -469,48 +579,307 @@ class DelayedPropertyGetExpression implements DelayedExpression {
       identical(this, expression) || _receiver.uses(expression);
 }
 
-/// An invocation of [_invokeName] on [receiver] of type [receiverType] with
-/// L_arguments].
+/// An access to [_propertyName] on [_receiver] with no statically known target.
 ///
-/// The accessed [_invokeTarget] known upon creation of this delayed expression.
-class DelayedInvokeExpression implements DelayedExpression {
+/// The [_resultType] is the static type of expression.
+class DelayedDynamicGet implements DelayedExpression {
   final CacheableExpression _receiver;
-  final ObjectAccessTarget _invokeTarget;
-  final Name _invokeName;
-  final List<DelayedExpression> _arguments;
+  final Name _propertyName;
+  final DynamicAccessKind _kind;
+  final DartType _resultType;
   final int fileOffset;
 
-  DelayedInvokeExpression(
-      this._receiver, this._invokeTarget, this._invokeName, this._arguments,
+  DelayedDynamicGet(
+      this._receiver, this._propertyName, this._kind, this._resultType,
       {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    ExpressionInferenceResult result = base.inferMethodInvocation(
-        base,
-        fileOffset,
-        const Link(),
-        _receiver.createExpression(base),
-        _receiver.getType(base),
-        _invokeName,
-        new ArgumentsImpl(
-            _arguments.map((e) => e.createExpression(base)).toList()),
-        // TODO(johnniwinther): What is the type context?
-        const UnknownType(),
-        isExpressionInvocation: false,
-        isImplicitCall: false,
-        target: _invokeTarget);
-    return result.expression;
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new DynamicGet(_kind,
+        _receiver.createExpression(typeEnvironment, effects), _propertyName)
+      ..fileOffset = fileOffset;
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _invokeTarget.getReturnType(base);
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _resultType;
   }
 
   @override
   void registerUse() {
     _receiver.registerUse();
+  }
+
+  @override
+  bool uses(DelayedExpression expression) =>
+      identical(this, expression) || _receiver.uses(expression);
+}
+
+/// An access to `call` on the function typed [_receiver].
+///
+/// The [_resultType] is the static type of expression.
+class DelayedFunctionTearOff implements DelayedExpression {
+  final CacheableExpression _receiver;
+  final DartType _resultType;
+  final int fileOffset;
+
+  DelayedFunctionTearOff(this._receiver, this._resultType,
+      {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new FunctionTearOff(
+        _receiver.createExpression(typeEnvironment, effects))
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _resultType;
+  }
+
+  @override
+  void registerUse() {
+    _receiver.registerUse();
+  }
+
+  @override
+  bool uses(DelayedExpression expression) =>
+      identical(this, expression) || _receiver.uses(expression);
+}
+
+/// An invocation of [_methodName] on [_receiver] with the provided positional
+/// [_arguments] and no statically known target.
+///
+/// The [_resultType] is the static type of expression.
+class DelayedDynamicInvocation implements DelayedExpression {
+  final CacheableExpression _receiver;
+  final Name _methodName;
+  final List<DelayedExpression> _arguments;
+  final DynamicAccessKind _kind;
+  final DartType _resultType;
+  final int fileOffset;
+
+  DelayedDynamicInvocation(this._receiver, this._methodName, this._arguments,
+      this._kind, this._resultType,
+      {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new DynamicInvocation(
+        _kind,
+        _receiver.createExpression(typeEnvironment, effects),
+        _methodName,
+        new Arguments(_arguments
+            .map((e) => e.createExpression(typeEnvironment, effects))
+            .toList())
+          ..fileOffset = fileOffset)
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _resultType;
+  }
+
+  @override
+  void registerUse() {
+    _receiver.registerUse();
+    for (DelayedExpression argument in _arguments) {
+      argument.registerUse();
+    }
+  }
+
+  @override
+  bool uses(DelayedExpression expression) {
+    if (identical(this, expression)) return true;
+    if (_receiver.uses(expression)) return true;
+    for (DelayedExpression argument in _arguments) {
+      if (argument.uses(expression)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// An indexed record field access on [_receiver] of type [_recordType].
+///
+/// The [_resultType] is the static type of expression.
+class DelayedRecordIndexGet implements DelayedExpression {
+  final CacheableExpression _receiver;
+  final RecordType _recordType;
+  final int _index;
+  final int fileOffset;
+
+  DelayedRecordIndexGet(this._receiver, this._recordType, this._index,
+      {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new RecordIndexGet(
+        _receiver.createExpression(typeEnvironment, effects),
+        _recordType,
+        _index)
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _recordType.positional[_index];
+  }
+
+  @override
+  void registerUse() {
+    _receiver.registerUse();
+  }
+
+  @override
+  bool uses(DelayedExpression expression) =>
+      identical(this, expression) || _receiver.uses(expression);
+}
+
+/// An access of record field [_name] on [_receiver] of type [_recordType].
+///
+/// The [_resultType] is the static type of expression.
+class DelayedRecordNameGet implements DelayedExpression {
+  final CacheableExpression _receiver;
+  final RecordType _recordType;
+  final String _name;
+  final int fileOffset;
+
+  DelayedRecordNameGet(this._receiver, this._recordType, this._name,
+      {required this.fileOffset})
+      : assert(
+            _recordType.named
+                    .where((element) => element.name == _name)
+                    .length ==
+                1,
+            "Invalid record type $_recordType for named access of '$_name'.");
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new RecordNameGet(
+        _receiver.createExpression(typeEnvironment, effects),
+        _recordType,
+        _name)
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _recordType.named
+        .singleWhere((element) => element.name == _name)
+        .type;
+  }
+
+  @override
+  void registerUse() {
+    _receiver.registerUse();
+  }
+
+  @override
+  bool uses(DelayedExpression expression) =>
+      identical(this, expression) || _receiver.uses(expression);
+}
+
+/// An invocation of [_target] on [receiver] with the positional [_arguments].
+///
+/// The [_functionType] is the static type of the invocation.
+class DelayedInstanceInvocation implements DelayedExpression {
+  final CacheableExpression _receiver;
+  final Procedure _target;
+  final FunctionType _functionType;
+  final List<DelayedExpression> _arguments;
+  final int fileOffset;
+
+  DelayedInstanceInvocation(
+      this._receiver, this._target, this._functionType, this._arguments,
+      {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new InstanceInvocation(
+        InstanceAccessKind.Instance,
+        _receiver.createExpression(typeEnvironment, effects),
+        _target.name,
+        new Arguments(_arguments
+            .map((e) => e.createExpression(typeEnvironment, effects))
+            .toList())
+          ..fileOffset = fileOffset,
+        interfaceTarget: _target,
+        functionType: _functionType)
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _functionType.returnType;
+  }
+
+  @override
+  void registerUse() {
+    _receiver.registerUse();
+    for (DelayedExpression argument in _arguments) {
+      argument.registerUse();
+    }
+  }
+
+  @override
+  bool uses(DelayedExpression expression) {
+    if (identical(this, expression)) return true;
+    if (_receiver.uses(expression)) return true;
+    for (DelayedExpression argument in _arguments) {
+      if (argument.uses(expression)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// A static invocation of the lowered extension or inline class [_target] with
+/// the provided [_arguments] and [_typeArguments].
+///
+/// The [_functionType] is the static type of the invocation.
+class DelayedExtensionInvocation implements DelayedExpression {
+  final Procedure _target;
+  final List<DelayedExpression> _arguments;
+  final List<DartType> _typeArguments;
+  final FunctionType _functionType;
+  final int fileOffset;
+
+  DelayedExtensionInvocation(
+      this._target, this._arguments, this._typeArguments, this._functionType,
+      {required this.fileOffset});
+
+  @override
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new StaticInvocation(
+        _target,
+        new Arguments(
+            _arguments
+                .map((e) => e.createExpression(typeEnvironment, effects))
+                .toList(),
+            types: _typeArguments)
+          ..fileOffset = fileOffset)
+      ..fileOffset = fileOffset;
+  }
+
+  @override
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _functionType.returnType;
+  }
+
+  @override
+  void registerUse() {
     for (DelayedExpression argument in _arguments) {
       argument.registerUse();
     }
@@ -528,49 +897,31 @@ class DelayedInvokeExpression implements DelayedExpression {
   }
 }
 
-/// An invocation of `==` on [_left] of type [_leftType] with [_right].
-///
-/// If [isNot] is `true`, the result is negated.
-///
-/// The accessed [_invokeTarget] known upon creation of this delayed expression.
+/// An invocation of the `==` operator [_target] of type [_functionType] on
+/// [_left]  with [_right].
 class DelayedEqualsExpression implements DelayedExpression {
   final CacheableExpression _left;
-  final ObjectAccessTarget _invokeTarget;
   final DelayedExpression _right;
+  final Procedure _target;
+  final FunctionType _functionType;
   final int fileOffset;
 
-  DelayedEqualsExpression(this._left, this._invokeTarget, this._right,
+  DelayedEqualsExpression(
+      this._left, this._right, this._target, this._functionType,
       {required this.fileOffset});
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    if (_invokeTarget.isInstanceMember || _invokeTarget.isObjectMember) {
-      FunctionType functionType = _invokeTarget.getFunctionType(base);
-      return new EqualsCall(
-          _left.createExpression(base), _right.createExpression(base),
-          functionType: functionType,
-          interfaceTarget: _invokeTarget.member as Procedure)
-        ..fileOffset = fileOffset;
-    } else {
-      assert(_invokeTarget.isNever);
-      FunctionType functionType = new FunctionType([const DynamicType()],
-          const NeverType.nonNullable(), base.libraryBuilder.nonNullable);
-      // Ensure operator == member even for `Never`.
-      Member target = base
-          .findInterfaceMember(const DynamicType(), equalsName, -1,
-              instrumented: false,
-              callSiteAccessKind: CallSiteAccessKind.operatorInvocation)
-          .member!;
-      return new EqualsCall(
-          _left.createExpression(base), _right.createExpression(base),
-          functionType: functionType, interfaceTarget: target as Procedure)
-        ..fileOffset = fileOffset;
-    }
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return new EqualsCall(_left.createExpression(typeEnvironment, effects),
+        _right.createExpression(typeEnvironment, effects),
+        functionType: _functionType, interfaceTarget: _target)
+      ..fileOffset = fileOffset;
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return _invokeTarget.getReturnType(base);
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return _functionType.returnType;
   }
 
   @override
@@ -586,19 +937,21 @@ class DelayedEqualsExpression implements DelayedExpression {
       _right.uses(expression);
 }
 
+/// A negation of [_expression].
 class DelayedNotExpression implements DelayedExpression {
   final DelayedExpression _expression;
 
   DelayedNotExpression(this._expression);
 
   @override
-  Expression createExpression(InferenceVisitorBase base) {
-    return createNot(_expression.createExpression(base));
+  Expression createExpression(TypeEnvironment typeEnvironment,
+      [List<Expression>? effects]) {
+    return createNot(_expression.createExpression(typeEnvironment, effects));
   }
 
   @override
-  DartType getType(InferenceVisitorBase base) {
-    return base.coreTypes.boolNonNullableRawType;
+  DartType getType(TypeEnvironment typeEnvironment) {
+    return typeEnvironment.coreTypes.boolNonNullableRawType;
   }
 
   @override

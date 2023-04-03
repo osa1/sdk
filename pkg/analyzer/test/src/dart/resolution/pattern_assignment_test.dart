@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/src/dart/error/syntactic_errors.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
@@ -104,13 +105,16 @@ PatternAssignment
       AssignedVariablePattern
         name: a
         element: self::@function::f::@parameter::a
+        matchedValueType: int
     rightBracket: ]
+    matchedValueType: List<int>
     requiredType: List<int>
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: List<int>
+  patternTypeSchema: List<num>
   staticType: List<int>
 ''');
   }
@@ -137,14 +141,16 @@ PatternAssignment
       type: A
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           colon: :
         pattern: AssignedVariablePattern
           name: foo
           element: self::@function::f::@parameter::foo
-        fieldElement: self::@class::A::@getter::foo
+          matchedValueType: int
+        element: self::@class::A::@getter::foo
     rightParenthesis: )
+    matchedValueType: A
   equals: =
   expression: InstanceCreationExpression
     constructorName: ConstructorName
@@ -159,6 +165,7 @@ PatternAssignment
       leftParenthesis: (
       rightParenthesis: )
     staticType: A
+  patternTypeSchema: A
   staticType: A
 ''');
   }
@@ -177,12 +184,15 @@ PatternAssignment
     pattern: AssignedVariablePattern
       name: a
       element: self::@function::f::@parameter::a
+      matchedValueType: int
     rightParenthesis: )
+    matchedValueType: int
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: int
+  patternTypeSchema: num
   staticType: int
 ''');
   }
@@ -203,7 +213,9 @@ PatternAssignment
     pattern: AssignedVariablePattern
       name: a
       element: self::@function::f::@parameter::a
+      matchedValueType: int
     rightParenthesis: )
+    matchedValueType: int
   equals: =
   expression: MethodInvocation
     methodName: SimpleIdentifier
@@ -217,6 +229,7 @@ PatternAssignment
     staticType: int
     typeArgumentTypes
       int
+  patternTypeSchema: int
   staticType: int
 ''');
   }
@@ -233,20 +246,23 @@ PatternAssignment
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           name: foo
           colon: :
         pattern: AssignedVariablePattern
           name: a
           element: self::@function::f::@parameter::a
-        fieldElement: <null>
+          matchedValueType: int
+        element: <null>
     rightParenthesis: )
+    matchedValueType: ({int foo})
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: ({int foo})
+  patternTypeSchema: ({num foo})
   staticType: ({int foo})
 ''');
   }
@@ -263,14 +279,16 @@ PatternAssignment
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           colon: :
         pattern: AssignedVariablePattern
           name: a
           element: self::@function::f::@parameter::a
-        fieldElement: <null>
+          matchedValueType: int
+        element: <null>
     rightParenthesis: )
+    matchedValueType: ({int a})
   equals: =
   expression: RecordLiteral
     leftParenthesis: (
@@ -287,6 +305,7 @@ PatternAssignment
           staticType: int
     rightParenthesis: )
     staticType: ({int a})
+  patternTypeSchema: ({int a})
   staticType: ({int a})
 ''');
   }
@@ -303,19 +322,54 @@ PatternAssignment
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
+      PatternField
         pattern: AssignedVariablePattern
           name: a
           element: self::@function::f::@parameter::a
-        fieldElement: <null>
+          matchedValueType: int
+        element: <null>
     rightParenthesis: )
+    matchedValueType: (int)
   equals: =
   expression: SimpleIdentifier
     token: x
     staticElement: self::@function::f::@parameter::x
     staticType: (int)
+  patternTypeSchema: (num)
   staticType: (int)
 ''');
+  }
+
+  test_declaredVariable_inPatternAssignment_referenced() async {
+    // Note: the error is reporting during parsing but we test it here to make
+    // sure that error recovery produces an AST that can be analyzed without
+    // crashing.
+    await assertErrorsInCode(r'''
+void f(a, y) {
+  [a, var d] = y;
+  d;
+}
+''', [
+      // The reference doesn't resolve so the errors include
+      // UNUSED_LOCAL_VARIABLE and UNDEFINED_IDENTIFIER.
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 25, 1),
+      error(HintCode.UNUSED_LOCAL_VARIABLE, 25, 1),
+      error(CompileTimeErrorCode.UNDEFINED_IDENTIFIER, 35, 1),
+    ]);
+  }
+
+  test_declaredVariable_inPatternAssignment_unreferenced() async {
+    // Note: the error is reporting during parsing but we test it here to make
+    // sure that error recovery produces an AST that can be analyzed without
+    // crashing.
+    await assertErrorsInCode(r'''
+void f(a, y) {
+  [a, var d] = y;
+}
+''', [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 25, 1),
+      error(HintCode.UNUSED_LOCAL_VARIABLE, 25, 1),
+    ]);
   }
 
   test_final_becomesDefinitelyAssigned() async {

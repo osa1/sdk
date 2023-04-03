@@ -112,7 +112,7 @@ class TestFragment {
 //
 // kNone:
 //
-//   There is no unchecked entrypoint: the unchecked entry is set to NULL in
+//   There is no unchecked entrypoint: the unchecked entry is set to nullptr in
 //   the 'GraphEntryInstr'.
 //
 // kSeparate:
@@ -153,7 +153,7 @@ class BaseFlowGraphBuilder {
         last_used_block_id_(last_used_block_id),
         current_try_index_(kInvalidTryIndex),
         next_used_try_index_(0),
-        stack_(NULL),
+        stack_(nullptr),
         exit_collector_(exit_collector),
         inlining_unchecked_entry_(inlining_unchecked_entry),
         saved_args_desc_array_(
@@ -307,13 +307,15 @@ class BaseFlowGraphBuilder {
                               intptr_t stack_depth,
                               intptr_t loop_depth);
   Fragment CheckStackOverflowInPrologue(TokenPosition position);
-  Fragment MemoryCopy(classid_t src_cid, classid_t dest_cid);
+  Fragment MemoryCopy(classid_t src_cid,
+                      classid_t dest_cid,
+                      bool unboxed_length);
   Fragment TailCall(const Code& code);
   Fragment Utf8Scan();
 
   intptr_t GetNextDeoptId() {
     intptr_t deopt_id = thread_->compiler_state().GetNextDeoptId();
-    if (context_level_array_ != NULL) {
+    if (context_level_array_ != nullptr) {
       intptr_t level = context_depth_;
       context_level_array_->Add(deopt_id);
       context_level_array_->Add(level);
@@ -383,13 +385,11 @@ class BaseFlowGraphBuilder {
   // Loads 'receiver' and checks it for null. Throws NoSuchMethod if it is null.
   // 'function_name' is a selector which is being called (reported in
   // NoSuchMethod message).
-  // Sets 'receiver' to 'null' after the check if 'clear_the_temp'.
   // Note that this does _not_ use the result of the CheckNullInstr, so it does
   // not create a data dependency and might break with code motion.
   Fragment CheckNull(TokenPosition position,
                      LocalVariable* receiver,
-                     const String& function_name,
-                     bool clear_the_temp = true);
+                     const String& function_name);
 
   // Pops the top of the stack, checks it for null, and pushes the result on
   // the stack to create a data dependency.
@@ -421,7 +421,7 @@ class BaseFlowGraphBuilder {
   // Builds closure call with given number of arguments. Target closure
   // (in bare instructions mode) or closure function (otherwise) is taken from
   // top of the stack.
-  // PushArgument instructions should be already added for arguments.
+  // MoveArgument instructions should be already added for arguments.
   Fragment ClosureCall(TokenPosition position,
                        intptr_t type_args_len,
                        intptr_t argument_count,

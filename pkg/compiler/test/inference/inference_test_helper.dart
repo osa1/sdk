@@ -26,7 +26,7 @@ main(List<String> args) {
 
 runTests(List<String> args, [int? shardIndex]) {
   asyncTest(() async {
-    Directory dataDir = new Directory.fromUri(Platform.script.resolve('data'));
+    Directory dataDir = Directory.fromUri(Platform.script.resolve('data'));
     await checkTests(dataDir, const TypeMaskDataComputer(),
         forUserLibrariesOnly: true,
         args: args,
@@ -34,7 +34,6 @@ runTests(List<String> args, [int? shardIndex]) {
         testedConfigs: allInternalConfigs,
         perTestOptions: {
           "issue48304.dart": [Flags.soundNullSafety],
-          "record_1.dart": ['--enable-experiment=records'],
         },
         skip: skip,
         shardIndex: shardIndex ?? 0,
@@ -58,7 +57,7 @@ class TypeMaskDataComputer extends DataComputer<String> {
         compiler.globalInference.resultsForTesting!;
     GlobalLocalsMap localsMap = results.globalLocalsMap;
     MemberDefinition definition = elementMap.getMemberDefinition(member);
-    new TypeMaskIrComputer(
+    TypeMaskIrComputer(
             compiler.reporter,
             actualMap,
             elementMap,
@@ -171,6 +170,8 @@ class TypeMaskIrComputer extends IrDataExtractor<String> {
       } else if (id.kind == IdKind.moveNext) {
         return getTypeMaskValue(result.typeOfIteratorMoveNext(node));
       }
+    } else if (node is ir.RecordIndexGet || node is ir.RecordNameGet) {
+      return getTypeMaskValue(result.typeOfReceiver(node));
     }
     return null;
   }

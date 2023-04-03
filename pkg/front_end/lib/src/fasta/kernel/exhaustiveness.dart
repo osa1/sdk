@@ -1,21 +1,34 @@
-// Copyright (c) 2022 the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2022, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:_fe_analyzer_shared/src/exhaustiveness/exhaustive.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/key.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/path.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/shared.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/space.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/static_type.dart';
-import 'package:_fe_analyzer_shared/src/exhaustiveness/static_types.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/types.dart';
+import 'package:front_end/src/fasta/kernel/constant_evaluator.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
 import 'package:kernel/src/printer.dart';
+import 'package:kernel/src/replacement_visitor.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
-import 'internal_ast.dart';
+
+/// AST printer strategy used by default in `CfeTypeOperations.typeToString`.
+const AstTextStrategy textStrategy = const AstTextStrategy(
+    showNullableOnly: true, useQualifiedTypeParameterNames: false);
 
 /// Data gathered by the exhaustiveness computation, retained for testing
 /// purposes.
 class ExhaustivenessDataForTesting {
+  /// Access to interface for looking up `Object` members on non-interface
+  /// types.
+  ObjectFieldLookup? objectFieldLookup;
+
   /// Map from switch statement/expression nodes to the results of the
   /// exhaustiveness test.
   Map<Node, ExhaustivenessResult> switchResults = {};
@@ -25,10 +38,10 @@ class ExhaustivenessResult {
   final StaticType scrutineeType;
   final List<Space> caseSpaces;
   final List<int> caseOffsets;
-  final List<Space> remainingSpaces;
+  final List<ExhaustivenessError> errors;
 
-  ExhaustivenessResult(this.scrutineeType, this.caseSpaces, this.caseOffsets,
-      this.remainingSpaces);
+  ExhaustivenessResult(
+      this.scrutineeType, this.caseSpaces, this.caseOffsets, this.errors);
 }
 
 class CfeTypeOperations implements TypeOperations<DartType> {
@@ -63,7 +76,7 @@ class CfeTypeOperations implements TypeOperations<DartType> {
 
   @override
   bool isNullable(DartType type) {
-    return type.isPotentiallyNullable;
+    return type.declaredNullability == Nullability.nullable;
   }
 
   @override
@@ -72,10 +85,24 @@ class CfeTypeOperations implements TypeOperations<DartType> {
   }
 
   @override
+  bool isDynamic(DartType type) {
+    return type is DynamicType;
+  }
+
+  @override
+  bool isRecordType(DartType type) {
+    return type is RecordType && !isNullable(type);
+  }
+
+  @override
   bool isSubtypeOf(DartType s, DartType t) {
     return _typeEnvironment.isSubtypeOf(
         s, t, SubtypeCheckMode.withNullabilities);
   }
+
+  @override
+  DartType get nonNullableObjectType =>
+      _typeEnvironment.objectNonNullableRawType;
 
   @override
   DartType get nullableObjectType => _typeEnvironment.objectNullableRawType;
@@ -89,9 +116,9 @@ class CfeTypeOperations implements TypeOperations<DartType> {
   }
 
   @override
-  Map<String, DartType> getFieldTypes(DartType type) {
-    Map<String, DartType> fieldTypes = {};
+  Map<Key, DartType> getFieldTypes(DartType type) {
     if (type is InterfaceType) {
+      Map<Key, DartType> fieldTypes = {};
       Map<Class, Substitution> substitutions = {};
       for (Member member
           in _classHierarchy.getInterfaceMembers(type.classNode)) {
@@ -101,7 +128,7 @@ class CfeTypeOperations implements TypeOperations<DartType> {
         DartType? fieldType;
         if (member is Field) {
           fieldType = member.getterType;
-        } else if (member is Procedure && member.isGetter) {
+        } else if (member is Procedure && !member.isSetter) {
           fieldType = member.getterType;
         }
         if (fieldType != null) {
@@ -113,29 +140,116 @@ class CfeTypeOperations implements TypeOperations<DartType> {
                         isNonNullableByDefault: true)!);
             fieldType = substitution.substituteType(fieldType);
           }
-          fieldTypes[member.name.text] = fieldType;
+          fieldTypes[new NameKey(member.name.text)] = fieldType;
         }
       }
+      return fieldTypes;
     } else if (type is RecordType) {
-      Map<String, DartType> fieldTypes = {};
+      Map<Key, DartType> fieldTypes = {};
+      fieldTypes.addAll(
+          getFieldTypes(_typeEnvironment.coreTypes.objectNonNullableRawType));
       for (int index = 0; index < type.positional.length; index++) {
-        fieldTypes['\$$index'] = type.positional[index];
+        fieldTypes[new RecordIndexKey(index)] = type.positional[index];
       }
       for (NamedType field in type.named) {
-        fieldTypes[field.name] = field.type;
+        fieldTypes[new RecordNameKey(field.name)] = field.type;
       }
       return fieldTypes;
+    } else {
+      return getFieldTypes(_typeEnvironment.coreTypes.objectNonNullableRawType);
     }
-    return fieldTypes;
   }
 
   @override
-  String typeToString(DartType type) => type.toText(defaultAstTextStrategy);
+  String typeToString(DartType type) => type.toText(textStrategy);
+
+  @override
+  DartType overapproximate(DartType type) {
+    return TypeParameterReplacer.replaceTypeVariables(type);
+  }
+
+  @override
+  bool isGeneric(DartType type) {
+    return type is InterfaceType && type.typeArguments.isNotEmpty;
+  }
+
+  @override
+  DartType instantiateFuture(DartType type) {
+    return _typeEnvironment.futureType(type, Nullability.nonNullable);
+  }
+
+  @override
+  DartType? getFutureOrTypeArgument(DartType type) {
+    return type is FutureOrType ? type.typeArgument : null;
+  }
+
+  @override
+  DartType? getListElementType(DartType type) {
+    type = type.resolveTypeParameterType;
+    if (type is InterfaceType) {
+      InterfaceType? listType = _classHierarchy.getTypeAsInstanceOf(
+          type, _typeEnvironment.coreTypes.listClass,
+          isNonNullableByDefault: true);
+      if (listType != null) {
+        return listType.typeArguments[0];
+      }
+    }
+    return null;
+  }
+
+  @override
+  DartType? getListType(DartType type) {
+    type = type.resolveTypeParameterType;
+    if (type is InterfaceType) {
+      return _classHierarchy.getTypeAsInstanceOf(
+          type, _typeEnvironment.coreTypes.listClass,
+          isNonNullableByDefault: true);
+    }
+    return null;
+  }
+
+  @override
+  DartType? getMapValueType(DartType type) {
+    type = type.resolveTypeParameterType;
+    if (type is InterfaceType) {
+      InterfaceType? mapType = _classHierarchy.getTypeAsInstanceOf(
+          type, _typeEnvironment.coreTypes.mapClass,
+          isNonNullableByDefault: true);
+      if (mapType != null) {
+        return mapType.typeArguments[1];
+      }
+    }
+    return null;
+  }
+
+  @override
+  bool hasSimpleName(DartType type) {
+    return type is InterfaceType ||
+        type is DynamicType ||
+        type is VoidType ||
+        type is NeverType ||
+        type is NullType ||
+        type is InlineType ||
+        // TODO(johnniwinther): What about intersection types?
+        type is TypeParameterType;
+  }
+
+  @override
+  DartType? getTypeVariableBound(DartType type) {
+    if (type is TypeParameterType) {
+      return type.bound;
+    } else if (type is IntersectionType) {
+      return type.right;
+    }
+    return null;
+  }
 }
 
 class CfeEnumOperations
     implements EnumOperations<DartType, Class, Field, Constant> {
-  const CfeEnumOperations();
+  final ConstantEvaluator _constantEvaluator;
+
+  CfeEnumOperations(this._constantEvaluator);
 
   @override
   Class? getEnumClass(DartType type) {
@@ -157,10 +271,15 @@ class CfeEnumOperations
 
   @override
   Constant getEnumElementValue(Field enumField) {
-    // TODO(johnniwinther): Ensure that the field initializer has been
-    // evaluated.
-    ConstantExpression expression = enumField.initializer as ConstantExpression;
-    return expression.constant;
+    // Enum field initializers might not have been replaced by
+    // [ConstantExpression]s. Either because we haven't visited them yet during
+    // normal constant evaluation or because they are from outlines that are
+    // not part of the fully compiled libraries. Therefore we perform constant
+    // evaluation here, to ensure that we have the [Constant] value for the
+    // enum element.
+    StaticTypeContext context =
+        new StaticTypeContext(enumField, _constantEvaluator.typeEnvironment);
+    return _constantEvaluator.evaluate(context, enumField.initializer!);
   }
 
   @override
@@ -175,9 +294,9 @@ class CfeEnumOperations
 
 class CfeSealedClassOperations
     implements SealedClassOperations<DartType, Class> {
-  final ClassHierarchy classHierarchy;
+  final TypeEnvironment _typeEnvironment;
 
-  CfeSealedClassOperations(this.classHierarchy);
+  CfeSealedClassOperations(this._typeEnvironment);
 
   @override
   List<Class> getDirectSubclasses(Class sealedClass) {
@@ -230,131 +349,241 @@ class CfeSealedClassOperations
   }
 
   @override
-  InterfaceType? getSubclassAsInstanceOf(
-      Class subClass, DartType sealedClassType) {
-    // TODO(johnniwinther): Handle generic types.
-    return subClass.getThisType(
-        classHierarchy.coreTypes, Nullability.nonNullable);
+  DartType? getSubclassAsInstanceOf(
+      Class subClass, covariant InterfaceType sealedClassType) {
+    InterfaceType thisType = subClass.getThisType(
+        _typeEnvironment.coreTypes, Nullability.nonNullable);
+    InterfaceType asSealedType = _typeEnvironment.hierarchy.getTypeAsInstanceOf(
+        thisType, sealedClassType.classNode,
+        isNonNullableByDefault: true)!;
+    if (thisType.typeArguments.isEmpty) {
+      return thisType;
+    }
+    bool trivialSubstitution = true;
+    if (thisType.typeArguments.length == asSealedType.typeArguments.length) {
+      for (int i = 0; i < thisType.typeArguments.length; i++) {
+        if (thisType.typeArguments[i] != asSealedType.typeArguments[i]) {
+          trivialSubstitution = false;
+          break;
+        }
+      }
+      if (trivialSubstitution) {
+        Substitution substitution = Substitution.fromPairs(
+            subClass.typeParameters, sealedClassType.typeArguments);
+        for (int i = 0; i < subClass.typeParameters.length; i++) {
+          DartType bound =
+              substitution.substituteType(subClass.typeParameters[i].bound);
+          if (!_typeEnvironment.isSubtypeOf(sealedClassType.typeArguments[i],
+              bound, SubtypeCheckMode.withNullabilities)) {
+            trivialSubstitution = false;
+            break;
+          }
+        }
+      }
+    } else {
+      trivialSubstitution = false;
+    }
+    if (trivialSubstitution) {
+      return new InterfaceType(
+          subClass, Nullability.nonNullable, sealedClassType.typeArguments);
+    } else {
+      return TypeParameterReplacer.replaceTypeVariables(thisType);
+    }
   }
 }
 
 class CfeExhaustivenessCache
     extends ExhaustivenessCache<DartType, Class, Class, Field, Constant> {
-  CfeExhaustivenessCache(TypeEnvironment typeEnvironment)
-      : super(new CfeTypeOperations(typeEnvironment), const CfeEnumOperations(),
-            new CfeSealedClassOperations(typeEnvironment.hierarchy));
+  final TypeEnvironment typeEnvironment;
+
+  CfeExhaustivenessCache(ConstantEvaluator constantEvaluator)
+      : typeEnvironment = constantEvaluator.typeEnvironment,
+        super(
+            new CfeTypeOperations(constantEvaluator.typeEnvironment),
+            new CfeEnumOperations(constantEvaluator),
+            new CfeSealedClassOperations(constantEvaluator.typeEnvironment));
 }
 
-abstract class SwitchCaseInfo {
-  int get fileOffset;
+class PatternConverter with SpaceCreator<Pattern, DartType> {
+  final CfeExhaustivenessCache cache;
+  final StaticTypeContext context;
+  final bool Function(Constant) hasPrimitiveEquality;
 
-  Space createSpace(CfeExhaustivenessCache cache,
-      Map<Node, Constant?> constants, StaticTypeContext context);
-}
-
-class ExpressionCaseInfo extends SwitchCaseInfo {
-  final Expression expression;
+  PatternConverter(this.cache, this.context,
+      {required this.hasPrimitiveEquality});
 
   @override
-  final int fileOffset;
-
-  ExpressionCaseInfo(this.expression, {required this.fileOffset});
-
-  @override
-  Space createSpace(CfeExhaustivenessCache cache,
-      Map<Node, Constant?> constants, StaticTypeContext context) {
-    return convertExpressionToSpace(cache, expression, constants, context);
-  }
-}
-
-class PatternCaseInfo extends SwitchCaseInfo {
-  final Pattern pattern;
-  @override
-  final int fileOffset;
-
-  PatternCaseInfo(this.pattern, {required this.fileOffset});
-
-  @override
-  Space createSpace(CfeExhaustivenessCache cache,
-      Map<Node, Constant?> constants, StaticTypeContext context) {
-    return convertPatternToSpace(cache, pattern, constants, context);
-  }
-}
-
-class SwitchInfo {
-  final TreeNode node;
-  final DartType expressionType;
-  final List<SwitchCaseInfo> cases;
-  final bool mustBeExhaustive;
-  final int fileOffset;
-
-  SwitchInfo(this.node, this.expressionType, this.cases,
-      {required this.mustBeExhaustive, required this.fileOffset});
-}
-
-class ExhaustivenessInfo {
-  Map<TreeNode, SwitchInfo> _switchInfo = {};
-
-  void registerSwitchInfo(SwitchInfo info) {
-    _switchInfo[info.node] = info;
-  }
-
-  SwitchInfo? getSwitchInfo(TreeNode node) => _switchInfo.remove(node);
-
-  bool get isEmpty => _switchInfo.isEmpty;
-
-  Iterable<TreeNode> get nodes => _switchInfo.keys;
-}
-
-Space convertExpressionToSpace(
-    CfeExhaustivenessCache cache,
-    Expression expression,
-    Map<Node, Constant?> constants,
-    StaticTypeContext context) {
-  Constant? constant = constants[expression];
-  return convertConstantToSpace(cache, constant, constants, context);
-}
-
-Space convertPatternToSpace(CfeExhaustivenessCache cache, Pattern pattern,
-    Map<Node, Constant?> constants, StaticTypeContext context) {
-  if (pattern is ObjectPattern) {
-    InterfaceType type = new InterfaceType(
-        pattern.classNode, Nullability.nonNullable, pattern.typeArguments);
-    Map<String, Space> fields = {};
-    for (NamedPattern field in pattern.fields) {
-      fields[field.name] =
-          convertPatternToSpace(cache, field.pattern, constants, context);
+  Space dispatchPattern(Path path, StaticType contextType, Pattern pattern,
+      {required bool nonNull}) {
+    if (pattern is ObjectPattern) {
+      Map<String, Pattern> fields = {};
+      for (NamedPattern field in pattern.fields) {
+        fields[field.name] = field.pattern;
+      }
+      return createObjectSpace(path, contextType, pattern.lookupType!, fields,
+          nonNull: nonNull);
+    } else if (pattern is VariablePattern) {
+      return createVariableSpace(path, contextType, pattern.variable.type,
+          nonNull: nonNull);
+    } else if (pattern is ConstantPattern) {
+      return convertConstantToSpace(pattern.value!, path: path);
+    } else if (pattern is RecordPattern) {
+      List<Pattern> positional = [];
+      Map<String, Pattern> named = {};
+      for (Pattern field in pattern.patterns) {
+        if (field is NamedPattern) {
+          named[field.name] = field.pattern;
+        } else {
+          positional.add(field);
+        }
+      }
+      return createRecordSpace(
+          path, contextType, pattern.requiredType!, positional, named);
+    } else if (pattern is WildcardPattern) {
+      return createWildcardSpace(path, contextType, pattern.type,
+          nonNull: nonNull);
+    } else if (pattern is OrPattern) {
+      return createLogicalOrSpace(
+          path, contextType, pattern.left, pattern.right,
+          nonNull: nonNull);
+    } else if (pattern is NullCheckPattern) {
+      return createNullCheckSpace(path, contextType, pattern.pattern);
+    } else if (pattern is NullAssertPattern) {
+      return createNullAssertSpace(path, contextType, pattern.pattern);
+    } else if (pattern is CastPattern) {
+      return createCastSpace(path, contextType, pattern.type, pattern.pattern,
+          nonNull: nonNull);
+    } else if (pattern is AndPattern) {
+      return createLogicalAndSpace(
+          path, contextType, pattern.left, pattern.right,
+          nonNull: nonNull);
+    } else if (pattern is InvalidPattern) {
+      // These pattern do not add to the exhaustiveness coverage.
+      return createUnknownSpace(path);
+    } else if (pattern is RelationalPattern) {
+      return createRelationalSpace(path);
+    } else if (pattern is ListPattern) {
+      InterfaceType type = pattern.requiredType as InterfaceType;
+      assert(type.classNode == cache.typeEnvironment.coreTypes.listClass &&
+          type.typeArguments.length == 1);
+      DartType elementType = type.typeArguments[0];
+      bool hasRest = false;
+      List<Pattern> headPatterns = [];
+      Pattern? restPattern;
+      List<Pattern> tailPatterns = [];
+      for (Pattern element in pattern.patterns) {
+        if (element is RestPattern) {
+          hasRest = true;
+          restPattern = element.subPattern;
+        } else if (hasRest) {
+          tailPatterns.add(element);
+        } else {
+          headPatterns.add(element);
+        }
+      }
+      return createListSpace(path,
+          type: pattern.requiredType!,
+          elementType: elementType,
+          headElements: headPatterns,
+          restElement: restPattern,
+          tailElements: tailPatterns,
+          hasRest: hasRest,
+          hasExplicitTypeArgument: pattern.typeArgument != null);
+    } else if (pattern is MapPattern) {
+      InterfaceType type = pattern.requiredType as InterfaceType;
+      assert(type.classNode == cache.typeEnvironment.coreTypes.mapClass &&
+          type.typeArguments.length == 2);
+      DartType keyType = type.typeArguments[0];
+      DartType valueType = type.typeArguments[1];
+      Map<MapKey, Pattern> entries = {};
+      for (MapPatternEntry entry in pattern.entries) {
+        if (entry is MapPatternRestEntry) {
+          // Rest patterns are illegal in map patterns, so just skip over it.
+        } else {
+          Constant constant = entry.keyValue!;
+          MapKey key = new MapKey(constant, constant.toText(textStrategy));
+          entries[key] = entry.value;
+        }
+      }
+      return createMapSpace(path,
+          type: pattern.lookupType!,
+          keyType: keyType,
+          valueType: valueType,
+          entries: entries,
+          hasExplicitTypeArguments:
+              pattern.keyType != null && pattern.valueType != null);
     }
-    return new Space(cache.getStaticType(type), fields);
-  } else if (pattern is VariablePattern) {
-    return new Space(cache.getStaticType(pattern.variable.type));
-  } else if (pattern is ExpressionPattern) {
-    return convertExpressionToSpace(
-        cache, pattern.expression, constants, context);
+    assert(false, "Unexpected pattern $pattern (${pattern.runtimeType}).");
+    return createUnknownSpace(path);
   }
-  // TODO(johnniwinther): Handle remaining constants.
-  return new Space(cache.getUnknownStaticType());
-}
 
-Space convertConstantToSpace(CfeExhaustivenessCache cache, Constant? constant,
-    Map<Node, Constant?> constants, StaticTypeContext context) {
-  if (constant != null) {
-    if (constant is NullConstant) {
-      return Space.nullSpace;
-    } else if (constant is BoolConstant) {
-      return new Space(cache.getBoolValueStaticType(constant.value));
-    } else if (constant is InstanceConstant && constant.classNode.isEnum) {
-      return new Space(
-          cache.getEnumElementStaticType(constant.classNode, constant));
+  Space convertConstantToSpace(Constant? constant, {required Path path}) {
+    if (constant != null) {
+      if (constant is NullConstant) {
+        return new Space(path, StaticType.nullType);
+      } else if (constant is BoolConstant) {
+        return new Space(path, cache.getBoolValueStaticType(constant.value));
+      } else if (constant is InstanceConstant && constant.classNode.isEnum) {
+        return new Space(
+            path, cache.getEnumElementStaticType(constant.classNode, constant));
+      } else if (constant is RecordConstant) {
+        Map<Key, Space> fields = {};
+        for (int index = 0; index < constant.positional.length; index++) {
+          Key key = new RecordIndexKey(index);
+          fields[key] = convertConstantToSpace(constant.positional[index],
+              path: path.add(key));
+        }
+        for (MapEntry<String, Constant> entry in constant.named.entries) {
+          Key key = new RecordNameKey(entry.key);
+          fields[key] =
+              convertConstantToSpace(entry.value, path: path.add(key));
+        }
+        return new Space(path, cache.getStaticType(constant.recordType),
+            fields: fields);
+      } else if (hasPrimitiveEquality(constant)) {
+        // Only if [constant] has primitive equality can we tell if it is equal
+        // to itself.
+        return new Space(
+            path,
+            cache.getUniqueStaticType<Constant>(constant.getType(context),
+                constant, constant.toText(textStrategy)));
+      } else {
+        return new Space(path, cache.getUnknownStaticType());
+      }
     } else {
-      return new Space(cache.getUniqueStaticType(
-          constant.getType(context), constant, '${constant}'));
+      // TODO(johnniwinther): Assert that constant value is available when the
+      // exhaustiveness checking is complete.
+      return new Space(path, cache.getUnknownStaticType());
     }
-  } else {
-    // TODO(johnniwinther): Assert that constant value is available when the
-    // exhaustiveness checking is complete.
-    return new Space(cache.getUnknownStaticType());
   }
+
+  @override
+  StaticType createUnknownStaticType() {
+    return cache.getUnknownStaticType();
+  }
+
+  @override
+  StaticType createStaticType(DartType type) {
+    return cache.getStaticType(type);
+  }
+
+  @override
+  StaticType createListType(
+      DartType type, ListTypeRestriction<DartType> restriction) {
+    return cache.getListStaticType(type, restriction);
+  }
+
+  @override
+  StaticType createMapType(
+      DartType type, MapTypeRestriction<DartType> restriction) {
+    return cache.getMapStaticType(type, restriction);
+  }
+
+  @override
+  TypeOperations<DartType> get typeOperations => cache.typeOperations;
+
+  @override
+  ObjectFieldLookup get objectFieldLookup => cache;
 }
 
 bool computeIsAlwaysExhaustiveType(DartType type, CoreTypes coreTypes) {
@@ -386,7 +615,6 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
 
   @override
   bool visitFutureOrType(FutureOrType type, CoreTypes coreTypes) {
-    // TODO(johnniwinther): Why? This doesn't work if the value is a Future.
     return type.typeArgument.accept1(this, coreTypes);
   }
 
@@ -410,8 +638,7 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
 
   @override
   bool visitIntersectionType(IntersectionType type, CoreTypes coreTypes) {
-    // TODO(johnniwinther): Why don't we use the bound?
-    return false;
+    return type.right.accept1(this, coreTypes);
   }
 
   @override
@@ -446,8 +673,7 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
 
   @override
   bool visitTypeParameterType(TypeParameterType type, CoreTypes coreTypes) {
-    // TODO(johnniwinther): Why don't we use the bound?
-    return false;
+    return type.bound.accept1(this, coreTypes);
   }
 
   @override
@@ -458,5 +684,33 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
   @override
   bool visitVoidType(VoidType type, CoreTypes coreTypes) {
     return false;
+  }
+}
+
+class TypeParameterReplacer extends ReplacementVisitor {
+  const TypeParameterReplacer();
+
+  @override
+  DartType? visitTypeParameterType(TypeParameterType node, int variance) {
+    DartType replacement = super.visitTypeParameterType(node, variance) ?? node;
+    if (replacement is TypeParameterType) {
+      if (variance == Variance.contravariant) {
+        return _replaceTypeParameterTypes(
+            const NeverType.nonNullable(), variance);
+      } else {
+        return _replaceTypeParameterTypes(
+            replacement.parameter.defaultType, variance);
+      }
+    }
+    return replacement;
+  }
+
+  DartType _replaceTypeParameterTypes(DartType type, int variance) {
+    return type.accept1(this, variance) ?? type;
+  }
+
+  static DartType replaceTypeVariables(DartType type) {
+    return const TypeParameterReplacer()
+        ._replaceTypeParameterTypes(type, Variance.covariant);
   }
 }

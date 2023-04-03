@@ -11,6 +11,7 @@ import 'package:analyzer/src/dart/ast/token.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
 import 'package:analyzer_plugin/src/utilities/completion/completion_target.dart';
+import 'package:analyzer_plugin/src/utilities/extensions/token.dart';
 import 'package:collection/collection.dart';
 
 typedef SuggestionsFilter = int? Function(DartType dartType, int relevance);
@@ -63,6 +64,12 @@ class OpType {
 
   /// Indicates whether the completion target is prefixed.
   bool isPrefixed = false;
+
+  /// Indicates whether the completion location requires a constant expression
+  /// without being a constant context.
+  // TODO(brianwilkerson) Consider using this value to control whether non-const
+  //  elements are suggested.
+  bool mustBeConst = false;
 
   /// The suggested completion kind.
   CompletionSuggestionKind suggestKind = CompletionSuggestionKind.INVOCATION;
@@ -128,6 +135,15 @@ class OpType {
       !includeTypeNameSuggestions &&
       !includeReturnValueSuggestions &&
       !includeVoidReturnSuggestions;
+
+  /// Mark this op-type appropriately for a [completionLocation] in which any
+  /// kind of pattern is appropriate.
+  void _forPattern(String completionLocation) {
+    this.completionLocation = completionLocation;
+    includeReturnValueSuggestions = true;
+    includeTypeNameSuggestions = true;
+    mustBeConst = true;
+  }
 
   /// Return the statement before [entity]
   /// where [entity] can be a statement or the `}` closing the given block.
@@ -240,7 +256,7 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
       if (0 <= index && index < parameters.length) {
         var param = parameters[index];
         var paramType = param.type;
-        if (paramType is FunctionType && paramType.returnType.isVoid) {
+        if (paramType is FunctionType && paramType.returnType is VoidType) {
           optype.includeVoidReturnSuggestions = true;
         }
         if (param.isNamed == true) {
@@ -558,7 +574,7 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
       if (parent is FunctionExpression) {
         type = parent.staticType;
         if (type is FunctionType) {
-          if (type.returnType.isVoid) {
+          if (type.returnType is VoidType) {
             // TODO(brianwilkerson) Determine whether the return type can ever
             //  be inferred as void and remove this case if it can't be.
             optype.includeVoidReturnSuggestions = true;
@@ -569,7 +585,7 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
               if (parameter != null) {
                 var parameterType = parameter.type;
                 if (parameterType is FunctionType &&
-                    parameterType.returnType.isVoid) {
+                    parameterType.returnType is VoidType) {
                   optype.includeVoidReturnSuggestions = true;
                 }
               }
@@ -578,7 +594,7 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
         }
       } else if (parent is MethodDeclaration) {
         type = parent.declaredElement?.returnType;
-        if (type != null && type.isVoid) {
+        if (type != null && type is VoidType) {
           optype.includeVoidReturnSuggestions = true;
         }
       }
@@ -713,6 +729,17 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
       optype.includeTypeNameSuggestions = true;
     }
     visitForEachParts(node);
+  }
+
+  @override
+  void visitForEachPartsWithPattern(ForEachPartsWithPattern node) {
+    if (identical(entity, node.iterable)) {
+      optype.completionLocation = 'visitForEachPartsWithPattern_iterable';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+    } else {
+      visitForEachParts(node);
+    }
   }
 
   @override
@@ -947,10 +974,29 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitListPattern(ListPattern node) {
+    optype._forPattern('ListPattern_element');
+  }
+
+  @override
   void visitMapLiteralEntry(MapLiteralEntry node) {
     optype.completionLocation = 'MapLiteralEntry_value';
     optype.includeReturnValueSuggestions = true;
     optype.includeTypeNameSuggestions = true;
+  }
+
+  @override
+  void visitMapPattern(MapPattern node) {
+    optype.completionLocation = 'MapPatternEntry_key';
+    optype.includeReturnValueSuggestions = true;
+    optype.includeTypeNameSuggestions = true;
+    optype.includeVarNameSuggestions = true;
+    optype.mustBeConst = true;
+  }
+
+  @override
+  void visitMapPatternEntry(MapPatternEntry node) {
+    optype._forPattern('MapPatternEntry_value');
   }
 
   @override
@@ -1088,6 +1134,37 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitParenthesizedPattern(ParenthesizedPattern node) {
+    optype._forPattern('ParenthesizedPattern_expression');
+  }
+
+  @override
+  void visitPatternAssignment(PatternAssignment node) {
+    if (identical(entity, node.expression)) {
+      optype.completionLocation = 'PatternAssignment_expression';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+      optype.includeVarNameSuggestions = true;
+    }
+  }
+
+  @override
+  void visitPatternField(PatternField node) {
+    optype.completionLocation = 'PatternField_pattern';
+    optype.includeTypeNameSuggestions = true;
+    optype.includeReturnValueSuggestions = true;
+  }
+
+  @override
+  void visitPatternVariableDeclaration(PatternVariableDeclaration node) {
+    if (identical(entity, node.expression)) {
+      optype.completionLocation = 'PatternVariableDeclaration_expression';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+    }
+  }
+
+  @override
   void visitPostfixExpression(PostfixExpression node) {
     optype.includeReturnValueSuggestions = true;
     optype.includeTypeNameSuggestions = true;
@@ -1170,13 +1247,6 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
-  void visitRecordPatternField(RecordPatternField node) {
-    optype.completionLocation = 'RecordPatternField_pattern';
-    optype.includeTypeNameSuggestions = true;
-    optype.includeReturnValueSuggestions = true;
-  }
-
-  @override
   void visitRecordTypeAnnotation(RecordTypeAnnotation node) {
     optype.completionLocation = 'RecordTypeAnnotation_positionalFields';
 
@@ -1216,6 +1286,28 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
   ) {
     optype.completionLocation = 'RecordTypeAnnotationPositionalField_name';
     optype.includeVarNameSuggestions = true;
+  }
+
+  @override
+  void visitRelationalPattern(RelationalPattern node) {
+    var operator = node.operator;
+    if (offset >= operator.end) {
+      if (operator.type == TokenType.LT &&
+          operator.nextNotSynthetic.type == TokenType.GT) {
+        // This is most likely a type argument list.
+        optype.completionLocation = 'TypeArgumentList_argument';
+        optype.includeTypeNameSuggestions = true;
+        return;
+      }
+      optype._forPattern('RelationalPattern_operand');
+    }
+  }
+
+  @override
+  void visitRestPatternElement(RestPatternElement node) {
+    if (identical(entity, node.pattern)) {
+      optype._forPattern('RestPatternElement_pattern');
+    }
   }
 
   @override
@@ -1338,6 +1430,24 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
   }
 
   @override
+  void visitSwitchExpression(SwitchExpression node) {
+    if (identical(entity, node.expression)) {
+      optype.completionLocation = 'SwitchExpression_expression';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+    }
+  }
+
+  @override
+  void visitSwitchExpressionCase(SwitchExpressionCase node) {
+    if (identical(entity, node.expression)) {
+      optype.completionLocation = 'SwitchExpressionCase_expression';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+    }
+  }
+
+  @override
   void visitSwitchPatternCase(SwitchPatternCase node) {
     if (identical(entity, node.colon)) {
       var guardedPattern = node.guardedPattern;
@@ -1346,6 +1456,17 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
           pattern is DeclaredVariablePattern &&
           pattern.name.lexeme == 'as') {
         optype.completionLocation = 'CastPattern_type';
+        optype.includeTypeNameSuggestions = true;
+      }
+    } else if (entity is GuardedPattern) {
+      optype.completionLocation = 'SwitchPatternCase_pattern';
+      var pattern = node.guardedPattern.pattern;
+      if (pattern is DeclaredVariablePattern) {
+        var keyword = pattern.keyword;
+        if (keyword == null || keyword.lexeme != 'var') {
+          optype.includeTypeNameSuggestions = true;
+        }
+      } else if (pattern is ConstantPattern) {
         optype.includeTypeNameSuggestions = true;
       }
     } else if (node.statements.contains(entity)) {
@@ -1452,6 +1573,16 @@ class _OpTypeAstVisitor extends GeneralizingAstVisitor<void> {
 
   @override
   void visitVariableDeclarationStatement(VariableDeclarationStatement node) {}
+
+  @override
+  void visitWhenClause(WhenClause node) {
+    if (identical(entity, node.expression)) {
+      optype.completionLocation = 'WhenClause_expression';
+      optype.includeReturnValueSuggestions = true;
+      optype.includeTypeNameSuggestions = true;
+      optype.includeVoidReturnSuggestions = true;
+    }
+  }
 
   @override
   void visitWhileStatement(WhileStatement node) {

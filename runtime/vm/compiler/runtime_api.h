@@ -331,7 +331,7 @@ inline intptr_t RoundedAllocationSize(intptr_t size) {
   return Utils::RoundUp(size, kObjectAlignment);
 }
 // Information about frame_layout that compiler should be targeting.
-extern UntaggedFrame frame_layout;
+extern FrameLayout frame_layout;
 
 constexpr intptr_t kIntSpillFactor = sizeof(int64_t) / kWordSize;
 constexpr intptr_t kDoubleSpillFactor = sizeof(double) / kWordSize;
@@ -998,6 +998,8 @@ class Capability : public AllStatic {
 
 class ReceivePort : public AllStatic {
  public:
+  static word send_port_offset();
+  static word handler_offset();
   static word InstanceSize();
   FINAL_CLASS();
 };

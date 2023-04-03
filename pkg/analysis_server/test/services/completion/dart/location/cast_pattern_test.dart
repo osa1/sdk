@@ -39,7 +39,7 @@ class A01 {}
 class A02 {}
 class B01 {}
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   A01
     kind: class
@@ -47,6 +47,8 @@ suggestions
     kind: class
   B01
     kind: class
+  dynamic
+    kind: keyword
 ''');
   }
 
@@ -62,7 +64,7 @@ class A01 {}
 class A02 {}
 class B01 {}
 ''');
-    assertResponse('''
+    assertResponse(r'''
 suggestions
   A01
     kind: class
@@ -70,6 +72,8 @@ suggestions
     kind: class
   B01
     kind: class
+  dynamic
+    kind: keyword
 ''');
   }
 
@@ -85,7 +89,7 @@ class A02 {}
 class B01 {}
 ''');
     if (isProtocolVersion2) {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -95,7 +99,7 @@ suggestions
     kind: class
 ''');
     } else {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -122,7 +126,7 @@ class A02 {}
 class B01 {}
 ''');
     if (isProtocolVersion2) {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -132,7 +136,7 @@ suggestions
     kind: class
 ''');
     } else {
-      assertResponse('''
+      assertResponse(r'''
 replacement
   left: 1
 suggestions

@@ -42,13 +42,17 @@ import 'inferrer_experimental/types.dart' as experimentalInferrer
 import 'inferrer_experimental/typemasks/masks.dart' as experimentalInferrer
     show TypeMaskStrategy;
 import 'inferrer/wrapped.dart' show WrappedAbstractValueStrategy;
-import 'ir/modular.dart';
+import 'io/source_information.dart';
+import 'ir/annotations.dart';
+import 'ir/modular.dart' hide reportLocatedMessage;
 import 'js_backend/codegen_inputs.dart' show CodegenInputs;
 import 'js_backend/enqueuer.dart';
 import 'js_backend/inferred_data.dart';
 import 'js_model/js_strategy.dart';
 import 'js_model/js_world.dart';
 import 'js_model/locals.dart';
+import 'kernel/dart2js_target.dart';
+import 'kernel/element_map.dart';
 import 'kernel/front_end_adapter.dart' show CompilerFileSystem;
 import 'kernel/kernel_strategy.dart';
 import 'kernel/kernel_world.dart';
@@ -104,7 +108,7 @@ class Compiler {
   DiagnosticReporter get reporter => _reporter;
   Map<Entity, WorldImpact> get impactCache => _impactCache;
 
-  final Environment environment;
+  late final Environment environment;
 
   late final List<CompilerTask> tasks;
   late final GenericTask loadKernelTask;
@@ -146,10 +150,10 @@ class Compiler {
       this.options)
       // NOTE: allocating measurer is done upfront to ensure the wallclock is
       // started before other computations.
-      : measurer = Measurer(enableTaskMeasurements: options.verbose),
-        this.environment = Environment(options.environment) {
+      : measurer = Measurer(enableTaskMeasurements: options.verbose) {
     options.deriveOptions();
     options.validate();
+    environment = Environment(options.environment);
 
     abstractValueStrategy = options.experimentalInferrer
         ? (options.useTrivialAbstractValueDomain
@@ -394,7 +398,7 @@ class Compiler {
   }
 
   Future<load_kernel.Output?> produceKernel() async {
-    if (options.readClosedWorldUri == null) {
+    if (shouldComputeClosedWorld) {
       load_kernel.Output? output = await loadKernel();
       if (output == null || compilationFailed) return null;
       ir.Component component = output.component;
@@ -435,12 +439,46 @@ class Compiler {
     } else {
       ir.Component component =
           await serializationTask.deserializeComponentAndUpdateOptions();
+      if (retainDataForTesting) {
+        componentForTesting = component;
+      }
       return load_kernel.Output(component, null, null, null, null);
     }
   }
 
   bool shouldStopAfterLoadKernel(load_kernel.Output? output) =>
       output == null || compilationFailed || options.cfeOnly;
+
+  void simplifyConstConditionals(ir.Component component) {
+    void reportMessage(
+        fe.LocatedMessage message, List<fe.LocatedMessage>? context) {
+      reportLocatedMessage(reporter, message, context);
+    }
+
+    bool shouldNotInline(ir.TreeNode node) {
+      if (node is! ir.Annotatable) {
+        return false;
+      }
+      return computePragmaAnnotationDataFromIr(node).any((pragma) =>
+          pragma == const PragmaAnnotationData('noInline') ||
+          pragma == const PragmaAnnotationData('never-inline'));
+    }
+
+    fe.ConstConditionalSimplifier(
+            const Dart2jsDartLibrarySupport(),
+            const Dart2jsConstantsBackend(supportsUnevaluatedConstants: false),
+            component,
+            reportMessage,
+            environmentDefines: environment.definitions,
+            evaluationMode: options.useLegacySubtyping
+                ? fe.EvaluationMode.weak
+                : fe.EvaluationMode.strong,
+            shouldNotInline: shouldNotInline)
+        .run();
+  }
+
+  bool get usingModularAnalysis =>
+      options.modularMode || options.hasModularAnalysisInputs;
 
   Future<ModuleData> runModularAnalysis(
       load_kernel.Output output, Set<Uri> moduleLibraries) async {
@@ -495,7 +533,8 @@ class Compiler {
         mainFunction, closedWorld, globalLocalsMap, inferredDataBuilder);
   }
 
-  int runCodegenEnqueuer(CodegenResults codegenResults) {
+  int runCodegenEnqueuer(
+      CodegenResults codegenResults, SourceLookup sourceLookup) {
     GlobalTypeInferenceResults globalInferenceResults =
         codegenResults.globalTypeInferenceResults;
     JClosedWorld closedWorld = globalInferenceResults.closedWorld;
@@ -505,7 +544,8 @@ class Compiler {
         closedWorld,
         globalInferenceResults,
         codegenInputs,
-        codegenResults)
+        codegenResults,
+        sourceLookup)
       ..onEmptyForTesting = onCodegenQueueEmptyForTesting;
     if (retainDataForTesting) {
       codegenEnqueuerForTesting = codegenEnqueuer;
@@ -561,11 +601,28 @@ class Compiler {
         globalTypeInferenceResultsData);
   }
 
+  bool get shouldComputeClosedWorld => options.readClosedWorldUri == null;
+
   Future<DataAndIndices<JClosedWorld>?> produceClosedWorld(
       load_kernel.Output output, ModuleData? moduleData) async {
     ir.Component component = output.component;
     DataAndIndices<JClosedWorld> closedWorldAndIndices;
-    if (options.readClosedWorldUri == null) {
+    if (shouldComputeClosedWorld) {
+      if (!usingModularAnalysis) {
+        // If we're deserializing the closed world, the input .dill already
+        // contains the modified AST, so the transformer only needs to run if
+        // the closed world is being computed from scratch.
+        //
+        // However, the transformer is not currently compatible with modular
+        // analysis. When modular analysis is enabled in Blaze, some aspects run
+        // before this phase of the compiler. This can cause dart2js to crash if
+        // the kernel AST is mutated, since we will attempt to serialize and
+        // deserialize against different ASTs.
+        //
+        // TODO(fishythefish): Make this compatible with modular analysis.
+        simplifyConstConditionals(component);
+      }
+
       Uri rootLibraryUri = output.rootLibraryUri!;
       List<Uri> libraries = output.libraries!;
       final closedWorld =
@@ -645,8 +702,8 @@ class Compiler {
   }
 
   Future<CodegenResults> produceCodegenResults(
-      DataAndIndices<GlobalTypeInferenceResults>
-          globalTypeInferenceResults) async {
+      DataAndIndices<GlobalTypeInferenceResults> globalTypeInferenceResults,
+      SourceLookup sourceLookup) async {
     final globalTypeInferenceData = globalTypeInferenceResults.data!;
     CodegenInputs codegenInputs = initializeCodegen(globalTypeInferenceData);
     CodegenResults codegenResults;
@@ -663,7 +720,8 @@ class Compiler {
           globalTypeInferenceData,
           codegenInputs,
           globalTypeInferenceResults.indices!,
-          useDeferredSourceReads);
+          useDeferredSourceReads,
+          sourceLookup);
     }
     return codegenResults;
   }
@@ -688,7 +746,7 @@ class Compiler {
     // Run modular analysis. This may be null if modular analysis was not
     // requested for this pipeline.
     ModuleData? moduleData;
-    if (options.modularMode || options.hasModularAnalysisInputs) {
+    if (usingModularAnalysis) {
       moduleData = await produceModuleData(output!);
     }
     if (shouldStopAfterModularAnalysis) return;
@@ -704,12 +762,13 @@ class Compiler {
     if (shouldStopAfterGlobalTypeInference) return;
 
     // Run codegen.
+    final sourceLookup = SourceLookup(output.component);
     CodegenResults codegenResults =
-        await produceCodegenResults(globalTypeInferenceResults);
+        await produceCodegenResults(globalTypeInferenceResults, sourceLookup);
     if (shouldStopAfterCodegen) return;
 
     // Link.
-    int programSize = runCodegenEnqueuer(codegenResults);
+    int programSize = runCodegenEnqueuer(codegenResults, sourceLookup);
 
     // Dump Info.
     if (options.dumpInfo) {

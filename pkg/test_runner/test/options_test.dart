@@ -1,6 +1,8 @@
 // Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
+import 'dart:io';
+
 import 'package:expect/expect.dart';
 
 import 'package:test_runner/src/configuration.dart';
@@ -10,6 +12,7 @@ void main() {
   testDefaults();
   testOptions();
   testValidation();
+  testSelectors();
 }
 
 void testDefaults() {
@@ -97,6 +100,77 @@ void testValidation() {
   // Don't allow invalid named configurations.
   expectValidationError(['-ninvalid-vm-android-simarm'],
       'The named configuration "invalid-vm-android-simarm" is invalid.');
+}
+
+void testSelectors() {
+  // Legacy suites.
+  for (var arguments in [
+    <String>[],
+    ['-nvm-legacy']
+  ]) {
+    var configuration = parseConfiguration(arguments);
+    Expect.setEquals({
+      'standalone_2',
+      'corelib_2',
+      'language_2',
+      'vm',
+      'utils',
+      'lib_2',
+      'service_2',
+      'kernel',
+      'observatory_ui_2',
+      'ffi_2',
+    }, configuration.selectors.keys, "suites for $arguments");
+  }
+
+  // Default null safe suites.
+  for (var arguments in [
+    ['--nnbd=strong'],
+    ['-nvm-strong']
+  ]) {
+    var configuration = parseConfiguration(arguments);
+    Expect.setEquals({
+      'samples',
+      'standalone',
+      'corelib',
+      'language',
+      'vm',
+      'utils',
+      'lib',
+      'service',
+      'kernel',
+      'ffi',
+    }, configuration.selectors.keys, "suites for $arguments");
+  }
+
+  // The test runner can run individual tests by being given the
+  // complete relative path to the test file, relative to the
+  // root of the Dart source checkout. The test runner parses
+  // these paths, if they match a known test suite location,
+  // and turns them into a suite name followed by a test path and name.
+  final testPath = ['tests', 'language', 'subdir', 'some_test.dart']
+      .join(Platform.pathSeparator);
+  final co19Path = [
+    'tests',
+    'co19_2',
+    'src',
+    'subdir_1',
+    'subdir_src',
+    'some_co19_test'
+  ].join(Platform.pathSeparator);
+  final configuration = parseConfiguration(
+      // Test arguments that include two test file paths and two
+      // suite selectors, one with a pattern ending in .dart.
+      // The final .dart is removed both from file paths and selector
+      // patterns.
+      ['vm', 'language_2/a_legacy_test.dart', testPath, co19Path]);
+  Expect.equals(
+      'subdir/some_test', configuration.selectors['language']?.pattern);
+  Expect.equals('subdir_1/subdir_src/some_co19_test',
+      configuration.selectors['co19_2']?.pattern);
+  Expect.equals('.?', configuration.selectors['vm']?.pattern);
+  Expect.equals(
+      'a_legacy_test', configuration.selectors['language_2']?.pattern);
 }
 
 TestConfiguration parseConfiguration(List<String> arguments) {

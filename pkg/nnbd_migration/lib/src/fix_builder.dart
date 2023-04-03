@@ -198,7 +198,6 @@ class FixBuilder {
         source!,
         typeProvider,
         errorListener,
-        null /* inferenceErrorListener */,
         _typeSystem,
         FeatureSet.fromEnableFlags2(
           sdkLanguageVersion: Feature.non_nullable.releaseVersion!,
@@ -1461,7 +1460,7 @@ class _FixBuilderPreVisitor extends GeneralizingAstVisitor<void>
   }
 
   bool _typeIsNaturallyNullable(DartType type) =>
-      type.isDynamic || type.isVoid || type.isDartCoreNull;
+      type.isDynamic || type is VoidType || type.isDartCoreNull;
 }
 
 /// Specialization of [_AssignmentLikeExpressionHandler] for

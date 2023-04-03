@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/src/dart/error/syntactic_errors.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
@@ -40,11 +41,14 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: isFinal a@24
           type: num
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     equals: =
     expression: IntegerLiteral
       literal: 0
       staticType: int
+    patternTypeSchema: num
   semicolon: ;
 ''');
   }
@@ -67,11 +71,14 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: hasImplicitType isFinal a@20
           type: int
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     equals: =
     expression: IntegerLiteral
       literal: 0
       staticType: int
+    patternTypeSchema: _
   semicolon: ;
 ''');
   }
@@ -97,7 +104,9 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: hasImplicitType a@18
           type: A
+        matchedValueType: A
       rightParenthesis: )
+      matchedValueType: A
     equals: =
     expression: InstanceCreationExpression
       constructorName: ConstructorName
@@ -112,6 +121,7 @@ PatternVariableDeclarationStatement
         leftParenthesis: (
         rightParenthesis: )
       staticType: A
+    patternTypeSchema: _
   semicolon: ;
 ''');
   }
@@ -140,11 +150,14 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: a@22
           type: num
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     equals: =
     expression: IntegerLiteral
       literal: 0
       staticType: int
+    patternTypeSchema: num
   semicolon: ;
 ''');
   }
@@ -176,7 +189,9 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: a@22
           type: int
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     equals: =
     expression: MethodInvocation
       methodName: SimpleIdentifier
@@ -190,6 +205,7 @@ PatternVariableDeclarationStatement
       staticType: int
       typeArgumentTypes
         int
+    patternTypeSchema: int
   semicolon: ;
 ''');
   }
@@ -212,11 +228,14 @@ PatternVariableDeclarationStatement
         name: a
         declaredElement: hasImplicitType a@18
           type: int
+        matchedValueType: int
       rightParenthesis: )
+      matchedValueType: int
     equals: =
     expression: IntegerLiteral
       literal: 0
       staticType: int
+    patternTypeSchema: _
   semicolon: ;
 ''');
   }
@@ -238,24 +257,28 @@ PatternVariableDeclarationStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
             declaredElement: hasImplicitType a@33
               type: int
-          fieldElement: <null>
-        RecordPatternField
+            matchedValueType: int
+          element: <null>
+        PatternField
           pattern: DeclaredVariablePattern
             name: b
             declaredElement: hasImplicitType b@36
               type: String
-          fieldElement: <null>
+            matchedValueType: String
+          element: <null>
       rightParenthesis: )
+      matchedValueType: (int, String)
     equals: =
     expression: SimpleIdentifier
       token: x
       staticElement: self::@function::f::@parameter::x
       staticType: (int, String)
+    patternTypeSchema: (_, _)
   semicolon: ;
 ''');
   }
@@ -267,9 +290,7 @@ void f() {
   a;
 }
 ''', [
-      error(
-          CompileTimeErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT,
-          18,
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 18,
           5),
     ]);
   }
@@ -281,9 +302,7 @@ void f() {
   a;
 }
 ''', [
-      error(
-          CompileTimeErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT,
-          18,
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 18,
           3),
     ]);
   }

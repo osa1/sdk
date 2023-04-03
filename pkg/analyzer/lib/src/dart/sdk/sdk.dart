@@ -10,6 +10,7 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/exception/exception.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/memory_file_system.dart';
+import 'package:analyzer/src/dart/sdk/sdk_utils.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/java_engine_io.dart';
 import 'package:analyzer/src/generated/sdk.dart';
@@ -17,6 +18,22 @@ import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/utilities/uri_cache.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
+
+/// Returns the version of the SDK that runs the analyzer.
+Version? get runningSdkVersion {
+  try {
+    final regExp = RegExp(r'^(\d+\.\d+\.\d+)');
+    final match = regExp.firstMatch(io.Platform.version);
+    if (match == null) {
+      return null;
+    }
+
+    final sdkVersionStr = match.group(1)!;
+    return Version.parse(sdkVersionStr);
+  } catch (_) {
+    return null;
+  }
+}
 
 Version languageVersionFromSdkVersion(String sdkVersionStr) {
   var sdkVersionParts = sdkVersionStr.split('.');
@@ -162,12 +179,10 @@ abstract class AbstractDartSdk implements DartSdk {
     for (final library in libraryMap.sdkLibraries) {
       final pathContext = resourceProvider.pathContext;
       if (pathContext.isAbsolute(library.path)) {
-        final libraryFile = resourceProvider.getFile(library.path);
-        final libraryFolder = libraryFile.parent;
-        if (libraryFolder.contains(file.path)) {
-          final relPath = pathContext
-              .relative(file.path, from: libraryFolder.path)
-              .replaceAll(separator, '/');
+        String? relativePathIfInside =
+            getRelativePathIfInside(library.path, file.path);
+        if (relativePathIfInside != null) {
+          final relPath = relativePathIfInside.replaceAll(separator, '/');
           return '${library.shortName}/$relPath';
         }
       }

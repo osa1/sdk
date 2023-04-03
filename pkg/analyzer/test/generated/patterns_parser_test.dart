@@ -21,6 +21,35 @@ main() {
 class PatternsTest extends ParserDiagnosticsTest {
   late FindNode findNode;
 
+  test_case_identifier_dot_incomplete() {
+    // Based on the repro from
+    // https://github.com/Dart-Code/Dart-Code/issues/4407.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case A.
+  }
+}
+''', errors: [
+      error(ParserErrorCode.MISSING_IDENTIFIER, 41, 1),
+      error(ParserErrorCode.EXPECTED_TOKEN, 41, 1),
+    ]);
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ConstantPattern
+      expression: PrefixedIdentifier
+        prefix: SimpleIdentifier
+          token: A
+        period: .
+        identifier: SimpleIdentifier
+          token: <empty> <synthetic>
+  colon: : <synthetic>
+''');
+  }
+
   test_caseHead_withClassicPattern_guarded_insideIfElement() {
     _parse('''
 void f(x) {
@@ -566,6 +595,67 @@ CastPattern
 ''');
   }
 
+  test_cast_insideCast() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y as int as num:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 8),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+CastPattern
+  pattern: CastPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    asToken: as
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+  asToken: as
+  type: NamedType
+    name: SimpleIdentifier
+      token: num
+''');
+  }
+
+  test_cast_insideCast_parenthesized() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case (y as int) as num:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+CastPattern
+  pattern: ParenthesizedPattern
+    leftParenthesis: (
+    pattern: CastPattern
+      pattern: ConstantPattern
+        expression: SimpleIdentifier
+          token: y
+      asToken: as
+      type: NamedType
+        name: SimpleIdentifier
+          token: int
+    rightParenthesis: )
+  asToken: as
+  type: NamedType
+    name: SimpleIdentifier
+      token: num
+''');
+  }
+
   test_cast_insideIfCase() {
     _parse('''
 void f(x) {
@@ -780,6 +870,61 @@ MapPattern
 ''');
   }
 
+  test_cast_insideNullAssert() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y as int!:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 8),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullAssertPattern
+  pattern: CastPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    asToken: as
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+  operator: !
+''');
+  }
+
+  test_cast_insideNullCheck() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y as int? ?:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 9),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullCheckPattern
+  pattern: CastPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    asToken: as
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+      question: ?
+  operator: ?
+''');
+  }
+
   test_cast_insideObject_explicitlyNamed() {
     _parse('''
 class C {
@@ -800,8 +945,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: f
         colon: :
       pattern: CastPattern
@@ -836,8 +981,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: CastPattern
         pattern: DeclaredVariablePattern
@@ -890,8 +1035,8 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: n
         colon: :
       pattern: CastPattern
@@ -902,7 +1047,7 @@ RecordPattern
         type: NamedType
           name: SimpleIdentifier
             token: int
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -924,8 +1069,8 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: CastPattern
         pattern: DeclaredVariablePattern
@@ -935,7 +1080,7 @@ RecordPattern
         type: NamedType
           name: SimpleIdentifier
             token: int
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -957,7 +1102,7 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: CastPattern
         pattern: ConstantPattern
           expression: IntegerLiteral
@@ -966,7 +1111,7 @@ RecordPattern
         type: NamedType
           name: SimpleIdentifier
             token: int
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -2897,6 +3042,144 @@ NullCheckPattern
 ''');
   }
 
+  test_declaredVariable_inPatternAssignment_usingFinal() {
+    _parse('''
+void f() {
+  [a, final d] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 23, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      DeclaredVariablePattern
+        keyword: final
+        name: d
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_declaredVariable_inPatternAssignment_usingFinalAndType() {
+    _parse('''
+void f() {
+  [a, final int d] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 27, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      DeclaredVariablePattern
+        keyword: final
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: d
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_declaredVariable_inPatternAssignment_usingType() {
+    _parse('''
+void f() {
+  [a, int d] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 21, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      DeclaredVariablePattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: d
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_declaredVariable_inPatternAssignment_usingVar() {
+    _parse('''
+void f() {
+  [a, var d] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 21, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      DeclaredVariablePattern
+        keyword: var
+        name: d
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_declaredVariable_inPatternAssignment_usingVarAndType() {
+    _parse('''
+void f() {
+  [a, var int d] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 25, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      DeclaredVariablePattern
+        keyword: var
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: d
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
   test_errorRecovery_afterQuestionSuffixInExpression() {
     // Based on co19 test `Language/Expressions/Conditional/syntax_t06.dart`.
     // Even though we now support suffix `?` in patterns, we need to make sure
@@ -3088,8 +3371,8 @@ ObjectPattern
       token: Foo
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: bar
         colon: :
       pattern: RelationalPattern
@@ -3327,8 +3610,8 @@ SwitchExpressionCase
           token: Foo
       leftParenthesis: (
       fields
-        RecordPatternField
-          fieldName: RecordPatternFieldName
+        PatternField
+          name: PatternFieldName
             name: bar
             colon: :
           pattern: WildcardPattern
@@ -3806,6 +4089,106 @@ NullCheckPattern
           literal: 1
     rightBracket: ]
   operator: ?
+''');
+  }
+
+  test_list_recovery_bogusTokensAfterListElement() {
+    // If the extra tokens after a list element don't look like they could be a
+    // pattern, the parser skips to the end of the list to avoid a large number
+    // of parse errors.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case [int() * 2]:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 43, 1),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ListPattern
+  leftBracket: [
+  elements
+    ObjectPattern
+      type: NamedType
+        name: SimpleIdentifier
+          token: int
+      leftParenthesis: (
+      rightParenthesis: )
+  rightBracket: ]
+''');
+  }
+
+  test_list_recovery_missingClosingBracket() {
+    // If the extra tokens after a list element don't look like they could be a
+    // pattern, and the pattern doesn't have a matching `]`, the parser assumes
+    // it's the `]` that is missing.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case [int():
+      break;
+  }
+}
+''', errors: [
+      error(ScannerErrorCode.EXPECTED_TOKEN, 59, 1),
+    ]);
+    var node = findNode.switchStatement('switch').members.single;
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ListPattern
+      leftBracket: [
+      elements
+        ObjectPattern
+          type: NamedType
+            name: SimpleIdentifier
+              token: int
+          leftParenthesis: (
+          rightParenthesis: )
+      rightBracket: ] <synthetic>
+  colon: :
+  statements
+    BreakStatement
+      breakKeyword: break
+      semicolon: ;
+''');
+  }
+
+  test_list_recovery_missingComma() {
+    // If the extra tokens after a list element look like they could be a
+    // pattern, the parser assumes there's a missing comma.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case [int() int()]:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 43, 3),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ListPattern
+  leftBracket: [
+  elements
+    ObjectPattern
+      type: NamedType
+        name: SimpleIdentifier
+          token: int
+      leftParenthesis: (
+      rightParenthesis: )
+    ObjectPattern
+      type: NamedType
+        name: SimpleIdentifier
+          token: int
+      leftParenthesis: (
+      rightParenthesis: )
+  rightBracket: ]
 ''');
   }
 
@@ -4857,6 +5240,163 @@ NullCheckPattern
 ''');
   }
 
+  test_map_recovery_bogusTokensAfterMapElement() {
+    // If the extra tokens after a map element don't look like they could be a
+    // key expression, the parser skips to the end of the map to avoid a large
+    // number of parse errors.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case {'foo': int() * 2}:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 50, 1),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+MapPattern
+  leftBracket: {
+  elements
+    MapPatternEntry
+      key: SimpleStringLiteral
+        literal: 'foo'
+      separator: :
+      value: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+  rightBracket: }
+''');
+  }
+
+  void test_map_recovery_incompleteEntry() {
+    _parse('''
+const c = 0;
+
+void f(Object o) {
+  switch (o) {
+    case {c}:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 59, 1),
+      error(ParserErrorCode.MISSING_IDENTIFIER, 59, 1),
+    ]);
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: MapPattern
+      leftBracket: {
+      elements
+        MapPatternEntry
+          key: SimpleIdentifier
+            token: c
+          separator: : <synthetic>
+          value: ConstantPattern
+            expression: SimpleIdentifier
+              token: <empty> <synthetic>
+      rightBracket: }
+  colon: :
+  statements
+    BreakStatement
+      breakKeyword: break
+      semicolon: ;
+''');
+  }
+
+  test_map_recovery_missingClosingBrace() {
+    // If the extra tokens after a map element don't look like they could be a
+    // key expression, and the pattern doesn't have a matching `}`, the parser
+    // assumes it's the `}` that is missing.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case ({'foo': int()):
+      break;
+  }
+}
+''', errors: [
+      error(ScannerErrorCode.EXPECTED_TOKEN, 50, 1),
+    ]);
+    var node = findNode.switchStatement('switch').members.single;
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: MapPattern
+        leftBracket: {
+        elements
+          MapPatternEntry
+            key: SimpleStringLiteral
+              literal: 'foo'
+            separator: :
+            value: ObjectPattern
+              type: NamedType
+                name: SimpleIdentifier
+                  token: int
+              leftParenthesis: (
+              rightParenthesis: )
+        rightBracket: } <synthetic>
+      rightParenthesis: )
+  colon: :
+  statements
+    BreakStatement
+      breakKeyword: break
+      semicolon: ;
+''');
+  }
+
+  test_map_recovery_missingComma() {
+    // If the extra tokens after a map element look like they could be a key
+    // expression, the parser assumes there's a missing comma.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case {'foo': int() 'bar': int()}:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 50, 5),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+MapPattern
+  leftBracket: {
+  elements
+    MapPatternEntry
+      key: SimpleStringLiteral
+        literal: 'foo'
+      separator: :
+      value: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+    MapPatternEntry
+      key: SimpleStringLiteral
+        literal: 'bar'
+      separator: :
+      value: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+  rightBracket: }
+''');
+  }
+
   test_nullAssert_insideCase() {
     _parse('''
 void f(x) {
@@ -4874,6 +5414,33 @@ NullAssertPattern
     expression: SimpleIdentifier
       token: y
   operator: !
+''');
+  }
+
+  test_nullAssert_insideCast() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y! as num:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+CastPattern
+  pattern: NullAssertPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: !
+  asToken: as
+  type: NamedType
+    name: SimpleIdentifier
+      token: num
 ''');
   }
 
@@ -5042,6 +5609,54 @@ MapPattern
 ''');
   }
 
+  test_nullAssert_insideNullAssert() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y!!:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullAssertPattern
+  pattern: NullAssertPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: !
+  operator: !
+''');
+  }
+
+  test_nullAssert_insideNullCheck() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y!?:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullCheckPattern
+  pattern: NullAssertPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: !
+  operator: ?
+''');
+  }
+
   test_nullAssert_insideObject_explicitlyNamed() {
     _parse('''
 class C {
@@ -5062,8 +5677,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: f
         colon: :
       pattern: NullAssertPattern
@@ -5095,8 +5710,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: NullAssertPattern
         pattern: DeclaredVariablePattern
@@ -5143,8 +5758,8 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: n
         colon: :
       pattern: NullAssertPattern
@@ -5152,7 +5767,7 @@ RecordPattern
           expression: IntegerLiteral
             literal: 1
         operator: !
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -5174,15 +5789,15 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: NullAssertPattern
         pattern: DeclaredVariablePattern
           keyword: var
           name: n
         operator: !
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -5204,13 +5819,13 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: NullAssertPattern
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 1
         operator: !
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -5235,6 +5850,33 @@ NullCheckPattern
     expression: SimpleIdentifier
       token: y
   operator: ?
+''');
+  }
+
+  test_nullCheck_insideCast() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y? as num:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+CastPattern
+  pattern: NullCheckPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: ?
+  asToken: as
+  type: NamedType
+    name: SimpleIdentifier
+      token: num
 ''');
   }
 
@@ -5403,6 +6045,54 @@ MapPattern
 ''');
   }
 
+  test_nullCheck_insideNullAssert() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y?!:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullAssertPattern
+  pattern: NullCheckPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: ?
+  operator: !
+''');
+  }
+
+  test_nullCheck_insideNullCheck() {
+    _parse('''
+void f(x) {
+  const y = 1;
+  switch (x) {
+    case y? ?:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 51, 2),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullCheckPattern
+  pattern: NullCheckPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: y
+    operator: ?
+  operator: ?
+''');
+  }
+
   test_nullCheck_insideObject_explicitlyNamed() {
     _parse('''
 class C {
@@ -5423,8 +6113,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: f
         colon: :
       pattern: NullCheckPattern
@@ -5456,8 +6146,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: NullCheckPattern
         pattern: DeclaredVariablePattern
@@ -5504,8 +6194,8 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: n
         colon: :
       pattern: NullCheckPattern
@@ -5513,7 +6203,7 @@ RecordPattern
           expression: IntegerLiteral
             literal: 1
         operator: ?
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -5535,15 +6225,15 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: NullCheckPattern
         pattern: DeclaredVariablePattern
           keyword: var
           name: n
         operator: ?
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -5565,16 +6255,196 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: NullCheckPattern
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 1
         operator: ?
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
+  rightParenthesis: )
+''');
+  }
+
+  test_object_dynamic() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case dynamic():
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: dynamic
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_async() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var async() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: async
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_await() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var await() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: await
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_hide() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var hide() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: hide
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_of() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var of() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: of
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_on() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var on() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: on
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_show() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var show() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: show
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_sync() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var sync() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: sync
+  leftParenthesis: (
+  rightParenthesis: )
+''');
+  }
+
+  test_object_otherIdentifier_yield() {
+    // The type name in an object pattern is a `typeIdentifier`; in the spec
+    // grammar, `typeIdentifier` includes `OTHER_IDENTIFIER`, so this is
+    // allowed.
+    _parse('''
+void f(x) {
+  var yield() = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: yield
+  leftParenthesis: (
   rightParenthesis: )
 ''');
   }
@@ -5863,6 +6733,131 @@ ObjectPattern
 ''');
   }
 
+  test_object_recovery_bogusTokensAfterPatternField() {
+    // If the extra tokens after a pattern field don't look like they could be a
+    // subsequent pattern field, the parser skips to the closing parenthesis to
+    // avoid a large number of parse errors.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case dynamic(foo: int() * 2):
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 55, 1),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: dynamic
+  leftParenthesis: (
+  fields
+    PatternField
+      name: PatternFieldName
+        name: foo
+        colon: :
+      pattern: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+  rightParenthesis: )
+''');
+  }
+
+  test_object_recovery_missingClosingParen() {
+    // If the extra tokens after a pattern don't look like they could be a
+    // subsequent pattern field, and the pattern doesn't have a matching `)`,
+    // the parser assumes it's the `)` that is missing.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case dynamic(foo: int():
+      break;
+  }
+}
+''', errors: [
+      error(ScannerErrorCode.EXPECTED_TOKEN, 71, 1),
+    ]);
+    var node = findNode.switchStatement('switch').members.single;
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ObjectPattern
+      type: NamedType
+        name: SimpleIdentifier
+          token: dynamic
+      leftParenthesis: (
+      fields
+        PatternField
+          name: PatternFieldName
+            name: foo
+            colon: :
+          pattern: ObjectPattern
+            type: NamedType
+              name: SimpleIdentifier
+                token: int
+            leftParenthesis: (
+            rightParenthesis: )
+      rightParenthesis: ) <synthetic>
+  colon: :
+  statements
+    BreakStatement
+      breakKeyword: break
+      semicolon: ;
+''');
+  }
+
+  test_object_recovery_missingComma() {
+    // If the extra tokens after a pattern field look like they could be a
+    // subsequent pattern field, the parser assumes there's a missing comma.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case dynamic(foo: int() bar: int()):
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 55, 3),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: SimpleIdentifier
+      token: dynamic
+  leftParenthesis: (
+  fields
+    PatternField
+      name: PatternFieldName
+        name: foo
+        colon: :
+      pattern: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+    PatternField
+      name: PatternFieldName
+        name: bar
+        colon: :
+      pattern: ObjectPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        leftParenthesis: (
+        rightParenthesis: )
+  rightParenthesis: )
+''');
+  }
+
   test_object_unprefixed_withoutTypeArgs_insideCast() {
     _parse('''
 class C {
@@ -5884,8 +6879,8 @@ CastPattern
         token: C
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           name: f
           colon: :
         pattern: ConstantPattern
@@ -5920,8 +6915,8 @@ NullAssertPattern
         token: C
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           name: f
           colon: :
         pattern: ConstantPattern
@@ -5953,8 +6948,8 @@ NullCheckPattern
         token: C
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           name: f
           colon: :
         pattern: ConstantPattern
@@ -6046,8 +7041,8 @@ NullAssertPattern
         rightBracket: >
     leftParenthesis: (
     fields
-      RecordPatternField
-        fieldName: RecordPatternFieldName
+      PatternField
+        name: PatternFieldName
           name: f
           colon: :
         pattern: ConstantPattern
@@ -6285,10 +7280,10 @@ ForElement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: b
       rightParenthesis: )
@@ -6320,10 +7315,10 @@ ForElement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: b
       rightParenthesis: )
@@ -6352,10 +7347,10 @@ ForStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: b
       rightParenthesis: )
@@ -6390,10 +7385,10 @@ ForStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: b
       rightParenthesis: )
@@ -6422,10 +7417,10 @@ ForElement
       pattern: RecordPattern
         leftParenthesis: (
         fields
-          RecordPatternField
+          PatternField
             pattern: DeclaredVariablePattern
               name: a
-          RecordPatternField
+          PatternField
             pattern: DeclaredVariablePattern
               name: b
         rightParenthesis: )
@@ -6457,10 +7452,10 @@ ForStatement
       pattern: RecordPattern
         leftParenthesis: (
         fields
-          RecordPatternField
+          PatternField
             pattern: DeclaredVariablePattern
               name: a
-          RecordPatternField
+          PatternField
             pattern: DeclaredVariablePattern
               name: b
         rightParenthesis: )
@@ -6490,10 +7485,10 @@ ForElement
       pattern: RecordPattern
         leftParenthesis: (
         fields
-          RecordPatternField
+          PatternField
             pattern: AssignedVariablePattern
               name: a
-          RecordPatternField
+          PatternField
             pattern: AssignedVariablePattern
               name: b
         rightParenthesis: )
@@ -6524,10 +7519,10 @@ ForStatement
       pattern: RecordPattern
         leftParenthesis: (
         fields
-          RecordPatternField
+          PatternField
             pattern: AssignedVariablePattern
               name: a
-          RecordPatternField
+          PatternField
             pattern: AssignedVariablePattern
               name: b
         rightParenthesis: )
@@ -6576,8 +7571,8 @@ PatternVariableDeclarationStatement
           token: C
       leftParenthesis: (
       fields
-        RecordPatternField
-          fieldName: RecordPatternFieldName
+        PatternField
+          name: PatternFieldName
             name: f
             colon: :
           pattern: DeclaredVariablePattern
@@ -6679,7 +7674,7 @@ PatternVariableDeclarationStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
       rightParenthesis: )
@@ -6707,8 +7702,8 @@ PatternVariableDeclarationStatement
           token: C
       leftParenthesis: (
       fields
-        RecordPatternField
-          fieldName: RecordPatternFieldName
+        PatternField
+          name: PatternFieldName
             name: f
             colon: :
           pattern: DeclaredVariablePattern
@@ -6810,7 +7805,7 @@ PatternVariableDeclarationStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
       rightParenthesis: )
@@ -6844,8 +7839,8 @@ PatternVariableDeclarationStatement
           token: C
       leftParenthesis: (
       fields
-        RecordPatternField
-          fieldName: RecordPatternFieldName
+        PatternField
+          name: PatternFieldName
             name: f
             colon: :
           pattern: DeclaredVariablePattern
@@ -6971,7 +7966,7 @@ PatternVariableDeclarationStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
       rightParenthesis: )
@@ -7005,8 +8000,8 @@ PatternVariableDeclarationStatement
           token: C
       leftParenthesis: (
       fields
-        RecordPatternField
-          fieldName: RecordPatternFieldName
+        PatternField
+          name: PatternFieldName
             name: f
             colon: :
           pattern: DeclaredVariablePattern
@@ -7132,7 +8127,7 @@ PatternVariableDeclarationStatement
     pattern: RecordPattern
       leftParenthesis: (
       fields
-        RecordPatternField
+        PatternField
           pattern: DeclaredVariablePattern
             name: a
       rightParenthesis: )
@@ -7168,7 +8163,7 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: AssignedVariablePattern
         name: a
   rightParenthesis: )
@@ -7186,10 +8181,10 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: AssignedVariablePattern
         name: a
-    RecordPatternField
+    PatternField
       pattern: AssignedVariablePattern
         name: b
   rightParenthesis: )
@@ -7227,7 +8222,7 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 1
@@ -7249,11 +8244,11 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 1
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -7276,11 +8271,11 @@ CastPattern
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 1
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 2
@@ -7317,7 +8312,7 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: DeclaredVariablePattern
         name: a
   rightParenthesis: )
@@ -7335,10 +8330,10 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: DeclaredVariablePattern
         name: a
-    RecordPatternField
+    PatternField
       pattern: DeclaredVariablePattern
         name: b
   rightParenthesis: )
@@ -7360,11 +8355,11 @@ NullAssertPattern
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 1
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 2
@@ -7388,17 +8383,103 @@ NullCheckPattern
   pattern: RecordPattern
     leftParenthesis: (
     fields
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 1
-      RecordPatternField
+      PatternField
         pattern: ConstantPattern
           expression: IntegerLiteral
             literal: 2
     rightParenthesis: )
   operator: ?
 ''');
+  }
+
+  test_relational_containingBitwiseOrExpression_equality() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case == 1 | 2:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+RelationalPattern
+  operator: ==
+  operand: BinaryExpression
+    leftOperand: IntegerLiteral
+      literal: 1
+    operator: |
+    rightOperand: IntegerLiteral
+      literal: 2
+''');
+  }
+
+  test_relational_containingBitwiseOrExpression_relational() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case > 1 | 2:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+RelationalPattern
+  operator: >
+  operand: BinaryExpression
+    leftOperand: IntegerLiteral
+      literal: 1
+    operator: |
+    rightOperand: IntegerLiteral
+      literal: 2
+''');
+  }
+
+  test_relational_containingRelationalExpression_equality() {
+    // The patterns grammar doesn't allow a relational expression inside a
+    // relational pattern (even though technically it would be unambiguous).
+    // TODO(paulberry): try to improve parser error recovery in this scenario.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case == 1 > 0:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 41, 1),
+      error(ParserErrorCode.MISSING_IDENTIFIER, 41, 1),
+      error(ParserErrorCode.EXPECTED_TOKEN, 43, 1),
+      error(ParserErrorCode.MISSING_IDENTIFIER, 44, 1),
+      error(ParserErrorCode.UNEXPECTED_TOKEN, 44, 1),
+    ]);
+    // We don't care what the parsed AST is, just that there are errors.
+  }
+
+  test_relational_containingRelationalExpression_relational() {
+    // The patterns grammar doesn't allow a relational expression inside a
+    // relational pattern (even though technically it would be unambiguous).
+    // TODO(paulberry): try to improve parser error recovery in this scenario.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case > 1 > 0:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 40, 1),
+      error(ParserErrorCode.MISSING_IDENTIFIER, 40, 1),
+      error(ParserErrorCode.EXPECTED_TOKEN, 42, 1),
+      error(ParserErrorCode.MISSING_IDENTIFIER, 43, 1),
+      error(ParserErrorCode.UNEXPECTED_TOKEN, 43, 1),
+    ]);
+    // We don't care what the parsed AST is, just that there are errors.
   }
 
   test_relational_insideCase_equal() {
@@ -7691,6 +8772,50 @@ MapPattern
 ''');
   }
 
+  test_relational_insideNullCheck_equal() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case == 1?:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 36, 4),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullCheckPattern
+  pattern: RelationalPattern
+    operator: ==
+    operand: IntegerLiteral
+      literal: 1
+  operator: ?
+''');
+  }
+
+  test_relational_insideNullCheck_greaterThan() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case > 1?:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN, 36, 3),
+    ]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+NullCheckPattern
+  pattern: RelationalPattern
+    operator: >
+    operand: IntegerLiteral
+      literal: 1
+  operator: ?
+''');
+  }
+
   test_relational_insideObject_explicitlyNamed() {
     _parse('''
 class C {
@@ -7711,8 +8836,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: f
         colon: :
       pattern: RelationalPattern
@@ -7758,15 +8883,15 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: n
         colon: :
       pattern: RelationalPattern
         operator: ==
         operand: IntegerLiteral
           literal: 1
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -7788,12 +8913,12 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: RelationalPattern
         operator: ==
         operand: IntegerLiteral
           literal: 1
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -8053,6 +9178,89 @@ SwitchExpression
 ''');
   }
 
+  test_switchExpression_recovery_bogusTokensAfterCase() {
+    // If the extra tokens after a switch case don't look like they could be a
+    // pattern, the parser skips to the end of the switch expression to avoid a
+    // large number of parse errors.
+    _parse('''
+f(x) => switch(x) {
+  int() => 0 : 1
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 33, 1),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ObjectPattern
+          type: NamedType
+            name: SimpleIdentifier
+              token: int
+          leftParenthesis: (
+          rightParenthesis: )
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 0
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_missingComma() {
+    // If the extra tokens after a switch case look like they could be a
+    // pattern, the parser assumes there's a missing comma.
+    _parse('''
+f(x) => switch(x) {
+  int() => 0
+  double() => 1
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 35, 6),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ObjectPattern
+          type: NamedType
+            name: SimpleIdentifier
+              token: int
+          leftParenthesis: (
+          rightParenthesis: )
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 0
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ObjectPattern
+          type: NamedType
+            name: SimpleIdentifier
+              token: double
+          leftParenthesis: (
+          rightParenthesis: )
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 1
+  rightBracket: }
+''');
+  }
+
   test_switchExpression_twoPatterns() {
     _parse('''
 f(x) => switch(x) {
@@ -8091,6 +9299,73 @@ SwitchExpression
 ''');
   }
 
+  test_typeQuestionBeforeWhen_conditional() {
+    // The logic for parsing types has special disambiguation rules for deciding
+    // whether a trailing `?` should be included in the type; these rules are
+    // based primarily on what token(s) follow the `?`.  Make sure that these
+    // rules do the right thing if the token that follows the `?` is `when`, but
+    // the `when` is an ordinary identifier.
+    _parse('''
+void f(condition, when, otherwise) => condition as bool ? when : otherwise;
+''');
+    var node = findNode.functionDeclaration('=>').functionExpression.body;
+    assertParsedNodeText(node, r'''
+ExpressionFunctionBody
+  functionDefinition: =>
+  expression: ConditionalExpression
+    condition: AsExpression
+      expression: SimpleIdentifier
+        token: condition
+      asOperator: as
+      type: NamedType
+        name: SimpleIdentifier
+          token: bool
+    question: ?
+    thenExpression: SimpleIdentifier
+      token: when
+    colon: :
+    elseExpression: SimpleIdentifier
+      token: otherwise
+  semicolon: ;
+''');
+  }
+
+  test_typeQuestionBeforeWhen_guard() {
+    // The logic for parsing types has special disambiguation rules for deciding
+    // whether a trailing `?` should be included in the type; these rules are
+    // based primarily on what token(s) follow the `?`.  Make sure that these
+    // rules do the right thing if the token that follows the `?` is the `when`
+    // of a pattern guard.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case _ as int? when x == null:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern;
+    assertParsedNodeText(node, r'''
+GuardedPattern
+  pattern: CastPattern
+    pattern: WildcardPattern
+      name: _
+    asToken: as
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+      question: ?
+  whenClause: WhenClause
+    whenKeyword: when
+    expression: BinaryExpression
+      leftOperand: SimpleIdentifier
+        token: x
+      operator: ==
+      rightOperand: NullLiteral
+        literal: null
+''');
+  }
+
   test_variable_bare_insideCast() {
     _parse('''
 void f(x) {
@@ -8108,6 +9383,26 @@ ParenthesizedPattern
     type: NamedType
       name: SimpleIdentifier
         token: Object
+  rightParenthesis: )
+''');
+  }
+
+  test_variable_final_inDeclarationContext() {
+    _parse('''
+void f(x) {
+  var (final y) = x;
+}
+''', errors: [
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 19,
+          5),
+    ]);
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: DeclaredVariablePattern
+    keyword: final
+    name: y
   rightParenthesis: )
 ''');
   }
@@ -8608,8 +9903,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: f
         colon: :
       pattern: DeclaredVariablePattern
@@ -8641,8 +9936,8 @@ ObjectPattern
       token: C
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: DeclaredVariablePattern
         type: NamedType
@@ -8689,8 +9984,8 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         name: n
         colon: :
       pattern: DeclaredVariablePattern
@@ -8698,7 +9993,7 @@ RecordPattern
           name: SimpleIdentifier
             token: int
         name: as
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -8720,15 +10015,15 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
-      fieldName: RecordPatternFieldName
+    PatternField
+      name: PatternFieldName
         colon: :
       pattern: DeclaredVariablePattern
         type: NamedType
           name: SimpleIdentifier
             token: int
         name: as
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -8750,13 +10045,13 @@ void f(x) {
 RecordPattern
   leftParenthesis: (
   fields
-    RecordPatternField
+    PatternField
       pattern: DeclaredVariablePattern
         type: NamedType
           name: SimpleIdentifier
             token: int
         name: as
-    RecordPatternField
+    PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
           literal: 2
@@ -8879,6 +10174,26 @@ CastPattern
 ''');
   }
 
+  test_variable_var_inDeclarationContext() {
+    _parse('''
+void f(x) {
+  var (var y) = x;
+}
+''', errors: [
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 19,
+          3),
+    ]);
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: DeclaredVariablePattern
+    keyword: var
+    name: y
+  rightParenthesis: )
+''');
+  }
+
   test_variable_var_insideCase() {
     _parse('''
 void f(x) {
@@ -8970,6 +10285,98 @@ NullCheckPattern
     keyword: var
     name: y
   operator: ?
+''');
+  }
+
+  test_varKeywordInTypedVariablePattern_declarationContext() {
+    _parse('''
+void f(int x) {
+  var (var int y) = x;
+}
+''', errors: [
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 23,
+          3),
+    ]);
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: DeclaredVariablePattern
+    keyword: var
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+    name: y
+  rightParenthesis: )
+''');
+  }
+
+  test_varKeywordInTypedVariablePattern_declarationContext_wildcard() {
+    _parse('''
+void f(x) {
+  var (var int _) = x;
+}
+''', errors: [
+      error(ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT, 19,
+          3),
+    ]);
+    var node = findNode.patternVariableDeclaration('= x').pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: WildcardPattern
+    keyword: var
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+    name: _
+  rightParenthesis: )
+''');
+  }
+
+  test_varKeywordInTypedVariablePattern_matchingContext() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case var int y:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.VAR_AND_TYPE, 36, 3),
+    ]);
+    var node = findNode.singleGuardedPattern;
+    assertParsedNodeText(node, r'''
+GuardedPattern
+  pattern: DeclaredVariablePattern
+    keyword: var
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+    name: y
+''');
+  }
+
+  test_varKeywordInTypedVariablePattern_matchingContext_wildcard() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case var int _:
+      break;
+  }
+}
+''', errors: [
+      error(ParserErrorCode.VAR_AND_TYPE, 36, 3),
+    ]);
+    var node = findNode.singleGuardedPattern;
+    assertParsedNodeText(node, r'''
+GuardedPattern
+  pattern: WildcardPattern
+    keyword: var
+    type: NamedType
+      name: SimpleIdentifier
+        token: int
+    name: _
 ''');
   }
 
@@ -9283,6 +10690,167 @@ NullCheckPattern
     keyword: final
     name: _
   operator: ?
+''');
+  }
+
+  test_wildcard_inPatternAssignment_bareIdentifier() {
+    _parse('''
+void f() {
+  [a, _] = y;
+}
+''');
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_wildcard_inPatternAssignment_usingFinal() {
+    _parse('''
+void f() {
+  [a, final _] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 23, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        keyword: final
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_wildcard_inPatternAssignment_usingFinalAndType() {
+    _parse('''
+void f() {
+  [a, final int _] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 27, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        keyword: final
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_wildcard_inPatternAssignment_usingType() {
+    _parse('''
+void f() {
+  [a, int _] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 21, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_wildcard_inPatternAssignment_usingVar() {
+    _parse('''
+void f() {
+  [a, var _] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 21, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        keyword: var
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
+''');
+  }
+
+  test_wildcard_inPatternAssignment_usingVarAndType() {
+    _parse('''
+void f() {
+  [a, var int _] = y;
+}
+''', errors: [
+      error(ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE, 25, 1),
+    ]);
+    var node = findNode.patternAssignment('=');
+    assertParsedNodeText(node, r'''
+PatternAssignment
+  pattern: ListPattern
+    leftBracket: [
+    elements
+      AssignedVariablePattern
+        name: a
+      WildcardPattern
+        keyword: var
+        type: NamedType
+          name: SimpleIdentifier
+            token: int
+        name: _
+    rightBracket: ]
+  equals: =
+  expression: SimpleIdentifier
+    token: y
 ''');
   }
 

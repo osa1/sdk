@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// @dart = 2.7
-
 /*member: testFunctionStatement:[null|exact=JSUInt31]*/
 testFunctionStatement() {
   var res;
@@ -46,7 +44,7 @@ class A {
 testStoredInInstance() {
   var res;
   /*[exact=JSUInt31]*/ closure(/*[exact=JSUInt31]*/ a) => res = a;
-  var a = new A(closure);
+  var a = A(closure);
   a.field /*invoke: [exact=A]*/ (42);
   return res;
 }
@@ -129,6 +127,17 @@ testStoredInListOfListUsingAdd() {
   return res;
 }
 
+/*member: testStoredInRecord:[null|subclass=Object]*/
+testStoredInRecord() {
+  var res;
+  /*[null|subclass=Object]*/ closure(/*[null|subclass=Object]*/ a) => res = a;
+  final a = (3, closure);
+
+  a. /*[Record(RecordShape(2), [[exact=JSUInt31], [subclass=Closure]])]*/ $2(
+      42);
+  return res;
+}
+
 /*member: foo:[null]*/
 foo(/*[subclass=Closure]*/ closure) {
   closure(42);
@@ -204,6 +213,7 @@ main() {
   testStoredInListOfList();
   testStoredInListOfListUsingInsert();
   testStoredInListOfListUsingAdd();
+  testStoredInRecord();
   testPassedInParameter();
   testStaticClosure1();
   testStaticClosure2();

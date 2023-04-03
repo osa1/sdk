@@ -4,6 +4,9 @@
 
 import 'dart:io' show Directory, Platform;
 
+import 'package:_fe_analyzer_shared/src/exhaustiveness/exhaustive.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/key.dart';
+import 'package:_fe_analyzer_shared/src/exhaustiveness/space.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/test_helper.dart';
 import 'package:_fe_analyzer_shared/src/testing/features.dart';
 import 'package:_fe_analyzer_shared/src/testing/id.dart'
@@ -68,19 +71,50 @@ class ExhaustivenessDataExtractor extends CfeDataExtractor<Features> {
     if (result != null) {
       Features features = new Features();
       features[Tags.scrutineeType] = staticTypeToText(result.scrutineeType);
-      String? subtypes = subtypesToText(result.scrutineeType);
+      Set<Key> keysOfInterest = {};
+      Set<Key> fieldsOfInterest = {};
+      for (Space caseSpace in result.caseSpaces) {
+        for (SingleSpace singleSpace in caseSpace.singleSpaces) {
+          fieldsOfInterest.addAll(singleSpace.fields.keys);
+          keysOfInterest.addAll(singleSpace.additionalFields.keys);
+        }
+      }
+      String? subtypes =
+          typesToText(result.scrutineeType.getSubtypes(keysOfInterest));
       if (subtypes != null) {
         features[Tags.subtypes] = subtypes;
       }
-      features[Tags.scrutineeFields] =
-          fieldsToText(result.scrutineeType.fields);
-      features[Tags.remaining] = spaceToText(result.remainingSpaces.last);
+      if (result.scrutineeType.isSealed) {
+        String? expandedSubtypes = typesToText(
+            expandSealedSubtypes(result.scrutineeType, keysOfInterest));
+        if (subtypes != expandedSubtypes && expandedSubtypes != null) {
+          features[Tags.expandedSubtypes] = expandedSubtypes;
+        }
+        String? order =
+            typesToText(checkingOrder(result.scrutineeType, keysOfInterest));
+        if (order != null) {
+          features[Tags.checkingOrder] = order;
+        }
+      }
+      if (fieldsOfInterest.isNotEmpty) {
+        features[Tags.scrutineeFields] = fieldsToText(result.scrutineeType,
+            _exhaustivenessData.objectFieldLookup!, fieldsOfInterest);
+      }
+      for (ExhaustivenessError error in result.errors) {
+        if (error is NonExhaustiveError) {
+          features[Tags.error] = errorToText(error);
+        }
+      }
       Uri uri = node.location!.file;
       for (int i = 0; i < result.caseSpaces.length; i++) {
         int offset = result.caseOffsets[i];
         Features caseFeatures = new Features();
-        caseFeatures[Tags.space] = spaceToText(result.caseSpaces[i]);
-        caseFeatures[Tags.remaining] = spaceToText(result.remainingSpaces[i]);
+        caseFeatures[Tags.space] = spacesToText(result.caseSpaces[i]);
+        for (ExhaustivenessError error in result.errors) {
+          if (error is UnreachableCaseError && error.index == i) {
+            caseFeatures[Tags.error] = errorToText(error);
+          }
+        }
         registerValue(
             uri, offset, new NodeId(offset, IdKind.node), caseFeatures, node);
       }
@@ -91,7 +125,7 @@ class ExhaustivenessDataExtractor extends CfeDataExtractor<Features> {
 
   @override
   Features? computeNodeValue(Id id, TreeNode node) {
-    if (node is SwitchStatement || node is Block) {
+    if (node is SwitchStatement || node is Block || node is BlockExpression) {
       return computeExhaustivenessData(node);
     }
     return null;

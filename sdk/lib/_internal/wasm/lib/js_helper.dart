@@ -8,32 +8,36 @@ library dart._js_helper;
 import 'dart:_internal';
 import 'dart:_js_annotations' as js;
 import 'dart:collection';
+import 'dart:js_interop';
 import 'dart:typed_data';
 import 'dart:wasm';
 
 part 'regexp_helper.dart';
 
-/// The interface implemented by JavaScript objects and used as the
-/// representation type for inline classes.
-///
-/// Note that the semantics of this on dart2wasm is slightly different from the
-/// JS backends as [JSValue] implements this. This means we can interop with any
-/// JS extern ref. TODO(srujzs): Change this when we add JS types.
-abstract class JSObject {}
+// TODO(joshualitt): After we have JS types and more efficient JS interop, we
+// should be able to rewrite a significant amount of logic in this file and
+// `js_runtime_blob` such that most of the conversion logic can live in Dart.
+// TODO(joshualitt): In many places we use `WasmExternRef?` when the ref can't
+// be null, we should use `WasmExternRef` in those cases.
 
-/// [JSValue] is the root of the JS interop object hierarchy.
-class JSValue implements JSObject {
-  final WasmExternRef _ref;
+/// [JSValue] is just a box [WasmExternRef?]. For now, it is the single box for
+/// all JS types, but in time we may want to make each JS type a unique box
+/// type.
+class JSValue {
+  final WasmExternRef? _ref;
 
   JSValue(this._ref);
 
-  // Currently we always explicitly box JS ref's in [JSValue] objects. In the
-  // future, we will want to leave these values unboxed when possible, even when
-  // they are nullable.
+  // This is currently only used in js_util.
+  // TODO(joshualitt): Remove [box] and [unbox] once `JSNull` is boxed and users
+  // have been migrated over to the helpers in `dart:js_interop`.
   static JSValue? box(WasmExternRef? ref) =>
-      isDartNull(ref) ? null : JSValue(ref!);
+      isDartNull(ref) ? null : JSValue(ref);
 
-  static WasmExternRef? unbox(JSValue? v) => v == null ? null : v._ref;
+  // We need to handle the case of a nullable [JSValue] to match the semantics
+  // of the JS backends.
+  static WasmExternRef? unbox(JSValue? v) =>
+      v == null ? WasmExternRef.nullRef : v._ref;
 
   @override
   bool operator ==(Object that) =>
@@ -55,59 +59,47 @@ class JSValue implements JSObject {
   String toString() => stringify(_ref);
 
   // Overrides to avoid using [ObjectToJS].
-  WasmExternRef toExternRef() => _ref;
-  JSValue toJS() => this;
+  WasmExternRef? get toExternRef => _ref;
 }
 
 extension DoubleToJS on double {
-  WasmExternRef toExternRef() => toJSNumber(this)!;
-  JSValue toJS() => JSValue(toExternRef());
+  WasmExternRef get toExternRef => toJSNumber(this)!;
 }
 
 extension StringToJS on String {
-  WasmExternRef toExternRef() => jsStringFromDartString(this)!;
-  JSValue toJS() => JSValue(toExternRef());
+  WasmExternRef get toExternRef => jsStringFromDartString(this)!;
 }
 
 extension ListOfObjectToJS on List<Object?> {
-  WasmExternRef toExternRef() => jsArrayFromDartList(this)!;
-  JSValue toJS() => JSValue(toExternRef());
+  WasmExternRef get toExternRef => jsArrayFromDartList(this)!;
 }
 
 extension ObjectToJS on Object {
-  WasmExternRef toExternRef() => jsObjectFromDartObject(this);
-  JSValue toJS() => JSValue(toExternRef());
+  WasmExternRef get toExternRef => jsObjectFromDartObject(this);
 }
 
-// For now both `null` and `undefined` in JS map to `null` in Dart.
-bool isDartNull(WasmExternRef? ref) => ref == null || isJSUndefined(ref);
+extension JSAnyToExtern on JSAny {
+  WasmExternRef? get toExternRef => (this as JSValue).toExternRef;
+}
 
-/// A [JSArray] is a wrapper for a native JSArray.
-@js.JS()
-@js.staticInterop
-class JSArray {}
+// For `dartify` and `jsify`, we match the conflation of `JSUndefined`, `JSNull`
+// and `null`.
+bool isDartNull(WasmExternRef? ref) => ref.isNull || isJSUndefined(ref);
 
+// Extensions for [JSArray] and [JSObject].
 extension JSArrayExtension on JSArray {
-  external Object? pop();
-  external Object? operator [](int index);
-  external void operator []=(int index, Object? value);
-  external int get length;
+  external JSAny? pop();
+  external JSAny? operator [](JSNumber index);
+  external void operator []=(JSNumber index, JSAny? value);
+  external JSNumber get length;
 }
 
-/// A [JSObjectInterface] is a wrapper for any JS object literal.
-///
-/// TODO(srujzs): This is a temporary placeholder type. We should remove this
-/// once we expose the extension elsewhere.
-@js.JS()
-@js.staticInterop
-class JSObjectInterface {}
-
-extension JSObjectInterfaceExtension on JSObjectInterface {
-  external Object? operator [](String key);
-  external void operator []=(String key, Object? value);
+extension JSObjectExtension on JSObject {
+  external JSAny? operator [](JSString key);
+  external void operator []=(JSString key, JSAny? value);
 }
 
-class JSArrayIteratorAdapter<T> extends Iterator<T> {
+class JSArrayIteratorAdapter<T> implements Iterator<T> {
   final JSArray array;
   int index = -1;
 
@@ -116,14 +108,15 @@ class JSArrayIteratorAdapter<T> extends Iterator<T> {
   @override
   bool moveNext() {
     index++;
-    if (index > array.length) {
+    int length = array.length.toDart.toInt();
+    if (index > length) {
       throw 'Iterator out of bounds';
     }
-    return index < array.length;
+    return index < length;
   }
 
   @override
-  T get current => dartifyRaw(array[index]?.toExternRef()) as T;
+  T get current => dartifyRaw(array[index.toJS]?.toExternRef) as T;
 }
 
 /// [JSArrayIterableAdapter] lazily adapts a [JSArray] to Dart's [Iterable]
@@ -137,14 +130,14 @@ class JSArrayIterableAdapter<T> extends EfficientLengthIterable<T> {
   Iterator<T> get iterator => JSArrayIteratorAdapter<T>(array);
 
   @override
-  int get length => array.length;
+  int get length => array.length.toDart.toInt();
 }
 
 // Convert to double to avoid converting to [BigInt] in the case of int64.
 WasmExternRef intToJSNumber(int i) => toJSNumber(i.toDouble())!;
 
 WasmExternRef? getConstructorString(String constructor) =>
-    getPropertyRaw(globalThisRaw(), constructor.toExternRef());
+    getPropertyRaw(globalThisRaw(), constructor.toExternRef);
 
 Object jsObjectToDartObject(WasmExternRef? ref) =>
     unsafeCastOpaque<Object>(ref.internalize());
@@ -235,8 +228,8 @@ double objectLength(WasmExternRef? o) => JS<double>("o => o.length", o);
 WasmExternRef? objectReadIndex(WasmExternRef? o, double index) =>
     JS<WasmExternRef?>("(o, i) => o[i]", o, index);
 
-Object? unwrapJSWrappedDartFunction(WasmExternRef? f) =>
-    JS<Object?>("f => f.dartFunction", f);
+Function unwrapJSWrappedDartFunction(WasmExternRef? f) =>
+    JS<Function>("f => f.dartFunction", f);
 
 WasmExternRef? jsInt8ArrayFromDartInt8List(Int8List l) =>
     JS<WasmExternRef?>('l => arrayFromDartList(Int8Array, l)', l);
@@ -334,20 +327,20 @@ WasmExternRef? jsArrayBufferFromDartByteBuffer(ByteBuffer buffer) {
   ByteData byteData = ByteData.view(buffer);
   WasmExternRef? dataView =
       jsDataViewFromDartByteData(byteData, byteData.lengthInBytes.toDouble());
-  return getPropertyRaw(dataView, 'buffer'.toExternRef());
+  return getPropertyRaw(dataView, 'buffer'.toExternRef);
 }
 
 WasmExternRef? jsifyRaw(Object? object) {
   if (object == null) {
-    return null;
+    return WasmExternRef.nullRef;
   } else if (object is bool) {
     return toJSBoolean(object);
   } else if (object is Function) {
     assert(functionToJSWrapper.containsKey(object),
         'Must call `allowInterop` on functions before they flow to JS');
-    return functionToJSWrapper[object]?.toExternRef();
+    return functionToJSWrapper[object]!.toExternRef;
   } else if (object is JSValue) {
-    return object.toExternRef();
+    return object.toExternRef;
   } else if (object is String) {
     return jsStringFromDartString(object);
   } else if (object is Int8List) {
@@ -381,13 +374,10 @@ WasmExternRef? jsifyRaw(Object? object) {
   }
 }
 
-bool isWasmGCStruct(WasmExternRef ref) => ref.internalize().isObject;
+bool isWasmGCStruct(WasmExternRef? ref) => ref.internalize()?.isObject ?? false;
 
 Object? dartifyRaw(WasmExternRef? ref) {
-  if (ref == null) {
-    return null;
-  } else if (isJSUndefined(ref)) {
-    // TODO(joshualitt): Introduce a `JSUndefined` type.
+  if (ref.isNull || isJSUndefined(ref)) {
     return null;
   } else if (isJSBoolean(ref)) {
     return toDartBool(ref);
@@ -466,18 +456,18 @@ Float64List toDartFloat64List(WasmExternRef? ref) =>
 
 ByteBuffer toDartByteBuffer(WasmExternRef? ref) =>
     toDartByteData(callConstructorVarArgsRaw(
-            getConstructorString('DataView'), [JSValue.box(ref)].toExternRef()))
+            getConstructorString('DataView'), [JSValue(ref)].toExternRef))
         .buffer;
 
 ByteData toDartByteData(WasmExternRef? ref) {
   int length =
-      toDartNumber(getPropertyRaw(ref, 'byteLength'.toExternRef())).toInt();
+      toDartNumber(getPropertyRaw(ref, 'byteLength'.toExternRef)).toInt();
   ByteData data = ByteData(length);
   for (int i = 0; i < length; i++) {
     data.setUint8(
         i,
         toDartNumber(callMethodVarArgsRaw(
-                ref, 'getUint8'.toExternRef(), [i].toExternRef()))
+                ref, 'getUint8'.toExternRef, [i].toExternRef))
             .toInt());
   }
   return data;
@@ -503,6 +493,19 @@ List<int> jsIntTypedArrayToDartIntTypedData(
   return list;
 }
 
+JSArray toJSArray(List<JSAny?> list) {
+  int length = list.length;
+  JSArray result = JSArray.withLength(length.toJS);
+  for (int i = 0; i < length; i++) {
+    result[i.toJS] = list[i];
+  }
+  return result;
+}
+
+List<JSAny?> toDartListJSAny(WasmExternRef? ref) => List<JSAny?>.generate(
+    objectLength(ref).round(),
+    (int n) => JSValue(objectReadIndex(ref, n.toDouble())) as JSAny?);
+
 List<Object?> toDartList(WasmExternRef? ref) => List<Object?>.generate(
     objectLength(ref).round(),
     (int n) => dartifyRaw(objectReadIndex(ref, n.toDouble())));
@@ -519,12 +522,12 @@ F _wrapDartFunction<F extends Function>(F f, WasmExternRef ref) {
 
 /// Returns the JS constructor object for a given [String].
 WasmExternRef? getConstructorRaw(String name) =>
-    getPropertyRaw(globalThisRaw(), name.toExternRef());
+    getPropertyRaw(globalThisRaw(), name.toExternRef);
 
 /// Equivalent to `Object.keys(object)`.
-JSArray objectKeys(JSObjectInterface object) =>
-    JSValue.box(callMethodVarArgsRaw(getConstructorRaw('Object'),
-        'keys'.toExternRef(), [object].toExternRef())!) as JSArray;
+// TODO(joshualitt): Make this a static helper on 'JSObject'.
+@js.JS('Object.keys')
+external JSArray objectKeys(JSObject object);
 
 /// Takes a [codeTemplate] string which must represent a valid JS function, and
 /// a list of optional arguments. The [codeTemplate] will be inserted into the

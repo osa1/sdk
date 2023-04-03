@@ -201,7 +201,8 @@ const String EXPECTATIONS = '''
 ]
 ''';
 
-final Expectation runtimeError = ExpectationSet.Default["RuntimeError"];
+final Expectation runtimeError =
+    ExpectationSet.defaultExpectations["RuntimeError"];
 
 const String experimentalFlagOptions = '--enable-experiment=';
 const Option<String?> overwriteCurrentSdkVersion =
@@ -223,6 +224,7 @@ const List<Option> folderOptionsSpecification = [
   noVerifyCmd,
   Options.target,
   Options.defines,
+  Options.showOffsets,
 ];
 
 const Option<bool> fixNnbdReleaseVersion =
@@ -259,6 +261,7 @@ class FolderOptions {
   final bool noVerify;
   final String target;
   final String? overwriteCurrentSdkVersion;
+  final bool showOffsets;
 
   FolderOptions(this._explicitExperimentalFlags,
       {this.enableUnscheduledExperiments,
@@ -272,7 +275,8 @@ class FolderOptions {
       this.noVerify = false,
       this.target = "vm",
       // can be null
-      this.overwriteCurrentSdkVersion})
+      this.overwriteCurrentSdkVersion,
+      this.showOffsets = false})
       // ignore: unnecessary_null_comparison
       : assert(nnbdAgnosticMode != null),
         assert(
@@ -446,6 +450,7 @@ class FastaContext extends ChainContext with MatchContext {
       bool noVerify = false;
       Map<String, String>? defines = {};
       String target = "vm";
+      bool showOffsets = false;
       if (directory.uri == baseUri) {
         folderOptions = new FolderOptions({},
             enableUnscheduledExperiments: enableUnscheduledExperiments,
@@ -457,7 +462,8 @@ class FastaContext extends ChainContext with MatchContext {
             nnbdAgnosticMode: nnbdAgnosticMode,
             defines: defines,
             noVerify: noVerify,
-            target: target);
+            target: target,
+            showOffsets: showOffsets);
       } else {
         File optionsFile =
             new File.fromUri(directory.uri.resolve('folder.options'));
@@ -483,6 +489,7 @@ class FastaContext extends ChainContext with MatchContext {
               Options.forceConstructorTearOffLowering.read(parsedOptions);
           nnbdAgnosticMode = Options.nnbdAgnosticMode.read(parsedOptions);
           defines = parsedOptions.defines;
+          showOffsets = Options.showOffsets.read(parsedOptions);
           if (Options.noDefines.read(parsedOptions)) {
             if (defines.isNotEmpty) {
               throw "Can't have no defines and specific defines "
@@ -508,7 +515,8 @@ class FastaContext extends ChainContext with MatchContext {
               defines: defines,
               noVerify: noVerify,
               target: target,
-              overwriteCurrentSdkVersion: overwriteCurrentSdkVersionArgument);
+              overwriteCurrentSdkVersion: overwriteCurrentSdkVersionArgument,
+              showOffsets: showOffsets);
         } else {
           folderOptions = _computeFolderOptions(directory.parent);
         }
@@ -696,10 +704,10 @@ class FastaContext extends ChainContext with MatchContext {
       TestDescription description, Result result, bool last) {
     if (onlyCrashes) {
       Expectation outcome = result.outcome;
-      if (outcome == Expectation.Crash || outcome == verificationError) {
+      if (outcome == Expectation.crash || outcome == verificationError) {
         return result;
       }
-      return result.copyWithOutcome(Expectation.Pass);
+      return result.copyWithOutcome(Expectation.pass);
     }
     return super.processTestResult(description, result, last);
   }
@@ -734,7 +742,7 @@ class FastaContext extends ChainContext with MatchContext {
     // Changes made: No expectations left. This happens when all expected
     // outcomes are removed above.
     // We have to put in the implicit assumption that it will pass then.
-    if (result.isEmpty) return {Expectation.Pass};
+    if (result.isEmpty) return {Expectation.pass};
 
     // Changes made with at least one expectation left. That's out result!
     return result;
@@ -851,7 +859,8 @@ class Run extends Step<ComponentResult, ComponentResult, FastaContext> {
           if (result.component.mode ==
               NonNullableByDefaultCompiledMode.Invalid) {
             // In this case we expect and want a runtime error.
-            if (runResult.outcome == ExpectationSet.Default["RuntimeError"]) {
+            if (runResult.outcome ==
+                ExpectationSet.defaultExpectations["RuntimeError"]) {
               // We convert this to pass because that's exactly what we'd
               // expect.
               return pass(result);
@@ -859,7 +868,7 @@ class Run extends Step<ComponentResult, ComponentResult, FastaContext> {
               // Different outcome - that's a failure!
               return new Result<ComponentResult>(
                   result,
-                  ExpectationSet.Default["MissingRuntimeError"],
+                  ExpectationSet.defaultExpectations["MissingRuntimeError"],
                   runResult.error);
             }
           }
@@ -2181,7 +2190,7 @@ Target createTarget(FolderOptions folderOptions, FastaContext context) {
         folderOptions.forceNoExplicitGetterCalls,
     forceConstructorTearOffLoweringForTesting:
         folderOptions.forceConstructorTearOffLowering,
-    enableNullSafety: context.soundNullSafety,
+    soundNullSafety: context.soundNullSafety,
     supportedDartLibraries: {'_supported.by.target'},
     unsupportedDartLibraries: {'unsupported.by.target'},
   );

@@ -15,20 +15,30 @@ import 'repository.dart';
 import 'test_configurations.dart';
 import 'utils.dart';
 
-const _defaultTestSelectors = [
-  'samples',
-  'standalone_2',
+const _legacyTestSelectors = [
   'corelib_2',
+  'ffi_2',
   'language_2',
-  'vm',
-  'benchmark_smoke',
-  'utils',
   'lib_2',
-  'analyze_library',
-  'service_2',
   'kernel',
   'observatory_ui_2',
-  'ffi_2'
+  'service_2',
+  'standalone_2',
+  'utils',
+  'vm',
+];
+
+const _defaultTestSelectors = [
+  'corelib',
+  'ffi',
+  'kernel',
+  'language',
+  'lib',
+  'samples',
+  'service',
+  'standalone',
+  'utils',
+  'vm',
 ];
 
 extension _IntOption on ArgParser {
@@ -76,8 +86,7 @@ class OptionsParser {
 dart2js:              Compile to JavaScript using dart2js.
 dart2analyzer:        Perform static analysis on Dart code using the analyzer.
 compare_analyzer_cfe: Compare analyzer and common front end representations.
-dartdevc:             Compile to JavaScript using dartdevc.
-dartdevk:             Compile to JavaScript using dartdevc (same as dartdevc).
+ddc:                  Compile to JavaScript using dartdevc.
 app_jitk:             Compile the Dart code into Kernel and then into an app
                       snapshot.
 dartk:                Compile the Dart code into Kernel before running test.
@@ -132,6 +141,12 @@ riscv32, riscv64, simriscv32, simriscv64''')
         hide: true,
         help: '''The named test configuration that supplies the values for all
 test options, specifying how tests should be run.''')
+    ..addFlag('detect-host',
+        aliases: ['detect_host'],
+        help: 'Replace the system and architecture options in named '
+            'configurations to match the local host. Provided only as a '
+            'convenience when running tests locally. It is an error use this '
+            'flag with without specifying a named configuration.')
     ..addFlag('build',
         help: 'Build the necessary targets to test this configuration')
     // TODO(sigmund): rename flag once we migrate all dart2js bots to the test
@@ -264,11 +279,6 @@ compact, color, line, verbose, silent, status, buildbot''')
         help: '''Which set of non-nullable type features to use.
 
 Allowed values are: legacy, weak, strong''')
-    // TODO(rnystrom): This does not appear to be used. Remove?
-    ..addOption('build-directory',
-        aliases: ['build_directory'],
-        help: 'The name of the build directory, where products are placed.',
-        hide: true)
     ..addOption('output-directory',
         aliases: ['output_directory'],
         defaultsTo: "logs",
@@ -347,6 +357,10 @@ options. Used to be able to make sane updates to the status files.''',
         aliases: ['dart2js_options'],
         hide: true,
         help: 'Extra options for dart2js compilation step.')
+    ..addMultiOption('ddc-options',
+        aliases: ['ddc_options'],
+        hide: true,
+        help: 'Extra command line options passed to the DDC compiler.')
     ..addMultiOption('shared-options',
         aliases: ['shared_options'], hide: true, help: 'Extra shared options.')
     ..addMultiOption('enable-experiment',
@@ -483,8 +497,8 @@ has been specified on the command line.''')
 
     var allSuiteDirectories = [
       ...testSuiteDirectories,
-      "tests/co19",
-      "tests/co19_2",
+      Path('tests/co19'),
+      Path('tests/co19_2'),
     ];
 
     var selectors = <String>[];
@@ -494,20 +508,24 @@ has been specified on the command line.''')
       // the command line.
       for (var suiteDirectory in allSuiteDirectories) {
         var path = suiteDirectory.toString();
-        if (selector.startsWith("$path/") || selector.startsWith("$path\\")) {
-          selector = selector.substring(path.lastIndexOf("/") + 1);
+        final separator = Platform.pathSeparator;
+        if (separator != '/') {
+          selector = selector.replaceAll(separator, '/');
+        }
+        if (selector.startsWith('$path/')) {
+          selector = selector.substring(path.lastIndexOf('/') + 1);
 
           // Remove the `src/` subdirectories from the co19 and co19_2
           // directories that do not appear in the test names.
-          if (selector.startsWith("co19")) {
-            selector = selector.replaceFirst(RegExp("src[/\]"), "");
+          if (selector.startsWith('co19')) {
+            selector = selector.replaceFirst(RegExp('src/'), '');
           }
           break;
         }
       }
 
       // If they tab complete to a single test, ignore the ".dart".
-      if (selector.endsWith(".dart")) {
+      if (selector.endsWith('.dart')) {
         selector = selector.substring(0, selector.length - 5);
       }
 
@@ -529,7 +547,7 @@ has been specified on the command line.''')
       options['test-list-contents'] = LineSplitter.split(tests).toList();
     }
 
-    return _createConfigurations(options);
+    return _expandConfigurations(options);
   }
 
   /// Given a set of parsed option values, returns the list of command line
@@ -572,48 +590,9 @@ has been specified on the command line.''')
     return arguments;
   }
 
-  List<TestConfiguration> _createConfigurations(
-      Map<String, dynamic> configuration) {
-    var selectors = _expandSelectors(configuration);
-
-    // Put observatory_ui in a configuration with its own packages override.
-    // Only one value in the configuration map is mutable:
-    if (selectors.containsKey('observatory_ui')) {
-      if (selectors.length == 1) {
-        configuration['packages'] = Repository.uri
-            .resolve('.dart_tool/package_config.json')
-            .toFilePath();
-      } else {
-        // Make a new configuration whose selectors map only contains
-        // observatory_ui, and remove observatory_ui from the original
-        // selectors. The only mutable value in the map is the selectors, so a
-        // shallow copy is safe.
-        var observatoryConfiguration = Map<String, dynamic>.from(configuration);
-        var observatorySelectors = {
-          'observatory_ui': selectors['observatory_ui']
-        };
-        selectors.remove('observatory_ui');
-
-        // Set the packages flag.
-        observatoryConfiguration['packages'] = Repository.uri
-            .resolve('.dart_tool/package_config.json')
-            .toFilePath();
-
-        return [
-          ..._expandConfigurations(configuration, selectors),
-          ..._expandConfigurations(
-              observatoryConfiguration, observatorySelectors)
-        ];
-      }
-    }
-
-    return _expandConfigurations(configuration, selectors);
-  }
-
   /// Recursively expands a configuration with multiple values per key into a
   /// list of configurations with exactly one value per key.
-  List<TestConfiguration> _expandConfigurations(
-      Map<String, dynamic> data, Map<String, RegExp?> selectors) {
+  List<TestConfiguration> _expandConfigurations(Map<String, dynamic> data) {
     var result = <TestConfiguration>[];
 
     // Handles a string option containing a space-separated list of words.
@@ -628,6 +607,7 @@ has been specified on the command line.''')
     }
 
     var dart2jsOptions = listOption("dart2js-options");
+    var ddcOptions = listOption("ddc-options");
     var vmOptions = listOption("vm-options");
     var sharedOptions = listOption("shared-options");
     var experiments = data["enable-experiment"] as List<String>?;
@@ -675,7 +655,7 @@ has been specified on the command line.''')
       var configuration = TestConfiguration(
           configuration: innerConfiguration,
           progress: progress,
-          selectors: selectors,
+          selectors: _expandSelectors(data, innerConfiguration.nnbdMode),
           build: data["build"] as bool,
           testList: data["test-list-contents"] as List<String>?,
           repeat: int.parse(data["repeat"] as String),
@@ -735,12 +715,32 @@ has been specified on the command line.''')
     }
 
     var namedConfigurations = data["named-configuration"] as List<String>;
+    var detectHost = data['detect-host'] as bool;
+    if (detectHost && namedConfigurations.isEmpty) {
+      _fail('The `--detect-host` flag is only supported for named '
+          'configurations.');
+    }
     if (namedConfigurations.isNotEmpty) {
       var testMatrix = TestMatrix.fromPath(_testMatrixFile);
       for (var namedConfiguration in namedConfigurations) {
         try {
           var configuration = testMatrix.configurations
               .singleWhere((c) => c.name == namedConfiguration);
+          if (configuration.system != System.host ||
+              configuration.architecture != Architecture.host) {
+            print("-- WARNING -- \n"
+                "The provided named configuration does not match the host "
+                "system or architecture:\n"
+                "    ${configuration.name}");
+            if (detectHost) {
+              configuration = Configuration.detectHost(configuration);
+              print("Detecting host configuration:\n"
+                  "    $configuration");
+            } else {
+              print("Passing the `--detect-host` flag will modify the named "
+                  "configuration to match the local system and architecture.");
+            }
+          }
           addConfiguration(configuration, namedConfiguration);
         } on StateError {
           var names = testMatrix.configurations
@@ -819,6 +819,7 @@ has been specified on the command line.''')
                   isMinified: data["minified"] as bool,
                   vmOptions: vmOptions,
                   dart2jsOptions: dart2jsOptions,
+                  ddcOptions: ddcOptions,
                   experiments: experiments,
                   babel: data['babel'] as String?,
                   builderTag: data["builder-tag"] as String?,
@@ -836,7 +837,8 @@ has been specified on the command line.''')
   /// expression to be used on the full path of a test file in that test suite.
   ///
   /// If no selectors are explicitly given, uses the default suite patterns.
-  Map<String, RegExp> _expandSelectors(Map<String, dynamic> configuration) {
+  Map<String, RegExp> _expandSelectors(
+      Map<String, dynamic> configuration, NnbdMode nnbdMode) {
     var selectors = configuration['selectors'] as List<String>?;
 
     if (selectors == null || selectors.isEmpty) {
@@ -849,7 +851,11 @@ has been specified on the command line.''')
             .toSet()
             .toList();
       } else {
-        selectors = _defaultTestSelectors.toList();
+        if (nnbdMode == NnbdMode.legacy) {
+          selectors = _legacyTestSelectors.toList();
+        } else {
+          selectors = _defaultTestSelectors.toList();
+        }
       }
 
       var excludeSuites = configuration['exclude-suite'] != null

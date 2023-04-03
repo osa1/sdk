@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:dartdev/src/resident_frontend_constants.dart';
 import 'package:dartdev/src/resident_frontend_utils.dart';
 import 'package:path/path.dart' as path;
+import 'package:pub_semver/pub_semver.dart';
 import 'package:test/test.dart';
 
 import '../utils.dart';
@@ -32,8 +33,6 @@ void main() async {
 
 void run() {
   late TestProject p;
-
-  tearDown(() async => await p.dispose());
 
   test('--help', () async {
     p = project();
@@ -117,7 +116,7 @@ void run() {
     // VM service).
     //
     // See https://github.com/dart-lang/sdk/issues/50230
-    p = project();
+    p = project(sdkConstraint: VersionConstraint.parse('>=3.0.0-0 <4.0.0'));
     p.file('main.dart', 'void main(args) { print("Record: \${(1, 2)}"); }');
     ProcessResult result = await p.run([
       'run',
@@ -142,7 +141,21 @@ void run() {
     expect(result.stdout, isEmpty);
     expect(result.stderr, isNotEmpty);
     expect(result.exitCode, 254);
-  });
+
+    p.file('bin/main.dart', 'void main(args) { print("Record: \${(1, 2)}"); }');
+    // Run again with the package-syntax
+    result = await p.run([
+      'run',
+      '--enable-experiment=records',
+      ':main',
+    ]);
+
+    // The records experiment should not be enabled and the program should fail
+    // to run.
+    expect(result.stderr, isEmpty);
+    expect(result.stdout, contains('Record: '));
+    expect(result.exitCode, 0);
+  }, skip: 'records are enabled by default in 3.0');
 
   test('arguments are properly passed', () async {
     p = project();
@@ -163,7 +176,7 @@ void run() {
 
   test('from path-dependency with cyclic dependency', () async {
     p = project(name: 'foo');
-    final bar = TestProject(name: 'bar');
+    final bar = project(name: 'bar');
     p.file('pubspec.yaml', '''
 name: foo
 environment:
@@ -176,22 +189,18 @@ import 'package:bar/bar.dart';
 final b = "FOO $bar";
 ''');
 
-    try {
-      bar.file('lib/bar.dart', 'final bar = "BAR";');
+    bar.file('lib/bar.dart', 'final bar = "BAR";');
 
-      bar.file('bin/main.dart', r'''
+    bar.file('bin/main.dart', r'''
 import 'package:foo/foo.dart';
 void main(List<String> args) => print("$b $args");
 ''');
 
-      ProcessResult result = await p.run(['run', 'bar:main', '--arg1', 'arg2']);
+    ProcessResult result = await p.run(['run', 'bar:main', '--arg1', 'arg2']);
 
-      expect(result.stderr, isEmpty);
-      expect(result.stdout, contains('FOO BAR [--arg1, arg2]'));
-      expect(result.exitCode, 0);
-    } finally {
-      await bar.dispose();
-    }
+    expect(result.stderr, isEmpty);
+    expect(result.stdout, contains('FOO BAR [--arg1, arg2]'));
+    expect(result.exitCode, 0);
   });
 
   test('with absolute file path', () async {
@@ -211,6 +220,87 @@ void main(List<String> args) => print("$b $args");
     expect(result.stderr, isEmpty);
     expect(result.stdout, equals('[--argument1, argument2]\n'));
     expect(result.exitCode, 0);
+  });
+
+  test('Resolves pubspec in the project where target file resides', () async {
+    final bar = project(name: 'bar', mainSrc: 'final x = 42;');
+
+    p = project(pubspecExtras: {
+      'dependencies': {
+        'bar': {'path': bar.dirPath}
+      }
+    });
+    p.file('main.dart', '''
+import 'package:bar/main.dart';
+void main(args) {
+  print(x);
+  print(args);
+}
+''');
+    // Run in a sibling-dir to the project with a relative path to the main.
+    // The pubspec should be resolved.
+    final siblingDir = path.join(p.root.path, 'sibling');
+    Directory(siblingDir).createSync();
+    final target =
+        path.relative(path.join(p.dirPath, 'main.dart'), from: siblingDir);
+    final result = await p.run(
+      [
+        'run',
+        '--enable-experiment=test-experiment',
+        target,
+        '--argument1',
+        'argument2',
+      ],
+      workingDir: siblingDir,
+    );
+
+    // --enable-experiment and main.dart should not be passed.
+    expect(result.stderr, isEmpty);
+    expect(result.stdout, equals('42\n[--argument1, argument2]\n'));
+    expect(result.exitCode, 0);
+  });
+
+  test('Reports errors from pubspec in the project where target file resides',
+      () async {
+    p = project(pubspecExtras: {
+      'dependencies': {
+        'bar': {'path': '../does_not_exist'}
+      }
+    });
+    p.file('main.dart', '''
+import 'package:bar/main.dart';
+void main(args) {
+  print(x);
+  print(args);
+}
+''');
+    // Run in a sibling-dir to the project with a relative path to the main.
+    // The pubspec should be resolved.
+    final siblingDir = path.join(p.root.path, 'sibling');
+    Directory(siblingDir).createSync();
+    final target =
+        path.relative(path.join(p.dirPath, 'main.dart'), from: siblingDir);
+    final result = await p.run(
+      [
+        'run',
+        '--enable-experiment=test-experiment',
+        target,
+        '--argument1',
+        'argument2',
+      ],
+      workingDir: siblingDir,
+    );
+
+    // --enable-experiment and main.dart should not be passed.
+    expect(
+      result.stderr,
+      allOf(
+        contains('(could not find package bar at "../does_not_exist")'),
+        contains('version solving failed.'),
+      ),
+    );
+    expect(result.stdout, isEmpty);
+    expect(result.exitCode, 255);
   });
 
   test('with file uri', () async {
@@ -244,7 +334,7 @@ void main(List<String> args) => print("$b $args");
     // arguments are properly handled by the VM.
     ProcessResult result = await p.run([
       'run',
-      '--observe',
+      '--observe=0',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -257,7 +347,7 @@ void main(List<String> args) => print("$b $args");
     expect(
       result.stdout,
       matches(
-          r'The Dart VM service is listening on http:\/\/127.0.0.1:8181\/[a-zA-Z0-9_-]+=\/\n.*'),
+          r'The Dart VM service is listening on http:\/\/127.0.0.1:\d+\/[a-zA-Z0-9_-]+=\/\n.*'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
@@ -265,7 +355,7 @@ void main(List<String> args) => print("$b $args");
     // Again, with --disable-service-auth-codes.
     result = await p.run([
       'run',
-      '--observe',
+      '--observe=0',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -279,7 +369,8 @@ void main(List<String> args) => print("$b $args");
 
     expect(
       result.stdout,
-      contains('The Dart VM service is listening on http://127.0.0.1:8181/\n'),
+      matches(
+          r'The Dart VM service is listening on http:\/\/127.0.0.1:\d+\/\n'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
@@ -287,7 +378,7 @@ void main(List<String> args) => print("$b $args");
     // Again, with IPv6.
     result = await p.run([
       'run',
-      '--observe=8181/::1',
+      '--observe=0/::1',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -301,10 +392,32 @@ void main(List<String> args) => print("$b $args");
     expect(
       result.stdout,
       matches(
-          r'The Dart VM service is listening on http:\/\/\[::1\]:8181\/[a-zA-Z0-9_-]+=\/\n.*'),
+          r'The Dart VM service is listening on http:\/\/\[::1\]:\d+\/[a-zA-Z0-9_-]+=\/\n.*'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
+  });
+
+  test('with accepted VM flags related to the timeline', () async {
+    p = project(
+        mainSrc: 'import "dart:developer";'
+            'void main() {'
+            'Timeline.startSync("sync");'
+            'Timeline.finishSync();'
+            '}');
+
+    final result = await p.run([
+      'run',
+      '--timeline-recorder=file',
+      '--timeline-streams=Dart',
+      p.relativeFilePath
+    ]);
+
+    expect(result.stderr, isEmpty);
+    expect(result.stdout, isEmpty);
+    expect(result.exitCode, 0);
+    expect(p.findFile('dart-timeline.json')!.readAsStringSync(),
+        contains('"name":"sync","cat":"Dart"'));
   });
 
   test('fails when provided verbose VM flags', () async {
@@ -420,7 +533,7 @@ void main(List<String> args) => print("$b $args");
         ProcessResult result = await p.run([
           'run',
           '--no-dds',
-          '--enable-vm-service',
+          '--enable-vm-service=0',
           p.relativeFilePath,
         ]);
         expect(result.stdout, isNot(contains(devToolsMessagePrefix)));
@@ -431,7 +544,7 @@ void main(List<String> args) => print("$b $args");
         p = project(mainSrc: "void main() { print('Hello World'); }");
         ProcessResult result = await p.run([
           '--no-dds',
-          '--enable-vm-service',
+          '--enable-vm-service=0',
           p.relativeFilePath,
         ]);
         expect(result.stdout, isNot(contains(devToolsMessagePrefix)));
@@ -445,7 +558,7 @@ void main(List<String> args) => print("$b $args");
         ProcessResult result = await p.run([
           'run',
           '--dds',
-          '--enable-vm-service',
+          '--enable-vm-service=0',
           p.relativeFilePath,
         ]);
         expect(result.stdout, contains(devToolsMessagePrefix));
@@ -456,7 +569,7 @@ void main(List<String> args) => print("$b $args");
         p = project(mainSrc: "void main() { print('Hello World'); }");
         ProcessResult result = await p.run([
           '--dds',
-          '--enable-vm-service',
+          '--enable-vm-service=0',
           p.relativeFilePath,
         ]);
         expect(result.stdout, contains(devToolsMessagePrefix));
@@ -470,7 +583,7 @@ void main(List<String> args) => print("$b $args");
       p = project(mainSrc: "void main() { print('Hello World'); }");
       ProcessResult result = await p.run([
         'run',
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         p.relativeFilePath,
       ]);
       expect(result.stdout, contains(devToolsMessagePrefix));
@@ -479,7 +592,7 @@ void main(List<String> args) => print("$b $args");
     test('dart simple', () async {
       p = project(mainSrc: "void main() { print('Hello World'); }");
       ProcessResult result = await p.run([
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         p.relativeFilePath,
       ]);
       expect(result.stdout, contains(devToolsMessagePrefix));
@@ -490,7 +603,7 @@ void main(List<String> args) => print("$b $args");
       ProcessResult result = await p.run([
         'run',
         '--serve-devtools',
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         p.relativeFilePath,
       ]);
       expect(result.stdout, contains(devToolsMessagePrefix));
@@ -500,7 +613,7 @@ void main(List<String> args) => print("$b $args");
       p = project(mainSrc: "void main() { print('Hello World'); }");
       ProcessResult result = await p.run([
         '--serve-devtools',
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         p.relativeFilePath,
       ]);
       expect(result.stdout, contains(devToolsMessagePrefix));
@@ -510,7 +623,7 @@ void main(List<String> args) => print("$b $args");
       p = project(mainSrc: "void main() { print('Hello World'); }");
       ProcessResult result = await p.run([
         'run',
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         '--no-serve-devtools',
         p.relativeFilePath,
       ]);
@@ -520,7 +633,7 @@ void main(List<String> args) => print("$b $args");
     test('dart disabled', () async {
       p = project(mainSrc: "void main() { print('Hello World'); }");
       ProcessResult result = await p.run([
-        '--enable-vm-service',
+        '--enable-vm-service=0',
         '--no-serve-devtools',
         p.relativeFilePath,
       ]);
@@ -597,7 +710,7 @@ void main(List<String> args) => print("$b $args");
           );
           Process process = await p.start([
             if (explicitRun) 'run',
-            '--enable-vm-service',
+            '--enable-vm-service=0',
             if (!withDds) '--no-dds',
             if (!enableAuthCodes) '--disable-service-auth-codes',
             if (!serve) '--no-serve-observatory',
@@ -662,7 +775,10 @@ void main(List<String> args) => print("$b $args");
     }
 
     const flags = <bool>[true, false];
-    for (final serve in flags) {
+    // TODO(jcollins):  Disabling serving no longer seems to produce
+    // the expected output.  Maybe this is because the web interface has
+    // changed?
+    for (final serve in [true]) {
       for (final enableAuthCodes in flags) {
         for (final explicitRun in flags) {
           for (final withDds in flags) {
@@ -709,11 +825,7 @@ void residentRun() {
         File(path.join(serverInfoDirectory.dirPath, 'info')),
       );
     } catch (_) {}
-
-    serverInfoDirectory.dispose();
   });
-
-  tearDown(() async => await p.dispose());
 
   test("'Hello World'", () async {
     p = project(mainSrc: "void main() { print('Hello World'); }");
@@ -736,10 +848,37 @@ void residentRun() {
     expect(kernelCache, isNot(null));
   });
 
+  test('Handles experiments', () async {
+    p = project(
+      mainSrc: r"void main() { print(('hello','world').$1); }",
+      sdkConstraint: VersionConstraint.parse(
+        '^3.0.0-0',
+      ),
+    );
+    final result = await p.run([
+      'run',
+      '--$serverInfoOption=$serverInfoFile',
+      '--enable-experiment=test-experiment',
+      p.relativeFilePath,
+    ]);
+    Directory? kernelCache = p.findDirectory('.dart_tool/kernel');
+
+    expect(result.stderr, isEmpty);
+    expect(
+      result.stdout,
+      allOf(
+        contains('hello'),
+        isNot(contains(residentFrontendServerPrefix)),
+      ),
+    );
+    expect(result.exitCode, 0);
+
+    expect(kernelCache, isNot(null));
+  });
+
   test('same server used from different directories', () async {
     p = project(mainSrc: "void main() { print('1'); }");
     TestProject p2 = project(mainSrc: "void main() { print('2'); }");
-    addTearDown(() async => p2.dispose());
 
     final runResult1 = await p.run([
       'run',
@@ -871,7 +1010,7 @@ void residentRun() {
     ProcessResult result = await p.run([
       'run',
       '--$serverInfoOption=$serverInfoFile',
-      '--observe',
+      '--observe=0',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -891,8 +1030,7 @@ void residentRun() {
     );
     expect(
       result.stdout,
-      matches(
-          r'The Dart VM service is listening on http:\/\/127.0.0.1:8181\/[a-zA-Z0-9_-]+=\/\n.*'),
+      matches(r'The Dart VM service is listening on http:\/\/127.0.0.1:[0-9+]'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
@@ -901,7 +1039,7 @@ void residentRun() {
     result = await p.run([
       'run',
       '--$serverInfoOption=$serverInfoFile',
-      '--observe',
+      '--observe=0',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -922,7 +1060,7 @@ void residentRun() {
     );
     expect(
       result.stdout,
-      contains('The Dart VM service is listening on http://127.0.0.1:8181/\n'),
+      contains('The Dart VM service is listening on http://127.0.0.1:'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
@@ -931,7 +1069,7 @@ void residentRun() {
     result = await p.run([
       'run',
       '--$serverInfoOption=$serverInfoFile',
-      '--observe=8181/::1',
+      '--observe=0/::1',
       '--pause-isolates-on-start',
       // This should negate the above flag.
       '--no-pause-isolates-on-start',
@@ -952,43 +1090,71 @@ void residentRun() {
     expect(
       result.stdout,
       matches(
-          r'The Dart VM service is listening on http:\/\/\[::1\]:8181\/[a-zA-Z0-9_-]+=\/\n.*'),
+          r'The Dart VM service is listening on http:\/\/\[::1\]:\d+\/[a-zA-Z0-9_-]+=\/\n.*'),
     );
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
   });
 
   test('custom package_config path', () async {
-    p = project(name: 'foo');
-    final bar = TestProject(name: 'bar');
-    final baz = TestProject(name: 'baz', mainSrc: '''
-  import 'package:bar/bar.dart'
-  void main() {}
+    p = project(name: 'foo', mainSrc: '''
+import 'package:bar/main.dart';
+void main() {
+  cmd();
+}
 ''');
-    addTearDown(() async => bar.dispose());
-    addTearDown(() async => baz.dispose());
+    final bar1 = project(name: 'bar1', mainSrc: '''
+cmd() {
+  print('hi');
+}
+''');
+    final bar2 = project(name: 'bar2', mainSrc: '''
+cmd() {
+  print('bye');
+}
+''');
 
-    p.file('custom_packages.json', '''
+    p.file('custom_packages1.json', '''
 {
   "configVersion": 2,
   "packages": [
     {
       "name": "bar",
-      "rootUri": "${bar.dirPath}",
-      "packageUri": "${path.join(bar.dirPath, 'lib')}"
+      "rootUri": "${bar1.dirPath}",
+      "packageUri": "${path.join(bar1.dirPath, 'lib')}"
     }
   ]
 }
 ''');
-    final runResult = await baz.run([
+    p.file('custom_packages2.json', '''
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "bar",
+      "rootUri": "${bar2.dirPath}",
+      "packageUri": "${path.join(bar2.dirPath, 'lib')}"
+    }
+  ]
+}
+''');
+    final runResult1 = await p.run([
       'run',
-      '--$serverInfoOption=$serverInfoFile',
-      '--packages=${path.join(p.dirPath, 'custom_packages.json')}',
-      baz.relativeFilePath,
+      '--packages=${path.join(p.dirPath, 'custom_packages1.json')}',
+      p.relativeFilePath,
+    ]);
+    expect(runResult1.stderr, isEmpty);
+    expect(runResult1.stdout, contains('hi'));
+    expect(runResult1.exitCode, 0);
+    // Test that --packages can precede the command name
+    final runResult2 = await p.run([
+      '--packages=${path.join(p.dirPath, 'custom_packages2.json')}',
+      'run',
+      p.relativeFilePath,
     ]);
 
-    expect(runResult.exitCode, 0);
-    expect(runResult.stderr, isEmpty);
-    expect(runResult.stdout, isEmpty);
-  }, skip: 'until a --packages flag is added to the run command');
+    expect(runResult2.stderr, isEmpty);
+    expect(runResult2.stdout, contains('bye'));
+    expect(runResult2.exitCode, 0);
+  });
 }

@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:math';
+import 'dart:math' show min;
 
 import 'package:dart2wasm/class_info.dart';
 import 'package:dart2wasm/param_info.dart';
@@ -38,10 +38,8 @@ class SelectorInfo {
   /// Least upper bound of [ParameterInfo]s of all targets.
   final ParameterInfo paramInfo;
 
-  /// Number of Wasm return values of the selector's targets.
-  ///
-  /// BUG(50458): This should always be 1.
-  int _returnCount;
+  /// Is this an implicit or explicit setter?
+  final bool isSetter;
 
   /// Maps class IDs to the selector's member in the class. The member can be
   /// abstract.
@@ -75,7 +73,7 @@ class SelectorInfo {
   String get name => paramInfo.member!.name.text;
 
   SelectorInfo._(this.translator, this.id, this.callCount, this.paramInfo,
-      this._returnCount);
+      {required this.isSetter});
 
   /// Compute the signature for the functions implementing members targeted by
   /// this selector.
@@ -86,18 +84,18 @@ class SelectorInfo {
   /// returns are subtypes (resp. supertypes) of the types in the signature.
   w.FunctionType _computeSignature() {
     var nameIndex = paramInfo.nameIndex;
-    List<Set<ClassInfo>> inputSets =
+    final int returnCount = isSetter ? 0 : 1;
+    List<Set<w.ValueType>> inputSets =
         List.generate(1 + paramInfo.paramCount, (_) => {});
-    List<Set<ClassInfo>> outputSets = List.generate(_returnCount, (_) => {});
-    List<bool> inputNullable = List.filled(1 + paramInfo.paramCount, false);
+    List<Set<w.ValueType>> outputSets = List.generate(returnCount, (_) => {});
     List<bool> ensureBoxed = List.filled(1 + paramInfo.paramCount, false);
-    List<bool> outputNullable = List.filled(_returnCount, false);
     targets.forEach((classId, target) {
-      ClassInfo receiver = translator.classes[classId];
+      Member member = target.asMember;
+      DartType receiver =
+          InterfaceType(member.enclosingClass!, Nullability.nonNullable);
       List<DartType> positional;
       Map<String, DartType> named;
       List<DartType> returns;
-      Member member = target.asMember;
       if (member is Field) {
         if (target.isImplicitGetter) {
           positional = const [];
@@ -123,9 +121,7 @@ class SelectorInfo {
             for (VariableDeclaration param in function.namedParameters)
               param.name!: param.type
           };
-          returns = function.returnType is VoidType
-              ? const []
-              : [function.returnType];
+          returns = target.isSetter ? const [] : [function.returnType];
 
           // Box parameters that need covariance checks
           if (!translator.options.omitTypeChecks) {
@@ -142,53 +138,78 @@ class SelectorInfo {
         }
       }
       assert(returns.length <= outputSets.length);
-      inputSets[0].add(receiver);
-      ensureBoxed[0] = true;
+      inputSets[0].add(translator.translateType(receiver));
+      ensureBoxed[0] = member.enclosingClass != translator.ffiPointerClass;
       for (int i = 0; i < positional.length; i++) {
         DartType type = positional[i];
-        inputSets[1 + i]
-            .add(translator.classInfo[translator.classForType(type)]!);
-        inputNullable[1 + i] |= type.isPotentiallyNullable;
+        inputSets[1 + i].add(translator.translateType(type));
         ensureBoxed[1 + i] |=
             paramInfo.positional[i] == ParameterInfo.defaultValueSentinel;
       }
       for (String name in named.keys) {
         int i = nameIndex[name]!;
         DartType type = named[name]!;
-        inputSets[1 + i]
-            .add(translator.classInfo[translator.classForType(type)]!);
-        inputNullable[1 + i] |= type.isPotentiallyNullable;
+        inputSets[1 + i].add(translator.translateType(type));
         ensureBoxed[1 + i] |=
             paramInfo.named[name] == ParameterInfo.defaultValueSentinel;
       }
-      for (int i = 0; i < _returnCount; i++) {
+      for (int i = 0; i < returnCount; i++) {
         if (i < returns.length) {
-          outputSets[i]
-              .add(translator.classInfo[translator.classForType(returns[i])]!);
-          outputNullable[i] |= returns[i].isPotentiallyNullable;
+          DartType type = returns[i];
+          outputSets[i].add(translator.translateType(type));
         } else {
-          outputNullable[i] = true;
+          outputSets[i].add(translator.topInfo.nullableType);
         }
       }
     });
 
     List<w.ValueType> typeParameters = List.filled(paramInfo.typeParamCount,
         translator.classInfo[translator.typeClass]!.nonNullableType);
-    List<w.ValueType> inputs = List.generate(
-        inputSets.length,
-        (i) => translator.typeForInfo(
-            upperBound(inputSets[i]), inputNullable[i],
-            ensureBoxed: ensureBoxed[i]) as w.ValueType);
+    List<w.ValueType> inputs = List.generate(inputSets.length,
+        (i) => _upperBound(inputSets[i], ensureBoxed: ensureBoxed[i]));
     if (name == '==') {
       // == can't be called with null
       inputs[1] = inputs[1].withNullability(false);
     }
-    List<w.ValueType> outputs = List.generate(
-        outputSets.length,
-        (i) => translator.typeForInfo(
-            upperBound(outputSets[i]), outputNullable[i]) as w.ValueType);
+    List<w.ValueType> outputs = List.generate(outputSets.length,
+        (i) => _upperBound(outputSets[i], ensureBoxed: false));
     return m.addFunctionType(
         [inputs[0], ...typeParameters, ...inputs.sublist(1)], outputs);
+  }
+
+  w.ValueType _upperBound(Set<w.ValueType> types, {required bool ensureBoxed}) {
+    if (!ensureBoxed && types.length == 1 && types.single.isPrimitive) {
+      // Unboxed primitive.
+      return types.single;
+    }
+    final bool nullable = types.any((type) => type.nullable);
+    int minDepth = 999999999;
+    Set<w.DefType> heapTypes = types
+        .where((type) => type is! w.RefType || type.heapType is w.DefType)
+        .map((type) {
+      w.DefType def = type is w.RefType
+          ? type.heapType as w.DefType
+          : translator.classInfo[translator.boxedClasses[type]!]!.struct;
+      minDepth = min(minDepth, def.depth);
+      return def;
+    }).toSet();
+    if (heapTypes.isEmpty) {
+      // Only abstract heap types.
+      Set<w.HeapType> heapTypes =
+          types.map((type) => (type as w.RefType).heapType).toSet();
+      return w.RefType(heapTypes.single, nullable: nullable);
+    }
+    int targetDepth = minDepth;
+    while (heapTypes.length > 1) {
+      heapTypes = heapTypes.map((s) {
+        while (s.depth > targetDepth) {
+          s = s.superType!;
+        }
+        return s;
+      }).toSet();
+      targetDepth -= 1;
+    }
+    return w.RefType.def(heapTypes.single, nullable: nullable);
   }
 }
 
@@ -250,10 +271,6 @@ class DispatchTable {
         ? metadata.getterSelectorId
         : metadata.methodOrSetterSelectorId;
     ParameterInfo paramInfo = ParameterInfo.fromMember(target);
-    final int returnCount = (isGetter && member.getterType is! VoidType) ||
-            (member is Procedure && member.function.returnType is! VoidType)
-        ? 1
-        : 0;
 
     // _WasmBase and its subclass methods cannot be called dynamically
     final cls = member.enclosingClass;
@@ -267,9 +284,10 @@ class DispatchTable {
     final selector = _selectorInfo.putIfAbsent(
         selectorId,
         () => SelectorInfo._(translator, selectorId,
-            _selectorMetadata[selectorId].callCount, paramInfo, returnCount));
+            _selectorMetadata[selectorId].callCount, paramInfo,
+            isSetter: isSetter));
+    assert(selector.isSetter == isSetter);
     selector.paramInfo.merge(paramInfo);
-    selector._returnCount = max(selector._returnCount, returnCount);
     if (calledDynamically) {
       if (isGetter) {
         (_dynamicGetters[member.name.text] ??= []).add(selector);

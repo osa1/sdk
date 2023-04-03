@@ -498,7 +498,7 @@ void f() {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 51, 2),
+      error(WarningCode.DEAD_CODE, 51, 2),
     ]);
   }
 
@@ -513,7 +513,7 @@ void f() {
 }
 ''', [
       error(HintCode.UNUSED_LOCAL_VARIABLE, 31, 1),
-      error(HintCode.DEAD_CODE, 61, 2),
+      error(WarningCode.DEAD_CODE, 61, 2),
     ]);
   }
 
@@ -754,7 +754,7 @@ void f() {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 33, 25),
+      error(WarningCode.DEAD_CODE, 33, 25),
     ]);
   }
 
@@ -816,7 +816,7 @@ void f() {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 33, 25),
+      error(WarningCode.DEAD_CODE, 33, 25),
     ]);
   }
 
@@ -1187,35 +1187,41 @@ void f() {
   }
 
   test_syntheticPatternVariable_orPattern_inIfCase() async {
-    await assertNoErrorsInCode(r'''
+    await assertErrorsInCode(r'''
 void f(Object? x) {
   if (x case <int>[var a || var a] when a > 0) {
     a;
   }
 }
-''');
+''', [
+      error(WarningCode.DEAD_CODE, 45, 8),
+    ]);
   }
 
   test_syntheticPatternVariable_orPattern_inSwitchExpression() async {
-    await assertNoErrorsInCode(r'''
+    await assertErrorsInCode(r'''
 void f(Object? x) {
   (switch (x) {
     <int>[var a || var a] when a > 0 => a,
     _ => 0,
   });
 }
-''');
+''', [
+      error(WarningCode.DEAD_CODE, 52, 8),
+    ]);
   }
 
   test_syntheticPatternVariable_orPattern_inSwitchStatement() async {
-    await assertNoErrorsInCode(r'''
+    await assertErrorsInCode(r'''
 void f(Object? x) {
   switch (x) {
     case <int>[var a || var a] when a > 0:
       a;
   }
 }
-''');
+''', [
+      error(WarningCode.DEAD_CODE, 56, 8),
+    ]);
   }
 
   test_syntheticPatternVariable_switchCasesSharingABody() async {
@@ -1500,7 +1506,7 @@ void f(bool b) {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 131, 2),
+      error(WarningCode.DEAD_CODE, 131, 2),
     ]);
   }
 
@@ -1576,7 +1582,7 @@ void f(bool b) {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 81, 2),
+      error(WarningCode.DEAD_CODE, 81, 2),
       error(
           CompileTimeErrorCode
               .NOT_ASSIGNED_POTENTIALLY_NON_NULLABLE_LOCAL_VARIABLE,
@@ -1596,7 +1602,7 @@ void f() {
   v;
 }
 ''', [
-      error(HintCode.DEAD_CODE, 114, 2),
+      error(WarningCode.DEAD_CODE, 114, 2),
       error(
           CompileTimeErrorCode
               .NOT_ASSIGNED_POTENTIALLY_NON_NULLABLE_LOCAL_VARIABLE,

@@ -58,8 +58,9 @@ const c2 = Enum.c;
 
 void nonExhaustiveSwitch1(Enum e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum' is not exhaustively matched by the switch cases.
     case Enum.a:
       print('a');
@@ -72,8 +73,9 @@ void nonExhaustiveSwitch1(Enum e) {
 
 void nonExhaustiveSwitch2(Enum e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum' is not exhaustively matched by the switch cases.
     case Enum.a:
       print('a');
@@ -86,8 +88,9 @@ void nonExhaustiveSwitch2(Enum e) {
 
 void nonExhaustiveSwitch3(Enum e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum' is not exhaustively matched by the switch cases.
     case Enum.b:
       print('b');
@@ -100,8 +103,9 @@ void nonExhaustiveSwitch3(Enum e) {
 
 void nonExhaustiveSwitch4(Enum e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum' is not exhaustively matched by the switch cases.
     case Enum.b:
       print('b');
@@ -139,8 +143,9 @@ void exhaustiveNullableSwitch(Enum? e) {
 
 void nonExhaustiveNullableSwitch1(Enum? e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum?' is not exhaustively matched by the switch cases.
     case Enum.a:
       print('a');
@@ -156,8 +161,9 @@ void nonExhaustiveNullableSwitch1(Enum? e) {
 
 void nonExhaustiveNullableSwitch2(Enum? e) {
   switch (e) /* Error */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum?' is not exhaustively matched by the switch cases.
     case Enum.a:
       print('a');
@@ -180,8 +186,8 @@ void unreachableCase1(Enum e) {
       print('b');
       break;
     case Enum.a: // Unreachable
-//  ^
-// [cfe] This case is covered by the previous cases.
+//  ^^^^
+// [analyzer] HINT.UNREACHABLE_SWITCH_CASE
       print('a2');
       break;
     case Enum.c:
@@ -192,8 +198,9 @@ void unreachableCase1(Enum e) {
 
 void unreachableCase2(Enum e) {
   switch (e) /* Non-exhaustive */ {
-//        ^
+//^^^^^^
 // [analyzer] COMPILE_TIME_ERROR.NON_EXHAUSTIVE_SWITCH
+//        ^
 // [cfe] The type 'Enum' is not exhaustively matched by the switch cases.
     case Enum.a:
       print('a1');
@@ -202,8 +209,8 @@ void unreachableCase2(Enum e) {
       print('b');
       break;
     case Enum.a: // Unreachable
-//  ^
-// [cfe] This case is covered by the previous cases.
+//  ^^^^
+// [analyzer] HINT.UNREACHABLE_SWITCH_CASE
       print('a2');
       break;
   }
@@ -242,8 +249,8 @@ void unreachableCase4(Enum? e) {
       print('null1');
       break;
     case null: // Unreachable
-//  ^
-// [cfe] This case is covered by the previous cases.
+//  ^^^^
+// [analyzer] HINT.UNREACHABLE_SWITCH_CASE
       print('null2');
       break;
   }
@@ -256,8 +263,8 @@ void unreachableCase5(Enum e) {
       break;
     case Enum.b:
     case Enum.a: // Unreachable
-//  ^
-// [cfe] This case is covered by the previous cases.
+//  ^^^^
+// [analyzer] HINT.UNREACHABLE_SWITCH_CASE
     case Enum.c:
       print('c');
       break;
