@@ -613,10 +613,19 @@ class Types {
     }
 
     if (type.typeArguments.any((t) => t is! DynamicType)) {
-      makeType(codeGen, type);
-      codeGen.call(translator.isSubtype.reference);
-      _endPotentiallyNullableBlock();
-      return;
+      // `x is T` where `T` has at least one type argument which is not
+      // `dynamic`.
+      //
+      // As an optimization, when `x` is `B<T1, ..., Tn>`, `T` is
+      // `A<T1, ... Tn>`, we generate class ID check.
+      final sameTypeArgs = operandType is InterfaceType &&
+          listEquals(type.typeArguments, operandType.typeArguments);
+      if (!sameTypeArgs) {
+        makeType(codeGen, type);
+        codeGen.call(translator.isSubtype.reference);
+        _endPotentiallyNullableBlock();
+        return;
+      }
     }
 
     // `x is T` where `T` either has no type arguments or all type arguments
