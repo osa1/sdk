@@ -207,6 +207,9 @@ class SyncStarCodeGenerator extends CodeGenerator {
   @override
   void generate() {
     closures = Closures(this);
+
+    if (member.name.text == 'test') print(member.function?.body);
+
     setupParametersAndContexts(member);
     generateTypeChecks(member.function!.typeParameters, member.function!,
         translator.paramInfoFor(reference));
@@ -392,7 +395,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   void emitTargetLabel(_StateTarget target) {
     currentTargetIndex++;
-    assert(target.index == currentTargetIndex);
+    assert(target.index == currentTargetIndex,
+        'target.index = ${target.index}, currentTargetIndex = $currentTargetIndex');
     b.end();
   }
 
@@ -524,8 +528,141 @@ class SyncStarCodeGenerator extends CodeGenerator {
     _StateTarget? after = afterTargets[node];
     if (after == null) return super.visitSwitchStatement(node);
 
-    // TODO(51342): Implement this.
-    unimplemented(node, "switch in sync*", const []);
+    // yield inside `switch`.
+    // switch (x) {
+    //   case 1:
+    //     yield x;
+    //     yield y;
+    //     break;
+    //   ...
+    // }
+
+    bool check<L extends Expression, C extends Constant>() =>
+        node.cases.expand((c) => c.expressions).every((e) =>
+            e is L ||
+            e is NullLiteral ||
+            (e is ConstantExpression &&
+                (e.constant is C || e.constant is NullConstant)));
+
+    // Identify kind of switch. One of `nullableType` or `nonNullableType` will
+    // be the type for Wasm local that holds the switch value.
+    late final w.ValueType nullableType;
+    late final w.ValueType nonNullableType;
+    late final void Function() compare;
+    if (node.cases.every((c) =>
+        c.expressions.isEmpty && c.isDefault ||
+        c.expressions.every((e) =>
+            e is NullLiteral ||
+            e is ConstantExpression && e.constant is NullConstant))) {
+      // default-only switch
+      nonNullableType = w.RefType.eq(nullable: false);
+      nullableType = w.RefType.eq(nullable: true);
+      compare = () => throw "Comparison in default-only switch";
+    } else if (check<BoolLiteral, BoolConstant>()) {
+      // bool switch
+      nonNullableType = w.NumType.i32;
+      nullableType =
+          translator.classInfo[translator.boxedBoolClass]!.nullableType;
+      compare = () => b.i32_eq();
+    } else if (check<IntLiteral, IntConstant>()) {
+      // int switch
+      nonNullableType = w.NumType.i64;
+      nullableType =
+          translator.classInfo[translator.boxedIntClass]!.nullableType;
+      compare = () => b.i64_eq();
+    } else if (check<StringLiteral, StringConstant>()) {
+      // String switch
+      nonNullableType =
+          translator.classInfo[translator.stringBaseClass]!.nonNullableType;
+      nullableType = nonNullableType.withNullability(true);
+      compare = () => call(translator.stringEquals.reference);
+    } else {
+      // Object switch
+      assert(check<InvalidExpression, Constant>());
+      nonNullableType = w.RefType.eq(nullable: false);
+      nullableType = w.RefType.eq(nullable: true);
+      compare = () => b.ref_eq();
+    }
+
+    bool isNullable = dartTypeOf(node.expression).isPotentiallyNullable;
+
+    wrap(node.expression, isNullable ? nullableType : nonNullableType);
+
+    // Special cases
+    SwitchCase? defaultCase = node.cases
+        .cast<SwitchCase?>()
+        .firstWhere((c) => c!.isDefault, orElse: () => null);
+
+    SwitchCase? nullCase = node.cases.cast<SwitchCase?>().firstWhere(
+        (c) => c!.expressions.any((e) =>
+            e is NullLiteral ||
+            e is ConstantExpression && e.constant is NullConstant),
+        orElse: () => null);
+
+    // When the type is nullable we use two variables: one for the nullable
+    // value, one after the null check, with non-nullable type.
+    w.Local switchValueNonNullableLocal = addLocal(nonNullableType);
+    w.Local? switchValueNullableLocal =
+        isNullable ? addLocal(nullableType) : null;
+
+    // Initialize switch value local
+    wrap(node.expression, isNullable ? nullableType : nonNullableType);
+    b.local_set(
+        isNullable ? switchValueNullableLocal! : switchValueNonNullableLocal);
+
+    // Compute value and handle null
+    if (isNullable) {
+      final _StateTarget nullTarget = nullCase != null
+          ? innerTargets[nullCase]!
+          : defaultCase != null
+              ? innerTargets[defaultCase]!
+              : after;
+
+      b.local_get(switchValueNullableLocal!);
+      // TODO: Using ref_is_null for now to keep number of blocks low when debugging
+      b.ref_is_null();
+      b.if_();
+      jumpToTarget(nullTarget);
+      b.end();
+      b.local_get(switchValueNullableLocal);
+      b.ref_as_non_null();
+      b.local_set(switchValueNonNullableLocal);
+    }
+
+    // Compare against all case values
+    for (SwitchCase c in node.cases) {
+      for (Expression exp in c.expressions) {
+        if (exp is NullLiteral ||
+            exp is ConstantExpression && exp.constant is NullConstant) {
+          // Null already checked, skip
+        } else {
+          wrap(exp, nonNullableType);
+          b.local_get(switchValueNonNullableLocal);
+          compare();
+          b.if_();
+          jumpToTarget(innerTargets[c]!);
+          b.end();
+        }
+      }
+    }
+
+    // No explicit cases matched
+    if (node.isExplicitlyExhaustive) {
+      b.unreachable();
+    } else {
+      final _StateTarget defaultLabel =
+          defaultCase != null ? innerTargets[defaultCase]! : after;
+      jumpToTarget(defaultLabel);
+    }
+
+    // Emit case bodies
+    for (SwitchCase c in node.cases) {
+      emitTargetLabel(innerTargets[c]!);
+      visitStatement(c.body);
+      jumpToTarget(after);
+    }
+
+    emitTargetLabel(after);
   }
 
   @override
