@@ -614,24 +614,20 @@ class Types {
       // Type has at least one type argument that is not `dynamic`.
       //
       // In cases like `x is List<T>` where `x : Iterable<T>` (tested-against
-      // type is a subtype of the operand's static type), it is not necessary
-      // to test the type arguments.
+      // type is a subtype of the operand's static type and the types have same
+      // number of type arguments), it is not necessary to test the type
+      // arguments.
       Class cls = translator.classForType(operandType);
-
-      // type = H1<num>
-      // operandType = Object
-      // cls = Object
-
       InterfaceType? base = translator.hierarchy
           .getTypeAsInstanceOf(type, cls,
               isNonNullableByDefault:
                   codeGen.member.enclosingLibrary.isNonNullableByDefault)
           ?.withDeclaredNullability(operandType.declaredNullability);
 
-      final sameTypeParams = (operandType is InterfaceType &&
+      final sameNumTypeParams = (operandType is InterfaceType &&
           operandType.typeArguments.length == type.typeArguments.length);
 
-      if (!sameTypeParams || base != operandType) {
+      if (!sameNumTypeParams || base != operandType) {
         makeType(codeGen, type);
         codeGen.call(translator.isSubtype.reference);
         _endPotentiallyNullableBlock();
