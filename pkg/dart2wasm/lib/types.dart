@@ -627,7 +627,7 @@ class Types {
       final sameNumTypeParams = (operandType is InterfaceType &&
           operandType.typeArguments.length == type.typeArguments.length);
 
-      if (!sameNumTypeParams || base != operandType) {
+      if (!(sameNumTypeParams && base == operandType)) {
         makeType(codeGen, type);
         codeGen.call(translator.isSubtype.reference);
         _endPotentiallyNullableBlock();
