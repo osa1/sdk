@@ -624,8 +624,8 @@ class Types {
                   codeGen.member.enclosingLibrary.isNonNullableByDefault)
           ?.withDeclaredNullability(operandType.declaredNullability);
 
-      final sameNumTypeParams = (operandType is InterfaceType &&
-          operandType.typeArguments.length == type.typeArguments.length);
+      final sameNumTypeParams = operandType is InterfaceType &&
+          operandType.typeArguments.length == type.typeArguments.length;
 
       if (!(sameNumTypeParams && base == operandType)) {
         makeType(codeGen, type);
