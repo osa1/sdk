@@ -397,11 +397,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
   }
 
   void emitReturn() {
-    // Set state target to final state.
-    b.local_get(suspendStateLocal);
-    b.i32_const(targets.last.index);
-    b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
-
     // Return `false`.
     b.i32_const(0);
     b.return_();
