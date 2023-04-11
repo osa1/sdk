@@ -493,6 +493,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
         'target.node.location = ${target.node.location}');
     exceptionHandlers.terminateWasmTryBlocks(this);
     b.end();
+    exceptionHandlers.generateWasmTryBlocks(b);
   }
 
   void emitReturn() {
@@ -635,13 +636,20 @@ class SyncStarCodeGenerator extends CodeGenerator {
     exceptionHandlers.pushTryCatch(node);
     exceptionHandlers.generateWasmTryBlocks(b);
     visitStatement(node.body);
-    emitTargetLabel(after);
+
+    // We can't call emitTargetLabel below as we don't want to emit the `try`
+    // again
+    // emitTargetLabel(after);
+    currentTargetIndex++;
+    exceptionHandlers.terminateWasmTryBlocks(this);
+    b.end();
 
     exceptionHandlers.pop();
 
     for (Catch c in node.catches) {
       emitTargetLabel(innerTargets[c]!);
-      b.unreachable();
+      // TODO: emit guards
+      visitStatement(c.body);
     }
   }
 
