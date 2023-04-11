@@ -193,6 +193,7 @@ class ExceptionHandlerStack {
     }
 
     b.try_();
+    _catchBlockDepth += 1;
   }
 
   /// Call this right before terminating a CFG block to generate Wasm `end`
@@ -275,6 +276,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
   late final w.Local pendingStackTraceLocal;
   late final w.Local targetIndexLocal;
 
+  late final ExceptionHandlerStack exceptionHandlers;
+
   late final ClassInfo suspendStateInfo =
       translator.classInfo[translator.suspendStateClass]!;
   late final ClassInfo syncStarIterableInfo =
@@ -312,6 +315,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
           break;
       }
     }
+
+    exceptionHandlers = ExceptionHandlerStack(translator, innerTargets);
 
     // Wasm function containing the body of the `sync*` function.
     final w.DefinedFunction resumeFun = m.addFunction(
@@ -470,7 +475,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   void emitTargetLabel(_StateTarget target) {
     currentTargetIndex++;
-    assert(target.index == currentTargetIndex);
+    assert(target.index == currentTargetIndex,
+        'target.index = ${target.index}, currentTargetIndex = $currentTargetIndex');
     b.end();
   }
 
