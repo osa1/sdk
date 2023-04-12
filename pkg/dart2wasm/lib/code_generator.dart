@@ -1102,7 +1102,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     w.Label tryFinallyBlock = b.block();
 
     // Create one block for each wrapping label
-    for (final labelBlocks in breakFinalizers.values.toList().reversed) {
+    for (final labelBlocks in breakFinalizers.values) {
       labelBlocks.add(b.block());
     }
 
