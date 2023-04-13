@@ -216,8 +216,6 @@ class ExceptionHandlerStack {
     }
 
     codeGen.b.catch_(translator.exceptionTag);
-    // codeGen.b.local_set(codeGen.pendingStackTraceLocal);
-    // codeGen.b.local_set(codeGen.pendingExceptionLocal);
 
     void setVar(VariableDeclaration? var_, w.Local valueLocal) {
       final Capture? capture = codeGen.closures.captures[var_];
@@ -225,7 +223,6 @@ class ExceptionHandlerStack {
 
       if (capture == null && local == null) {
         // TODO: Does this mean unused?
-        print("Variable $var_ is not a capture or a local");
         return;
       }
 
@@ -234,9 +231,6 @@ class ExceptionHandlerStack {
         codeGen.b.ref_as_non_null();
         codeGen.b.local_set(local!);
       } else {
-        print("Variable $var_ field index = ${capture.fieldIndex}");
-        print(
-            "Context owner = ${capture.context.owner}, struct = ${capture.context.struct.fields}, isEmpty = ${capture.context.isEmpty}, local = ${capture.context.currentLocal}");
         codeGen.b.local_get(capture.context.currentLocal);
         codeGen.b.ref_as_non_null();
         codeGen.b.local_get(valueLocal);
@@ -785,8 +779,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
     }
-
-    // restoreContextsAndThis(context);
   }
 
   @override
