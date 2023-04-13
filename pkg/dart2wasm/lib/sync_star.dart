@@ -182,7 +182,8 @@ class ExceptionHandlerStack {
 
   void pushTryCatch(TryCatch tryCatch) =>
       _catchBlocks.add(HandlerList(tryCatch.catches
-          .map((catch_) => Handler(catch_.guard, _innerTargets[catch_]!))
+          .map((catch_) => Handler(catch_.guard, _innerTargets[catch_]!,
+              catch_.exception, catch_.stackTrace))
           .toList()));
 
   void pushTryFinally(TryFinally tryFinally) =>
@@ -215,6 +216,42 @@ class ExceptionHandlerStack {
     }
 
     codeGen.b.catch_(translator.exceptionTag);
+    // codeGen.b.local_set(codeGen.pendingStackTraceLocal);
+    // codeGen.b.local_set(codeGen.pendingExceptionLocal);
+
+    void setVar(VariableDeclaration? var_, w.Local valueLocal) {
+      final Capture? capture = codeGen.closures.captures[var_];
+      final w.Local? local = codeGen.locals[var_];
+
+      if (capture == null && local == null) {
+        // TODO: Does this mean unused?
+        print("Variable $var_ is not a capture or a local");
+        return;
+      }
+
+      if (capture == null) {
+        codeGen.b.local_get(valueLocal);
+        codeGen.b.ref_as_non_null();
+        codeGen.b.local_set(local!);
+      } else {
+        print("Variable $var_ field index = ${capture.fieldIndex}");
+        print(
+            "Context owner = ${capture.context.owner}, struct = ${capture.context.struct.fields}, isEmpty = ${capture.context.isEmpty}, local = ${capture.context.currentLocal}");
+        codeGen.b.local_get(capture.context.currentLocal);
+        codeGen.b.ref_as_non_null();
+        codeGen.b.local_get(valueLocal);
+        codeGen.b.struct_set(capture.context.struct, capture.fieldIndex);
+      }
+    }
+
+    final exceptionHandler = _catchBlocks.last;
+    if (exceptionHandler is HandlerList) {
+      for (Handler handler in exceptionHandler.handlers) {
+        setVar(handler.exception, codeGen.pendingExceptionLocal);
+        setVar(handler.stackTrace, codeGen.pendingStackTraceLocal);
+      }
+    }
+
     codeGen.jumpToTarget(_catchBlocks[_tryBlockDepth - 1].target);
     codeGen.b.end();
 
@@ -243,8 +280,10 @@ class HandlerList implements ExceptionHandler {
 class Handler {
   final DartType guard;
   final _StateTarget target;
+  final VariableDeclaration? exception;
+  final VariableDeclaration? stackTrace;
 
-  Handler(this.guard, this.target);
+  Handler(this.guard, this.target, this.exception, this.stackTrace);
 }
 
 /// A specialized code generator for generating code for `sync*` functions.
@@ -633,6 +672,17 @@ class SyncStarCodeGenerator extends CodeGenerator {
     _StateTarget? after = afterTargets[node];
     if (after == null) return super.visitTryCatch(node);
 
+    allocateContext(node);
+
+    for (Catch c in node.catches) {
+      if (c.exception != null) {
+        visitVariableDeclaration(c.exception!);
+      }
+      if (c.stackTrace != null) {
+        visitVariableDeclaration(c.stackTrace!);
+      }
+    }
+
     exceptionHandlers.pushTryCatch(node);
     exceptionHandlers.generateWasmTryBlocks(b);
     visitStatement(node.body);
@@ -723,6 +773,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
     // Resume.
     emitTargetLabel(after);
 
+    restoreContextsAndThis(context);
+
     // For `yield*`, check for pending exception.
     if (node.isYieldStar) {
       w.Label exceptionCheck = b.block();
@@ -734,7 +786,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
       b.end(); // exceptionCheck
     }
 
-    restoreContextsAndThis(context);
+    // restoreContextsAndThis(context);
   }
 
   @override
