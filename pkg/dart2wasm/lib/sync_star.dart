@@ -213,38 +213,6 @@ class ExceptionHandlerStack {
     }
 
     codeGen.b.catch_(translator.exceptionTag);
-
-    void setVar(VariableDeclaration? var_, w.Local valueLocal) {
-      final Capture? capture = codeGen.closures.captures[var_];
-      final w.Local? local = codeGen.locals[var_];
-
-      if (capture == null && local == null) {
-        // TODO: Does this mean unused?
-        return;
-      }
-
-      if (capture == null) {
-        codeGen.b.local_get(valueLocal);
-        codeGen.b.ref_as_non_null();
-        codeGen.b.local_set(local!);
-      } else {
-        codeGen.b.local_get(capture.context.currentLocal);
-        codeGen.b.ref_as_non_null();
-        codeGen.b.local_get(valueLocal);
-        translator.convertType(codeGen.function, valueLocal.type,
-            capture.context.struct.fields[capture.fieldIndex].type.unpacked);
-        codeGen.b.struct_set(capture.context.struct, capture.fieldIndex);
-      }
-    }
-
-    final exceptionHandler = _catchBlocks.last;
-    if (exceptionHandler is HandlerList) {
-      for (Handler handler in exceptionHandler.handlers) {
-        setVar(handler.exception, codeGen.pendingExceptionLocal);
-        setVar(handler.stackTrace, codeGen.pendingStackTraceLocal);
-      }
-    }
-
     codeGen.jumpToTarget(_catchBlocks[_tryBlockDepth - 1].target);
     codeGen.b.end();
 
@@ -683,11 +651,62 @@ class SyncStarCodeGenerator extends CodeGenerator {
     exceptionHandlers.terminateWasmTryBlocks(this);
     exceptionHandlers.pop();
 
-    for (Catch c in node.catches) {
-      emitTargetLabel(innerTargets[c]!);
-      // TODO: emit guards
-      visitStatement(c.body);
+    void setVar(VariableDeclaration? var_, w.Local valueLocal) {
+      final Capture? capture = closures.captures[var_];
+      final w.Local? local = locals[var_];
+
+      if (capture == null && local == null) {
+        // TODO: Does this mean unused?
+        return;
+      }
+
+      if (capture == null) {
+        b.local_get(valueLocal);
+        b.ref_as_non_null();
+        b.local_set(local!);
+      } else {
+        b.local_get(capture.context.currentLocal);
+        b.ref_as_non_null();
+        b.local_get(valueLocal);
+        translator.convertType(function, valueLocal.type,
+            capture.context.struct.fields[capture.fieldIndex].type.unpacked);
+        b.struct_set(capture.context.struct, capture.fieldIndex);
+      }
     }
+
+    void emitCatchBlock(Catch catch_, bool emitGuard) {
+      if (emitGuard) {
+        final DartType guard = catch_.guard;
+        b.local_get(pendingExceptionLocal);
+        b.ref_as_non_null();
+        types.emitTypeTest(
+            this, guard, translator.coreTypes.objectNonNullableRawType);
+        b.if_();
+      }
+      visitStatement(catch_.body);
+      jumpToTarget(after);
+      if (emitGuard) {
+        b.end();
+      }
+    }
+
+    for (Catch catch_ in node.catches) {
+      emitTargetLabel(innerTargets[catch_]!);
+
+      final bool shouldEmitGuard =
+          catch_.guard != translator.coreTypes.objectNonNullableRawType;
+      emitCatchBlock(catch_, shouldEmitGuard);
+      if (!shouldEmitGuard) {
+        break;
+      }
+    }
+
+    // rethrow
+    b.local_get(pendingExceptionLocal);
+    b.ref_as_non_null();
+    b.local_get(pendingStackTraceLocal);
+    b.ref_as_non_null();
+    b.throw_(translator.exceptionTag);
 
     emitTargetLabel(after);
   }
