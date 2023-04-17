@@ -32,7 +32,7 @@
 
 namespace dart {
 
-static const intptr_t kMaxSamplesPerTick = 4;
+static constexpr intptr_t kMaxSamplesPerTick = 4;
 
 DEFINE_FLAG(bool, trace_profiled_isolates, false, "Trace profiled isolates.");
 
@@ -1444,7 +1444,7 @@ class CodeLookupTableBuilder : public ObjectVisitor {
 
   ~CodeLookupTableBuilder() {}
 
-  void VisitObject(ObjectPtr raw_obj) {
+  void VisitObject(ObjectPtr raw_obj) override {
     if (raw_obj->IsCode() && !Code::IsUnknownDartCode(Code::RawCast(raw_obj))) {
       table_->Add(Code::Handle(Code::RawCast(raw_obj)));
     }

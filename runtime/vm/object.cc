@@ -189,8 +189,6 @@ ClassPtr Object::weak_serialization_reference_class_ =
     static_cast<ClassPtr>(RAW_NULL);
 ClassPtr Object::weak_array_class_ = static_cast<ClassPtr>(RAW_NULL);
 
-const double MegamorphicCache::kLoadFactor = 0.50;
-
 static void AppendSubString(BaseTextBuffer* buffer,
                             const char* name,
                             intptr_t start_pos,
@@ -2861,7 +2859,7 @@ class WriteBarrierUpdateVisitor : public ObjectPointerVisitor {
     ASSERT(old_obj_->IsOldObject());
   }
 
-  void VisitPointers(ObjectPtr* from, ObjectPtr* to) {
+  void VisitPointers(ObjectPtr* from, ObjectPtr* to) override {
     if (old_obj_->IsArray()) {
       for (ObjectPtr* slot = from; slot <= to; ++slot) {
         ObjectPtr value = *slot;
@@ -2879,9 +2877,10 @@ class WriteBarrierUpdateVisitor : public ObjectPointerVisitor {
     }
   }
 
+#if defined(DART_COMPRESSED_POINTERS)
   void VisitCompressedPointers(uword heap_base,
                                CompressedObjectPtr* from,
-                               CompressedObjectPtr* to) {
+                               CompressedObjectPtr* to) override {
     if (old_obj_->IsArray()) {
       for (CompressedObjectPtr* slot = from; slot <= to; ++slot) {
         ObjectPtr value = slot->Decompress(heap_base);
@@ -2898,6 +2897,7 @@ class WriteBarrierUpdateVisitor : public ObjectPointerVisitor {
       }
     }
   }
+#endif
 
  private:
   Thread* thread_;
@@ -2931,7 +2931,7 @@ ObjectPtr Object::Clone(const Object& orig,
   // Copy the body of the original into the clone.
   uword orig_addr = UntaggedObject::ToAddr(orig.ptr());
   uword clone_addr = UntaggedObject::ToAddr(raw_clone);
-  static const intptr_t kHeaderSizeInBytes = sizeof(UntaggedObject);
+  const intptr_t kHeaderSizeInBytes = sizeof(UntaggedObject);
   if (load_with_relaxed_atomics) {
     auto orig_atomics_ptr = reinterpret_cast<std::atomic<uword>*>(orig_addr);
     auto clone_ptr = reinterpret_cast<uword*>(clone_addr);
@@ -14298,7 +14298,7 @@ ObjectPtr Library::EvaluateCompiledExpression(
 
 void Library::InitNativeWrappersLibrary(IsolateGroup* isolate_group,
                                         bool is_kernel) {
-  static const int kNumNativeWrappersClasses = 4;
+  const int kNumNativeWrappersClasses = 4;
   COMPILE_ASSERT((kNumNativeWrappersClasses > 0) &&
                  (kNumNativeWrappersClasses < 10));
   Thread* thread = Thread::Current();
@@ -14312,8 +14312,8 @@ void Library::InitNativeWrappersLibrary(IsolateGroup* isolate_group,
   native_flds_lib.Register(thread);
   native_flds_lib.SetLoadInProgress();
   isolate_group->object_store()->set_native_wrappers_library(native_flds_lib);
-  static const char* const kNativeWrappersClass = "NativeFieldWrapperClass";
-  static const int kNameLength = 25;
+  const char* const kNativeWrappersClass = "NativeFieldWrapperClass";
+  const int kNameLength = 25;
   ASSERT(kNameLength == (strlen(kNativeWrappersClass) + 1 + 1));
   char name_buffer[kNameLength];
   String& cls_name = String::Handle(zone);
@@ -19963,19 +19963,21 @@ class CheckForPointers : public ObjectPointerVisitor {
 
   bool has_pointers() const { return has_pointers_; }
 
-  void VisitPointers(ObjectPtr* first, ObjectPtr* last) {
+  void VisitPointers(ObjectPtr* first, ObjectPtr* last) override {
     if (last >= first) {
       has_pointers_ = true;
     }
   }
 
+#if defined(DART_COMPRESSED_POINTERS)
   void VisitCompressedPointers(uword heap_base,
                                CompressedObjectPtr* first,
-                               CompressedObjectPtr* last) {
+                               CompressedObjectPtr* last) override {
     if (last >= first) {
       has_pointers_ = true;
     }
   }
+#endif
 
  private:
   bool has_pointers_;
@@ -25641,8 +25643,8 @@ MapPtr Map::NewDefault(intptr_t class_id, Heap::Space space) {
   const TypedData& index = TypedData::Handle(
       TypedData::New(kTypedDataUint32ArrayCid, kInitialIndexSize, space));
   // On 32-bit, the top bits are wasted to avoid Mint allocation.
-  static const intptr_t kAvailableBits = (kSmiBits >= 32) ? 32 : kSmiBits;
-  static const intptr_t kInitialHashMask =
+  const intptr_t kAvailableBits = (kSmiBits >= 32) ? 32 : kSmiBits;
+  const intptr_t kInitialHashMask =
       (1 << (kAvailableBits - kInitialIndexBits)) - 1;
   return Map::New(class_id, data, index, kInitialHashMask, 0, 0, space);
 }
@@ -25825,8 +25827,8 @@ SetPtr Set::NewDefault(intptr_t class_id, Heap::Space space) {
   const TypedData& index = TypedData::Handle(
       TypedData::New(kTypedDataUint32ArrayCid, kInitialIndexSize, space));
   // On 32-bit, the top bits are wasted to avoid Mint allocation.
-  static const intptr_t kAvailableBits = (kSmiBits >= 32) ? 32 : kSmiBits;
-  static const intptr_t kInitialHashMask =
+  const intptr_t kAvailableBits = (kSmiBits >= 32) ? 32 : kSmiBits;
+  const intptr_t kInitialHashMask =
       (1 << (kAvailableBits - kInitialIndexBits)) - 1;
   return Set::New(class_id, data, index, kInitialHashMask, 0, 0, space);
 }

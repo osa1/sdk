@@ -182,6 +182,44 @@ NamedType
 ''');
   }
 
+  test_importPrefix_unresolved() async {
+    await assertErrorsInCode(r'''
+import 'dart:math' as math;
+
+void f(math.Unresolved<int> a) {}
+''', [
+      error(CompileTimeErrorCode.UNDEFINED_CLASS, 36, 15),
+    ]);
+
+    final node = findNode.namedType('math.Unresolved');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: PrefixedIdentifier
+    prefix: SimpleIdentifier
+      token: math
+      staticElement: self::@prefix::math
+      staticType: null
+    period: .
+    identifier: SimpleIdentifier
+      token: Unresolved
+      staticElement: <null>
+      staticType: null
+    staticElement: <null>
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
+''');
+  }
+
   test_invalid_deferredImportPrefix_identifier() async {
     await assertErrorsInCode(r'''
 import 'dart:async' deferred as async;
@@ -220,6 +258,102 @@ NamedType
         type: int
     rightBracket: >
   type: Future<int>
+''');
+  }
+
+  test_invalid_importPrefix() async {
+    await assertErrorsInCode(r'''
+import 'dart:math' as prefix;
+
+void f(prefix<int> a) {}
+''', [
+      error(CompileTimeErrorCode.NOT_A_TYPE, 38, 6),
+    ]);
+
+    final node = findNode.namedType('prefix<int>');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: SimpleIdentifier
+    token: prefix
+    staticElement: self::@prefix::prefix
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
+''');
+  }
+
+  test_invalid_topLevelFunction() async {
+    await assertErrorsInCode(r'''
+void f(T<int> a) {}
+
+void T() {}
+''', [
+      error(CompileTimeErrorCode.NOT_A_TYPE, 7, 1),
+    ]);
+
+    final node = findNode.namedType('T<int>');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: SimpleIdentifier
+    token: T
+    staticElement: self::@function::T
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
+''');
+  }
+
+  test_invalid_typeParameter_identifier() async {
+    await assertErrorsInCode(r'''
+void f<T>(T.name<int> a) {}
+''', [
+      error(CompileTimeErrorCode.PREFIX_SHADOWED_BY_LOCAL_DECLARATION, 10, 1),
+    ]);
+
+    final node = findNode.namedType('T.name<int>');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: PrefixedIdentifier
+    prefix: SimpleIdentifier
+      token: T
+      staticElement: T@7
+      staticType: null
+    period: .
+    identifier: SimpleIdentifier
+      token: name
+      staticElement: <null>
+      staticType: null
+    staticElement: <null>
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
 ''');
   }
 
@@ -1099,6 +1233,70 @@ NamedType
     staticElement: self::@typeAlias::Nothing
     staticType: null
   type: void
+''');
+  }
+
+  test_unresolved() async {
+    await assertErrorsInCode(r'''
+void f(Unresolved<int> a) {}
+''', [
+      error(CompileTimeErrorCode.UNDEFINED_CLASS, 7, 10),
+    ]);
+
+    final node = findNode.namedType('Unresolved');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: SimpleIdentifier
+    token: Unresolved
+    staticElement: <null>
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
+''');
+  }
+
+  test_unresolved_identifier() async {
+    await assertErrorsInCode(r'''
+void f(unresolved.List<int> a) {}
+''', [
+      error(CompileTimeErrorCode.UNDEFINED_CLASS, 7, 15),
+    ]);
+
+    final node = findNode.namedType('unresolved.List');
+    assertResolvedNodeText(node, r'''
+NamedType
+  name: PrefixedIdentifier
+    prefix: SimpleIdentifier
+      token: unresolved
+      staticElement: <null>
+      staticType: null
+    period: .
+    identifier: SimpleIdentifier
+      token: List
+      staticElement: <null>
+      staticType: null
+    staticElement: <null>
+    staticType: null
+  typeArguments: TypeArgumentList
+    leftBracket: <
+    arguments
+      NamedType
+        name: SimpleIdentifier
+          token: int
+          staticElement: dart:core::@class::int
+          staticType: null
+        type: int
+    rightBracket: >
+  type: dynamic
 ''');
   }
 }

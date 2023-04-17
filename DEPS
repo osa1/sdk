@@ -50,7 +50,7 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "ad6c7258ca40aab2a08f56cb726483b47de896d8",
+  "co19_rev": "c01fbd751c060650b6582523a7751b83777026c3",
   # This line prevents conflicts when both packages are rolled simultaneously.
   "co19_2_rev": "ae846ed2a987a2d2dbe4b9e9c68448a21f91ef5b",
 
@@ -74,7 +74,7 @@ vars = {
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
   "clang_version": "git_revision:fa3cb517e4a569ff075c98bb6d037abf38b88202",
-  "gn_version": "git_revision:41fef642de70ecdcaaa26be96d56a0398f95abd4",
+  "gn_version": "git_revision:ffeea1b1fd070cb6a8d47154a03f8523486b50a7",
 
   # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/gn
   "fuchsia_sdk_version": "version:12.20230314.2.1",
@@ -172,7 +172,7 @@ vars = {
   "test_descriptor_rev": "aa11162f55a93fc6cefc927c5189b5f74decb957",
   "test_process_rev": "946bc27abd9726c4dadb9afae7c56f55df5945ed",
   "test_reflective_loader_rev": "a85a930ad3736f93b96f6cc104d3576c1ae19e0e",
-  "tools_rev": "58d914764eab030bf537c2c58089c8ba7b46a313",
+  "tools_rev": "2308c672e0d7446f5bfdba96594b41f26fa24a2e",
   "typed_data_rev": "d85363d2efb333afce07ec409a529ec32986e1a2",
   "usage_rev": "0698711985b332432ce9a901bbbd3b1ed227b090",
   "vector_math_rev": "7dec98433b3e016fbe49107ad4320b31f519eb70",

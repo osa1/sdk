@@ -45,15 +45,21 @@ class FindNode {
   ConstructorFieldInitializer get singleConstructorFieldInitializer =>
       _single();
 
+  ExportDirective get singleExportDirective => _single();
+
   ExtendsClause get singleExtendsClause => _single();
 
   FieldDeclaration get singleFieldDeclaration => _single();
+
+  FieldFormalParameter get singleFieldFormalParameter => _single();
 
   ForElement get singleForElement => _single();
 
   ForStatement get singleForStatement => _single();
 
   FunctionBody get singleFunctionBody => _single();
+
+  FunctionDeclaration get singleFunctionDeclaration => _single();
 
   FunctionDeclarationStatement get singleFunctionDeclarationStatement =>
       _single();
@@ -63,6 +69,9 @@ class FindNode {
 
   FunctionReference get singleFunctionReference => _single();
 
+  FunctionTypedFormalParameter get singleFunctionTypedFormalParameter =>
+      _single();
+
   GuardedPattern get singleGuardedPattern => _single();
 
   IfElement get singleIfElement => _single();
@@ -71,7 +80,17 @@ class FindNode {
 
   ImplementsClause get singleImplementsClause => _single();
 
+  ImportDirective get singleImportDirective => _single();
+
+  InstanceCreationExpression get singleInstanceCreationExpression => _single();
+
+  IsExpression get singleIsExpression => _single();
+
+  LabeledStatement get singleLabeledStatement => _single();
+
   LibraryDirective get singleLibraryDirective => _single();
+
+  ListLiteral get singleListLiteral => _single();
 
   MethodDeclaration get singleMethodDeclaration => _single();
 
@@ -93,11 +112,19 @@ class FindNode {
   RedirectingConstructorInvocation get singleRedirectingConstructorInvocation =>
       _single();
 
+  RethrowExpression get singleRethrowExpression => _single();
+
+  SetOrMapLiteral get singleSetOrMapLiteral => _single();
+
   SuperConstructorInvocation get singleSuperConstructorInvocation => _single();
 
   SwitchExpression get singleSwitchExpression => _single();
 
   SwitchPatternCase get singleSwitchPatternCase => _single();
+
+  TryStatement get singleTryStatement => _single();
+
+  WhileStatement get singleWhileStatement => _single();
 
   WithClause get singleWithClause => _single();
 

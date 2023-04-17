@@ -2519,6 +2519,8 @@ ParserErrorCode.ANNOTATION_WITH_TYPE_ARGUMENTS_UNINSTANTIATED:
     Add the parens.
 ParserErrorCode.ASYNC_KEYWORD_USED_AS_IDENTIFIER:
   status: noFix
+ParserErrorCode.BASE_ENUM:
+  status: needsEvaluation
 ParserErrorCode.BINARY_OPERATOR_WRITTEN_OUT:
   status: needsFix
   notes: |-
@@ -2601,10 +2603,7 @@ ParserErrorCode.COVARIANT_TOP_LEVEL_DECLARATION:
   notes: |-
     Remove `covariant`.
 ParserErrorCode.DEFAULT_IN_SWITCH_EXPRESSION:
-  status: needsFix
-  issue: https://github.com/dart-lang/sdk/issues/51953
-  notes: |-
-    Replace with a wildcard pattern
+  status: hasFix
 ParserErrorCode.DEFAULT_VALUE_IN_FUNCTION_TYPE:
   status: needsFix
   notes: |-
@@ -2859,6 +2858,8 @@ ParserErrorCode.INITIALIZED_VARIABLE_IN_FOR_EACH:
   status: needsFix
   notes: |-
     Remove the initializer.
+ParserErrorCode.INTERFACE_ENUM:
+  status: needsEvaluation
 ParserErrorCode.INTERFACE_MIXIN:
   status: needsFix
   notes: |-
@@ -3036,6 +3037,8 @@ ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR:
   status: needsFix
   notes: |-
     Remove the constructor.
+ParserErrorCode.MIXIN_WITH_CLAUSE:
+  status: needsEvaluation
 ParserErrorCode.MODIFIER_OUT_OF_ORDER:
   status: noFix
   notes: |-
@@ -3153,6 +3156,8 @@ ParserErrorCode.REDIRECTION_IN_NON_FACTORY_CONSTRUCTOR:
   status: needsFix
   notes: |-
     Remove the redirection.
+ParserErrorCode.SEALED_ENUM:
+  status: needsEvaluation
 ParserErrorCode.SEALED_MIXIN:
   status: needsFix
   notes: |-
