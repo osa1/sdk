@@ -231,6 +231,8 @@ class ExceptionHandlerStack {
         codeGen.b.local_get(capture.context.currentLocal);
         codeGen.b.ref_as_non_null();
         codeGen.b.local_get(valueLocal);
+        translator.convertType(codeGen.function, valueLocal.type,
+            capture.context.struct.fields[capture.fieldIndex].type.unpacked);
         codeGen.b.struct_set(capture.context.struct, capture.fieldIndex);
       }
     }
