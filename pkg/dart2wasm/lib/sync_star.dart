@@ -683,6 +683,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
             this, guard, translator.coreTypes.objectNonNullableRawType);
         b.if_();
       }
+      setVar(catch_.exception, pendingExceptionLocal);
+      setVar(catch_.stackTrace, pendingStackTraceLocal);
       visitStatement(catch_.body);
       jumpToTarget(after);
       if (emitGuard) {
