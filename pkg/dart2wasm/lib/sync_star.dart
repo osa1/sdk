@@ -129,12 +129,10 @@ class _YieldFinder extends StatementVisitor<void> {
   @override
   void visitTryCatch(TryCatch node) {
     recurse(node.body);
-
     for (Catch c in node.catches) {
       addTarget(c, _StateTargetPlacement.Inner);
       recurse(c.body);
     }
-
     addTarget(node, _StateTargetPlacement.After);
   }
 
