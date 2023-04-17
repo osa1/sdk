@@ -129,14 +129,13 @@ class _YieldFinder extends StatementVisitor<void> {
   @override
   void visitTryCatch(TryCatch node) {
     recurse(node.body);
-    addTarget(node, _StateTargetPlacement.After);
 
-    // Generate catch blocks after the body so that jumps to the catch blocks
-    // in Wasm `catch` blocks will be forward jumps.
     for (Catch c in node.catches) {
       addTarget(c, _StateTargetPlacement.Inner);
       recurse(c.body);
     }
+
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
@@ -680,14 +679,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
     exceptionHandlers.pushTryCatch(node);
     exceptionHandlers.generateWasmTryBlocks(b);
     visitStatement(node.body);
-
-    // We can't call emitTargetLabel below as we don't want to emit the `try`
-    // again
-    // emitTargetLabel(after);
-    currentTargetIndex++;
+    jumpToTarget(after);
     exceptionHandlers.terminateWasmTryBlocks(this);
-    b.end();
-
     exceptionHandlers.pop();
 
     for (Catch c in node.catches) {
@@ -695,6 +688,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
       // TODO: emit guards
       visitStatement(c.body);
     }
+
+    emitTargetLabel(after);
   }
 
   @override
