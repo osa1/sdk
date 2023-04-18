@@ -744,6 +744,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
       exceptionHandlers.pushTryFinally(node);
       exceptionHandlers.generateWasmTryBlocks(b);
       visitStatement(node.body);
+      // TODO: Set continuation
       jumpToTarget(finalizerTarget);
       exceptionHandlers.terminateWasmTryBlocks(this);
       exceptionHandlers.pop();
