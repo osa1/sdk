@@ -63,11 +63,13 @@ class _YieldFinder extends StatementVisitor<void> {
 
   /// Recurse into a statement and then remove any targets added by the
   /// statement if it doesn't contain any `yield` or `yield*` statements.
-  void recurse(Statement statement) {
+  void recurse(Statement statement, {bool removeUnusedTargets = true}) {
     int yieldCountIn = yieldCount;
     int targetsIn = targets.length;
     statement.accept(this);
-    if (yieldCount == yieldCountIn) targets.length = targetsIn;
+    if (removeUnusedTargets && yieldCount == yieldCountIn) {
+      targets.length = targetsIn;
+    }
   }
 
   void addTarget(TreeNode node, _StateTargetPlacement placement) {
@@ -138,9 +140,13 @@ class _YieldFinder extends StatementVisitor<void> {
 
   @override
   void visitTryFinally(TryFinally node) {
-    recurse(node.body);
+    // try-finally blocks are always compiled to the CFG, even when they don't
+    // have yields. This is to keep the code size small: with normal
+    // compilation finalizer blocks need to be duplicated based on
+    // continuations, which we don't need in the CFG implementation.
+    recurse(node.body, removeUnusedTargets: false);
     addTarget(node, _StateTargetPlacement.Inner);
-    recurse(node.finalizer);
+    recurse(node.finalizer, removeUnusedTargets: false);
     addTarget(node, _StateTargetPlacement.After);
   }
 
@@ -188,6 +194,19 @@ class ExceptionHandlerStack {
 
   void pop() {
     _catchBlocks.removeLast();
+  }
+
+  Finalizer? get nextFinalizer {
+    if (_catchBlocks.isEmpty) {
+      return null;
+    }
+    for (int i = _catchBlocks.length - 1; i >= 0; i -= 1) {
+      final block = _catchBlocks[i];
+      if (block is Finalizer) {
+        return block;
+      }
+    }
+    return null;
   }
 
   /// Call this when generating a new CFG block to generate Wasm `try` blocks
@@ -715,11 +734,82 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   @override
   void visitTryFinally(TryFinally node) {
-    _StateTarget? after = afterTargets[node];
-    if (after == null) return super.visitTryFinally(node);
+    allocateContext(node);
 
-    // TODO(51343): implement this.
-    unimplemented(node, "try/finally in sync*", const []);
+    final _StateTarget finalizerTarget = innerTargets[node]!;
+    final _StateTarget continuationTarget = afterTargets[node]!;
+
+    // Body
+    {
+      exceptionHandlers.pushTryFinally(node);
+      exceptionHandlers.generateWasmTryBlocks(b);
+      visitStatement(node.body);
+      jumpToTarget(finalizerTarget);
+      exceptionHandlers.terminateWasmTryBlocks(this);
+      exceptionHandlers.pop();
+    }
+
+    // Finalizer
+    {
+      emitTargetLabel(innerTargets[node]!);
+      visitStatement(node.body);
+
+      // Check the `numFinalizer` state for how many parent finalizers to run.
+      // If this is the top-most finalizer block no need for the check.
+      final Finalizer? nextFinalizer = exceptionHandlers.nextFinalizer;
+      if (nextFinalizer != null) {
+        b.local_get(suspendStateLocal);
+        b.struct_get(
+            suspendStateInfo.struct, FieldIndex.suspendStateNumFinalizers);
+        b.if_();
+        // Counter is non-zero. Decrement counter.
+        b.local_get(suspendStateLocal);
+        b.local_get(suspendStateLocal);
+        b.struct_get(
+            suspendStateInfo.struct, FieldIndex.suspendStateNumFinalizers);
+        b.i32_const(1);
+        b.i32_sub();
+        b.struct_set(
+            suspendStateInfo.struct, FieldIndex.suspendStateNumFinalizers);
+        jumpToTarget(nextFinalizer.target);
+        b.end();
+      }
+
+      // Counter is zero or we're at the top finalizer, check continuation.
+      // 0 = return
+      b.local_get(suspendStateLocal);
+      b.struct_get(
+          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
+      b.i32_eqz();
+      b.if_();
+      b.local_get(suspendStateLocal);
+      b.struct_get(
+          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerReturnValue);
+      b.return_();
+      b.end();
+
+      // 1 = rethrow
+      // TODO: We need to store the exception and stack trace in suspend state
+      b.local_get(suspendStateLocal);
+      b.struct_get(
+          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
+      b.i32_const(1);
+      b.i32_eq();
+      b.if_();
+      b.unreachable(); // TODO
+      b.end();
+
+      // Any other value: jump to the target.
+      b.local_get(suspendStateLocal);
+      b.struct_get(
+          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
+      b.i32_const(2);
+      b.i32_sub();
+      b.local_set(targetIndexLocal);
+      b.br(masterLoop);
+    }
+
+    emitTargetLabel(continuationTarget);
   }
 
   @override
