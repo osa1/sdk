@@ -50,7 +50,6 @@ class FieldIndex {
   static const suspendStateTargetIndex = 6;
   static const suspendStateNumFinalizers = 7;
   static const suspendStateFinalizerTargetIndex = 8;
-  static const suspendStateFinalizerReturnValue = 9;
   static const syncStarIteratorCurrent = 3;
   static const syncStarIteratorYieldStarIterable = 4;
   static const recordFieldBase = 2;

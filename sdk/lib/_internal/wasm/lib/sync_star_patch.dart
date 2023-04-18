@@ -49,20 +49,13 @@ class _SuspendState {
   @pragma("wasm:entry-point")
   WasmI32 _finalizerTargetIndex;
 
-  // When running finalizers, return value when the last finalizer returns.
-  //
-  // Used in finalizer blocks.
-  @pragma("wasm:entry-point")
-  Object? _finalizerReturnValue;
-
   _SuspendState(_SyncStarIterable iterable, _SuspendState? parent)
       : _resume = iterable._resume,
         _parent = parent,
         _context = iterable._context,
         _targetIndex = WasmI32.fromInt(_initialTargetIndex),
         _numFinalizers = WasmI32.fromInt(0),
-        _finalizerTargetIndex = WasmI32.fromInt(0),
-        _finalizerReturnValue = null;
+        _finalizerTargetIndex = WasmI32.fromInt(0);
 }
 
 /// An [Iterable] returned from a `sync*` function.

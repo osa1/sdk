@@ -783,9 +783,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
           suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
       b.i32_eqz();
       b.if_();
-      b.local_get(suspendStateLocal);
-      b.struct_get(
-          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerReturnValue);
       b.i32_const(0); // false = done
       b.return_();
       b.end();
