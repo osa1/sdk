@@ -739,7 +739,19 @@ class SyncStarCodeGenerator extends CodeGenerator {
       exceptionHandlers.pushTryFinally(node);
       exceptionHandlers.generateWasmTryBlocks(b);
       visitStatement(node.body);
-      // TODO: Set continuation
+
+      // Set continuation
+      b.local_get(suspendStateLocal);
+      b.i32_const(continuationTarget.index);
+      b.i32_const(2);
+      b.i32_add();
+      b.struct_set(
+          suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
+      b.local_get(suspendStateLocal);
+      b.i32_const(0);
+      b.struct_set(
+          suspendStateInfo.struct, FieldIndex.suspendStateNumFinalizers);
+
       jumpToTarget(finalizerTarget);
       exceptionHandlers.terminateWasmTryBlocks(this);
       exceptionHandlers.pop();
@@ -778,8 +790,12 @@ class SyncStarCodeGenerator extends CodeGenerator {
           suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
       b.i32_eqz();
       b.if_();
-      b.i32_const(0); // false = done
-      b.return_();
+      if (nextFinalizer == null) {
+        b.i32_const(0); // false = done
+        b.return_();
+      } else {
+        jumpToTarget(nextFinalizer.target);
+      }
       b.end();
 
       // 1 = rethrow
