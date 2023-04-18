@@ -19,6 +19,7 @@ const int _initialTargetIndex = 0;
 class _SuspendState {
   // The inner function.
   final _ResumeFun _resume;
+
   // Parent state to transition to when this body completes. This will be
   // present when the `sync*` iterable was consumed by a `yield*`.
   final _SuspendState? _parent;
@@ -27,18 +28,41 @@ class _SuspendState {
   // belong to the same iterator.
   @pragma("wasm:entry-point")
   _SyncStarIterator? _iterator;
+
   // Context containing the local variables of the function.
   @pragma("wasm:entry-point")
   WasmStructRef? _context;
+
   // CFG target index for the next resumption.
   @pragma("wasm:entry-point")
   WasmI32 _targetIndex;
+
+  // When running finalizers, how many finalizers to run.
+  //
+  // Used in finalizer blocks.
+  @pragma("wasm:entry-point")
+  WasmI32 _numFinalizers;
+
+  // When running finalizers, how to continue after the last finalizer.
+  //
+  // Used in finalizer blocks.
+  @pragma("wasm:entry-point")
+  WasmI32 _finalizerTargetIndex;
+
+  // When running finalizers, return value when the last finalizer returns.
+  //
+  // Used in finalizer blocks.
+  @pragma("wasm:entry-point")
+  Object? _finalizerReturnValue;
 
   _SuspendState(_SyncStarIterable iterable, _SuspendState? parent)
       : _resume = iterable._resume,
         _parent = parent,
         _context = iterable._context,
-        _targetIndex = WasmI32.fromInt(_initialTargetIndex);
+        _targetIndex = WasmI32.fromInt(_initialTargetIndex),
+        _numFinalizers = WasmI32.fromInt(0),
+        _finalizerTargetIndex = WasmI32.fromInt(0),
+        _finalizerReturnValue = null;
 }
 
 /// An [Iterable] returned from a `sync*` function.
