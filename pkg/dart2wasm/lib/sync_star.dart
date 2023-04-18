@@ -212,12 +212,10 @@ class ExceptionHandlerStack {
   /// Call this when generating a new CFG block to generate Wasm `try` blocks
   /// for the current exception handlers.
   void generateWasmTryBlocks(w.Instructions b) {
-    if (_catchBlocks.length == _tryBlockDepth) {
-      return;
+    while (_tryBlockDepth < _catchBlocks.length) {
+      b.try_();
+      _tryBlockDepth += 1;
     }
-
-    b.try_();
-    _tryBlockDepth += 1;
   }
 
   /// Call this right before terminating a CFG block to generate Wasm `end`
@@ -227,15 +225,12 @@ class ExceptionHandlerStack {
     // assert(numCatchBlocks == _tryBlockDepth,
     //     '_catchBlocks.length = $numCatchBlocks, _tryBlockDepth = $_tryBlockDepth');
 
-    if (_tryBlockDepth == 0) {
-      return;
+    while (_tryBlockDepth > 0) {
+      codeGen.b.catch_(translator.exceptionTag);
+      codeGen.jumpToTarget(_catchBlocks[_tryBlockDepth - 1].target);
+      codeGen.b.end();
+      _tryBlockDepth -= 1;
     }
-
-    codeGen.b.catch_(translator.exceptionTag);
-    codeGen.jumpToTarget(_catchBlocks[_tryBlockDepth - 1].target);
-    codeGen.b.end();
-
-    _tryBlockDepth -= 1;
   }
 }
 
