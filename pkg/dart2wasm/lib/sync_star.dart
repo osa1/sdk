@@ -751,7 +751,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
     // Finalizer
     {
-      emitTargetLabel(innerTargets[node]!);
+      emitTargetLabel(finalizerTarget);
       visitStatement(node.finalizer);
 
       // Check the `numFinalizer` state for how many parent finalizers to run.
