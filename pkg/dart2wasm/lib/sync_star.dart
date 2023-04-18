@@ -912,4 +912,23 @@ class SyncStarCodeGenerator extends CodeGenerator {
       jumpToTarget(finalizer.target);
     }
   }
+
+  @override
+  w.ValueType visitThrow(Throw node, w.ValueType expectedType) {
+    // TODO: We should probably move the exception arguments to suspend state
+    // `_currentException` and `_currentExceptionStackTrace` and always use
+    // those in the function body.
+
+    wrap(node.expression, translator.topInfo.nonNullableType);
+    b.local_tee(pendingExceptionLocal);
+    b.ref_as_non_null();
+
+    call(translator.stackTraceCurrent.reference);
+    b.local_tee(pendingStackTraceLocal);
+    b.ref_as_non_null();
+
+    call(translator.errorThrow.reference);
+    b.unreachable();
+    return expectedType;
+  }
 }

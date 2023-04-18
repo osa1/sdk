@@ -49,13 +49,28 @@ class _SuspendState {
   @pragma("wasm:entry-point")
   WasmI32 _finalizerTargetIndex;
 
+  // When running finalizers, current exception to rethrow.
+  //
+  // Used in finalizer blocks.
+  @pragma("wasm:entry-point")
+  Object? _currentException;
+
+  // When running finalizers, stack trace of the exception in
+  // [_currentException].
+  //
+  // Used in finalizer blocks.
+  @pragma("wasm:entry-point")
+  StackTrace? _currentExceptionStackTrace;
+
   _SuspendState(_SyncStarIterable iterable, _SuspendState? parent)
       : _resume = iterable._resume,
         _parent = parent,
         _context = iterable._context,
         _targetIndex = WasmI32.fromInt(_initialTargetIndex),
         _numFinalizers = WasmI32.fromInt(0),
-        _finalizerTargetIndex = WasmI32.fromInt(0);
+        _finalizerTargetIndex = WasmI32.fromInt(0),
+        _currentException = null,
+        _currentExceptionStackTrace = null;
 }
 
 /// An [Iterable] returned from a `sync*` function.
