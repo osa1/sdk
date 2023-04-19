@@ -62,6 +62,10 @@ class _SuspendState {
   @pragma("wasm:entry-point")
   StackTrace? _currentExceptionStackTrace;
 
+  // Whether the iteration should stop next time. We set this after throwing an
+  // exception to the caller.
+  bool _done = false;
+
   _SuspendState(_SyncStarIterable iterable, _SuspendState? parent)
       : _resume = iterable._resume,
         _parent = parent,
@@ -99,6 +103,7 @@ class _SyncStarIterator<T> implements Iterator<T> {
   // [_yieldStarIterable] (for `yield*`).
   @pragma("wasm:entry-point")
   T? _current;
+
   @pragma("wasm:entry-point")
   Iterable<T>? _yieldStarIterable;
 
@@ -131,6 +136,11 @@ class _SyncStarIterator<T> implements Iterator<T> {
   bool moveNext() {
     Object? pendingException;
     StackTrace? pendingStackTrace;
+
+    if (_state._done) {
+      return false;
+    }
+
     while (true) {
       // First delegate to an active nested iterator (if any).
       final iterator = _yieldStarIterator;
@@ -165,6 +175,8 @@ class _SyncStarIterator<T> implements Iterator<T> {
         if (_handleSyncStarMethodCompletion()) {
           continue;
         }
+        // Next iteration should return `false`
+        _state._done = true;
         rethrow;
       }
 
