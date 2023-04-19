@@ -84,6 +84,7 @@ class _SyncStarIterable<T> extends Iterable<T> {
   // context when the `sync*` function is a lambda.
   @pragma("wasm:entry-point")
   WasmStructRef? _context;
+
   // The inner function.
   @pragma("wasm:entry-point")
   _ResumeFun _resume;
@@ -159,6 +160,8 @@ class _SyncStarIterator<T> implements Iterator<T> {
 
       try {
         // Resume current sync* method in order to move to the next value.
+        // TODO NOTE: Does this work as expected when the target state is not
+        // in a try block? I think we just ignore the exception in this case.
         final bool hasMore =
             _state._resume.call(_state, pendingException, pendingStackTrace);
         pendingException = null;
@@ -189,7 +192,15 @@ class _SyncStarIterator<T> implements Iterator<T> {
           // current _state for later resumption).
           _state = _SuspendState(iterable, _state).._iterator = this;
         } else {
-          _yieldStarIterator = iterable.iterator;
+          try {
+            _yieldStarIterator = iterable.iterator;
+          } catch (exception, stackTrace) {
+            pendingException = exception;
+            pendingStackTrace = stackTrace;
+            _yieldStarIterable = null;
+            _current = null;
+            continue;
+          }
         }
         _yieldStarIterable = null;
         _current = null;
