@@ -943,10 +943,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   @override
   w.ValueType visitThrow(Throw node, w.ValueType expectedType) {
-    // TODO: We should probably move the exception arguments to suspend state
-    // `_currentException` and `_currentExceptionStackTrace` and always use
-    // those in the function body.
-
     // TODO: Only override current exception if we're in try-finally
 
     final exceptionLocal = addLocal(translator.topInfo.nonNullableType);
