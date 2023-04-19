@@ -196,6 +196,16 @@ class ExceptionHandlerStack {
     _catchBlocks.removeLast();
   }
 
+  int get numFinalizers {
+    int i = 0;
+    for (final handler in _catchBlocks) {
+      if (handler is Finalizer) {
+        i += 1;
+      }
+    }
+    return i;
+  }
+
   Finalizer? get nextFinalizer {
     if (_catchBlocks.isEmpty) {
       return null;
@@ -261,6 +271,56 @@ class Handler {
   Handler(this.guard, this.target, this.exception, this.stackTrace);
 }
 
+abstract class LabelTarget {
+  void jump(SyncStarCodeGenerator codeGen);
+}
+
+class DirectLabelTarget implements LabelTarget {
+  final w.Label label;
+
+  DirectLabelTarget(this.label);
+
+  @override
+  void jump(SyncStarCodeGenerator codeGen) {
+    codeGen.b.br(label);
+  }
+}
+
+class IndirectLabelTarget implements LabelTarget {
+  final int finalizerDepth;
+  final _StateTarget stateTarget;
+
+  IndirectLabelTarget(this.finalizerDepth, this.stateTarget);
+
+  @override
+  void jump(SyncStarCodeGenerator codeGen) {
+    final nextFinalizer = codeGen.exceptionHandlers.nextFinalizer;
+    if (nextFinalizer == null) {
+      // Finalizer stack is empty at `break`, the label should also not have
+      // any finalizers
+      assert(finalizerDepth == 0);
+      codeGen.jumpToTarget(stateTarget);
+    } else {
+      final currentFinalizerDepth = codeGen.exceptionHandlers.numFinalizers;
+      final finalizersToRun = currentFinalizerDepth - finalizerDepth;
+
+      if (finalizersToRun != 0) {
+        codeGen.b.local_get(codeGen.suspendStateLocal);
+        codeGen.b.i32_const(finalizersToRun);
+        codeGen.b.struct_set(codeGen.suspendStateInfo.struct,
+            FieldIndex.suspendStateNumFinalizers);
+      }
+
+      codeGen.b.local_get(codeGen.suspendStateLocal);
+      codeGen.b.i32_const(stateTarget.index);
+      codeGen.b.i32_const(2);
+      codeGen.b.i32_add();
+      codeGen.b.struct_set(codeGen.suspendStateInfo.struct,
+          FieldIndex.suspendStateFinalizerTargetIndex);
+    }
+  }
+}
+
 /// A specialized code generator for generating code for `sync*` functions.
 ///
 /// This will create an "outer" function which is a small function that just
@@ -302,12 +362,21 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   late final ExceptionHandlerStack exceptionHandlers;
 
+  final Map<LabeledStatement, LabelTarget> labelTargets = {};
+
   late final ClassInfo suspendStateInfo =
       translator.classInfo[translator.suspendStateClass]!;
   late final ClassInfo syncStarIterableInfo =
       translator.classInfo[translator.syncStarIterableClass]!;
   late final ClassInfo syncStarIteratorInfo =
       translator.classInfo[translator.syncStarIteratorClass]!;
+
+  // TODO: Rename this
+  // TODO: Should we stop extending CodeGenerator?
+  // Number of finalizers around a label. This is used to calculate number of
+  // finalizer blocks to run on a `break`.
+  @override
+  final List<int> syncStarBreakFinalizers = <int>[];
 
   @override
   void generate() {
@@ -639,18 +708,24 @@ class SyncStarCodeGenerator extends CodeGenerator {
   @override
   void visitLabeledStatement(LabeledStatement node) {
     _StateTarget? after = afterTargets[node];
-    if (after == null) return super.visitLabeledStatement(node);
-
-    visitStatement(node.body);
-    emitTargetLabel(after);
+    if (after == null) {
+      final w.Label label = b.block();
+      labelTargets[node] = DirectLabelTarget(label);
+      visitStatement(node.body);
+      labelTargets.remove(node);
+      b.end();
+    } else {
+      labelTargets[node] =
+          IndirectLabelTarget(exceptionHandlers.numFinalizers, after);
+      visitStatement(node.body);
+      labelTargets.remove(node);
+      emitTargetLabel(after);
+    }
   }
 
   @override
   void visitBreakStatement(BreakStatement node) {
-    _StateTarget? target = afterTargets[node.target];
-    if (target == null) return super.visitBreakStatement(node);
-
-    jumpToTarget(target);
+    labelTargets[node.target]!.jump(this);
   }
 
   @override
