@@ -297,8 +297,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
   // Locals containing special values.
   late final w.Local suspendStateLocal;
-  late final w.Local pendingExceptionLocal;
-  late final w.Local pendingStackTraceLocal;
+
   late final w.Local targetIndexLocal;
 
   late final ExceptionHandlerStack exceptionHandlers;
@@ -347,8 +346,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
     final w.DefinedFunction resumeFun = m.addFunction(
         m.addFunctionType([
           suspendStateInfo.nonNullableType,
-          translator.topInfo.nullableType,
-          translator.stackTraceInfo.nullableType
+          translator.topInfo.nullableType, // pending exception
+          translator.stackTraceInfo.nullableType // pending exception stack
         ], const [
           w.NumType.i32
         ]),
@@ -442,8 +441,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
 
     // Parameters passed from [_SyncStarIterator.moveNext].
     suspendStateLocal = function.locals[0];
-    pendingExceptionLocal = function.locals[1];
-    pendingStackTraceLocal = function.locals[2];
+    final pendingExceptionLocal = function.locals[1];
+    final pendingStackTraceLocal = function.locals[2];
 
     // Set up locals for contexts and `this`.
     thisLocal = null;
@@ -465,6 +464,25 @@ class SyncStarCodeGenerator extends CodeGenerator {
       }
       localContext = localContext.parent;
     }
+
+    // If a nested iterator threw, override the current exception with the
+    // nested iterator exception.
+    b.local_get(pendingExceptionLocal);
+    b.ref_is_null();
+    b.i32_eqz();
+    b.if_();
+
+    b.local_get(suspendStateLocal);
+    b.local_get(pendingExceptionLocal);
+    b.struct_set(
+        suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
+
+    b.local_get(suspendStateLocal);
+    b.local_get(pendingStackTraceLocal);
+    b.struct_set(suspendStateInfo.struct,
+        FieldIndex.suspendStateCurrentExceptionStackTrace);
+
+    b.end(); // end if
 
     // Read target index from the suspend state.
     targetIndexLocal = addLocal(w.NumType.i32);
@@ -665,7 +683,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
     exceptionHandlers.terminateWasmTryBlocks(this);
     exceptionHandlers.pop();
 
-    void setVar(VariableDeclaration? var_, w.Local valueLocal) {
+    void setVar(VariableDeclaration? var_, void Function() emitValue,
+        w.ValueType valueType) {
       final Capture? capture = closures.captures[var_];
       final w.Local? local = locals[var_];
 
@@ -675,14 +694,14 @@ class SyncStarCodeGenerator extends CodeGenerator {
       }
 
       if (capture == null) {
-        b.local_get(valueLocal);
+        emitValue();
         b.ref_as_non_null();
         b.local_set(local!);
       } else {
         b.local_get(capture.context.currentLocal);
         b.ref_as_non_null();
-        b.local_get(valueLocal);
-        translator.convertType(function, valueLocal.type,
+        emitValue();
+        translator.convertType(function, valueType,
             capture.context.struct.fields[capture.fieldIndex].type.unpacked);
         b.struct_set(capture.context.struct, capture.fieldIndex);
       }
@@ -691,14 +710,16 @@ class SyncStarCodeGenerator extends CodeGenerator {
     void emitCatchBlock(Catch catch_, bool emitGuard) {
       if (emitGuard) {
         final DartType guard = catch_.guard;
-        b.local_get(pendingExceptionLocal);
+        _getCurrentException();
         b.ref_as_non_null();
         types.emitTypeTest(
             this, guard, translator.coreTypes.objectNonNullableRawType);
         b.if_();
       }
-      setVar(catch_.exception, pendingExceptionLocal);
-      setVar(catch_.stackTrace, pendingStackTraceLocal);
+      setVar(catch_.exception, () => _getCurrentException(),
+          translator.topInfo.nullableType);
+      setVar(catch_.stackTrace, () => _getCurrentExceptionStackTrace(),
+          translator.stackTraceInfo.nullableType);
       visitStatement(catch_.body);
       jumpToTarget(after);
       if (emitGuard) {
@@ -718,9 +739,9 @@ class SyncStarCodeGenerator extends CodeGenerator {
     }
 
     // rethrow
-    b.local_get(pendingExceptionLocal);
+    _getCurrentException();
     b.ref_as_non_null();
-    b.local_get(pendingStackTraceLocal);
+    _getCurrentExceptionStackTrace();
     b.ref_as_non_null();
     b.throw_(translator.exceptionTag);
 
@@ -806,7 +827,13 @@ class SyncStarCodeGenerator extends CodeGenerator {
       b.i32_const(1);
       b.i32_eq();
       b.if_();
-      b.unreachable(); // TODO
+
+      _getCurrentException();
+      b.ref_as_non_null();
+      _getCurrentExceptionStackTrace();
+      b.ref_as_non_null();
+      b.throw_(translator.exceptionTag);
+
       b.end();
 
       // Any other value: jump to the target.
@@ -886,11 +913,12 @@ class SyncStarCodeGenerator extends CodeGenerator {
     restoreContextsAndThis(context);
 
     // For `yield*`, check for pending exception.
+    // TODO FIXME NOTE: I don't understand what this is doing
     if (node.isYieldStar) {
       w.Label exceptionCheck = b.block();
-      b.local_get(pendingExceptionLocal);
+      _getCurrentException();
       b.br_on_null(exceptionCheck);
-      b.local_get(pendingStackTraceLocal);
+      _getCurrentExceptionStackTrace();
       b.ref_as_non_null();
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
@@ -919,16 +947,58 @@ class SyncStarCodeGenerator extends CodeGenerator {
     // `_currentException` and `_currentExceptionStackTrace` and always use
     // those in the function body.
 
+    // TODO: Only override current exception if we're in try-finally
+
+    final exceptionLocal = addLocal(translator.topInfo.nonNullableType);
     wrap(node.expression, translator.topInfo.nonNullableType);
-    b.local_tee(pendingExceptionLocal);
-    b.ref_as_non_null();
+    b.local_set(exceptionLocal);
+    _setCurrentException(() => b.local_get(exceptionLocal));
 
+    final stackTraceLocal = addLocal(translator.stackTraceInfo.nonNullableType);
     call(translator.stackTraceCurrent.reference);
-    b.local_tee(pendingStackTraceLocal);
-    b.ref_as_non_null();
+    b.local_set(stackTraceLocal);
+    _setCurrentExceptionStackTrace(() => b.local_get(stackTraceLocal));
 
+    _setFinalizerContinuationRethrow();
+
+    b.local_get(exceptionLocal);
+    b.local_get(stackTraceLocal);
     call(translator.errorThrow.reference);
+
     b.unreachable();
     return expectedType;
+  }
+
+  void _getCurrentException() {
+    b.local_get(suspendStateLocal);
+    b.struct_get(
+        suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
+  }
+
+  void _setCurrentException(void Function() emitValue) {
+    b.local_get(suspendStateLocal);
+    emitValue();
+    b.struct_set(
+        suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
+  }
+
+  void _getCurrentExceptionStackTrace() {
+    b.local_get(suspendStateLocal);
+    b.struct_get(suspendStateInfo.struct,
+        FieldIndex.suspendStateCurrentExceptionStackTrace);
+  }
+
+  void _setCurrentExceptionStackTrace(void Function() emitValue) {
+    b.local_get(suspendStateLocal);
+    emitValue();
+    b.struct_set(suspendStateInfo.struct,
+        FieldIndex.suspendStateCurrentExceptionStackTrace);
+  }
+
+  void _setFinalizerContinuationRethrow() {
+    b.local_get(suspendStateLocal);
+    b.i32_const(1);
+    b.struct_set(
+        suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
   }
 }
