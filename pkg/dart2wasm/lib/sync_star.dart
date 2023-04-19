@@ -967,10 +967,16 @@ class SyncStarCodeGenerator extends CodeGenerator {
     return expectedType;
   }
 
-  // @override
-  // w.ValueType visitRethrow(Rethrow node, w.ValueType expectedType) {
-  //   return expectedType;
-  // }
+  @override
+  w.ValueType visitRethrow(Rethrow node, w.ValueType expectedType) {
+    _getCurrentException();
+    b.ref_as_non_null();
+    _getCurrentExceptionStackTrace();
+    b.ref_as_non_null();
+    b.throw_(translator.exceptionTag);
+    b.unreachable();
+    return expectedType;
+  }
 
   void _getCurrentException() {
     b.local_get(suspendStateLocal);
