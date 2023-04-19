@@ -482,6 +482,8 @@ class SyncStarCodeGenerator extends CodeGenerator {
     b.struct_set(suspendStateInfo.struct,
         FieldIndex.suspendStateCurrentExceptionStackTrace);
 
+    _setFinalizerContinuationRethrow();
+
     b.end(); // end if
 
     // Read target index from the suspend state.
@@ -964,6 +966,11 @@ class SyncStarCodeGenerator extends CodeGenerator {
     b.unreachable();
     return expectedType;
   }
+
+  // @override
+  // w.ValueType visitRethrow(Rethrow node, w.ValueType expectedType) {
+  //   return expectedType;
+  // }
 
   void _getCurrentException() {
     b.local_get(suspendStateLocal);
