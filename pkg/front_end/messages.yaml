@@ -4918,6 +4918,11 @@ FfiAbiSpecificIntegerMappingInvalid:
   problemMessage: "Classes extending 'AbiSpecificInteger' must have exactly one 'AbiSpecificIntegerMapping' annotation specifying the mapping from ABI to a NativeType integer with a fixed size."
   external: test/ffi_test.dart
 
+FfiCreateOfStructOrUnion:
+  # Used by dart:ffi
+  problemMessage: "Subclasses of 'Struct' and 'Union' are backed by native memory, and can't be instantiated by a generative constructor. Try allocating it via allocation, or load from a 'Pointer'."
+  external: test/ffi_test.dart
+
 FfiTypeMismatch:
   # Used by dart:ffi
   problemMessage: "Expected type '#type' to be '#type2', which is the Dart type corresponding to '#type3'."
@@ -5577,6 +5582,10 @@ JsInteropStaticInteropTrustTypesUsageNotAllowed:
 JsInteropStrictModeViolation:
   problemMessage: "JS interop requires JS types when strict mode is enabled, but Type '#type' is not a type or subtype of a type from `dart:js_interop`."
   correctionMessage: "Use a JS type instead."
+
+JsInteropStrictModeForbiddenLibrary:
+  problemMessage: "Library '#name' is forbidden when strict mode is enabled."
+  correctionMessage: "Remove the import of a forbidden library."
 
 NonNullableInNullAware:
   problemMessage: "Operand of null-aware operation '#name' has type '#type' which excludes null."

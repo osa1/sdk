@@ -220,11 +220,12 @@
       "pkg/",
       "samples/",
       "tools/",
+      "buildtools/linux-x64/clang/bin/llvm",
       "buildtools/linux-x64/clang/bin/llvm-strip",
       "buildtools/linux-x64/clang/bin/llvm-symbolizer",
+      "buildtools/mac-x64/clang/bin/llvm",
       "buildtools/mac-x64/clang/bin/llvm-strip",
       "buildtools/mac-x64/clang/bin/llvm-symbolizer",
-      "buildtools/win-x64/clang/bin/llvm-strip.exe",
       "buildtools/win-x64/clang/bin/llvm-symbolizer.exe",
       "third_party/android_tools/sdk/platform-tools/adb",
       "third_party/android_tools/ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip",
@@ -3224,7 +3225,9 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}",
+            "c_compiler",
             "dart_style",
+            "native_assets_cli",
             "package_config"
           ]
         },
@@ -3274,7 +3277,9 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}-arm64",
+            "c_compiler",
             "dart_style",
+            "native_assets_cli",
             "package_config"
           ]
         },
@@ -3315,7 +3320,9 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}",
+            "c_compiler",
             "dart_style",
+            "native_assets_cli",
             "package_config"
           ]
         },

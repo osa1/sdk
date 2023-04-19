@@ -73,7 +73,7 @@ vars = {
   # The list of revisions for these tools comes from Fuchsia, here:
   # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
   # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  "clang_version": "git_revision:fa3cb517e4a569ff075c98bb6d037abf38b88202",
+  "clang_version": "git_revision:e8cfbfd05a951b85f80156dffc8eeecb34c7271c",
   "gn_version": "git_revision:ffeea1b1fd070cb6a8d47154a03f8523486b50a7",
 
   # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/gn
@@ -93,7 +93,6 @@ vars = {
   "boringssl_rev": "87f316d7748268eb56f2dc147bd593254ae93198",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "devtools_rev": "026f0adf03725fbab24d601ac74c811808f258e5",
-  "gperftools_revision": "bf8b714bf5075d0a6f2f28504b43095e2b1e11c5",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libprotobuf_rev": "24487dd1045c7f3d64a21f38a3f0c06cc4cf2edb",
@@ -103,7 +102,7 @@ vars = {
   "protobuf_gn_rev": "f872f05cb0378eef9a7a2609076929f0f35b4141",
   "root_certificates_rev": "692f6d6488af68e0121317a9c2c9eb393eb0ee50",
   "WebCore_rev": "bcb10901266c884e7b3740abc597ab95373ab55c",
-  "zlib_rev": "27c2f474b71d0d20764f86f60ef8b00da1a16cda",
+  "zlib_rev": "14dd4c4455602c9b71a1a89b5cafd1f4030d2e3f",
 
   ### /third_party/pkg dependencies
   # 'tools/rev_sdk_deps.dart' can rev pkg dependencies to their latest; put an
@@ -133,7 +132,7 @@ vars = {
   #   and land the review.
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
-  "dart_style_rev": "33efb2560c62b7b7bf330009cd757495b0e1456a", # disable rev_sdk_deps.dart
+  "dart_style_rev": "6c9bc10cf2dc6496b2ce863c8d614aa0781abf90", # disable rev_sdk_deps.dart
   "dartdoc_rev": "a0755f5f59fbfeb46e694bcf67c2832e3a67255e",
   "ffi_rev": "04fa38ab45cb2957f9059e03031b53906c2c4385",
   "file_rev": "72a67c33f90bfb7e10057e286e06d2fe3baa4d98",
@@ -145,13 +144,14 @@ vars = {
   "http_parser_rev": "bbe37dd228ec59f58a73df4b328ef747757165c7",
   "intl_rev": "a958db01c90d041f0cd357d1732ae9813b620ee0",
   "json_rpc_2_rev": "5da270592006e4d43fd5a6ac736829f955881240",
-  "linter_rev": "eb0ca501f48deaa034e07e6dd1ff9ad6ff3519c6", # disable rev_sdk_deps.dart
+  "linter_rev": "ca2a9fe07b399138b1f9d44e9e11e5198e0d8c05", # disable rev_sdk_deps.dart
   "lints_rev": "f09399a2574eb4e3f485881cf977fca72628f443",
   "logging_rev": "787030a2b3d0d5d53ce57f1c7dc74f27ecb07b0b",
   "markdown_rev": "d437c85188806fe2bfa4f3616159300ba9dc6d2a",
   "matcher_rev": "cb6b68c603d2c57a51bbddfff08fa211bba7dcd3",
   "mime_rev": "2d8496df6a6e851816610c3f99eae0d9663f54c4",
   "mockito_rev": "28e8eda2ef16f2e9c5e2e8fef48a834afd33ce44",
+  "native_rev": "a547d0cb57699fce5e0940b593c673f310c56a0c",
   "package_config_rev": "7e09db12e968482ef81e309de3ce233463b4cd7e",
   "path_rev": "23e33194c4073c0fdd818a70dd944afd5ad206e6",
   "pool_rev": "650e5d3eff10529c65ef45b5fcb4bca270c7ea8f",
@@ -172,7 +172,7 @@ vars = {
   "test_descriptor_rev": "aa11162f55a93fc6cefc927c5189b5f74decb957",
   "test_process_rev": "946bc27abd9726c4dadb9afae7c56f55df5945ed",
   "test_reflective_loader_rev": "a85a930ad3736f93b96f6cc104d3576c1ae19e0e",
-  "tools_rev": "2308c672e0d7446f5bfdba96594b41f26fa24a2e",
+  "tools_rev": "545d7e1c73ce21b8c91f638021f9d487d324a501",
   "typed_data_rev": "d85363d2efb333afce07ec409a529ec32986e1a2",
   "usage_rev": "0698711985b332432ce9a901bbbd3b1ed227b090",
   "vector_math_rev": "7dec98433b3e016fbe49107ad4320b31f519eb70",
@@ -333,10 +333,6 @@ deps = {
       Var('chromium_git') + '/external/github.com/mdn/browser-compat-data' +
       "@" + Var("browser-compat-data_tag"),
 
-  Var("dart_root") + "/third_party/tcmalloc/gperftools":
-      Var('chromium_git') + '/external/github.com/gperftools/gperftools.git' +
-      "@" + Var("gperftools_revision"),
-
   Var("dart_root") + "/third_party/pkg/args":
       Var("dart_git") + "args.git" + "@" + Var("args_rev"),
   Var("dart_root") + "/third_party/pkg/async":
@@ -405,6 +401,8 @@ deps = {
       Var("dart_git") + "mime.git" + "@" + Var("mime_rev"),
   Var("dart_root") + "/third_party/pkg/mockito":
       Var("dart_git") + "mockito.git" + "@" + Var("mockito_rev"),
+  Var("dart_root") + "/third_party/pkg/native":
+      Var("dart_git") + "native.git" + "@" + Var("native_rev"),
   Var("dart_root") + "/third_party/pkg/package_config":
       Var("dart_git") + "package_config.git" +
       "@" + Var("package_config_rev"),

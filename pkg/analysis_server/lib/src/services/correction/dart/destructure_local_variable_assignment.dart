@@ -2,11 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analysis_server/src/protocol_server.dart';
+import 'package:analysis_server/src/protocol_server.dart' hide Element;
 import 'package:analysis_server/src/services/correction/assist.dart';
 import 'package:analysis_server/src/services/correction/dart/abstract_producer.dart';
 import 'package:analysis_server/src/services/correction/name_suggestion.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/ast/utilities.dart';
 import 'package:analyzer_plugin/utilities/assist/assist.dart';
@@ -25,8 +27,39 @@ class DestructureLocalVariableAssignment extends CorrectionProducer {
     var element = node.declaredElement;
     if (element == null) return;
     var type = element.type;
-    if (type is! RecordType) return;
+    switch (type) {
+      case RecordType():
+        await computeRecordPattern(type, node, builder);
+      case InterfaceType():
+        await computeObjectPattern(type, node, builder);
+    }
+  }
 
+  Future<void> computeObjectPattern(InterfaceType type,
+      VariableDeclaration node, ChangeBuilder builder) async {
+    // todo(pq): share reference checking w/ record computation
+
+    var variableElement = node.declaredElement;
+    if (variableElement is! LocalVariableElement) return;
+
+    var function = node.thisOrAncestorOfType<FunctionBody>();
+    if (function == null) return;
+
+    var references = variableElement.findReferencesIn(function);
+    // todo(pq): convert references
+    if (references.isNotEmpty) return;
+
+    await builder.addDartFileEdit(file, (builder) {
+      builder.addReplacement(range.entity(node.name), (builder) {
+        builder.write('${type.element.name}(');
+        builder.selectHere();
+        builder.write(')');
+      });
+    });
+  }
+
+  Future<void> computeRecordPattern(
+      RecordType type, VariableDeclaration node, ChangeBuilder builder) async {
     var excluded = <String>{};
     var offset = node.offset;
 
@@ -39,11 +72,9 @@ class DestructureLocalVariableAssignment extends CorrectionProducer {
       var varName = '\$$i';
       if (excluded.contains(varName)) {
         varName = getIndexedVariableName(i, excluded) ?? varName;
-        variables.add(PositionalField(varName));
-        excluded.add(varName);
-      } else {
-        variables.add(PositionalField(varName));
       }
+      variables.add(PositionalField(varName));
+      excluded.add(varName);
     }
 
     for (var namedField in type.namedFields) {
@@ -54,7 +85,6 @@ class DestructureLocalVariableAssignment extends CorrectionProducer {
         var suggestions = getVariableNameSuggestionsForText(name, excluded);
         if (suggestions.isEmpty) return;
         var suggestion = suggestions.first;
-        excluded.add(suggestion);
         variables.add(NamedField(field: name, variable: suggestion));
       }
     }
@@ -62,11 +92,11 @@ class DestructureLocalVariableAssignment extends CorrectionProducer {
     await builder.addDartFileEdit(file, (builder) {
       builder.addReplacement(range.entity(node.name), (builder) {
         builder.write('(');
-        for (var i = 0; i < variables.length; i++) {
+        for (var (i, variable) in variables.indexed) {
           if (i > 0) {
             builder.write(', ');
           }
-          variables[i].write(builder, 'VAR_$i');
+          variable.write(builder, 'VAR_$i');
         }
         builder.write(')');
       });
@@ -90,13 +120,18 @@ class NamedField extends RecordField {
   @override
   void write(EditBuilder builder, String groupName) {
     var variable = this.variable;
+    var suggestions = <String>[];
     if (variable == null) {
       variable = ':$field';
+      suggestions.add('$field: $wildCard');
     } else {
       builder.write('$field: ');
+      suggestions.add(wildCard);
     }
+    // Make sure the variable proposal is first.
+    suggestions.insert(0, variable);
     builder.addSimpleLinkedEdit(groupName, variable,
-        kind: LinkedEditSuggestionKind.VARIABLE, suggestions: [variable]);
+        kind: LinkedEditSuggestionKind.VARIABLE, suggestions: suggestions);
   }
 }
 
@@ -107,10 +142,36 @@ class PositionalField extends RecordField {
   @override
   void write(EditBuilder builder, String groupName) {
     builder.addSimpleLinkedEdit(groupName, variable,
-        kind: LinkedEditSuggestionKind.VARIABLE, suggestions: [variable]);
+        kind: LinkedEditSuggestionKind.VARIABLE,
+        suggestions: [variable, wildCard]);
   }
 }
 
 abstract class RecordField {
+  final wildCard = '_';
   void write(EditBuilder builder, String groupName);
+}
+
+class _ReferenceFinder extends RecursiveAstVisitor<void> {
+  final List<SimpleIdentifier> references = <SimpleIdentifier>[];
+  final VariableElement? element;
+  _ReferenceFinder(this.element);
+
+  List<SimpleIdentifier> findReferences(FunctionBody target) {
+    target.accept(this);
+    return references;
+  }
+
+  @override
+  void visitSimpleIdentifier(SimpleIdentifier node) {
+    if (node.staticElement == element) {
+      references.add(node);
+    }
+    super.visitSimpleIdentifier(node);
+  }
+}
+
+extension on VariableElement {
+  List<SimpleIdentifier> findReferencesIn(FunctionBody target) =>
+      _ReferenceFinder(this).findReferences(target);
 }

@@ -122,10 +122,8 @@ class BackendImpacts {
   );
 
   late final BackendImpact syncStarBody = BackendImpact(
-    staticUses: [
-      _commonElements.endOfIteration,
-      _commonElements.yieldStar,
-      _commonElements.syncStarUncaughtError,
+    dynamicUses: [
+      Selector.fromElement(_commonElements.syncStarIteratorYieldStarMethod),
     ],
   );
 
@@ -201,7 +199,7 @@ class BackendImpacts {
   late final BackendImpact superNoSuchMethod = BackendImpact(
     staticUses: [
       _commonElements.createInvocationMirror,
-      _commonElements.objectNoSuchMethod
+      _commonElements.objectNoSuchMethod!
     ],
     otherImpacts: [
       _needsInt('Needed to encode the invocation kind of super.noSuchMethod.'),

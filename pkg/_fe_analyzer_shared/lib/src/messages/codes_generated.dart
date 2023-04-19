@@ -4644,6 +4644,15 @@ Message _withArgumentsFfiCompoundImplementsFinalizable(
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeFfiCreateOfStructOrUnion = messageFfiCreateOfStructOrUnion;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageFfiCreateOfStructOrUnion = const MessageCode(
+    "FfiCreateOfStructOrUnion",
+    problemMessage:
+        r"""Subclasses of 'Struct' and 'Union' are backed by native memory, and can't be instantiated by a generative constructor. Try allocating it via allocation, or load from a 'Pointer'.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
     Message Function(
         String string,
@@ -8334,6 +8343,34 @@ Message _withArgumentsJsInteropStaticInteropWithNonStaticSupertype(
           """JS interop class '${name}' has an `@staticInterop` annotation, but has supertype '${name2}', which does not.""",
       correctionMessage: """Try marking the supertype as a static interop class using `@staticInterop`.""",
       arguments: {'name': name, 'name2': name2});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<Message Function(String name)>
+    templateJsInteropStrictModeForbiddenLibrary =
+    const Template<Message Function(String name)>(
+        problemMessageTemplate:
+            r"""Library '#name' is forbidden when strict mode is enabled.""",
+        correctionMessageTemplate:
+            r"""Remove the import of a forbidden library.""",
+        withArguments: _withArgumentsJsInteropStrictModeForbiddenLibrary);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)>
+    codeJsInteropStrictModeForbiddenLibrary =
+    const Code<Message Function(String name)>(
+  "JsInteropStrictModeForbiddenLibrary",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsJsInteropStrictModeForbiddenLibrary(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeJsInteropStrictModeForbiddenLibrary,
+      problemMessage:
+          """Library '${name}' is forbidden when strict mode is enabled.""",
+      correctionMessage: """Remove the import of a forbidden library.""",
+      arguments: {'name': name});
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.

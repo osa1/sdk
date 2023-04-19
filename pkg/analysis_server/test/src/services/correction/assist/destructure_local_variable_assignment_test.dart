@@ -11,12 +11,54 @@ import 'assist_processor.dart';
 
 void main() {
   defineReflectiveSuite(() {
-    defineReflectiveTests(DestructureLocalVariableAssignmentTest);
+    defineReflectiveTests(DestructureLocalVariableAssignmentObjectTest);
+    defineReflectiveTests(DestructureLocalVariableAssignmentRecordTest);
   });
 }
 
 @reflectiveTest
-class DestructureLocalVariableAssignmentTest extends AssistProcessorTest {
+class DestructureLocalVariableAssignmentObjectTest extends AssistProcessorTest {
+  @override
+  AssistKind get kind => DartAssistKind.DESTRUCTURE_LOCAL_VARIABLE_ASSIGNMENT;
+
+  Future<void> test_object() async {
+    await resolveTestCode('''
+class A { }
+
+A f() => A();
+
+m() {
+  var obj = f();
+}
+''');
+    await assertHasAssistAt('obj', r'''
+class A { }
+
+A f() => A();
+
+m() {
+  var A() = f();
+}
+''');
+  }
+
+  Future<void> test_object_referenced_noAssist() async {
+    await resolveTestCode('''
+class A { }
+
+A f() => A();
+
+m() {
+  var obj = f();
+  print(obj);
+}
+''');
+    await assertNoAssistAt('obj');
+  }
+}
+
+@reflectiveTest
+class DestructureLocalVariableAssignmentRecordTest extends AssistProcessorTest {
   @override
   AssistKind get kind => DartAssistKind.DESTRUCTURE_LOCAL_VARIABLE_ASSIGNMENT;
 
@@ -53,8 +95,13 @@ m(int n) {
 }
 ''');
 
-    assertLinkedGroup(0, ['n2'],
-        expectedSuggestions(LinkedEditSuggestionKind.VARIABLE, ['n2']));
+    assertLinkedGroup(
+        0,
+        ['n2'],
+        expectedSuggestions(
+          LinkedEditSuggestionKind.VARIABLE,
+          ['n2', '_'],
+        ));
   }
 
   Future<void> test_positionalAndNamedFields() async {
@@ -72,6 +119,14 @@ m() {
   var ($1, :n, :s) = f();
 }
 ''');
+
+    assertLinkedGroup(
+        1,
+        [':n'],
+        expectedSuggestions(
+          LinkedEditSuggestionKind.VARIABLE,
+          [':n', 'n: _'],
+        ));
   }
 
   Future<void> test_positionalFields() async {
@@ -89,8 +144,13 @@ m() {
   var ($1, $2) = f();
 }
 ''');
-    assertLinkedGroup(0, [r'$1'],
-        expectedSuggestions(LinkedEditSuggestionKind.VARIABLE, [r'$1']));
+    assertLinkedGroup(
+        0,
+        [r'$1'],
+        expectedSuggestions(
+          LinkedEditSuggestionKind.VARIABLE,
+          [r'$1', '_'],
+        ));
   }
 
   Future<void> test_positionalFields_nameConflict() async {
