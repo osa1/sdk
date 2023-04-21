@@ -234,6 +234,18 @@ class ExceptionHandlerStack {
   void terminateWasmTryBlocks(SyncStarCodeGenerator codeGen) {
     while (_tryBlockDepth > 0) {
       codeGen.b.catch_(translator.exceptionTag);
+
+      final stackTraceLocal =
+          codeGen.addLocal(translator.stackTraceInfo.nonNullableType);
+      codeGen.b.local_set(stackTraceLocal);
+      final exceptionLocal =
+          codeGen.addLocal(translator.topInfo.nonNullableType);
+      codeGen.b.local_set(exceptionLocal);
+
+      codeGen._setCurrentExceptionStackTrace(
+          () => codeGen.b.local_get(stackTraceLocal));
+      codeGen._setCurrentException(() => codeGen.b.local_get(exceptionLocal));
+
       codeGen.jumpToTarget(_handlers[_tryBlockDepth - 1].target);
       codeGen.b.end();
       _tryBlockDepth -= 1;
@@ -812,6 +824,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
     b.ref_as_non_null();
     _getCurrentExceptionStackTrace();
     b.ref_as_non_null();
+    _setFinalizerContinuationRethrow();
     b.throw_(translator.exceptionTag);
 
     emitTargetLabel(after);
@@ -889,7 +902,6 @@ class SyncStarCodeGenerator extends CodeGenerator {
       b.end();
 
       // 1 = rethrow
-      // TODO: We need to store the exception and stack trace in suspend state
       b.local_get(suspendStateLocal);
       b.struct_get(
           suspendStateInfo.struct, FieldIndex.suspendStateFinalizerTargetIndex);
@@ -982,13 +994,13 @@ class SyncStarCodeGenerator extends CodeGenerator {
     restoreContextsAndThis(context);
 
     // For `yield*`, check for pending exception.
-    // TODO FIXME NOTE: I don't understand what this is doing
     if (node.isYieldStar) {
       w.Label exceptionCheck = b.block();
       _getCurrentException();
       b.br_on_null(exceptionCheck);
       _getCurrentExceptionStackTrace();
       b.ref_as_non_null();
+      _setFinalizerContinuationRethrow();
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
     }
@@ -1040,6 +1052,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
     b.ref_as_non_null();
     _getCurrentExceptionStackTrace();
     b.ref_as_non_null();
+    _setFinalizerContinuationRethrow();
     b.throw_(translator.exceptionTag);
     b.unreachable();
     return expectedType;

@@ -72,7 +72,8 @@ class _SuspendState {
         _context = iterable._context,
         _targetIndex = WasmI32.fromInt(_initialTargetIndex),
         _numFinalizers = WasmI32.fromInt(0),
-        _finalizerTargetIndex = WasmI32.fromInt(0),
+        // TODO: Make the default (rethrow) 0
+        _finalizerTargetIndex = WasmI32.fromInt(1),
         _currentException = null,
         _currentExceptionStackTrace = null;
 }
