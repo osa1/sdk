@@ -14,7 +14,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
 import 'package:analyzer_plugin/utilities/fixes/fixes.dart';
 import 'package:analyzer_plugin/utilities/range_factory.dart';
-import 'package:collection/collection.dart';
 
 /// A predicate is a one-argument function that returns a boolean value.
 typedef _ElementPredicate = bool Function(Element argument);
@@ -145,7 +144,7 @@ class ChangeTo extends CorrectionProducer {
         _updateFinderWithClassMembers(finder, interfaceElement);
       }
     } else if (target is ExtensionOverride) {
-      _updateFinderWithExtensionMembers(finder, target.staticElement);
+      _updateFinderWithExtensionMembers(finder, target.element);
     } else if (targetIdentifierElement is ExtensionElement) {
       _updateFinderWithExtensionMembers(finder, targetIdentifierElement);
     } else {

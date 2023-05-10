@@ -53,7 +53,7 @@ class _WasmTransformer extends Transformer {
         _nonNullableTypeType = coreTypes.index
             .getClass('dart:core', '_Type')
             .getThisType(coreTypes, Nullability.nonNullable),
-        _wasmBaseClass = coreTypes.index.getClass('dart:wasm', '_WasmBase'),
+        _wasmBaseClass = coreTypes.index.getClass('dart:_wasm', '_WasmBase'),
         _coreLibrary = coreTypes.index.getLibrary('dart:core');
 
   @override
@@ -298,11 +298,9 @@ class _WasmTransformer extends Transformer {
       VariableDeclaration completer, int fileOffset) {
     Procedure completerFuture =
         coreTypes.index.getProcedure('dart:async', 'Completer', 'get:future');
-    FunctionType completerFutureType =
-        Substitution.fromInterfaceType(completerBoolType).substituteType(
-                completerFuture.function
-                    .computeThisFunctionType(Nullability.nonNullable))
-            as FunctionType;
+    // Future<bool>
+    DartType completerFutureType = InterfaceType(coreTypes.futureClass,
+        Nullability.nonNullable, [coreTypes.boolNonNullableRawType]);
     return AwaitExpression(InstanceGet(
         InstanceAccessKind.Instance, VariableGet(completer), Name('future'),
         interfaceTarget: completerFuture, resultType: completerFutureType)

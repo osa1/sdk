@@ -58,6 +58,8 @@ abstract class ExpressionGeneratorHelper implements InferenceHelper {
 
   LibraryFeatures get libraryFeatures;
 
+  bool isDeclaredInEnclosingCase(VariableDeclaration variable);
+
   Expression_Generator_Builder scopeLookup(
       Scope scope, String name, Token token,
       {bool isQualified = false, PrefixBuilder? prefix});
@@ -83,7 +85,8 @@ abstract class ExpressionGeneratorHelper implements InferenceHelper {
 
   Expression buildStaticInvocation(Member target, Arguments arguments,
       {Constness constness = Constness.implicit,
-      int charOffset = TreeNode.noOffset});
+      int charOffset = TreeNode.noOffset,
+      required bool isConstructorInvocation});
 
   Expression buildExtensionMethodInvocation(
       int fileOffset, Procedure target, Arguments arguments,

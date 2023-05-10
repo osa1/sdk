@@ -165,6 +165,9 @@ class _MatcherBuilder {
       _addMatcher(components: [node.name.lexeme], kinds: []);
     } else if (node is Literal) {
       var parent = node.parent;
+      if (parent is NamedExpression) {
+        parent = parent.parent;
+      }
       if (parent is ArgumentList) {
         _buildFromArgumentList(parent);
       }
@@ -240,7 +243,7 @@ class _MatcherBuilder {
     //  get a more exact matcher.
     // TODO(brianwilkerson) Use 'new' for the name of the unnamed constructor.
     var constructorName = node.name?.name ?? ''; // ?? 'new';
-    var className = node.type.name.simpleName;
+    var className = node.type.name2.lexeme;
     _addMatcher(
       components: [constructorName, className],
       kinds: const [ElementKind.constructorKind],
@@ -254,7 +257,7 @@ class _MatcherBuilder {
   /// Build a matcher for the extension.
   void _buildFromExtensionOverride(ExtensionOverride node) {
     _addMatcher(
-      components: [node.extensionName.name],
+      components: [node.name.lexeme],
       kinds: [ElementKind.extensionKind],
     );
   }
@@ -341,7 +344,7 @@ class _MatcherBuilder {
     // TODO(brianwilkerson) Use the static element, if there is one, in order to
     //  get a more exact matcher.
     _addMatcher(
-      components: [node.name.simpleName],
+      components: [node.name2.lexeme],
       kinds: const [
         ElementKind.classKind,
         ElementKind.enumKind,
@@ -544,7 +547,7 @@ class _MatcherBuilder {
       if (type != null) {
         if (type is InterfaceType) {
           return type.element.name;
-        } else if (type.isDynamic) {
+        } else if (type is DynamicType) {
           // The name is likely to be undefined.
           return target.name;
         }
@@ -559,16 +562,5 @@ class _MatcherBuilder {
       return null;
     }
     return null;
-  }
-}
-
-extension on Identifier {
-  String get simpleName {
-    var identifier = this;
-    if (identifier is PrefixedIdentifier) {
-      // The prefix isn't part of the name of the class.
-      return identifier.identifier.name;
-    }
-    return name;
   }
 }

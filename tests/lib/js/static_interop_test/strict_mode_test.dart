@@ -6,7 +6,13 @@
 library strict_mode_test;
 
 import 'dart:js_interop';
-import 'package:js/js.dart' hide JS;
+   import 'dart:js';
+// ^
+// [web] Library 'dart:js' is forbidden when strict mode is enabled.
+
+   import 'dart:js_util';
+// ^
+// [web] Library 'dart:js_util' is forbidden when strict mode is enabled.
 
 @JS()
 @staticInterop
@@ -105,4 +111,9 @@ void main() {
   jsFunctionTest(((JSNumber foo) => 4.0).toJS);
   //                                     ^
   // [web] JS interop requires JS types when strict mode is enabled, but Type 'double' is not a type or subtype of a type from `dart:js_interop`.
+
+  jsFunctionTest(((((JSNumber foo) => 4.0) as dynamic) as Function).toJS);
+  //                                                                ^
+  // [web] `Function.toJS` requires a statically known function type, but Type 'Function' is not a function type, e.g., `void Function()`.
+
 }

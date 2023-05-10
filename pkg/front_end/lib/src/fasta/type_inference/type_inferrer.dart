@@ -139,17 +139,23 @@ class TypeInferrerImpl implements TypeInferrer {
       this.thisType,
       this.libraryBuilder,
       this.assignedVariables,
-      this.dataForTesting)
+      this.dataForTesting,
+      FunctionType unknownFunctionNonNullable,
+      FunctionType unknownFunctionLegacy)
       // ignore: unnecessary_null_comparison
       : assert(libraryBuilder != null),
-        unknownFunction = new FunctionType(
-            const [], const DynamicType(), libraryBuilder.nonNullable),
+        unknownFunction = libraryBuilder.isNonNullableByDefault
+            ? unknownFunctionNonNullable
+            : unknownFunctionLegacy,
         instrumentation = isTopLevel ? null : engine.instrumentation,
         typeSchemaEnvironment = engine.typeSchemaEnvironment,
         operations = new OperationsCfe(engine.typeSchemaEnvironment,
             isNonNullableByDefault: libraryBuilder.isNonNullableByDefault,
             unpromotablePrivateFieldNames:
-                libraryBuilder.unpromotablePrivateFieldNames);
+                libraryBuilder.unpromotablePrivateFieldNames,
+            typeCacheNonNullable: engine.typeCacheNonNullable,
+            typeCacheNullable: engine.typeCacheNullable,
+            typeCacheLegacy: engine.typeCacheLegacy);
 
   InferenceVisitorBase _createInferenceVisitor(InferenceHelper helper,
       [ConstructorDeclaration? constructorDeclaration]) {
@@ -305,16 +311,27 @@ class TypeInferrerImplBenchmarked implements TypeInferrer {
   final Benchmarker benchmarker;
 
   TypeInferrerImplBenchmarked(
-      TypeInferenceEngine engine,
-      Uri uriForInstrumentation,
-      bool topLevel,
-      InterfaceType? thisType,
-      SourceLibraryBuilder library,
-      AssignedVariables<TreeNode, VariableDeclaration> assignedVariables,
-      InferenceDataForTesting? dataForTesting,
-      this.benchmarker)
-      : impl = new TypeInferrerImpl(engine, uriForInstrumentation, topLevel,
-            thisType, library, assignedVariables, dataForTesting);
+    TypeInferenceEngine engine,
+    Uri uriForInstrumentation,
+    bool topLevel,
+    InterfaceType? thisType,
+    SourceLibraryBuilder library,
+    AssignedVariables<TreeNode, VariableDeclaration> assignedVariables,
+    InferenceDataForTesting? dataForTesting,
+    this.benchmarker,
+    FunctionType unknownFunctionNonNullable,
+    FunctionType unknownFunctionLegacy,
+  ) : impl = new TypeInferrerImpl(
+          engine,
+          uriForInstrumentation,
+          topLevel,
+          thisType,
+          library,
+          assignedVariables,
+          dataForTesting,
+          unknownFunctionNonNullable,
+          unknownFunctionLegacy,
+        );
 
   @override
   bool get isTopLevel => impl.isTopLevel;

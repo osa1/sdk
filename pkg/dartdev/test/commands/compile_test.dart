@@ -48,7 +48,7 @@ void defineCompileTests() {
         ],
       );
 
-      expect(result.stdout, contains(soundNullSafetyMessage));
+      expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
       expect(result.stderr, isEmpty);
       expect(result.exitCode, 0);
       expect(File(outFile).existsSync(), true,
@@ -89,7 +89,7 @@ void defineCompileTests() {
         ],
       );
 
-      expect(result.stdout, contains(soundNullSafetyMessage));
+      expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
       expect(result.stderr, isEmpty);
       expect(result.exitCode, 0);
       expect(File(outFile).existsSync(), true,
@@ -221,7 +221,7 @@ void defineCompileTests() {
         p.relativeFilePath,
       ],
     );
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -251,7 +251,7 @@ void defineCompileTests() {
       '-v',
       inFile,
     ]);
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     final file = File(outFile);
     expect(file.existsSync(), true, reason: 'File not found: $outFile');
@@ -408,7 +408,7 @@ void defineCompileTests() {
     );
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
 
     result = await p.run(['run', 'main.dill']);
@@ -472,7 +472,7 @@ void main() {
     expect(result.stderr, contains('Error: '));
     // The CFE doesn't print to stderr, so all output is piped to stderr, even
     // including info-only output:
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, compileErrorExitCode);
     expect(File(outFile).existsSync(), false,
         reason: 'File not found: $outFile');
@@ -520,7 +520,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout, contains(soundNullSafetyMessage));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -569,7 +569,7 @@ void main() {}
       ],
     );
 
-    expect(result.stdout, contains(soundNullSafetyMessage));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -601,8 +601,7 @@ void main() {}
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -630,8 +629,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
   }, skip: isRunningOnIA32);
@@ -651,7 +649,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout, contains(soundNullSafetyMessage));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -700,8 +698,7 @@ void main() {}
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -729,8 +726,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
   });
@@ -750,7 +746,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout, contains(soundNullSafetyMessage));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -799,8 +795,7 @@ void main() {}
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -828,8 +823,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
   }, skip: isRunningOnIA32);
@@ -855,8 +849,7 @@ void main() {
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stdout, contains('Warning: '));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
@@ -906,7 +899,7 @@ void main() {
       ],
     );
 
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -955,7 +948,7 @@ void main() {}
       ],
     );
 
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -1002,8 +995,7 @@ void main() {}
       ],
     );
 
-    expect(result.stdout,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stdout, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, isEmpty);
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
@@ -1030,8 +1022,7 @@ void main() {
       ],
     );
 
-    expect(result.stderr,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, contains('must be assigned before it can be used'));
     expect(result.exitCode, 254);
   });
@@ -1056,8 +1047,7 @@ void main() {
       ],
     );
 
-    expect(result.stderr,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, contains('Warning:'));
     expect(result.exitCode, 0);
   });
@@ -1077,7 +1067,7 @@ void main() {
       ],
     );
 
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -1124,7 +1114,7 @@ void main() {}
       ],
     );
 
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -1175,7 +1165,7 @@ void main() {}
       ],
     );
 
-    expect(result.stderr, contains(soundNullSafetyMessage));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.stdout,
         predicate((dynamic o) => '$o'.contains('[foo, -e, --foobar=bar]')));
     expect(result.exitCode, 0);
@@ -1199,8 +1189,7 @@ void main() {}
       ],
     );
 
-    expect(result.stderr,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.exitCode, 0);
     expect(File(outFile).existsSync(), true,
         reason: 'File not found: $outFile');
@@ -1226,8 +1215,7 @@ void main() {
       ],
     );
 
-    expect(result.stderr,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, contains('must be assigned before it can be used'));
     expect(result.exitCode, 254);
   });
@@ -1252,86 +1240,10 @@ void main() {
       ],
     );
 
-    expect(result.stderr,
-        predicate((dynamic o) => !'$o'.contains(soundNullSafetyMessage)));
+    expect(result.stderr, isNot(contains(soundNullSafetyMessage)));
     expect(result.stderr, contains('Warning:'));
     expect(result.exitCode, 0);
   });
-
-  // One test per sub-command, as they do not share the target resolution code.
-  for (final command in [
-    'exe',
-    'js',
-    'jit-snapshot',
-    'aot-snapshot',
-    'kernel',
-  ]) {
-    test('`compile $command` resolves pubspec for target project', () async {
-      final bar = project(name: 'bar', mainSrc: 'final x = 42;');
-
-      final p = project(mainSrc: '''
-import 'package:bar/main.dart';
-void main(args) {
-  print(x);
-}
-''', pubspecExtras: {
-        'dependencies': {
-          'bar': {'path': bar.dirPath}
-        }
-      });
-      // Run in a sibling-dir to the project with a relative path to the main.
-      // The pubspec should be resolved.
-      final siblingDir = path.join(p.root.path, 'sibling');
-      Directory(siblingDir).createSync();
-      final target = path.relative(
-        path.join(p.dirPath, 'lib', 'main.dart'),
-        from: siblingDir,
-      );
-
-      final result = await p
-          .run(['compile', command, target, '-o', 'a'], workingDir: siblingDir);
-      // TODO(sigurdm): expect something from stdout and stderr, however they
-      // are highly irregular between commands.
-      expect(result.exitCode, 0);
-    });
-
-    test(
-        '`compile $command --no-pub` doesn\'t resolve pubspec for target project',
-        () async {
-      final bar = project(name: 'bar', mainSrc: 'final x = does not compile;');
-      final bar2 = project(name: 'bar', mainSrc: 'final x = 42;');
-
-      final p = project(mainSrc: '''
-import 'package:bar/main.dart';
-void main(args) {
-  print(x);
-}
-''', pubspecExtras: {
-        'dependencies': {
-          'bar': {'path': bar.dirPath}
-        }
-      });
-      p.file('.dart_tool/package_config.json', '''
-{
-  "configVersion": 2,
-  "packages": [
-    {
-      "name": "bar",
-      "rootUri": "${bar2.dirPath}",
-      "packageUri": "${path.join(bar2.dirPath, 'lib')}"
-    }
-  ]
-}
-''');
-      // Run in a sibling-dir to the project with a relative path to the main.
-      // The pubspec should not be resolved due to '--no-pub'.
-      final result = await p
-          .run(['compile', command, '--no-pub', p.relativeFilePath, '-o', 'a']);
-      // TODO(sigurdm): expect something from stdout and stderr, however they
-      // are highly irregular between commands.
-      expect(result.exitCode, 0);
-    });
-  }
 
   if (Platform.isMacOS) {
     test('Compile and run executable from signed dartaotruntime', () async {

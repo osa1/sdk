@@ -1039,7 +1039,7 @@ CompileTimeErrorCode:
 
       ```dart
       void f(list) {
-        await for (var e [!in!] list) {
+        [!await!] for (var e in list) {
           print(e);
         }
       }
@@ -3940,7 +3940,7 @@ CompileTimeErrorCode:
 
       ```dart
       void f(Object o) {
-        switch (0) {
+        switch (o) {
           case C(f: 1, [!f!]: 2):
             return;
         }
@@ -9245,10 +9245,10 @@ CompileTimeErrorCode:
     correctionMessage: "Try removing the '@'."
     hasPublishedDocs: true
     comment: No parameters.
-  MISSING_OBJECT_PATTERN_GETTER_NAME:
+  MISSING_NAMED_PATTERN_FIELD_NAME:
     problemMessage: The getter name is not specified explicitly, and the pattern is not a variable.
     correctionMessage: Try specifying the getter name explicitly, or using a variable pattern.
-    hasPublishedDocs: true
+    hasPublishedDocs: false
     comment: No parameters.
     documentation: |-
       #### Description
@@ -10924,14 +10924,75 @@ CompileTimeErrorCode:
       13.2 Expression Statements: It is a compile-time error if a non-constant
       map literal that has no explicit type arguments appears in a place where a
       statement is expected.
-  NON_EXHAUSTIVE_SWITCH:
-    problemMessage: "The type '{0}' is not exhaustively matched by the switch cases."
-    correctionMessage: "Try adding a default case or cases that match '{1}'."
+  NON_EXHAUSTIVE_SWITCH_EXPRESSION:
+    problemMessage: "The type '{0}' is not exhaustively matched by the switch cases since it doesn't match '{1}'."
+    correctionMessage: "Try adding a wildcard pattern or cases that match '{2}'."
     hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the type of the switch scrutinee
-      1: the unmatched space
+      1: the witness pattern for the unmatched value
+      2: the suggested pattern for the unmatched value
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when a `switch` expression is
+      missing a case for one or more of the possible values that could flow
+      through it.
+
+      #### Example
+
+      The following code produces this diagnostic because the switch expression
+      doesn't have a case for the value `E.three`:
+
+      ```dart
+      enum E { one, two, three }
+
+      String f(E e) => [!switch!] (e) {
+          E.one => 'one',
+          E.two => 'two',
+        };
+      ```
+
+      #### Common fixes
+
+      Add a case for each of the constants that aren't currently being matched:
+
+      ```dart
+      enum E { one, two, three }
+
+      String f(E e) => switch (e) {
+          E.one => 'one',
+          E.two => 'two',
+          E.three => 'three',
+        };
+      ```
+
+      If the missing values don't need to be matched, then add  a wildcard
+      pattern:
+
+      ```dart
+      enum E { one, two, three }
+
+      String f(E e) => switch (e) {
+          E.one => 'one',
+          E.two => 'two',
+          _ => 'unknown',
+        };
+      ```
+
+      But be aware that adding a wildcard pattern will cause any future values
+      of the type to also be handled, so you will have lost the ability for the
+      compiler to warn you if the `switch` needs to be updated.
+  NON_EXHAUSTIVE_SWITCH_STATEMENT:
+    problemMessage: "The type '{0}' is not exhaustively matched by the switch cases since it doesn't match '{1}'."
+    correctionMessage: "Try adding a default case or cases that match '{2}'."
+    hasPublishedDocs: true
+    comment: |-
+      Parameters:
+      0: the type of the switch scrutinee
+      1: the witness pattern for the unmatched value
+      2: the suggested pattern for the unmatched value
     documentation: |-
       #### Description
 
@@ -10974,7 +11035,7 @@ CompileTimeErrorCode:
       ```
 
       If the missing values don't need to be matched, then add a `default`
-      clause (or a wildcard pattern in a `switch` expression):
+      clause or a wildcard pattern:
 
       ```dart
       enum E { one, two, three }
@@ -12673,6 +12734,41 @@ CompileTimeErrorCode:
     comment: |-
       Parameters:
       0: the name of the pattern variable
+  POSITIONAL_FIELD_IN_OBJECT_PATTERN:
+    problemMessage: Object patterns can only use named fields.
+    correctionMessage: Try specifying the field name.
+    comment: No parameters.
+    hasPublishedDocs: true
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when an object pattern contains a
+      field that doesn't have a getter name. The fields provide a pattern to
+      match against the value returned by a getter, and not specifying the name
+      of the getter means that there's no way to access the value that the
+      pattern is intended to match against.
+
+      #### Example
+
+      The following code produces this diagnostic because the object pattern
+      `String(1)` doesn't say which value to compare with `1`:
+
+      ```dart
+      void f(Object o) {
+        if (o case String([!1!])) {}
+      }
+      ```
+
+      #### Common fixes
+
+      Add both the name of the getter to use to access the value and a colon
+      before the value:
+
+      ```dart
+      void f(Object o) {
+        if (o case String(length: 1)) {}
+      }
+      ```
   POSITIONAL_SUPER_FORMAL_PARAMETER_WITH_POSITIONAL_ARGUMENT:
     problemMessage: Positional super parameters can't be used when the super constructor invocation has a positional argument.
     correctionMessage: Try making all the positional parameters passed to the super constructor be either all super parameters or all normal parameters.
@@ -19690,6 +19786,7 @@ HintCode:
   UNNECESSARY_CAST:
     problemMessage: Unnecessary cast.
     correctionMessage: Try removing the cast.
+    deprecatedMessage: Use 'WarningCode.UNNECESSARY_CAST' instead.
     hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
@@ -19722,64 +19819,6 @@ HintCode:
         }
       }
       ```
-  UNNECESSARY_FINAL:
-    problemMessage: The keyword 'final' isn't necessary because the parameter is implicitly 'final'.
-    correctionMessage: Try removing the 'final'.
-    hasPublishedDocs: true
-    comment: No parameters.
-    documentation: |-
-      #### Description
-
-      The analyzer produces this diagnostic when either a field initializing
-      parameter or a super parameter in a constructor has the keyword `final`.
-      In both cases the keyword is unnecessary because the parameter is
-      implicitly `final`.
-
-      #### Examples
-
-      The following code produces this diagnostic because the field initializing
-      parameter has the keyword `final`:
-
-      ```dart
-      class A {
-        int value;
-
-        A([!final!] this.value);
-      }
-      ```
-
-      The following code produces this diagnostic because the super parameter in
-      `B` has the keyword `final`:
-
-      ```dart
-      class A {
-        A(int value);
-      }
-
-      class B extends A {
-        B([!final!] super.value);
-      }
-      ```
-
-      #### Common fixes
-
-      Remove the unnecessary `final` keyword:
-
-      ```dart
-      class A {
-        A(int value);
-      }
-
-      class B extends A {
-        B(super.value);
-      }
-      ```
-  UNNECESSARY_IGNORE:
-    problemMessage: "The diagnostic '{0}' isn't produced at this location so it doesn't need to be ignored."
-    correctionMessage: Try removing the name from the list, or removing the whole comment if this is the only name in the list.
-    comment: |-
-      Parameters:
-      0: the name of the diagnostic being ignored
   UNNECESSARY_IMPORT:
     problemMessage: "The import of '{0}' is unnecessary because all of the used elements are also provided by the import of '{1}'."
     correctionMessage: Try removing the import directive.
@@ -19834,6 +19873,7 @@ HintCode:
   UNREACHABLE_SWITCH_CASE:
     problemMessage: "This case is covered by the previous cases."
     correctionMessage: Try removing the case clause, or restructuring the preceding patterns.
+    deprecatedMessage: Use 'WarningCode.UNREACHABLE_SWITCH_CASE' instead.
     hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
@@ -19876,6 +19916,7 @@ HintCode:
   UNUSED_ELEMENT:
     problemMessage: "The declaration '{0}' isn't referenced."
     correctionMessage: "Try removing the declaration of '{0}'."
+    deprecatedMessage: Use 'WarningCode.UNUSED_ELEMENT' instead.
     hasPublishedDocs: true
     comment: |-
       Parameters:
@@ -19938,6 +19979,7 @@ HintCode:
     sharedName: UNUSED_ELEMENT
     problemMessage: "A value for optional parameter '{0}' isn't ever given."
     correctionMessage: Try removing the unused parameter.
+    deprecatedMessage: Use 'WarningCode.UNUSED_ELEMENT_PARAMETER' instead.
     hasPublishedDocs: true
     comment: |-
       Parameters:
@@ -20177,9 +20219,6 @@ ParserErrorCode:
     correctionMessage: "Try removing the keyword 'final'."
   FINAL_CONSTRUCTOR:
     problemMessage: "A constructor can't be declared to be 'final'."
-    correctionMessage: "Try removing the keyword 'final'."
-  FINAL_ENUM:
-    problemMessage: "Enums can't be declared to be 'final'."
     correctionMessage: "Try removing the keyword 'final'."
   FINAL_METHOD:
     problemMessage: "Getters, setters and methods can't be declared to be 'final'."
@@ -23671,6 +23710,13 @@ WarningCode:
       A setter with the override annotation does not override an existing setter.
 
       No parameters.
+  PATTERN_NEVER_MATCHES_VALUE_TYPE:
+    problemMessage: "The matched value type '{0}' can never match the required type '{1}'."
+    correctionMessage: "Try using a different pattern."
+    comment: |-
+      Parameters:
+      0: the matched value type
+      1: the required pattern type
   RECEIVER_OF_TYPE_NEVER:
     problemMessage: "The receiver is of type 'Never', and will never complete with a value."
     correctionMessage: Try checking for throw expressions or type errors in the receiver
@@ -24733,8 +24779,63 @@ WarningCode:
     correctionMessage: Try removing the cast pattern.
     comment: No parameters.
   UNNECESSARY_FINAL:
-    aliasFor: HintCode.UNNECESSARY_FINAL
-    comment: This is the new replacement for [HintCode.UNNECESSARY_FINAL].
+    problemMessage: The keyword 'final' isn't necessary because the parameter is implicitly 'final'.
+    correctionMessage: Try removing the 'final'.
+    hasPublishedDocs: true
+    comment: No parameters.
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when either a field initializing
+      parameter or a super parameter in a constructor has the keyword `final`.
+      In both cases the keyword is unnecessary because the parameter is
+      implicitly `final`.
+
+      #### Examples
+
+      The following code produces this diagnostic because the field initializing
+      parameter has the keyword `final`:
+
+      ```dart
+      class A {
+        int value;
+
+        A([!final!] this.value);
+      }
+      ```
+
+      The following code produces this diagnostic because the super parameter in
+      `B` has the keyword `final`:
+
+      ```dart
+      class A {
+        A(int value);
+      }
+
+      class B extends A {
+        B([!final!] super.value);
+      }
+      ```
+
+      #### Common fixes
+
+      Remove the unnecessary `final` keyword:
+
+      ```dart
+      class A {
+        A(int value);
+      }
+
+      class B extends A {
+        B(super.value);
+      }
+      ```
+  UNNECESSARY_IGNORE:
+    problemMessage: "The diagnostic '{0}' isn't produced at this location so it doesn't need to be ignored."
+    correctionMessage: Try removing the name from the list, or removing the whole comment if this is the only name in the list.
+    comment: |-
+      Parameters:
+      0: the name of the diagnostic being ignored
   UNNECESSARY_NAN_COMPARISON_FALSE:
     sharedName: UNNECESSARY_NAN_COMPARISON
     problemMessage: A double can't equal 'double.nan', so the condition is always 'false'.

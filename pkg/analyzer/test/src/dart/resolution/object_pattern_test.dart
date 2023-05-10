@@ -31,10 +31,8 @@ void f(Object o) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: B
-      staticElement: self::@class::B
-      staticType: null
+    name: B
+    element: self::@class::B
     type: B<B<Object?>>
   leftParenthesis: (
   rightParenthesis: )
@@ -57,10 +55,8 @@ void f(A<int> x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: B
-      staticElement: self::@class::B
-      staticType: null
+    name: B
+    element: self::@class::B
     type: B<int>
   leftParenthesis: (
   rightParenthesis: )
@@ -84,10 +80,8 @@ void f(B<int> b) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
-      staticElement: self::@class::C
-      staticType: null
+    name: C
+    element: self::@class::C
     type: C<int, Set<int>>
   leftParenthesis: (
   rightParenthesis: )
@@ -110,10 +104,8 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A<num>
   leftParenthesis: (
   rightParenthesis: )
@@ -137,10 +129,8 @@ void f(A<int, String> x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: L
-      staticElement: self::@typeAlias::L
-      staticType: null
+    name: L
+    element: self::@typeAlias::L
     type: B<int, String>
       alias: self::@typeAlias::L
         typeArguments
@@ -170,20 +160,16 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
       rightBracket: >
+    element: self::@class::A
     type: A<int>
   leftParenthesis: (
   fields
@@ -222,10 +208,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -263,10 +247,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -304,10 +286,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -348,10 +328,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -390,10 +368,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -426,16 +402,14 @@ void f(x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.MISSING_OBJECT_PATTERN_GETTER_NAME, 75, 3),
+      error(CompileTimeErrorCode.MISSING_NAMED_PATTERN_FIELD_NAME, 75, 3),
     ]);
     final node = findNode.singleGuardedPattern.pattern;
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -472,10 +446,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -513,10 +485,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -532,10 +502,8 @@ ObjectPattern
           matchedValueType: int
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
         matchedValueType: int?
       element: self::@class::A::@getter::foo
@@ -563,10 +531,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -607,10 +573,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -651,10 +615,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -677,6 +639,35 @@ ObjectPattern
 ''');
   }
 
+  test_class_notGeneric_positionalField() async {
+    await assertErrorsInCode(r'''
+void f(Object? x) {
+  if (x case Object(0)) {}
+}
+''', [
+      error(CompileTimeErrorCode.POSITIONAL_FIELD_IN_OBJECT_PATTERN, 40, 1),
+    ]);
+    final node = findNode.singleGuardedPattern.pattern;
+    assertResolvedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: Object
+    element: dart:core::@class::Object
+    type: Object
+  leftParenthesis: (
+  fields
+    PatternField
+      pattern: ConstantPattern
+        expression: IntegerLiteral
+          literal: 0
+          staticType: int
+        matchedValueType: dynamic
+      element: <null>
+  rightParenthesis: )
+  matchedValueType: Object?
+''');
+  }
+
   test_class_notGeneric_unresolved_hasName() async {
     await assertErrorsInCode(r'''
 abstract class A {}
@@ -694,10 +685,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -734,10 +723,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@class::A
-      staticType: null
+    name: A
+    element: self::@class::A
     type: A
   leftParenthesis: (
   fields
@@ -749,6 +736,45 @@ ObjectPattern
         name: foo
         declaredElement: hasImplicitType foo@65
           type: dynamic
+        matchedValueType: dynamic
+      element: <null>
+  rightParenthesis: )
+  matchedValueType: dynamic
+''');
+  }
+
+  test_typeAlias_nullable() async {
+    await assertErrorsInCode(r'''
+typedef A = int?;
+
+void f(x) {
+  switch (x) {
+    case A(foo: 0):
+      break;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.UNCHECKED_PROPERTY_ACCESS_OF_NULLABLE_VALUE,
+          55, 1),
+    ]);
+    final node = findNode.singleGuardedPattern.pattern;
+    assertResolvedNodeText(node, r'''
+ObjectPattern
+  type: NamedType
+    name: A
+    element: self::@typeAlias::A
+    type: int?
+      alias: self::@typeAlias::A
+  leftParenthesis: (
+  fields
+    PatternField
+      name: PatternFieldName
+        name: foo
+        colon: :
+      pattern: ConstantPattern
+        expression: IntegerLiteral
+          literal: 0
+          staticType: int
         matchedValueType: dynamic
       element: <null>
   rightParenthesis: )
@@ -773,10 +799,8 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: dynamic
   leftParenthesis: (
   fields
@@ -817,20 +841,16 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
       rightBracket: >
+    element: self::@typeAlias::A
     type: int Function()
       alias: self::@typeAlias::A
         typeArguments
@@ -874,10 +894,8 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: void Function()
       alias: self::@typeAlias::A
   leftParenthesis: (
@@ -915,10 +933,8 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: void Function()
       alias: self::@typeAlias::A
   leftParenthesis: (
@@ -957,10 +973,8 @@ void f(Object? x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: void Function()
       alias: self::@typeAlias::A
   leftParenthesis: (
@@ -998,10 +1012,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: ({int foo})
       alias: self::@typeAlias::A
   leftParenthesis: (
@@ -1039,10 +1051,8 @@ void f(x) {
     assertResolvedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: A
-      staticElement: self::@typeAlias::A
-      staticType: null
+    name: A
+    element: self::@typeAlias::A
     type: (int)
       alias: self::@typeAlias::A
   leftParenthesis: (
@@ -1081,10 +1091,8 @@ PatternVariableDeclaration
   keyword: var
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: A
-        staticElement: self::@class::A
-        staticType: null
+      name: A
+      element: self::@class::A
       type: A<int>
     leftParenthesis: (
     fields
@@ -1130,20 +1138,16 @@ PatternVariableDeclaration
   keyword: var
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: A
-        staticElement: self::@class::A
-        staticType: null
+      name: A
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
-              staticElement: dart:core::@class::int
-              staticType: null
+            name: int
+            element: dart:core::@class::int
             type: int
         rightBracket: >
+      element: self::@class::A
       type: A<int>
     leftParenthesis: (
     fields
@@ -1166,10 +1170,8 @@ PatternVariableDeclaration
     keyword: new
     constructorName: ConstructorName
       type: NamedType
-        name: SimpleIdentifier
-          token: A
-          staticElement: self::@class::A
-          staticType: null
+        name: A
+        element: self::@class::A
         type: A<int>
       staticElement: ConstructorMember
         base: self::@class::A::@constructor::new
@@ -1201,10 +1203,8 @@ PatternVariableDeclaration
   keyword: var
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: A
-        staticElement: self::@class::A
-        staticType: null
+      name: A
+      element: self::@class::A
       type: A<dynamic>
     leftParenthesis: (
     fields
@@ -1214,10 +1214,8 @@ PatternVariableDeclaration
           colon: :
         pattern: DeclaredVariablePattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
-              staticElement: dart:core::@class::int
-              staticType: null
+            name: int
+            element: dart:core::@class::int
             type: int
           name: a
           declaredElement: a@28
@@ -1233,10 +1231,8 @@ PatternVariableDeclaration
     keyword: new
     constructorName: ConstructorName
       type: NamedType
-        name: SimpleIdentifier
-          token: A
-          staticElement: self::@class::A
-          staticType: null
+        name: A
+        element: self::@class::A
         type: A<dynamic>
       staticElement: ConstructorMember
         base: self::@class::A::@constructor::new

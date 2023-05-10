@@ -139,9 +139,9 @@ class A6 {
       /*update: [exact=A6]*/ f6b = "2";
     }
     if (x) {
-      /*update: [exact=A6]*/ f6b = List();
+      /*update: [exact=A6]*/ f6b = [];
     } else {
-      /*update: [exact=A6]*/ f6b = List();
+      /*update: [exact=A6]*/ f6b = [];
     }
   }
 }
@@ -168,10 +168,10 @@ class A7 {
       /*update: [exact=A7]*/ f7b = "2";
     }
     if (x) {
-      /*update: [exact=A7]*/ f7a = List();
-      /*update: [exact=A7]*/ f7b = List();
+      /*update: [exact=A7]*/ f7a = [];
+      /*update: [exact=A7]*/ f7b = [];
     } else {
-      /*update: [exact=A7]*/ f7b = List();
+      /*update: [exact=A7]*/ f7b = [];
     }
   }
 }
@@ -341,7 +341,7 @@ class A15 {
 
   /*member: A15.other:[exact=A15]*/
   A15.other() {
-    /*update: [exact=A15]*/ f15 = List();
+    /*update: [exact=A15]*/ f15 = [];
   }
 }
 
@@ -742,7 +742,7 @@ class A27 {
 /*member: B27.:[exact=B27]*/
 class B27 extends A27 {
   @override
-  set f27b(/*[exact=JSUInt31]*/ value) {}
+  set f27b(/*[null|exact=JSUInt31]*/ value) {}
 }
 
 /*member: test27:[null]*/

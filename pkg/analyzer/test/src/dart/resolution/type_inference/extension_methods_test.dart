@@ -53,20 +53,67 @@ void f(A<int> a) {
   a.foo(1.0);
 }
 ''');
-    // TODO(scheglov) We need to instantiate "foo" fully.
-    var invocation = findNode.methodInvocation('foo(1.0)');
-    assertMember(
-      invocation,
-      findElement.method('foo', of: 'E'),
-      {'T': 'int'},
-    );
-//    assertMember(
-//      invocation,
-//      findElement.method('foo', of: 'E'),
-//      {'T': 'int', 'U': 'double'},
-//    );
-    assertInvokeType(invocation, 'Map<int, double> Function(double)');
-    assertType(invocation, 'Map<int, double>');
+
+    final node = findNode.singleMethodInvocation;
+    if (isNullSafetyEnabled) {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A<int>
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: int, U: U}
+    staticType: Map<int, U> Function<U>(U)
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double}
+        staticType: double
+    rightParenthesis: )
+  staticInvokeType: Map<int, double> Function(double)
+  staticType: Map<int, double>
+  typeArgumentTypes
+    double
+''');
+    } else {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A<int*>*
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: int*, U: U}
+    staticType: Map<int*, U*>* Function<U>(U*)*
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double*}
+        staticType: double*
+    rightParenthesis: )
+  staticInvokeType: Map<int*, double*>* Function(double*)*
+  staticType: Map<int*, double*>*
+  typeArgumentTypes
+    double*
+''');
+    }
   }
 
   test_implicit_method_internal() async {
@@ -131,20 +178,67 @@ void f(String a) {
   a.foo(0);
 }
 ''');
-    // TODO(scheglov) We need to instantiate "foo" fully.
-    var invocation = findNode.methodInvocation('foo(0)');
-    assertMember(
-      invocation,
-      findElement.method('foo', of: 'E'),
-      {'T': 'String'},
-    );
-//    assertMember(
-//      invocation,
-//      findElement.method('foo', of: 'E'),
-//      {'T': 'int', 'U': 'double'},
-//    );
-    assertInvokeType(invocation, 'Map<String, int> Function(int)');
-    assertType(invocation, 'Map<String, int>');
+
+    final node = findNode.singleMethodInvocation;
+    if (isNullSafetyEnabled) {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: String
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: String, U: U}
+    staticType: Map<String, U> Function<U>(U)
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      IntegerLiteral
+        literal: 0
+        parameter: ParameterMember
+          base: root::@parameter::value
+          substitution: {U: int}
+        staticType: int
+    rightParenthesis: )
+  staticInvokeType: Map<String, int> Function(int)
+  staticType: Map<String, int>
+  typeArgumentTypes
+    int
+''');
+    } else {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: String*
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: String*, U: U}
+    staticType: Map<String*, U*>* Function<U>(U*)*
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      IntegerLiteral
+        literal: 0
+        parameter: ParameterMember
+          base: root::@parameter::value
+          substitution: {U: int*}
+        staticType: int*
+    rightParenthesis: )
+  staticInvokeType: Map<String*, int*>* Function(int*)*
+  staticType: Map<String*, int*>*
+  typeArgumentTypes
+    int*
+''');
+    }
   }
 
   test_implicit_method_tearOff() async {
@@ -312,24 +406,47 @@ void f<S extends num>(S x) {
 }
 ''');
 
-    if (result.libraryElement.isNonNullableByDefault) {
-      assertPropertyAccess2(
-        findNode.propertyAccess('.test'),
-        element: elementMatcher(
-          findElement.getter('test'),
-          substitution: {'T': 'S'},
-        ),
-        type: 'S Function(S)',
-      );
+    final node = findNode.singlePropertyAccess;
+    if (isNullSafetyEnabled) {
+      assertResolvedNodeText(node, r'''
+PropertyAccess
+  target: ParenthesizedExpression
+    leftParenthesis: (
+    expression: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: S
+    rightParenthesis: )
+    staticType: S
+  operator: .
+  propertyName: SimpleIdentifier
+    token: test
+    staticElement: PropertyAccessorMember
+      base: self::@extension::Test::@getter::test
+      substitution: {T: S}
+    staticType: S Function(S)
+  staticType: S Function(S)
+''');
     } else {
-      assertPropertyAccess2(
-        findNode.propertyAccess('.test'),
-        element: elementMatcher(
-          findElement.getter('test'),
-          substitution: {'T': 'num'},
-        ),
-        type: 'num Function(num)',
-      );
+      assertResolvedNodeText(node, r'''
+PropertyAccess
+  target: ParenthesizedExpression
+    leftParenthesis: (
+    expression: SimpleIdentifier
+      token: x
+      staticElement: self::@function::f::@parameter::x
+      staticType: S*
+    rightParenthesis: )
+    staticType: S*
+  operator: .
+  propertyName: SimpleIdentifier
+    token: test
+    staticElement: PropertyAccessorMember
+      base: self::@extension::Test::@getter::test
+      substitution: {T: num*}
+    staticType: num* Function(num*)*
+  staticType: num* Function(num*)*
+''');
     }
   }
 
@@ -519,24 +636,107 @@ void f(A<int> a) {
   E<num>(a).foo(1.0);
 }
 ''');
-    var override = findNode.extensionOverride('E<num>(a)');
-    assertElement(override, findElement.extension_('E'));
-    assertElementTypes(override.typeArgumentTypes, ['num']);
-    assertType(override.extendedType, 'A<num>');
 
-    // TODO(scheglov) We need to instantiate "foo" fully.
-    var invocation = findNode.methodInvocation('foo(1.0)');
-    assertMember(
-      invocation,
-      findElement.method('foo', of: 'E'),
-      {'T': 'num'},
-    );
-//    assertMember(
-//      invocation,
-//      findElement.method('foo', of: 'E'),
-//      {'T': 'int', 'U': 'double'},
-//    );
-    assertInvokeType(invocation, 'Map<num, double> Function(double)');
+    final node = findNode.singleMethodInvocation;
+    if (isNullSafetyEnabled) {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ExtensionOverride
+    name: E
+    typeArguments: TypeArgumentList
+      leftBracket: <
+      arguments
+        NamedType
+          name: num
+          element: dart:core::@class::num
+          type: num
+      rightBracket: >
+    argumentList: ArgumentList
+      leftParenthesis: (
+      arguments
+        SimpleIdentifier
+          token: a
+          parameter: <null>
+          staticElement: self::@function::f::@parameter::a
+          staticType: A<int>
+      rightParenthesis: )
+    element: self::@extension::E
+    extendedType: A<num>
+    staticType: null
+    typeArgumentTypes
+      num
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: num, U: U}
+    staticType: Map<num, U> Function<U>(U)
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double}
+        staticType: double
+    rightParenthesis: )
+  staticInvokeType: Map<num, double> Function(double)
+  staticType: Map<num, double>
+  typeArgumentTypes
+    double
+''');
+    } else {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ExtensionOverride
+    name: E
+    typeArguments: TypeArgumentList
+      leftBracket: <
+      arguments
+        NamedType
+          name: num
+          element: dart:core::@class::num
+          type: num*
+      rightBracket: >
+    argumentList: ArgumentList
+      leftParenthesis: (
+      arguments
+        SimpleIdentifier
+          token: a
+          parameter: <null>
+          staticElement: self::@function::f::@parameter::a
+          staticType: A<int*>*
+      rightParenthesis: )
+    element: self::@extension::E
+    extendedType: A<num*>*
+    staticType: null
+    typeArgumentTypes
+      num*
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: num*, U: U}
+    staticType: Map<num*, U*>* Function<U>(U*)*
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double*}
+        staticType: double*
+    rightParenthesis: )
+  staticInvokeType: Map<num*, double*>* Function(double*)*
+  staticType: Map<num*, double*>*
+  typeArgumentTypes
+    double*
+''');
+    }
   }
 
   test_override_hasTypeArguments_method_tearOff() async {
@@ -579,18 +779,13 @@ void f(A<int> a) {
 AssignmentExpression
   leftHandSide: PropertyAccess
     target: ExtensionOverride
-      extensionName: SimpleIdentifier
-        token: E
-        staticElement: self::@extension::E
-        staticType: null
+      name: E
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: num
-              staticElement: dart:core::@class::num
-              staticType: null
+            name: num
+            element: dart:core::@class::num
             type: num
         rightBracket: >
       argumentList: ArgumentList
@@ -602,6 +797,7 @@ AssignmentExpression
             staticElement: self::@function::f::@parameter::a
             staticType: A<int>
         rightParenthesis: )
+      element: self::@extension::E
       extendedType: A<num>
       staticType: null
       typeArgumentTypes
@@ -633,18 +829,13 @@ AssignmentExpression
 AssignmentExpression
   leftHandSide: PropertyAccess
     target: ExtensionOverride
-      extensionName: SimpleIdentifier
-        token: E
-        staticElement: self::@extension::E
-        staticType: null
+      name: E
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: num
-              staticElement: dart:core::@class::num
-              staticType: null
+            name: num
+            element: dart:core::@class::num
             type: num*
         rightBracket: >
       argumentList: ArgumentList
@@ -656,6 +847,7 @@ AssignmentExpression
             staticElement: self::@function::f::@parameter::a
             staticType: A<int*>*
         rightParenthesis: )
+      element: self::@extension::E
       extendedType: A<num*>*
       staticType: null
       typeArgumentTypes
@@ -740,24 +932,91 @@ void f(A<int> a) {
   E(a).foo(1.0);
 }
 ''');
-    var override = findNode.extensionOverride('E(a)');
-    assertElement(override, findElement.extension_('E'));
-    assertElementTypes(override.typeArgumentTypes, ['int']);
-    assertType(override.extendedType, 'A<int>');
 
-    // TODO(scheglov) We need to instantiate "foo" fully.
-    var invocation = findNode.methodInvocation('foo(1.0)');
-    assertMember(
-      invocation,
-      findElement.method('foo', of: 'E'),
-      {'T': 'int'},
-    );
-//    assertMember(
-//      invocation,
-//      findElement.method('foo', of: 'E'),
-//      {'T': 'int', 'U': 'double'},
-//    );
-    assertInvokeType(invocation, 'Map<int, double> Function(double)');
+    final node = findNode.singleMethodInvocation;
+    if (isNullSafetyEnabled) {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ExtensionOverride
+    name: E
+    argumentList: ArgumentList
+      leftParenthesis: (
+      arguments
+        SimpleIdentifier
+          token: a
+          parameter: <null>
+          staticElement: self::@function::f::@parameter::a
+          staticType: A<int>
+      rightParenthesis: )
+    element: self::@extension::E
+    extendedType: A<int>
+    staticType: null
+    typeArgumentTypes
+      int
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: int, U: U}
+    staticType: Map<int, U> Function<U>(U)
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double}
+        staticType: double
+    rightParenthesis: )
+  staticInvokeType: Map<int, double> Function(double)
+  staticType: Map<int, double>
+  typeArgumentTypes
+    double
+''');
+    } else {
+      assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ExtensionOverride
+    name: E
+    argumentList: ArgumentList
+      leftParenthesis: (
+      arguments
+        SimpleIdentifier
+          token: a
+          parameter: <null>
+          staticElement: self::@function::f::@parameter::a
+          staticType: A<int*>*
+      rightParenthesis: )
+    element: self::@extension::E
+    extendedType: A<int*>*
+    staticType: null
+    typeArgumentTypes
+      int*
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: MethodMember
+      base: self::@extension::E::@method::foo
+      substitution: {T: int*, U: U}
+    staticType: Map<int*, U*>* Function<U>(U*)*
+  argumentList: ArgumentList
+    leftParenthesis: (
+    arguments
+      DoubleLiteral
+        literal: 1.0
+        parameter: ParameterMember
+          base: root::@parameter::u
+          substitution: {U: double*}
+        staticType: double*
+    rightParenthesis: )
+  staticInvokeType: Map<int*, double*>* Function(double*)*
+  staticType: Map<int*, double*>*
+  typeArgumentTypes
+    double*
+''');
+    }
   }
 
   test_override_inferTypeArguments_method_tearOff() async {
@@ -804,10 +1063,7 @@ void f(A<int> a) {
 AssignmentExpression
   leftHandSide: PropertyAccess
     target: ExtensionOverride
-      extensionName: SimpleIdentifier
-        token: E
-        staticElement: self::@extension::E
-        staticType: null
+      name: E
       argumentList: ArgumentList
         leftParenthesis: (
         arguments
@@ -817,6 +1073,7 @@ AssignmentExpression
             staticElement: self::@function::f::@parameter::a
             staticType: A<int>
         rightParenthesis: )
+      element: self::@extension::E
       extendedType: A<int>
       staticType: null
       typeArgumentTypes
@@ -848,10 +1105,7 @@ AssignmentExpression
 AssignmentExpression
   leftHandSide: PropertyAccess
     target: ExtensionOverride
-      extensionName: SimpleIdentifier
-        token: E
-        staticElement: self::@extension::E
-        staticType: null
+      name: E
       argumentList: ArgumentList
         leftParenthesis: (
         arguments
@@ -861,6 +1115,7 @@ AssignmentExpression
             staticElement: self::@function::f::@parameter::a
             staticType: A<int*>*
         rightParenthesis: )
+      element: self::@extension::E
       extendedType: A<int*>*
       staticType: null
       typeArgumentTypes

@@ -1,10 +1,10 @@
 @#C2
 library static_interop /*isNonNullableByDefault*/;
 import self as self;
-import "package:js/js.dart" as js;
+import "dart:js_interop" as js_;
 import "dart:core" as core;
 
-import "package:js/js.dart";
+import "dart:js_interop";
 
 abstract class A extends core::Object {
   synthetic constructor •() → self::A
@@ -60,33 +60,24 @@ static method method(self::A a) → void {
   a = self::B|get#field(b1);
   self::B|set#field(b1, a);
   a = self::B|method(b1);
-  () → self::A f1 = self::B|get#method(b1);
   b2 = self::B|genericMethod<self::B>(b2, b2);
-  <T extends core::Object? = dynamic>(T%) → T% f2 = self::B|get#genericMethod(b2);
-  (core::int) → core::int f3 = self::B|get#genericMethod(b2)<core::int>;
   b1 = self::B|get#getter(b2);
   self::B|set#setter(b1, b2);
   a = self::B|staticField;
   self::B|staticField = a;
   a = self::B|staticMethod();
-  () → self::A f4 = #C3;
   b2 = self::B|staticGenericMethod<self::B>(b2);
-  <T extends core::Object? = dynamic>(T%) → T% f5 = #C4;
-  (core::String) → core::String f6 = #C5;
   b1 = self::B|staticGetter;
   self::B|staticSetter = b2;
 }
 
 constants  {
   #C1 = null
-  #C2 = js::JS {name:#C1}
-  #C3 = static-tearoff self::B|staticMethod
-  #C4 = static-tearoff self::B|staticGenericMethod
-  #C5 = instantiation #C4 <core::String>
+  #C2 = js_::JS {name:#C1}
 }
 
 
 Constructor coverage from constants:
 org-dartlang-testcase:///external.dart:
-- JS. (from org-dartlang-testcase-sdk:///pkg/js/lib/js.dart:23:9)
+- JS. (from org-dartlang-sdk:///lib/js_interop/js_interop.dart)
 - Object. (from org-dartlang-sdk:///lib/core/object.dart)

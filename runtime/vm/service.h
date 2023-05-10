@@ -17,7 +17,7 @@
 namespace dart {
 
 #define SERVICE_PROTOCOL_MAJOR_VERSION 4
-#define SERVICE_PROTOCOL_MINOR_VERSION 4
+#define SERVICE_PROTOCOL_MINOR_VERSION 7
 
 class Array;
 class EmbedderServiceHandler;
@@ -209,7 +209,7 @@ class Service : public AllStatic {
   static void SetDartLibraryKernelForSources(const uint8_t* kernel_bytes,
                                              intptr_t kernel_length);
   static bool HasDartLibraryKernelForSources() {
-    return (dart_library_kernel_ != NULL);
+    return (dart_library_kernel_ != nullptr);
   }
 
   static const uint8_t* dart_library_kernel() { return dart_library_kernel_; }

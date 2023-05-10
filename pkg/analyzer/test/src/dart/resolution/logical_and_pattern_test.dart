@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/src/dart/error/hint_codes.dart';
+import 'package:analyzer/src/error/codes.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
 import 'context_collection_resolution.dart';
@@ -26,20 +26,16 @@ void f(x) {
 LogicalAndPattern
   leftOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
-        staticElement: dart:core::@class::int
-        staticType: null
+      name: int
+      element: dart:core::@class::int
       type: int
     name: _
     matchedValueType: dynamic
   operator: &&
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: double
-        staticElement: dart:core::@class::double
-        staticType: null
+      name: double
+      element: dart:core::@class::double
       type: double
     name: _
     matchedValueType: int
@@ -61,20 +57,16 @@ void f(x) {
 LogicalAndPattern
   leftOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
-        staticElement: dart:core::@class::int
-        staticType: null
+      name: int
+      element: dart:core::@class::int
       type: int
     name: _
     matchedValueType: dynamic
   operator: &&
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: double
-        staticElement: dart:core::@class::double
-        staticType: null
+      name: double
+      element: dart:core::@class::double
       type: double
     name: _
     matchedValueType: int

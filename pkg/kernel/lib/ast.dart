@@ -4153,15 +4153,27 @@ class FunctionNode extends TreeNode {
   /// [FunctionType.withoutTypeParameters].
   FunctionType computeThisFunctionType(Nullability nullability) {
     TreeNode? parent = this.parent;
-    List<NamedType> named =
-        namedParameters.map(_getNamedTypeOfVariable).toList(growable: false);
-    named.sort();
-    // We need create a copy of the list of type parameters, otherwise
-    // transformations like erasure don't work.
-    List<TypeParameter> typeParametersCopy = new List<TypeParameter>.of(
-        parent is Constructor
-            ? parent.enclosingClass.typeParameters
-            : typeParameters);
+    List<NamedType> named;
+    if (namedParameters.isEmpty) {
+      named = const <NamedType>[];
+    } else {
+      named =
+          namedParameters.map(_getNamedTypeOfVariable).toList(growable: false);
+      named.sort();
+    }
+
+    List<TypeParameter> typeParametersCopy;
+    List<TypeParameter> typeParametersToCopy = parent is Constructor
+        ? parent.enclosingClass.typeParameters
+        : typeParameters;
+    if (typeParametersToCopy.isEmpty) {
+      typeParametersCopy = const <TypeParameter>[];
+    } else {
+      // We need create a copy of the list of type parameters, otherwise
+      // transformations like erasure don't work.
+      typeParametersCopy =
+          new List<TypeParameter>.of(typeParametersToCopy, growable: false);
+    }
     return new FunctionType(
         positionalParameters.map(_getTypeOfVariable).toList(growable: false),
         returnType,
@@ -10490,10 +10502,28 @@ class SwitchStatement extends Statement {
   /// Initialized during type inference.
   bool isExplicitlyExhaustive;
 
+  /// The static type of the [expression]
+  ///
+  /// This is set during inference.
+  DartType? expressionTypeInternal;
+
   SwitchStatement(this.expression, this.cases,
       {this.isExplicitlyExhaustive = false}) {
     expression.parent = this;
     setParents(cases, this);
+  }
+
+  /// The static type of the [expression]
+  ///
+  /// This is set during inference.
+  DartType get expressionType {
+    assert(expressionTypeInternal != null,
+        "Expression type hasn't been computed for $this.");
+    return expressionTypeInternal!;
+  }
+
+  void set expressionType(DartType value) {
+    expressionTypeInternal = value;
   }
 
   /// Whether the switch has a `default` case.
@@ -10517,6 +10547,7 @@ class SwitchStatement extends Statement {
   void visitChildren(Visitor v) {
     expression.accept(v);
     visitList(cases, v);
+    expressionTypeInternal?.accept(v);
   }
 
   @override
@@ -10527,6 +10558,9 @@ class SwitchStatement extends Statement {
       expression.parent = this;
     }
     v.transformList(cases, this);
+    if (expressionTypeInternal != null) {
+      expressionTypeInternal = v.visitDartType(expressionTypeInternal!);
+    }
   }
 
   @override
@@ -10537,6 +10571,10 @@ class SwitchStatement extends Statement {
       expression.parent = this;
     }
     v.transformSwitchCaseList(cases, this);
+    if (expressionTypeInternal != null) {
+      expressionTypeInternal =
+          v.visitDartType(expressionTypeInternal!, cannotRemoveSentinel);
+    }
   }
 
   @override
@@ -13169,7 +13207,7 @@ class IntersectionType extends DartType {
 
   @override
   IntersectionType withDeclaredNullability(Nullability declaredNullability) {
-    if (left.declaredNullability == this.declaredNullability) {
+    if (left.declaredNullability == declaredNullability) {
       return this;
     }
     TypeParameterType newLeft =

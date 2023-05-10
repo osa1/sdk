@@ -53,7 +53,7 @@ class PropertyElementResolver with ScopeHelpers {
         _reportUnresolvedIndex(
           node,
           CompileTimeErrorCode.UNDEFINED_EXTENSION_OPERATOR,
-          ['[]', target.staticElement!.name!],
+          ['[]', target.element.name!],
         );
       }
 
@@ -63,7 +63,7 @@ class PropertyElementResolver with ScopeHelpers {
         _reportUnresolvedIndex(
           node,
           CompileTimeErrorCode.UNDEFINED_EXTENSION_OPERATOR,
-          ['[]=', target.staticElement!.name!],
+          ['[]=', target.element.name!],
         );
       }
 
@@ -228,7 +228,7 @@ class PropertyElementResolver with ScopeHelpers {
     final scopeLookupResult = node.scopeLookupResult!;
     reportDeprecatedExportUse(
       scopeLookupResult: scopeLookupResult,
-      node: node,
+      nameToken: node.token,
       hasRead: hasRead,
       hasWrite: hasWrite,
     );
@@ -451,13 +451,13 @@ class PropertyElementResolver with ScopeHelpers {
         errorReporter.reportErrorForNode(
           CompileTimeErrorCode.UNDEFINED_GETTER_ON_FUNCTION_TYPE,
           propertyName,
-          [propertyName.name, target.type.name.name],
+          [propertyName.name, target.type.qualifiedName],
         );
       } else {
         errorReporter.reportErrorForNode(
           CompileTimeErrorCode.UNDEFINED_SETTER_ON_FUNCTION_TYPE,
           propertyName,
-          [propertyName.name, target.type.name.name],
+          [propertyName.name, target.type.qualifiedName],
         );
       }
       return PropertyElementResolverResult();
@@ -585,13 +585,13 @@ class PropertyElementResolver with ScopeHelpers {
   }) {
     if (target.parent is CascadeExpression) {
       // Report this error and recover by treating it like a non-cascade.
-      errorReporter.reportErrorForNode(
+      errorReporter.reportErrorForToken(
         CompileTimeErrorCode.EXTENSION_OVERRIDE_WITH_CASCADE,
-        target.extensionName,
+        target.name,
       );
     }
 
-    var element = target.extensionName.staticElement!;
+    var element = target.element;
     var memberName = propertyName.name;
 
     var result = _extensionResolver.getOverrideMember(target, memberName);
@@ -732,7 +732,7 @@ class PropertyElementResolver with ScopeHelpers {
     var lookupResult = target.scope.lookup(identifier.name);
     reportDeprecatedExportUse(
       scopeLookupResult: lookupResult,
-      node: identifier,
+      nameToken: identifier.token,
       hasRead: hasRead,
       hasWrite: hasWrite,
     );

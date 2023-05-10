@@ -3,17 +3,23 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal' show patch;
-import 'dart:_js_helper';
+import 'dart:_js_helper' hide JS;
+import 'dart:_js_helper' as js_helper;
+import 'dart:_wasm';
 import 'dart:async' show Completer;
 import 'dart:js_interop';
-import 'dart:js_util' show NullRejectionException;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
-import 'dart:wasm';
 
 /// Some helpers for working with JS types internally. If we implement the JS
 /// types as inline classes then these should go away.
 /// TODO(joshualitt): Find a way to get rid of the explicit casts.
 T _box<T>(WasmExternRef? ref) => JSValue(ref) as T;
+
+// TODO(joshualitt): Eventually delete `dart:js_util` on Dart2Wasm and migrate
+// any used logic to this file.
+@patch
+JSObject get globalJSObject => js_util.globalThis as JSObject;
 
 /// Helper for working with the [JSAny?] top type in a backend agnostic way.
 extension NullableUndefineableJSAnyExtension on JSAny? {
@@ -25,6 +31,28 @@ extension NullableUndefineableJSAnyExtension on JSAny? {
 
   @patch
   bool get isNull => this == null || this!.toExternRef.isNull;
+
+  @patch
+  JSBoolean typeofEquals(JSString type) =>
+      _box<JSBoolean>(js_helper.JS<WasmExternRef?>(
+          '(o, t) => typeof o === t', this?.toExternRef, type.toExternRef));
+
+  @patch
+  Object? dartify() => js_util.dartify(this);
+}
+
+/// Utility extensions for [Object?].
+extension NullableObjectUtilExtension on Object? {
+  @patch
+  JSAny? jsify() => js_util.jsify(this) as JSAny?;
+}
+
+/// Utility extensions for [JSObject].
+extension JSObjectUtilExtension on JSObject {
+  @patch
+  JSBoolean instanceof(JSFunction constructor) =>
+      _box<JSBoolean>(js_helper.JS<WasmExternRef?>(
+          '(o, c) => o instanceof c', toExternRef, constructor.toExternRef));
 }
 
 /// [JSExportedDartFunction] <-> [Function]
@@ -65,7 +93,7 @@ extension JSPromiseToFuture on JSPromise {
       // TODO(joshualitt): Use helpers to avoid conflating `null` and `JSNull` /
       // `JSUndefined`.
       if (e == null) {
-        return completer.completeError(NullRejectionException(false));
+        return completer.completeError(js_util.NullRejectionException(false));
       }
       return completer.completeError(e);
     }.toJS;

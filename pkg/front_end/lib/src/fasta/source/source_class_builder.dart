@@ -41,10 +41,11 @@ import '../builder/void_type_declaration_builder.dart';
 import '../dill/dill_member_builder.dart';
 import '../fasta_codes.dart';
 import '../identifiers.dart';
+import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/hierarchy/hierarchy_node.dart';
 import '../kernel/kernel_helper.dart';
-import '../kernel/redirecting_factory_body.dart'
+import 'package:kernel/src/redirecting_factory_body.dart'
     show RedirectingFactoryBody, redirectingName;
 import '../kernel/type_algorithms.dart' show computeTypeVariableBuilderVariance;
 import '../kernel/utils.dart' show compareProcedures;
@@ -286,28 +287,6 @@ class SourceClassBuilder extends ClassBuilderImpl
     cls.isInterface = isInterface;
     cls.isFinal = isFinal;
 
-    // Anonymous mixins have to propagate certain class modifiers.
-    if (cls.isAnonymousMixin) {
-      Class? superclass = cls.superclass;
-      Class? mixedInClass = cls.mixedInClass;
-      // If either [superclass] or [mixedInClass] is sealed, the current
-      // anonymous mixin is sealed.
-      if (superclass != null && superclass.isSealed ||
-          mixedInClass != null && mixedInClass.isSealed) {
-        cls.isSealed = true;
-      } else {
-        // Otherwise, if either [superclass] or [mixedInClass] is base or final,
-        // then the current anonymous mixin is final.
-        bool superclassIsBaseOrFinal =
-            superclass != null && (superclass.isBase || superclass.isFinal);
-        bool mixedInClassIsBaseOrFinal = mixedInClass != null &&
-            (mixedInClass.isBase || mixedInClass.isFinal);
-        if (superclassIsBaseOrFinal || mixedInClassIsBaseOrFinal) {
-          cls.isFinal = true;
-        }
-      }
-    }
-
     if (interfaceBuilders != null) {
       for (int i = 0; i < interfaceBuilders!.length; ++i) {
         interfaceBuilders![i] = _checkSupertype(interfaceBuilders![i]);
@@ -382,6 +361,9 @@ class SourceClassBuilder extends ClassBuilderImpl
     return false;
   }
 
+  BodyBuilderContext get bodyBuilderContext =>
+      new ClassBodyBuilderContext(this);
+
   void buildOutlineExpressions(
       ClassHierarchy classHierarchy,
       List<DelayedActionPerformer> delayedActionPerformers,
@@ -393,11 +375,15 @@ class SourceClassBuilder extends ClassBuilderImpl
     }
 
     MetadataBuilder.buildAnnotations(isPatch ? origin.cls : cls, metadata,
-        libraryBuilder, this, null, fileUri, libraryBuilder.scope);
+        bodyBuilderContext, libraryBuilder, fileUri, libraryBuilder.scope);
     if (typeVariables != null) {
       for (int i = 0; i < typeVariables!.length; i++) {
-        typeVariables![i].buildOutlineExpressions(libraryBuilder, this, null,
-            classHierarchy, delayedActionPerformers, scope.parent!);
+        typeVariables![i].buildOutlineExpressions(
+            libraryBuilder,
+            bodyBuilderContext,
+            classHierarchy,
+            delayedActionPerformers,
+            scope.parent!);
       }
     }
 
@@ -521,9 +507,6 @@ class SourceClassBuilder extends ClassBuilderImpl
               .buildAliased(
                   libraryBuilder, TypeUse.defaultTypeAsTypeArgument, hierarchy),
           growable: true);
-      if (library is SourceLibraryBuilder) {
-        library.inferredTypes.addAll(result);
-      }
       return result;
     }
 
@@ -640,6 +623,28 @@ class SourceClassBuilder extends ClassBuilderImpl
     // interface appears multiple times in the 'implements' clause.
     // Moreover, it checks that `FutureOr` and `void` are not among the
     // supertypes and that `Enum` is not implemented by non-abstract classes.
+
+    // Anonymous mixins have to propagate certain class modifiers.
+    if (cls.isAnonymousMixin) {
+      Class? superclass = cls.superclass;
+      Class? mixedInClass = cls.mixedInClass;
+      // If either [superclass] or [mixedInClass] is sealed, the current
+      // anonymous mixin is sealed.
+      if (superclass != null && superclass.isSealed ||
+          mixedInClass != null && mixedInClass.isSealed) {
+        cls.isSealed = true;
+      } else {
+        // Otherwise, if either [superclass] or [mixedInClass] is base or final,
+        // then the current anonymous mixin is final.
+        bool superclassIsBaseOrFinal =
+            superclass != null && (superclass.isBase || superclass.isFinal);
+        bool mixedInClassIsBaseOrFinal = mixedInClass != null &&
+            (mixedInClass.isBase || mixedInClass.isFinal);
+        if (superclassIsBaseOrFinal || mixedInClassIsBaseOrFinal) {
+          cls.isFinal = true;
+        }
+      }
+    }
 
     ClassHierarchyNode classHierarchyNode =
         hierarchyBuilder.getNodeFromClass(cls);

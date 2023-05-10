@@ -362,6 +362,7 @@ mixin TypeAnalyzer<
     Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isDynamic(matchedType) &&
+        !operations.isError(matchedType) &&
         !operations.isSubtypeOf(matchedType, variableDeclaredType)) {
       patternTypeMismatchInIrrefutableContextError =
           errors.patternTypeMismatchInIrrefutableContext(
@@ -516,6 +517,7 @@ mixin TypeAnalyzer<
     Error? patternTypeMismatchInIrrefutableContextError;
     if (irrefutableContext != null &&
         !operations.isDynamic(matchedType) &&
+        !operations.isError(matchedType) &&
         !operations.isSubtypeOf(matchedType, staticType)) {
       patternTypeMismatchInIrrefutableContextError =
           errors.patternTypeMismatchInIrrefutableContext(
@@ -792,6 +794,8 @@ mixin TypeAnalyzer<
         valueType = listElementType;
       } else if (operations.isDynamic(matchedType)) {
         valueType = dynamicType;
+      } else if (operations.isError(matchedType)) {
+        valueType = errorType;
       } else {
         valueType = objectQuestionType;
       }
@@ -800,7 +804,8 @@ mixin TypeAnalyzer<
     flow.promoteForPattern(
         matchedType: matchedType,
         knownType: requiredType,
-        matchMayFailEvenIfCorrectType: true);
+        matchMayFailEvenIfCorrectType:
+            !(elements.length == 1 && isRestPatternElement(elements[0])));
     // Stack: ()
     Node? previousRestPattern;
     Map<int, Error>? duplicateRestPatternErrors;
@@ -1052,6 +1057,10 @@ mixin TypeAnalyzer<
         keyType = dynamicType;
         valueType = dynamicType;
         keyContext = unknownType;
+      } else if (operations.isError(matchedType)) {
+        keyType = errorType;
+        valueType = errorType;
+        keyContext = unknownType;
       } else {
         keyType = objectQuestionType;
         valueType = objectQuestionType;
@@ -1068,10 +1077,12 @@ mixin TypeAnalyzer<
         matchMayFailEvenIfCorrectType: true);
     // Stack: ()
 
+    Map<int, Error>? restPatternErrors;
     for (int i = 0; i < elements.length; i++) {
       Node element = elements[i];
       if (isRestPatternElement(element)) {
-        errors.restPatternInMap(node: node, element: element);
+        (restPatternErrors ??= {})[i] =
+            errors.restPatternInMap(node: node, element: element);
       }
     }
 
@@ -1114,13 +1125,16 @@ mixin TypeAnalyzer<
         requiredType: requiredType,
       );
     }
+    Error? emptyMapPatternError;
     if (elements.isEmpty) {
-      errors.emptyMapPattern(pattern: node);
+      emptyMapPatternError = errors.emptyMapPattern(pattern: node);
     }
     return new MapPatternResult(
         requiredType: requiredType,
         patternTypeMismatchInIrrefutableContextError:
-            patternTypeMismatchInIrrefutableContextError);
+            patternTypeMismatchInIrrefutableContextError,
+        emptyMapPatternError: emptyMapPatternError,
+        restPatternErrors: restPatternErrors);
   }
 
   /// Computes the type schema for a map pattern.  [typeArguments] contain
@@ -1253,6 +1267,7 @@ mixin TypeAnalyzer<
     // treated as having the same type.
     Type? overridePropertyGetType;
     if (operations.isDynamic(requiredType) ||
+        operations.isError(requiredType) ||
         operations.isNever(requiredType)) {
       overridePropertyGetType = requiredType;
     }
@@ -1274,6 +1289,7 @@ mixin TypeAnalyzer<
     for (RecordPatternField<Node, Pattern> field in fields) {
       Type propertyType = overridePropertyGetType ??
           resolveObjectPatternPropertyGet(
+            objectPattern: node,
             receiverType: requiredType,
             field: field,
           );
@@ -1372,6 +1388,8 @@ mixin TypeAnalyzer<
     if (elementType == null) {
       if (operations.isDynamic(expressionType)) {
         elementType = dynamicType;
+      } else if (operations.isError(expressionType)) {
+        elementType = errorType;
       } else {
         patternForInExpressionIsNotIterableError =
             errors.patternForInExpressionIsNotIterable(
@@ -1379,7 +1397,7 @@ mixin TypeAnalyzer<
           expression: expression,
           expressionType: expressionType,
         );
-        elementType = dynamicType;
+        elementType = errorType;
       }
     }
     flow.patternForIn_afterExpression(elementType);
@@ -1541,6 +1559,8 @@ mixin TypeAnalyzer<
       }
     } else if (operations.isDynamic(matchedType)) {
       dispatchFields(dynamicType);
+    } else if (operations.isError(matchedType)) {
+      dispatchFields(errorType);
     } else {
       dispatchFields(objectQuestionType);
     }
@@ -2261,6 +2281,7 @@ mixin TypeAnalyzer<
   /// the name of the [field].  If the property cannot be resolved, the client
   /// should report an error, and return `dynamic` for recovery.
   Type resolveObjectPatternPropertyGet({
+    required Pattern objectPattern,
     required Type receiverType,
     required RecordPatternField<Node, Pattern> field,
   });
@@ -2531,7 +2552,7 @@ abstract class TypeAnalyzerErrors<
   /// Called if a map pattern does not have elements.
   ///
   /// [pattern] is the map pattern.
-  void emptyMapPattern({
+  Error emptyMapPattern({
     required Pattern pattern,
   });
 
@@ -2619,7 +2640,7 @@ abstract class TypeAnalyzerErrors<
   /// Called if a rest pattern found inside a map pattern.
   ///
   /// [node] is the map pattern.  [element] is the rest pattern.
-  void restPatternInMap({required Pattern node, required Node element});
+  Error restPatternInMap({required Pattern node, required Node element});
 
   /// Called if one of the case bodies of a switch statement completes normally
   /// (other than the last case body), and the "patterns" feature is not

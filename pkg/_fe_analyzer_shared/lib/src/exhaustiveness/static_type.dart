@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart_template_buffer.dart';
 import 'key.dart';
 import 'space.dart';
 import 'witness.dart';
@@ -31,14 +32,14 @@ abstract class StaticType {
   ///
   /// This is used to support implicit on the constant [StaticType]s
   /// [nullableObject], [nonNullableObject], [nullType] and [neverType].
-  StaticType? getField(ObjectFieldLookup fieldLookup, Key key);
+  StaticType? getPropertyType(ObjectPropertyLookup fieldLookup, Key key);
 
   /// Returns the static type for the [key] in this static type, or `null` if
   /// no such key exists.
   ///
   /// This is used to model keys in map patterns, and indices and ranges in list
   /// patterns.
-  StaticType? getAdditionalField(Key key);
+  StaticType? getAdditionalPropertyType(Key key);
 
   /// Returns `true` if this static type is a subtype of [other], taking the
   /// nullability and subtyping relation into account.
@@ -69,10 +70,18 @@ abstract class StaticType {
   /// This is only used for print the type as part of a [Witness].
   bool get isRecord;
 
+  /// Return `true` if this type is implicitly nullable.
+  ///
+  /// This is used to omit the '?' for the [name] in the [NullableStaticType].
+  bool get isImplicitlyNullable;
+
   /// Returns the name of this static type.
   ///
   /// This is used for printing [Space]s.
   String get name;
+
+  /// Writes the name of this static type to [buffer].
+  void typeToDart(DartTemplateBuffer buffer);
 
   /// Returns the nullable static type corresponding to this type.
   StaticType get nullable;
@@ -88,17 +97,23 @@ abstract class StaticType {
   Iterable<StaticType> getSubtypes(Set<Key> keysOfInterest);
 
   /// Returns a textual representation of a single space consisting of this
-  /// type and the provided [fields] and [additionalFields].
-  String spaceToText(
-      Map<Key, Space> spaceFields, Map<Key, Space> additionalSpaceFields);
+  /// type and the provided [spaceProperties] and [additionalSpaceProperties].
+  String spaceToText(Map<Key, Space> spaceProperties,
+      Map<Key, Space> additionalSpaceProperties);
 
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields);
+  /// Write this [witness] with the [witnessFields] as a pattern into [buffer]
+  /// using this [StaticType] to determine the syntax.
+  ///
+  /// If [forCorrection] is true, [witnessFields] that fully cover their static
+  /// type are omitted if possible.
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection});
 }
 
 mixin _ObjectFieldMixin on _BaseStaticType {
   @override
-  StaticType? getField(ObjectFieldLookup fieldLookup, Key key) {
+  StaticType? getPropertyType(ObjectPropertyLookup fieldLookup, Key key) {
     return fields[key] ?? fieldLookup.getObjectFieldType(key);
   }
 }
@@ -113,12 +128,12 @@ abstract class _BaseStaticType implements StaticType {
   Map<Key, StaticType> get fields => const {};
 
   @override
-  StaticType? getField(ObjectFieldLookup fieldLookup, Key key) {
+  StaticType? getPropertyType(ObjectPropertyLookup fieldLookup, Key key) {
     return fields[key];
   }
 
   @override
-  StaticType? getAdditionalField(Key key) => null;
+  StaticType? getAdditionalPropertyType(Key key) => null;
 
   @override
   Iterable<StaticType> getSubtypes(Set<Key> keysOfInterest) => const [];
@@ -138,15 +153,17 @@ abstract class _BaseStaticType implements StaticType {
   }
 
   @override
-  String spaceToText(
-      Map<Key, Space> spaceFields, Map<Key, Space> additionalSpaceFields) {
-    assert(additionalSpaceFields.isEmpty,
+  String spaceToText(Map<Key, Space> spaceProperties,
+      Map<Key, Space> additionalSpaceProperties) {
+    assert(additionalSpaceProperties.isEmpty,
         "Additional fields not supported in ${runtimeType}.");
-    if (this == StaticType.nullableObject && spaceFields.isEmpty) return '()';
-    if (this == StaticType.neverType && spaceFields.isEmpty) return '∅';
+    if (this == StaticType.nullableObject && spaceProperties.isEmpty) {
+      return '()';
+    }
+    if (this == StaticType.neverType && spaceProperties.isEmpty) return '∅';
 
     // If there are no fields, just show the type.
-    if (spaceFields.isEmpty) return name;
+    if (spaceProperties.isEmpty) return name;
 
     StringBuffer buffer = new StringBuffer();
     buffer.write(name);
@@ -154,9 +171,13 @@ abstract class _BaseStaticType implements StaticType {
     buffer.write('(');
     bool first = true;
 
-    spaceFields.forEach((Key key, Space space) {
+    spaceProperties.forEach((Key key, Space space) {
       if (!first) buffer.write(', ');
-      buffer.write('${key.name}: $space');
+      if (key is ExtensionKey) {
+        buffer.write('${key.receiverType}.${key.name}: $space (${key.type})');
+      } else {
+        buffer.write('${key.name}: $space');
+      }
       first = false;
     });
 
@@ -165,25 +186,25 @@ abstract class _BaseStaticType implements StaticType {
   }
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
     if (this == StaticType.nullableObject && witnessFields.isEmpty) {
       buffer.write('_');
     } else if (this == StaticType.nullType && witnessFields.isEmpty) {
       buffer.write('null');
     } else {
-      buffer.write(name);
+      typeToDart(buffer);
       buffer.write('(');
-      if (witnessFields.isNotEmpty) {
-        String comma = '';
-        for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
-          buffer.write(comma);
-          comma = ', ';
-
-          buffer.write(entry.key.name);
-          buffer.write(': ');
-          entry.value.witnessToText(buffer);
-        }
+      String comma = '';
+      for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
+        Key key = entry.key;
+        PropertyWitness witness = entry.value;
+        buffer.write(comma);
+        comma = ', ';
+        buffer.write(key.name);
+        buffer.write(': ');
+        witness.witnessToDart(buffer, forCorrection: forCorrection);
       }
       buffer.write(')');
     }
@@ -213,6 +234,14 @@ class _NonNullableObject extends _BaseStaticType with _ObjectFieldMixin {
 
   @override
   StaticType get nonNullable => this;
+
+  @override
+  bool get isImplicitlyNullable => false;
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    buffer.writeCoreType(name);
+  }
 }
 
 class _NeverType extends _BaseStaticType with _ObjectFieldMixin {
@@ -235,6 +264,14 @@ class _NeverType extends _BaseStaticType with _ObjectFieldMixin {
 
   @override
   StaticType get nonNullable => this;
+
+  @override
+  bool get isImplicitlyNullable => false;
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    buffer.writeCoreType(name);
+  }
 }
 
 class _NullType extends NullableStaticType with _ObjectFieldMixin {
@@ -253,7 +290,15 @@ class _NullType extends NullableStaticType with _ObjectFieldMixin {
   }
 
   @override
+  bool get isImplicitlyNullable => true;
+
+  @override
   String get name => 'Null';
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    buffer.writeCoreType(name);
+  }
 }
 
 class NullableStaticType extends _BaseStaticType with _ObjectFieldMixin {
@@ -279,7 +324,11 @@ class NullableStaticType extends _BaseStaticType with _ObjectFieldMixin {
   }
 
   @override
-  String get name => '${underlying.name}?';
+  String get name =>
+      underlying.isImplicitlyNullable ? underlying.name : '${underlying.name}?';
+
+  @override
+  bool get isImplicitlyNullable => true;
 
   @override
   StaticType get nullable => this;
@@ -294,6 +343,14 @@ class NullableStaticType extends _BaseStaticType with _ObjectFieldMixin {
   bool operator ==(other) {
     if (identical(this, other)) return true;
     return other is NullableStaticType && underlying == other.underlying;
+  }
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    underlying.typeToDart(buffer);
+    if (!underlying.isImplicitlyNullable) {
+      buffer.write('?');
+    }
   }
 }
 
@@ -338,8 +395,8 @@ class WrappedStaticType extends _BaseStaticType {
   Map<Key, StaticType> get fields => wrappedType.fields;
 
   @override
-  StaticType? getField(ObjectFieldLookup fieldLookup, Key key) {
-    return wrappedType.getField(fieldLookup, key);
+  StaticType? getPropertyType(ObjectPropertyLookup fieldLookup, Key key) {
+    return wrappedType.getPropertyType(fieldLookup, key);
   }
 
   @override
@@ -352,9 +409,41 @@ class WrappedStaticType extends _BaseStaticType {
   String get name => wrappedType.name;
 
   @override
-  Iterable<StaticType> getSubtypes(Set<Key> keysOfInterest) => wrappedType
-      .getSubtypes(keysOfInterest)
-      .map((e) => new WrappedStaticType(e, impliedType));
+  bool get isImplicitlyNullable => wrappedType.isImplicitlyNullable;
+
+  @override
+  Iterable<StaticType> getSubtypes(Set<Key> keysOfInterest) {
+    StaticType wrappedType = this.wrappedType;
+    StaticType impliedType = this.impliedType;
+    if (wrappedType is NullableStaticType &&
+        impliedType is NullableStaticType) {
+      // With nullable types we need to avoid carrying the nullable implied type
+      // into the non-nullable subtype since it otherwise wouldn't allow for
+      // matching the non-nullable aspect of the wrapped type with the
+      // non-nullable implied type.
+      //
+      // For instance
+      //
+      //     method<O>(O? object) => switch (object) {
+      //         O object => 0,
+      //         null => 1,
+      //       };
+      //
+      // Here the static type of `O?` is `WrappedStaticType(Object?, O?)` which
+      // allows for matching both by the bound `Object?` and the exact type
+      // variable type `O?`. If we split this into the subtypes
+      // `WrappedStaticType(Object, O?)` and `WrappedStaticType(null, O?)` then
+      // we miss that `O object` covers the non-nullable aspect, since `O` is
+      // neither a super type of `Object` nor `O?`.
+      return [
+        new WrappedStaticType(wrappedType.underlying, impliedType.underlying),
+        StaticType.nullType
+      ];
+    }
+    return wrappedType
+        .getSubtypes(keysOfInterest)
+        .map((e) => new WrappedStaticType(e, impliedType));
+  }
 
   @override
   bool isSubtypeOf(StaticType other) {
@@ -375,9 +464,11 @@ class WrappedStaticType extends _BaseStaticType {
   }
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
-    return wrappedType.witnessToText(buffer, witness, witnessFields);
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
+    return wrappedType.witnessToDart(buffer, witness, witnessFields,
+        forCorrection: forCorrection);
   }
 
   @override
@@ -391,10 +482,15 @@ class WrappedStaticType extends _BaseStaticType {
       wrappedType.nullable == wrappedType && impliedType.nullable == impliedType
           ? this
           : new WrappedStaticType(wrappedType.nullable, impliedType.nullable);
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    wrappedType.typeToDart(buffer);
+  }
 }
 
 /// Interface for accessing the members defined on `Object`.
-abstract class ObjectFieldLookup {
+abstract class ObjectPropertyLookup {
   /// Returns the [StaticType] for the member with the given [key] defined on
   /// `Object`, or `null` none exists.
   StaticType? getObjectFieldType(Key key);

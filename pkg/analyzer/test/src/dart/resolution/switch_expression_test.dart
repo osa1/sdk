@@ -15,11 +15,67 @@ main() {
 
 @reflectiveTest
 class SwitchExpressionResolutionTest extends PubPackageResolutionTest {
+  test_case_expression_void() async {
+    await assertNoErrorsInCode(r'''
+void f(Object? x) {
+  (switch(x) {
+    0 => 0,
+    _ => g(),
+  });
+}
+
+void g() {}
+''');
+
+    final node = findNode.singleSwitchExpression;
+    assertResolvedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+    staticElement: self::@function::f::@parameter::x
+    staticType: Object?
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 0
+            staticType: int
+          matchedValueType: Object?
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 0
+        staticType: int
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+          matchedValueType: Object?
+      arrow: =>
+      expression: MethodInvocation
+        methodName: SimpleIdentifier
+          token: g
+          staticElement: self::@function::g
+          staticType: void Function()
+        argumentList: ArgumentList
+          leftParenthesis: (
+          rightParenthesis: )
+        staticInvokeType: void Function()
+        staticType: void
+  rightBracket: }
+  staticType: void
+''');
+  }
+
   test_cases_empty() async {
     await assertErrorsInCode(r'''
 final a = switch (0) {};
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 10, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION, 10, 6),
     ]);
 
     final node = findNode.singleSwitchExpression;
@@ -85,9 +141,48 @@ SwitchExpression
 ''');
   }
 
+  test_expression_void() async {
+    await assertErrorsInCode('''
+void f(void x) {
+  (switch(x) {
+    _ => 0,
+  });
+}
+''', [
+      error(CompileTimeErrorCode.USE_OF_VOID_RESULT, 27, 1),
+    ]);
+
+    final node = findNode.singleSwitchExpression;
+    assertResolvedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+    staticElement: self::@function::f::@parameter::x
+    staticType: void
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+          matchedValueType: void
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 0
+        staticType: int
+  rightBracket: }
+  staticType: int
+''');
+  }
+
   test_location_topLevel() async {
     await assertNoErrorsInCode(r'''
-final a = switch (null) {
+num a = 0;
+
+final b = switch (a) {
   int(:var isEven) when isEven => 1,
   _ => 0,
 };
@@ -98,9 +193,10 @@ final a = switch (null) {
 SwitchExpression
   switchKeyword: switch
   leftParenthesis: (
-  expression: NullLiteral
-    literal: null
-    staticType: Null
+  expression: SimpleIdentifier
+    token: a
+    staticElement: self::@getter::a
+    staticType: num
   rightParenthesis: )
   leftBracket: {
   cases
@@ -108,10 +204,8 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: ObjectPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
-              staticElement: dart:core::@class::int
-              staticType: null
+            name: int
+            element: dart:core::@class::int
             type: int
           leftParenthesis: (
           fields
@@ -121,17 +215,17 @@ SwitchExpression
               pattern: DeclaredVariablePattern
                 keyword: var
                 name: isEven
-                declaredElement: hasImplicitType isEven@37
+                declaredElement: hasImplicitType isEven@46
                   type: bool
                 matchedValueType: bool
               element: dart:core::@class::int::@getter::isEven
           rightParenthesis: )
-          matchedValueType: Null
+          matchedValueType: num
         whenClause: WhenClause
           whenKeyword: when
           expression: SimpleIdentifier
             token: isEven
-            staticElement: isEven@37
+            staticElement: isEven@46
             staticType: bool
       arrow: =>
       expression: IntegerLiteral
@@ -141,7 +235,7 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: WildcardPattern
           name: _
-          matchedValueType: Null
+          matchedValueType: num
       arrow: =>
       expression: IntegerLiteral
         literal: 0
@@ -205,10 +299,8 @@ SwitchExpressionCase
       expression: InstanceCreationExpression
         constructorName: ConstructorName
           type: NamedType
-            name: SimpleIdentifier
-              token: A
-              staticElement: self::@class::A
-              staticType: null
+            name: A
+            element: self::@class::A
             type: A
           staticElement: self::@class::A::@constructor::new
         argumentList: ArgumentList
@@ -429,10 +521,8 @@ SwitchExpression
             leftBracket: <
             arguments
               NamedType
-                name: SimpleIdentifier
-                  token: int
-                  staticElement: dart:core::@class::int
-                  staticType: null
+                name: int
+                element: dart:core::@class::int
                 type: int
             rightBracket: >
           leftBracket: [
@@ -509,10 +599,8 @@ SwitchExpression
           elements
             DeclaredVariablePattern
               type: NamedType
-                name: SimpleIdentifier
-                  token: int
-                  staticElement: dart:core::@class::int
-                  staticType: null
+                name: int
+                element: dart:core::@class::int
                 type: int
               name: a
               declaredElement: a@58
@@ -591,10 +679,8 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: DeclaredVariablePattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
-              staticElement: dart:core::@class::int
-              staticType: null
+            name: int
+            element: dart:core::@class::int
             type: int
           name: a
           declaredElement: a@44

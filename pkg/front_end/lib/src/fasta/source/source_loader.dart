@@ -8,11 +8,10 @@ import 'dart:collection' show Queue;
 import 'dart:convert' show utf8;
 import 'dart:typed_data' show Uint8List;
 
-import 'package:_fe_analyzer_shared/src/parser/forwarding_listener.dart'
-    show ForwardingListener;
-
 import 'package:_fe_analyzer_shared/src/parser/class_member_parser.dart'
     show ClassMemberParser;
+import 'package:_fe_analyzer_shared/src/parser/forwarding_listener.dart'
+    show ForwardingListener;
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show Parser, lengthForToken;
 import 'package:_fe_analyzer_shared/src/scanner/scanner.dart'
@@ -45,18 +44,14 @@ import '../../base/instrumentation.dart' show Instrumentation;
 import '../../base/nnbd_mode.dart';
 import '../builder/builder.dart';
 import '../builder/class_builder.dart';
-import '../builder/declaration_builder.dart';
 import '../builder/extension_builder.dart';
-import '../builder/field_builder.dart';
 import '../builder/invalid_type_declaration_builder.dart';
 import '../builder/library_builder.dart';
 import '../builder/member_builder.dart';
-import '../builder/modifier_builder.dart';
 import '../builder/name_iterator.dart';
 import '../builder/named_type_builder.dart';
 import '../builder/omitted_type_builder.dart';
 import '../builder/prefix_builder.dart';
-import '../builder/procedure_builder.dart';
 import '../builder/type_alias_builder.dart';
 import '../builder/type_builder.dart';
 import '../builder/type_declaration_builder.dart';
@@ -68,6 +63,7 @@ import '../export.dart' show Export;
 import '../fasta_codes.dart';
 import '../import_chains.dart';
 import '../kernel/body_builder.dart' show BodyBuilder;
+import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/class_member.dart';
 import '../kernel/hierarchy/delayed.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
@@ -76,8 +72,8 @@ import '../kernel/hierarchy/members_builder.dart';
 import '../kernel/kernel_helper.dart'
     show DelayedDefaultValueCloner, TypeDependency;
 import '../kernel/kernel_target.dart' show KernelTarget;
-import '../kernel/macro/macro.dart';
 import '../kernel/macro/annotation_parser.dart';
+import '../kernel/macro/macro.dart';
 import '../kernel/type_builder_computer.dart' show TypeBuilderComputer;
 import '../loader.dart' show Loader, untranslatableUriScheme;
 import '../problems.dart' show internalProblem;
@@ -86,8 +82,8 @@ import '../ticker.dart' show Ticker;
 import '../type_inference/type_inference_engine.dart';
 import '../type_inference/type_inferrer.dart';
 import '../uri_offset.dart';
-import '../util/helpers.dart';
 import '../uris.dart';
+import '../util/helpers.dart';
 import 'diet_listener.dart' show DietListener;
 import 'diet_parser.dart' show DietParser, useImplicitCreationExpressionInCfe;
 import 'name_scheme.dart';
@@ -786,13 +782,12 @@ severity: $severity
 
   BodyBuilder createBodyBuilderForOutlineExpression(
       SourceLibraryBuilder library,
-      DeclarationBuilder? declarationBuilder,
-      ModifierBuilder member,
+      BodyBuilderContext bodyBuilderContext,
       Scope scope,
       Uri fileUri,
       {Scope? formalParameterScope}) {
     return new BodyBuilder.forOutlineExpression(
-        library, declarationBuilder, member, scope, fileUri,
+        library, bodyBuilderContext, scope, fileUri,
         formalParameterScope: formalParameterScope);
   }
 
@@ -1243,6 +1238,10 @@ severity: $severity
       // When benchmarking we do extra parsing on it's own to get a timing of
       // how much time is spent on the actual parsing (as opposed to the
       // building of what's parsed).
+      // NOTE: This runs the parser over the token stream meaning that any
+      // parser recovery rewriting the token stream will have happened once
+      // the "real" parsing is done. This in turn means that some errors
+      // (e.g. missing semi-colon) will not be issued when benchmarking.
       {
         target.benchmarker?.beginSubdivide(
             BenchmarkSubdivides.body_buildBody_benchmark_specific_diet_parser);
@@ -1308,7 +1307,7 @@ severity: $severity
               "debugExpression in extension $enclosingClassOrExtension");
       }
     }
-    ProcedureBuilder builder = new SourceProcedureBuilder(
+    SourceProcedureBuilder builder = new SourceProcedureBuilder(
         /* metadata = */ null,
         /* modifier flags = */ 0,
         const ImplicitTypeBuilder(),
@@ -1331,8 +1330,10 @@ severity: $severity
             libraryName: libraryBuilder.libraryName))
       ..parent = parent;
     BodyBuilder listener = dietListener.createListener(
-        builder, dietListener.memberScope,
-        isDeclarationInstanceMember: isClassInstanceMember,
+        new ExpressionCompilerProcedureBodyBuildContext(dietListener, builder,
+            isDeclarationInstanceMember: isClassInstanceMember),
+        builder,
+        dietListener.memberScope,
         thisVariable: extensionThis);
     for (VariableDeclaration variable in parameters.positionalParameters) {
       listener.typeInferrer.assignedVariables.declare(variable);
@@ -2146,6 +2147,8 @@ severity: $severity
 
   /// Reports errors for 'base', 'interface', 'final', 'mixin' and 'sealed'
   /// class modifiers.
+  // TODO(johnniwinther): Merge supertype checking with class hierarchy
+  //  computation to better support transitive checking.
   void checkSupertypeClassModifiers(SourceClassBuilder cls,
       Map<ClassBuilder, ClassBuilder> classToBaseOrFinalSuperClass) {
     bool isClassModifiersEnabled(ClassBuilder typeBuilder) =>
@@ -2270,9 +2273,12 @@ severity: $severity
           superclass.isSealed &&
           baseOrFinalSuperClass.libraryBuilder.origin !=
               cls.libraryBuilder.origin) {
+        // This error is reported at the call site.
+        // TODO(johnniwinther): Merge supertype checking with class hierarchy
+        //  computation to better support transitive checking.
         // It's an error to implement a class if it has a supertype from a
         // different library which is marked base.
-        if (baseOrFinalSuperClass.isBase) {
+        /*if (baseOrFinalSuperClass.isBase) {
           cls.addProblem(
               templateBaseClassImplementedOutsideOfLibrary
                   .withArguments(baseOrFinalSuperClass.fullNameForErrors),
@@ -2285,7 +2291,7 @@ severity: $severity
                     .withLocation(baseOrFinalSuperClass.fileUri,
                         baseOrFinalSuperClass.charOffset, noLength)
               ]);
-        }
+        }*/
       } else if (!cls.isBase &&
           !cls.isFinal &&
           !cls.isSealed &&
@@ -2432,44 +2438,68 @@ severity: $severity
                   implementsBuilder: interfaceBuilder);
             }
 
-            if (cls.libraryBuilder.origin !=
-                    interfaceDeclaration.libraryBuilder.origin &&
-                !mayIgnoreClassModifiers(interfaceDeclaration)) {
-              // Report an error for a class implementing a base class outside
-              // of its library.
-              if (interfaceDeclaration.isBase && !cls.cls.isAnonymousMixin) {
-                if (interfaceDeclaration.isMixinDeclaration) {
-                  cls.addProblem(
-                      templateBaseMixinImplementedOutsideOfLibrary
-                          .withArguments(
-                              interfaceDeclaration.fullNameForErrors),
-                      interfaceBuilder.charOffset ?? TreeNode.noOffset,
-                      noLength);
-                } else {
-                  cls.addProblem(
-                      templateBaseClassImplementedOutsideOfLibrary
-                          .withArguments(
-                              interfaceDeclaration.fullNameForErrors),
-                      interfaceBuilder.charOffset ?? TreeNode.noOffset,
-                      noLength);
-                }
-              } else if (interfaceDeclaration.isFinal) {
-                if (cls.cls.isAnonymousMixin) {
-                  cls.addProblem(
-                      templateFinalClassUsedAsMixinConstraintOutsideOfLibrary
-                          .withArguments(
-                              interfaceDeclaration.fullNameForErrors),
-                      interfaceBuilder.charOffset ?? TreeNode.noOffset,
-                      noLength);
-                } else {
-                  cls.addProblem(
-                      templateFinalClassImplementedOutsideOfLibrary
-                          .withArguments(
-                              interfaceDeclaration.fullNameForErrors),
-                      interfaceBuilder.charOffset ?? TreeNode.noOffset,
-                      noLength);
+            ClassBuilder? checkedClass = interfaceDeclaration;
+            while (checkedClass != null) {
+              if (cls.libraryBuilder.origin !=
+                      checkedClass.libraryBuilder.origin &&
+                  !mayIgnoreClassModifiers(checkedClass)) {
+                // Report an error for a class implementing a base class outside
+                // of its library.
+                if (checkedClass.isBase && !cls.cls.isAnonymousMixin) {
+                  if (checkedClass.isMixinDeclaration) {
+                    cls.addProblem(
+                        templateBaseMixinImplementedOutsideOfLibrary
+                            .withArguments(checkedClass.fullNameForErrors),
+                        interfaceBuilder.charOffset ?? TreeNode.noOffset,
+                        noLength,
+                        context: [
+                          if (checkedClass != interfaceDeclaration)
+                            templateBaseClassImplementedOutsideOfLibraryCause
+                                .withArguments(
+                                    interfaceDeclaration.fullNameForErrors,
+                                    checkedClass.fullNameForErrors)
+                                .withLocation(checkedClass.fileUri,
+                                    checkedClass.charOffset, noLength)
+                        ]);
+                  } else {
+                    cls.addProblem(
+                        templateBaseClassImplementedOutsideOfLibrary
+                            .withArguments(checkedClass.fullNameForErrors),
+                        interfaceBuilder.charOffset ?? TreeNode.noOffset,
+                        noLength,
+                        context: [
+                          if (checkedClass != interfaceDeclaration)
+                            templateBaseClassImplementedOutsideOfLibraryCause
+                                .withArguments(
+                                    interfaceDeclaration.fullNameForErrors,
+                                    checkedClass.fullNameForErrors)
+                                .withLocation(checkedClass.fileUri,
+                                    checkedClass.charOffset, noLength)
+                        ]);
+                  }
+                  // Break to only report one error.
+                  break;
+                } else if (checkedClass.isFinal &&
+                    checkedClass == interfaceDeclaration) {
+                  if (cls.cls.isAnonymousMixin) {
+                    cls.addProblem(
+                        templateFinalClassUsedAsMixinConstraintOutsideOfLibrary
+                            .withArguments(
+                                interfaceDeclaration.fullNameForErrors),
+                        interfaceBuilder.charOffset ?? TreeNode.noOffset,
+                        noLength);
+                  } else {
+                    cls.addProblem(
+                        templateFinalClassImplementedOutsideOfLibrary
+                            .withArguments(
+                                interfaceDeclaration.fullNameForErrors),
+                        interfaceBuilder.charOffset ?? TreeNode.noOffset,
+                        noLength);
+                  }
+                  break;
                 }
               }
+              checkedClass = classToBaseOrFinalSuperClass[checkedClass];
             }
           }
 
@@ -3028,8 +3058,13 @@ severity: $severity
   }
 
   BodyBuilder createBodyBuilderForField(
-      FieldBuilder field, TypeInferrer typeInferrer) {
-    return new BodyBuilder.forField(field, typeInferrer);
+      SourceLibraryBuilder libraryBuilder,
+      BodyBuilderContext bodyBuilderContext,
+      Scope enclosingScope,
+      TypeInferrer typeInferrer,
+      Uri uri) {
+    return new BodyBuilder.forField(
+        libraryBuilder, bodyBuilderContext, enclosingScope, typeInferrer, uri);
   }
 }
 
@@ -3055,7 +3090,6 @@ class Iterable<E> {
 }
 
 class List<E> extends Iterable<E> {
-  factory List() => null;
   factory List.unmodifiable(elements) => null;
   factory List.empty({bool growable = false}) => null;
   factory List.filled(int length, E fill, {bool growable = false}) => null;

@@ -39,6 +39,11 @@ class DefaultTypesBuilder {
         _breakSelfCycles(node.typeParameters);
         _breakRawTypeCycles(element, node.typeParameters);
         _computeBounds(element, node.typeParameters);
+      } else if (node is ExtensionDeclaration) {
+        var element = node.declaredElement!;
+        _breakSelfCycles(node.typeParameters);
+        _breakRawTypeCycles(element, node.typeParameters);
+        _computeBounds(element, node.typeParameters);
       } else if (node is FunctionTypeAlias) {
         var element = node.declaredElement!;
         _breakSelfCycles(node.typeParameters);
@@ -72,6 +77,8 @@ class DefaultTypesBuilder {
       } else if (node is ClassTypeAlias) {
         _build(node.typeParameters);
       } else if (node is EnumDeclaration) {
+        _build(node.typeParameters);
+      } else if (node is ExtensionDeclaration) {
         _build(node.typeParameters);
       } else if (node is FunctionTypeAlias) {
         _build(node.typeParameters);
@@ -144,9 +151,8 @@ class DefaultTypesBuilder {
             ++step) {
           var bound = current.bound;
           if (bound is NamedType) {
-            var typeNameIdentifier = bound.name;
-            if (typeNameIdentifier is SimpleIdentifier) {
-              current = typeParametersByName[typeNameIdentifier.name];
+            if (bound.importPrefix == null) {
+              current = typeParametersByName[bound.name2.lexeme];
               continue;
             }
           }

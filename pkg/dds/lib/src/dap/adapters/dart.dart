@@ -458,13 +458,15 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
   /// the user would not expect the script to continue to pause on breakpoints
   /// the had set while attached.
   Future<void> preventBreakingAndResume() async {
-    // Remove anything that may cause us to pause again.
-    await Future.wait([
-      isolateManager.clearAllBreakpoints(),
-      isolateManager.setExceptionPauseMode('None'),
-    ]);
-    // Once those have completed, it's safe to resume anything paused.
-    await isolateManager.resumeAll();
+    await _withErrorHandling(() async {
+      // Remove anything that may cause us to pause again.
+      await Future.wait([
+        isolateManager.clearAllBreakpoints(),
+        isolateManager.setExceptionPauseMode('None'),
+      ]);
+      // Once those have completed, it's safe to resume anything paused.
+      await isolateManager.resumeAll();
+    });
   }
 
   DartDebugAdapter(
@@ -629,7 +631,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     }
 
     logger?.call('Connecting to debugger at $uri');
-    sendOutput('console', 'Connecting to VM Service at $uri\n');
+    sendConsoleOutput('Connecting to VM Service at $uri');
     final vmService = await _vmServiceConnectUri(uri.toString());
     logger?.call('Connected to debugger at $uri!');
 
@@ -1063,10 +1065,9 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     _hasSentTerminatedEvent = true;
 
     // Always add a leading newline since the last written text might not have
-    // had one. Send directly via sendEvent and not sendOutput to ensure no
-    // async since we're about to terminate.
+    // had one.
     final reason = isDetaching ? 'Detached' : 'Exited';
-    sendEvent(OutputEventBody(output: '\n$reason$exitSuffix.'));
+    sendConsoleOutput('\n$reason$exitSuffix.');
     sendEvent(TerminatedEventBody());
   }
 
@@ -1268,6 +1269,16 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     }
 
     sendResponse(ScopesResponseBody(scopes: scopes));
+  }
+
+  /// Sends an OutputEvent with a trailing newline to the console.
+  ///
+  /// This method sends output directly and does not go through [sendOutput]
+  /// because that method is async and queues output. Console output is for
+  /// adapter-level output that does not require this and we want to ensure
+  /// it's sent immediately (for example during shutdown/exit).
+  void sendConsoleOutput(String? message) {
+    sendEvent(OutputEventBody(output: '$message\n'));
   }
 
   /// Sends an OutputEvent (without a newline, since calls to this method
@@ -1749,7 +1760,10 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
         Future<Variable> convert(int index, vm.BoundVariable variable) {
           // Store the expression that gets this object as we may need it to
           // compute evaluateNames for child objects later.
-          storeEvaluateName(variable.value, variable.name);
+          final value = variable.value;
+          if (value is vm.InstanceRef) {
+            storeEvaluateName(value, variable.name);
+          }
           return _converter.convertVmResponseToVariable(
             thread,
             variable.value,

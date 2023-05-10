@@ -3819,6 +3819,37 @@ Message _withArgumentsJsInteropExportInvalidTypeArgument(
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(DartType _type, bool isNonNullableByDefault)>
+    templateJsInteropFunctionToJSRequiresStaticType = const Template<
+            Message Function(DartType _type, bool isNonNullableByDefault)>(
+        problemMessageTemplate:
+            r"""`Function.toJS` requires a statically known function type, but Type '#type' is not a function type, e.g., `void Function()`.""",
+        correctionMessageTemplate:
+            r"""Insert an explicit cast to the expected function type.""",
+        withArguments: _withArgumentsJsInteropFunctionToJSRequiresStaticType);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(DartType _type, bool isNonNullableByDefault)>
+    codeJsInteropFunctionToJSRequiresStaticType =
+    const Code<Message Function(DartType _type, bool isNonNullableByDefault)>(
+  "JsInteropFunctionToJSRequiresStaticType",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsJsInteropFunctionToJSRequiresStaticType(
+    DartType _type, bool isNonNullableByDefault) {
+  TypeLabeler labeler = new TypeLabeler(isNonNullableByDefault);
+  List<Object> typeParts = labeler.labelType(_type);
+  String type = typeParts.join();
+  return new Message(codeJsInteropFunctionToJSRequiresStaticType,
+      problemMessage:
+          """`Function.toJS` requires a statically known function type, but Type '${type}' is not a function type, e.g., `void Function()`.""" +
+              labeler.originMessages,
+      correctionMessage: """Insert an explicit cast to the expected function type.""",
+      arguments: {'type': _type});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<Message Function(DartType _type, bool isNonNullableByDefault)>
     templateJsInteropStaticInteropMockNotStaticInteropType = const Template<
             Message Function(DartType _type, bool isNonNullableByDefault)>(
         problemMessageTemplate:
@@ -4062,42 +4093,78 @@ Message _withArgumentsNameNotFoundInRecordNameGet(
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
-    Message Function(
-        DartType _type,
-        String string,
-        bool
-            isNonNullableByDefault)> templateNonExhaustiveSwitch = const Template<
-        Message Function(
-            DartType _type, String string, bool isNonNullableByDefault)>(
-    problemMessageTemplate:
-        r"""The type '#type' is not exhaustively matched by the switch cases.""",
-    correctionMessageTemplate:
-        r"""Try adding a default case or cases that match '#string'.""",
-    withArguments: _withArgumentsNonExhaustiveSwitch);
+        Message Function(DartType _type, String string, String string2,
+            bool isNonNullableByDefault)>
+    templateNonExhaustiveSwitchExpression = const Template<
+            Message Function(DartType _type, String string, String string2,
+                bool isNonNullableByDefault)>(
+        problemMessageTemplate:
+            r"""The type '#type' is not exhaustively matched by the switch cases since it doesn't match '#string'.""",
+        correctionMessageTemplate:
+            r"""Try adding a wildcard pattern or cases that match '#string2'.""",
+        withArguments: _withArgumentsNonExhaustiveSwitchExpression);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<
-        Message Function(
-            DartType _type, String string, bool isNonNullableByDefault)>
-    codeNonExhaustiveSwitch = const Code<
-            Message Function(
-                DartType _type, String string, bool isNonNullableByDefault)>(
-        "NonExhaustiveSwitch",
-        analyzerCodes: <String>["NON_EXHAUSTIVE_SWITCH"]);
+        Message Function(DartType _type, String string, String string2,
+            bool isNonNullableByDefault)> codeNonExhaustiveSwitchExpression =
+    const Code<
+            Message Function(DartType _type, String string, String string2,
+                bool isNonNullableByDefault)>("NonExhaustiveSwitchExpression",
+        analyzerCodes: <String>["NON_EXHAUSTIVE_SWITCH_EXPRESSION"]);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-Message _withArgumentsNonExhaustiveSwitch(
-    DartType _type, String string, bool isNonNullableByDefault) {
+Message _withArgumentsNonExhaustiveSwitchExpression(DartType _type,
+    String string, String string2, bool isNonNullableByDefault) {
   TypeLabeler labeler = new TypeLabeler(isNonNullableByDefault);
   List<Object> typeParts = labeler.labelType(_type);
   if (string.isEmpty) throw 'No string provided';
+  if (string2.isEmpty) throw 'No string provided';
   String type = typeParts.join();
-  return new Message(codeNonExhaustiveSwitch,
+  return new Message(codeNonExhaustiveSwitchExpression,
       problemMessage:
-          """The type '${type}' is not exhaustively matched by the switch cases.""" +
+          """The type '${type}' is not exhaustively matched by the switch cases since it doesn't match '${string}'.""" +
               labeler.originMessages,
-      correctionMessage: """Try adding a default case or cases that match '${string}'.""",
-      arguments: {'type': _type, 'string': string});
+      correctionMessage: """Try adding a wildcard pattern or cases that match '${string2}'.""",
+      arguments: {'type': _type, 'string': string, 'string2': string2});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+        Message Function(DartType _type, String string, String string2,
+            bool isNonNullableByDefault)> templateNonExhaustiveSwitchStatement =
+    const Template<
+            Message Function(DartType _type, String string, String string2,
+                bool isNonNullableByDefault)>(
+        problemMessageTemplate:
+            r"""The type '#type' is not exhaustively matched by the switch cases since it doesn't match '#string'.""",
+        correctionMessageTemplate:
+            r"""Try adding a default case or cases that match '#string2'.""",
+        withArguments: _withArgumentsNonExhaustiveSwitchStatement);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<
+        Message Function(DartType _type, String string, String string2,
+            bool isNonNullableByDefault)> codeNonExhaustiveSwitchStatement =
+    const Code<
+            Message Function(DartType _type, String string, String string2,
+                bool isNonNullableByDefault)>("NonExhaustiveSwitchStatement",
+        analyzerCodes: <String>["NON_EXHAUSTIVE_SWITCH_STATEMENT"]);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonExhaustiveSwitchStatement(DartType _type,
+    String string, String string2, bool isNonNullableByDefault) {
+  TypeLabeler labeler = new TypeLabeler(isNonNullableByDefault);
+  List<Object> typeParts = labeler.labelType(_type);
+  if (string.isEmpty) throw 'No string provided';
+  if (string2.isEmpty) throw 'No string provided';
+  String type = typeParts.join();
+  return new Message(codeNonExhaustiveSwitchStatement,
+      problemMessage:
+          """The type '${type}' is not exhaustively matched by the switch cases since it doesn't match '${string}'.""" +
+              labeler.originMessages,
+      correctionMessage: """Try adding a default case or cases that match '${string2}'.""",
+      arguments: {'type': _type, 'string': string, 'string2': string2});
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.

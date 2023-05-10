@@ -1828,13 +1828,15 @@ bool FlowGraphBuilder::NeedsDebugStepCheck(Value* value,
     return false;
   }
   Definition* definition = value->definition();
-  if (definition->IsConstant() || definition->IsLoadStaticField()) {
+  if (definition->IsConstant() || definition->IsLoadStaticField() ||
+      definition->IsLoadLocal() || definition->IsAssertAssignable() ||
+      definition->IsAllocateSmallRecord() || definition->IsAllocateRecord()) {
     return true;
   }
   if (auto const alloc = definition->AsAllocateClosure()) {
     return !alloc->known_function().IsNull();
   }
-  return definition->IsLoadLocal() || definition->IsAssertAssignable();
+  return false;
 }
 
 Fragment FlowGraphBuilder::EvaluateAssertion() {
@@ -1991,9 +1993,6 @@ void FlowGraphBuilder::BuildTypeArgumentTypeChecks(TypeChecksToBuild mode,
       type_param = dart_function.TypeParameterAt(i);
     }
     ASSERT(type_param.IsFinalized());
-    if (bound.IsTypeRef()) {
-      bound = TypeRef::Cast(bound).type();
-    }
     check_bounds +=
         AssertSubtype(TokenPosition::kNoSource, type_param, bound, name);
   }
@@ -3481,7 +3480,7 @@ FlowGraph* FlowGraphBuilder::BuildGraphOfNoSuchMethodForwarder(
           Function::ZoneHandle(Z, function.parent_function());
       const Class& owner = Class::ZoneHandle(Z, parent.Owner());
       AbstractType& type = AbstractType::ZoneHandle(Z);
-      type = Type::New(owner, TypeArguments::Handle(Z));
+      type = Type::New(owner, Object::null_type_arguments());
       type = ClassFinalizer::FinalizeType(type);
       body += Constant(type);
     } else {
@@ -3738,8 +3737,8 @@ FlowGraph* FlowGraphBuilder::BuildGraphOfImplicitClosureFunction(
       // TranslateInstantiatedTypeArguments is smart enough to
       // avoid instantiation and reuse passed function type arguments
       // if there are no extra type arguments in the flattened vector.
-      const auto& instantiated_type_arguments =
-          TypeArguments::ZoneHandle(Z, result_type.arguments());
+      const auto& instantiated_type_arguments = TypeArguments::ZoneHandle(
+          Z, Type::Cast(result_type).GetInstanceTypeArguments(H.thread()));
       closure +=
           TranslateInstantiatedTypeArguments(instantiated_type_arguments);
     } else {
@@ -3758,8 +3757,8 @@ FlowGraph* FlowGraphBuilder::BuildGraphOfImplicitClosureFunction(
     const Class& cls = Class::ZoneHandle(Z, target.Owner());
     if (cls.NumTypeArguments() > 0) {
       if (!function.IsGeneric()) {
-        Type& cls_type = Type::Handle(Z, cls.DeclarationType());
-        closure += Constant(TypeArguments::ZoneHandle(Z, cls_type.arguments()));
+        closure += Constant(TypeArguments::ZoneHandle(
+            Z, cls.GetDeclarationInstanceTypeArguments()));
       }
       closure += AllocateObject(function.token_pos(), cls, 1);
     } else {
@@ -4311,7 +4310,7 @@ Fragment FlowGraphBuilder::FfiPointerFromAddress() {
   // do not appear in the type arguments to a any Pointer classes in an FFI
   // signature.
   ASSERT(args.IsNull() || args.IsInstantiated());
-  args = args.Canonicalize(thread_, nullptr);
+  args = args.Canonicalize(thread_);
 
   Fragment code;
   code += Constant(args);

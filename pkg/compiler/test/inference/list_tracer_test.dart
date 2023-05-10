@@ -208,9 +208,7 @@ void main() {
     // Test literal list.
     await doTest('<dynamic>[]', nullify: false);
     // Test growable list.
-    await doTest('new List<dynamic>()', nullify: false);
-    // Test fixed list.
-    await doTest('new List<dynamic>(1)', nullify: true);
+    await doTest('new List<dynamic>.empty()', nullify: false);
     // Test List.filled.
     await doTest('new List<dynamic>.filled(1, 0)', nullify: false);
     // Test List.filled.
@@ -265,10 +263,10 @@ doTest(String allocation, {required bool nullify}) async {
   checkType('listPassedAsNamedParameter', commonMasks.numType);
   checkType('listStoredInList', commonMasks.uint31Type);
   checkType('listStoredInListButEscapes', commonMasks.dynamicType);
-  checkType('listStoredInRecordWithIndexAccess', commonMasks.dynamicType);
-  checkType('listStoredInRecordWithNameAccess', commonMasks.dynamicType);
-  checkType('listStoredInRecordWithDynamicAccess', commonMasks.dynamicType);
-  checkType('listStoredInRecordWithoutAccess', commonMasks.dynamicType);
+  checkType('listStoredInRecordWithIndexAccess', commonMasks.numType);
+  checkType('listStoredInRecordWithNameAccess', commonMasks.numType);
+  checkType('listStoredInRecordWithDynamicAccess', commonMasks.numType);
+  checkType('listStoredInRecordWithoutAccess', commonMasks.uint31Type);
 
   if (!allocation.contains('filled')) {
     checkType('listUnset', TypeMask.nonNullEmpty());

@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart_template_buffer.dart';
 import 'key.dart';
 import 'shared.dart';
 import 'space.dart';
@@ -26,14 +27,17 @@ class TypeBasedStaticType<Type extends Object> extends NonNullableStaticType {
   final TypeOperations<Type> _typeOperations;
   final FieldLookup<Type> _fieldLookup;
   final Type _type;
+  @override
+  final bool isImplicitlyNullable;
 
-  TypeBasedStaticType(this._typeOperations, this._fieldLookup, this._type);
+  TypeBasedStaticType(this._typeOperations, this._fieldLookup, this._type,
+      {required this.isImplicitlyNullable});
 
   @override
   Map<Key, StaticType> get fields => _fieldLookup.getFieldTypes(_type);
 
   @override
-  StaticType? getAdditionalField(Key key) =>
+  StaticType? getAdditionalPropertyType(Key key) =>
       _fieldLookup.getAdditionalFieldType(_type, key);
 
   /// Returns a [Restriction] value for static types the determines subtypes of
@@ -67,8 +71,9 @@ class TypeBasedStaticType<Type extends Object> extends NonNullableStaticType {
   Type get typeForTesting => _type;
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
     if (!_typeOperations.hasSimpleName(_type)) {
       buffer.write(name);
       buffer.write(' _');
@@ -77,7 +82,7 @@ class TypeBasedStaticType<Type extends Object> extends NonNullableStaticType {
       String additionalStart = ' && Object(';
       String additionalEnd = '';
       String comma = '';
-      for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
+      for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
         Key key = entry.key;
         if (key is! ListKey) {
           buffer.write(additionalStart);
@@ -88,14 +93,20 @@ class TypeBasedStaticType<Type extends Object> extends NonNullableStaticType {
 
           buffer.write(key.name);
           buffer.write(': ');
-          FieldWitness field = entry.value;
-          field.witnessToText(buffer);
+          PropertyWitness field = entry.value;
+          field.witnessToDart(buffer, forCorrection: forCorrection);
         }
       }
       buffer.write(additionalEnd);
     } else {
-      super.witnessToText(buffer, witness, witnessFields);
+      super.witnessToDart(buffer, witness, witnessFields,
+          forCorrection: forCorrection);
     }
+  }
+
+  @override
+  void typeToDart(DartTemplateBuffer buffer) {
+    buffer.writeGeneralType(_type, name);
   }
 }
 
@@ -109,25 +120,44 @@ abstract class RestrictedStaticType<Type extends Object,
   final String name;
 
   RestrictedStaticType(super.typeOperations, super.fieldLookup, super.type,
-      this.restriction, this.name);
+      this.restriction, this.name)
+      : super(isImplicitlyNullable: false);
+}
+
+/// [StaticType] for an object restricted to a single value, where that value is
+/// a general-purpose value (not a boolean or an enum).
+class GeneralValueStaticType<Type extends Object, T extends Object>
+    extends ValueStaticType<Type, T> {
+  final T _value;
+
+  @override
+  void valueToDart(DartTemplateBuffer buffer) {
+    buffer.writeGeneralConstantValue(_value, name);
+  }
+
+  GeneralValueStaticType(super.typeOperations, super.fieldLookup, super.type,
+      super.restriction, super.name, this._value);
 }
 
 /// [StaticType] for an object restricted to a single value.
-class ValueStaticType<Type extends Object, T extends Object>
+abstract class ValueStaticType<Type extends Object, T extends Object>
     extends RestrictedStaticType<Type, IdentityRestriction<T>> {
+  void valueToDart(DartTemplateBuffer buffer);
+
   ValueStaticType(super.typeOperations, super.fieldLookup, super.type,
       super.restriction, super.name);
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
-    buffer.write(name);
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
+    valueToDart(buffer);
 
     // If we have restrictions on the value we create an and pattern.
     String additionalStart = ' && Object(';
     String additionalEnd = '';
     String comma = '';
-    for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
+    for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
       Key key = entry.key;
       if (key is! RecordKey) {
         buffer.write(additionalStart);
@@ -138,8 +168,8 @@ class ValueStaticType<Type extends Object, T extends Object>
 
         buffer.write(key.name);
         buffer.write(': ');
-        FieldWitness field = entry.value;
-        field.witnessToText(buffer);
+        PropertyWitness field = entry.value;
+        field.witnessToDart(buffer, forCorrection: forCorrection);
       }
     }
     buffer.write(additionalEnd);

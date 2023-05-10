@@ -320,7 +320,7 @@ class HttpConnectionsInfo {
 /// as the standard allows. In most cases a name holds only a single value,
 /// The most common mode of operation is to use `set()` for setting a value,
 /// and `value()` for retrieving a value.
-abstract class HttpHeaders {
+abstract interface class HttpHeaders {
   static const acceptHeader = "accept";
   static const acceptCharsetHeader = "accept-charset";
   static const acceptEncodingHeader = "accept-encoding";
@@ -603,7 +603,7 @@ abstract class HttpHeaders {
 ///     });
 ///
 /// An instance of [HeaderValue] is immutable.
-abstract class HeaderValue {
+abstract interface class HeaderValue {
   /// Creates a new header value object setting the value and parameters.
   factory HeaderValue(
       [String value = "", Map<String, String?> parameters = const {}]) {
@@ -638,7 +638,7 @@ abstract class HeaderValue {
 }
 
 /// The [session][HttpRequest.session] of an [HttpRequest].
-abstract class HttpSession implements Map {
+abstract interface class HttpSession implements Map {
   /// The id of the current session.
   String get id;
 
@@ -661,7 +661,7 @@ abstract class HttpSession implements Map {
 /// [HttpHeaders.contentTypeHeader] header.
 ///
 /// A [ContentType] is immutable.
-abstract class ContentType implements HeaderValue {
+abstract interface class ContentType implements HeaderValue {
   /// Content type for plain text using UTF-8 encoding.
   ///
   ///     text/plain; charset=utf-8
@@ -735,11 +735,41 @@ abstract class ContentType implements HeaderValue {
   String? get charset;
 }
 
+/// Cookie cross-site availability configuration.
+///
+/// The value of [Cookie.sameSite], which defines whether an
+/// HTTP cookie is available from other sites or not.
+///
+/// Has three possible values: [lax], [strict] and [none].
+final class SameSite {
+  /// Default value, cookie with this value will generally not be sent on
+  /// cross-site requests, unless the user is navigated to the original site.
+  static const lax = SameSite._("Lax");
+
+  /// Cookie with this value will never be sent on cross-site requests.
+  static const strict = SameSite._("Strict");
+
+  /// Cookie with this value will be sent in all requests.
+  ///
+  /// [Cookie.secure] must also be set to true, otherwise the `none` value
+  /// will have no effect.
+  static const none = SameSite._("None");
+
+  static const List<SameSite> values = [lax, strict, none];
+
+  final String name;
+
+  const SameSite._(this.name);
+
+  @override
+  String toString() => "SameSite=$name";
+}
+
 /// Representation of a cookie. For cookies received by the server as Cookie
 /// header values only [name] and [value] properties will be set. When building a
 /// cookie for the 'set-cookie' header in the server and when receiving cookies
 /// in the client as 'set-cookie' headers all fields can be used.
-abstract class Cookie {
+abstract interface class Cookie {
   /// The name of the cookie.
   ///
   /// Must be a `token` as specified in RFC 6265.
@@ -780,6 +810,13 @@ abstract class Cookie {
   /// Whether the cookie is only sent in the HTTP request and is not made
   /// available to client side scripts.
   bool httpOnly = false;
+
+  /// Whether the cookie is available from other sites.
+  ///
+  /// This value is `null` if the SameSite attribute is not present.
+  ///
+  /// See [SameSite] for more information.
+  SameSite? sameSite;
 
   /// Creates a new cookie setting the name and value.
   ///
@@ -844,7 +881,7 @@ abstract class Cookie {
 ///       res.write('Received request ${req.method}: ${req.uri.path}');
 ///       res.close();
 ///     }
-abstract class HttpRequest implements Stream<Uint8List> {
+abstract interface class HttpRequest implements Stream<Uint8List> {
   /// The content length of the request body.
   ///
   /// If the size of the request body is not known in advance,
@@ -966,7 +1003,7 @@ abstract class HttpRequest implements Stream<Uint8List> {
 ///
 /// An exception is thrown if you use the `write()` method
 /// while an unsupported content-type is set.
-abstract class HttpResponse implements IOSink {
+abstract interface class HttpResponse implements IOSink {
   // TODO(ajohnsen): Add documentation of how to pipe a file to the response.
   /// Gets and sets the content length of the response. If the size of
   /// the response is not known in advance set the content length to
@@ -1149,7 +1186,7 @@ abstract class HttpResponse implements IOSink {
 ///
 ///     HttpClient client = HttpClient();
 ///     client.findProxy = null;
-abstract class HttpClient {
+abstract interface class HttpClient {
   static const int defaultHttpPort = 80;
 
   static const int defaultHttpsPort = 443;
@@ -1632,7 +1669,7 @@ abstract class HttpClient {
 ///
 /// An exception is thrown if you use an unsupported encoding and the
 /// `write()` method being used takes a string parameter.
-abstract class HttpClientRequest implements IOSink {
+abstract interface class HttpClientRequest implements IOSink {
   /// The requested persistent connection state.
   ///
   /// The default value is `true`.
@@ -1789,7 +1826,7 @@ abstract class HttpClientRequest implements IOSink {
 ///   client.close();
 /// }
 /// ```
-abstract class HttpClientResponse implements Stream<List<int>> {
+abstract interface class HttpClientResponse implements Stream<List<int>> {
   /// Returns the status code.
   ///
   /// The status code must be set before the body is written
@@ -1924,10 +1961,11 @@ enum HttpClientResponseCompressionState {
   compressed,
 }
 
-abstract class HttpClientCredentials {}
+abstract interface class HttpClientCredentials {}
 
 /// Represents credentials for basic authentication.
-abstract class HttpClientBasicCredentials extends HttpClientCredentials {
+abstract final class HttpClientBasicCredentials
+    implements HttpClientCredentials {
   factory HttpClientBasicCredentials(String username, String password) =>
       _HttpClientBasicCredentials(username, password);
 }
@@ -1936,21 +1974,22 @@ abstract class HttpClientBasicCredentials extends HttpClientCredentials {
 /// authentication is only supported for servers using the MD5
 /// algorithm and quality of protection (qop) of either "none" or
 /// "auth".
-abstract class HttpClientDigestCredentials extends HttpClientCredentials {
+abstract final class HttpClientDigestCredentials
+    implements HttpClientCredentials {
   factory HttpClientDigestCredentials(String username, String password) =>
       _HttpClientDigestCredentials(username, password);
 }
 
 /// Information about an [HttpRequest], [HttpResponse], [HttpClientRequest], or
 /// [HttpClientResponse] connection.
-abstract class HttpConnectionInfo {
+abstract interface class HttpConnectionInfo {
   InternetAddress get remoteAddress;
   int get remotePort;
   int get localPort;
 }
 
 /// Redirect information.
-abstract class RedirectInfo {
+abstract interface class RedirectInfo {
   /// Returns the status code used for the redirect.
   int get statusCode;
 

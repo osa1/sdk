@@ -240,6 +240,15 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
   }
 
   @override
+  void visitCatchClauseParameter(CatchClauseParameter node) {
+    _writeln('CatchClauseParameter');
+    _withIndent(() {
+      _writeNamedChildEntities(node);
+      _writeDeclaredElement(node.declaredElement);
+    });
+  }
+
+  @override
   void visitClassDeclaration(ClassDeclaration node) {
     _writeln('ClassDeclaration');
     _withIndent(() {
@@ -523,6 +532,7 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
     _writeln('ExtensionOverride');
     _withIndent(() {
       _writeNamedChildEntities(node);
+      _writeElement('element', node.element);
       _writeType('extendedType', node.extendedType);
       _writeType('staticType', node.staticType);
       _writeTypeList('typeArgumentTypes', node.typeArgumentTypes);
@@ -776,6 +786,15 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
   }
 
   @override
+  void visitImportPrefixReference(ImportPrefixReference node) {
+    _writeln('ImportPrefixReference');
+    _withIndent(() {
+      _writeNamedChildEntities(node);
+      _writeElement('element', node.element);
+    });
+  }
+
+  @override
   void visitIndexExpression(IndexExpression node) {
     _writeln('IndexExpression');
     _withIndent(() {
@@ -835,6 +854,14 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
   @override
   void visitLabel(Label node) {
     _writeln('Label');
+    _withIndent(() {
+      _writeNamedChildEntities(node);
+    });
+  }
+
+  @override
+  void visitLabeledStatement(LabeledStatement node) {
+    _writeln('LabeledStatement');
     _withIndent(() {
       _writeNamedChildEntities(node);
     });
@@ -908,7 +935,7 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
 
   @override
   void visitMapLiteralEntry(MapLiteralEntry node) {
-    _writeln('SetOrMapLiteral');
+    _writeln('MapLiteralEntry');
     _withIndent(() {
       _writeNamedChildEntities(node);
     });
@@ -986,6 +1013,7 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
     _writeln('NamedType');
     _withIndent(() {
       _writeNamedChildEntities(node);
+      _writeElement('element', node.element);
       _writeType('type', node.type);
     });
   }
@@ -1254,6 +1282,16 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
     _writeln('RestPatternElement');
     _withIndent(() {
       _writeNamedChildEntities(node);
+    });
+  }
+
+  @override
+  void visitRethrowExpression(RethrowExpression node) {
+    _writeln('RethrowExpression');
+    _withIndent(() {
+      _writeNamedChildEntities(node);
+      _writeParameterElement(node);
+      _writeType('staticType', node.staticType);
     });
   }
 

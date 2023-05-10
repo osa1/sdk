@@ -424,18 +424,25 @@ class DelayedAsExpression implements DelayedExpression {
   final DartType _type;
   final bool isUnchecked;
   final bool isImplicit;
+  final bool isCovarianceCheck;
   final int fileOffset;
 
   DelayedAsExpression(this._operand, this._type,
       {this.isUnchecked = false,
       this.isImplicit = false,
+      this.isCovarianceCheck = false,
       required this.fileOffset});
 
   @override
   Expression createExpression(TypeEnvironment typeEnvironment,
       [List<Expression>? effects]) {
     Expression operand = _operand.createExpression(typeEnvironment, effects);
-    if (isImplicit) {
+    if (isCovarianceCheck) {
+      return createAsExpression(operand, _type,
+          forNonNullableByDefault: true,
+          isCovarianceCheck: true,
+          fileOffset: fileOffset);
+    } else if (isImplicit) {
       DartType operandType = _operand.getType(typeEnvironment);
       if (typeEnvironment.isSubtypeOf(
           operandType, _type, SubtypeCheckMode.withNullabilities)) {
@@ -852,11 +859,11 @@ class DelayedExtensionInvocation implements DelayedExpression {
   final Procedure _target;
   final List<DelayedExpression> _arguments;
   final List<DartType> _typeArguments;
-  final FunctionType _functionType;
+  final DartType _resultType;
   final int fileOffset;
 
   DelayedExtensionInvocation(
-      this._target, this._arguments, this._typeArguments, this._functionType,
+      this._target, this._arguments, this._typeArguments, this._resultType,
       {required this.fileOffset});
 
   @override
@@ -875,7 +882,7 @@ class DelayedExtensionInvocation implements DelayedExpression {
 
   @override
   DartType getType(TypeEnvironment typeEnvironment) {
-    return _functionType.returnType;
+    return _resultType;
   }
 
   @override

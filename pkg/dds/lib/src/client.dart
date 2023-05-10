@@ -11,6 +11,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../dds.dart';
 import 'constants.dart';
+import 'dap/adapters/dds_hosted_adapter.dart';
 import 'dds_impl.dart';
 import 'rpc_error_codes.dart';
 import 'stream_manager.dart';
@@ -234,6 +235,11 @@ class DartDevelopmentServiceClient {
       dds.isolateManager.getCachedCpuSamples,
     );
 
+    _clientPeer.registerMethod(
+      'getPerfettoVMTimelineWithCpuSamples',
+      dds.isolateManager.getPerfettoVMTimelineWithCpuSamples,
+    );
+
     // `evaluate` and `evaluateInFrame` actually consist of multiple RPC
     // invocations, including a call to `compileExpression` which can be
     // overridden by clients which provide their own implementation (e.g.,
@@ -250,6 +256,11 @@ class DartDevelopmentServiceClient {
     _clientPeer.registerMethod(
       'lookupResolvedPackageUris',
       dds.packageUriConverter.convert,
+    );
+
+    _clientPeer.registerMethod(
+      'handleDap',
+      (parameters) => dds.dapHandler.handle(adapter, parameters),
     );
 
     // When invoked within a fallback, the next fallback will start executing.
@@ -334,4 +345,5 @@ class DartDevelopmentServiceClient {
   final Set<String> profilerUserTagFilters = {};
   final json_rpc.Peer _vmServicePeer;
   late json_rpc.Peer _clientPeer;
+  final DdsHostedAdapter adapter = DdsHostedAdapter();
 }

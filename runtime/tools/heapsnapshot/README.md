@@ -13,30 +13,21 @@ heapsnapshot.
 
 ### Programmatically
 
+Note: enabled for debug and release Dart build modes, but not for product mode.
+
 It's possible to programmatically dump a heapsnapshot to a file by using a
-(currently) internal API:
+`dart:developer` API:
 ```
-import 'dart:_internal';
+import 'dart:developer';
 
 foo() {
   ...
   // Will dump the heapsnapshot at a specific place in program execution.
   // Allows very precise analysis of what data is live at a particular place.
-  VMInternalsForTesting.writeHeapSnapshotToFile('dump.heapsnapshot');
+  NativeRuntime.writeHeapSnapshotToFile('dump.heapsnapshot');
   ...
 }
 ```
-
-In order to be able to import `dart:_internal`, one has to update the `VMTarget`
-class:
-```
-class VMTarget extends Target {
-  ...
-  bool allowPlatformPrivateLibraryAccess(Uri importer, Uri imported) => true;
-  ...
-}
-```
-
 
 ## CLI Usage:
 

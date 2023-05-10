@@ -151,6 +151,10 @@ abstract class CommonElements {
   late final LibraryEntity? dartJsAnnotationsLibrary =
       _env.lookupLibrary(Uris.dart__js_annotations);
 
+  /// The dart:js_interop library.
+  late final LibraryEntity? dartJsInteropLibrary =
+      _env.lookupLibrary(Uris.dart__js_interop);
+
   /// The `NativeTypedData` class from dart:typed_data.
   ClassEntity get typedDataClass =>
       _findClass(typedDataLibrary, 'NativeTypedData');
@@ -438,9 +442,9 @@ abstract class CommonElements {
               PrivateName('_makeEmpty', setLiteralClass.library.canonicalUri))
           as FunctionEntity;
 
-  late final FunctionEntity objectNoSuchMethod = _env.lookupLocalClassMember(
+  late final FunctionEntity? objectNoSuchMethod = _env.lookupLocalClassMember(
           objectClass, const PublicName(Identifiers.noSuchMethod_))
-      as FunctionEntity;
+      as FunctionEntity?;
 
   bool isDefaultNoSuchMethodImplementation(FunctionEntity element) {
     ClassEntity? classElement = element.enclosingClass;
@@ -495,6 +499,18 @@ abstract class CommonElements {
 
   ClassEntity get syncStarIterable =>
       _findAsyncHelperClass("_SyncStarIterable");
+
+  late final ClassEntity _syncStarIteratorClass =
+      _findAsyncHelperClass('_SyncStarIterator');
+
+  late final FieldEntity syncStarIteratorCurrentField =
+      _findClassMember(_syncStarIteratorClass, '_current');
+
+  late final FieldEntity syncStarIteratorDatumField =
+      _findClassMember(_syncStarIteratorClass, '_datum');
+
+  late final FunctionEntity syncStarIteratorYieldStarMethod =
+      _findClassMember(_syncStarIteratorClass, '_yieldStar');
 
   ClassEntity get futureImplementation => _findAsyncHelperClass('_Future');
 
@@ -1069,11 +1085,19 @@ class KCommonElements extends CommonElements {
   late final ClassEntity? jsAnonymousClass2 =
       _findClassOrNull(dartJsAnnotationsLibrary, '_Anonymous');
 
+  // From dart:js_interop
+
+  late final ClassEntity? jsAnnotationClass3 =
+      _findClassOrNull(dartJsInteropLibrary, 'JS');
+
   /// Returns `true` if [cls] is a @JS() annotation.
   ///
-  /// The class can come from either `package:js` or `dart:_js_annotations`.
+  /// The class can come from either `package:js`, `dart:_js_annotations`, or
+  /// `dart:js_interop`.
   bool isJsAnnotationClass(ClassEntity cls) {
-    return cls == jsAnnotationClass1 || cls == jsAnnotationClass2;
+    return cls == jsAnnotationClass1 ||
+        cls == jsAnnotationClass2 ||
+        cls == jsAnnotationClass3;
   }
 
   /// Returns `true` if [cls] is an @anonymous annotation.
@@ -1094,14 +1118,6 @@ class KCommonElements extends CommonElements {
 
 class JCommonElements extends CommonElements {
   JCommonElements(super.dartTypes, super.env);
-
-  /// Returns `true` if [element] is the unnamed constructor of `List`.
-  ///
-  /// This will not resolve the constructor if it hasn't been seen yet during
-  /// compilation.
-  bool isUnnamedListConstructor(ConstructorEntity element) =>
-      (element.name == '' && element.enclosingClass == listClass) ||
-      (element.name == 'list' && element.enclosingClass == jsArrayClass);
 
   /// Returns `true` if [element] is the named constructor of `List`,
   /// e.g. `List.of`.

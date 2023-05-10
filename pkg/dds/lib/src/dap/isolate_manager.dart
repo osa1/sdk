@@ -260,7 +260,14 @@ class IsolateManager {
 
     final thread = _threadsByThreadId[threadId];
     if (thread == null) {
-      throw DebugAdapterException('Thread $threadId was not found');
+      if (isInvalidThreadId(threadId)) {
+        throw DebugAdapterException('Thread $threadId was not found');
+      } else {
+        // Otherwise, this thread has exited and we don't need to do anything.
+        // It's possible another debugger unpaused or we're shutting down and
+        // the VM has terminated it.
+        return;
+      }
     }
 
     // Check this thread hasn't already been resumed by another handler in the
@@ -279,10 +286,27 @@ class IsolateManager {
     thread.hasPendingResume = true;
     try {
       await _adapter.vmService?.resume(thread.isolate.id!, step: resumeType);
+    } on vm.SentinelException {
+      // It's possible during these async requests that the isolate went away
+      // (for example a shutdown/restart) and we no longer care about
+      // resuming it.
+    } on vm.RPCError catch (e) {
+      if (e.code == RpcErrorCodes.kIsolateMustBePaused) {
+        // It's possible something else resumed the thread (such as if another
+        // debugger is attached), we can just continue.
+      } else {
+        rethrow;
+      }
     } finally {
       thread.hasPendingResume = false;
     }
   }
+
+  /// Checks whether [threadId] is invalid and has never been used.
+  ///
+  /// Returns `false` is [threadId] corresponds to either a live, or previously
+  /// exited thread.
+  bool isInvalidThreadId(int threadId) => threadId >= _nextThreadNumber;
 
   /// Sends an event informing the client that a thread is stopped at entry.
   void sendStoppedOnEntryEvent(int threadId) {
@@ -363,14 +387,20 @@ class IsolateManager {
   /// Configures a new isolate, setting it's exception-pause mode, which
   /// libraries are debuggable, and sending all breakpoints.
   Future<void> _configureIsolate(ThreadInfo thread) async {
-    // Libraries must be set as debuggable _before_ sending breakpoints, or
-    // they may fail for SDK sources.
-    await Future.wait([
-      _sendLibraryDebuggables(thread),
-      _sendExceptionPauseMode(thread),
-    ], eagerError: true);
+    try {
+      // Libraries must be set as debuggable _before_ sending breakpoints, or
+      // they may fail for SDK sources.
+      await Future.wait([
+        _sendLibraryDebuggables(thread),
+        _sendExceptionPauseMode(thread),
+      ], eagerError: true);
 
-    await _sendBreakpoints(thread);
+      await _sendBreakpoints(thread);
+    } on vm.SentinelException {
+      // It's possible during these async requests that the isolate went away
+      // (for example a shutdown/restart) and we no longer care about
+      // configuring it. State will be cleaned up by the IsolateExit event.
+    }
   }
 
   /// Evaluates an expression, returning the result if it is a [vm.InstanceRef]
@@ -392,21 +422,18 @@ class IsolateManager {
         return result;
       } else if (result is vm.ErrorRef) {
         final message = result.message ?? '<error ref>';
-        _adapter.sendOutput(
-          'console',
-          'Debugger failed to evaluate breakpoint $type "$expression": $message\n',
+        _adapter.sendConsoleOutput(
+          'Debugger failed to evaluate breakpoint $type "$expression": $message',
         );
       } else if (result is vm.Sentinel) {
         final message = result.valueAsString ?? '<collected>';
-        _adapter.sendOutput(
-          'console',
-          'Debugger failed to evaluate breakpoint $type "$expression": $message\n',
+        _adapter.sendConsoleOutput(
+          'Debugger failed to evaluate breakpoint $type "$expression": $message',
         );
       }
     } catch (e) {
-      _adapter.sendOutput(
-        'console',
-        'Debugger failed to evaluate breakpoint $type "$expression": $e\n',
+      _adapter.sendConsoleOutput(
+        'Debugger failed to evaluate breakpoint $type "$expression": $e',
       );
     }
     return null;
@@ -606,13 +633,19 @@ class IsolateManager {
   ) async {
     final isolateId = isolate.id!;
     final uriStrings = uris.map((uri) => uri.toString()).toList();
-    final res = await _adapter.vmService
-        ?.lookupResolvedPackageUris(isolateId, uriStrings, local: true);
+    try {
+      final res = await _adapter.vmService
+          ?.lookupResolvedPackageUris(isolateId, uriStrings, local: true);
 
-    return res?.uris
-        ?.cast<String?>()
-        .map((uri) => uri != null ? Uri.parse(uri) : null)
-        .toList();
+      return res?.uris
+          ?.cast<String?>()
+          .map((uri) => uri != null ? Uri.parse(uri) : null)
+          .toList();
+    } on vm.SentinelException {
+      // If the isolate disappeared before we sent this request, just return
+      // null responses.
+      return uris.map((e) => null).toList();
+    }
   }
 
   /// Interpolates and prints messages for any log points.
@@ -646,7 +679,7 @@ class IsolateManager {
 
     for (final messageResult in results) {
       // TODO(dantup): Format this using other existing code in protocol converter?
-      _adapter.sendOutput('console', '${messageResult?.valueAsString}\n');
+      _adapter.sendConsoleOutput(messageResult?.valueAsString);
     }
   }
 

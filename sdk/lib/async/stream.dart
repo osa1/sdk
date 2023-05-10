@@ -2177,7 +2177,7 @@ abstract interface class EventSink<T> implements Sink<T> {
 }
 
 /// [Stream] wrapper that only exposes the [Stream] interface.
-base class StreamView<T> extends Stream<T> {
+class StreamView<T> extends Stream<T> {
   final Stream<T> _stream;
 
   const StreamView(Stream<T> stream) : _stream = stream;
@@ -2251,7 +2251,8 @@ abstract class StreamConsumer<S> {
 /// catch any errors.
 ///
 /// When [close] is called, it will return the [done] [Future].
-abstract class StreamSink<S> implements EventSink<S>, StreamConsumer<S> {
+abstract interface class StreamSink<S>
+    implements EventSink<S>, StreamConsumer<S> {
   /// Tells the stream sink that no further streams will be added.
   ///
   /// This allows the stream sink to complete any remaining work and release

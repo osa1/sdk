@@ -211,8 +211,10 @@ class SdkConstraintVerifier extends RecursiveAstVisitor<void> {
   @override
   void visitExtensionOverride(ExtensionOverride node) {
     if (checkExtensionMethods) {
-      _errorReporter.reportErrorForNode(
-          WarningCode.SDK_VERSION_EXTENSION_METHODS, node.extensionName);
+      _errorReporter.reportErrorForToken(
+        WarningCode.SDK_VERSION_EXTENSION_METHODS,
+        node.name,
+      );
     }
     super.visitExtensionOverride(node);
   }
@@ -280,7 +282,7 @@ class SdkConstraintVerifier extends RecursiveAstVisitor<void> {
 
   @override
   void visitNamedType(NamedType node) {
-    _checkSinceSdkVersion(node.name.staticElement, node);
+    _checkSinceSdkVersion(node.element, node);
     super.visitNamedType(node);
   }
 
@@ -369,7 +371,7 @@ class SdkConstraintVerifier extends RecursiveAstVisitor<void> {
               target = target.leftHandSide;
             }
             if (target is ConstructorName) {
-              errorEntity = target.name ?? target.type.name.simpleName;
+              errorEntity = target.name?.token ?? target.type.name2;
             } else if (target is FunctionExpressionInvocation) {
               errorEntity = target.argumentList;
             } else if (target is IndexExpression) {
@@ -377,7 +379,7 @@ class SdkConstraintVerifier extends RecursiveAstVisitor<void> {
             } else if (target is MethodInvocation) {
               errorEntity = target.methodName;
             } else if (target is NamedType) {
-              errorEntity = target.name.simpleName;
+              errorEntity = target.name2;
             } else if (target is PrefixedIdentifier) {
               errorEntity = target.identifier;
             } else if (target is PropertyAccess) {

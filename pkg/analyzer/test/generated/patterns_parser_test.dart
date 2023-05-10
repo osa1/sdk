@@ -21,6 +21,44 @@ main() {
 class PatternsTest extends ParserDiagnosticsTest {
   late FindNode findNode;
 
+  test_assignedVariable_namedAs() {
+    _parse('''
+void f(x) {
+  dynamic as;
+  (as) = x;
+}
+''', errors: [
+      error(ParserErrorCode.ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME, 29, 2)
+    ]);
+    var node = findNode.singlePatternAssignment.pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: AssignedVariablePattern
+    name: as
+  rightParenthesis: )
+''');
+  }
+
+  test_assignedVariable_namedWhen() {
+    _parse('''
+void f(x) {
+  dynamic when;
+  (when) = x;
+}
+''', errors: [
+      error(ParserErrorCode.ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME, 31, 4)
+    ]);
+    var node = findNode.singlePatternAssignment.pattern;
+    assertParsedNodeText(node, r'''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: AssignedVariablePattern
+    name: when
+  rightParenthesis: )
+''');
+  }
+
   test_case_identifier_dot_incomplete() {
     // Based on the repro from
     // https://github.com/Dart-Code/Dart-Code/issues/4407.
@@ -61,7 +99,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -90,7 +128,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -122,7 +160,7 @@ void f(x) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -152,7 +190,7 @@ void f(x) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -215,7 +253,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -240,7 +278,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -268,7 +306,7 @@ void f(x) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -319,7 +357,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -330,8 +368,7 @@ IfElement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       whenClause: WhenClause
         whenKeyword: when
         expression: BooleanLiteral
@@ -353,7 +390,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -364,8 +401,7 @@ IfElement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       whenClause: WhenClause
         whenKeyword: when
         expression: BooleanLiteral
@@ -390,7 +426,7 @@ void f(x) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -401,8 +437,7 @@ IfStatement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       whenClause: WhenClause
         whenKeyword: when
         expression: BooleanLiteral
@@ -434,8 +469,7 @@ SwitchPatternCase
           literal: 0
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     whenClause: WhenClause
       whenKeyword: when
       expression: BooleanLiteral
@@ -459,7 +493,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -470,8 +504,7 @@ IfElement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightParenthesis: )
   thenElement: IntegerLiteral
     literal: 1
@@ -489,7 +522,7 @@ void f(x) {
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -500,8 +533,7 @@ IfElement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightParenthesis: )
   thenElement: IntegerLiteral
     literal: 1
@@ -522,7 +554,7 @@ void f(x) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -533,8 +565,7 @@ IfStatement
             literal: 0
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightParenthesis: )
   thenStatement: Block
     leftBracket: {
@@ -562,8 +593,7 @@ SwitchPatternCase
           literal: 0
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
   colon: :
   statements
     BreakStatement
@@ -590,8 +620,7 @@ CastPattern
       token: y
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: int
+    name: int
 ''');
   }
 
@@ -616,12 +645,10 @@ CastPattern
         token: y
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: num
+    name: num
 ''');
   }
 
@@ -646,13 +673,11 @@ CastPattern
           token: y
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: num
+    name: num
 ''');
   }
 
@@ -673,8 +698,7 @@ CaseClause
         name: y
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
 ''');
   }
 
@@ -698,8 +722,7 @@ ListPattern
           literal: 1
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
   rightBracket: ]
 ''');
   }
@@ -719,20 +742,17 @@ LogicalAndPattern
   leftOperand: CastPattern
     pattern: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
         question: ?
       name: _
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: double
+      name: double
       question: ?
   operator: &&
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
     name: _
 ''');
@@ -752,22 +772,19 @@ void f(x) {
 LogicalAndPattern
   leftOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
       question: ?
     name: _
   operator: &&
   rightOperand: CastPattern
     pattern: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
 ''');
   }
@@ -787,20 +804,17 @@ LogicalOrPattern
   leftOperand: CastPattern
     pattern: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
         question: ?
       name: _
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: double
+      name: double
       question: ?
   operator: ||
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
     name: _
 ''');
@@ -820,22 +834,19 @@ void f(x) {
 LogicalOrPattern
   leftOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
       question: ?
     name: _
   operator: ||
   rightOperand: CastPattern
     pattern: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
 ''');
   }
@@ -864,8 +875,7 @@ MapPattern
             literal: 1
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightBracket: }
 ''');
   }
@@ -891,8 +901,7 @@ NullAssertPattern
         token: y
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
   operator: !
 ''');
   }
@@ -918,8 +927,7 @@ NullCheckPattern
         token: y
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
       question: ?
   operator: ?
 ''');
@@ -941,8 +949,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -955,8 +962,7 @@ ObjectPattern
             literal: 1
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightParenthesis: )
 ''');
   }
@@ -977,8 +983,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -990,8 +995,7 @@ ObjectPattern
           name: f
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
   rightParenthesis: )
 ''');
   }
@@ -1015,8 +1019,7 @@ ParenthesizedPattern
         literal: 1
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
   rightParenthesis: )
 ''');
   }
@@ -1045,8 +1048,7 @@ RecordPattern
             literal: 1
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
     PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
@@ -1078,8 +1080,7 @@ RecordPattern
           name: n
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
     PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
@@ -1109,8 +1110,7 @@ RecordPattern
             literal: 1
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
     PatternField
       pattern: ConstantPattern
         expression: IntegerLiteral
@@ -1195,8 +1195,7 @@ CastPattern
         token: c
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -1305,6 +1304,38 @@ ConstantPattern
 ''');
   }
 
+  test_constant_identifier_namedAs() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case as:
+  }
+}
+''', errors: [error(ParserErrorCode.ILLEGAL_PATTERN_IDENTIFIER_NAME, 36, 2)]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ConstantPattern
+  expression: SimpleIdentifier
+    token: as
+''');
+  }
+
+  test_constant_identifier_namedWhen() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case when:
+  }
+}
+''', errors: [error(ParserErrorCode.ILLEGAL_PATTERN_IDENTIFIER_NAME, 36, 4)]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+ConstantPattern
+  expression: SimpleIdentifier
+    token: when
+''');
+  }
+
   test_constant_identifier_prefixed_builtin() {
     _parse('''
 void f(x) {
@@ -1369,8 +1400,7 @@ CastPattern
         token: b
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -1562,8 +1592,7 @@ CastPattern
       token: y
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -1675,8 +1704,7 @@ ConstantPattern
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
     leftBracket: [
     rightBracket: ]
@@ -1702,15 +1730,13 @@ CastPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       rightBracket: ]
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -1732,8 +1758,7 @@ CaseClause
           leftBracket: <
           arguments
             NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
           rightBracket: >
         leftBracket: [
         rightBracket: ]
@@ -1759,8 +1784,7 @@ NullAssertPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       rightBracket: ]
@@ -1787,8 +1811,7 @@ NullCheckPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       rightBracket: ]
@@ -1814,8 +1837,7 @@ ConstantPattern
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
     leftBracket: [
     elements
@@ -1844,8 +1866,7 @@ CastPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       elements
@@ -1854,8 +1875,7 @@ CastPattern
       rightBracket: ]
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -1877,8 +1897,7 @@ CaseClause
           leftBracket: <
           arguments
             NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
           rightBracket: >
         leftBracket: [
         elements
@@ -1907,8 +1926,7 @@ NullAssertPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       elements
@@ -1938,8 +1956,7 @@ NullCheckPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: [
       elements
@@ -1988,8 +2005,7 @@ CastPattern
       rightBracket: ]
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2098,8 +2114,7 @@ CastPattern
       rightBracket: ]
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2191,15 +2206,13 @@ ConstantPattern
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
     leftBracket: {
     elements
-      SetOrMapLiteral
+      MapLiteralEntry
         key: IntegerLiteral
           literal: 1
         separator: :
@@ -2229,15 +2242,13 @@ CastPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2247,8 +2258,7 @@ CastPattern
       isMap: false
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2270,15 +2280,13 @@ CaseClause
           leftBracket: <
           arguments
             NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
             NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
           rightBracket: >
         leftBracket: {
         elements
-          SetOrMapLiteral
+          MapLiteralEntry
             key: IntegerLiteral
               literal: 1
             separator: :
@@ -2308,15 +2316,13 @@ NullAssertPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2347,15 +2353,13 @@ NullCheckPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2383,7 +2387,7 @@ ConstantPattern
   expression: SetOrMapLiteral
     leftBracket: {
     elements
-      SetOrMapLiteral
+      MapLiteralEntry
         key: IntegerLiteral
           literal: 1
         separator: :
@@ -2411,7 +2415,7 @@ CastPattern
     expression: SetOrMapLiteral
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2421,8 +2425,7 @@ CastPattern
       isMap: false
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2442,7 +2445,7 @@ CaseClause
       expression: SetOrMapLiteral
         leftBracket: {
         elements
-          SetOrMapLiteral
+          MapLiteralEntry
             key: IntegerLiteral
               literal: 1
             separator: :
@@ -2470,7 +2473,7 @@ NullAssertPattern
     expression: SetOrMapLiteral
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2499,7 +2502,7 @@ NullCheckPattern
     expression: SetOrMapLiteral
       leftBracket: {
       elements
-        SetOrMapLiteral
+        MapLiteralEntry
           key: IntegerLiteral
             literal: 1
           separator: :
@@ -2561,8 +2564,7 @@ CastPattern
         rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2687,8 +2689,7 @@ CastPattern
       rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2777,8 +2778,7 @@ ConstantPattern
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
     leftBracket: {
     elements
@@ -2808,8 +2808,7 @@ CastPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
@@ -2819,8 +2818,7 @@ CastPattern
       isMap: false
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -2842,8 +2840,7 @@ CaseClause
           leftBracket: <
           arguments
             NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
           rightBracket: >
         leftBracket: {
         elements
@@ -2873,8 +2870,7 @@ NullAssertPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
@@ -2905,8 +2901,7 @@ NullCheckPattern
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
       leftBracket: {
       elements
@@ -2964,8 +2959,7 @@ CastPattern
       isMap: false
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -3087,8 +3081,7 @@ PatternAssignment
       DeclaredVariablePattern
         keyword: final
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: d
     rightBracket: ]
   equals: =
@@ -3115,8 +3108,7 @@ PatternAssignment
         name: a
       DeclaredVariablePattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: d
     rightBracket: ]
   equals: =
@@ -3170,8 +3162,7 @@ PatternAssignment
       DeclaredVariablePattern
         keyword: var
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: d
     rightBracket: ]
   equals: =
@@ -3243,7 +3234,7 @@ f(x, y) => [if (x case _ when y + () => 0) 0];
 IfElement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -3281,7 +3272,7 @@ f(x, y) {
 IfStatement
   ifKeyword: if
   leftParenthesis: (
-  condition: SimpleIdentifier
+  expression: SimpleIdentifier
     token: x
   caseClause: CaseClause
     caseKeyword: case
@@ -3367,8 +3358,7 @@ f(x) => switch(x) { Foo(bar: == () => 0) => 0 };
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: Foo
+    name: Foo
   leftParenthesis: (
   fields
     PatternField
@@ -3606,8 +3596,7 @@ SwitchExpressionCase
   guardedPattern: GuardedPattern
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: Foo
+        name: Foo
       leftParenthesis: (
       fields
         PatternField
@@ -3708,6 +3697,108 @@ SwitchExpressionCase
 ''');
   }
 
+  test_identifier_as_when() {
+    // Based on the discussion at https://github.com/dart-lang/sdk/issues/52199.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case foo as when:
+  }
+}
+''');
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: CastPattern
+      pattern: ConstantPattern
+        expression: SimpleIdentifier
+          token: foo
+      asToken: as
+      type: NamedType
+        name: when
+  colon: :
+''');
+  }
+
+  test_identifier_when_as() {
+    // Based on the discussion at https://github.com/dart-lang/sdk/issues/52199.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case foo when as:
+  }
+}
+''');
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: foo
+    whenClause: WhenClause
+      whenKeyword: when
+      expression: SimpleIdentifier
+        token: as
+  colon: :
+''');
+  }
+
+  test_identifier_when_not() {
+    // Based on the repro from https://github.com/dart-lang/sdk/issues/52199.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case foo when !flag:
+  }
+}
+''');
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: foo
+    whenClause: WhenClause
+      whenKeyword: when
+      expression: PrefixExpression
+        operator: !
+        operand: SimpleIdentifier
+          token: flag
+  colon: :
+''');
+  }
+
+  test_identifier_when_when() {
+    // Based on the discussion at https://github.com/dart-lang/sdk/issues/52199.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case foo when when:
+  }
+}
+''');
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ConstantPattern
+      expression: SimpleIdentifier
+        token: foo
+    whenClause: WhenClause
+      whenKeyword: when
+      expression: SimpleIdentifier
+        token: when
+  colon: :
+''');
+  }
+
   test_issue50591_example1() {
     _parse('''
 f(x, bool Function() a) => switch(x) {
@@ -3798,8 +3889,7 @@ ListPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: [
   elements
@@ -3874,8 +3964,7 @@ ListPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: [
   elements
@@ -3968,8 +4057,7 @@ CastPattern
     rightBracket: ]
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -3986,8 +4074,7 @@ ListPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: [
   elements
@@ -4113,8 +4200,7 @@ ListPattern
   elements
     ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       leftParenthesis: (
       rightParenthesis: )
   rightBracket: ]
@@ -4145,8 +4231,7 @@ SwitchPatternCase
       elements
         ObjectPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           leftParenthesis: (
           rightParenthesis: )
       rightBracket: ] <synthetic>
@@ -4178,14 +4263,12 @@ ListPattern
   elements
     ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       leftParenthesis: (
       rightParenthesis: )
     ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       leftParenthesis: (
       rightParenthesis: )
   rightBracket: ]
@@ -4226,8 +4309,7 @@ CastPattern
       literal: true
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -4320,8 +4402,7 @@ CastPattern
       literal: 1.0
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -4414,8 +4495,7 @@ CastPattern
       literal: 1
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -4508,8 +4588,7 @@ CastPattern
       literal: null
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -4602,8 +4681,7 @@ CastPattern
       literal: "x"
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -4676,15 +4754,13 @@ CaseClause
     pattern: LogicalAndPattern
       leftOperand: WildcardPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
           question: ?
         name: _
       operator: &&
       rightOperand: WildcardPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: double
+          name: double
           question: ?
         name: _
 ''');
@@ -4705,22 +4781,19 @@ LogicalAndPattern
   leftOperand: LogicalAndPattern
     leftOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
         question: ?
       name: _
     operator: &&
     rightOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
   operator: &&
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
     name: _
 ''');
@@ -4741,22 +4814,19 @@ LogicalOrPattern
   leftOperand: LogicalAndPattern
     leftOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
         question: ?
       name: _
     operator: &&
     rightOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
   operator: ||
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
     name: _
 ''');
@@ -4776,23 +4846,20 @@ void f(x) {
 LogicalOrPattern
   leftOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
       question: ?
     name: _
   operator: ||
   rightOperand: LogicalAndPattern
     leftOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
     operator: &&
     rightOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: Object
+        name: Object
         question: ?
       name: _
 ''');
@@ -4812,15 +4879,13 @@ CaseClause
     pattern: LogicalOrPattern
       leftOperand: WildcardPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
           question: ?
         name: _
       operator: ||
       rightOperand: WildcardPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: double
+          name: double
           question: ?
         name: _
 ''');
@@ -4841,22 +4906,19 @@ LogicalOrPattern
   leftOperand: LogicalOrPattern
     leftOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
         question: ?
       name: _
     operator: ||
     rightOperand: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: double
+        name: double
         question: ?
       name: _
   operator: ||
   rightOperand: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
       question: ?
     name: _
 ''');
@@ -4875,11 +4937,9 @@ MapPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: String
+        name: String
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: {
   elements
@@ -5003,11 +5063,9 @@ MapPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: String
+        name: String
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: {
   elements
@@ -5103,8 +5161,7 @@ CastPattern
     rightBracket: }
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -5121,11 +5178,9 @@ MapPattern
     leftBracket: <
     arguments
       NamedType
-        name: SimpleIdentifier
-          token: String
+        name: String
       NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
     rightBracket: >
   leftBracket: {
   elements
@@ -5265,8 +5320,7 @@ MapPattern
       separator: :
       value: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
   rightBracket: }
@@ -5341,8 +5395,7 @@ SwitchPatternCase
             separator: :
             value: ObjectPattern
               type: NamedType
-                name: SimpleIdentifier
-                  token: int
+                name: int
               leftParenthesis: (
               rightParenthesis: )
         rightBracket: } <synthetic>
@@ -5379,8 +5432,7 @@ MapPattern
       separator: :
       value: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
     MapPatternEntry
@@ -5389,8 +5441,7 @@ MapPattern
       separator: :
       value: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
   rightBracket: }
@@ -5439,8 +5490,7 @@ CastPattern
     operator: !
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: num
+    name: num
 ''');
   }
 
@@ -5673,8 +5723,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -5706,8 +5755,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -5875,8 +5923,7 @@ CastPattern
     operator: ?
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: num
+    name: num
 ''');
   }
 
@@ -6109,8 +6156,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -6142,8 +6188,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -6282,8 +6327,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: dynamic
+    name: dynamic
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6302,8 +6346,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: async
+    name: async
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6322,8 +6365,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: await
+    name: await
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6342,8 +6384,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: hide
+    name: hide
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6362,8 +6403,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: of
+    name: of
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6382,8 +6422,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: on
+    name: on
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6402,8 +6441,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: show
+    name: show
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6422,8 +6460,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: sync
+    name: sync
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6442,8 +6479,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: yield
+    name: yield
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6459,18 +6495,15 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: async
+    importPrefix: ImportPrefixReference
+      name: async
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -6492,18 +6525,15 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: async
+    importPrefix: ImportPrefixReference
+      name: async
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -6529,25 +6559,21 @@ SwitchPatternCase
     pattern: CastPattern
       pattern: ObjectPattern
         type: NamedType
-          name: PrefixedIdentifier
-            prefix: SimpleIdentifier
-              token: async
+          importPrefix: ImportPrefixReference
+            name: async
             period: .
-            identifier: SimpleIdentifier
-              token: Future
+          name: Future
           typeArguments: TypeArgumentList
             leftBracket: <
             arguments
               NamedType
-                name: SimpleIdentifier
-                  token: int
+                name: int
             rightBracket: >
         leftParenthesis: (
         rightParenthesis: )
       asToken: as
       type: NamedType
-        name: SimpleIdentifier
-          token: Object
+        name: Object
   colon: :
   statements
     BreakStatement
@@ -6566,18 +6592,15 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: async
+    importPrefix: ImportPrefixReference
+      name: async
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -6600,18 +6623,15 @@ void f(x) {
 NullAssertPattern
   pattern: ObjectPattern
     type: NamedType
-      name: PrefixedIdentifier
-        prefix: SimpleIdentifier
-          token: async
+      importPrefix: ImportPrefixReference
+        name: async
         period: .
-        identifier: SimpleIdentifier
-          token: Future
+      name: Future
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
     leftParenthesis: (
     rightParenthesis: )
@@ -6635,18 +6655,15 @@ void f(x) {
 NullCheckPattern
   pattern: ObjectPattern
     type: NamedType
-      name: PrefixedIdentifier
-        prefix: SimpleIdentifier
-          token: async
+      importPrefix: ImportPrefixReference
+        name: async
         period: .
-        identifier: SimpleIdentifier
-          token: Future
+      name: Future
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
     leftParenthesis: (
     rightParenthesis: )
@@ -6668,12 +6685,10 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: _
+    importPrefix: ImportPrefixReference
+      name: _
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6690,12 +6705,10 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: _
+    importPrefix: ImportPrefixReference
+      name: _
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -6715,18 +6728,15 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: PrefixedIdentifier
-      prefix: SimpleIdentifier
-        token: _
+    importPrefix: ImportPrefixReference
+      name: _
       period: .
-      identifier: SimpleIdentifier
-        token: Future
+    name: Future
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -6751,8 +6761,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: dynamic
+    name: dynamic
   leftParenthesis: (
   fields
     PatternField
@@ -6761,8 +6770,7 @@ ObjectPattern
         colon: :
       pattern: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
   rightParenthesis: )
@@ -6790,8 +6798,7 @@ SwitchPatternCase
   guardedPattern: GuardedPattern
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: dynamic
+        name: dynamic
       leftParenthesis: (
       fields
         PatternField
@@ -6800,8 +6807,7 @@ SwitchPatternCase
             colon: :
           pattern: ObjectPattern
             type: NamedType
-              name: SimpleIdentifier
-                token: int
+              name: int
             leftParenthesis: (
             rightParenthesis: )
       rightParenthesis: ) <synthetic>
@@ -6830,8 +6836,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: dynamic
+    name: dynamic
   leftParenthesis: (
   fields
     PatternField
@@ -6840,8 +6845,7 @@ ObjectPattern
         colon: :
       pattern: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
     PatternField
@@ -6850,8 +6854,7 @@ ObjectPattern
         colon: :
       pattern: ObjectPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         leftParenthesis: (
         rightParenthesis: )
   rightParenthesis: )
@@ -6875,8 +6878,7 @@ void f(x) {
 CastPattern
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: C
+      name: C
     leftParenthesis: (
     fields
       PatternField
@@ -6889,8 +6891,7 @@ CastPattern
     rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -6911,8 +6912,7 @@ void f(x) {
 NullAssertPattern
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: C
+      name: C
     leftParenthesis: (
     fields
       PatternField
@@ -6944,8 +6944,7 @@ void f(x) {
 NullCheckPattern
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: C
+      name: C
     leftParenthesis: (
     fields
       PatternField
@@ -6974,14 +6973,12 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -6999,14 +6996,12 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -7030,14 +7025,12 @@ void f(x) {
 NullAssertPattern
   pattern: ObjectPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: C
+      name: C
       typeArguments: TypeArgumentList
         leftBracket: <
         arguments
           NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
         rightBracket: >
     leftParenthesis: (
     fields
@@ -7067,8 +7060,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: _
+    name: _
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -7085,8 +7077,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: _
+    name: _
   leftParenthesis: (
   rightParenthesis: )
 ''');
@@ -7106,14 +7097,12 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: _
+    name: _
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -7131,14 +7120,12 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: _
+    name: _
     typeArguments: TypeArgumentList
       leftBracket: <
       arguments
         NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
       rightBracket: >
   leftParenthesis: (
   rightParenthesis: )
@@ -7201,8 +7188,7 @@ CastPattern
     rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -7538,20 +7524,121 @@ ForStatement
 ''');
   }
 
-  test_patternVariableDeclarationStatement_disallowsLate() {
+  test_patternVariableDeclaration_inClass() {
+    // If a pattern variable declaration appears outside a function or method,
+    // the parser recovers by replacing the pattern with a synthetic identifier,
+    // so that it parses as an ordinary field or top level variable declaration.
+    _parse('''
+class C {
+  var (a, b) = (0, 1);
+}
+''', errors: [
+      error(
+          ParserErrorCode
+              .PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD,
+          16,
+          6),
+    ]);
+    var node = findNode.classDeclaration('class');
+    assertParsedNodeText(node, r'''
+ClassDeclaration
+  classKeyword: class
+  name: C
+  leftBracket: {
+  members
+    FieldDeclaration
+      fields: VariableDeclarationList
+        keyword: var
+        variables
+          VariableDeclaration
+            name: <empty> <synthetic>
+            equals: =
+            initializer: RecordLiteral
+              leftParenthesis: (
+              fields
+                IntegerLiteral
+                  literal: 0
+                IntegerLiteral
+                  literal: 1
+              rightParenthesis: )
+      semicolon: ;
+  rightBracket: }
+''');
+  }
+
+  test_patternVariableDeclaration_topLevel() {
+    // If a pattern variable declaration appears outside a function or method,
+    // the parser recovers by replacing the pattern with a synthetic identifier,
+    // so that it parses as an ordinary field or top level variable declaration.
+    _parse('''
+var (a, b) = (0, 1);
+''', errors: [
+      error(
+          ParserErrorCode
+              .PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD,
+          4,
+          6),
+    ]);
+    var node = findNode.unit;
+    assertParsedNodeText(node, r'''
+CompilationUnit
+  declarations
+    TopLevelVariableDeclaration
+      variables: VariableDeclarationList
+        keyword: var
+        variables
+          VariableDeclaration
+            name: <empty> <synthetic>
+            equals: =
+            initializer: RecordLiteral
+              leftParenthesis: (
+              fields
+                IntegerLiteral
+                  literal: 0
+                IntegerLiteral
+                  literal: 1
+              rightParenthesis: )
+      semicolon: ;
+''');
+  }
+
+  test_patternVariableDeclarationStatement_disallowsConst() {
     // TODO(paulberry): do better error recovery.
+    _parse('''
+f(x) {
+  const (_) = x;
+}
+''', errors: [
+      error(ParserErrorCode.MISSING_ASSIGNABLE_SELECTOR, 9, 9),
+      error(ParserErrorCode.ILLEGAL_ASSIGNMENT_TO_NON_ASSIGNABLE, 9, 9),
+      error(ParserErrorCode.RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA, 17,
+          1),
+    ]);
+  }
+
+  test_patternVariableDeclarationStatement_disallowsLate() {
     _parse('''
 f(x) {
   late var (_) = x;
 }
 ''', errors: [
-      error(ParserErrorCode.MISSING_IDENTIFIER, 18, 1),
-      error(ParserErrorCode.EXPECTED_TOKEN, 18, 1),
-      error(ParserErrorCode.EXPECTED_TOKEN, 19, 1),
-      error(ParserErrorCode.MISSING_IDENTIFIER, 20, 1),
-      error(ParserErrorCode.UNEXPECTED_TOKEN, 20, 1),
-      error(ParserErrorCode.MISSING_IDENTIFIER, 22, 1),
+      error(ParserErrorCode.LATE_PATTERN_VARIABLE_DECLARATION, 9, 4),
     ]);
+    var node = findNode.patternVariableDeclarationStatement('= x');
+    assertParsedNodeText(node, r'''
+PatternVariableDeclarationStatement
+  declaration: PatternVariableDeclaration
+    keyword: var
+    pattern: ParenthesizedPattern
+      leftParenthesis: (
+      pattern: WildcardPattern
+        name: _
+      rightParenthesis: )
+    equals: =
+    expression: SimpleIdentifier
+      token: x
+  semicolon: ;
+''');
   }
 
   test_patternVariableDeclarationStatement_noMetadata_final_extractor() {
@@ -7567,8 +7654,7 @@ PatternVariableDeclarationStatement
     keyword: final
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: C
+        name: C
       leftParenthesis: (
       fields
         PatternField
@@ -7698,8 +7784,7 @@ PatternVariableDeclarationStatement
     keyword: var
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: C
+        name: C
       leftParenthesis: (
       fields
         PatternField
@@ -7835,8 +7920,7 @@ PatternVariableDeclarationStatement
     keyword: final
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: C
+        name: C
       leftParenthesis: (
       fields
         PatternField
@@ -7996,8 +8080,7 @@ PatternVariableDeclarationStatement
     keyword: var
     pattern: ObjectPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: C
+        name: C
       leftParenthesis: (
       fields
         PatternField
@@ -8135,6 +8218,37 @@ PatternVariableDeclarationStatement
     expression: SimpleIdentifier
       token: x
   semicolon: ;
+''');
+  }
+
+  test_prefixedIdentifier_when_not() {
+    // Based on the repro from https://github.com/dart-lang/sdk/issues/52199.
+    _parse('''
+void f(x) {
+  switch (x) {
+    case Enum.value when !flag:
+  }
+}
+''');
+    var node = findNode.switchPatternCase('case');
+    assertParsedNodeText(node, r'''
+SwitchPatternCase
+  keyword: case
+  guardedPattern: GuardedPattern
+    pattern: ConstantPattern
+      expression: PrefixedIdentifier
+        prefix: SimpleIdentifier
+          token: Enum
+        period: .
+        identifier: SimpleIdentifier
+          token: value
+    whenClause: WhenClause
+      whenKeyword: when
+      expression: PrefixExpression
+        operator: !
+        operand: SimpleIdentifier
+          token: flag
+  colon: :
 ''');
   }
 
@@ -8282,8 +8396,7 @@ CastPattern
     rightParenthesis: )
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -8832,8 +8945,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 ObjectPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: C
+    name: C
   leftParenthesis: (
   fields
     PatternField
@@ -9203,13 +9315,296 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: ObjectPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           leftParenthesis: (
           rightParenthesis: )
       arrow: =>
       expression: IntegerLiteral
         literal: 0
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_bogusTokensAfterCase_laterComma() {
+    // If the extra tokens after a switch case don't look like they could be a
+    // pattern, the parser doesn't try to skip beyond the closing `}` to find
+    // the next case.
+    _parse('''
+f(x) => [switch(x) {
+  int() => 0 : 1
+}, 0];
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 34, 1),
+    ]);
+    var node = findNode.listLiteral('[');
+    assertParsedNodeText(node, r'''
+ListLiteral
+  leftBracket: [
+  elements
+    SwitchExpression
+      switchKeyword: switch
+      leftParenthesis: (
+      expression: SimpleIdentifier
+        token: x
+      rightParenthesis: )
+      leftBracket: {
+      cases
+        SwitchExpressionCase
+          guardedPattern: GuardedPattern
+            pattern: ObjectPattern
+              type: NamedType
+                name: int
+              leftParenthesis: (
+              rightParenthesis: )
+          arrow: =>
+          expression: IntegerLiteral
+            literal: 0
+      rightBracket: }
+    IntegerLiteral
+      literal: 0
+  rightBracket: ]
+''');
+  }
+
+  test_switchExpression_recovery_bogusTokensAfterCase_nestedComma() {
+    // If the extra tokens after a switch case don't look like they could be a
+    // pattern, the parser doesn't try to skip to a nested `,` trying to find
+    // the next case.
+    _parse('''
+f(x) => switch(x) {
+  int() => 0 : (1, 2)
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 33, 1),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ObjectPattern
+          type: NamedType
+            name: int
+          leftParenthesis: (
+          rightParenthesis: )
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 0
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_caseKeyword() {
+    _parse('''
+f(x) => switch (x) {
+  case 1 => 'one',
+  case 2 => 'two'
+};
+''', errors: [
+      error(ParserErrorCode.UNEXPECTED_TOKEN, 23, 4),
+      error(ParserErrorCode.UNEXPECTED_TOKEN, 42, 4),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 1
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'one'
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 2
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'two'
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_colonInsteadOfArrow() {
+    _parse('''
+f(x) => switch (x) {
+  1: 'one',
+  2: 'two'
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 24, 1),
+      error(ParserErrorCode.EXPECTED_TOKEN, 36, 1),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 1
+      arrow: :
+      expression: SimpleStringLiteral
+        literal: 'one'
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 2
+      arrow: :
+      expression: SimpleStringLiteral
+        literal: 'two'
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_defaultKeyword() {
+    _parse('''
+f(x) => switch (x) {
+  1 => 'one',
+  default => 'other'
+};
+''', errors: [
+      error(ParserErrorCode.DEFAULT_IN_SWITCH_EXPRESSION, 37, 7),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 1
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'one'
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: default
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'other'
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_illegalFunctionExpressionInGuard() {
+    // If a function expression occurs in a guard, parsing skips to the case
+    // that follows.
+    _parse('''
+f(x) => switch (x) {
+  _ when () => true => 1,
+  _ => 2
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 41, 2),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+        whenClause: WhenClause
+          whenKeyword: when
+          expression: RecordLiteral
+            leftParenthesis: (
+            rightParenthesis: )
+      arrow: =>
+      expression: BooleanLiteral
+        literal: true
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 2
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_illegalFunctionExpressionInGuard_semicolon() {
+    // If a function expression occurs in a guard, parsing skips to the case
+    // that follows.  The logic to skip to the next case understands that a
+    // naive user might have mistakenly used `;` instead of `,` to separate
+    // cases.
+    _parse('''
+f(x) => switch (x) {
+  _ when () => true => 1;
+  _ => 2
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 41, 2),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+        whenClause: WhenClause
+          whenKeyword: when
+          expression: RecordLiteral
+            leftParenthesis: (
+            rightParenthesis: )
+      arrow: =>
+      expression: BooleanLiteral
+        literal: true
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: WildcardPattern
+          name: _
+      arrow: =>
+      expression: IntegerLiteral
+        literal: 2
   rightBracket: }
 ''');
   }
@@ -9239,8 +9634,7 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: ObjectPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           leftParenthesis: (
           rightParenthesis: )
       arrow: =>
@@ -9250,13 +9644,51 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: ObjectPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: double
+            name: double
           leftParenthesis: (
           rightParenthesis: )
       arrow: =>
       expression: IntegerLiteral
         literal: 1
+  rightBracket: }
+''');
+  }
+
+  test_switchExpression_recovery_semicolonInsteadOfComma() {
+    _parse('''
+f(x) => switch (x) {
+  1 => 'one';
+  2 => 'two'
+};
+''', errors: [
+      error(ParserErrorCode.EXPECTED_TOKEN, 33, 1),
+    ]);
+    var node = findNode.switchExpression('switch');
+    assertParsedNodeText(node, r'''
+SwitchExpression
+  switchKeyword: switch
+  leftParenthesis: (
+  expression: SimpleIdentifier
+    token: x
+  rightParenthesis: )
+  leftBracket: {
+  cases
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 1
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'one'
+    SwitchExpressionCase
+      guardedPattern: GuardedPattern
+        pattern: ConstantPattern
+          expression: IntegerLiteral
+            literal: 2
+      arrow: =>
+      expression: SimpleStringLiteral
+        literal: 'two'
   rightBracket: }
 ''');
   }
@@ -9282,8 +9714,7 @@ SwitchExpression
       guardedPattern: GuardedPattern
         pattern: WildcardPattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
+            name: int
           name: _
       arrow: =>
       expression: IntegerLiteral
@@ -9318,8 +9749,7 @@ ExpressionFunctionBody
         token: condition
       asOperator: as
       type: NamedType
-        name: SimpleIdentifier
-          token: bool
+        name: bool
     question: ?
     thenExpression: SimpleIdentifier
       token: when
@@ -9352,8 +9782,7 @@ GuardedPattern
       name: _
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
       question: ?
   whenClause: WhenClause
     whenKeyword: when
@@ -9381,8 +9810,7 @@ ParenthesizedPattern
       name: y
     asToken: as
     type: NamedType
-      name: SimpleIdentifier
-        token: Object
+      name: Object
   rightParenthesis: )
 ''');
   }
@@ -9462,6 +9890,128 @@ NullCheckPattern
 ''');
   }
 
+  test_variable_namedAs() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case var as:
+  }
+}
+''', errors: [error(ParserErrorCode.ILLEGAL_PATTERN_VARIABLE_NAME, 40, 2)]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+DeclaredVariablePattern
+  keyword: var
+  name: as
+''');
+  }
+
+  test_variable_namedWhen() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case var when:
+  }
+}
+''', errors: [error(ParserErrorCode.ILLEGAL_PATTERN_VARIABLE_NAME, 40, 4)]);
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, r'''
+DeclaredVariablePattern
+  keyword: var
+  name: when
+''');
+  }
+
+  test_variable_type_record_empty_inDeclarationContext() {
+    _parse('''
+void f(x) {
+  var (() y) = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('var').pattern;
+    assertParsedNodeText(node, '''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: DeclaredVariablePattern
+    type: RecordTypeAnnotation
+      leftParenthesis: (
+      rightParenthesis: )
+    name: y
+  rightParenthesis: )
+''');
+  }
+
+  test_variable_type_record_empty_inMatchingContext() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case () y:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, '''
+DeclaredVariablePattern
+  type: RecordTypeAnnotation
+    leftParenthesis: (
+    rightParenthesis: )
+  name: y
+''');
+  }
+
+  test_variable_type_record_nonEmpty_inDeclarationContext() {
+    _parse('''
+void f(x) {
+  var ((int, String) y) = x;
+}
+''');
+    var node = findNode.patternVariableDeclaration('var').pattern;
+    assertParsedNodeText(node, '''
+ParenthesizedPattern
+  leftParenthesis: (
+  pattern: DeclaredVariablePattern
+    type: RecordTypeAnnotation
+      leftParenthesis: (
+      positionalFields
+        RecordTypeAnnotationPositionalField
+          type: NamedType
+            name: int
+        RecordTypeAnnotationPositionalField
+          type: NamedType
+            name: String
+      rightParenthesis: )
+    name: y
+  rightParenthesis: )
+''');
+  }
+
+  test_variable_type_record_nonEmpty_inMatchingContext() {
+    _parse('''
+void f(x) {
+  switch (x) {
+    case (int, String) y:
+      break;
+  }
+}
+''');
+    var node = findNode.singleGuardedPattern.pattern;
+    assertParsedNodeText(node, '''
+DeclaredVariablePattern
+  type: RecordTypeAnnotation
+    leftParenthesis: (
+    positionalFields
+      RecordTypeAnnotationPositionalField
+        type: NamedType
+          name: int
+      RecordTypeAnnotationPositionalField
+        type: NamedType
+          name: String
+    rightParenthesis: )
+  name: y
+''');
+  }
+
   test_variable_typed_insideCase() {
     _parse('''
 void f(x) {
@@ -9475,8 +10025,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 DeclaredVariablePattern
   type: NamedType
-    name: SimpleIdentifier
-      token: int
+    name: int
   name: y
 ''');
   }
@@ -9495,13 +10044,11 @@ void f(x) {
 CastPattern
   pattern: DeclaredVariablePattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: y
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -9518,8 +10065,7 @@ CaseClause
   guardedPattern: GuardedPattern
     pattern: DeclaredVariablePattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       name: y
 ''');
   }
@@ -9538,8 +10084,7 @@ void f(x) {
 NullAssertPattern
   pattern: DeclaredVariablePattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: y
   operator: !
 ''');
@@ -9559,503 +10104,9 @@ void f(x) {
 NullCheckPattern
   pattern: DeclaredVariablePattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: y
   operator: ?
-''');
-  }
-
-  test_variable_typedNamedAs_absurd() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case when as as when when as as when == as as when:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern;
-    assertParsedNodeText(node, r'''
-GuardedPattern
-  pattern: CastPattern
-    pattern: DeclaredVariablePattern
-      type: NamedType
-        name: SimpleIdentifier
-          token: when
-      name: as
-    asToken: as
-    type: NamedType
-      name: SimpleIdentifier
-        token: when
-  whenClause: WhenClause
-    whenKeyword: when
-    expression: BinaryExpression
-      leftOperand: AsExpression
-        expression: SimpleIdentifier
-          token: as
-        asOperator: as
-        type: NamedType
-          name: SimpleIdentifier
-            token: when
-      operator: ==
-      rightOperand: AsExpression
-        expression: SimpleIdentifier
-          token: as
-        asOperator: as
-        type: NamedType
-          name: SimpleIdentifier
-            token: when
-''');
-  }
-
-  test_variable_typedNamedAs_beforeWhen() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as when true:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern;
-    assertParsedNodeText(node, r'''
-GuardedPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  whenClause: WhenClause
-    whenKeyword: when
-    expression: BooleanLiteral
-      literal: true
-''');
-  }
-
-  test_variable_typedNamedAs_insideCase() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-DeclaredVariablePattern
-  type: NamedType
-    name: SimpleIdentifier
-      token: int
-  name: as
-''');
-  }
-
-  test_variable_typedNamedAs_insideCast() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as as Object:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-CastPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  asToken: as
-  type: NamedType
-    name: SimpleIdentifier
-      token: Object
-''');
-  }
-
-  test_variable_typedNamedAs_insideIfCase() {
-    _parse('''
-void f(x) {
-  if (x case int as) {}
-}
-''');
-    var node = findNode.caseClause('case');
-    assertParsedNodeText(node, r'''
-CaseClause
-  caseKeyword: case
-  guardedPattern: GuardedPattern
-    pattern: DeclaredVariablePattern
-      type: NamedType
-        name: SimpleIdentifier
-          token: int
-      name: as
-''');
-  }
-
-  test_variable_typedNamedAs_insideList() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case [int as]:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-ListPattern
-  leftBracket: [
-  elements
-    DeclaredVariablePattern
-      type: NamedType
-        name: SimpleIdentifier
-          token: int
-      name: as
-  rightBracket: ]
-''');
-  }
-
-  test_variable_typedNamedAs_insideLogicalAnd_lhs() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as && 2:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-LogicalAndPattern
-  leftOperand: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  operator: &&
-  rightOperand: ConstantPattern
-    expression: IntegerLiteral
-      literal: 2
-''');
-  }
-
-  test_variable_typedNamedAs_insideLogicalAnd_rhs() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case 1 && int as:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-LogicalAndPattern
-  leftOperand: ConstantPattern
-    expression: IntegerLiteral
-      literal: 1
-  operator: &&
-  rightOperand: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-''');
-  }
-
-  test_variable_typedNamedAs_insideLogicalOr_lhs() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as || 2:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-LogicalOrPattern
-  leftOperand: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  operator: ||
-  rightOperand: ConstantPattern
-    expression: IntegerLiteral
-      literal: 2
-''');
-  }
-
-  test_variable_typedNamedAs_insideLogicalOr_rhs() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case 1 || int as:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-LogicalOrPattern
-  leftOperand: ConstantPattern
-    expression: IntegerLiteral
-      literal: 1
-  operator: ||
-  rightOperand: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-''');
-  }
-
-  test_variable_typedNamedAs_insideMap() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case {'a': int as}:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-MapPattern
-  leftBracket: {
-  elements
-    MapPatternEntry
-      key: SimpleStringLiteral
-        literal: 'a'
-      separator: :
-      value: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-  rightBracket: }
-''');
-  }
-
-  test_variable_typedNamedAs_insideNullAssert() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as!:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-NullAssertPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  operator: !
-''');
-  }
-
-  test_variable_typedNamedAs_insideNullCheck() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int as?:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-NullCheckPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  operator: ?
-''');
-  }
-
-  test_variable_typedNamedAs_insideObject_explicitlyNamed() {
-    _parse('''
-class C {
-  int? f;
-}
-void f(x) {
-  switch (x) {
-    case C(f: int as):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-ObjectPattern
-  type: NamedType
-    name: SimpleIdentifier
-      token: C
-  leftParenthesis: (
-  fields
-    PatternField
-      name: PatternFieldName
-        name: f
-        colon: :
-      pattern: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-  rightParenthesis: )
-''');
-  }
-
-  test_variable_typedNamedAs_insideObject_implicitlyNamed() {
-    _parse('''
-class C {
-  int? f;
-}
-void f(x) {
-  switch (x) {
-    case C(: int as):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-ObjectPattern
-  type: NamedType
-    name: SimpleIdentifier
-      token: C
-  leftParenthesis: (
-  fields
-    PatternField
-      name: PatternFieldName
-        colon: :
-      pattern: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-  rightParenthesis: )
-''');
-  }
-
-  test_variable_typedNamedAs_insideParenthesized() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case (int as):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-ParenthesizedPattern
-  leftParenthesis: (
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: as
-  rightParenthesis: )
-''');
-  }
-
-  test_variable_typedNamedAs_insideRecord_explicitlyNamed() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case (n: int as, 2):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-RecordPattern
-  leftParenthesis: (
-  fields
-    PatternField
-      name: PatternFieldName
-        name: n
-        colon: :
-      pattern: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-    PatternField
-      pattern: ConstantPattern
-        expression: IntegerLiteral
-          literal: 2
-  rightParenthesis: )
-''');
-  }
-
-  test_variable_typedNamedAs_insideRecord_implicitlyNamed() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case (: int as, 2):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-RecordPattern
-  leftParenthesis: (
-  fields
-    PatternField
-      name: PatternFieldName
-        colon: :
-      pattern: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-    PatternField
-      pattern: ConstantPattern
-        expression: IntegerLiteral
-          literal: 2
-  rightParenthesis: )
-''');
-  }
-
-  test_variable_typedNamedAs_insideRecord_unnamed() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case (int as, 2):
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-RecordPattern
-  leftParenthesis: (
-  fields
-    PatternField
-      pattern: DeclaredVariablePattern
-        type: NamedType
-          name: SimpleIdentifier
-            token: int
-        name: as
-    PatternField
-      pattern: ConstantPattern
-        expression: IntegerLiteral
-          literal: 2
-  rightParenthesis: )
 ''');
   }
 
@@ -10073,104 +10124,8 @@ void f(x) {
     assertParsedNodeText(node, r'''
 DeclaredVariablePattern
   type: NamedType
-    name: SimpleIdentifier
-      token: _
+    name: _
   name: y
-''');
-  }
-
-  test_variable_typedNamedWhen_absurd() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int when when when > 0:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern;
-    assertParsedNodeText(node, r'''
-GuardedPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: when
-  whenClause: WhenClause
-    whenKeyword: when
-    expression: BinaryExpression
-      leftOperand: SimpleIdentifier
-        token: when
-      operator: >
-      rightOperand: IntegerLiteral
-        literal: 0
-''');
-  }
-
-  test_variable_typedNamedWhen_beforeWhen() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int when when true:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern;
-    assertParsedNodeText(node, r'''
-GuardedPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: when
-  whenClause: WhenClause
-    whenKeyword: when
-    expression: BooleanLiteral
-      literal: true
-''');
-  }
-
-  test_variable_typedNamedWhen_insideCase() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int when:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-DeclaredVariablePattern
-  type: NamedType
-    name: SimpleIdentifier
-      token: int
-  name: when
-''');
-  }
-
-  test_variable_typedNamedWhen_insideCast() {
-    _parse('''
-void f(x) {
-  switch (x) {
-    case int when as Object:
-      break;
-  }
-}
-''');
-    var node = findNode.singleGuardedPattern.pattern;
-    assertParsedNodeText(node, r'''
-CastPattern
-  pattern: DeclaredVariablePattern
-    type: NamedType
-      name: SimpleIdentifier
-        token: int
-    name: when
-  asToken: as
-  type: NamedType
-    name: SimpleIdentifier
-      token: Object
 ''');
   }
 
@@ -10228,8 +10183,7 @@ CastPattern
     name: y
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -10304,8 +10258,7 @@ ParenthesizedPattern
   pattern: DeclaredVariablePattern
     keyword: var
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: y
   rightParenthesis: )
 ''');
@@ -10327,8 +10280,7 @@ ParenthesizedPattern
   pattern: WildcardPattern
     keyword: var
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   rightParenthesis: )
 ''');
@@ -10351,8 +10303,7 @@ GuardedPattern
   pattern: DeclaredVariablePattern
     keyword: var
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: y
 ''');
   }
@@ -10374,8 +10325,7 @@ GuardedPattern
   pattern: WildcardPattern
     keyword: var
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
 ''');
   }
@@ -10433,8 +10383,7 @@ CastPattern
     name: _
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -10504,8 +10453,7 @@ void f(x) {
 WildcardPattern
   keyword: final
   type: NamedType
-    name: SimpleIdentifier
-      token: int
+    name: int
   name: _
 ''');
   }
@@ -10525,13 +10473,11 @@ CastPattern
   pattern: WildcardPattern
     keyword: final
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -10549,8 +10495,7 @@ CaseClause
     pattern: WildcardPattern
       keyword: final
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       name: _
 ''');
   }
@@ -10570,8 +10515,7 @@ NullAssertPattern
   pattern: WildcardPattern
     keyword: final
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   operator: !
 ''');
@@ -10592,8 +10536,7 @@ NullCheckPattern
   pattern: WildcardPattern
     keyword: final
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   operator: ?
 ''');
@@ -10633,8 +10576,7 @@ CastPattern
     name: _
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -10761,8 +10703,7 @@ PatternAssignment
       WildcardPattern
         keyword: final
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: _
     rightBracket: ]
   equals: =
@@ -10789,8 +10730,7 @@ PatternAssignment
         name: a
       WildcardPattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: _
     rightBracket: ]
   equals: =
@@ -10844,8 +10784,7 @@ PatternAssignment
       WildcardPattern
         keyword: var
         type: NamedType
-          name: SimpleIdentifier
-            token: int
+          name: int
         name: _
     rightBracket: ]
   equals: =
@@ -10867,8 +10806,7 @@ void f(x) {
     assertParsedNodeText(node, r'''
 WildcardPattern
   type: NamedType
-    name: SimpleIdentifier
-      token: int
+    name: int
   name: _
 ''');
   }
@@ -10887,13 +10825,11 @@ void f(x) {
 CastPattern
   pattern: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 
@@ -10910,8 +10846,7 @@ CaseClause
   guardedPattern: GuardedPattern
     pattern: WildcardPattern
       type: NamedType
-        name: SimpleIdentifier
-          token: int
+        name: int
       name: _
 ''');
   }
@@ -10930,8 +10865,7 @@ void f(x) {
 NullAssertPattern
   pattern: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   operator: !
 ''');
@@ -10951,8 +10885,7 @@ void f(x) {
 NullCheckPattern
   pattern: WildcardPattern
     type: NamedType
-      name: SimpleIdentifier
-        token: int
+      name: int
     name: _
   operator: ?
 ''');
@@ -10992,8 +10925,7 @@ CastPattern
     name: _
   asToken: as
   type: NamedType
-    name: SimpleIdentifier
-      token: Object
+    name: Object
 ''');
   }
 

@@ -52,6 +52,9 @@ class DapTestClient {
   /// testing.
   bool? forceBreakpointDriveLetterCasingLower;
 
+  /// All stderr OutputEvents that have occurred so far.
+  final StringBuffer _stderr = StringBuffer();
+
   DapTestClient._(
     this._channel,
     this._logger, {
@@ -76,6 +79,12 @@ class DapTestClient {
         _pendingRequests.clear();
       },
     );
+
+    // Collect stderr output events so if we can write this to the real
+    // stderr when the app terminates to help track down things like VM crashes.
+    outputEvents
+        .where((event) => event.category == 'stderr')
+        .listen((event) => _stderr.write(event.output));
   }
 
   /// Returns a stream of [OutputEventBody] events.
@@ -103,6 +112,10 @@ class DapTestClient {
       .map((event) =>
           BreakpointEventBody.fromJson(event.body as Map<String, Object?>))
       .where((body) => body.reason == 'changed');
+
+  /// Returns a stream of [ThreadEventBody] events.
+  Stream<ThreadEventBody> get threadEvents => events('thread')
+      .map((e) => ThreadEventBody.fromJson(e.body as Map<String, Object?>));
 
   /// Send an attachRequest to the server, asking it to attach to an existing
   /// Dart program.
@@ -415,7 +428,13 @@ class DapTestClient {
     await _subscription.cancel();
   }
 
-  Future<Response> terminate() => sendRequest(TerminateArguments());
+  /// Whether or not any `terminate()` request has been sent.
+  bool get hasSentTerminateRequest => _hasSentTerminateRequest;
+  bool _hasSentTerminateRequest = false;
+  Future<Response?> terminate() async {
+    _hasSentTerminateRequest = true;
+    return sendRequest(TerminateArguments());
+  }
 
   /// Sends a threads request to the server to request the list of active
   /// threads (isolates).
@@ -449,7 +468,8 @@ class DapTestClient {
 
   /// Handles an incoming message from the server, completing the relevant request
   /// of raising the appropriate event.
-  Future<void> _handleMessage(message) async {
+  Future<void> _handleMessage(ProtocolMessage message) async {
+    _verifyMessageOrdering(message);
     if (message is Response) {
       final pendingRequest = _pendingRequests.remove(message.requestSeq);
       if (pendingRequest == null) {
@@ -469,6 +489,11 @@ class DapTestClient {
       // a useful location.
       if (message.event == 'terminated') {
         unawaited(_eventController.close());
+
+        if (_stderr.isNotEmpty) {
+          stderr.writeln('STDERR output collected before app terminated:');
+          stderr.write(_stderr.toString());
+        }
       }
     } else if (message is Request) {
       // The server sent a request to the client. Call the handler and then send
@@ -495,6 +520,43 @@ class DapTestClient {
     });
     return future.whenComplete(timer.cancel);
   }
+
+  /// Ensures that protocol messages are received in the correct order where
+  /// ordering matters.
+  void _verifyMessageOrdering(ProtocolMessage message) {
+    if (message is Event) {
+      if (message.event == 'initialized' &&
+          !_receivedResponses.contains('initialize')) {
+        throw StateError(
+          'Adapter sent "initialized" event before the "initialize" request had '
+          'been responded to',
+        );
+      }
+
+      _receivedEvents.add(message.event);
+    } else if (message is Response) {
+      if (message.command == 'initialize' &&
+          _receivedEvents.contains('initialized')) {
+        throw StateError(
+          'Adapter sent a response to an "initialize" request after it had '
+          'already send the "initialized" event',
+        );
+      }
+
+      _receivedResponses.add(message.command);
+    }
+  }
+
+  /// A list of all event names that have been received during this session.
+  ///
+  /// Used by [_verifyMessageOrdering].
+  final _receivedEvents = <String>{};
+
+  /// A list of all request names that have been responded to during this
+  /// session.
+  ///
+  /// Used by [_verifyMessageOrdering].
+  final _receivedResponses = <String>{};
 
   /// Creates a [DapTestClient] that connects the server listening on
   /// [host]:[port].

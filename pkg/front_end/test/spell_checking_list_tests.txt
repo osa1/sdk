@@ -40,6 +40,8 @@ approval
 approximation
 arbitrarily
 area
+arglebargle
+arr
 asdf
 asserter
 assure
@@ -121,6 +123,7 @@ characteristics
 charset
 checkme
 checkout
+chromes
 chunked
 cipd
 circular
@@ -157,6 +160,7 @@ conversions
 coo
 corge
 corners
+costing
 cov
 coverages
 cp
@@ -221,6 +225,7 @@ discrepancies
 dispatcher
 dispose
 dist
+diterations
 div
 divergent
 doctest
@@ -237,6 +242,7 @@ dskip
 dumping
 dumps
 dupe
+dur
 durations
 dw
 e's
@@ -287,6 +293,7 @@ filters
 fisk
 five
 fl
+flame
 floor
 fluctuate
 foo'bar'baz
@@ -372,6 +379,7 @@ inlinable
 inlineable
 insights
 instrument
+instrumenter
 insufficient
 intdiv
 interactions
@@ -511,7 +519,9 @@ periodically
 perm
 perms
 person
+ph
 phrase
+pid
 pink
 placement
 planned
@@ -548,6 +558,7 @@ quit
 quot
 quux
 quuz
+ram
 reality
 recompilation
 recompiles

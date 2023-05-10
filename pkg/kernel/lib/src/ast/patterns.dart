@@ -583,6 +583,10 @@ class ObjectPattern extends Pattern {
   ///
   /// This is the type the matched expression is checked against, if the
   /// [matchedValueType] is not already a subtype of [requiredType].
+  ///
+  /// This is the type on which pattern accesses from [fields] are looked up.
+  ///
+  /// This is set during inference.
   DartType requiredType;
 
   final List<NamedPattern> fields;
@@ -602,9 +606,8 @@ class ObjectPattern extends Pattern {
   /// [requiredType] or the [matchedValueType] if it is a subtype of
   /// [requiredType].
   ///
-  /// This is the type on which pattern accesses from [fields] are looked up.
-  ///
   /// This is set during inference.
+  // TODO(johnniwinther): Remove this field. It is no longer used.
   DartType? lookupType;
 
   ObjectPattern(this.requiredType, this.fields) {
@@ -1079,11 +1082,16 @@ class NamedPattern extends Pattern {
   /// When used in an object pattern, this holds the static property type for
   /// this pattern.
   ///
-  /// This is used for [ObjectAccessKind.Object] and
-  /// [ObjectAccessKind.Instance].
+  /// This is used for [ObjectAccessKind.Object], [ObjectAccessKind.Instance],
+  /// and [ObjectAccessKind.Static].
   ///
   /// This is set during inference.
   DartType? resultType;
+
+  /// When used in an object pattern, this is set to `true` if the field value
+  /// needs to be checked against the [resultType]. This is needed for fields
+  /// whose type contain covariant types that occur in non-covariant positions.
+  bool checkReturn = false;
 
   /// When used in an object pattern, this holds the record on which the
   /// property for this pattern is read.
@@ -1105,9 +1113,8 @@ class NamedPattern extends Pattern {
   /// When used in an object pattern, this holds the function type of [target]
   /// called to read the property for this pattern.
   ///
-  /// This is used for [ObjectAccessKind.Static].
-  ///
   /// This is set during inference.
+  // TODO(johnniwinther): Remove this. This is no longer used.
   FunctionType? functionType;
 
   /// When used in an object pattern, this holds the type arguments used when
@@ -1673,10 +1680,14 @@ class PatternSwitchCase extends TreeNode implements SwitchCase {
 
   final List<VariableDeclaration> jointVariables;
 
+  // TODO(johnniwinther): Serialize this field.
+  final List<int>? jointVariableFirstUseOffsets;
+
   PatternSwitchCase(this.caseOffsets, this.patternGuards, this.body,
       {required this.isDefault,
       required this.hasLabel,
-      required this.jointVariables}) {
+      required this.jointVariables,
+      required this.jointVariableFirstUseOffsets}) {
     setParents(patternGuards, this);
     setParents(jointVariables, this);
     body.parent = this;
@@ -1764,7 +1775,8 @@ class PatternSwitchStatement extends Statement implements SwitchStatement {
   /// The type of the [expression].
   ///
   /// This is set during inference.
-  DartType? expressionType;
+  @override
+  DartType? expressionTypeInternal;
 
   /// `true` if the last case terminates.
   ///
@@ -1775,6 +1787,18 @@ class PatternSwitchStatement extends Statement implements SwitchStatement {
   PatternSwitchStatement(this.expression, this.cases) {
     expression.parent = this;
     setParents(cases, this);
+  }
+
+  @override
+  DartType get expressionType {
+    assert(expressionTypeInternal != null,
+        "Expression type hasn't been computed for $this.");
+    return expressionTypeInternal!;
+  }
+
+  @override
+  void set expressionType(DartType value) {
+    expressionTypeInternal = value;
   }
 
   @override
@@ -2184,7 +2208,10 @@ final PatternGuard dummyPatternGuard = new PatternGuard(dummyPattern);
 
 final PatternSwitchCase dummyPatternSwitchCase = new PatternSwitchCase(
     [], [], dummyStatement,
-    isDefault: true, hasLabel: false, jointVariables: []);
+    isDefault: true,
+    hasLabel: false,
+    jointVariables: [],
+    jointVariableFirstUseOffsets: null);
 
 final SwitchExpressionCase dummySwitchExpressionCase =
     new SwitchExpressionCase(dummyPatternGuard, dummyExpression);

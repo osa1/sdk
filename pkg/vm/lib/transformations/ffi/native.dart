@@ -505,13 +505,6 @@ class FfiNativeTransformer extends FfiTransformer {
 
     final parent = node.parent;
 
-    var fileUri = currentLibrary.fileUri;
-    if (parent is Class) {
-      fileUri = parent.fileUri;
-    } else if (parent is Library) {
-      fileUri = parent.fileUri;
-    }
-
     // static final _myMethod$FfiNative$Ptr = ..
     final resolvedField = _createResolvedFfiNativeField(
       '${node.name.text}\$${node.kind.name}',
@@ -521,7 +514,7 @@ class FfiNativeTransformer extends FfiTransformer {
       wrappedDartFunctionType,
       ffiFunctionType,
       node.fileOffset,
-      fileUri,
+      node.fileUri,
     );
 
     // Add field to the parent the FfiNative function belongs to.
@@ -668,6 +661,16 @@ class FfiNativeTransformer extends FfiTransformer {
     node.annotations.remove(ffiNativeAnnotation);
 
     final ffiConstant = ffiNativeAnnotation.constant as InstanceConstant;
+    final nativeType = ffiConstant.typeArguments[0];
+    try {
+      final nativeFunctionType = InterfaceType(
+          nativeFunctionClass, Nullability.nonNullable, [nativeType]);
+      ensureNativeTypeValid(nativeFunctionType, ffiNativeAnnotation,
+          allowCompounds: true, allowHandle: true);
+    } on FfiStaticTypeError {
+      // We've already reported an error.
+      return node;
+    }
     final ffiFunctionType = ffiConstant.typeArguments[0] as FunctionType;
     final nativeFunctionConst =
         (ffiConstant.fieldValues[nativeSymbolField.fieldReference] ??

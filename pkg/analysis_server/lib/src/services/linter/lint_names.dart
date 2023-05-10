@@ -76,6 +76,8 @@ class LintNames {
   static const String leading_newlines_in_multiline_strings =
       'leading_newlines_in_multiline_strings';
   static const String library_annotations = 'library_annotations';
+  static const String no_literal_bool_comparisons =
+      'no_literal_bool_comparisons';
   static const String no_duplicate_case_values = 'no_duplicate_case_values';
   static const String no_leading_underscores_for_library_prefixes =
       'no_leading_underscores_for_library_prefixes';
@@ -143,6 +145,8 @@ class LintNames {
       'sort_unnamed_constructors_first';
   static const String type_annotate_public_apis = 'type_annotate_public_apis';
   static const String type_init_formals = 'type_init_formals';
+  static const String type_literal_in_constant_pattern =
+      'type_literal_in_constant_pattern';
   static const String unawaited_futures = 'unawaited_futures';
   static const String unnecessary_brace_in_string_interps =
       'unnecessary_brace_in_string_interps';

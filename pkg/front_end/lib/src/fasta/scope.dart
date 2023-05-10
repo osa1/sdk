@@ -17,6 +17,7 @@ import 'builder/name_iterator.dart';
 import 'builder/type_variable_builder.dart';
 import 'fasta_codes.dart';
 import 'kernel/body_builder.dart' show JumpTarget;
+import 'kernel/body_builder_context.dart';
 import 'kernel/hierarchy/class_member.dart' show ClassMember;
 import 'kernel/kernel_helper.dart';
 import 'problems.dart' show internalProblem, unsupported;
@@ -73,6 +74,17 @@ enum ScopeKind {
   /// should be visible in the scope of the function itself.
   namedFunctionExpression,
 
+  /// The scope of the RHS of a binary-or pattern
+  ///
+  /// It is utilized for separating the branch-local variables from the joint
+  /// variables of the overall binary-or pattern.
+  orPatternRight,
+
+  /// The scope of a pattern
+  ///
+  /// It contains the variables associated with pattern variable declarations.
+  pattern,
+
   /// Local scope of a statement, such as the body of a while loop
   statementLocalScope,
 
@@ -81,16 +93,21 @@ enum ScopeKind {
   /// This scope kind is used in assertion checks.
   switchCase,
 
+  /// Scope for switch case bodies
+  ///
+  /// This is used to handle local variables of switch cases.
+  switchCaseBody,
+
   /// Scope for type parameters of declarations
   typeParameters,
 }
 
 class MutableScope {
   /// Names declared in this scope.
-  Map<String, Builder> _local;
+  Map<String, Builder>? _local;
 
   /// Setters declared in this scope.
-  Map<String, MemberBuilder> _setters;
+  Map<String, MemberBuilder>? _setters;
 
   /// The extensions declared in this scope.
   ///
@@ -140,7 +157,7 @@ class MutableScope {
   Scope? get parent => _parent;
 
   @override
-  String toString() => "Scope(${kind}, $classNameOrDebugName, ${_local.keys})";
+  String toString() => "Scope(${kind}, $classNameOrDebugName, ${_local?.keys})";
 }
 
 class Scope extends MutableScope {
@@ -156,14 +173,13 @@ class Scope extends MutableScope {
 
   Scope(
       {required ScopeKind kind,
-      required Map<String, Builder> local,
+      Map<String, Builder>? local,
       Map<String, MemberBuilder>? setters,
       Set<ExtensionBuilder>? extensions,
       Scope? parent,
       required String debugName,
       this.isModifiable = true})
-      : super(kind, local, setters = setters ?? const <String, MemberBuilder>{},
-            extensions, parent, debugName);
+      : super(kind, local, setters, extensions, parent, debugName);
 
   Scope.top({required ScopeKind kind, bool isModifiable = false})
       : this(
@@ -185,8 +201,6 @@ class Scope extends MutableScope {
       {bool isModifiable = true, required ScopeKind kind})
       : this(
             kind: kind,
-            local: <String, Builder>{},
-            setters: <String, MemberBuilder>{},
             parent: parent,
             debugName: debugName,
             isModifiable: isModifiable);
@@ -253,11 +267,11 @@ class Scope extends MutableScope {
 
   void debug() {
     print("Locals:");
-    _local.forEach((key, value) {
+    _local?.forEach((key, value) {
       print("  $key: $value (${identityHashCode(value)}) (${value.parent})");
     });
     print("Setters:");
-    _setters.forEach((key, value) {
+    _setters?.forEach((key, value) {
       print("  $key: $value (${identityHashCode(value)}) (${value.parent})");
     });
     print("Extensions:");
@@ -285,12 +299,12 @@ class Scope extends MutableScope {
     // that need (some) replacement. Afterwards we go through these names
     // handling both getters and setters at the same time.
     Set<String> replacedNames = {};
-    _local.forEach((String name, Builder builder) {
+    _local?.forEach((String name, Builder builder) {
       if (replacementMap.containsKey(builder.parent)) {
         replacedNames.add(name);
       }
     });
-    _setters.forEach((String name, Builder builder) {
+    _setters?.forEach((String name, Builder builder) {
       if (replacementMapSetters.containsKey(builder.parent)) {
         replacedNames.add(name);
       }
@@ -300,7 +314,7 @@ class Scope extends MutableScope {
         // We start be collecting the relation between an existing getter/setter
         // and the getter/setter that will replace it. This information is used
         // below to handle all the different cases that can occur.
-        Builder? existingGetter = _local[name];
+        Builder? existingGetter = _local?[name];
         LibraryBuilder? replacementLibraryBuilderFromGetter;
         Builder? replacementGetterFromGetter;
         Builder? replacementSetterFromGetter;
@@ -313,7 +327,7 @@ class Scope extends MutableScope {
           replacementSetterFromGetter =
               replacementMapSetters[replacementLibraryBuilderFromGetter]![name];
         }
-        Builder? existingSetter = _setters[name];
+        Builder? existingSetter = _setters?[name];
         LibraryBuilder? replacementLibraryBuilderFromSetter;
         Builder? replacementGetterFromSetter;
         Builder? replacementSetterFromSetter;
@@ -333,19 +347,19 @@ class Scope extends MutableScope {
             // We might have had one implicitly from the setter. Use it here,
             // if so. (This is currently not possible, but added to match the
             // case for setters below.)
-            _local[name] = replacementGetterFromSetter;
+            (_local ??= {})[name] = replacementGetterFromSetter;
           }
         } else if (existingGetter.parent ==
             replacementLibraryBuilderFromGetter) {
           // The existing getter should be replaced.
           if (replacementGetterFromGetter != null) {
             // With a new getter.
-            _local[name] = replacementGetterFromGetter;
+            (_local ??= {})[name] = replacementGetterFromGetter;
           } else {
             // With `null`, i.e. removed. This means that the getter is
             // implicitly available through the setter. (This is currently not
             // possible, but handled here to match the case for setters below).
-            _local.remove(name);
+            _local?.remove(name);
           }
         } else {
           // Leave the getter in - it wasn't replaced.
@@ -355,19 +369,21 @@ class Scope extends MutableScope {
           if (replacementSetterFromGetter != null) {
             // We might have had one implicitly from the getter. Use it here,
             // if so.
-            _setters[name] = replacementSetterFromGetter as MemberBuilder;
+            (_setters ??= {})[name] =
+                replacementSetterFromGetter as MemberBuilder;
           }
         } else if (existingSetter.parent ==
             replacementLibraryBuilderFromSetter) {
           // The existing setter should be replaced.
           if (replacementSetterFromSetter != null) {
             // With a new setter.
-            _setters[name] = replacementSetterFromSetter as MemberBuilder;
+            (_setters ??= {})[name] =
+                replacementSetterFromSetter as MemberBuilder;
           } else {
             // With `null`, i.e. removed. This means that the setter is
             // implicitly available through the getter. This happens when the
             // getter is a field builder for an assignable field.
-            _setters.remove(name);
+            _setters?.remove(name);
           }
         } else {
           // Leave the setter in - it wasn't replaced.
@@ -442,7 +458,7 @@ class Scope extends MutableScope {
     Scope newScope = new Scope.nested(this, "type variables",
         isModifiable: false, kind: ScopeKind.typeParameters);
     for (TypeVariableBuilder t in typeVariables) {
-      newScope._local[t.name] = t;
+      (newScope._local ??= {})[t.name] = t;
     }
     return newScope;
   }
@@ -455,6 +471,10 @@ class Scope extends MutableScope {
   ///     x = 42;
   ///     print("The answer is $x.");
   Scope createNestedLabelScope() {
+    // The scopes needs to reference the same locals and setters so we have to
+    // eagerly initialize them.
+    _local ??= {};
+    _setters ??= {};
     return new Scope(
         kind: ScopeKind.labels,
         local: _local,
@@ -495,16 +515,20 @@ class Scope extends MutableScope {
   Builder? lookup(String name, int charOffset, Uri fileUri,
       {bool isInstanceScope = true}) {
     recordUse(name, charOffset);
-    Builder? builder =
-        lookupIn(name, charOffset, fileUri, _local, isInstanceScope);
-    if (builder != null) return builder;
-    builder = lookupIn(name, charOffset, fileUri, _setters, isInstanceScope);
-    if (builder != null && !builder.hasProblem) {
-      return new AccessErrorBuilder(name, builder, charOffset, fileUri);
+    Builder? builder;
+    if (_local != null) {
+      builder = lookupIn(name, charOffset, fileUri, _local!, isInstanceScope);
+      if (builder != null) return builder;
     }
-    if (!isInstanceScope) {
-      // For static lookup, do not search the parent scope.
-      return builder;
+    if (_setters != null) {
+      builder = lookupIn(name, charOffset, fileUri, _setters!, isInstanceScope);
+      if (builder != null && !builder.hasProblem) {
+        return new AccessErrorBuilder(name, builder, charOffset, fileUri);
+      }
+      if (!isInstanceScope) {
+        // For static lookup, do not search the parent scope.
+        return builder;
+      }
     }
     return builder ?? _parent?.lookup(name, charOffset, fileUri);
   }
@@ -512,38 +536,42 @@ class Scope extends MutableScope {
   Builder? lookupSetter(String name, int charOffset, Uri fileUri,
       {bool isInstanceScope = true}) {
     recordUse(name, charOffset);
-    Builder? builder =
-        lookupIn(name, charOffset, fileUri, _setters, isInstanceScope);
-    if (builder != null) return builder;
-    builder = lookupIn(name, charOffset, fileUri, _local, isInstanceScope);
-    if (builder != null && !builder.hasProblem) {
-      return new AccessErrorBuilder(name, builder, charOffset, fileUri);
+    Builder? builder;
+    if (_setters != null) {
+      builder = lookupIn(name, charOffset, fileUri, _setters!, isInstanceScope);
+      if (builder != null) return builder;
     }
-    if (!isInstanceScope) {
-      // For static lookup, do not search the parent scope.
-      return builder;
+    if (_local != null) {
+      builder = lookupIn(name, charOffset, fileUri, _local!, isInstanceScope);
+      if (builder != null && !builder.hasProblem) {
+        return new AccessErrorBuilder(name, builder, charOffset, fileUri);
+      }
+      if (!isInstanceScope) {
+        // For static lookup, do not search the parent scope.
+        return builder;
+      }
     }
     return builder ?? _parent?.lookupSetter(name, charOffset, fileUri);
   }
 
   Builder? lookupLocalMember(String name, {required bool setter}) {
-    return setter ? _setters[name] : _local[name];
+    return setter ? (_setters?[name]) : (_local?[name]);
   }
 
   void addLocalMember(String name, Builder member, {required bool setter}) {
     if (setter) {
-      _setters[name] = member as MemberBuilder;
+      (_setters ??= {})[name] = member as MemberBuilder;
     } else {
-      _local[name] = member;
+      (_local ??= {})[name] = member;
     }
   }
 
   void forEachLocalMember(void Function(String name, Builder member) f) {
-    _local.forEach(f);
+    _local?.forEach(f);
   }
 
   void forEachLocalSetter(void Function(String name, MemberBuilder member) f) {
-    _setters.forEach(f);
+    _setters?.forEach(f);
   }
 
   ExtensionBuilder? lookupLocalUnnamedExtension(Uri fileUri, int offset) {
@@ -561,9 +589,9 @@ class Scope extends MutableScope {
     _extensions?.forEach(f);
   }
 
-  Iterable<Builder> get localMembers => _local.values;
+  Iterable<Builder> get localMembers => _local?.values ?? const {};
 
-  Iterable<MemberBuilder> get localSetters => _setters.values;
+  Iterable<MemberBuilder> get localSetters => _setters?.values ?? const {};
 
   bool hasLocalLabel(String name) =>
       labels != null && labels!.containsKey(name);
@@ -617,7 +645,7 @@ class Scope extends MutableScope {
             .withArguments(name)
             .withLocation(fileUri, offset, name.length);
       }
-      _local[name] = builder;
+      (_local ??= {})[name] = builder;
     } else {
       internalProblem(
           messageInternalProblemExtendingUnmodifiableScope, -1, null);
@@ -641,7 +669,7 @@ class Scope extends MutableScope {
       Scope scope,
       Builder computeAmbiguousDeclaration(
           String name, Builder existing, Builder member)) {
-    Map<String, Builder> map = _local;
+    Map<String, Builder> map = const {};
 
     void mergeMember(String name, Builder member) {
       Builder? existing = map[name];
@@ -653,17 +681,22 @@ class Scope extends MutableScope {
       map[name] = member;
     }
 
-    scope._local.forEach(mergeMember);
-    map = _setters;
-    scope._setters.forEach(mergeMember);
+    if (scope._local != null) {
+      map = _local ??= {};
+      scope._local?.forEach(mergeMember);
+    }
+    if (scope._setters != null) {
+      map = _setters ??= {};
+      scope._setters?.forEach(mergeMember);
+    }
     if (scope._extensions != null) {
       (_extensions ??= {}).addAll(scope._extensions!);
     }
   }
 
   void forEach(f(String name, Builder member)) {
-    _local.forEach(f);
-    _setters.forEach(f);
+    _local?.forEach(f);
+    _setters?.forEach(f);
   }
 
   String get debugString {
@@ -679,10 +712,10 @@ class Scope extends MutableScope {
     int nestingLevel = (_parent?.writeOn(sink) ?? -1) + 1;
     String indent = "  " * nestingLevel;
     sink.writeln("$indent{");
-    _local.forEach((String name, Builder member) {
+    _local?.forEach((String name, Builder member) {
       sink.writeln("$indent  $name");
     });
-    _setters.forEach((String name, Builder member) {
+    _setters?.forEach((String name, Builder member) {
       sink.writeln("$indent  $name=");
     });
     return nestingLevel;
@@ -792,13 +825,13 @@ abstract class LazyScope extends Scope {
   void ensureScope();
 
   @override
-  Map<String, Builder> get _local {
+  Map<String, Builder>? get _local {
     ensureScope();
     return super._local;
   }
 
   @override
-  Map<String, MemberBuilder> get _setters {
+  Map<String, MemberBuilder>? get _setters {
     ensureScope();
     return super._setters;
   }
@@ -839,7 +872,7 @@ class AccessErrorBuilder extends ProblemBuilder {
       : super(name, builder, charOffset, fileUri);
 
   @override
-  Builder get parent => builder;
+  Builder? get parent => builder.parent;
 
   @override
   bool get isFinal => builder.isFinal;
@@ -1012,6 +1045,12 @@ mixin ErroneousMemberBuilderMixin implements SourceMemberBuilder {
   AugmentSuperTarget? get augmentSuperTarget {
     throw new UnsupportedError('$runtimeType.augmentSuperTarget}');
   }
+
+  @override
+  BodyBuilderContext get bodyBuilderContext {
+    throw new UnsupportedError(
+        '$runtimeType.bodyBuilderContextForAnnotations}');
+  }
 }
 
 class AmbiguousMemberBuilder extends AmbiguousBuilder
@@ -1031,8 +1070,8 @@ class ScopeIterator implements Iterator<Builder> {
   Builder? _current;
 
   ScopeIterator(Scope scope)
-      : local = scope._local.values.iterator,
-        setters = scope._setters.values.iterator,
+      : local = scope._local?.values.iterator,
+        setters = scope._setters?.values.iterator,
         extensions = scope._extensions?.iterator;
 
   @override
@@ -1091,8 +1130,8 @@ class ScopeNameIterator extends ScopeIterator implements NameIterator<Builder> {
   String? _name;
 
   ScopeNameIterator(Scope scope)
-      : localNames = scope._local.keys.iterator,
-        setterNames = scope._setters.keys.iterator,
+      : localNames = scope._local?.keys.iterator,
+        setterNames = scope._setters?.keys.iterator,
         super(scope);
 
   @override

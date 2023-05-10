@@ -48,7 +48,7 @@ class Breakpoint {
   Breakpoint(intptr_t id, BreakpointLocation* bpt_location)
       : id_(id),
         kind_(Breakpoint::kNone),
-        next_(NULL),
+        next_(nullptr),
         closure_(Instance::null()),
         bpt_location_(bpt_location),
         is_synthetic_async_(false) {}
@@ -311,7 +311,6 @@ class ActivationFrame : public ZoneAllocated {
     kRegular,
     kAsyncSuspensionMarker,
     kAsyncCausal,
-    kAsyncActivation,
   };
 
   ActivationFrame(uword pc,
@@ -425,8 +424,6 @@ class ActivationFrame : public ZoneAllocated {
   void GetVarDescriptors();
   void GetDescIndices();
 
-  bool IsAsyncMachinery() const;
-
   static const char* KindToCString(Kind kind) {
     switch (kind) {
       case kRegular:
@@ -435,8 +432,6 @@ class ActivationFrame : public ZoneAllocated {
         return "AsyncCausal";
       case kAsyncSuspensionMarker:
         return "AsyncSuspensionMarker";
-      case kAsyncActivation:
-        return "AsyncActivation";
       default:
         UNREACHABLE();
         return "";
@@ -494,8 +489,9 @@ class DebuggerStackTrace : public ZoneAllocated {
 
   ActivationFrame* GetHandlerFrame(const Instance& exc_obj) const;
 
-  static DebuggerStackTrace* CollectAwaiterReturn();
   static DebuggerStackTrace* Collect();
+  static DebuggerStackTrace* CollectAsyncCausal();
+
   // Returns a debugger stack trace corresponding to a dart.core.StackTrace.
   // Frames corresponding to invisible functions are omitted. It is not valid
   // to query local variables in the returned stack.
@@ -513,8 +509,6 @@ class DebuggerStackTrace : public ZoneAllocated {
                         Code* code,
                         Code* inlined_code,
                         Array* deopt_frame);
-
-  static DebuggerStackTrace* CollectAsyncCausal();
 
   ZoneGrowableArray<ActivationFrame*> trace_;
 
@@ -539,7 +533,7 @@ class DebuggerKeyValueTrait : public AllStatic {
   struct Pair {
     Key key;
     Value value;
-    Pair() : key(NULL), value(false) {}
+    Pair() : key(nullptr), value(false) {}
     Pair(const Key key, const Value& value) : key(key), value(value) {}
     Pair(const Pair& other) : key(other.key), value(other.value) {}
     Pair& operator=(const Pair&) = default;
@@ -738,13 +732,13 @@ class Debugger {
 
   bool SetResumeAction(ResumeAction action,
                        intptr_t frame_index = 1,
-                       const char** error = NULL);
+                       const char** error = nullptr);
 
   bool IsStepping() const { return resume_action_ != kContinue; }
 
   bool IsSingleStepping() const { return resume_action_ == kStepInto; }
 
-  bool IsPaused() const { return pause_event_ != NULL; }
+  bool IsPaused() const { return pause_event_ != nullptr; }
 
   bool ignore_breakpoints() const { return ignore_breakpoints_; }
   void set_ignore_breakpoints(bool ignore_breakpoints) {
@@ -758,7 +752,7 @@ class Debugger {
   void EnterSingleStepMode();
 
   // Indicates why the debugger is currently paused.  If the debugger
-  // is not paused, this returns NULL.  Note that the debugger can be
+  // is not paused, this returns nullptr.  Note that the debugger can be
   // paused for breakpoints, isolate interruption, and (sometimes)
   // exceptions.
   const ServiceEvent* PauseEvent() const { return pause_event_; }
@@ -891,8 +885,7 @@ class Debugger {
                              bool skip_next_step = false);
 
   void CacheStackTraces(DebuggerStackTrace* stack_trace,
-                        DebuggerStackTrace* async_causal_stack_trace,
-                        DebuggerStackTrace* awaiter_stack_trace);
+                        DebuggerStackTrace* async_causal_stack_trace);
   void ClearCachedStackTraces();
 
   void RewindToFrame(intptr_t frame_index);
@@ -928,7 +921,7 @@ class Debugger {
   bool ignore_breakpoints_;
 
   // Indicates why the debugger is currently paused.  If the debugger
-  // is not paused, this is NULL.  Note that the debugger can be
+  // is not paused, this is nullptr.  Note that the debugger can be
   // paused for breakpoints, isolate interruption, and (sometimes)
   // exceptions.
   ServiceEvent* pause_event_;
@@ -936,7 +929,6 @@ class Debugger {
   // Current stack trace. Valid only while IsPaused().
   DebuggerStackTrace* stack_trace_;
   DebuggerStackTrace* async_causal_stack_trace_;
-  DebuggerStackTrace* awaiter_stack_trace_;
 
   // When stepping through code, only pause the program if the top
   // frame corresponds to this fp value, or if the top frame is
@@ -973,7 +965,7 @@ class DisableBreakpointsScope : public ValueObject {
  public:
   DisableBreakpointsScope(Debugger* debugger, bool disable)
       : debugger_(debugger) {
-    ASSERT(debugger_ != NULL);
+    ASSERT(debugger_ != nullptr);
     initial_state_ = debugger_->ignore_breakpoints();
     debugger_->set_ignore_breakpoints(disable);
   }

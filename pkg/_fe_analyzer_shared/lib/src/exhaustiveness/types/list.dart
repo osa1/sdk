@@ -55,7 +55,8 @@ part of '../types.dart';
 /// and the list of n or more elements as the witness candidates.
 class ListTypeStaticType<Type extends Object>
     extends TypeBasedStaticType<Type> {
-  ListTypeStaticType(super.typeOperations, super.fieldLookup, super.type);
+  ListTypeStaticType(super.typeOperations, super.fieldLookup, super.type)
+      : super(isImplicitlyNullable: false);
 
   @override
   bool get isSealed => true;
@@ -108,14 +109,14 @@ class ListPatternStaticType<Type extends Object>
       super.restriction, super.name);
 
   @override
-  String spaceToText(
-      Map<Key, Space> spaceFields, Map<Key, Space> additionalSpaceFields) {
+  String spaceToText(Map<Key, Space> spaceProperties,
+      Map<Key, Space> additionalSpaceProperties) {
     StringBuffer buffer = new StringBuffer();
     buffer.write(restriction.typeArgumentText);
     buffer.write('[');
 
     bool first = true;
-    additionalSpaceFields.forEach((Key key, Space space) {
+    additionalSpaceProperties.forEach((Key key, Space space) {
       if (!first) buffer.write(', ');
       if (key is RestKey) {
         buffer.write('...');
@@ -129,12 +130,13 @@ class ListPatternStaticType<Type extends Object>
   }
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
     int maxHeadSize = 0;
     int maxTailSize = 0;
-    FieldWitness? restWitness;
-    for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
+    PropertyWitness? restWitness;
+    for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
       Key key = entry.key;
       if (key is HeadKey && key.index >= maxHeadSize) {
         maxHeadSize = key.index + 1;
@@ -154,9 +156,9 @@ class ListPatternStaticType<Type extends Object>
     for (int index = 0; index < maxHeadSize; index++) {
       buffer.write(comma);
       Key key = new HeadKey(index);
-      FieldWitness? witness = witnessFields[key];
+      PropertyWitness? witness = witnessFields[key];
       if (witness != null) {
-        witness.witnessToText(buffer);
+        witness.witnessToDart(buffer, forCorrection: forCorrection);
       } else {
         buffer.write('_');
       }
@@ -166,16 +168,16 @@ class ListPatternStaticType<Type extends Object>
       buffer.write(comma);
       buffer.write('...');
       if (restWitness != null) {
-        restWitness.witnessToText(buffer);
+        restWitness.witnessToDart(buffer, forCorrection: forCorrection);
       }
       comma = ', ';
     }
     for (int index = maxTailSize - 1; index >= 0; index--) {
       buffer.write(comma);
       Key key = new TailKey(index);
-      FieldWitness? witness = witnessFields[key];
+      PropertyWitness? witness = witnessFields[key];
       if (witness != null) {
-        witness.witnessToText(buffer);
+        witness.witnessToDart(buffer, forCorrection: forCorrection);
       } else {
         buffer.write('_');
       }
@@ -187,7 +189,7 @@ class ListPatternStaticType<Type extends Object>
     String additionalStart = ' && Object(';
     String additionalEnd = '';
     comma = '';
-    for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
+    for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
       Key key = entry.key;
       if (key is! ListKey) {
         buffer.write(additionalStart);
@@ -198,8 +200,8 @@ class ListPatternStaticType<Type extends Object>
 
         buffer.write(key.name);
         buffer.write(': ');
-        FieldWitness field = entry.value;
-        field.witnessToText(buffer);
+        PropertyWitness field = entry.value;
+        field.witnessToDart(buffer, forCorrection: forCorrection);
       }
     }
     buffer.write(additionalEnd);

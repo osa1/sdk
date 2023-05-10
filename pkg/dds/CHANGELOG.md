@@ -1,3 +1,17 @@
+# 2.8.1
+- Updated DDS protocol version to 1.5.
+- Added `getPerfettoVMTimelineWithCpuSamples` RPC.
+- Updated `vm_service` version to >=11.0.0 <12.0.0.
+
+# 2.7.10
+- [DAP] Isolates that exit immediately after being paused (perhaps by another debugger or due to the app shutting down) will no longer cause a crash.
+
+# 2.7.9
+- [DAP] Configuring and resuming isolates will no longer cause a crash if the isolate exits before the request is processed.
+
+# 2.7.8
+- [DAP] Sentinel values (such as uninitialized fields/locals) will no longer cause `scopesRequest`/`variablesRequest` to fail, instead showing appropriate text (like "<not initialized>") against the variable.
+
 # 2.7.7
 - [DAP] Debug adapters now only call `setLibraryDebuggable` when the debuggable flag changes from the default/current values, reducing the amount of VM Service traffic for new isolates/reloads.
 - [DAP] `breakpoint` events are no longer sometimes sent prior to the response to the `setBreakpointsRequest` that created them.

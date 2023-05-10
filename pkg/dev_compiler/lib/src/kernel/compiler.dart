@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:io' as io;
 import 'dart:math' show max, min;
 
+import 'package:_js_interop_checks/src/transformations/static_interop_class_eraser.dart'
+    show transformJSTypesForJSCompilers;
 import 'package:collection/collection.dart'
     show IterableExtension, IterableNullableExtension;
 import 'package:front_end/src/api_unstable/ddc.dart';
@@ -2833,7 +2835,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   js_ast.LiteralString? _emitJSInteropExternalStaticMemberName(NamedNode n) {
     if (!usesJSInterop(n)) return null;
     if (n is Member && !n.isExternal) return null;
-    var name = _annotationName(n, isPublicJSAnnotation) ?? getTopLevelName(n);
+    var name = _annotationName(n, isJSInteropAnnotation) ?? getTopLevelName(n);
     assert(!name.contains('.'),
         'JS interop checker rejects dotted names on static class members');
     return js.escapedString(name, "'");
@@ -2909,8 +2911,9 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   String? _jsNameWithoutGlobal(NamedNode n) {
     if (!usesJSInterop(n)) return null;
-    var libraryJSName = _annotationName(getLibrary(n), isPublicJSAnnotation);
-    var jsName = _annotationName(n, isPublicJSAnnotation) ?? getTopLevelName(n);
+    var libraryJSName = _annotationName(getLibrary(n), isJSInteropAnnotation);
+    var jsName =
+        _annotationName(n, isJSInteropAnnotation) ?? getTopLevelName(n);
     return libraryJSName != null ? '$libraryJSName.$jsName' : jsName;
   }
 
@@ -3231,8 +3234,13 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         ? getLocalClassName(c)
         : _emitJsNameWithoutGlobal(c);
     if (jsName != null) {
-      typeRep = runtimeCall('packageJSType(#, #)',
-          [js.escapedString(jsName), js.boolean(isStaticInteropType(c))]);
+      if (isDartJSTypesType(c)) {
+        typeRep = visitInterfaceType(
+            transformJSTypesForJSCompilers(_coreTypes, type));
+      } else {
+        typeRep = runtimeCall('packageJSType(#, #)',
+            [js.escapedString(jsName), js.boolean(isStaticInteropType(c))]);
+      }
     }
 
     if (typeRep != null) {
@@ -4744,33 +4752,22 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   @override
   js_ast.Statement visitIfStatement(IfStatement node) {
+    bool isTriviallyTrue(condition) =>
+        condition is js_ast.LiteralBool && condition.value;
+
+    bool isTriviallyFalse(condition) =>
+        condition is js_ast.LiteralBool && !condition.value;
+
     var condition = _visitTest(node.condition);
-    if (node.otherwise != null) {
-      if (condition is js_ast.LiteralBool) {
-        // Avoid emitting the branch with code that will never execute.
-        if (condition.value) {
-          return _visitScope(node.then).toStatement();
-        } else {
-          return _visitScope(node.otherwise!).toStatement();
-        }
-      }
-      return js_ast.If(
-          condition, _visitScope(node.then), _visitScope(node.otherwise!));
+    if (isTriviallyTrue(condition)) return _visitScope(node.then);
+    var otherwise = node.otherwise;
+    var hasElse = otherwise != null;
+    if (isTriviallyFalse(condition)) {
+      return hasElse ? _visitScope(otherwise) : js_ast.EmptyStatement();
     }
-
-    if (condition is js_ast.LiteralBool) {
-      if (condition.value) {
-        // Avoid emitting conditional when it is always true.
-        // ex: `if (true) {abc...}` -> `{abc...}`
-        return _visitScope(node.then).toStatement();
-      } else {
-        // Avoid emitting conditional and then when it will never execute.
-        // ex: `if (false) {abc...}` -> `;`
-        return js_ast.EmptyStatement();
-      }
-    }
-
-    return js_ast.If.noElse(condition, _visitScope(node.then));
+    return hasElse
+        ? js_ast.If(condition, _visitScope(node.then), _visitScope(otherwise))
+        : js_ast.If.noElse(condition, _visitScope(node.then));
   }
 
   /// Visits a statement, and ensures the resulting AST handles block scope
@@ -6674,7 +6671,13 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   js_ast.Expression _emitIsExpression(Expression operand, DartType type) {
     // Generate `is` as `dart.is` or `typeof` depending on the RHS type.
     var lhs = _visitExpression(operand);
-    var typeofName = _typeRep.typeFor(type).primitiveTypeOf;
+    // It is invalid to use a simplified check for a native type in place of
+    // a type test for a `TypeParameterType`. This is because at runtime type
+    // parameters can be instantiated as the bottom type `Never` and
+    // `val is Never` should always evaluate to false.
+    var typeofName = type is TypeParameterType
+        ? null
+        : _typeRep.typeFor(type).primitiveTypeOf;
     // Inline non-nullable primitive types other than int (which requires a
     // Math.floor check).
     if (typeofName != null &&

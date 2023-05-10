@@ -309,7 +309,7 @@ class ConvertToSwitchExpression extends CorrectionProducer {
   bool isEffectivelyExhaustive(DartType? type, SwitchStatement node) {
     if (type == null) return false;
     if ((typeSystem as TypeSystemImpl).isAlwaysExhaustive(type)) return true;
-    var last = node.members.last;
+    var last = node.members.lastOrNull;
     if (last is SwitchPatternCase) {
       var pattern = last.guardedPattern.pattern;
       return pattern is WildcardPattern;

@@ -24,7 +24,7 @@ Object f(bool x) {
   };
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 28, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION, 28, 6),
     ]);
   }
 
@@ -74,7 +74,7 @@ Object f(E x) {
   };
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 44, 6,
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION, 44, 6,
           correctionContains: 'E.a'),
     ]);
   }
@@ -91,7 +91,7 @@ void f(bool x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 19, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 19, 6),
     ]);
   }
 
@@ -127,7 +127,8 @@ void f(bool x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 19, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 19, 6),
+      error(WarningCode.PATTERN_NEVER_MATCHES_VALUE_TYPE, 41, 3),
     ]);
   }
 
@@ -152,7 +153,7 @@ void f(bool? x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 20, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 20, 6),
     ]);
   }
 
@@ -182,7 +183,7 @@ void f(E x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 35, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 35, 6),
     ]);
   }
 
@@ -216,7 +217,7 @@ void f(E x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 35, 6,
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 35, 6,
           correctionContains: 'E.a'),
     ]);
   }
@@ -238,13 +239,33 @@ void f(E x) {
     );
   }
 
+  test_alwaysExhaustive_enum_cannotCompute() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v1(v2), v2(v1);
+  const E(Object f);
+}
+
+void f(E x) {
+  switch (x) {
+    case E.v1:
+    case E.v2:
+      break;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.RECURSIVE_COMPILE_TIME_CONSTANT, 11, 2),
+      error(CompileTimeErrorCode.RECURSIVE_COMPILE_TIME_CONSTANT, 19, 2),
+    ]);
+  }
+
   test_alwaysExhaustive_Null_hasError() async {
     await assertErrorsInCode(r'''
 void f(Null x) {
   switch (x) {}
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 19, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 19, 6),
     ]);
   }
 
@@ -286,7 +307,7 @@ void f(A x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 77, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 77, 6),
     ]);
   }
 
@@ -324,6 +345,86 @@ void f(A x) {
 ''');
   }
 
+  test_alwaysExhaustive_sealedClass_implementedByEnum_3at2() async {
+    await assertErrorsInCode(r'''
+sealed class A {}
+
+class B implements A {}
+
+enum E implements A {
+  a, b
+}
+
+void f(A x) {
+  switch (x) {
+    case B _:
+    case E.a:
+      break;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 92, 6),
+    ]);
+  }
+
+  test_alwaysExhaustive_sealedClass_implementedByEnum_3at3() async {
+    await assertNoErrorsInCode(r'''
+sealed class A {}
+
+class B implements A {}
+
+enum E implements A {
+  a, b
+}
+
+void f(A x) {
+  switch (x) {
+    case B _:
+    case E.a:
+    case E.b:
+      break;
+  }
+}
+''');
+  }
+
+  test_alwaysExhaustive_sealedClass_implementedByMixin_2at1() async {
+    await assertErrorsInCode(r'''
+sealed class A {}
+
+class B implements A {}
+
+mixin M implements A {}
+
+void f(A x) {
+  switch (x) {
+    case B _:
+      break;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 85, 6),
+    ]);
+  }
+
+  test_alwaysExhaustive_sealedClass_implementedByMixin_2at2() async {
+    await assertNoErrorsInCode(r'''
+sealed class A {}
+
+class B implements A {}
+
+mixin M implements A {}
+
+void f(A x) {
+  switch (x) {
+    case B _:
+    case M _:
+      break;
+  }
+}
+''');
+  }
+
   test_alwaysExhaustive_typeVariable_bound_bool_true() async {
     await assertErrorsInCode(r'''
 void f<T extends bool>(T x) {
@@ -333,7 +434,7 @@ void f<T extends bool>(T x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 32, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 32, 6),
     ]);
   }
 
@@ -360,7 +461,7 @@ void f<T>(T x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH, 40, 6),
+      error(CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT, 40, 6),
     ]);
   }
 

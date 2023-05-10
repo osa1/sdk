@@ -163,10 +163,8 @@ RecordPattern
         colon: :
       pattern: DeclaredVariablePattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
         name: y
         declaredElement: y@54
@@ -255,10 +253,8 @@ RecordPattern
     PatternField
       pattern: DeclaredVariablePattern
         type: NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
         name: y
         declaredElement: y@49
@@ -629,7 +625,7 @@ void f(({int foo}) x) {
   }
 }
 ''', [
-      error(CompileTimeErrorCode.MISSING_OBJECT_PATTERN_GETTER_NAME, 49, 3),
+      error(CompileTimeErrorCode.MISSING_NAMED_PATTERN_FIELD_NAME, 49, 3),
     ]);
     final node = findNode.singleGuardedPattern.pattern;
     assertResolvedNodeText(node, r'''
@@ -709,10 +705,8 @@ RecordPattern
           matchedValueType: int
         asToken: as
         type: NamedType
-          name: SimpleIdentifier
-            token: int
-            staticElement: dart:core::@class::int
-            staticType: null
+          name: int
+          element: dart:core::@class::int
           type: int
         matchedValueType: int?
       element: <null>
@@ -880,10 +874,8 @@ PatternVariableDeclaration
       PatternField
         pattern: DeclaredVariablePattern
           type: NamedType
-            name: SimpleIdentifier
-              token: int
-              staticElement: dart:core::@class::int
-              staticType: null
+            name: int
+            element: dart:core::@class::int
             type: int
           name: a
           declaredElement: a@22
@@ -893,10 +885,8 @@ PatternVariableDeclaration
       PatternField
         pattern: DeclaredVariablePattern
           type: NamedType
-            name: SimpleIdentifier
-              token: String
-              staticElement: dart:core::@class::String
-              staticType: null
+            name: String
+            element: dart:core::@class::String
             type: String
           name: b
           declaredElement: b@32

@@ -28,6 +28,36 @@ class TypeArgumentListTest2 extends AbstractCompletionDriverTest
 }
 
 mixin TypeArgumentListTestCases on AbstractCompletionDriverTest {
+  Future<void> test_afterLess_beforeGreater_functionInvocation() async {
+    await computeSuggestions('''
+void f<T>() {}
+
+void m() {
+  f<^>();
+}
+''');
+    assertResponse(r'''
+suggestions
+  dynamic
+    kind: keyword
+  void
+    kind: keyword
+''');
+  }
+
+  Future<void> test_afterLess_beforeGreater_namedType() async {
+    await computeSuggestions('''
+void m() {List<^> list;}
+''');
+    assertResponse(r'''
+suggestions
+  dynamic
+    kind: keyword
+  void
+    kind: keyword
+''');
+  }
+
   Future<void> test_argument_afterClassName() async {
     await computeSuggestions('''
 void f(Object o) {
@@ -49,9 +79,9 @@ suggestions
     kind: class
   B01
     kind: class
-  void
-    kind: keyword
   dynamic
+    kind: keyword
+  void
     kind: keyword
 ''');
   }
@@ -76,9 +106,9 @@ suggestions
     kind: class
   B01
     kind: class
-  void
-    kind: keyword
   dynamic
+    kind: keyword
+  void
     kind: keyword
 ''');
   }
@@ -103,9 +133,9 @@ suggestions
     kind: class
   B01
     kind: class
-  void
-    kind: keyword
   dynamic
+    kind: keyword
+  void
     kind: keyword
 ''');
   }
@@ -130,9 +160,9 @@ suggestions
     kind: class
   B01
     kind: class
-  void
-    kind: keyword
   dynamic
+    kind: keyword
+  void
     kind: keyword
 ''');
   }

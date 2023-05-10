@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:_fe_analyzer_shared/src/exhaustiveness/dart_template_buffer.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/exhaustive.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/key.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/path.dart';
@@ -22,6 +23,64 @@ import 'package:analyzer/src/dart/element/type_algebra.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/dart/resolver/variance.dart';
 import 'package:analyzer/src/generated/constant.dart';
+
+/// The buffer that accumulates types and elements as is, so that they
+/// can be written latter into Dart code that considers imports. It also
+/// accumulates fragments of text, such as syntax `(`, or names of properties.
+class AnalyzerDartTemplateBuffer
+    implements DartTemplateBuffer<DartObject, FieldElement, DartType> {
+  final List<MissingPatternPart> parts = [];
+  bool isComplete = true;
+
+  @override
+  void write(String text) {
+    parts.add(
+      MissingPatternTextPart(text),
+    );
+  }
+
+  @override
+  void writeBoolValue(bool value) {
+    parts.add(
+      MissingPatternTextPart('$value'),
+    );
+  }
+
+  @override
+  void writeCoreType(String name) {
+    parts.add(
+      MissingPatternTextPart(name),
+    );
+  }
+
+  @override
+  void writeEnumValue(FieldElement value, String name) {
+    final enumElement = value.enclosingElement;
+    if (enumElement is! EnumElement) {
+      isComplete = false;
+      return;
+    }
+
+    parts.add(
+      MissingPatternEnumValuePart(
+        enumElement: enumElement,
+        value: value,
+      ),
+    );
+  }
+
+  @override
+  void writeGeneralConstantValue(DartObject value, String name) {
+    isComplete = false;
+  }
+
+  @override
+  void writeGeneralType(DartType type, String name) {
+    parts.add(
+      MissingPatternTypePart(type),
+    );
+  }
+}
 
 class AnalyzerEnumOperations
     implements EnumOperations<DartType, EnumElement, FieldElement, DartObject> {
@@ -56,35 +115,35 @@ class AnalyzerEnumOperations
   }
 
   @override
-  DartObject getEnumElementValue(FieldElement enumField) {
-    return enumField.computeConstantValue()!;
+  DartObject? getEnumElementValue(FieldElement enumField) {
+    return enumField.computeConstantValue();
   }
 }
 
 class AnalyzerExhaustivenessCache extends ExhaustivenessCache<DartType,
-    ClassElement, EnumElement, FieldElement, DartObject> {
+    InterfaceElement, EnumElement, FieldElement, DartObject> {
   final TypeSystemImpl typeSystem;
 
-  AnalyzerExhaustivenessCache(this.typeSystem)
+  AnalyzerExhaustivenessCache(this.typeSystem, LibraryElement enclosingLibrary)
       : super(
-            AnalyzerTypeOperations(typeSystem),
+            AnalyzerTypeOperations(typeSystem, enclosingLibrary),
             const AnalyzerEnumOperations(),
             AnalyzerSealedClassOperations(typeSystem));
 }
 
 class AnalyzerSealedClassOperations
-    implements SealedClassOperations<DartType, ClassElement> {
+    implements SealedClassOperations<DartType, InterfaceElement> {
   final TypeSystemImpl _typeSystem;
 
   AnalyzerSealedClassOperations(this._typeSystem);
 
   @override
-  List<ClassElement> getDirectSubclasses(ClassElement sealedClass) {
-    List<ClassElement> subclasses = [];
+  List<InterfaceElement> getDirectSubclasses(InterfaceElement sealedClass) {
+    List<InterfaceElement> subclasses = [];
     LibraryElement library = sealedClass.library;
     outer:
     for (Element declaration in library.topLevelElements) {
-      if (declaration != sealedClass && declaration is ClassElement) {
+      if (declaration != sealedClass && declaration is InterfaceElement) {
         bool checkType(InterfaceType? type) {
           if (type?.element == sealedClass) {
             subclasses.add(declaration);
@@ -122,7 +181,7 @@ class AnalyzerSealedClassOperations
 
   @override
   DartType? getSubclassAsInstanceOf(
-      ClassElement subClass, covariant InterfaceType sealedClassType) {
+      InterfaceElement subClass, covariant InterfaceType sealedClassType) {
     InterfaceType thisType = subClass.thisType;
     InterfaceType asSealedClass =
         thisType.asInstanceOf(sealedClassType.element)!;
@@ -165,10 +224,11 @@ class AnalyzerSealedClassOperations
 
 class AnalyzerTypeOperations implements TypeOperations<DartType> {
   final TypeSystemImpl _typeSystem;
+  final LibraryElement _enclosingLibrary;
 
   final Map<InterfaceType, Map<Key, DartType>> _interfaceFieldTypesCaches = {};
 
-  AnalyzerTypeOperations(this._typeSystem);
+  AnalyzerTypeOperations(this._typeSystem, this._enclosingLibrary);
 
   @override
   DartType get boolType => _typeSystem.typeProvider.boolType;
@@ -322,11 +382,17 @@ class AnalyzerTypeOperations implements TypeOperations<DartType> {
         fieldTypes.addAll(_getInterfaceFieldTypes(supertype));
       }
       for (PropertyAccessorElement accessor in type.accessors) {
+        if (accessor.isPrivate && accessor.library != _enclosingLibrary) {
+          continue;
+        }
         if (accessor.isGetter && !accessor.isStatic) {
           fieldTypes[NameKey(accessor.name)] = accessor.type.returnType;
         }
       }
       for (MethodElement method in type.methods) {
+        if (method.isPrivate && method.library != _enclosingLibrary) {
+          continue;
+        }
         if (!method.isStatic) {
           fieldTypes[NameKey(method.name)] = method.type;
         }
@@ -341,7 +407,7 @@ class AnalyzerTypeOperations implements TypeOperations<DartType> {
 class ExhaustivenessDataForTesting {
   /// Access to interface for looking up `Object` members on non-interface
   /// types.
-  final ObjectFieldLookup objectFieldLookup;
+  final ObjectPropertyLookup objectFieldLookup;
 
   /// Map from switch statement/expression nodes to the static type of the
   /// scrutinee.
@@ -360,6 +426,41 @@ class ExhaustivenessDataForTesting {
   ExhaustivenessDataForTesting(this.objectFieldLookup);
 }
 
+class MissingPatternEnumValuePart extends MissingPatternPart {
+  final EnumElement enumElement;
+  final FieldElement value;
+
+  MissingPatternEnumValuePart({
+    required this.enumElement,
+    required this.value,
+  });
+
+  @override
+  String toString() => value.name;
+}
+
+abstract class MissingPatternPart {}
+
+class MissingPatternTextPart extends MissingPatternPart {
+  final String text;
+
+  MissingPatternTextPart(this.text);
+
+  @override
+  String toString() => text;
+}
+
+class MissingPatternTypePart extends MissingPatternPart {
+  final DartType type;
+
+  MissingPatternTypePart(this.type);
+
+  @override
+  String toString() {
+    return type.getDisplayString(withNullability: true);
+  }
+}
+
 class PatternConverter with SpaceCreator<DartPattern, DartType> {
   final FeatureSet featureSet;
   final AnalyzerExhaustivenessCache cache;
@@ -374,7 +475,7 @@ class PatternConverter with SpaceCreator<DartPattern, DartType> {
   });
 
   @override
-  ObjectFieldLookup get objectFieldLookup => cache;
+  ObjectPropertyLookup get objectFieldLookup => cache;
 
   @override
   TypeOperations<DartType> get typeOperations => cache.typeOperations;
@@ -409,17 +510,30 @@ class PatternConverter with SpaceCreator<DartPattern, DartType> {
           path, contextType, pattern.declaredElement!.type,
           nonNull: nonNull);
     } else if (pattern is ObjectPattern) {
-      final fields = <String, DartPattern>{};
+      final properties = <String, DartPattern>{};
+      final extensionPropertyTypes = <String, DartType>{};
       for (final field in pattern.fields) {
         final name = field.effectiveName;
         if (name == null) {
           // Error case, skip field.
           continue;
         }
-        fields[name] = field.pattern;
+        properties[name] = field.pattern;
+        Element? element = field.element;
+        DartType? extensionPropertyType;
+        if (element is PropertyAccessorElement &&
+            element.enclosingElement is ExtensionElement) {
+          extensionPropertyType = element.returnType;
+        } else if (element is ExecutableElement &&
+            element.enclosingElement is ExtensionElement) {
+          extensionPropertyType = element.type;
+        }
+        if (extensionPropertyType != null) {
+          extensionPropertyTypes[name] = extensionPropertyType;
+        }
       }
-      return createObjectSpace(
-          path, contextType, pattern.type.typeOrThrow, fields,
+      return createObjectSpace(path, contextType, pattern.type.typeOrThrow,
+          properties, extensionPropertyTypes,
           nonNull: nonNull);
     } else if (pattern is WildcardPattern) {
       return createWildcardSpace(path, contextType, pattern.type?.typeOrThrow,
@@ -549,17 +663,18 @@ class PatternConverter with SpaceCreator<DartPattern, DartType> {
         return Space(path, cache.getBoolValueStaticType(state.value!));
       }
     } else if (state is RecordState) {
-      final fields = <Key, Space>{};
+      final properties = <Key, Space>{};
       for (var index = 0; index < state.positionalFields.length; index++) {
         final key = RecordIndexKey(index);
         final value = state.positionalFields[index];
-        fields[key] = _convertConstantValue(value, path.add(key));
+        properties[key] = _convertConstantValue(value, path.add(key));
       }
       for (final entry in state.namedFields.entries) {
         final key = RecordNameKey(entry.key);
-        fields[key] = _convertConstantValue(entry.value, path.add(key));
+        properties[key] = _convertConstantValue(entry.value, path.add(key));
       }
-      return Space(path, cache.getStaticType(value.type), fields: fields);
+      return Space(path, cache.getStaticType(value.type),
+          properties: properties);
     }
     final type = value.type;
     if (type is InterfaceType) {
@@ -612,8 +727,9 @@ class TypeParameterReplacer extends ReplacementVisitor {
     if (_variance == Variance.contravariant) {
       return _replaceTypeParameterTypes(_typeSystem.typeProvider.neverType);
     } else {
-      return _replaceTypeParameterTypes(
-          (node.element as TypeParameterElementImpl).defaultType!);
+      final element = node.element as TypeParameterElementImpl;
+      final defaultType = element.defaultType!;
+      return _replaceTypeParameterTypes(defaultType);
     }
   }
 

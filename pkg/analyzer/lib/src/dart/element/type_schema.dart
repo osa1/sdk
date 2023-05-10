@@ -32,6 +32,7 @@ class UnknownInferredType extends TypeImpl {
   @override
   int get hashCode => 1;
 
+  @Deprecated('Use `is UnknownInferredType` instead')
   @override
   bool get isDynamic => true;
 
@@ -84,13 +85,30 @@ class UnknownInferredType extends TypeImpl {
     if (identical(type, UnknownInferredType.instance)) {
       return true;
     }
+
     if (type is InterfaceTypeImpl) {
       return type.typeArguments.any(isUnknown);
     }
+
     if (type is FunctionType) {
       return isUnknown(type.returnType) ||
           type.parameters.any((p) => isUnknown(p.type));
     }
+
+    if (type is RecordType) {
+      for (final field in type.positionalFields) {
+        if (isUnknown(field.type)) {
+          return true;
+        }
+      }
+      for (final field in type.namedFields) {
+        if (isUnknown(field.type)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     return false;
   }
 }

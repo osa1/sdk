@@ -4,6 +4,7 @@
 
 import 'dart:collection';
 
+import 'package:_fe_analyzer_shared/src/exhaustiveness/dart_template_buffer.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/exhaustive.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/space.dart';
 import 'package:analyzer/dart/analysis/declared_variables.dart';
@@ -94,7 +95,8 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
               _currentLibrary.featureSet.isEnabled(Feature.non_nullable),
           configuration: ConstantEvaluationConfiguration(),
         ),
-        _exhaustivenessCache = AnalyzerExhaustivenessCache(_typeSystem) {
+        _exhaustivenessCache =
+            AnalyzerExhaustivenessCache(_typeSystem, _currentLibrary) {
     exhaustivenessDataForTesting = retainDataForTesting
         ? ExhaustivenessDataForTesting(_exhaustivenessCache)
         : null;
@@ -403,6 +405,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         mapPatternKeyValues: mapPatternKeyValues,
         constantPatternValues: constantPatternValues,
         mustBeExhaustive: true,
+        isSwitchExpression: true,
       );
     });
   }
@@ -421,6 +424,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
           constantPatternValues: constantPatternValues,
           mustBeExhaustive:
               _typeSystem.isAlwaysExhaustive(node.expression.typeOrThrow),
+          isSwitchExpression: false,
         );
       } else if (_currentLibrary.isNonNullableByDefault) {
         _validateSwitchStatement_nullSafety(node);
@@ -474,6 +478,9 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
           return _canBeEqual(constantType, bound);
         }
       } else if (valueType is FunctionType) {
+        if (constantType.isDartCoreNull) {
+          return _typeSystem.isNullable(valueType);
+        }
         return false;
       }
     }
@@ -487,10 +494,9 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
   void _checkForConstWithTypeParameters(
       TypeAnnotation type, ErrorCode errorCode) {
     if (type is NamedType) {
-      Identifier name = type.name;
       // Should not be a type parameter.
-      if (name.staticElement is TypeParameterElement) {
-        _errorReporter.reportErrorForNode(errorCode, name);
+      if (type.element is TypeParameterElement) {
+        _errorReporter.reportErrorForNode(errorCode, type);
       }
       // Check type arguments.
       var typeArguments = type.typeArguments;
@@ -600,7 +606,13 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         _errorReporter.reportError(data);
       } else if (errorCode != null) {
         _errorReporter.reportError(
-            AnalysisError(data.source, data.offset, data.length, errorCode));
+          AnalysisError.tmp(
+            source: data.source,
+            offset: data.offset,
+            length: data.length,
+            errorCode: errorCode,
+          ),
+        );
       }
     }
   }
@@ -768,6 +780,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     required Map<Expression, DartObjectImpl> mapPatternKeyValues,
     required Map<ConstantPattern, DartObjectImpl> constantPatternValues,
     required bool mustBeExhaustive,
+    required bool isSwitchExpression,
   }) {
     final scrutineeType = scrutinee.typeOrThrow;
     final scrutineeTypeEx = _exhaustivenessCache.getStaticType(scrutineeType);
@@ -823,14 +836,28 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
           throw UnimplementedError('(${caseNode.runtimeType}) $caseNode');
         }
         _errorReporter.reportErrorForToken(
-          HintCode.UNREACHABLE_SWITCH_CASE,
+          WarningCode.UNREACHABLE_SWITCH_CASE,
           errorToken,
         );
       } else if (error is NonExhaustiveError && reportNonExhaustive) {
+        var errorBuffer = SimpleDartBuffer();
+        error.witness.toDart(errorBuffer, forCorrection: false);
+        var correctionTextBuffer = SimpleDartBuffer();
+        var correctionDataBuffer = AnalyzerDartTemplateBuffer();
+        error.witness.toDart(correctionTextBuffer, forCorrection: true);
+        error.witness.toDart(correctionDataBuffer, forCorrection: true);
         _errorReporter.reportErrorForToken(
-          CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH,
+          isSwitchExpression
+              ? CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION
+              : CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT,
           switchKeyword,
-          [scrutineeType, error.witness.toString()],
+          [
+            scrutineeType,
+            errorBuffer.toString(),
+            correctionTextBuffer.toString(),
+          ],
+          [],
+          correctionDataBuffer.isComplete ? correctionDataBuffer.parts : null,
         );
       }
     }
@@ -999,7 +1026,7 @@ class _ConstLiteralVerifier {
       verifier._errorReporter.reportErrorForNode(errorCode, element);
       return false;
     } else if (element is IfElement) {
-      var conditionValue = verifier._validate(element.condition, errorCode);
+      var conditionValue = verifier._validate(element.expression, errorCode);
       var conditionBool = conditionValue?.toBoolValue();
 
       // The errors have already been reported.

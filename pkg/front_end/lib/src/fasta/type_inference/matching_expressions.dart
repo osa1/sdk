@@ -411,6 +411,7 @@ class MatchingExpressionVisitor
     for (NamedPattern field in node.fields) {
       DelayedExpression expression;
       Member? staticTarget;
+      List<DartType>? typeArguments;
       switch (field.accessKind) {
         case ObjectAccessKind.Object:
           expression = new DelayedInstanceGet(
@@ -423,13 +424,11 @@ class MatchingExpressionVisitor
               isObjectAccess: false, fileOffset: field.fileOffset);
           break;
         case ObjectAccessKind.Static:
-          expression = new DelayedExtensionInvocation(
-              field.target as Procedure,
-              [typedMatchedExpression],
-              field.typeArguments!,
-              field.functionType!,
+          expression = new DelayedExtensionInvocation(field.target as Procedure,
+              [typedMatchedExpression], field.typeArguments!, field.resultType!,
               fileOffset: field.fileOffset);
           staticTarget = field.target;
+          typeArguments = field.typeArguments;
           break;
         case ObjectAccessKind.RecordNamed:
           expression = new DelayedRecordNameGet(
@@ -461,7 +460,7 @@ class MatchingExpressionVisitor
           break;
         case ObjectAccessKind.FunctionTearOff:
           expression = new DelayedFunctionTearOff(
-              typedMatchedExpression, node.lookupType!,
+              typedMatchedExpression, node.requiredType,
               fileOffset: field.fileOffset);
           break;
         case ObjectAccessKind.Error:
@@ -473,7 +472,14 @@ class MatchingExpressionVisitor
       CacheableExpression objectExpression =
           matchingCache.createPropertyGetExpression(
               typedMatchedExpression, field.fieldName.text, expression,
-              staticTarget: staticTarget, fileOffset: field.fileOffset);
+              staticTarget: staticTarget,
+              typeArguments: typeArguments,
+              fileOffset: field.fileOffset);
+      if (field.checkReturn) {
+        objectExpression = new CovariantCheckCacheableExpression(
+            objectExpression, field.resultType!,
+            fileOffset: field.fileOffset);
+      }
 
       DelayedExpression subExpression =
           visitPattern(field.pattern, objectExpression);
@@ -565,6 +571,8 @@ class MatchingExpressionVisitor
   @override
   DelayedExpression visitRelationalPattern(
       RelationalPattern node, CacheableExpression matchedExpression) {
+    matchedExpression = matchedExpression.promote(node.matchedValueType!);
+
     CacheableExpression constant = matchingCache.createConstantExpression(
         node.expressionValue!, node.expressionType!,
         fileOffset: node.expression.fileOffset);
@@ -590,6 +598,7 @@ class MatchingExpressionVisitor
       case RelationalPatternKind.greaterThanEqual:
         DelayedExpression expression;
         Member? staticTarget;
+        List<DartType>? typeArguments;
         switch (node.accessKind) {
           case RelationalAccessKind.Instance:
             FunctionType functionType = node.functionType!;
@@ -616,9 +625,11 @@ class MatchingExpressionVisitor
                       isImplicit: true, fileOffset: node.fileOffset)
                 ],
                 node.typeArguments!,
-                functionType,
+                functionType.returnType,
                 fileOffset: node.fileOffset);
             staticTarget = node.target;
+            typeArguments = node.typeArguments!;
+
             break;
           case RelationalAccessKind.Dynamic:
             expression = new DelayedDynamicInvocation(
@@ -653,7 +664,9 @@ class MatchingExpressionVisitor
             isImplicit: true, fileOffset: node.fileOffset);
         return matchingCache.createComparisonExpression(
             matchedExpression, node.name!.text, constant, expression,
-            staticTarget: staticTarget, fileOffset: node.fileOffset);
+            staticTarget: staticTarget,
+            typeArguments: typeArguments,
+            fileOffset: node.fileOffset);
     }
   }
 
@@ -669,8 +682,7 @@ class MatchingExpressionVisitor
   @override
   DelayedExpression visitVariablePattern(
       VariablePattern node, CacheableExpression matchedExpression) {
-    DartType matchedType = node.matchedValueType!;
-    matchedExpression = matchedExpression.promote(matchedType);
+    matchedExpression = matchedExpression.promote(node.matchedValueType!);
     DelayedExpression? matchingExpression;
     if (node.type != null) {
       matchingExpression = new DelayedIsExpression(

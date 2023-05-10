@@ -627,30 +627,36 @@ CompileType* CompileType::ComputeRefinedType(CompileType* old_type,
     return old_type;
   }
 
-  // Prefer exact Cid if known.
-  if (new_type->ToCid() != kDynamicCid) {
-    return new_type;
-  }
-  if (old_type->ToCid() != kDynamicCid) {
-    return old_type;
-  }
-
-  const AbstractType* old_abstract_type = old_type->ToAbstractType();
-  const AbstractType* new_abstract_type = new_type->ToAbstractType();
   CompileType* preferred_type = nullptr;
 
-  // Prefer 'int' if known.
-  if (old_type->IsNullableInt()) {
-    preferred_type = old_type;
-  } else if (new_type->IsNullableInt()) {
-    preferred_type = new_type;
-  } else if (old_abstract_type->IsSubtypeOf(*new_abstract_type, Heap::kOld)) {
-    // Prefer old type, as it is clearly more specific.
-    preferred_type = old_type;
-  } else {
-    // Prefer new type as it is more recent, even though it might be
-    // no better than the old type.
-    preferred_type = new_type;
+  // Prefer exact Cid if known.
+  const intptr_t new_type_cid = new_type->ToCid();
+  const intptr_t old_type_cid = old_type->ToCid();
+  if (new_type_cid != old_type_cid) {
+    if (new_type_cid != kDynamicCid) {
+      preferred_type = new_type;
+    } else if (old_type_cid != kDynamicCid) {
+      preferred_type = old_type;
+    }
+  }
+
+  if (preferred_type == nullptr) {
+    const AbstractType* old_abstract_type = old_type->ToAbstractType();
+    const AbstractType* new_abstract_type = new_type->ToAbstractType();
+
+    // Prefer 'int' if known.
+    if (old_type->IsNullableInt()) {
+      preferred_type = old_type;
+    } else if (new_type->IsNullableInt()) {
+      preferred_type = new_type;
+    } else if (old_abstract_type->IsSubtypeOf(*new_abstract_type, Heap::kOld)) {
+      // Prefer old type, as it is clearly more specific.
+      preferred_type = old_type;
+    } else {
+      // Prefer new type as it is more recent, even though it might be
+      // no better than the old type.
+      preferred_type = new_type;
+    }
   }
 
   // Refine non-nullability and whether it can be sentinel.
@@ -925,7 +931,6 @@ static bool CanPotentiallyBeSmi(const AbstractType& type, bool recurse) {
     // Comparable<int>).
     if (type.IsFutureOrType() ||
         type.type_class() == CompilerState::Current().ComparableClass().ptr()) {
-      // Type may be a TypeRef.
       const auto& args = TypeArguments::Handle(type.arguments());
       const auto& arg0 = AbstractType::Handle(args.TypeAt(0));
       return !recurse || CanPotentiallyBeSmi(arg0, /*recurse=*/true);
@@ -1514,14 +1519,18 @@ static CompileType ComputeListFactoryType(CompileType* inferred_type,
   if ((cid == kGrowableObjectArrayCid || cid == kArrayCid ||
        cid == kImmutableArrayCid) &&
       type_args_value->BindsToConstant()) {
-    const auto& type_args =
-        type_args_value->BoundConstant().IsNull()
-            ? TypeArguments::null_type_arguments()
-            : TypeArguments::Cast(type_args_value->BoundConstant());
+    Thread* thread = Thread::Current();
+    Zone* zone = thread->zone();
     const Class& cls =
-        Class::Handle(IsolateGroup::Current()->class_table()->At(cid));
-    Type& type =
-        Type::ZoneHandle(Type::New(cls, type_args, Nullability::kNonNullable));
+        Class::Handle(zone, thread->isolate_group()->class_table()->At(cid));
+    auto& type_args = TypeArguments::Handle(zone);
+    if (!type_args_value->BoundConstant().IsNull()) {
+      type_args ^= type_args_value->BoundConstant().ptr();
+      ASSERT(type_args.Length() >= cls.NumTypeArguments());
+      type_args = type_args.FromInstanceTypeArguments(thread, cls);
+    }
+    Type& type = Type::ZoneHandle(
+        zone, Type::New(cls, type_args, Nullability::kNonNullable));
     ASSERT(type.IsInstantiated());
     type.SetIsFinalized();
     return CompileType(CompileType::kCannotBeNull,
@@ -1921,7 +1930,8 @@ static AbstractTypePtr ExtractElementTypeFromArrayType(
       cid == kImmutableArrayCid ||
       array_type.type_class() ==
           IsolateGroup::Current()->object_store()->list_class()) {
-    const auto& type_args = TypeArguments::Handle(array_type.arguments());
+    const auto& type_args =
+        TypeArguments::Handle(Type::Cast(array_type).arguments());
     return type_args.TypeAtNullSafe(Array::kElementTypeTypeArgPos);
   }
   return Object::dynamic_type().ptr();

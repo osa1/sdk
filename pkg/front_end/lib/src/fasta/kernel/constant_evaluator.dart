@@ -399,10 +399,10 @@ class ConstantsTransformer extends RemovingTransformer {
   final bool errorOnUnevaluatedConstant;
   final bool isLateLocalLoweringEnabled;
 
-  /// Cache used for checking exhaustiveness.
-  late final CfeExhaustivenessCache exhaustivenessCache;
-
   final ExhaustivenessDataForTesting? _exhaustivenessDataForTesting;
+
+  /// Cache used for checking exhaustiveness.
+  CfeExhaustivenessCache? _exhaustivenessCache;
 
   ConstantsTransformer(
       Target target,
@@ -431,9 +431,7 @@ class ConstantsTransformer extends RemovingTransformer {
             enableConstFunctions: enableConstFunctions,
             errorOnUnevaluatedConstant: errorOnUnevaluatedConstant,
             evaluationMode: evaluationMode),
-        _exhaustivenessDataForTesting = exhaustivenessDataForTesting {
-    exhaustivenessCache = new CfeExhaustivenessCache(constantEvaluator);
-  }
+        _exhaustivenessDataForTesting = exhaustivenessDataForTesting {}
 
   /// Whether to preserve constant [Field]s. All use-sites will be rewritten.
   bool get keepFields => backend.keepFields;
@@ -451,6 +449,9 @@ class ConstantsTransformer extends RemovingTransformer {
   void convertLibrary(Library library) {
     _staticTypeContext =
         new StaticTypeContext.forAnnotations(library, typeEnvironment);
+
+    _exhaustivenessCache =
+        new CfeExhaustivenessCache(constantEvaluator, library);
 
     transformAnnotations(library.annotations, library);
 
@@ -471,6 +472,7 @@ class ConstantsTransformer extends RemovingTransformer {
       });
     }
     _staticTypeContext = null;
+    _exhaustivenessCache = null;
   }
 
   @override
@@ -1083,7 +1085,7 @@ class ConstantsTransformer extends RemovingTransformer {
     // statements.
     node.expression = transform(node.expression)..parent = node;
 
-    DartType scrutineeType = node.expressionType!;
+    DartType scrutineeType = node.expressionType;
 
     // If `true`, the switch expressions consists solely of guard-less constant
     // patterns whose value has a primitive equals method. For this case we
@@ -1129,6 +1131,7 @@ class ConstantsTransformer extends RemovingTransformer {
         computeIsAlwaysExhaustiveType(scrutineeType, typeEnvironment.coreTypes);
 
     Statement replacement;
+    LabeledStatement? outerLabeledStatement;
     if (primitiveEqualConstantsOnly) {
       List<SwitchCase> switchCases = [];
       for (PatternSwitchCase patternSwitchCase in node.cases) {
@@ -1155,7 +1158,6 @@ class ConstantsTransformer extends RemovingTransformer {
         }
       }
 
-      LabeledStatement? outerLabeledStatement;
       if (isAlwaysExhaustiveType &&
           !hasDefault &&
           constantEvaluator.evaluationMode != EvaluationMode.strong) {
@@ -1197,12 +1199,8 @@ class ConstantsTransformer extends RemovingTransformer {
 
       replacement = createSwitchStatement(node.expression, switchCases,
           isExplicitlyExhaustive: !hasDefault && isAlwaysExhaustiveType,
+          expressionType: scrutineeType,
           fileOffset: node.fileOffset);
-      if (outerLabeledStatement != null) {
-        outerLabeledStatement.body = replacement
-          ..parent = outerLabeledStatement;
-        replacement = outerLabeledStatement;
-      }
     } else {
       // matchResultVariable: int RVAR = -1;
       VariableDeclaration matchResultVariable = createInitializedVariable(
@@ -1260,6 +1258,11 @@ class ConstantsTransformer extends RemovingTransformer {
       // variables and labels on the same switch case.
       Map<String, List<VariableDeclaration>> declaredVariablesByName = {};
 
+      // In weak mode we need to throw on `null` for non-nullable types.
+      bool needsThrowForNull = isAlwaysExhaustiveType &&
+          !hasDefault &&
+          constantEvaluator.evaluationMode != EvaluationMode.strong;
+
       for (int caseIndex = 0; caseIndex < node.cases.length; caseIndex++) {
         PatternSwitchCase switchCase = node.cases[caseIndex];
         Statement body = switchCase.body;
@@ -1269,7 +1272,11 @@ class ConstantsTransformer extends RemovingTransformer {
         Map<String, VariableDeclaration> caseDeclaredVariableHelpersByName = {
           for (VariableDeclaration variable in switchCase.jointVariables)
             variable.name!: createUninitializedVariable(const DynamicType(),
-                fileOffset: node.fileOffset)
+                // Avoid step debugging on the declaration of intermediate
+                // variables.
+                // TODO(johnniwinther): Find a more systematic way of omitting
+                // offsets for better step debugging.
+                fileOffset: TreeNode.noOffset)
         };
 
         bool isContinueTarget = switchCaseIndex.containsKey(switchCase);
@@ -1433,13 +1440,28 @@ class ConstantsTransformer extends RemovingTransformer {
           caseBlock = createIfStatement(caseCondition, caseBlock,
               fileOffset: switchCase.fileOffset);
         }
-        cases.add(createBlock([...caseVariables, caseBlock],
-            fileOffset: switchCase.fileOffset));
+        BreakStatement? breakStatement;
+        if (caseIndex == node.cases.length - 1 &&
+            needsThrowForNull &&
+            !node.lastCaseTerminates) {
+          LabeledStatement target;
+          if (node.parent is LabeledStatement) {
+            target = node.parent as LabeledStatement;
+          } else {
+            target =
+                outerLabeledStatement = new LabeledStatement(dummyStatement);
+          }
+          breakStatement =
+              createBreakStatement(target, fileOffset: switchCase.fileOffset);
+        }
+        cases.add(createBlock([
+          ...caseVariables,
+          caseBlock,
+          if (breakStatement != null) breakStatement
+        ], fileOffset: switchCase.fileOffset));
       }
 
-      if (isAlwaysExhaustiveType &&
-          !hasDefault &&
-          constantEvaluator.evaluationMode != EvaluationMode.strong) {
+      if (needsThrowForNull) {
         cases.add(
             createExpressionStatement(createThrow(createConstructorInvocation(
                 typeEnvironment.coreTypes.reachabilityErrorConstructor,
@@ -1473,7 +1495,9 @@ class ConstantsTransformer extends RemovingTransformer {
           innerLabeledStatement,
           createSwitchStatement(
               createVariableGet(matchResultVariable), replacementCases,
-              isExplicitlyExhaustive: false, fileOffset: node.fileOffset)
+              isExplicitlyExhaustive: false,
+              expressionType: scrutineeType,
+              fileOffset: node.fileOffset)
         ];
       } else {
         replacementStatements = [
@@ -1491,6 +1515,11 @@ class ConstantsTransformer extends RemovingTransformer {
           ..fileOffset = node.fileOffset;
       }
     }
+    if (outerLabeledStatement != null) {
+      outerLabeledStatement.body = replacement..parent = outerLabeledStatement;
+      replacement = outerLabeledStatement;
+    }
+
     List<PatternGuard> patternGuards = [];
     for (PatternSwitchCase switchCase in node.cases) {
       patternGuards.addAll(switchCase.patternGuards);
@@ -1498,7 +1527,8 @@ class ConstantsTransformer extends RemovingTransformer {
     _checkExhaustiveness(node, replacement, scrutineeType, patternGuards,
         hasDefault: hasDefault,
         mustBeExhaustive: isAlwaysExhaustiveType,
-        fileOffset: node.expression.fileOffset);
+        fileOffset: node.expression.fileOffset,
+        isSwitchExpression: false);
     // TODO(johnniwinther): Avoid this work-around for [getFileUri].
     replacement.parent = node.parent;
     // TODO(johnniwinther): Avoid transform of [replacement] by generating
@@ -1510,11 +1540,16 @@ class ConstantsTransformer extends RemovingTransformer {
       DartType expressionType, List<PatternGuard> patternGuards,
       {required int fileOffset,
       required bool hasDefault,
-      required bool mustBeExhaustive}) {
-    StaticType type = exhaustivenessCache.getStaticType(expressionType);
+      required bool mustBeExhaustive,
+      required bool isSwitchExpression}) {
+    StaticType type = _exhaustivenessCache!.getStaticType(
+        // Treat invalid types as empty.
+        expressionType is InvalidType
+            ? const NeverType.nonNullable()
+            : expressionType);
     List<Space> cases = [];
     PatternConverter patternConverter = new PatternConverter(
-        exhaustivenessCache, staticTypeContext,
+        _exhaustivenessCache!, staticTypeContext,
         hasPrimitiveEquality: (Constant constant) => constantEvaluator
             .hasPrimitiveEqual(constant, staticTypeContext: staticTypeContext));
     for (PatternGuard patternGuard in patternGuards) {
@@ -1522,7 +1557,7 @@ class ConstantsTransformer extends RemovingTransformer {
           hasGuard: patternGuard.guard != null));
     }
     List<ExhaustivenessError> errors =
-        reportErrors(exhaustivenessCache, type, cases);
+        reportErrors(_exhaustivenessCache!, type, cases);
     List<ExhaustivenessError>? reportedErrors;
     if (_exhaustivenessDataForTesting != null) {
       reportedErrors = [];
@@ -1551,12 +1586,18 @@ class ConstantsTransformer extends RemovingTransformer {
             constantEvaluator.createLocatedMessageWithOffset(
                 node,
                 fileOffset,
-                templateNonExhaustiveSwitch.withArguments(expressionType,
-                    '${error.witness}', library.isNonNullableByDefault)));
+                (isSwitchExpression
+                        ? templateNonExhaustiveSwitchExpression
+                        : templateNonExhaustiveSwitchStatement)
+                    .withArguments(
+                        expressionType,
+                        error.witness.asWitness,
+                        error.witness.asCorrection,
+                        library.isNonNullableByDefault)));
       }
     }
     if (_exhaustivenessDataForTesting != null) {
-      _exhaustivenessDataForTesting!.objectFieldLookup ??= exhaustivenessCache;
+      _exhaustivenessDataForTesting!.objectFieldLookup ??= _exhaustivenessCache;
       _exhaustivenessDataForTesting!.switchResults[replacement] =
           new ExhaustivenessResult(type, cases,
               patternGuards.map((c) => c.fileOffset).toList(), reportedErrors!);
@@ -1844,9 +1885,12 @@ class ConstantsTransformer extends RemovingTransformer {
 
     Expression replacement;
     if (primitiveEqualConstantsOnly) {
-      VariableDeclaration valueVariable = createUninitializedVariable(
-          node.staticType!,
-          fileOffset: node.fileOffset);
+      VariableDeclaration valueVariable =
+          createUninitializedVariable(node.staticType!,
+              // Avoid step debugging on the declarations of the value variable.
+              // TODO(johnniwinther): Find a more systematic way of omitting
+              // offsets for better step debugging.
+              fileOffset: TreeNode.noOffset);
 
       LabeledStatement labeledStatement =
           createLabeledStatement(dummyStatement, fileOffset: node.fileOffset);
@@ -1895,7 +1939,9 @@ class ConstantsTransformer extends RemovingTransformer {
 
       labeledStatement.body = createSwitchStatement(
           node.expression, switchCases,
-          isExplicitlyExhaustive: true, fileOffset: node.fileOffset)
+          isExplicitlyExhaustive: true,
+          expressionType: scrutineeType,
+          fileOffset: node.fileOffset)
         ..parent = labeledStatement;
       replacement = createBlockExpression(
           createBlock([
@@ -1918,9 +1964,12 @@ class ConstantsTransformer extends RemovingTransformer {
           createLabeledStatement(dummyStatement, fileOffset: node.fileOffset);
 
       // valueVariable: `valueType` valueVariable;
-      VariableDeclaration valueVariable = createUninitializedVariable(
-          node.staticType!,
-          fileOffset: node.fileOffset);
+      VariableDeclaration valueVariable =
+          createUninitializedVariable(node.staticType!,
+              // Avoid step debugging on the declaration of the value variable.
+              // TODO(johnniwinther): Find a more systematic way of omitting
+              // offsets for better step debugging.
+              fileOffset: TreeNode.noOffset);
 
       List<Statement> cases = [];
 
@@ -1959,7 +2008,11 @@ class ConstantsTransformer extends RemovingTransformer {
               caseCondition,
               createBlock([
                 createExpressionStatement(createVariableSet(valueVariable, body,
-                    fileOffset: node.fileOffset)),
+                    // Avoid step debugging on the assignment to the value
+                    // variable.
+                    // TODO(johnniwinther): Find a more systematic way of
+                    //  omitting offsets for better step debugging.
+                    fileOffset: TreeNode.noOffset)),
                 createBreakStatement(labeledStatement,
                     fileOffset: switchCase.fileOffset),
               ], fileOffset: switchCase.fileOffset),
@@ -1996,8 +2049,10 @@ class ConstantsTransformer extends RemovingTransformer {
     }
     _checkExhaustiveness(node, replacement, scrutineeType, patternGuards,
         hasDefault: false,
-        mustBeExhaustive: true,
-        fileOffset: node.expression.fileOffset);
+        // Don't check exhaustiveness on erroneous expressions.
+        mustBeExhaustive: scrutineeType is! InvalidType,
+        fileOffset: node.expression.fileOffset,
+        isSwitchExpression: true);
 
     // TODO(johnniwinther): Avoid this work-around for [getFileUri].
     replacement.parent = node.parent;

@@ -566,7 +566,8 @@ abstract class C {
 
 ### abstract_sealed_class
 
-_A class can't be declared both 'sealed' and 'abstract'._
+_A 'sealed' class can't be marked 'abstract' because it's already implicitly
+abstract._
 
 #### Description
 
@@ -1645,7 +1646,7 @@ for-in loop:
 
 {% prettify dart tag=pre+code %}
 void f(list) {
-  await for (var e [!in!] list) {
+  [!await!] for (var e in list) {
     print(e);
   }
 }
@@ -4980,7 +4981,7 @@ matched twice in the same object pattern:
 
 {% prettify dart tag=pre+code %}
 void f(Object o) {
-  switch (0) {
+  switch (o) {
     case C(f: 1, [!f!]: 2):
       return;
   }
@@ -12154,7 +12155,7 @@ dependencies:
   meta: ^1.0.2
 ```
 
-### missing_object_pattern_getter_name
+### missing_named_pattern_field_name
 
 _The getter name is not specified explicitly, and the pattern is not a
 variable._
@@ -14277,9 +14278,66 @@ enum E {
 }
 {% endprettify %}
 
-### non_exhaustive_switch
+### non_exhaustive_switch_expression
 
-_The type '{0}' is not exhaustively matched by the switch cases._
+_The type '{0}' is not exhaustively matched by the switch cases since it doesn't
+match '{1}'._
+
+#### Description
+
+The analyzer produces this diagnostic when a `switch` expression is
+missing a case for one or more of the possible values that could flow
+through it.
+
+#### Example
+
+The following code produces this diagnostic because the switch expression
+doesn't have a case for the value `E.three`:
+
+{% prettify dart tag=pre+code %}
+enum E { one, two, three }
+
+String f(E e) => [!switch!] (e) {
+    E.one => 'one',
+    E.two => 'two',
+  };
+{% endprettify %}
+
+#### Common fixes
+
+Add a case for each of the constants that aren't currently being matched:
+
+{% prettify dart tag=pre+code %}
+enum E { one, two, three }
+
+String f(E e) => switch (e) {
+    E.one => 'one',
+    E.two => 'two',
+    E.three => 'three',
+  };
+{% endprettify %}
+
+If the missing values don't need to be matched, then add  a wildcard
+pattern:
+
+{% prettify dart tag=pre+code %}
+enum E { one, two, three }
+
+String f(E e) => switch (e) {
+    E.one => 'one',
+    E.two => 'two',
+    _ => 'unknown',
+  };
+{% endprettify %}
+
+But be aware that adding a wildcard pattern will cause any future values
+of the type to also be handled, so you will have lost the ability for the
+compiler to warn you if the `switch` needs to be updated.
+
+### non_exhaustive_switch_statement
+
+_The type '{0}' is not exhaustively matched by the switch cases since it doesn't
+match '{1}'._
 
 #### Description
 
@@ -14322,7 +14380,7 @@ void f(E e) {
 {% endprettify %}
 
 If the missing values don't need to be matched, then add a `default`
-clause (or a wildcard pattern in a `switch` expression):
+clause or a wildcard pattern:
 
 {% prettify dart tag=pre+code %}
 enum E { one, two, three }
@@ -16252,6 +16310,40 @@ void f(int x) {
   if (x case var a when 1 > 0) {
     print(a);
   }
+}
+{% endprettify %}
+
+### positional_field_in_object_pattern
+
+_Object patterns can only use named fields._
+
+#### Description
+
+The analyzer produces this diagnostic when an object pattern contains a
+field that doesn't have a getter name. The fields provide a pattern to
+match against the value returned by a getter, and not specifying the name
+of the getter means that there's no way to access the value that the
+pattern is intended to match against.
+
+#### Example
+
+The following code produces this diagnostic because the object pattern
+`String(1)` doesn't say which value to compare with `1`:
+
+{% prettify dart tag=pre+code %}
+void f(Object o) {
+  if (o case String([!1!])) {}
+}
+{% endprettify %}
+
+#### Common fixes
+
+Add both the name of the getter to use to access the value and a colon
+before the value:
+
+{% prettify dart tag=pre+code %}
+void f(Object o) {
+  if (o case String(length: 1)) {}
 }
 {% endprettify %}
 

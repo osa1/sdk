@@ -1,18 +1,179 @@
-## 3.0.0
+## 3.1.0
 
 ### Language
 
-- **Breaking Change** [#50902][]: Report a compile-time error for a `continue` statement
-  having an invalid target.
+### Libraries
 
-  As per 18.15 of the language spec, it is a compile-time error for a `continue`
-  label to have a target which is not a loop (`for`, `do` and `while` statements)
-  or a `switch` member.
+#### `dart:io`
 
-  Breakage is mitigated by changing the code to have the `continue` label properly
-  target a valid labeled statement.
+- **Breaking change** [#51486][]:
+  - Added `sameSite` to the `Cookie` class.
+  - Added class `SameSite`.
 
+[#51486]: https://github.com/dart-lang/sdk/issues/51486
+
+### Other libraries
+
+#### `package:js`
+
+- **Breaking change to `@staticInterop` and `external` extension members**:
+  `external` `@staticInterop` members and `external` extension members can no
+  longer be used as tear-offs. Declare a closure or a non-`external` method that
+  calls these members, and use that instead.
+- **Breaking change to `@staticInterop` and `external` extension members**:
+  `external` `@staticInterop` members and `external` extension members will
+  generate slightly different JS code for methods that have optional parameters.
+  Whereas before, the JS code passed in the default value for missing optionals,
+  it will now pass in only the provided members. This aligns with how JS
+  parameters work, where omitted parameters are actually omitted. For example,
+  calling `external void foo([int a, int b])` as `foo(0)` will now result in
+  `foo(0)`, and not `foo(0, null)`.
+
+### Tools
+
+## 3.0.0 - 2023-05-10
+
+### Language
+
+Dart 3.0 adds the following features. To use them, set your package's [SDK
+constraint][language version] lower bound to 3.0 or greater (`sdk: '^3.0.0'`).
+
+[language version]: https://dart.dev/guides/language/evolution
+
+- **[Records]**: Records are anonymous immutable data structures that let you
+  aggregate multiple values together, similar to [tuples][] in other languages.
+  With records, you can return multiple values from a function, create composite
+  map keys, or use them any other place where you want to bundle a couple of
+  objects together.
+
+  For example, using a record to return two values:
+
+  ```dart
+  (double x, double y) geoLocation(String name) {
+    if (name == 'Nairobi') {
+      return (-1.2921, 36.8219);
+    } else {
+      ...
+    }
+  }
+  ```
+
+- **[Pattern matching]**: Expressions build values out of smaller pieces.
+  Conversely, patterns are an expressive tool for decomposing values back into
+  their constituent parts. Patterns can call getters on an object, access
+  elements from a list, pull fields out of a record, etc. For example, we can
+  destructure the record from the previous example like so:
+
+  ```dart
+  var (lat, long) = geoLocation('Nairobi');
+  print('Nairobi is at $lat, $long.');
+  ```
+
+  Patterns can also be used in [switch cases]. There, you can destructure values
+  and also test them to see if they have a certain type or value:
+
+  ```dart
+  switch (object) {
+    case [int a]:
+      print('A list with a single integer element $a');
+    case ('name', _):
+      print('A two-element record whose first field is "name".');
+    default: print('Some other object.');
+  }
+  ```
+
+  Also, as you can see, non-empty switch cases no longer need `break;`
+  statements.
+
+  **Breaking change**: Dart 3.0 interprets [switch cases] as patterns instead of
+  constant expressions. Most constant expressions found in switch cases are
+  valid patterns with the same meaning (named constants, literals, etc.). You
+  may need to tweak a few constant expressions to make them valid. This only
+  affects libraries that have upgraded to language version 3.0.
+
+- **[Switch expressions]**: Switch expressions allow you to use patterns and
+  multi-way branching in contexts where a statement isn't allowed:
+
+  ```dart
+  return TextButton(
+    onPressed: _goPrevious,
+    child: Text(switch (page) {
+      0 => 'Exit story',
+      1 => 'First page',
+      _ when page == _lastPage => 'Start over',
+      _ => 'Previous page',
+    }),
+  );
+  ```
+
+- **[If-case statements and elements]**: A new if construct that matches a value
+  against a pattern and executes the then or else branch depending on whether
+  the pattern matches:
+
+  ```dart
+  if (json case ['user', var name]) {
+    print('Got user message for user $name.');
+  }
+  ```
+
+  There is also a corresponding [if-case element] that can be used in collection
+  literals.
+
+- **[Sealed classes]**: When you mark a type `sealed`, the compiler ensures that
+  switches on values of that type [exhaustively cover] every subtype. This
+  enables you to program in an [algebraic datatype][] style with the
+  compile-time safety you expect:
+
+  ```dart
+  sealed class Amigo {}
+  class Lucky extends Amigo {}
+  class Dusty extends Amigo {}
+  class Ned extends Amigo {}
+
+  String lastName(Amigo amigo) =>
+      switch (amigo) {
+        case Lucky _ => 'Day';
+        case Ned _   => 'Nederlander';
+      }
+  ```
+
+  In this last example, the compiler reports an error that the switch doesn't
+  cover the subclass `Dusty`.
+
+- **[Class modifiers]**: New modifiers `final`, `interface`, `base`, and `mixin`
+  on `class` and `mixin` declarations let you control how the type can be used.
+  By default, Dart is flexible in that a single class declaration can be used as
+  an interface, a superclass, or even a mixin. This flexibility can make it
+  harder to evolve an API over time without breaking users. We mostly keep the
+  current flexible defaults, but these new modifiers give you finer-grained
+  control over how the type can be used.
+
+  **Breaking change:** Class declarations from libraries that have been upgraded
+  to Dart 3.0 can no longer be used as mixins by default. If you want the class
+  to be usable as both a class and a mixin, mark it [`mixin class`][mixin
+  class]. If you want it to be used only as a mixin, make it a `mixin`
+  declaration. If you haven't upgraded a class to Dart 3.0, you can still use it
+  as a mixin.
+
+- **Breaking Change** [#50902][]: Dart reports a compile-time error if a
+  `continue` statement targets a [label] that is not a loop (`for`, `do` and
+  `while` statements) or a `switch` member. Fix this by changing the `continue`
+  to target a valid labeled statement.
+
+[records]: https://dart.dev/language/records
+[tuples]: https://en.wikipedia.org/wiki/Tuple
+[pattern matching]: https://dart.dev/language/patterns
+[switch cases]: https://dart.dev/language/branches#switch
+[switch expressions]: https://dart.dev/language/branches#switch-expressions
+[if-case statements and elements]: https://dart.dev/language/branches#if-case
+[if-case element]: https://dart.dev/language/collections#control-flow-operators
+[sealed classes]: https://dart.dev/language/class-modifiers#sealed
+[exhaustively cover]: https://dart.dev/language/branches#exhaustiveness-checking
+[algebraic datatype]: https://en.wikipedia.org/wiki/Algebraic_data_type
+[class modifiers]: https://dart.dev/language/class-modifiers
+[mixin class]: https://dart.dev/language/mixins#class-mixin-or-mixin-class
 [#50902]: https://github.com/dart-lang/sdk/issues/50902
+[label]: https://dart.dev/language/branches#switch
 
 ### Libraries
 
@@ -21,7 +182,9 @@
 - **Breaking Change**: Non-`mixin` classes in the platform libraries
   can no longer be mixed in, unless they are explicitly marked as `mixin class`.
   The following existing classes have been made mixin classes:
-  * `IterableMixin`
+  * `Iterable`
+  * `IterableMixin` (now alias for `Iterable`)
+  * `IterableBase` (now alias for `Iterable`)
   * `ListMixin`
   * `SetMixin`
   * `MapMixin`
@@ -31,6 +194,7 @@
 #### `dart:core`
 - Added `bool.parse` and `bool.tryParse` static methods.
 - Added `DateTime.timestamp()` constructor to get current time as UTC.
+- The type of `RegExpMatch.pattern` is now `RegExp`, not just `Pattern`.
 
 - **Breaking change** [#49529][]:
   - Removed the deprecated `List` constructor, as it wasn't null safe.
@@ -80,6 +244,7 @@
     * `RegExpMatch`
     * `StackTrace`
     * `StringSink`
+
     None of these declarations contained any implementation to inherit,
     and are marked as `interface` to signify that they are only intended
     as interfaces.
@@ -90,6 +255,7 @@
     * `Expando`
     * `WeakReference`
     * `Finalizer`
+
     The `MapEntry` value class is restricted to enable later optimizations.
     The remaining classes are tightly coupled to the platform and not
     intended to be subclassed or implemented.
@@ -121,6 +287,8 @@
 
 #### `dart:async`
 
+- Added extension member `wait` on iterables and 2-9 tuples of futures.
+
 - **Breaking change** [#49529][]:
   - Removed the deprecated [`DeferredLibrary`][] class.
     Use the [`deferred as`][] import syntax instead.
@@ -131,7 +299,30 @@
 
 #### `dart:collection`
 
+- Added extension members `nonNulls`, `firstOrNull`, `lastOrNull`,
+  `singleOrNull`, `elementAtOrNull` and `indexed` on `Iterable`s.
+  Also exported from `dart:core`.
 - Deprecated the `HasNextIterator` class ([#50883][]).
+
+- **Breaking change when migrating code to Dart 3.0**:
+  Some changes to platform libraries only affect code when it is migrated
+  to language version 3.0.
+  - The following interface can no longer be extended, only implemented:
+    * `Queue`
+  - The following implementation classes can no longer be implemented:
+    * `LinkedList`
+    * `LinkedListEntry`
+  - The following implementation classes can no longer be implemented
+    or extended:
+    * `HasNextIterator` (Also deprecated.)
+    * `HashMap`
+    * `LinkedHashMap`
+    * `HashSet`
+    * `LinkedHashSet`
+    * `DoubleLinkedQueue`
+    * `ListQueue`
+    * `SplayTreeMap`
+    * `SplayTreeSet`
 
 [#50883]: https://github.com/dart-lang/sdk/issues/50883
 
@@ -172,17 +363,24 @@
 
 #### `dart:io`
 
-- Deprecated `NetworkInterface.listSupported`. Has always returned true since
+- Added `name` and `signalNumber` to the `ProcessSignal` class.
+- Deprecate `NetworkInterface.listSupported`. Has always returned true since
   Dart 2.3.
 - Finalize `httpEnableTimelineLogging` parameter name transition from `enable`
   to `enabled`. See [#43638][].
+- Favor IPv4 connections over IPv6 when connecting sockets. See
+  [#50868].
 - **Breaking change** [#51035][]:
   - Update `NetworkProfiling` to accommodate new `String` ids
     that are introduced in vm_service:11.0.0
 
+[#43638]: https://github.com/dart-lang/sdk/issues/43638
+[#50868]: https://github.com/dart-lang/sdk/issues/50868
+[#51035]: https://github.com/dart-lang/sdk/issues/51035
+
 #### `dart:js_util`
 
-- Added several helper functions to access more JavaScript operator, like
+- Added several helper functions to access more JavaScript operators, like
   `delete` and the `typeof` functionality.
 - `jsify` is now permissive and has inverse semantics to `dartify`.
 - `jsify` and `dartify` both handle types they understand natively more
@@ -192,8 +390,26 @@
 
 ### Tools
 
+#### Observatory
+- Observatory is no longer served by default and users should instead use Dart
+  DevTools. Users requiring specific functionality in Observatory should set
+  the `--serve-observatory` flag.
+
 #### Web Dev Compiler (DDC)
 - Removed deprecated command line flags `-k`, `--kernel`, and `--dart-sdk`.
+- The compile time flag `--nativeNonNullAsserts`, which ensures web library APIs
+are sound in their nullability, is by default set to true in sound mode. For
+more information on the flag, see [NATIVE_NULL_ASSERTIONS.md][].
+
+[NATIVE_NULL_ASSERTIONS.md]: https://github.com/dart-lang/sdk/blob/main/sdk/lib/html/doc/NATIVE_NULL_ASSERTIONS.md
+
+#### dart2js
+- The compile time flag `--native-null-assertions`, which ensures web library
+APIs are sound in their nullability, is by default set to true in sound mode,
+unless `-O3` or higher is passed, in which case they are not checked. For more
+information on the flag, see [NATIVE_NULL_ASSERTIONS.md][].
+
+[NATIVE_NULL_ASSERTIONS.md]: https://github.com/dart-lang/sdk/blob/main/sdk/lib/html/doc/NATIVE_NULL_ASSERTIONS.md
 
 #### Dart2js
 
@@ -223,15 +439,22 @@
   package uses a Dart SDK element annotated with `@Since`, analyzer will report
   a warning if the package's [Dart SDK constraint] allows versions of Dart
   which don't include that element.
+- Protects the Dart Analysis Server against extreme memory usage by limiting
+  the number of plugins per analysis context to 1. (issue [#50981][]).
 
 [changing the severity of rules]: https://dart.dev/guides/language/analysis-options#changing-the-severity-of-rules
 [Dart SDK constraint]: https://dart.dev/tools/pub/pubspec#sdk-constraints
 
 #### Linter
 
-Updates the Linter to `1.34.0-dev`, which includes changes that
+Updates the Linter to `1.35.0`, which includes changes that
 
-- add new lint: `unnecessary_breaks`.
+- add new lints:
+  - `explicit_reopen`
+  - `unnecessary_breaks`
+  - `type_literal_in_constant_pattern`
+  - `invalid_case_patterns`
+- update existing lints to support patterns and class modifiers
 - remove support for:
   - `enable_null_safety`
   - `invariant_booleans`
@@ -256,7 +479,6 @@ Updates the Linter to `1.34.0-dev`, which includes changes that
 - update `use_build_context_synchronously` to check context properties.
 - improve `unnecessary_parenthesis` support for property accesses and method
   invocations.
-- add new lint: `invalid_case_patterns`.
 - update `unnecessary_parenthesis` to allow parentheses in more null-aware
   cascade contexts.
 - update `unreachable_from_main` to track static elements.
@@ -271,8 +493,6 @@ Updates the Linter to `1.34.0-dev`, which includes changes that
 - add new lint: `deprecated_member_use_from_same_package` which replaces the
   soft-deprecated analyzer hint of the same name.
 - update `public_member_api_docs` to not require docs on enum constructors.
-- add new lint: `implicit_reopen`.
-- add new lint: `type_literal_in_constant_pattern`.
 - update `prefer_void_to_null` to not report on as-expressions.
 
 #### Migration tool removal
@@ -299,6 +519,22 @@ using Dart version 2.19, before upgrading to Dart version 3.0.
   dependencies in the `example` folder (if it exists). Use `--no-example` to
   avoid this.
 
+## 2.19.6 - 2023-03-29
+
+This is a patch release that:
+
+- Fixes an `Out of Memory` exception due to a VM bug. (issue [#50537]).
+
+[#50537]: https://github.com/dart-lang/sdk/issues/50537
+
+## 2.19.5 - 2023-03-22
+
+This is a patch release that:
+
+- Fixes fixes broken usage of `Dart_CObject_Type`. (issue [#51459]).
+
+[#51459]: https://github.com/dart-lang/sdk/issues/51459
+
 ## 2.19.4 - 2023-03-08
 
 This is a patch release that:
@@ -314,8 +550,8 @@ This is a patch release that:
 
 - Updates DDC test and builder configuration. (issue [#51481][]).
 
-- Improves the performance of the Dart Analysis Server by limiting the analysis
-  context to 1. (issue [#50981][]).
+- Protects the Dart Analysis Server against extreme memory usage by limiting
+  the number of plugins per analysis context to 1. (issue [#50981][]).
 
 [#50981]: https://github.com/dart-lang/sdk/issues/50981
 [#51481]: https://github.com/dart-lang/sdk/issues/51481

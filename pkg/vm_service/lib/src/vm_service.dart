@@ -28,7 +28,7 @@ export 'snapshot_graph.dart'
         HeapSnapshotObjectNoData,
         HeapSnapshotObjectNullData;
 
-const String vmServiceVersion = '4.4.0';
+const String vmServiceVersion = '4.7.0';
 
 /// @optional
 const String optional = 'optional';
@@ -161,6 +161,8 @@ Map<String, Function> _typeFactories = {
   '@Object': ObjRef.parse,
   'Object': Obj.parse,
   'Parameter': Parameter.parse,
+  'PerfettoCpuSamples': PerfettoCpuSamples.parse,
+  'PerfettoTimeline': PerfettoTimeline.parse,
   'PortList': PortList.parse,
   'ProfileFunction': ProfileFunction.parse,
   'ProtocolList': ProtocolList.parse,
@@ -218,6 +220,8 @@ Map<String, List<String>> _methodReturnTypes = {
   'getIsolateGroupMemoryUsage': const ['MemoryUsage'],
   'getScripts': const ['ScriptList'],
   'getObject': const ['Obj'],
+  'getPerfettoCpuSamples': const ['PerfettoCpuSamples'],
+  'getPerfettoVMTimeline': const ['PerfettoTimeline'],
   'getPorts': const ['PortList'],
   'getRetainingPath': const ['RetainingPath'],
   'getProcessMemoryUsage': const ['ProcessMemoryUsage'],
@@ -552,15 +556,25 @@ abstract class VmServiceInterface {
   Future<ClassList> getClassList(String isolateId);
 
   /// The `getCpuSamples` RPC is used to retrieve samples collected by the CPU
-  /// profiler. Only samples collected in the time range `[timeOriginMicros,
-  /// timeOriginMicros + timeExtentMicros]` will be reported.
+  /// profiler. See [CpuSamples] for a detailed description of the response.
+  ///
+  /// The `timeOriginMicros` parameter is the beginning of the time range used
+  /// to filter samples. It uses the same monotonic clock as dart:developer's
+  /// `Timeline.now` and the VM embedding API's `Dart_TimelineGetMicros`. See
+  /// [VmServiceInterface.getVMTimelineMicros] for access to this clock through
+  /// the service protocol.
+  ///
+  /// The `timeExtentMicros` parameter specifies how large the time range used
+  /// to filter samples should be.
+  ///
+  /// For example, given `timeOriginMicros` and `timeExtentMicros`, only samples
+  /// from the following time range will be returned: `(timeOriginMicros,
+  /// timeOriginMicros + timeExtentMicros)`.
   ///
   /// If the profiler is disabled, an [RPCError] response will be returned.
   ///
   /// If `isolateId` refers to an isolate which has exited, then the `Collected`
   /// [Sentinel] is returned.
-  ///
-  /// See [CpuSamples].
   ///
   /// This method will throw a [SentinelException] in the case a [Sentinel] is
   /// returned.
@@ -774,6 +788,67 @@ abstract class VmServiceInterface {
     int? count,
   });
 
+  /// The `getPerfettoCpuSamples` RPC is used to retrieve samples collected by
+  /// the CPU profiler, serialized in Perfetto's proto format. See
+  /// [PerfettoCpuSamples] for a detailed description of the response.
+  ///
+  /// The `timeOriginMicros` parameter is the beginning of the time range used
+  /// to filter samples. It uses the same monotonic clock as dart:developer's
+  /// `Timeline.now` and the VM embedding API's `Dart_TimelineGetMicros`. See
+  /// [VmServiceInterface.getVMTimelineMicros] for access to this clock through
+  /// the service protocol.
+  ///
+  /// The `timeExtentMicros` parameter specifies how large the time range used
+  /// to filter samples should be.
+  ///
+  /// For example, given `timeOriginMicros` and `timeExtentMicros`, only samples
+  /// from the following time range will be returned: `(timeOriginMicros,
+  /// timeOriginMicros + timeExtentMicros)`.
+  ///
+  /// If the profiler is disabled, an [RPCError] response will be returned.
+  ///
+  /// If `isolateId` refers to an isolate which has exited, then the `Collected`
+  /// [Sentinel] is returned.
+  ///
+  /// This method will throw a [SentinelException] in the case a [Sentinel] is
+  /// returned.
+  Future<PerfettoCpuSamples> getPerfettoCpuSamples(String isolateId,
+      {int? timeOriginMicros, int? timeExtentMicros});
+
+  /// The `getPerfettoVMTimeline` RPC is used to retrieve an object which
+  /// contains a VM timeline trace represented in Perfetto's proto format. See
+  /// [PerfettoTimeline] for a detailed description of the response.
+  ///
+  /// The `timeOriginMicros` parameter is the beginning of the time range used
+  /// to filter timeline events. It uses the same monotonic clock as
+  /// dart:developer's `Timeline.now` and the VM embedding API's
+  /// `Dart_TimelineGetMicros`. See [VmServiceInterface.getVMTimelineMicros] for
+  /// access to this clock through the service protocol.
+  ///
+  /// The `timeExtentMicros` parameter specifies how large the time range used
+  /// to filter timeline events should be.
+  ///
+  /// For example, given `timeOriginMicros` and `timeExtentMicros`, only
+  /// timeline events from the following time range will be returned:
+  /// `(timeOriginMicros, timeOriginMicros + timeExtentMicros)`.
+  ///
+  /// If `getPerfettoVMTimeline` is invoked while the current recorder is
+  /// Callback, an [RPCError] with error code `114`, `invalid timeline request`,
+  /// will be returned as timeline events are handled by the embedder in this
+  /// mode.
+  ///
+  /// If `getPerfettoVMTimeline` is invoked while the current recorder is one of
+  /// Fuchsia or Macos or Systrace, an [RPCError] with error code `114`,
+  /// `invalid timeline request`, will be returned as timeline events are
+  /// handled by the OS in these modes.
+  ///
+  /// If `getPerfettoVMTimeline` is invoked while the current recorder is File
+  /// or Perfettofile, an [RPCError] with error code `114`, `invalid timeline
+  /// request`, will be returned as timeline events are written directly to a
+  /// file, and thus cannot be retrieved through the VM Service, in these modes.
+  Future<PerfettoTimeline> getPerfettoVMTimeline(
+      {int? timeOriginMicros, int? timeExtentMicros});
+
   /// The `getPorts` RPC is used to retrieve the list of `ReceivePort` instances
   /// for a given isolate.
   ///
@@ -820,8 +895,7 @@ abstract class VmServiceInterface {
   /// If `limit` is provided, up to `limit` frames from the top of the stack
   /// will be returned. If the stack depth is smaller than `limit` the entire
   /// stack is returned. Note: this limit also applies to the
-  /// `asyncCausalFrames` and `awaiterFrames` stack representations in the
-  /// `Stack` response.
+  /// `asyncCausalFrames` stack representation in the `Stack` response.
   ///
   /// If `isolateId` refers to an isolate which has exited, then the `Collected`
   /// [Sentinel] is returned.
@@ -917,7 +991,8 @@ abstract class VmServiceInterface {
   Future<VM> getVM();
 
   /// The `getVMTimeline` RPC is used to retrieve an object which contains VM
-  /// timeline events.
+  /// timeline events. See [Timeline] for a detailed description of the
+  /// response.
   ///
   /// The `timeOriginMicros` parameter is the beginning of the time range used
   /// to filter timeline events. It uses the same monotonic clock as
@@ -941,10 +1016,10 @@ abstract class VmServiceInterface {
   /// timeline request`, will be returned as timeline events are handled by the
   /// OS in these modes.
   ///
-  /// If `getVMTimeline` is invoked while the current recorder is File, an
-  /// [RPCError] with error code `114`, `invalid timeline request`, will be
-  /// returned as timeline events are written directly to a file, and thus
-  /// cannot be retrieved through the VM Service, in this mode.
+  /// If `getVMTimeline` is invoked while the current recorder is File or
+  /// Perfettofile, an [RPCError] with error code `114`, `invalid timeline
+  /// request`, will be returned as timeline events are written directly to a
+  /// file, and thus cannot be retrieved through the VM Service, in these modes.
   Future<Timeline> getVMTimeline(
       {int? timeOriginMicros, int? timeExtentMicros});
 
@@ -1557,6 +1632,19 @@ class VmServerConnection {
             count: params['count'],
           );
           break;
+        case 'getPerfettoCpuSamples':
+          response = await _serviceImplementation.getPerfettoCpuSamples(
+            params!['isolateId'],
+            timeOriginMicros: params['timeOriginMicros'],
+            timeExtentMicros: params['timeExtentMicros'],
+          );
+          break;
+        case 'getPerfettoVMTimeline':
+          response = await _serviceImplementation.getPerfettoVMTimeline(
+            timeOriginMicros: params!['timeOriginMicros'],
+            timeExtentMicros: params['timeExtentMicros'],
+          );
+          break;
         case 'getPorts':
           response = await _serviceImplementation.getPorts(
             params!['isolateId'],
@@ -2117,6 +2205,23 @@ class VmService implements VmServiceInterface {
         'objectId': objectId,
         if (offset != null) 'offset': offset,
         if (count != null) 'count': count,
+      });
+
+  @override
+  Future<PerfettoCpuSamples> getPerfettoCpuSamples(String isolateId,
+          {int? timeOriginMicros, int? timeExtentMicros}) =>
+      _call('getPerfettoCpuSamples', {
+        'isolateId': isolateId,
+        if (timeOriginMicros != null) 'timeOriginMicros': timeOriginMicros,
+        if (timeExtentMicros != null) 'timeExtentMicros': timeExtentMicros,
+      });
+
+  @override
+  Future<PerfettoTimeline> getPerfettoVMTimeline(
+          {int? timeOriginMicros, int? timeExtentMicros}) =>
+      _call('getPerfettoVMTimeline', {
+        if (timeOriginMicros != null) 'timeOriginMicros': timeOriginMicros,
+        if (timeExtentMicros != null) 'timeExtentMicros': timeExtentMicros,
       });
 
   @override
@@ -2854,7 +2959,8 @@ class InstanceKind {
   /// An instance of the Dart class TypeParameter.
   static const String kTypeParameter = 'TypeParameter';
 
-  /// An instance of the Dart class TypeRef.
+  /// An instance of the Dart class TypeRef. Note: this object kind is
+  /// deprecated and will be removed.
   static const String kTypeRef = 'TypeRef';
 
   /// An instance of the Dart class FunctionType.
@@ -2907,6 +3013,8 @@ class FrameKind {
   static const String kRegular = 'Regular';
   static const String kAsyncCausal = 'AsyncCausal';
   static const String kAsyncSuspensionMarker = 'AsyncSuspensionMarker';
+
+  /// Deprecated since version 4.7 of the protocol. Will not occur in responses.
   static const String kAsyncActivation = 'AsyncActivation';
 }
 
@@ -4531,8 +4639,8 @@ class FieldRef extends ObjRef {
 
   /// The declared type of this field.
   ///
-  /// The value will always be of one of the kinds: Type, TypeRef,
-  /// TypeParameter, BoundedType.
+  /// The value will always be of one of the kinds: Type, TypeParameter,
+  /// RecordType, FunctionType, BoundedType.
   InstanceRef? declaredType;
 
   /// Is this field const?
@@ -4626,8 +4734,8 @@ class Field extends Obj implements FieldRef {
 
   /// The declared type of this field.
   ///
-  /// The value will always be of one of the kinds: Type, TypeRef,
-  /// TypeParameter, BoundedType.
+  /// The value will always be of one of the kinds: Type, TypeParameter,
+  /// RecordType, FunctionType, BoundedType.
   @override
   InstanceRef? declaredType;
 
@@ -4735,7 +4843,7 @@ class Flag {
 
   /// The value of this flag as a string.
   ///
-  /// If this property is absent, then the value of the flag was NULL.
+  /// If this property is absent, then the value of the flag was nullptr.
   @optional
   String? valueAsString;
 
@@ -5641,22 +5749,20 @@ class Instance extends Obj implements InstanceRef {
   @optional
   int? parameterIndex;
 
-  /// The type bounded by a BoundedType instance - or - the referent of a
-  /// TypeRef instance.
+  /// The type bounded by a BoundedType instance.
   ///
-  /// The value will always be of one of the kinds: Type, TypeRef,
-  /// TypeParameter, BoundedType.
+  /// The value will always be of one of the kinds: Type, TypeParameter,
+  /// RecordType, FunctionType, BoundedType.
   ///
   /// Provided for instance kinds:
   ///  - BoundedType
-  ///  - TypeRef
   @optional
   InstanceRef? targetType;
 
   /// The bound of a TypeParameter or BoundedType.
   ///
-  /// The value will always be of one of the kinds: Type, TypeRef,
-  /// TypeParameter, BoundedType.
+  /// The value will always be of one of the kinds: Type, TypeParameter,
+  /// RecordType, FunctionType, BoundedType.
   ///
   /// Provided for instance kinds:
   ///  - BoundedType
@@ -7189,6 +7295,128 @@ class Parameter {
       '[Parameter parameterType: $parameterType, fixed: $fixed]';
 }
 
+/// See [VmServiceInterface.getPerfettoCpuSamples].
+class PerfettoCpuSamples extends Response {
+  static PerfettoCpuSamples? parse(Map<String, dynamic>? json) =>
+      json == null ? null : PerfettoCpuSamples._fromJson(json);
+
+  /// The sampling rate for the profiler in microseconds.
+  int? samplePeriod;
+
+  /// The maximum possible stack depth for samples.
+  int? maxStackDepth;
+
+  /// The number of samples returned.
+  int? sampleCount;
+
+  /// The start of the period of time in which the returned samples were
+  /// collected.
+  int? timeOriginMicros;
+
+  /// The duration of time covered by the returned samples.
+  int? timeExtentMicros;
+
+  /// The process ID for the VM.
+  int? pid;
+
+  /// A Base64 string representing the requested samples in Perfetto's proto
+  /// format.
+  String? samples;
+
+  PerfettoCpuSamples({
+    this.samplePeriod,
+    this.maxStackDepth,
+    this.sampleCount,
+    this.timeOriginMicros,
+    this.timeExtentMicros,
+    this.pid,
+    this.samples,
+  });
+
+  PerfettoCpuSamples._fromJson(Map<String, dynamic> json)
+      : super._fromJson(json) {
+    samplePeriod = json['samplePeriod'] ?? -1;
+    maxStackDepth = json['maxStackDepth'] ?? -1;
+    sampleCount = json['sampleCount'] ?? -1;
+    timeOriginMicros = json['timeOriginMicros'] ?? -1;
+    timeExtentMicros = json['timeExtentMicros'] ?? -1;
+    pid = json['pid'] ?? -1;
+    samples = json['samples'] ?? '';
+  }
+
+  @override
+  String get type => 'PerfettoCpuSamples';
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['type'] = type;
+    json.addAll({
+      'samplePeriod': samplePeriod ?? -1,
+      'maxStackDepth': maxStackDepth ?? -1,
+      'sampleCount': sampleCount ?? -1,
+      'timeOriginMicros': timeOriginMicros ?? -1,
+      'timeExtentMicros': timeExtentMicros ?? -1,
+      'pid': pid ?? -1,
+      'samples': samples ?? '',
+    });
+    return json;
+  }
+
+  @override
+  String toString() => '[PerfettoCpuSamples ' //
+      'samplePeriod: $samplePeriod, maxStackDepth: $maxStackDepth, ' //
+      'sampleCount: $sampleCount, timeOriginMicros: $timeOriginMicros, timeExtentMicros: $timeExtentMicros, pid: $pid, samples: $samples]';
+}
+
+/// See [VmServiceInterface.getPerfettoVMTimeline];
+class PerfettoTimeline extends Response {
+  static PerfettoTimeline? parse(Map<String, dynamic>? json) =>
+      json == null ? null : PerfettoTimeline._fromJson(json);
+
+  /// A Base64 string representing the requested timeline trace in Perfetto's
+  /// proto format.
+  String? trace;
+
+  /// The start of the period of time covered by the trace.
+  int? timeOriginMicros;
+
+  /// The duration of time covered by the trace.
+  int? timeExtentMicros;
+
+  PerfettoTimeline({
+    this.trace,
+    this.timeOriginMicros,
+    this.timeExtentMicros,
+  });
+
+  PerfettoTimeline._fromJson(Map<String, dynamic> json)
+      : super._fromJson(json) {
+    trace = json['trace'] ?? '';
+    timeOriginMicros = json['timeOriginMicros'] ?? -1;
+    timeExtentMicros = json['timeExtentMicros'] ?? -1;
+  }
+
+  @override
+  String get type => 'PerfettoTimeline';
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['type'] = type;
+    json.addAll({
+      'trace': trace ?? '',
+      'timeOriginMicros': timeOriginMicros ?? -1,
+      'timeExtentMicros': timeExtentMicros ?? -1,
+    });
+    return json;
+  }
+
+  @override
+  String toString() => '[PerfettoTimeline ' //
+      'trace: $trace, timeOriginMicros: $timeOriginMicros, timeExtentMicros: $timeExtentMicros]';
+}
+
 /// A `PortList` contains a list of ports associated with some isolate.
 ///
 /// See [VmServiceInterface.getPorts].
@@ -8134,13 +8362,22 @@ class Stack extends Response {
   /// entrypoint).
   List<Frame>? frames;
 
-  /// A list of frames representing the asynchronous path. Comparable to
-  /// `awaiterFrames`, if provided, although some frames may be different.
+  /// A list of frames which contains both synchronous part and the asynchronous
+  /// continuation e.g. `async` functions awaiting completion of the currently
+  /// running `async` function. Asynchronous frames are separated from each
+  /// other and synchronous prefix via frames of kind
+  /// FrameKind.kAsyncSuspensionMarker.
+  ///
+  /// This field is absent if currently running code does not have an
+  /// asynchronous continuation.
   @optional
   List<Frame>? asyncCausalFrames;
 
-  /// A list of frames representing the asynchronous path. Comparable to
-  /// `asyncCausalFrames`, if provided, although some frames may be different.
+  /// Deprecated since version 4.7 of the protocol. Will be always absent in the
+  /// response.
+  ///
+  /// Used to contain information about asynchronous continuation, similar to
+  /// the one in asyncCausalFrame but with a slightly different encoding.
   @optional
   List<Frame>? awaiterFrames;
 
@@ -8226,6 +8463,7 @@ class Success extends Response {
   String toString() => '[Success]';
 }
 
+/// See [VmServiceInterface.getVMTimeline];
 class Timeline extends Response {
   static Timeline? parse(Map<String, dynamic>? json) =>
       json == null ? null : Timeline._fromJson(json);
@@ -8437,8 +8675,8 @@ class TypeArguments extends Obj implements TypeArgumentsRef {
 
   /// A list of types.
   ///
-  /// The value will always be one of the kinds: Type, TypeRef, TypeParameter,
-  /// BoundedType.
+  /// The value will always be one of the kinds: Type, TypeParameter,
+  /// RecordType, FunctionType, BoundedType.
   List<InstanceRef>? types;
 
   TypeArguments({

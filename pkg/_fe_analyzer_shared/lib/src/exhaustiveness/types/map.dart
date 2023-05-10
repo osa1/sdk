@@ -12,14 +12,14 @@ class MapPatternStaticType<Type extends Object>
       super.restriction, super.name);
 
   @override
-  String spaceToText(
-      Map<Key, Space> spaceFields, Map<Key, Space> additionalSpaceFields) {
+  String spaceToText(Map<Key, Space> spaceProperties,
+      Map<Key, Space> additionalSpaceProperties) {
     StringBuffer buffer = new StringBuffer();
     buffer.write(restriction.typeArgumentsText);
     buffer.write('{');
 
     bool first = true;
-    additionalSpaceFields.forEach((Key key, Space space) {
+    additionalSpaceProperties.forEach((Key key, Space space) {
       if (!first) buffer.write(', ');
       buffer.write('$key: $space');
       first = false;
@@ -30,17 +30,18 @@ class MapPatternStaticType<Type extends Object>
   }
 
   @override
-  void witnessToText(StringBuffer buffer, FieldWitness witness,
-      Map<Key, FieldWitness> witnessFields) {
+  void witnessToDart(DartTemplateBuffer buffer, PropertyWitness witness,
+      Map<Key, PropertyWitness> witnessFields,
+      {required bool forCorrection}) {
     buffer.write('{');
     String comma = '';
     for (MapKey key in restriction.keys) {
       buffer.write(comma);
       buffer.write(key.valueAsText);
       buffer.write(': ');
-      FieldWitness? witness = witnessFields[key];
+      PropertyWitness? witness = witnessFields[key];
       if (witness != null) {
-        witness.witnessToText(buffer);
+        witness.witnessToDart(buffer, forCorrection: forCorrection);
       } else {
         buffer.write('_');
       }
@@ -52,7 +53,7 @@ class MapPatternStaticType<Type extends Object>
     String additionalStart = ' && Object(';
     String additionalEnd = '';
     comma = '';
-    for (MapEntry<Key, FieldWitness> entry in witnessFields.entries) {
+    for (MapEntry<Key, PropertyWitness> entry in witnessFields.entries) {
       Key key = entry.key;
       if (key is! MapKey) {
         buffer.write(additionalStart);
@@ -63,8 +64,8 @@ class MapPatternStaticType<Type extends Object>
 
         buffer.write(key.name);
         buffer.write(': ');
-        FieldWitness field = entry.value;
-        field.witnessToText(buffer);
+        PropertyWitness field = entry.value;
+        field.witnessToDart(buffer, forCorrection: forCorrection);
       }
     }
     buffer.write(additionalEnd);

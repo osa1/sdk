@@ -79,6 +79,7 @@ namespace dart {
   V(Developer_log, 8)                                                          \
   V(Developer_postEvent, 2)                                                    \
   V(Developer_webServerControl, 3)                                             \
+  V(Developer_NativeRuntime_writeHeapSnapshotToFile, 1)                        \
   V(Developer_reachability_barrier, 0)                                         \
   V(Double_getIsNegative, 1)                                                   \
   V(Double_getIsInfinite, 1)                                                   \
@@ -154,7 +155,7 @@ namespace dart {
   V(Timeline_getNextTaskId, 0)                                                 \
   V(Timeline_getTraceClock, 0)                                                 \
   V(Timeline_isDartStreamEnabled, 0)                                           \
-  V(Timeline_reportTaskEvent, 4)                                               \
+  V(Timeline_reportTaskEvent, 5)                                               \
   V(TypedData_Int8Array_new, 2)                                                \
   V(TypedData_Uint8Array_new, 2)                                               \
   V(TypedData_Uint8ClampedArray_new, 2)                                        \
@@ -331,7 +332,6 @@ namespace dart {
   V(Internal_unsafeCast, 1)                                                    \
   V(Internal_nativeEffect, 1)                                                  \
   V(Internal_collectAllGarbage, 0)                                             \
-  V(Internal_writeHeapSnapshotToFile, 1)                                       \
   V(Internal_makeListFixedLength, 1)                                           \
   V(Internal_makeFixedListUnmodifiable, 1)                                     \
   V(Internal_extractTypeArguments, 2)                                          \

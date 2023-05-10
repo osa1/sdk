@@ -268,6 +268,9 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   /// [isAborted].
   bool _isReachable = true;
 
+  /// Is the current statement or expression nested in a [ir.BlockExpression]?
+  bool _inBlockExpression = false;
+
   HLocalValue? lastAddedParameter;
 
   Map<Local, HInstruction> parameters = {};
@@ -1319,7 +1322,11 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   void _buildFunctionNode(
       FunctionEntity function, ir.FunctionNode functionNode) {
     if (functionNode.asyncMarker != ir.AsyncMarker.Sync) {
-      _buildGenerator(function, functionNode);
+      if (functionNode.asyncMarker == ir.AsyncMarker.SyncStar) {
+        _buildSyncStarGenerator(function, functionNode);
+      } else {
+        _buildGenerator(function, functionNode);
+      }
       return;
     }
 
@@ -1427,7 +1434,74 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     _closeFunction();
   }
 
-  /// Builds an SSA graph for a sync*/async/async* generator body.
+  /// Builds an SSA graph for a sync* method.  A sync* method is split into an
+  /// entry function and a body function. The entry function calls the body
+  /// function and wraps the result in an `_SyncStarIterable<T>`. The body
+  /// function is a separate entity (GeneratorBodyEntity) that is compiled via
+  /// SSA and the transformed into a reentrant state-machine.
+  ///
+  /// Here we generate the entry function which is approximately like this:
+  ///
+  ///     Iterable<T> foo(parameters) {
+  ///       return _makeSyncStarIterable<T>(foo$body(parameters));
+  ///     }
+  void _buildSyncStarGenerator(
+      FunctionEntity function, ir.FunctionNode functionNode) {
+    _openFunction(function,
+        functionNode: functionNode,
+        parameterStructure: function.parameterStructure,
+        checks: _checksForFunction(function));
+
+    // Prepare to call the body generator.
+
+    // Is 'buildAsyncBody' the best location for the entry?
+    var sourceInformation = _sourceInformationBuilder.buildAsyncBody();
+
+    // Forward all the parameters to the body.
+    List<HInstruction> inputs = [];
+    if (graph.thisInstruction != null) {
+      inputs.add(graph.thisInstruction!);
+    }
+    if (graph.explicitReceiverParameter != null) {
+      inputs.add(graph.explicitReceiverParameter!);
+    }
+    for (Local local in parameters.keys) {
+      if (!elidedParameters.contains(local)) {
+        inputs.add(localsHandler.readLocal(local));
+      }
+    }
+    for (Local local in _functionTypeParameterLocals) {
+      inputs.add(localsHandler.readLocal(local));
+    }
+
+    JGeneratorBody body = _elementMap.getGeneratorBody(function);
+    push(HInvokeGeneratorBody(
+        body,
+        inputs,
+        _abstractValueDomain.dynamicType, // Untyped JavaScript thunk.
+        sourceInformation));
+
+    // Call `_makeSyncStarIterable<T>(body)`. This usually gets inlined.
+
+    final elementType = _elementEnvironment.getAsyncOrSyncStarElementType(
+        function.asyncMarker, _returnType!);
+    FunctionEntity method = _commonElements.syncStarIterableFactory;
+    List<HInstruction> arguments = [pop()];
+    List<DartType> typeArguments = const [];
+    if (_rtiNeed.methodNeedsTypeArguments(method)) {
+      typeArguments = [elementType];
+      _addTypeArguments(arguments, typeArguments, sourceInformation);
+    }
+    _pushStaticInvocation(method, arguments,
+        _typeInferenceMap.getReturnTypeOf(method), typeArguments,
+        sourceInformation: sourceInformation);
+
+    _closeAndGotoExit(HReturn(_abstractValueDomain, pop(), sourceInformation));
+
+    _closeFunction();
+  }
+
+  /// Builds an SSA graph for a async/async* generator body.
   void _buildGeneratorBody(
       JGeneratorBody function, ir.FunctionNode functionNode) {
     FunctionEntity entry = function.function;
@@ -1902,7 +1976,13 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
   void visitExpressionStatement(ir.ExpressionStatement node) {
     if (!_isReachable) return;
     ir.Expression expression = node.expression;
-    if (expression is ir.Throw && _inliningStack.isEmpty) {
+
+    // Handle a `throw` expression in statement-position, with control flow to
+    // the exit. (In expression position the throw does not create control-flow
+    // out of CFG region for the expression).
+    if (expression is ir.Throw &&
+        _inliningStack.isEmpty &&
+        !_inBlockExpression) {
       _visitThrowExpression(expression.expression);
       _handleInTryStatement();
       final sourceInformation =
@@ -1966,7 +2046,13 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
         return;
       }
     }
-    _emitReturn(value, sourceInformation);
+    // TODO(43456): Better unreachable code removal. `_isReachable` removes
+    // more code, but also `return`s that pattern-match against more compact
+    // arrow functions. The `return`s also help the JavaScript VM.
+    // TODO(b/276976255): Using `_isReachable` causes a test failure.
+    if (!isAborted()) {
+      _emitReturn(value, sourceInformation);
+    }
   }
 
   @override
@@ -2778,7 +2864,8 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     body.accept(this);
     SubGraph bodyGraph = SubGraph(newBlock, lastOpenedBlock);
 
-    HBasicBlock joinBlock = graph.addNewBlock();
+    // Create join block only if reached, otherwise it won't have a dominator.
+    late final HBasicBlock joinBlock = graph.addNewBlock();
     List<LocalsHandler> breakHandlers = [];
     handler.forEachBreak((HBreak breakInstruction, LocalsHandler locals) {
       breakInstruction.block!.addSuccessor(joinBlock);
@@ -2790,14 +2877,16 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       breakHandlers.add(localsHandler);
     }
 
-    open(joinBlock);
-    localsHandler = beforeLocals.mergeMultiple(breakHandlers, joinBlock);
+    if (breakHandlers.isNotEmpty) {
+      open(joinBlock);
+      localsHandler = beforeLocals.mergeMultiple(breakHandlers, joinBlock);
 
-    // There was at least one reachable break, so the label is needed.
-    newBlock.setBlockFlow(
-        HLabeledBlockInformation(
-            HSubGraphBlockInformation(bodyGraph), handler.labels),
-        joinBlock);
+      // There was at least one reachable break, so the label is needed.
+      newBlock.setBlockFlow(
+          HLabeledBlockInformation(
+              HSubGraphBlockInformation(bodyGraph), handler.labels),
+          joinBlock);
+    }
     handler.close();
   }
 
@@ -3854,7 +3943,12 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     HInstruction initializedValue = pop();
     // TODO(sra): Apply inferred type information.
     _letBindings[variable] = initializedValue;
-    node.body.accept(this);
+    // TODO(43456): Use `!_isReachable` for better dead code removal.
+    if (isAborted()) {
+      stack.add(graph.addConstantUnreachable(closedWorld));
+    } else {
+      node.body.accept(this);
+    }
   }
 
   @override
@@ -3865,7 +3959,13 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     if (!_isReachable) {
       stack.add(graph.addConstantUnreachable(closedWorld));
     } else {
-      node.value.accept(this);
+      final previous = _inBlockExpression;
+      try {
+        _inBlockExpression = true;
+        node.value.accept(this);
+      } finally {
+        _inBlockExpression = previous;
+      }
     }
   }
 
@@ -4156,27 +4256,6 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       AbstractValue typeMask,
       List<HInstruction> arguments,
       SourceInformation? sourceInformation) {
-    // Recognize `List()` and `List(n)`.
-    if (_commonElements.isUnnamedListConstructor(function)) {
-      if (invocation.arguments.named.isEmpty) {
-        int argumentCount = invocation.arguments.positional.length;
-        if (argumentCount == 0) {
-          // `List()` takes no arguments, `JSArray.list()` takes a sentinel.
-          assert(arguments.length == 0 || arguments.length == 1,
-              '\narguments: $arguments\n');
-          _handleInvokeLegacyGrowableListFactoryConstructor(
-              invocation, function, typeMask, arguments, sourceInformation);
-          return;
-        }
-        if (argumentCount == 1) {
-          assert(arguments.length == 1);
-          _handleInvokeLegacyFixedListFactoryConstructor(
-              invocation, function, typeMask, arguments, sourceInformation);
-          return;
-        }
-      }
-    }
-
     // Recognize `JSArray<E>.typed(allocation)`.
     if (function == _commonElements.jsArrayTypedConstructor) {
       if (invocation.arguments.named.isEmpty) {
@@ -4300,98 +4379,6 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     stack.add(_setListRuntimeTypeInfoIfNeeded(pop(), type, sourceInformation));
   }
 
-  /// Handle the legacy `List<T>()` constructor.
-  void _handleInvokeLegacyGrowableListFactoryConstructor(
-      ir.StaticInvocation invocation,
-      ConstructorEntity function,
-      AbstractValue typeMask,
-      List<HInstruction> arguments,
-      SourceInformation? sourceInformation) {
-    // `List<T>()` is essentially the same as `<T>[]`.
-    push(_buildLiteralList([]));
-    HInstruction allocation = pop();
-    var inferredType = globalInferenceResults.typeOfNewList(invocation);
-    if (inferredType != null) {
-      allocation.instructionType = inferredType;
-    }
-    InterfaceType type = _elementMap.createInterfaceType(
-        invocation.target.enclosingClass!, invocation.arguments.types);
-    stack.add(
-        _setListRuntimeTypeInfoIfNeeded(allocation, type, sourceInformation));
-  }
-
-  /// Handle the `JSArray<T>.list(length)` and legacy `List<T>(length)`
-  /// constructors.
-  void _handleInvokeLegacyFixedListFactoryConstructor(
-      ir.StaticInvocation invocation,
-      ConstructorEntity function,
-      AbstractValue typeMask,
-      List<HInstruction> arguments,
-      SourceInformation? sourceInformation) {
-    assert(
-        // Arguments may include the type.
-        arguments.length == 1 || arguments.length == 2,
-        failedAt(
-            function,
-            "Unexpected arguments. "
-            "Expected 1-2 argument, actual: $arguments."));
-    HInstruction lengthInput = arguments.first;
-    if (lengthInput.isNumber(_abstractValueDomain).isPotentiallyFalse) {
-      HPrimitiveCheck conversion = HPrimitiveCheck(
-          _commonElements.numType,
-          HPrimitiveCheck.ARGUMENT_TYPE_CHECK,
-          _abstractValueDomain.numType,
-          lengthInput,
-          sourceInformation);
-      add(conversion);
-      lengthInput = conversion;
-    }
-    js.Template code = js.js.parseForeignJS('new Array(#)');
-    var behavior = NativeBehavior();
-
-    DartType expectedType = _getStaticType(invocation).type;
-    behavior.typesInstantiated.add(expectedType);
-    behavior.typesReturned.add(expectedType);
-
-    // The allocation can throw only if the given length is a double or
-    // outside the unsigned 32 bit range.
-    // TODO(sra): Array allocation should be an instruction so that canThrow
-    // can depend on a length type discovered in optimization.
-    bool canThrow = true;
-    if (lengthInput.isUInt32(_abstractValueDomain).isDefinitelyTrue) {
-      canThrow = false;
-    }
-
-    var resultType = globalInferenceResults.typeOfNewList(invocation) ??
-        _abstractValueDomain.fixedListType;
-
-    HForeignCode foreign = HForeignCode(code, resultType, [lengthInput],
-        nativeBehavior: behavior,
-        throwBehavior:
-            canThrow ? NativeThrowBehavior.MAY : NativeThrowBehavior.NEVER)
-      ..sourceInformation = sourceInformation;
-    push(foreign);
-    js.Template fixedLengthMarker =
-        js.js.parseForeignJS(r'#.fixed$length = Array');
-    // We set the instruction as [canThrow] to avoid it being dead code.
-    // We need a finer grained side effect.
-    add(HForeignCode(
-        fixedLengthMarker, _abstractValueDomain.nullType, [stack.last],
-        throwBehavior: NativeThrowBehavior.MAY));
-
-    HInstruction newInstance = stack.last;
-
-    // If we inlined a constructor the call-site-specific type from type
-    // inference (e.g. a container type) will not be on the node. Store the
-    // more specialized type on the allocation.
-    newInstance.instructionType = resultType;
-    graph.allocatedFixedLists.add(newInstance);
-
-    InterfaceType type = _elementMap.createInterfaceType(
-        invocation.target.enclosingClass!, invocation.arguments.types);
-    stack.add(_setListRuntimeTypeInfoIfNeeded(pop(), type, sourceInformation));
-  }
-
   /// Replace calls to `extractTypeArguments` with equivalent code. Returns
   /// `true` if `extractTypeArguments` is handled.
   bool _handleExtractTypeArguments(
@@ -4493,6 +4480,8 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       _handleForeignGetInterceptor(invocation);
     } else if (name == 'getJSArrayInteropRti') {
       _handleForeignGetJSArrayInteropRti(invocation);
+    } else if (name == 'JS_RAW_EXCEPTION') {
+      _handleJsRawException(invocation);
     } else if (name == 'JS_STRING_CONCAT') {
       _handleJsStringConcat(invocation);
     } else if (name == '_createInvocationMirror') {
@@ -4511,6 +4500,8 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
       _handleLateWriteOnceCheck(invocation);
     } else if (name == '_lateInitializeOnceCheck') {
       _handleLateInitializeOnceCheck(invocation);
+    } else if (name == 'HCharCodeAt') {
+      _handleCharCodeAt(invocation);
     } else {
       reporter.internalError(
           _elementMap.getSpannable(targetElement, invocation),
@@ -4810,6 +4801,27 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
         {'text': "'$name' $problem."});
     stack.add(graph.addConstantNull(closedWorld)); // Result expected on stack.
     return;
+  }
+
+  void _handleJsRawException(ir.StaticInvocation invocation) {
+    if (_unexpectedForeignArguments(invocation,
+        minPositional: 0, maxPositional: 0)) {
+      // Result expected on stack.
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
+
+    if (_rethrowableException != null) {
+      stack.add(_rethrowableException!);
+      return;
+    }
+
+    reporter.reportErrorMessage(
+        _elementMap.getSpannable(targetElement, invocation),
+        MessageKind.GENERIC,
+        {'text': "Error: JS_RAW_EXCEPTION() must be in a 'catch' block."});
+    // Result expected on stack.
+    stack.add(graph.addConstantNull(closedWorld));
   }
 
   void _handleForeignJsGetName(ir.StaticInvocation invocation) {
@@ -5158,6 +5170,17 @@ class KernelSsaGraphBuilder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     }
     List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
     push(HStringConcat(inputs[0], inputs[1], _abstractValueDomain.stringType));
+  }
+
+  void _handleCharCodeAt(ir.StaticInvocation invocation) {
+    if (_unexpectedForeignArguments(invocation,
+        minPositional: 2, maxPositional: 2)) {
+      // Result expected on stack.
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
+    List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
+    push(HCharCodeAt(inputs[0], inputs[1], _abstractValueDomain.uint31Type));
   }
 
   void _handleForeignTypeRef(ir.StaticInvocation invocation) {
@@ -7625,6 +7648,15 @@ class InlineWeeder extends ir.Visitor<void> with ir.VisitorVoidMixin {
     registerRegularNode();
     data.hasLabel = true;
     node.visitChildren(this);
+  }
+
+  @override
+  visitSwitchStatement(ir.SwitchStatement node) {
+    registerRegularNode();
+    registerReductiveNode();
+    // Don't visit 'SwitchStatement.expressionType'.
+    node.expression.accept(this);
+    visitList(node.cases);
   }
 
   @override

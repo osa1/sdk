@@ -53,7 +53,7 @@ class DartIterator<E> implements Iterator<E> {
 }
 
 /// Used to compile `sync*`.
-class SyncIterable<E> extends IterableBase<E> {
+class SyncIterable<E> extends Iterable<E> {
   final Function() _initGenerator;
   SyncIterable(this._initGenerator);
 
@@ -182,6 +182,23 @@ class Primitives {
       delta |= input.codeUnitAt(i) ^ lowerCaseTarget.codeUnitAt(i);
     }
     return delta == 0x20;
+  }
+
+  static String stringSafeToString(String str) {
+    return JS<String>('!', 'JSON.stringify(#)', str);
+  }
+
+  static String safeToString(obj) {
+    if (obj == null || obj is num || obj is bool) {
+      return obj.toString();
+    }
+    if (obj is String) {
+      return stringSafeToString(obj);
+    }
+    if (obj is dart.RecordImpl) {
+      return dart.recordSafeToString(obj);
+    }
+    return "Instance of '${dart.typeName(dart.getReifiedType(obj))}'";
   }
 
   /** `r"$".codeUnitAt(0)` */

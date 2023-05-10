@@ -11,6 +11,10 @@
 // code, as they match names declared in the source configuration files.
 // ignore_for_file: constant_identifier_names
 
+// While transitioning `HintCodes` to `WarningCodes`, we refer to deprecated
+// codes here.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import "package:analyzer/error/error.dart";
 import "package:analyzer/src/dart/error/hint_codes.g.dart";
 import "package:analyzer/src/error/analyzer_error_code.dart";
@@ -2926,15 +2930,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
-  static const CompileTimeErrorCode MISSING_OBJECT_PATTERN_GETTER_NAME =
+  static const CompileTimeErrorCode MISSING_NAMED_PATTERN_FIELD_NAME =
       CompileTimeErrorCode(
-    'MISSING_OBJECT_PATTERN_GETTER_NAME',
+    'MISSING_NAMED_PATTERN_FIELD_NAME',
     "The getter name is not specified explicitly, and the pattern is not a "
         "variable.",
     correctionMessage:
         "Try specifying the getter name explicitly, or using a variable "
         "pattern.",
-    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -3480,12 +3483,28 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
 
   ///  Parameters:
   ///  0: the type of the switch scrutinee
-  ///  1: the unmatched space
-  static const CompileTimeErrorCode NON_EXHAUSTIVE_SWITCH =
+  ///  1: the witness pattern for the unmatched value
+  ///  2: the suggested pattern for the unmatched value
+  static const CompileTimeErrorCode NON_EXHAUSTIVE_SWITCH_EXPRESSION =
       CompileTimeErrorCode(
-    'NON_EXHAUSTIVE_SWITCH',
-    "The type '{0}' is not exhaustively matched by the switch cases.",
-    correctionMessage: "Try adding a default case or cases that match '{1}'.",
+    'NON_EXHAUSTIVE_SWITCH_EXPRESSION',
+    "The type '{0}' is not exhaustively matched by the switch cases since it "
+        "doesn't match '{1}'.",
+    correctionMessage:
+        "Try adding a wildcard pattern or cases that match '{2}'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the type of the switch scrutinee
+  ///  1: the witness pattern for the unmatched value
+  ///  2: the suggested pattern for the unmatched value
+  static const CompileTimeErrorCode NON_EXHAUSTIVE_SWITCH_STATEMENT =
+      CompileTimeErrorCode(
+    'NON_EXHAUSTIVE_SWITCH_STATEMENT',
+    "The type '{0}' is not exhaustively matched by the switch cases since it "
+        "doesn't match '{1}'.",
+    correctionMessage: "Try adding a default case or cases that match '{2}'.",
     hasPublishedDocs: true,
   );
 
@@ -3975,6 +3994,15 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "all cases.",
     hasPublishedDocs: true,
     uniqueName: 'PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES',
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode POSITIONAL_FIELD_IN_OBJECT_PATTERN =
+      CompileTimeErrorCode(
+    'POSITIONAL_FIELD_IN_OBJECT_PATTERN',
+    "Object patterns can only use named fields.",
+    correctionMessage: "Try specifying the field name.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -6666,6 +6694,15 @@ class WarningCode extends AnalyzerErrorCode {
     uniqueName: 'OVERRIDE_ON_NON_OVERRIDING_SETTER',
   );
 
+  ///  Parameters:
+  ///  0: the matched value type
+  ///  1: the required pattern type
+  static const WarningCode PATTERN_NEVER_MATCHES_VALUE_TYPE = WarningCode(
+    'PATTERN_NEVER_MATCHES_VALUE_TYPE',
+    "The matched value type '{0}' can never match the required type '{1}'.",
+    correctionMessage: "Try using a different pattern.",
+  );
+
   ///  It is not an error to call or tear-off a method, setter, or getter, or to
   ///  read or write a field, on a receiver of static type `Never`.
   ///  Implementations that provide feedback about dead or unreachable code are
@@ -6995,8 +7032,25 @@ class WarningCode extends AnalyzerErrorCode {
     correctionMessage: "Try removing the cast pattern.",
   );
 
-  ///  This is the new replacement for [HintCode.UNNECESSARY_FINAL].
-  static const HintCode UNNECESSARY_FINAL = HintCode.UNNECESSARY_FINAL;
+  ///  No parameters.
+  static const WarningCode UNNECESSARY_FINAL = WarningCode(
+    'UNNECESSARY_FINAL',
+    "The keyword 'final' isn't necessary because the parameter is implicitly "
+        "'final'.",
+    correctionMessage: "Try removing the 'final'.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the diagnostic being ignored
+  static const WarningCode UNNECESSARY_IGNORE = WarningCode(
+    'UNNECESSARY_IGNORE',
+    "The diagnostic '{0}' isn't produced at this location so it doesn't need "
+        "to be ignored.",
+    correctionMessage:
+        "Try removing the name from the list, or removing the whole comment if "
+        "this is the only name in the list.",
+  );
 
   ///  No parameters.
   static const WarningCode UNNECESSARY_NAN_COMPARISON_FALSE = WarningCode(

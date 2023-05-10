@@ -51,6 +51,7 @@ import 'body_might_complete_normally_catch_error_test.dart'
 import 'body_might_complete_normally_nullable_test.dart'
     as body_might_complete_normally_nullable;
 import 'body_might_complete_normally_test.dart' as body_might_complete_normally;
+import 'break_label_on_switch_member_test.dart' as break_label_on_switch_member;
 import 'built_in_identifier_as_extension_name_test.dart'
     as built_in_as_extension_name;
 import 'built_in_identifier_as_prefix_name_test.dart'
@@ -637,6 +638,8 @@ import 'part_of_different_library_test.dart' as part_of_different_library;
 import 'part_of_non_part_test.dart' as part_of_non_part;
 import 'pattern_assignment_not_local_variable_test.dart'
     as pattern_assignment_not_local_variable;
+import 'pattern_never_matches_value_type_test.dart'
+    as pattern_never_matches_value_type;
 import 'pattern_type_mismatch_in_irrefutable_context_test.dart'
     as pattern_type_mismatch_in_irrefutable_context;
 import 'pattern_variable_assignment_inside_guard_test.dart'
@@ -814,7 +817,6 @@ import 'undefined_referenced_parameter_test.dart'
 import 'undefined_setter_test.dart' as undefined_setter;
 import 'undefined_shown_name_test.dart' as undefined_shown_name;
 import 'undefined_super_getter_test.dart' as undefined_super_getter;
-import 'undefined_super_method_test.dart' as undefined_super_method;
 import 'undefined_super_operator_test.dart' as undefined_super_operator;
 import 'undefined_super_setter_test.dart' as undefined_super_setter;
 import 'unignorable_ignore_test.dart' as unignorable_ignore;
@@ -910,6 +912,7 @@ main() {
     body_might_complete_normally_catch_error.main();
     body_might_complete_normally_nullable.main();
     body_might_complete_normally.main();
+    break_label_on_switch_member.main();
     built_in_as_extension_name.main();
     built_in_as_prefix_name.main();
     built_in_as_type_name.main();
@@ -1292,6 +1295,7 @@ main() {
     part_of_different_library.main();
     part_of_non_part.main();
     pattern_assignment_not_local_variable.main();
+    pattern_never_matches_value_type.main();
     pattern_type_mismatch_in_irrefutable_context.main();
     pattern_variable_assignment_inside_guard.main();
     positional_super_formal_parameter_with_positional_argument.main();
@@ -1408,7 +1412,6 @@ main() {
     undefined_setter.main();
     undefined_shown_name.main();
     undefined_super_getter.main();
-    undefined_super_method.main();
     undefined_super_operator.main();
     undefined_super_setter.main();
     unignorable_ignore.main();

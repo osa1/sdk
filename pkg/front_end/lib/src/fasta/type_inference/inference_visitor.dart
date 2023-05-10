@@ -108,7 +108,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
   Class? mapEntryClass;
 
   @override
-  final Operations<VariableDeclaration, DartType> operations;
+  final OperationsCfe operations;
 
   /// Context information for the current closure, or `null` if we are not
   /// inside a closure.
@@ -1922,10 +1922,13 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     int? stackBase;
     assert(checkStackBase(node, stackBase = stackHeight));
 
-    // TODO(scheglov) Pass actual variables, not just `{}`.
     IfCaseStatementResult<DartType, InvalidExpression> analysisResult =
         analyzeIfCaseStatement(node, node.expression, node.patternGuard.pattern,
-            node.patternGuard.guard, node.then, node.otherwise, {});
+            node.patternGuard.guard, node.then, node.otherwise, {
+      for (VariableDeclaration variable
+          in node.patternGuard.pattern.declaredVariables)
+        variable.name!: variable
+    });
 
     node.matchedValueType = analysisResult.matchedExpressionType;
 
@@ -4909,7 +4912,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     reportNonNullableInNullAwareWarningIfNeeded(
         operandType, "!", node.operand.fileOffset);
     flowAnalysis.nonNullAssert_end(node.operand);
-    DartType nonNullableResultType = operandType.toNonNull();
+    DartType nonNullableResultType = operations.promoteToNonNull(operandType);
     return createNullAwareExpressionInferenceResult(
         nonNullableResultType, node, nullAwareGuards);
   }
@@ -6065,8 +6068,14 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           new InstrumentationValueForMember(equalsTarget.member!));
     }
     DartType rightType = equalsTarget.getBinaryOperandType(this);
-    rightResult = ensureAssignableResult(
-        rightType.withDeclaredNullability(libraryBuilder.nullable), rightResult,
+    if (libraryBuilder.isNonNullableByDefault) {
+      rightType = operations.getNullableType(rightType);
+    } else {
+      rightType = operations.getLegacyType(rightType);
+    }
+    DartType contextType =
+        rightType.withDeclaredNullability(libraryBuilder.nullable);
+    rightResult = ensureAssignableResult(contextType, rightResult,
         errorTemplate: templateArgumentTypeNotAssignable,
         nullabilityErrorTemplate: templateArgumentTypeNotAssignableNullability,
         nullabilityPartErrorTemplate:
@@ -8250,6 +8259,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         analysisResult =
         analyzeSwitchStatement(node, expression, node.cases.length);
 
+    node.expressionType = analysisResult.scrutineeType;
+
     assert(checkStack(node, stackBase, [
       /* cases = */ ...repeatedKind(ValueKinds.SwitchCase, node.cases.length),
       /* scrutinee type = */ ValueKinds.DartType,
@@ -8371,6 +8382,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     for (int caseIndex = 0; caseIndex < node.cases.length; caseIndex++) {
       PatternSwitchCase switchCase = node.cases[caseIndex];
+      List<VariableDeclaration> jointVariablesNotInAll = [];
       for (int headIndex = 0;
           headIndex < switchCase.patternGuards.length;
           headIndex++) {
@@ -8398,16 +8410,28 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         };
         if (headIndex == 0) {
           for (VariableDeclaration jointVariable in switchCase.jointVariables) {
-            jointVariable.type = inferredVariableTypes[jointVariable.name!]!;
+            DartType? inferredType = inferredVariableTypes[jointVariable.name!];
+            if (inferredType != null) {
+              jointVariable.type = inferredType;
+            } else {
+              jointVariable.type = const InvalidType();
+              jointVariablesNotInAll.add(jointVariable);
+            }
           }
         } else {
-          for (VariableDeclaration jointVariable in switchCase.jointVariables) {
-            if (jointVariable.type !=
-                inferredVariableTypes[jointVariable.name!]!) {
+          for (int i = 0; i < switchCase.jointVariables.length; ++i) {
+            VariableDeclaration jointVariable = switchCase.jointVariables[i];
+            // The error on joint variables not present in all case heads is
+            // reported in BodyBuilder.
+            DartType? inferredType = inferredVariableTypes[jointVariable.name!];
+            if (!jointVariablesNotInAll.contains(jointVariable) &&
+                inferredType != null &&
+                jointVariable.type != inferredType) {
               jointVariable.initializer = helper.buildProblem(
-                  templateVariablePatternTypeMismatchInSwitchHeads
+                  templateJointPatternVariablesMismatch
                       .withArguments(jointVariable.name!),
-                  jointVariable.fileOffset,
+                  switchCase.jointVariableFirstUseOffsets?[i] ??
+                      jointVariable.fileOffset,
                   noLength)
                 ..parent = jointVariable;
             }
@@ -8823,7 +8847,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     rewrite = popRewrite();
     if (!identical(node.initializer, rewrite)) {
-      node.initializer = rewrite as Expression;
+      node.initializer = rewrite as Expression..parent = node;
     }
 
     return const StatementInferenceResult();
@@ -9376,7 +9400,9 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         parent is RelationalPattern && parent.expression == node;
 
     ExpressionInferenceResult expressionResult =
-        inferExpression(node, context).stopShorting();
+        // TODO(johnniwinther): Handle [isVoidAllowed] through
+        //  [dispatchExpression].
+        inferExpression(node, context, isVoidAllowed: true).stopShorting();
 
     if (needsCoercion) {
       expressionResult =
@@ -9478,7 +9504,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         (node as SwitchExpression).cases[caseIndex];
     Object? rewrite = popRewrite();
     if (!identical(switchExpressionCase.expression, rewrite)) {
-      switchExpressionCase.expression = rewrite as Expression;
+      switchExpressionCase.expression = rewrite as Expression
+        ..parent = switchExpressionCase;
     }
   }
 
@@ -10040,6 +10067,35 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       node.left = (rewrite as Pattern)..parent = node;
     }
 
+    Map<String, VariableDeclaration> leftDeclaredVariablesByName = {
+      for (VariableDeclaration variable in node.left.declaredVariables)
+        variable.name!: variable
+    };
+    Map<String, VariableDeclaration> jointVariableNames = {
+      for (VariableDeclaration variable in node.orPatternJointVariables)
+        variable.name!: variable
+    };
+    for (VariableDeclaration rightVariable in node.right.declaredVariables) {
+      String rightVariableName = rightVariable.name!;
+      VariableDeclaration? leftVariable =
+          leftDeclaredVariablesByName[rightVariableName];
+      VariableDeclaration? jointVariable =
+          jointVariableNames[rightVariableName];
+      if (leftVariable != null && jointVariable != null) {
+        if (leftVariable.type != rightVariable.type ||
+            leftVariable.isFinal != rightVariable.isFinal) {
+          helper.addProblem(
+              templateJointPatternVariablesMismatch
+                  .withArguments(rightVariableName),
+              leftVariable.fileOffset,
+              rightVariableName.length);
+        } else {
+          jointVariable.isFinal = rightVariable.isFinal;
+          jointVariable.type = rightVariable.type;
+        }
+      }
+    }
+
     pushRewrite(replacement ?? node);
 
     assert(checkStack(node, stackBase, [
@@ -10342,18 +10398,17 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     node.needsCheck = _needsCheck(
         matchedType: matchedValueType, requiredType: node.requiredType);
 
-    DartType lookupType;
     if (node.needsCheck) {
-      lookupType = node.lookupType = node.requiredType;
+      node.lookupType = node.requiredType;
     } else {
-      lookupType = node.lookupType = matchedValueType;
+      node.lookupType = matchedValueType;
     }
 
     for (NamedPattern field in node.fields) {
       field.fieldName = new Name(field.name, libraryBuilder.library);
 
       ObjectAccessTarget fieldTarget = findInterfaceMember(
-          lookupType, field.fieldName, field.fileOffset,
+          node.requiredType, field.fieldName, field.fileOffset,
           includeExtensionMethods: true,
           callSiteAccessKind: CallSiteAccessKind.getterInvocation);
 
@@ -10369,11 +10424,13 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           field.accessKind = ObjectAccessKind.Object;
           break;
         case ObjectAccessTargetKind.recordNamed:
-          field.recordType = lookupType.resolveTypeParameterType as RecordType;
+          field.recordType =
+              node.requiredType.resolveTypeParameterType as RecordType;
           field.accessKind = ObjectAccessKind.RecordNamed;
           break;
         case ObjectAccessTargetKind.recordIndexed:
-          field.recordType = lookupType.resolveTypeParameterType as RecordType;
+          field.recordType =
+              node.requiredType.resolveTypeParameterType as RecordType;
           field.accessKind = ObjectAccessKind.RecordIndexed;
           field.recordFieldIndex = fieldTarget.recordFieldIndex!;
           break;
@@ -10387,7 +10444,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         case ObjectAccessTargetKind.ambiguous:
           field.pattern = new InvalidPattern(
               createMissingPropertyGet(
-                  field.fileOffset, lookupType, field.fieldName),
+                  field.fileOffset, node.requiredType, field.fieldName),
               declaredVariables: field.pattern.declaredVariables)
             ..fileOffset = field.fileOffset
             ..parent = field;
@@ -10407,7 +10464,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         case ObjectAccessTargetKind.extensionMember:
         case ObjectAccessTargetKind.inlineClassMember:
           field.accessKind = ObjectAccessKind.Static;
-          field.functionType = fieldTarget.getFunctionType(this);
+          field.resultType = fieldTarget.getGetterType(this);
           field.typeArguments = fieldTarget.receiverTypeArguments;
           field.target = fieldTarget.member;
           break;
@@ -10417,6 +10474,22 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         case ObjectAccessTargetKind.never:
           field.accessKind = ObjectAccessKind.Dynamic;
           break;
+      }
+      if (fieldTarget.isInstanceMember || fieldTarget.isObjectMember) {
+        Member interfaceMember = fieldTarget.member!;
+        if (interfaceMember is Procedure) {
+          DartType typeToCheck = isNonNullableByDefault
+              ? interfaceMember.function
+                  .computeFunctionType(libraryBuilder.nonNullable)
+              : interfaceMember.function.returnType;
+          field.checkReturn =
+              InferenceVisitorBase.returnedTypeParametersOccurNonCovariantly(
+                  interfaceMember.enclosingClass!, typeToCheck);
+        } else if (interfaceMember is Field) {
+          field.checkReturn =
+              InferenceVisitorBase.returnedTypeParametersOccurNonCovariantly(
+                  interfaceMember.enclosingClass!, interfaceMember.type);
+        }
       }
     }
 
@@ -10620,6 +10693,13 @@ class InferenceVisitorImpl extends InferenceVisitorBase
             ..fileOffset = error.fileOffset;
     }
 
+    error = analysisResult.emptyMapPatternError;
+    if (error != null) {
+      replacement =
+          new InvalidPattern(error, declaredVariables: node.declaredVariables)
+            ..fileOffset = error.fileOffset;
+    }
+
     // TODO(johnniwinther): The required type computed by the type analyzer
     // isn't trivially `Map<dynamic, dynamic>` in all cases. Does that matter
     // for the lowering?
@@ -10662,6 +10742,27 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       Object? rewrite = popRewrite();
       if (!identical(node.entries[i], rewrite)) {
         node.entries[i] = (rewrite as MapPatternEntry)..parent = node;
+      }
+    }
+
+    Map<int, InvalidExpression>? restPatternErrors =
+        analysisResult.restPatternErrors;
+    if (restPatternErrors != null) {
+      InvalidExpression? firstError;
+      int insertionIndex = 0;
+      for (int readIndex = 0; readIndex < node.entries.length; readIndex++) {
+        InvalidExpression? error = restPatternErrors[readIndex];
+        if (error != null) {
+          firstError ??= error;
+        } else {
+          node.entries[insertionIndex++] = node.entries[readIndex];
+        }
+      }
+      node.entries.length = insertionIndex;
+      if (insertionIndex == 0) {
+        replacement ??= new InvalidPattern(firstError!,
+            declaredVariables: node.declaredVariables)
+          ..fileOffset = node.fileOffset;
       }
     }
 
@@ -10991,16 +11092,15 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
   @override
   DartType resolveObjectPatternPropertyGet({
+    required Pattern objectPattern,
     required DartType receiverType,
     required shared.RecordPatternField<TreeNode, Pattern> field,
   }) {
     String fieldName = field.name!;
-    ObjectAccessTarget fieldAccessTarget = findInterfaceMember(
-        receiverType,
-        new Name(fieldName,
-            fieldName.startsWith("_") ? libraryBuilder.library : null),
-        field.pattern.fileOffset,
-        callSiteAccessKind: CallSiteAccessKind.getterInvocation);
+    ObjectAccessTarget fieldAccessTarget = findInterfaceMember(receiverType,
+        new Name(fieldName, libraryBuilder.library), field.pattern.fileOffset,
+        callSiteAccessKind: CallSiteAccessKind.getterInvocation,
+        includeExtensionMethods: true);
     return fieldAccessTarget.getGetterType(this);
   }
 

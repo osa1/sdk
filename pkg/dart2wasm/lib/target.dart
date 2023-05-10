@@ -15,6 +15,7 @@ import 'package:kernel/reference_from_index.dart';
 import 'package:kernel/target/changed_structure_notifier.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:kernel/type_environment.dart';
+import 'package:kernel/verifier.dart';
 import 'package:vm/transformations/mixin_full_resolution.dart'
     as transformMixins show transformLibraries;
 import 'package:vm/transformations/ffi/common.dart' as ffiHelper
@@ -53,6 +54,9 @@ class WasmTarget extends Target {
   ConstantsBackend get constantsBackend => const ConstantsBackend();
 
   @override
+  Verification get verification => const WasmVerification();
+
+  @override
   String get name => 'wasm';
 
   @override
@@ -69,9 +73,10 @@ class WasmTarget extends Target {
         'dart:nativewrappers',
         'dart:io',
         'dart:js_interop',
+        'dart:js_interop_unsafe',
         'dart:js',
         'dart:js_util',
-        'dart:wasm',
+        'dart:_wasm',
         'dart:developer',
       ];
 
@@ -82,8 +87,13 @@ class WasmTarget extends Target {
         'dart:typed_data',
         'dart:js_interop',
         'dart:js_util',
-        'dart:wasm',
+        'dart:_wasm',
       ];
+
+  bool allowPlatformPrivateLibraryAccess(Uri importer, Uri imported) =>
+      super.allowPlatformPrivateLibraryAccess(importer, imported) ||
+      importer.path.contains('tests/web/wasm') ||
+      importer.isScheme('package') && importer.path == 'js/js.dart';
 
   void _patchHostEndian(CoreTypes coreTypes) {
     // Fix Endian.host to be a const field equal to Endian.little instead of
@@ -152,7 +162,9 @@ class WasmTarget extends Target {
       ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("package:js/js.dart")),
       ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
-          component, Uri.parse("dart:_js_annotations"))
+          component, Uri.parse("dart:_js_annotations")),
+      ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+          component, Uri.parse("dart:js_interop")),
     };
     if (transitiveImportingJSInterop.isEmpty) {
       logger?.call("Skipped JS interop transformations");
@@ -373,4 +385,25 @@ class WasmTarget extends Target {
   Class getRecordImplementationClass(CoreTypes coreTypes,
           int numPositionalFields, List<String> namedFields) =>
       recordClasses[RecordShape(numPositionalFields, namedFields)]!;
+}
+
+class WasmVerification extends Verification {
+  const WasmVerification();
+
+  @override
+  bool allowNoFileOffset(VerificationStage stage, TreeNode node) {
+    if (super.allowNoFileOffset(stage, node)) {
+      return true;
+    }
+    if (stage >= VerificationStage.afterModularTransformations) {
+      // Allow synthesized classes, procedures, fields and casts.
+      // TODO(askesc): Improve the precision of these exceptions.
+      return node is Class ||
+          node is Constructor ||
+          node is Procedure ||
+          node is Field ||
+          node is AsExpression;
+    }
+    return false;
+  }
 }

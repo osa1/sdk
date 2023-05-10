@@ -522,7 +522,8 @@ class CloneVisitorNotMembers implements TreeVisitor<TreeNode> {
     }
     return new SwitchStatement(
         clone(node.expression), node.cases.map(clone).toList(),
-        isExplicitlyExhaustive: node.isExplicitlyExhaustive);
+        isExplicitlyExhaustive: node.isExplicitlyExhaustive)
+      ..expressionTypeInternal = visitOptionalType(node.expressionTypeInternal);
   }
 
   @override
@@ -1010,14 +1011,17 @@ class CloneVisitorNotMembers implements TreeVisitor<TreeNode> {
         isDefault: node.isDefault,
         hasLabel: node.hasLabel,
         jointVariables:
-            node.jointVariables.map((e) => getVariableClone(e)!).toList());
+            node.jointVariables.map((e) => getVariableClone(e)!).toList(),
+        jointVariableFirstUseOffsets: node.jointVariableFirstUseOffsets == null
+            ? null
+            : new List<int>.of(node.jointVariableFirstUseOffsets!));
   }
 
   @override
   TreeNode visitPatternSwitchStatement(PatternSwitchStatement node) {
     return new PatternSwitchStatement(
         clone(node.expression), node.cases.map(clone).toList())
-      ..expressionType = visitOptionalType(node.expressionType);
+      ..expressionTypeInternal = visitOptionalType(node.expressionTypeInternal);
   }
 
   @override
@@ -1094,6 +1098,7 @@ class CloneVisitorWithMembers extends CloneVisitorNotMembers {
           : const <Expression>[]
       ..fileOffset = _cloneFileOffset(node.fileOffset)
       ..fileEndOffset = _cloneFileOffset(node.fileEndOffset);
+    setParents(result.annotations, result);
 
     _activeFileUri = activeFileUriSaved;
     return result;
@@ -1116,6 +1121,7 @@ class CloneVisitorWithMembers extends CloneVisitorNotMembers {
       ..fileOffset = _cloneFileOffset(node.fileOffset)
       ..fileEndOffset = _cloneFileOffset(node.fileEndOffset)
       ..flags = node.flags;
+    setParents(result.annotations, result);
 
     _activeFileUri = activeFileUriSaved;
     return result;
@@ -1156,6 +1162,7 @@ class CloneVisitorWithMembers extends CloneVisitorNotMembers {
       ..fileOffset = _cloneFileOffset(node.fileOffset)
       ..fileEndOffset = _cloneFileOffset(node.fileEndOffset)
       ..flags = node.flags;
+    setParents(result.annotations, result);
 
     _activeFileUri = activeFileUriSaved;
     return result;
@@ -1179,6 +1186,7 @@ class CloneVisitorWithMembers extends CloneVisitorNotMembers {
       ..annotations = cloneAnnotations && !node.annotations.isEmpty
           ? node.annotations.map(super.clone).toList()
           : const <Expression>[];
+    setParents(result.annotations, result);
 
     _activeFileUri = activeFileUriSaved;
     return result;

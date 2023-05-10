@@ -105,20 +105,20 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
         _errorReporter.reportErrorForNode(
             FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_EXTENDS,
             superclass,
-            [node.name.lexeme, superclass.name.name]);
+            [node.name.lexeme, superclass.name2.lexeme]);
       }
     }
 
     // No classes from the FFI may be explicitly implemented.
     void checkSupertype(NamedType typename, FfiCode subtypeOfStructCode) {
-      final superName = typename.name.staticElement?.name;
+      final superName = typename.element?.name;
       if (superName == _allocatorClassName ||
           superName == _finalizableClassName) {
         return;
       }
       if (typename.isCompoundSubtype || typename.isAbiSpecificIntegerSubtype) {
         _errorReporter.reportErrorForNode(subtypeOfStructCode, typename,
-            [node.name.lexeme, typename.name.toSource()]);
+            [node.name.lexeme, typename.name2.lexeme]);
       }
     }
 
@@ -156,6 +156,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
       }
     }
     super.visitClassDeclaration(node);
+    inCompound = false;
   }
 
   @override
@@ -318,8 +319,10 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
 
       final typeArguments = annotation.typeArguments?.arguments;
       final arguments = annotation.arguments?.arguments;
-      if (typeArguments == null || arguments == null) {
-        continue;
+      if (typeArguments == null) {
+        _errorReporter.reportErrorForNode(
+            FfiCode.MUST_BE_A_NATIVE_FUNCTION_TYPE, errorNode, ['T', 'Native']);
+        return;
       }
 
       final ffiSignature = typeArguments[0].type! as FunctionType;
@@ -400,13 +403,13 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
         _errorReporter.reportErrorForNode(
             FfiCode.MUST_BE_A_NATIVE_FUNCTION_TYPE,
             errorNode,
-            [nativeType, 'FfiNative']);
+            [nativeType, 'Native']);
         return;
       }
       if (!_validateCompatibleFunctionTypes(dartType, nativeType,
           nativeFieldWrappersAsPointer: true, allowStricterReturn: true)) {
         _errorReporter.reportErrorForNode(FfiCode.MUST_BE_A_SUBTYPE, errorNode,
-            [nativeType, dartType, 'FfiNative']);
+            [nativeType, dartType, 'Native']);
         return;
       }
     }
@@ -752,7 +755,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
       _errorReporter.reportErrorForNode(
           FfiCode.MISSING_ANNOTATION_ON_STRUCT_FIELD,
           errorNode,
-          [errorNode.type!, compound!.extendsClause!.superclass.name.name]);
+          [errorNode.type!, compound!.extendsClause!.superclass.name2.lexeme]);
     }
   }
 
@@ -926,8 +929,8 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
   }
 
   void _validateFfiLeafCallUsesNoHandles(
-      NodeList<Expression> args, DartType nativeType, AstNode errorNode) {
-    if (args.isEmpty) {
+      NodeList<Expression>? args, DartType nativeType, AstNode errorNode) {
+    if (args == null || args.isEmpty) {
       return;
     }
     for (final arg in args) {
@@ -1678,12 +1681,12 @@ extension on DartType {
 extension on NamedType {
   /// If this is a name of class from `dart:ffi`, return it.
   ClassElement? get ffiClass {
-    return name.staticElement.ffiClass;
+    return element.ffiClass;
   }
 
   /// Return `true` if this represents a subtype of `Struct` or `Union`.
   bool get isAbiSpecificIntegerSubtype {
-    var element = name.staticElement;
+    final element = this.element;
     if (element is ClassElement) {
       return element.allSupertypes.any((e) => e.isAbiSpecificInteger);
     }
@@ -1692,7 +1695,7 @@ extension on NamedType {
 
   /// Return `true` if this represents a subtype of `Struct` or `Union`.
   bool get isCompoundSubtype {
-    var element = name.staticElement;
+    final element = this.element;
     if (element is ClassElement) {
       return element.allSupertypes.any((e) => e.isCompound);
     }

@@ -4110,6 +4110,9 @@ class EquivalenceStrategy {
     if (!checkSwitchStatement_isExplicitlyExhaustive(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
+    if (!checkSwitchStatement_expressionTypeInternal(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
     if (!checkSwitchStatement_fileOffset(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
@@ -4308,7 +4311,8 @@ class EquivalenceStrategy {
     if (!checkPatternSwitchStatement_cases(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
-    if (!checkPatternSwitchStatement_expressionType(visitor, node, other)) {
+    if (!checkPatternSwitchStatement_expressionTypeInternal(
+        visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
     if (!checkPatternSwitchStatement_lastCaseTerminates(visitor, node, other)) {
@@ -4913,6 +4917,9 @@ class EquivalenceStrategy {
     if (!checkNamedPattern_resultType(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
+    if (!checkNamedPattern_checkReturn(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
     if (!checkNamedPattern_recordType(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
@@ -5107,6 +5114,10 @@ class EquivalenceStrategy {
       result = visitor.resultOnInequivalence;
     }
     if (!checkPatternSwitchCase_jointVariables(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
+    if (!checkPatternSwitchCase_jointVariableFirstUseOffsets(
+        visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
     if (!checkPatternSwitchCase_fileOffset(visitor, node, other)) {
@@ -8266,6 +8277,12 @@ class EquivalenceStrategy {
         other.isExplicitlyExhaustive, 'isExplicitlyExhaustive');
   }
 
+  bool checkSwitchStatement_expressionTypeInternal(
+      EquivalenceVisitor visitor, SwitchStatement node, SwitchStatement other) {
+    return visitor.checkNodes(node.expressionTypeInternal,
+        other.expressionTypeInternal, 'expressionTypeInternal');
+  }
+
   bool checkSwitchStatement_fileOffset(
       EquivalenceVisitor visitor, SwitchStatement node, SwitchStatement other) {
     return checkStatement_fileOffset(visitor, node, other);
@@ -8433,10 +8450,12 @@ class EquivalenceStrategy {
         node.cases, other.cases, visitor.checkNodes, 'cases');
   }
 
-  bool checkPatternSwitchStatement_expressionType(EquivalenceVisitor visitor,
-      PatternSwitchStatement node, PatternSwitchStatement other) {
-    return visitor.checkNodes(
-        node.expressionType, other.expressionType, 'expressionType');
+  bool checkPatternSwitchStatement_expressionTypeInternal(
+      EquivalenceVisitor visitor,
+      PatternSwitchStatement node,
+      PatternSwitchStatement other) {
+    return visitor.checkNodes(node.expressionTypeInternal,
+        other.expressionTypeInternal, 'expressionTypeInternal');
   }
 
   bool checkPatternSwitchStatement_lastCaseTerminates(
@@ -9133,6 +9152,12 @@ class EquivalenceStrategy {
     return visitor.checkNodes(node.resultType, other.resultType, 'resultType');
   }
 
+  bool checkNamedPattern_checkReturn(
+      EquivalenceVisitor visitor, NamedPattern node, NamedPattern other) {
+    return visitor.checkValues(
+        node.checkReturn, other.checkReturn, 'checkReturn');
+  }
+
   bool checkNamedPattern_recordType(
       EquivalenceVisitor visitor, NamedPattern node, NamedPattern other) {
     return visitor.checkNodes(node.recordType, other.recordType, 'recordType');
@@ -9324,6 +9349,17 @@ class EquivalenceStrategy {
       PatternSwitchCase node, PatternSwitchCase other) {
     return visitor.checkLists(node.jointVariables, other.jointVariables,
         visitor.checkNodes, 'jointVariables');
+  }
+
+  bool checkPatternSwitchCase_jointVariableFirstUseOffsets(
+      EquivalenceVisitor visitor,
+      PatternSwitchCase node,
+      PatternSwitchCase other) {
+    return visitor.checkLists(
+        node.jointVariableFirstUseOffsets,
+        other.jointVariableFirstUseOffsets,
+        visitor.checkValues,
+        'jointVariableFirstUseOffsets');
   }
 
   bool checkPatternSwitchCase_fileOffset(EquivalenceVisitor visitor,

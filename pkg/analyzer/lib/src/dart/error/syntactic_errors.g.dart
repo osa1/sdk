@@ -11,6 +11,10 @@
 // code, as they match names declared in the source configuration files.
 // ignore_for_file: constant_identifier_names
 
+// While transitioning `HintCodes` to `WarningCodes`, we refer to deprecated
+// codes here.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import "package:analyzer/error/error.dart";
 
 final fastaAnalyzerErrorCodes = <ErrorCode?>[
@@ -165,6 +169,17 @@ final fastaAnalyzerErrorCodes = <ErrorCode?>[
   ParserErrorCode.SEALED_MIXIN,
   ParserErrorCode.VARIABLE_PATTERN_KEYWORD_IN_DECLARATION_CONTEXT,
   ParserErrorCode.INVALID_INSIDE_UNARY_PATTERN,
+  ParserErrorCode.LATE_PATTERN_VARIABLE_DECLARATION,
+  ParserErrorCode.PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD,
+  ParserErrorCode.DEFAULT_IN_SWITCH_EXPRESSION,
+  ParserErrorCode.MIXIN_WITH_CLAUSE,
+  ParserErrorCode.BASE_ENUM,
+  ParserErrorCode.FINAL_ENUM,
+  ParserErrorCode.INTERFACE_ENUM,
+  ParserErrorCode.SEALED_ENUM,
+  ParserErrorCode.ILLEGAL_PATTERN_VARIABLE_NAME,
+  ParserErrorCode.ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME,
+  ParserErrorCode.ILLEGAL_PATTERN_IDENTIFIER_NAME,
 ];
 
 class ParserErrorCode extends ErrorCode {
@@ -196,8 +211,9 @@ class ParserErrorCode extends ErrorCode {
 
   static const ParserErrorCode ABSTRACT_SEALED_CLASS = ParserErrorCode(
     'ABSTRACT_SEALED_CLASS',
-    "A class can't be declared both 'sealed' and 'abstract'.",
-    correctionMessage: "Try removing the 'abstract' or 'sealed' keyword.",
+    "A 'sealed' class can't be marked 'abstract' because it's already "
+        "implicitly abstract.",
+    correctionMessage: "Try removing the 'abstract' keyword.",
     hasPublishedDocs: true,
   );
 
@@ -262,6 +278,12 @@ class ParserErrorCode extends ErrorCode {
     'ASYNC_KEYWORD_USED_AS_IDENTIFIER',
     "The keywords 'await' and 'yield' can't be used as identifiers in an "
         "asynchronous or generator function.",
+  );
+
+  static const ParserErrorCode BASE_ENUM = ParserErrorCode(
+    'BASE_ENUM',
+    "Enums can't be declared to be 'base'.",
+    correctionMessage: "Try removing the keyword 'base'.",
   );
 
   static const ParserErrorCode BINARY_OPERATOR_WRITTEN_OUT = ParserErrorCode(
@@ -411,6 +433,13 @@ class ParserErrorCode extends ErrorCode {
     'COVARIANT_TOP_LEVEL_DECLARATION',
     "Top-level declarations can't be declared to be covariant.",
     correctionMessage: "Try removing the keyword 'covariant'.",
+  );
+
+  ///  No parameters.
+  static const ParserErrorCode DEFAULT_IN_SWITCH_EXPRESSION = ParserErrorCode(
+    'DEFAULT_IN_SWITCH_EXPRESSION',
+    "A switch expression may not use the `default` keyword.",
+    correctionMessage: "Try replacing `default` with `_`.",
   );
 
   ///  No parameters.
@@ -886,6 +915,32 @@ class ParserErrorCode extends ErrorCode {
     "Illegal assignment to non-assignable expression.",
   );
 
+  ///  Parameters:
+  ///  0: the illegal name
+  static const ParserErrorCode ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME =
+      ParserErrorCode(
+    'ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME',
+    "A variable assigned by a pattern assignment can't be named '{0}'.",
+    correctionMessage: "Choose a different name.",
+  );
+
+  ///  Parameters:
+  ///  0: the illegal name
+  static const ParserErrorCode ILLEGAL_PATTERN_IDENTIFIER_NAME =
+      ParserErrorCode(
+    'ILLEGAL_PATTERN_IDENTIFIER_NAME',
+    "A pattern can't refer to an identifier named '{0}'.",
+    correctionMessage: "Match the identifier using '==",
+  );
+
+  ///  Parameters:
+  ///  0: the illegal name
+  static const ParserErrorCode ILLEGAL_PATTERN_VARIABLE_NAME = ParserErrorCode(
+    'ILLEGAL_PATTERN_VARIABLE_NAME',
+    "The variable declared by a variable pattern can't be named '{0}'.",
+    correctionMessage: "Choose a different name.",
+  );
+
   static const ParserErrorCode IMPLEMENTS_BEFORE_EXTENDS = ParserErrorCode(
     'IMPLEMENTS_BEFORE_EXTENDS',
     "The extends clause must be before the implements clause.",
@@ -920,6 +975,12 @@ class ParserErrorCode extends ErrorCode {
     "The loop variable in a for-each loop can't be initialized.",
     correctionMessage:
         "Try removing the initializer, or using a different kind of loop.",
+  );
+
+  static const ParserErrorCode INTERFACE_ENUM = ParserErrorCode(
+    'INTERFACE_ENUM',
+    "Enums can't be declared to be 'interface'.",
+    correctionMessage: "Try removing the keyword 'interface'.",
   );
 
   static const ParserErrorCode INTERFACE_MIXIN = ParserErrorCode(
@@ -1126,6 +1187,14 @@ class ParserErrorCode extends ErrorCode {
     "Can't have modifier '{0}' in an extension.",
     correctionMessage: "Try removing '{0}'.",
     hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const ParserErrorCode LATE_PATTERN_VARIABLE_DECLARATION =
+      ParserErrorCode(
+    'LATE_PATTERN_VARIABLE_DECLARATION',
+    "A pattern variable declaration may not use the `late` keyword.",
+    correctionMessage: "Try removing the keyword `late`.",
   );
 
   static const ParserErrorCode LIBRARY_DIRECTIVE_NOT_FIRST = ParserErrorCode(
@@ -1349,6 +1418,11 @@ class ParserErrorCode extends ErrorCode {
     "Mixins can't declare constructors.",
   );
 
+  static const ParserErrorCode MIXIN_WITH_CLAUSE = ParserErrorCode(
+    'MIXIN_WITH_CLAUSE',
+    "A mixin can't have a with clause.",
+  );
+
   static const ParserErrorCode MODIFIER_OUT_OF_ORDER = ParserErrorCode(
     'MODIFIER_OUT_OF_ORDER',
     "The modifier '{0}' should be before the modifier '{1}'.",
@@ -1547,6 +1621,17 @@ class ParserErrorCode extends ErrorCode {
         "pattern variable declaration.",
   );
 
+  ///  No parameters.
+  static const ParserErrorCode
+      PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD = ParserErrorCode(
+    'PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD',
+    "A pattern variable declaration may not appear outside a function or "
+        "method.",
+    correctionMessage:
+        "Try declaring ordinary variables and assigning from within a function "
+        "or method.",
+  );
+
   static const ParserErrorCode POSITIONAL_AFTER_NAMED_ARGUMENT =
       ParserErrorCode(
     'POSITIONAL_AFTER_NAMED_ARGUMENT',
@@ -1602,6 +1687,12 @@ class ParserErrorCode extends ErrorCode {
     "Only factory constructor can specify '=' redirection.",
     correctionMessage:
         "Try making this a factory constructor, or remove the redirection.",
+  );
+
+  static const ParserErrorCode SEALED_ENUM = ParserErrorCode(
+    'SEALED_ENUM',
+    "Enums can't be declared to be 'sealed'.",
+    correctionMessage: "Try removing the keyword 'sealed'.",
   );
 
   static const ParserErrorCode SEALED_MIXIN = ParserErrorCode(

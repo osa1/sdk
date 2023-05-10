@@ -196,13 +196,13 @@ class Version(object):
             return True
         if self.channel == 'be' and other.channel != 'be':
             return False
-        if int(self.prerelease_patch) < int(other.prerelease_patch):
-            return True
-        if int(self.prerelease_patch) > int(other.prerelease_patch):
-            return False
         if int(self.prerelease) < int(other.prerelease):
             return True
         if int(self.prerelease) > int(other.prerelease):
+            return False
+        if int(self.prerelease_patch) < int(other.prerelease_patch):
+            return True
+        if int(self.prerelease_patch) > int(other.prerelease_patch):
             return False
         return False
 
@@ -253,7 +253,7 @@ def HostArchitectures():
     else:
         if m in ['aarch64', 'arm64', 'arm64e', 'ARM64']:
             return ['arm64']
-        if m in ['armv7l']:
+        if m in ['armv7l', 'armv8l']:
             return ['arm']
         if m in ['i386', 'i686', 'ia32', 'x86']:
             return ['x86', 'ia32']

@@ -85,7 +85,7 @@ const POWERS_OF_TEN = const [
 /**
  * An [Iterable] of the UTF-16 code units of a [String] in index order.
  */
-class CodeUnits extends UnmodifiableListBase<int> {
+final class CodeUnits extends UnmodifiableListBase<int> {
   /** The string that this is the code units of. */
   final String _string;
 
@@ -973,6 +973,12 @@ abstract class HttpStatus {
 // `DoubleLinkedQueue.lastEntry` members.
 // Still, someone might have based their own double-linked list on this
 // class, so we keep it functional.
+//
+// Should really be marked `base`, but the only use in the platform
+// libraries is to implement the interface in a class which used to have
+// this publicly visible type.
+//
+// TODO: @Deprecated("Will be removed in a future release")
 class DoubleLinkedQueueEntry<E> {
   DoubleLinkedQueueEntry<E>? _previousLink;
   DoubleLinkedQueueEntry<E>? _nextLink;
@@ -1034,3 +1040,16 @@ class DoubleLinkedQueueEntry<E> {
 /// through scheduled events or timers, which would put the object into
 /// an inconsistent state if simply being copied.
 const vmIsolateUnsendable = pragma("vm:isolate-unsendable");
+
+// Helpers used to detect cycles in collection `toString`s.
+
+/// A collection used to identify cyclic lists during `toString` calls.
+final List<Object> toStringVisiting = [];
+
+/// Check if we are currently visiting [object] in a `toString` call.
+bool isToStringVisiting(Object object) {
+  for (int i = 0; i < toStringVisiting.length; i++) {
+    if (identical(object, toStringVisiting[i])) return true;
+  }
+  return false;
+}

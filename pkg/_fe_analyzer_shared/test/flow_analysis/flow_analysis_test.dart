@@ -4613,7 +4613,6 @@ main() {
     var intType = Type('int');
     var intQType = Type('int?');
     var stringType = Type('String');
-    const emptyMap = const <int, VariableModel<Type>>{};
 
     setUp(() {
       x = h.promotionKeyStore.keyForVariable(Var('x')..type = Type('Object?'));
@@ -4641,7 +4640,7 @@ main() {
           x: model(null),
           y: model([intType])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap), {
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), {
           x: _matchVariableModel(chain: null, ofInterest: ['int']),
           y: _matchVariableModel(chain: null, ofInterest: ['int'])
         });
@@ -4653,8 +4652,7 @@ main() {
           x: model([intType]),
           y: model([stringType])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p, p, emptyMap),
-            same(p));
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p, p), same(p));
       });
 
       test('one input empty', () {
@@ -4663,10 +4661,11 @@ main() {
           y: model([stringType])
         };
         var p2 = <int, VariableModel<Type>>{};
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            same(emptyMap));
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            same(emptyMap));
+        const expected = const <int, VariableModel<Never>>{};
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2),
+            same(expected));
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1),
+            same(expected));
       });
 
       test('promoted with unpromoted', () {
@@ -4677,10 +4676,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: null, ofInterest: ['int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
       });
 
       test('related type chains', () {
@@ -4693,10 +4690,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
       });
 
       test('unrelated type chains', () {
@@ -4709,10 +4704,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: null, ofInterest: ['String', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
       });
 
       test('sub-map', () {
@@ -4722,10 +4715,8 @@ main() {
           y: model([stringType])
         };
         var p2 = {x: xModel};
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            same(p2));
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            same(p2));
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), same(p2));
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), same(p2));
       });
 
       test('sub-map with matched subtype', () {
@@ -4739,10 +4730,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
       });
 
       test('sub-map with mismatched subtype', () {
@@ -4756,10 +4745,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap),
-            expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1, emptyMap),
-            expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
       });
 
       test('assigned', () {
@@ -4767,8 +4754,7 @@ main() {
         var assigned = model(null, assigned: true);
         var p1 = {x: assigned, y: assigned, z: unassigned, w: unassigned};
         var p2 = {x: assigned, y: unassigned, z: assigned, w: unassigned};
-        var joined =
-            FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap);
+        var joined = FlowModel.joinVariableInfo(h.typeOperations, p1, p2);
         expect(joined, {
           x: same(assigned),
           y: _matchVariableModel(
@@ -4794,8 +4780,7 @@ main() {
           z: writeCapturedModel,
           w: intQModel
         };
-        var joined =
-            FlowModel.joinVariableInfo(h.typeOperations, p1, p2, emptyMap);
+        var joined = FlowModel.joinVariableInfo(h.typeOperations, p1, p2);
         expect(joined, {
           x: same(writeCapturedModel),
           y: same(writeCapturedModel),
@@ -4827,7 +4812,7 @@ main() {
 
     test('first is null', () {
       var s1 = FlowModel.withInfo(Reachability.initial.split(), emptyMap);
-      var result = FlowModel.merge(h.typeOperations, null, s1, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, null, s1);
       expect(result.reachable, same(Reachability.initial));
     });
 
@@ -4835,7 +4820,7 @@ main() {
       var splitPoint = Reachability.initial.split();
       var afterSplit = splitPoint.split();
       var s1 = FlowModel.withInfo(afterSplit, emptyMap);
-      var result = FlowModel.merge(h.typeOperations, s1, null, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, s1, null);
       expect(result.reachable, same(splitPoint));
     });
 
@@ -4848,7 +4833,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit, {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo[x]!.promotedTypes, isNull);
     });
@@ -4862,7 +4847,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit, {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo, same(s2.variableInfo));
     });
@@ -4876,7 +4861,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo, same(s1.variableInfo));
     });
@@ -4890,7 +4875,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2, emptyMap);
+      var result = FlowModel.merge(h.typeOperations, s1, s2);
       expect(result.reachable.locallyReachable, false);
       expect(result.reachable.parent, same(splitPoint.parent));
       expect(result.variableInfo[x]!.promotedTypes, isNull);
@@ -7481,15 +7466,65 @@ main() {
     });
 
     group('List pattern:', () {
-      test('Not guaranteed to match', () {
-        h.run([
-          switch_(expr('Object'), [
-            listPattern([]).then([break_()]),
-            default_.then([
-              checkReachable(true),
+      group('Not guaranteed to match:', () {
+        test('Empty list', () {
+          h.run([
+            switch_(expr('List<Object>'), [
+              listPattern([]).then([break_()]),
+              default_.then([
+                checkReachable(true),
+              ]),
             ]),
-          ]),
-        ]);
+          ]);
+        });
+
+        test('Single non-rest element', () {
+          h.run([
+            switch_(expr('List<Object>'), [
+              listPattern([wildcard()]).then([break_()]),
+              default_.then([
+                checkReachable(true),
+              ]),
+            ]),
+          ]);
+        });
+
+        test('Rest pattern with subpattern that may fail to match', () {
+          h.run([
+            switch_(expr('List<Object>'), [
+              listPattern([listPatternRestElement(listPattern([]))])
+                  .then([break_()]),
+              default_.then([
+                checkReachable(true),
+              ])
+            ])
+          ]);
+        });
+      });
+
+      group('Guaranteed to match:', () {
+        test('Rest pattern with no subpattern', () {
+          h.run([
+            switch_(expr('List<Object>'), [
+              listPattern([listPatternRestElement()]).then([break_()]),
+              default_.then([
+                checkReachable(false),
+              ])
+            ])
+          ]);
+        });
+
+        test('Rest pattern with subpattern that always matches', () {
+          h.run([
+            switch_(expr('List<Object>'), [
+              listPattern([listPatternRestElement(wildcard())])
+                  .then([break_()]),
+              default_.then([
+                checkReachable(false),
+              ])
+            ])
+          ]);
+        });
       });
 
       test('Promotes', () {
@@ -9128,6 +9163,106 @@ main() {
                 checkAssigned(x, true),
               ])
             ]),
+          ]);
+        });
+      });
+
+      group('Trivial exhaustiveness:', () {
+        // Although flow analysis doesn't attempt to do full exhaustiveness
+        // checking on switch statements, it understands that if any single case
+        // fully covers the matched value type, the switch statement is
+        // exhaustive.  (Such a switch is called "trivially exhaustive").
+        //
+        // Note that we don't test all possible patterns, because the flow
+        // analysis logic for detecting trivial exhaustiveness builds on the
+        // logic for tracking the "unmatched" state, which is tested elsewhere.
+        test('exhaustive', () {
+          h.run([
+            switch_(expr('Object'), [
+              wildcard().switchCase.then([
+                return_(),
+              ]),
+            ]),
+            checkReachable(false),
+          ]);
+        });
+
+        test('exhaustive but a reachable switch case completes', () {
+          // In this case, even though the switch is trivially exhaustive, the
+          // code after the switch is reachable because one of the reachable
+          // switch cases completes normally.
+          h.run([
+            switch_(expr('Object'), [
+              wildcard(type: 'int').switchCase.then([
+                checkReachable(true),
+              ]),
+              wildcard().switchCase.then([
+                return_(),
+              ]),
+            ]),
+            checkReachable(true),
+          ]);
+        });
+
+        test('exhaustive but an unreachable switch case completes', () {
+          // In this case, even though the `int` case completes normally, that
+          // case is unreachable, so the code after the switch is unreachable.
+          h.run([
+            switch_(expr('Object'), [
+              wildcard().switchCase.then([
+                return_(),
+              ]),
+              wildcard(type: 'int').switchCase.then([
+                checkReachable(false),
+              ]),
+            ]),
+            checkReachable(false),
+          ]);
+        });
+
+        test('exhaustive but a reachable switch case breaks', () {
+          // In this case, even though the switch is trivially exhaustive, the
+          // code after the switch is reachable because one of the reachable
+          // switch cases ends in a break.
+          h.run([
+            switch_(expr('Object'), [
+              wildcard(type: 'int').switchCase.then([
+                checkReachable(true),
+                break_(),
+              ]),
+              wildcard().switchCase.then([
+                return_(),
+              ]),
+            ]),
+            checkReachable(true),
+          ]);
+        });
+
+        test('exhaustive but an unreachable switch case breaks', () {
+          // In this case, even though the `int` case breaks, that case is
+          // unreachable, so the code after the switch is unreachable.
+          h.run([
+            switch_(expr('Object'), [
+              wildcard().switchCase.then([
+                return_(),
+              ]),
+              wildcard(type: 'int').switchCase.then([
+                checkReachable(false),
+                break_(),
+              ]),
+            ]),
+            checkReachable(false),
+          ]);
+        });
+
+        test('not exhaustive', () {
+          h.run([
+            switch_(expr('Object'), [
+              wildcard(type: 'int').switchCase.then([
+                return_(),
+              ]),
+            ]),
+            checkReachable(true),
           ]);
         });
       });

@@ -223,6 +223,11 @@ class DartFixKind {
     70,
     "Add required argument '{0}'",
   );
+  static const ADD_MISSING_SWITCH_CASES = FixKind(
+    'dart.fix.add.missingSwitchCases',
+    DartFixKindPriority.DEFAULT,
+    'Add missing switch cases',
+  );
   static const ADD_NE_NULL = FixKind(
     'dart.fix.add.neNull',
     DartFixKindPriority.DEFAULT,
@@ -412,6 +417,16 @@ class DartFixKind {
     'dart.fix.convert.quotes.multi',
     DartFixKindPriority.IN_FILE,
     'Convert the quotes and remove escapes everywhere in file',
+  );
+  static const CONVERT_TO_BOOL_EXPRESSION = FixKind(
+    'dart.fix.convert.toBoolExpression',
+    DartFixKindPriority.DEFAULT,
+    'Convert to boolean expression',
+  );
+  static const CONVERT_TO_BOOL_EXPRESSION_MULTI = FixKind(
+    'dart.fix.convert.toBoolExpression.multi',
+    DartFixKindPriority.DEFAULT,
+    'Convert to boolean expressions everywhere in file',
   );
   static const CONVERT_TO_CASCADE = FixKind(
     'dart.fix.convert.toCascade',
@@ -642,6 +657,16 @@ class DartFixKind {
     'dart.fix.convert.toWhereType.multi',
     DartFixKindPriority.IN_FILE,
     "Convert to using 'whereType' everywhere in file",
+  );
+  static const CONVERT_TO_WILDCARD_PATTERN = FixKind(
+    'dart.fix.convert.toWildcardPattern',
+    DartFixKindPriority.DEFAULT,
+    "Convert to wildcard pattern",
+  );
+  static const CONVERT_TO_WILDCARD_PATTERN_MULTI = FixKind(
+    'dart.fix.convert.toWildcardPattern.multi',
+    DartFixKindPriority.DEFAULT,
+    "Convert to wildcard pattern everywhere in file",
   );
   static const CREATE_CLASS = FixKind(
     'dart.fix.create.class',
@@ -1106,6 +1131,16 @@ class DartFixKind {
     DartFixKindPriority.IN_FILE,
     'Remove unnecessary interpolation braces everywhere in file',
   );
+  static const REMOVE_LATE = FixKind(
+    'dart.fix.remove.late',
+    DartFixKindPriority.DEFAULT,
+    "Remove the 'late' keyword",
+  );
+  static const REMOVE_LATE_MULTI = FixKind(
+    'dart.fix.remove.late.multi',
+    DartFixKindPriority.DEFAULT,
+    "Remove the 'late' keyword everywhere in file",
+  );
   static const REMOVE_LEADING_UNDERSCORE = FixKind(
     'dart.fix.remove.leadingUnderscore',
     DartFixKindPriority.DEFAULT,
@@ -1358,6 +1393,16 @@ class DartFixKind {
     DartFixKindPriority.IN_FILE,
     'Remove all unnecessary string interpolations in file',
   );
+  static const REMOVE_UNNECESSARY_WILDCARD_PATTERN = FixKind(
+    'dart.fix.remove.unnecessaryWildcardPattern',
+    DartFixKindPriority.DEFAULT,
+    'Remove unnecessary wildcard pattern',
+  );
+  static const REMOVE_UNNECESSARY_WILDCARD_PATTERN_MULTI = FixKind(
+    'dart.fix.remove.unnecessaryWildcardPattern.multi',
+    DartFixKindPriority.DEFAULT,
+    'Remove all unnecessary wildcard pattern in file',
+  );
   static const REMOVE_UNUSED_CATCH_CLAUSE = FixKind(
     'dart.fix.remove.unusedCatchClause',
     DartFixKindPriority.DEFAULT,
@@ -1568,6 +1613,16 @@ class DartFixKind {
     DartFixKindPriority.DEFAULT,
     "Replace 'var' with 'dynamic'",
   );
+  static const REPLACE_WITH_ARROW = FixKind(
+    'dart.fix.replace.withArrow',
+    DartFixKindPriority.DEFAULT,
+    "Replace with '=>'",
+  );
+  static const REPLACE_WITH_ARROW_MULTI = FixKind(
+    'dart.fix.replace.withArrow.multi',
+    DartFixKindPriority.DEFAULT,
+    "Replace with '=>' everywhere in file",
+  );
   static const REPLACE_WITH_BRACKETS = FixKind(
     'dart.fix.replace.withBrackets',
     DartFixKindPriority.DEFAULT,
@@ -1700,6 +1755,16 @@ class DartFixKind {
     DartFixKindPriority.IN_FILE,
     "Replace type annotations with 'var' everywhere in file",
   );
+  static const REPLACE_WITH_WILDCARD = FixKind(
+    'dart.fix.replace.withWildcard',
+    DartFixKindPriority.DEFAULT,
+    "Replace with '_'",
+  );
+  static const REPLACE_WITH_WILDCARD_MULTI = FixKind(
+    'dart.fix.replace.withWildcard.multi',
+    DartFixKindPriority.DEFAULT,
+    "Replace with '_' everywhere in file",
+  );
   static const SORT_CHILD_PROPERTY_LAST = FixKind(
     'dart.fix.sort.childPropertyLast',
     DartFixKindPriority.DEFAULT,
@@ -1739,6 +1804,11 @@ class DartFixKind {
     'dart.fix.sort.sortUnnamedConstructorFirst.multi',
     DartFixKindPriority.DEFAULT,
     'Move all unnamed constructors before named constructors',
+  );
+  static const SURROUND_WITH_PARENTHESES = FixKind(
+    'dart.fix.surround.parentheses',
+    DartFixKindPriority.DEFAULT,
+    'Surround with parentheses',
   );
   static const UPDATE_SDK_CONSTRAINTS = FixKind(
     'dart.fix.updateSdkConstraints',

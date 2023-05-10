@@ -106,23 +106,13 @@ class A01 {}
 ''');
     assertResponse(r'''
 suggestions
-  break
-    kind: keyword
-  return
-    kind: keyword
-  if
-    kind: keyword
   A01
     kind: class
-  final
-    kind: keyword
-  for
-    kind: keyword
-  throw
-    kind: keyword
   A01
     kind: constructorInvocation
   assert
+    kind: keyword
+  break
     kind: keyword
   const
     kind: keyword
@@ -130,9 +120,19 @@ suggestions
     kind: keyword
   dynamic
     kind: keyword
+  final
+    kind: keyword
+  for
+    kind: keyword
+  if
+    kind: keyword
   late
     kind: keyword
+  return
+    kind: keyword
   switch
+    kind: keyword
+  throw
     kind: keyword
   try
     kind: keyword
@@ -203,8 +203,6 @@ suggestions
     kind: class
   B01
     kind: class
-  dynamic
-    kind: keyword
 ''');
   }
 
@@ -229,8 +227,6 @@ suggestions
     kind: class
   B01
     kind: class
-  dynamic
-    kind: keyword
 ''');
   }
 
@@ -371,6 +367,16 @@ void f(Object o) {
 ''');
     assertResponse(r'''
 suggestions
+  const
+    kind: keyword
+  false
+    kind: keyword
+  null
+    kind: keyword
+  switch
+    kind: keyword
+  true
+    kind: keyword
 ''');
   }
 
@@ -386,6 +392,16 @@ void f(Object o) {
 ''');
     assertResponse(r'''
 suggestions
+  const
+    kind: keyword
+  false
+    kind: keyword
+  null
+    kind: keyword
+  switch
+    kind: keyword
+  true
+    kind: keyword
 ''');
   }
 

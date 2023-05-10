@@ -65,6 +65,7 @@ import '../export.dart' show Export;
 import '../fasta_codes.dart';
 import '../identifiers.dart' show QualifiedName, flattenName;
 import '../import.dart' show Import;
+import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/hierarchy/members_builder.dart';
 import '../kernel/internal_ast.dart';
@@ -195,11 +196,6 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
   // the former does not need to be updated after the body of the latter was
   // built.
   final List<Procedure> forwardersOrigins = <Procedure>[];
-
-  // List of types inferred in the outline.  Errors in these should be reported
-  // differently than for specified types.
-  // TODO(cstefantsova):  Find a way to mark inferred types.
-  final Set<DartType> inferredTypes = new Set<DartType>.identity();
 
   // While the bounds of type parameters aren't compiled yet, we can't tell the
   // default nullability of the corresponding type-parameter types.  This list
@@ -1959,7 +1955,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     constructorReferences.clear();
     Map<String, TypeVariableBuilder>? typeVariablesByName =
         checkTypeVariables(typeVariables, classBuilder);
-    void setParent(String name, MemberBuilder? member) {
+    void setParent(MemberBuilder? member) {
       while (member != null) {
         member.parent = classBuilder;
         member = member.next as MemberBuilder?;
@@ -1980,7 +1976,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
               ]);
         }
       }
-      setParent(name, member as MemberBuilder);
+      setParent(member as MemberBuilder);
     }
 
     members.forEach(setParentAndCheckConflicts);
@@ -2173,7 +2169,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     constructorReferences.clear();
     Map<String, TypeVariableBuilder>? typeVariablesByName =
         checkTypeVariables(typeVariables, extensionBuilder);
-    void setParent(String name, MemberBuilder? member) {
+    void setParent(MemberBuilder? member) {
       while (member != null) {
         member.parent = extensionBuilder;
         member = member.next as MemberBuilder?;
@@ -2194,7 +2190,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
               ]);
         }
       }
-      setParent(name, member as MemberBuilder);
+      setParent(member as MemberBuilder);
     }
 
     members.forEach(setParentAndCheckConflicts);
@@ -2265,7 +2261,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     constructorReferences.clear();
     Map<String, TypeVariableBuilder>? typeVariablesByName =
         checkTypeVariables(typeVariables, inlineClassBuilder);
-    void setParent(String name, MemberBuilder? member) {
+    void setParent(MemberBuilder? member) {
       while (member != null) {
         member.parent = inlineClassBuilder;
         member = member.next as MemberBuilder?;
@@ -2286,7 +2282,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
               ]);
         }
       }
-      setParent(name, member as MemberBuilder);
+      setParent(member as MemberBuilder);
     }
 
     members.forEach(setParentAndCheckConflicts);
@@ -3165,7 +3161,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     Map<String, TypeVariableBuilder>? typeVariablesByName =
         checkTypeVariables(typeVariables, enumBuilder);
 
-    void setParent(String name, MemberBuilder? member) {
+    void setParent(MemberBuilder? member) {
       while (member != null) {
         member.parent = enumBuilder;
         member = member.next as MemberBuilder?;
@@ -3186,7 +3182,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
               ]);
         }
       }
-      setParent(name, member as MemberBuilder);
+      setParent(member as MemberBuilder);
     }
 
     members.forEach(setParentAndCheckConflicts);
@@ -3283,6 +3279,9 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     return builder;
   }
 
+  BodyBuilderContext get bodyBuilderContext =>
+      new LibraryBodyBuilderContext(this);
+
   void buildOutlineExpressions(
       ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners,
@@ -3296,7 +3295,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     }
 
     MetadataBuilder.buildAnnotations(
-        library, metadata, this, null, null, fileUri, scope);
+        library, metadata, bodyBuilderContext, this, fileUri, scope);
 
     Iterator<Builder> iterator = localMembersIterator;
     while (iterator.moveNext()) {
@@ -4246,9 +4245,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       TypeParameter? typeParameter = issue.typeParameter;
 
       Message message;
-      bool issueInferred = inferred ??
-          typeArgumentsInfo?.isInferred(issue.index) ??
-          inferredTypes.contains(argument);
+      bool issueInferred =
+          inferred ?? typeArgumentsInfo?.isInferred(issue.index) ?? false;
       offset =
           typeArgumentsInfo?.getOffsetForIndex(issue.index, offset) ?? offset;
       if (issue.isGenericTypeAsArgumentIssue) {
@@ -4466,10 +4464,10 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       {bool inferred = false}) {
     if (node.arguments.types.isEmpty) return;
     Procedure factory = node.target;
-    assert(factory.isFactory);
-    Class klass = factory.enclosingClass!;
-    DartType constructedType = new InterfaceType(
-        klass, klass.enclosingLibrary.nonNullable, node.arguments.types);
+    assert(factory.isFactory || factory.isInlineClassMember);
+    DartType constructedType = Substitution.fromPairs(
+            node.target.function.typeParameters, node.arguments.types)
+        .substituteType(node.target.function.returnType);
     checkBoundsInType(
         constructedType, typeEnvironment, fileUri, node.fileOffset,
         inferred: inferred, allowSuperBounded: false);
@@ -4700,7 +4698,6 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             "Unexpected declaration ${declaration.runtimeType}");
       }
     }
-    inferredTypes.clear();
     checkPendingBoundsChecks(typeEnvironment);
   }
 

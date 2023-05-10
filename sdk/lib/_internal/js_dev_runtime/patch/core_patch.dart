@@ -321,12 +321,12 @@ abstract class num implements Comparable<num> {
 class Error {
   @patch
   static String _objectToString(Object object) {
-    return "Instance of '${dart.typeName(dart.getReifiedType(object))}'";
+    return Primitives.safeToString(object);
   }
 
   @patch
   static String _stringToSafeString(String string) {
-    return JS("String", "JSON.stringify(#)", string);
+    return Primitives.stringSafeToString(string);
   }
 
   @patch
@@ -512,23 +512,6 @@ class Stopwatch {
 // Patch for List implementation.
 @patch
 class List<E> {
-  @patch
-  factory List([@undefined int? length]) {
-    dynamic list;
-    if (JS<bool>('!', '# === void 0', length)) {
-      list = JS('', '[]');
-    } else {
-      int _length = JS('!', '#', length);
-      if (length == null || _length < 0) {
-        throw ArgumentError("Length must be a non-negative integer: $_length");
-      }
-      list = JS('', 'new Array(#)', _length);
-      JS('', '#.fill(null)', list);
-      JSArray.markFixedList(list);
-    }
-    return JSArray<E>.of(list);
-  }
-
   @patch
   factory List.empty({bool growable = false}) {
     var list = JSArray<E>.of(JS('', 'new Array()'));

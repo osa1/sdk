@@ -11,6 +11,10 @@
 // code, as they match names declared in the source configuration files.
 // ignore_for_file: constant_identifier_names
 
+// While transitioning `HintCodes` to `WarningCodes`, we refer to deprecated
+// codes here.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:_fe_analyzer_shared/src/base/errors.dart';
 import 'package:_fe_analyzer_shared/src/scanner/errors.dart';
 import 'package:analyzer/src/dart/error/ffi_code.dart';
@@ -305,7 +309,7 @@ const List<ErrorCode> errorCodeValues = [
   CompileTimeErrorCode.MISSING_DEFAULT_VALUE_FOR_PARAMETER,
   CompileTimeErrorCode.MISSING_DEFAULT_VALUE_FOR_PARAMETER_POSITIONAL,
   CompileTimeErrorCode.MISSING_DEFAULT_VALUE_FOR_PARAMETER_WITH_ANNOTATION,
-  CompileTimeErrorCode.MISSING_OBJECT_PATTERN_GETTER_NAME,
+  CompileTimeErrorCode.MISSING_NAMED_PATTERN_FIELD_NAME,
   CompileTimeErrorCode.MISSING_REQUIRED_ARGUMENT,
   CompileTimeErrorCode.MISSING_VARIABLE_PATTERN,
   CompileTimeErrorCode.MIXINS_SUPER_CLASS,
@@ -357,7 +361,8 @@ const List<ErrorCode> errorCodeValues = [
   CompileTimeErrorCode.NON_CONSTANT_SET_ELEMENT,
   CompileTimeErrorCode.NON_CONST_GENERATIVE_ENUM_CONSTRUCTOR,
   CompileTimeErrorCode.NON_CONST_MAP_AS_EXPRESSION_STATEMENT,
-  CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH,
+  CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION,
+  CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_STATEMENT,
   CompileTimeErrorCode.NON_FINAL_FIELD_IN_ENUM,
   CompileTimeErrorCode.NON_GENERATIVE_CONSTRUCTOR,
   CompileTimeErrorCode.NON_GENERATIVE_IMPLICIT_CONSTRUCTOR,
@@ -404,6 +409,7 @@ const List<ErrorCode> errorCodeValues = [
       .PATTERN_VARIABLE_SHARED_CASE_SCOPE_DIFFERENT_FINALITY_OR_TYPE,
   CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_HAS_LABEL,
   CompileTimeErrorCode.PATTERN_VARIABLE_SHARED_CASE_SCOPE_NOT_ALL_CASES,
+  CompileTimeErrorCode.POSITIONAL_FIELD_IN_OBJECT_PATTERN,
   CompileTimeErrorCode
       .POSITIONAL_SUPER_FORMAL_PARAMETER_WITH_POSITIONAL_ARGUMENT,
   CompileTimeErrorCode.PREFIX_COLLIDES_WITH_TOP_LEVEL_MEMBER,
@@ -591,8 +597,6 @@ const List<ErrorCode> errorCodeValues = [
   HintCode.IMPORT_OF_LEGACY_LIBRARY_INTO_NULL_SAFE,
   HintCode.UNIGNORABLE_IGNORE,
   HintCode.UNNECESSARY_CAST,
-  HintCode.UNNECESSARY_FINAL,
-  HintCode.UNNECESSARY_IGNORE,
   HintCode.UNNECESSARY_IMPORT,
   HintCode.UNREACHABLE_SWITCH_CASE,
   HintCode.UNUSED_ELEMENT,
@@ -629,6 +633,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.ANNOTATION_WITH_TYPE_ARGUMENTS,
   ParserErrorCode.ANNOTATION_WITH_TYPE_ARGUMENTS_UNINSTANTIATED,
   ParserErrorCode.ASYNC_KEYWORD_USED_AS_IDENTIFIER,
+  ParserErrorCode.BASE_ENUM,
   ParserErrorCode.BINARY_OPERATOR_WRITTEN_OUT,
   ParserErrorCode.BREAK_OUTSIDE_OF_LOOP,
   ParserErrorCode.CATCH_SYNTAX,
@@ -651,6 +656,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.COVARIANT_CONSTRUCTOR,
   ParserErrorCode.COVARIANT_MEMBER,
   ParserErrorCode.COVARIANT_TOP_LEVEL_DECLARATION,
+  ParserErrorCode.DEFAULT_IN_SWITCH_EXPRESSION,
   ParserErrorCode.DEFAULT_VALUE_IN_FUNCTION_TYPE,
   ParserErrorCode.DEFERRED_AFTER_PREFIX,
   ParserErrorCode.DIRECTIVE_AFTER_DECLARATION,
@@ -719,11 +725,15 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.GETTER_IN_FUNCTION,
   ParserErrorCode.GETTER_WITH_PARAMETERS,
   ParserErrorCode.ILLEGAL_ASSIGNMENT_TO_NON_ASSIGNABLE,
+  ParserErrorCode.ILLEGAL_PATTERN_ASSIGNMENT_VARIABLE_NAME,
+  ParserErrorCode.ILLEGAL_PATTERN_IDENTIFIER_NAME,
+  ParserErrorCode.ILLEGAL_PATTERN_VARIABLE_NAME,
   ParserErrorCode.IMPLEMENTS_BEFORE_EXTENDS,
   ParserErrorCode.IMPLEMENTS_BEFORE_ON,
   ParserErrorCode.IMPLEMENTS_BEFORE_WITH,
   ParserErrorCode.IMPORT_DIRECTIVE_AFTER_PART_DIRECTIVE,
   ParserErrorCode.INITIALIZED_VARIABLE_IN_FOR_EACH,
+  ParserErrorCode.INTERFACE_ENUM,
   ParserErrorCode.INTERFACE_MIXIN,
   ParserErrorCode.INTERFACE_MIXIN_CLASS,
   ParserErrorCode.INVALID_AWAIT_IN_FOR,
@@ -754,6 +764,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.INVALID_UNICODE_ESCAPE_U_NO_BRACKET,
   ParserErrorCode.INVALID_UNICODE_ESCAPE_U_STARTED,
   ParserErrorCode.INVALID_USE_OF_COVARIANT_IN_EXTENSION,
+  ParserErrorCode.LATE_PATTERN_VARIABLE_DECLARATION,
   ParserErrorCode.LIBRARY_DIRECTIVE_NOT_FIRST,
   ParserErrorCode.LITERAL_WITH_CLASS,
   ParserErrorCode.LITERAL_WITH_CLASS_AND_NEW,
@@ -787,6 +798,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.MISSING_VARIABLE_IN_FOR_EACH,
   ParserErrorCode.MIXED_PARAMETER_GROUPS,
   ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR,
+  ParserErrorCode.MIXIN_WITH_CLAUSE,
   ParserErrorCode.MODIFIER_OUT_OF_ORDER,
   ParserErrorCode.MULTIPLE_CLAUSES,
   ParserErrorCode.MULTIPLE_EXTENDS_CLAUSES,
@@ -814,6 +826,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.NULL_AWARE_CASCADE_OUT_OF_ORDER,
   ParserErrorCode.OUT_OF_ORDER_CLAUSES,
   ParserErrorCode.PATTERN_ASSIGNMENT_DECLARES_VARIABLE,
+  ParserErrorCode.PATTERN_VARIABLE_DECLARATION_OUTSIDE_FUNCTION_OR_METHOD,
   ParserErrorCode.POSITIONAL_AFTER_NAMED_ARGUMENT,
   ParserErrorCode.POSITIONAL_PARAMETER_OUTSIDE_GROUP,
   ParserErrorCode.PREFIX_AFTER_COMBINATOR,
@@ -821,6 +834,7 @@ const List<ErrorCode> errorCodeValues = [
   ParserErrorCode.RECORD_TYPE_ONE_POSITIONAL_NO_TRAILING_COMMA,
   ParserErrorCode.REDIRECTING_CONSTRUCTOR_WITH_BODY,
   ParserErrorCode.REDIRECTION_IN_NON_FACTORY_CONSTRUCTOR,
+  ParserErrorCode.SEALED_ENUM,
   ParserErrorCode.SEALED_MIXIN,
   ParserErrorCode.SEALED_MIXIN_CLASS,
   ParserErrorCode.SETTER_CONSTRUCTOR,
@@ -970,6 +984,7 @@ const List<ErrorCode> errorCodeValues = [
   WarningCode.OVERRIDE_ON_NON_OVERRIDING_GETTER,
   WarningCode.OVERRIDE_ON_NON_OVERRIDING_METHOD,
   WarningCode.OVERRIDE_ON_NON_OVERRIDING_SETTER,
+  WarningCode.PATTERN_NEVER_MATCHES_VALUE_TYPE,
   WarningCode.RECEIVER_OF_TYPE_NEVER,
   WarningCode.RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA,
   WarningCode.REMOVED_LINT_USE,
@@ -1000,6 +1015,8 @@ const List<ErrorCode> errorCodeValues = [
   WarningCode.UNDEFINED_REFERENCED_PARAMETER,
   WarningCode.UNDEFINED_SHOWN_NAME,
   WarningCode.UNNECESSARY_CAST_PATTERN,
+  WarningCode.UNNECESSARY_FINAL,
+  WarningCode.UNNECESSARY_IGNORE,
   WarningCode.UNNECESSARY_NAN_COMPARISON_FALSE,
   WarningCode.UNNECESSARY_NAN_COMPARISON_TRUE,
   WarningCode.UNNECESSARY_NO_SUCH_METHOD,

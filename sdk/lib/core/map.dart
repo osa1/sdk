@@ -27,7 +27,7 @@ part of dart.core;
 /// It is generally not allowed to modify the equality of keys (and thus not
 /// their hashcode) while they are in the map. Some specialized subtypes may be
 /// more permissive, in which case they should document this behavior.
-abstract class Map<K, V> {
+abstract interface class Map<K, V> {
   /// Creates an empty [LinkedHashMap].
   ///
   /// This constructor is equivalent to the non-const map literal `<K,V>{}`.
@@ -35,6 +35,7 @@ abstract class Map<K, V> {
   /// A `LinkedHashMap` requires the keys to implement compatible
   /// `operator==` and `hashCode`.
   /// It iterates in key insertion order.
+  // TODO: @Deprecated("Use literal <K, V>{} instead")
   external factory Map();
 
   /// Creates a [LinkedHashMap] with the same keys and values as [other].

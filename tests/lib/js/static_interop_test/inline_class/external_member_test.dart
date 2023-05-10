@@ -73,16 +73,8 @@ void main() {
   // external.renamedGetSet = 'renamedGetSet';
   // expect(external.renamedGetSet, 'renamedGetSet');
 
-  // Methods and tear-offs.
-  // TODO(srujzs): Tear-offs for inline classes are currently labeled as
-  // extension members, so this triggers some issues in some backends. Once
-  // https://github.com/dart-lang/sdk/issues/51338 is resolved, uncomment the
-  // tear-off tests.
+  // Methods.
   expect(external.method(), 'method');
-  // expect((external.method)(), 'method');
   expect(external.differentArgsMethod('method'), 'methodundefined');
-  // expect((external.differentArgsMethod)('optional', 'method'),
-  //     'optionalmethod');
   expect(external.renamedMethod(), 'method');
-  // expect((external.renamedMethod)(), 'method');
 }

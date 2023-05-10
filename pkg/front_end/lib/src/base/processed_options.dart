@@ -54,7 +54,6 @@ import '../fasta/fasta_codes.dart'
         PlainAndColorizedString,
         messageCantInferPackagesFromManyInputs,
         messageCantInferPackagesFromPackageUri,
-        messageCompilingWithSoundNullSafety,
         messageCompilingWithoutSoundNullSafety,
         messageInternalProblemProvidedBothCompileSdkAndSdkSummary,
         messageMissingInput,
@@ -298,9 +297,6 @@ class ProcessedOptions {
               messageCompilingWithoutSoundNullSafety.severity);
           break;
         case NnbdMode.Strong:
-          reportWithoutLocation(messageCompilingWithSoundNullSafety,
-              messageCompilingWithSoundNullSafety.severity);
-          break;
         case NnbdMode.Agnostic:
           break;
       }
@@ -691,7 +687,7 @@ class ProcessedOptions {
 
     // Check for $cwd/.dart_tool/package_config.json
     Uri? candidate = await checkInDir(dir);
-    if (candidate != null) return createPackagesFromFile(candidate);
+    if (candidate != null) return await createPackagesFromFile(candidate);
 
     // Check for cwd(/..)+/.dart_tool/package_config.json
     Uri parentDir = dir.resolve('..');
@@ -702,7 +698,7 @@ class ProcessedOptions {
       parentDir = dir.resolve('..');
     }
 
-    if (candidate != null) return createPackagesFromFile(candidate);
+    if (candidate != null) return await createPackagesFromFile(candidate);
     return PackageConfig.empty;
   }
 

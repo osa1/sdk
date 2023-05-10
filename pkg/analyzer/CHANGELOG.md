@@ -1,3 +1,35 @@
+## 5.12.0
+* Deprecated `DartType.isDynamic`, use `is DynamicType` instead.
+* Updated `NamedType` to use `importPrefix` and `name2` token.
+  The deprecated `name` node is still visited in this version, but will stop
+  in the next major version.
+* Updated `ExtensionOverride` to use `importPrefix` and `name` token.
+  The deprecated `extensionName` node is still visited in this version, but
+  will stop in the next major version.
+* Deprecated the default `AnalysisError` constructor, use `tmp` constructor,
+  with names formal parameters. Theoretically no clients should use either,
+  but practically there are two uses currently.
+* Added `InvalidType`, used when a named type cannot be resolved, or a
+  property cannot be resolved, etc. Previously `DynamicType` was used.
+  In the future `DynamicType` will be used only when specified explicitly,
+  or a property is resolved against a dynamic target. The clients should
+  prepare by checking also for `InvalidType` in addition to `DynamicType`.
+
+## 5.11.1
+* Restore previously published `finalKeyword`, `interfaceKeyword` and
+  `sealedKeyword` of `MixinElement`. We added them preliminary while
+  working on the class modifiers feature, but eventually decided to remove.
+  See https://github.com/dart-lang/sdk/issues/52159 for details.
+
+## 5.11.0
+* Removed `@experimental` from AST nodes and elements for records and patterns.
+* Deprecated `IfStatement.condition`, use `expression` instead.
+* Added `NamedType.importPrefix`, `NamedType.name2`, and `NamedType.element`.
+  Deprecated `NamedType.name`.  Currently `Identifier` is an expression, and
+  an expression as a name of a type  does not make sense. So, instead we model
+  it as a name token, the `Element` that it references, and an optional import
+  library prefix reference.
+
 ## 5.10.0
 * Added `DartType.isDartCoreType`.
 
