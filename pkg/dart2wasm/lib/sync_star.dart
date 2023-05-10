@@ -524,7 +524,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
     _StateTarget? after = afterTargets[node];
     if (after == null) return super.visitSwitchStatement(node);
 
-    final switchInfo = SwitchInfo(translator, node);
+    final switchInfo = SwitchInfo(this, node);
 
     bool isNullable = dartTypeOf(node.expression).isPotentiallyNullable;
 
@@ -572,7 +572,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
         } else {
           wrap(exp, switchInfo.nonNullableType);
           b.local_get(switchValueNonNullableLocal);
-          switchInfo.compare(this);
+          switchInfo.compare();
           b.if_();
           jumpToTarget(innerTargets[c]!);
           b.end();
