@@ -1366,8 +1366,22 @@ class AsyncCodeGenerator extends CodeGenerator {
     b.struct_set(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateTargetIndex);
 
+    final operandType = dartTypeOf(node.operand);
+    final operandIsFutureOr = operandType is FutureOrType;
+
     b.local_get(suspendStateLocal);
+
+    if (operandIsFutureOr) {
+      translator.types.makeType(this, operandType.typeArgument);
+    }
+
     wrap(node.operand, translator.topInfo.nullableType);
+
+    if (operandIsFutureOr) {
+      b.call(
+          translator.functions.getFunction(translator.futureValue.reference));
+    }
+
     b.call(translator.functions.getFunction(translator.awaitHelper.reference));
     b.return_();
 

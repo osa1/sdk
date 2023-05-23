@@ -348,6 +348,7 @@ abstract interface class Future<T> {
   /// ```
   @pragma("vm:entry-point")
   @pragma("vm:prefer-inline")
+  @pragma("wasm:entry-point")
   factory Future.value([FutureOr<T>? value]) {
     return new _Future<T>.immediate(value == null ? value as T : value);
   }
@@ -1068,6 +1069,7 @@ extension FutureExtensions<T> on Future<T> {
       }
       return handleError(error, stackTrace);
     }
+
     if (this is _Future<Object?>) {
       // Internal method working like `catchError`,
       // but allows specifying a different result future type.

@@ -102,6 +102,8 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:async", "_awaitHelper");
   late final Procedure newAsyncSuspendState =
       index.getTopLevelProcedure("dart:async", "_newAsyncSuspendState");
+  late final Procedure futureValue =
+      index.getProcedure("dart:async", "Future", "value");
 
   // dart:ffi classes
   late final Class ffiCompoundClass = index.getClass("dart:ffi", "_Compound");
