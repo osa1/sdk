@@ -17,7 +17,9 @@ Stream<Completer<bool>> test() async* {
 }
 
 void main() async {
-  await for (Completer<bool> completer in test()) {
+  final values = await test().toList();
+  Expect.equals(values.length, 3);
+  for (final completer in values) {
     Expect.isFalse(completer.isCompleted);
   }
 }
