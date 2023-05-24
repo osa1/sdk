@@ -38,14 +38,21 @@ abstract class _Timer implements Timer {
     _schedule();
   }
 
+  void _schedule();
+}
+
+class _OneShotTimer extends _Timer {
+  final void Function() _callback;
+
+  _OneShotTimer(Duration duration, this._callback) : super(duration);
+
+  @override
   void _schedule() {
     _handle = setTimeout(_milliseconds, () {
       _tick++;
-      _run();
+      _callback();
     });
   }
-
-  void _run();
 
   @override
   void cancel() {
@@ -57,26 +64,26 @@ abstract class _Timer implements Timer {
   }
 }
 
-class _OneShotTimer extends _Timer {
-  final void Function() _callback;
-
-  _OneShotTimer(Duration duration, this._callback) : super(duration);
-
-  @override
-  void _run() {
-    _callback();
-  }
-}
-
 class _PeriodicTimer extends _Timer {
   final void Function(Timer) _callback;
 
   _PeriodicTimer(Duration duration, this._callback) : super(duration);
 
   @override
-  void _run() {
-    _schedule();
-    _callback(this);
+  void _schedule() {
+    _handle = setInterval(_milliseconds, () {
+      _tick++;
+      _callback(this);
+    });
+  }
+
+  @override
+  void cancel() {
+    final int? handle = _handle;
+    if (handle != null) {
+      clearInterval(handle);
+      _handle = null;
+    }
   }
 }
 
