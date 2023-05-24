@@ -290,9 +290,9 @@ if (typeof global != "undefined") self = global;  // Node.js.
     eventLoop(action);
   };
   self.setTimeout = addTimer;
-  // self.clearTimeout = cancelTimer;
-  // self.setInterval = addInterval;
-  // self.clearInterval = cancelTimer;
+  self.clearTimeout = cancelTimer;
+  self.setInterval = addInterval;
+  self.clearInterval = cancelTimer;
   self.queueMicrotask = addTask;
 })(self, []);
 

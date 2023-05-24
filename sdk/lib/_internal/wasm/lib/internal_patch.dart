@@ -182,19 +182,19 @@ List<String> _makeStringList() => <String>[];
 void _listAdd(List<dynamic> list, dynamic item) => list.add(item);
 
 // Schedule a callback from JS via setTimeout.
-void setTimeout(double millis, dynamic Function() callback) {
-  JS<void>(r"""(ms, c) =>
-            setTimeout(
-                () => dartInstance.exports.$invokeCallback(c),ms)""", millis,
-      callback);
-}
+int setTimeout(double millis, dynamic Function() callback) => JS<double>(
+        r"""(ms, c) =>
+            setTimeout(() => dartInstance.exports.$invokeCallback(c),ms)""",
+        millis,
+        callback)
+    .toInt();
+
+void clearTimeout(int id) => JS<void>(r"""(id) => clearTimeout(id)""", id);
 
 // Schedule a callback from JS via queueMicrotask.
-void queueMicrotask(dynamic Function() callback) {
-  JS<void>(r"""(c) =>
-            queueMicrotask(
-                () => dartInstance.exports.$invokeCallback(c))""", callback);
-}
+void queueMicrotask(dynamic Function() callback) => JS<void>(r"""(c) =>
+            queueMicrotask(() => dartInstance.exports.$invokeCallback(c))""",
+    callback);
 
 String jsonEncode(String object) => JS<String>(
     "s => stringToDartString(JSON.stringify(stringFromDartString(s)))", object);
