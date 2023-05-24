@@ -623,10 +623,19 @@ class AsyncCodeGenerator extends CodeGenerator {
     final DartType completerType;
     if (returnType is InterfaceType &&
         returnType.classNode == translator.coreTypes.futureClass) {
+      // Return type = Future<T>, completer type = _AsyncCompleter<T>.
       completerType = returnType.typeArguments.single;
     } else if (returnType is FutureOrType) {
+      // Return type = FutureOr<T>, completer type = _AsyncCompleter<T>.
       completerType = returnType.typeArgument;
+    } else if (returnType is VoidType) {
+      // Return type = void, completer type = _AsyncCompleter<Null>.
+      completerType = const NullType();
     } else {
+      // Async function return type must be `dynamic`.
+      // Completer type = _AsyncCompleter<dynamic>`.
+      assert(returnType is DynamicType,
+          'Unexpected async function return type: $returnType');
       completerType = const DynamicType();
     }
     types.makeType(this, completerType);
