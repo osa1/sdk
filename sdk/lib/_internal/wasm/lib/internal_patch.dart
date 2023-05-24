@@ -194,9 +194,11 @@ void clearTimeout(int id) => JS<void>(r"""(id) => clearTimeout(id)""", id);
 
 /// Schedule a periodic callback from JS via `setInterval`.
 int setInterval(double millis, dynamic Function() callback) => JS<double>(
-      r"""(ms, c) =>
-        setInterval(() => dartInstance.exports.$invokeCallback(c),ms)""",
-    ).toInt();
+        r"""(ms, c) =>
+        setInterval(() => dartInstance.exports.$invokeCallback(c), ms)""",
+        millis,
+        callback)
+    .toInt();
 
 /// Cancel a callback scheduled with [setInterval].
 void clearInterval(int id) => JS<void>(r"""(id) => clearInterval(id)""", id);
