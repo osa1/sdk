@@ -1069,7 +1069,6 @@ extension FutureExtensions<T> on Future<T> {
       }
       return handleError(error, stackTrace);
     }
-
     if (this is _Future<Object?>) {
       // Internal method working like `catchError`,
       // but allows specifying a different result future type.
