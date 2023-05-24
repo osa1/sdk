@@ -50,6 +50,7 @@ class _OneShotTimer extends _Timer {
   void _schedule() {
     _handle = setTimeout(_milliseconds, () {
       _tick++;
+      _handle = null;
       _callback();
     });
   }
