@@ -21,21 +21,27 @@ class Timer {
 }
 
 abstract class _Timer implements Timer {
-  final double milliseconds;
-  bool isActive;
-  int tick;
+  final double _milliseconds;
+  bool _isActive;
+  int _tick;
+
+  @override
+  int get tick => _tick;
+
+  @override
+  bool get isActive => _isActive;
 
   _Timer(Duration duration)
-      : milliseconds = duration.inMilliseconds.toDouble(),
-        isActive = true,
-        tick = 0 {
+      : _milliseconds = duration.inMilliseconds.toDouble(),
+        _isActive = true,
+        _tick = 0 {
     _schedule();
   }
 
   void _schedule() {
-    setTimeout(milliseconds, () {
-      if (isActive) {
-        tick++;
+    setTimeout(_milliseconds, () {
+      if (_isActive) {
+        _tick++;
         _run();
       }
     });
@@ -45,29 +51,29 @@ abstract class _Timer implements Timer {
 
   @override
   void cancel() {
-    isActive = false;
+    _isActive = false;
   }
 }
 
 class _OneShotTimer extends _Timer {
-  final void Function() callback;
+  final void Function() _callback;
 
-  _OneShotTimer(Duration duration, this.callback) : super(duration);
+  _OneShotTimer(Duration duration, this._callback) : super(duration);
 
   void _run() {
-    isActive = false;
-    callback();
+    _isActive = false;
+    _callback();
   }
 }
 
 class _PeriodicTimer extends _Timer {
-  final void Function(Timer) callback;
+  final void Function(Timer) _callback;
 
-  _PeriodicTimer(Duration duration, this.callback) : super(duration);
+  _PeriodicTimer(Duration duration, this._callback) : super(duration);
 
   void _run() {
     _schedule();
-    callback(this);
+    _callback(this);
   }
 }
 
