@@ -75,6 +75,6 @@ class _PeriodicTimer extends _Timer {
 class _AsyncRun {
   @patch
   static void _scheduleImmediate(void callback()) {
-    scheduleImmediate(callback);
+    queueMicrotask(callback);
   }
 }

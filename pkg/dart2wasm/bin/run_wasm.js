@@ -293,7 +293,7 @@ if (typeof global != "undefined") self = global;  // Node.js.
   // self.clearTimeout = cancelTimer;
   // self.setInterval = addInterval;
   // self.clearInterval = cancelTimer;
-  self.scheduleImmediate = addTask;
+  self.queueMicrotask = addTask;
 })(self, []);
 
 // We would like this itself to be a ES module rather than a script, but

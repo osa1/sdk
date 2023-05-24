@@ -189,10 +189,10 @@ void setTimeout(double millis, dynamic Function() callback) {
       callback);
 }
 
-// Schedule a callback from JS via scheduleImmediate.
-void scheduleImmediate(dynamic Function() callback) {
+// Schedule a callback from JS via queueMicrotask.
+void queueMicrotask(dynamic Function() callback) {
   JS<void>(r"""(c) =>
-            scheduleImmediate(
+            queueMicrotask(
                 () => dartInstance.exports.$invokeCallback(c))""", callback);
 }
 
