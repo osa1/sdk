@@ -1,4 +1,5 @@
-import 'dart:_internal' show scheduleCallback, patch, _AsyncCompleter;
+import 'dart:_internal'
+    show setTimeout, scheduleImmediate, patch, _AsyncCompleter;
 
 import 'dart:_wasm';
 

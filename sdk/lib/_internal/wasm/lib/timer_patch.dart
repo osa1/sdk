@@ -33,7 +33,7 @@ abstract class _Timer implements Timer {
   }
 
   void _schedule() {
-    scheduleCallback(milliseconds, () {
+    setTimeout(milliseconds, () {
       if (isActive) {
         tick++;
         _run();
@@ -75,6 +75,6 @@ class _PeriodicTimer extends _Timer {
 class _AsyncRun {
   @patch
   static void _scheduleImmediate(void callback()) {
-    scheduleCallback(0, callback);
+    scheduleImmediate(callback);
   }
 }
