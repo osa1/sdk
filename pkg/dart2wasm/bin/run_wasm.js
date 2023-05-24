@@ -31,6 +31,8 @@ const ffiArg = 2;
 var self = this;
 if (typeof global != "undefined") self = global;  // Node.js.
 
+// Event loop implementation below copied from dart2js:
+// sdk/lib/_internal/js_runtime/lib/preambles/d8.js
 (function(self, scriptArguments) {
   // Using strict mode to avoid accidentally defining global variables.
   "use strict"; // Should be first statement of this function.
@@ -292,7 +294,7 @@ if (typeof global != "undefined") self = global;  // Node.js.
   // self.setInterval = addInterval;
   // self.clearInterval = cancelTimer;
   self.scheduleImmediate = addTask;
-})(self, []); // TODO: not passing any arguments to mock date for now
+})(self, []);
 
 // We would like this itself to be a ES module rather than a script, but
 // unfortunately d8 does not return a failed error code if an unhandled
@@ -337,4 +339,5 @@ const main = async () => {
     // alive even after `main` returns.
     await dart2wasm.invoke(dartInstance, ...dartArgs);
 };
+
 dartMainRunner(main, []);
