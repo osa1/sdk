@@ -43,7 +43,6 @@ if (typeof global != "undefined") self = global;  // Node.js.
   var tail = 0;
   var mask = taskQueue.length - 1;
   function addTask(elem) {
-    console.log("addTask");
     taskQueue[head] = elem;
     head = (head + 1) & mask;
     if (head == tail) _growTaskQueue();
@@ -87,7 +86,6 @@ if (typeof global != "undefined") self = global;  // Node.js.
   var zeroTimerQueue = [];
 
   function addTimer(f, ms) {
-    console.log("addTimer");
     var id = timerIdCounter++;
     f.$timerId = id;
     timerIds[id] = f;
@@ -268,7 +266,6 @@ if (typeof global != "undefined") self = global;  // Node.js.
 
   async function eventLoop(action) {
     while (action) {
-      console.log("Event loop");
       try {
         await action();
       } catch (e) {
@@ -279,7 +276,6 @@ if (typeof global != "undefined") self = global;  // Node.js.
         }
       }
       action = nextEvent();
-      console.log("Event handled");
     }
   }
 
