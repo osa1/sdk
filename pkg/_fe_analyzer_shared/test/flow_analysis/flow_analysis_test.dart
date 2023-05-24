@@ -3628,7 +3628,8 @@ main() {
 
         var s = FlowModel<Type>(Reachability.initial)._write(
             h, null, objectQVar, Type('Object?'), new SsaNode<Type>(null));
-        expect(s.variableInfo[objectQVar], isNull);
+        expect(s.variableInfo[h.promotionKeyStore.keyForVariable(objectQVar)],
+            isNull);
       });
 
       test('unchanged', () {
