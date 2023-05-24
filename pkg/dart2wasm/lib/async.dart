@@ -628,14 +628,8 @@ class AsyncCodeGenerator extends CodeGenerator {
     } else if (returnType is FutureOrType) {
       // Return type = FutureOr<T>, completer type = _AsyncCompleter<T>.
       completerType = returnType.typeArgument;
-    } else if (returnType is VoidType) {
-      // Return type = void, completer type = _AsyncCompleter<Null>.
-      completerType = const NullType();
     } else {
-      // Async function return type must be `dynamic`.
-      // Completer type = _AsyncCompleter<dynamic>`.
-      assert(returnType is DynamicType,
-          'Unexpected async function return type: $returnType');
+      // In all other cases we use _AsyncCompleter<dynamic>.
       completerType = const DynamicType();
     }
     types.makeType(this, completerType);
