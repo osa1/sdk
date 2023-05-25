@@ -181,7 +181,7 @@ List<String> _makeStringList() => <String>[];
 @pragma("wasm:export", "\$listAdd")
 void _listAdd(List<dynamic> list, dynamic item) => list.add(item);
 
-/// Schedule a callback from JS via `queueMicrotask`.
+/// Schedule a callback from JS via `setTimeout`.
 void setTimeout(double millis, dynamic Function() callback) {
   JS<void>(r"""(ms, c) =>
             setTimeout(
