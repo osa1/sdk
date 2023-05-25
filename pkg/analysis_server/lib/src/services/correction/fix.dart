@@ -443,6 +443,11 @@ class DartFixKind {
     DartFixKindPriority.DEFAULT,
     'Convert to cascade notation',
   );
+  static const CONVERT_TO_CONSTANT_PATTERN = FixKind(
+    'dart.fix.convert.toConstantPattern',
+    49,
+    "Convert to constant pattern",
+  );
   static const CONVERT_TO_CONTAINS = FixKind(
     'dart.fix.convert.toContains',
     DartFixKindPriority.DEFAULT,
@@ -672,11 +677,6 @@ class DartFixKind {
     'dart.fix.convert.toWildcardPattern',
     DartFixKindPriority.DEFAULT,
     "Convert to wildcard pattern",
-  );
-  static const CONVERT_TO_WILDCARD_PATTERN_MULTI = FixKind(
-    'dart.fix.convert.toWildcardPattern.multi',
-    DartFixKindPriority.DEFAULT,
-    "Convert to wildcard pattern everywhere in file",
   );
   static const CREATE_CLASS = FixKind(
     'dart.fix.create.class',
@@ -1749,6 +1749,11 @@ class DartFixKind {
     'dart.fix.replace.withNullAware',
     DartFixKindPriority.DEFAULT,
     "Replace the '{0}' with a '{1}' in the invocation",
+  );
+  static const REPLACE_WITH_PART_OF_URI = FixKind(
+    'dart.fix.replace.withPartOfUri',
+    DartFixKindPriority.DEFAULT,
+    "Replace with 'part of {0}'",
   );
   static const REPLACE_WITH_TEAR_OFF = FixKind(
     'dart.fix.replace.withTearOff',
