@@ -294,6 +294,7 @@ if (typeof global != "undefined") self = global;  // Node.js.
   self.setInterval = addInterval;
   self.clearInterval = cancelTimer;
   self.queueMicrotask = addTask;
+  self.dartUseDateNowForTicks = true;
 })(self, []);
 
 // We would like this itself to be a ES module rather than a script, but

@@ -21,7 +21,7 @@ class Timer {
 }
 
 abstract class _Timer implements Timer {
-  final double _milliseconds;
+  final int _milliseconds;
   int _tick;
   int? _handle;
 
@@ -32,7 +32,7 @@ abstract class _Timer implements Timer {
   bool get isActive => _handle != null;
 
   _Timer(Duration duration)
-      : _milliseconds = duration.inMilliseconds.toDouble(),
+      : _milliseconds = duration.inMilliseconds,
         _tick = 0,
         _handle = null {
     _schedule();
@@ -48,7 +48,7 @@ class _OneShotTimer extends _Timer {
 
   @override
   void _schedule() {
-    _handle = setTimeout(_milliseconds, () {
+    _handle = setTimeout(_milliseconds.toDouble(), () {
       _tick++;
       _handle = null;
       _callback();
@@ -72,8 +72,17 @@ class _PeriodicTimer extends _Timer {
 
   @override
   void _schedule() {
-    _handle = setInterval(_milliseconds, () {
-      _tick++;
+    final int start = JS<double>('Date.now').toInt();
+    _handle = setInterval(_milliseconds.toDouble(), () {
+      int tick = this._tick + 1;
+      if (_milliseconds > 0) {
+        final int end = JS<double>('Date.now').toInt();
+        final int duration = end - start;
+        if (duration > (tick + 1) * _milliseconds) {
+          tick = duration ~/ _milliseconds;
+        }
+      }
+      this._tick = tick;
       _callback(this);
     });
   }

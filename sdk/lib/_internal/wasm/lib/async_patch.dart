@@ -8,6 +8,8 @@ import 'dart:_internal'
         patch,
         _AsyncCompleter;
 
+import 'dart:_js_helper' show JS;
+
 import 'dart:_wasm';
 
 part 'timer_patch.dart';
