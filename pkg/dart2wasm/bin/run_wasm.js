@@ -28,6 +28,10 @@ const jsRuntimeArg = 0;
 const wasmArg = 1;
 const ffiArg = 2;
 
+this.queueMicrotask = (cb) => {
+    Promise.resolve(null).then((_) => { cb(); });
+};
+
 // We would like this itself to be a ES module rather than a script, but
 // unfortunately d8 does not return a failed error code if an unhandled
 // exception occurs asynchronously in an ES module.

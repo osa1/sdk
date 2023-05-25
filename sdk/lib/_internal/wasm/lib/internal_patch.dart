@@ -181,12 +181,19 @@ List<String> _makeStringList() => <String>[];
 @pragma("wasm:export", "\$listAdd")
 void _listAdd(List<dynamic> list, dynamic item) => list.add(item);
 
-// Schedule a callback from JS via setTimeout.
-void scheduleCallback(double millis, dynamic Function() callback) {
+/// Schedule a callback from JS via `queueMicrotask`.
+void setTimeout(double millis, dynamic Function() callback) {
   JS<void>(r"""(ms, c) =>
             setTimeout(
                 () => dartInstance.exports.$invokeCallback(c),ms)""", millis,
       callback);
+}
+
+/// Schedule a callback from JS via `queueMicrotask`.
+void queueMicrotask(dynamic Function() callback) {
+  JS<void>(r"""(c) =>
+            queueMicrotask(
+                () => dartInstance.exports.$invokeCallback(c))""", callback);
 }
 
 String jsonEncode(String object) => JS<String>(
