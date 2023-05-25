@@ -7,25 +7,19 @@ part of "core_patch.dart";
 @patch
 class Stopwatch {
   static int Function() _timerTicks = () {
-    final int ticks = JS<double>("Date.now").toInt();
-    print("timerTicks Date.now ticks = $ticks");
-    return ticks;
+    return JS<double>("() => Date.now()").toInt();
   };
 
   @patch
   static int _initTicker() {
     if (JS<bool>("() => !!dartUseDateNowForTicks")) {
-      print("Using Date.now for ticks");
       // Millisecond precision, as int.
       return 1000;
     } else {
       // Microsecond precision as double. Convert to int without losing
       // precision.
-      print("Using performance.now for ticks");
       _timerTicks = () {
-        final int ticks = 1000 * JS<double>("performance.now").toInt();
-        print("timerTicks performance.now ticks = $ticks");
-        return ticks;
+        return 1000 * JS<double>("() => performance.now()").toInt();
       };
       return 1000000;
     }
@@ -37,7 +31,6 @@ class Stopwatch {
   @patch
   int get elapsedMicroseconds {
     int ticks = elapsedTicks;
-    print("elapsedMicroseconds ticks = $ticks");
     if (_frequency == 1000000) return ticks;
     assert(_frequency == 1000);
     return ticks * 1000;
@@ -46,7 +39,6 @@ class Stopwatch {
   @patch
   int get elapsedMilliseconds {
     int ticks = elapsedTicks;
-    print("elapsedMilliseconds ticks = $ticks");
     if (_frequency == 1000) return ticks;
     assert(_frequency == 1000000);
     return ticks ~/ 1000;

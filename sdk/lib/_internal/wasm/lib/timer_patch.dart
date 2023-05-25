@@ -72,11 +72,11 @@ class _PeriodicTimer extends _Timer {
 
   @override
   void _schedule() {
-    final int start = JS<double>('Date.now').toInt();
+    final int start = dateNow();
     _handle = setInterval(_milliseconds.toDouble(), () {
       int tick = this._tick + 1;
       if (_milliseconds > 0) {
-        final int end = JS<double>('Date.now').toInt();
+        final int end = dateNow();
         final int duration = end - start;
         if (duration > (tick + 1) * _milliseconds) {
           tick = duration ~/ _milliseconds;

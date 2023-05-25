@@ -208,5 +208,8 @@ void queueMicrotask(dynamic Function() callback) => JS<void>(r"""(c) =>
             queueMicrotask(() => dartInstance.exports.$invokeCallback(c))""",
     callback);
 
+/// JS `Date.now()`
+int dateNow() => JS<double>('() => Date.now()').toInt();
+
 String jsonEncode(String object) => JS<String>(
     "s => stringToDartString(JSON.stringify(stringFromDartString(s)))", object);

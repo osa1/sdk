@@ -114,7 +114,6 @@ class Stopwatch {
   ///
   /// The elapsed number of clock ticks increases by [frequency] every second.
   int get elapsedTicks {
-    print("_stop = $_stop, _now = ${_now()}, _start = $_start");
     return (_stop ?? _now()) - _start;
   }
 

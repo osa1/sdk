@@ -1,12 +1,13 @@
 import 'dart:_internal'
     show
-        setTimeout,
-        clearTimeout,
-        setInterval,
+        _AsyncCompleter,
         clearInterval,
-        queueMicrotask,
+        clearTimeout,
+        dateNow,
         patch,
-        _AsyncCompleter;
+        queueMicrotask,
+        setInterval,
+        setTimeout;
 
 import 'dart:_js_helper' show JS;
 
