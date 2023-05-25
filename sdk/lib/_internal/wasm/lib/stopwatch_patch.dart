@@ -19,7 +19,7 @@ class Stopwatch {
       // Microsecond precision as double. Convert to int without losing
       // precision.
       _timerTicks = () {
-        return 1000 * JS<double>("() => performance.now()").toInt();
+        return JS<double>("() => 1000 * performance.now()").toInt();
       };
       return 1000000;
     }
