@@ -74,15 +74,13 @@ class _PeriodicTimer extends _Timer {
   void _schedule() {
     final int start = dateNow();
     _handle = setInterval(_milliseconds.toDouble(), () {
-      int tick = this._tick + 1;
+      _tick++;
       if (_milliseconds > 0) {
-        final int end = dateNow();
-        final int duration = end - start;
-        if (duration > (tick + 1) * _milliseconds) {
-          tick = duration ~/ _milliseconds;
+        final int duration = dateNow() - start;
+        if (duration > _tick * _milliseconds) {
+          _tick = duration ~/ _milliseconds;
         }
       }
-      this._tick = tick;
       _callback(this);
     });
   }
