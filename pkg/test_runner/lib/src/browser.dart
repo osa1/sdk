@@ -275,8 +275,7 @@ String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
   <script type="text/javascript"
           src="/root_dart/pkg/test_runner/lib/src/test_controller.js">
   </script>
-  <script>
-(async function () {
+  <script type="module">
   let dart2wasm_runtime;
   let moduleInstance;
   try {
@@ -289,14 +288,14 @@ String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
     console.error('See https://flutter.dev/wasm for more information.');
   }
 
-  if (moduleInstance) {
-    try {
-      await dart2wasm_runtime.invoke(moduleInstance);
-    } catch (exception) {
-      console.error(`Exception while invoking test: \${exception}`);
+  dartMainRunner(() => {
+    if (moduleInstance) {
+      dartPrint("Invoking main");
+      dart2wasm_runtime.invoke(moduleInstance);
+      dartPrint("Done invoking main");
+      throw '123';
     }
-  }
-})();
+  });
   </script>
 </body>
 </html>""";

@@ -319,7 +319,7 @@ function dartMainRunner(main) {
     if (testErrorToStackTrace) {
       stack = testErrorToStackTrace(error);
     } else {
-      stack = error.stack.toString();
+      stack = '???';
     }
     recordEvent('sync_exception', error.toString(), stack);
     notifyDone('FAIL');
