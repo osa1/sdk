@@ -994,7 +994,7 @@ class StandardTestSuite extends TestSuite {
     var args = configuration.compilerConfiguration
         .computeCompilerArguments(testFile, const [], commonArguments);
     var compilation = configuration.compilerConfiguration
-        .computeCompilationArtifact(outputDir, args, environmentOverrides);
+        .computeCompilationArtifact(tempDir, args, environmentOverrides);
     commands.addAll(compilation.commands);
 
     _enqueueSingleBrowserTest(
