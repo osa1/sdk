@@ -252,3 +252,52 @@ requirejs(["$testName", "dart_sdk", "async_helper"],
 </html>
 """;
 }
+
+String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
+  return """
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="utf-8">
+  <meta name="dart.unittest" content="full-stack-traces">
+  <title> Test $title </title>
+  <link rel="preload" href="$wasmPath" as="fetch" crossorigin>
+  <style>
+     .unittest-table { font-family:monospace; border:1px; }
+     .unittest-pass { background: #6b3;}
+     .unittest-fail { background: #d55;}
+     .unittest-error { background: #a11;}
+  </style>
+</head>
+<body>
+  <h1> Running $title </h1>
+  <script type="text/javascript"
+          src="/root_dart/pkg/test_runner/lib/src/test_controller.js">
+  </script>
+  <script>
+(async function () {
+  let dart2wasm_runtime;
+  let moduleInstance;
+  try {
+    const dartModulePromise = WebAssembly.compileStreaming(fetch('$wasmPath'));
+    const imports = {};
+    dart2wasm_runtime = await import('$mjsPath');
+    moduleInstance = await dart2wasm_runtime.instantiate(dartModulePromise, imports);
+  } catch (exception) {
+    console.error(`Failed to fetch and instantiate wasm module: \${exception}`);
+    console.error('See https://flutter.dev/wasm for more information.');
+  }
+
+  if (moduleInstance) {
+    try {
+      await dart2wasm_runtime.invoke(moduleInstance);
+    } catch (exception) {
+      console.error(`Exception while invoking test: \${exception}`);
+    }
+  }
+})();
+  </script>
+</body>
+</html>""";
+}

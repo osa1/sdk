@@ -949,6 +949,14 @@ class StandardTestSuite extends TestSuite {
         var scriptPath =
             _createUrlPathFromFile(Path('$compilationTempDir/$nameNoExt.js'));
         content = dart2jsHtml(testFile.path.toNativePath(), scriptPath);
+      } else if (configuration.compiler == Compiler.dart2wasm) {
+        final wasmPath =
+            _createUrlPathFromFile(Path('$compilationTempDir/$nameNoExt.wasm'));
+        final mjsPath =
+            _createUrlPathFromFile(Path('$compilationTempDir/$nameNoExt.mjs'));
+        print("wasmPath = $wasmPath, mjsPath = $mjsPath");
+        content =
+            dart2wasmHtml(testFile.path.toNativePath(), wasmPath, mjsPath);
       } else {
         var nameFromModuleRoot = testFile.path.relativeTo(Repository.dir);
         var nameFromModuleRootNoExt =
