@@ -2694,6 +2694,7 @@
     },
     {
       "builders": [
+        "dart2wasm-linux-x64-chrome",
         "dart2wasm-linux-x64-d8"
       ],
       "meta": {
