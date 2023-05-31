@@ -293,7 +293,6 @@ String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
       dartPrint("Invoking main");
       dart2wasm_runtime.invoke(moduleInstance);
       dartPrint("Done invoking main");
-      throw '123';
     }
   });
   </script>
