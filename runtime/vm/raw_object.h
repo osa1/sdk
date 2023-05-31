@@ -2642,6 +2642,9 @@ class UntaggedAbstractType : public UntaggedInstance {
   std::atomic<uword> type_test_stub_entry_point_;
   // Accessed from generated code.
   std::atomic<uint32_t> flags_;
+#if defined(DART_COMPRESSED_POINTERS)
+  uint32_t padding_;  // Makes Windows and Posix agree on layout.
+#endif
   COMPRESSED_POINTER_FIELD(CodePtr, type_test_stub)
   COMPRESSED_POINTER_FIELD(SmiPtr, hash)
   VISIT_FROM(type_test_stub)
