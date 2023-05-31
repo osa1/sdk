@@ -931,6 +931,7 @@ class StandardTestSuite extends TestSuite {
     var tempDir = createOutputDirectory(testFile.path);
     var compilationTempDir = createCompilationOutputDirectory(testFile.path);
     var nameNoExt = testFile.path.filenameWithoutExtension;
+    var outputDir = compilationTempDir;
 
     var commonArguments = _commonArgumentsFromFile(testFile);
 
@@ -939,6 +940,7 @@ class StandardTestSuite extends TestSuite {
     var customHtml = File(
         testFile.path.directoryPath.append('$nameNoExt.html').toNativePath());
     if (customHtml.existsSync()) {
+      outputDir = tempDir;
       content = customHtml.readAsStringSync().replaceAll(
           '%TEST_SCRIPTS%', '<script src="$nameNoExt.js"></script>');
     } else {
@@ -948,6 +950,7 @@ class StandardTestSuite extends TestSuite {
             _createUrlPathFromFile(Path('$compilationTempDir/$nameNoExt.js'));
         content = dart2jsHtml(testFile.path.toNativePath(), scriptPath);
       } else if (configuration.compiler == Compiler.dart2wasm) {
+        outputDir = tempDir;
         final wasmPath =
             _createUrlPathFromFile(Path('$tempDir/$nameNoExt.wasm'));
         final mjsPath = _createUrlPathFromFile(Path('$tempDir/$nameNoExt.mjs'));
@@ -990,7 +993,7 @@ class StandardTestSuite extends TestSuite {
     var args = configuration.compilerConfiguration
         .computeCompilerArguments(testFile, const [], commonArguments);
     var compilation = configuration.compilerConfiguration
-        .computeCompilationArtifact(tempDir, args, environmentOverrides);
+        .computeCompilationArtifact(outputDir, args, environmentOverrides);
     commands.addAll(compilation.commands);
 
     _enqueueSingleBrowserTest(
