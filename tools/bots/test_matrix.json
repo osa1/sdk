@@ -555,14 +555,12 @@
       "options": {
         "host-checked": true,
         "timeout": 240,
-        "builder-tag": "dart2wasm"
       }
     },
     "dart2wasm-hostasserts-linux-x64-chrome": {
       "options": {
         "host-checked": true,
         "timeout": 240,
-        "builder-tag": "dart2wasm"
       }
     },
     "vm-aot-android-(debug|product|release)-arm_x64": {
@@ -2742,7 +2740,7 @@
         {
           "name": "dart2wasm Chrome tests",
           "arguments": [
-            "-ndart2wasm-hostasserts-linux-x64-d8",
+            "-ndart2wasm-hostasserts-linux-x64-chrome",
             "co19",
             "corelib",
             "language",
