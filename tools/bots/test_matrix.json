@@ -551,13 +551,7 @@
         "timeout": 240
       }
     },
-    "dart2wasm-hostasserts-linux-x64-d8": {
-      "options": {
-        "host-checked": true,
-        "timeout": 240
-      }
-    },
-    "dart2wasm-hostasserts-linux-x64-chrome": {
+    "dart2wasm-hostasserts-linux-x64-(d8|chrome)": {
       "options": {
         "host-checked": true,
         "timeout": 240
