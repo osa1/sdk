@@ -322,7 +322,7 @@ function dartMainRunner(main) {
       // TODO(omersa): This `error.stack` is undefined when thrown from
       // dart2wasm module runner script in `dart2wasmHtml`.
       if (error.stack === undefined) {
-        stack = "<Wasm stack>";
+        stack = "<undefined stack>";
       } else {
         stack = error.stack.toString();
       }

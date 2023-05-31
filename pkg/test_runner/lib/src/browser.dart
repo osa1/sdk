@@ -282,7 +282,8 @@ String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
     const dartModulePromise = WebAssembly.compileStreaming(fetch('$wasmPath'));
     const imports = {};
     dart2wasm_runtime = await import('$mjsPath');
-    moduleInstance = await dart2wasm_runtime.instantiate(dartModulePromise, imports);
+    moduleInstance =
+        await dart2wasm_runtime.instantiate(dartModulePromise, imports);
   } catch (exception) {
     console.error(`Failed to fetch and instantiate wasm module: \${exception}`);
     console.error('See https://flutter.dev/wasm for more information.');

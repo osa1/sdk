@@ -2690,7 +2690,7 @@
         "dart2wasm-linux-x64-d8"
       ],
       "meta": {
-        "description": "dart2wasm tests (${runtime})"
+        "description": "dart2wasm tests"
       },
       "steps": [
         {
@@ -2702,7 +2702,7 @@
           ]
         },
         {
-          "name": "dart2wasm ${runtime} tests",
+          "name": "dart2wasm tests",
           "arguments": [
             "-ndart2wasm-hostasserts-linux-x64-${runtime}",
             "co19",
