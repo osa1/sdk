@@ -2694,11 +2694,10 @@
     },
     {
       "builders": [
-        "dart2wasm-linux-x64-chrome",
         "dart2wasm-linux-x64-d8"
       ],
       "meta": {
-        "description": "dart2wasm tests."
+        "description": "dart2wasm tests in d8"
       },
       "steps": [
         {
@@ -2711,6 +2710,37 @@
         },
         {
           "name": "dart2wasm d8 tests",
+          "arguments": [
+            "-ndart2wasm-hostasserts-linux-x64-d8",
+            "co19",
+            "corelib",
+            "language",
+            "lib",
+            "web"
+          ],
+          "shards": 10,
+          "fileset": "dart2wasm_hostasserts"
+        }
+      ]
+    },
+    {
+      "builders": [
+        "dart2wasm-linux-x64-chrome"
+      ],
+      "meta": {
+        "description": "dart2wasm tests in Chrome"
+      },
+      "steps": [
+        {
+          "name": "build dart",
+          "script": "tools/build.py",
+          "arguments": [
+            "runtime",
+            "dart2wasm"
+          ]
+        },
+        {
+          "name": "dart2wasm Chrome tests",
           "arguments": [
             "-ndart2wasm-hostasserts-linux-x64-d8",
             "co19",
