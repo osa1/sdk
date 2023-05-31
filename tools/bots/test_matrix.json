@@ -558,6 +558,13 @@
         "builder-tag": "dart2wasm"
       }
     },
+    "dart2wasm-hostasserts-linux-x64-chrome": {
+      "options": {
+        "host-checked": true,
+        "timeout": 240,
+        "builder-tag": "dart2wasm"
+      }
+    },
     "vm-aot-android-(debug|product|release)-arm_x64": {
       "options": {
         "builder-tag": "crossword",
