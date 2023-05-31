@@ -952,8 +952,9 @@ class StandardTestSuite extends TestSuite {
       } else if (configuration.compiler == Compiler.dart2wasm) {
         outputDir = tempDir;
         final wasmPath =
-            _createUrlPathFromFile(Path('$tempDir/$nameNoExt.wasm'));
-        final mjsPath = _createUrlPathFromFile(Path('$tempDir/$nameNoExt.mjs'));
+            _createUrlPathFromFile(Path('$outputDir/$nameNoExt.wasm'));
+        final mjsPath =
+            _createUrlPathFromFile(Path('$outputDir/$nameNoExt.mjs'));
         content =
             dart2wasmHtml(testFile.path.toNativePath(), wasmPath, mjsPath);
       } else {
