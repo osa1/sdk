@@ -276,23 +276,14 @@ String dart2wasmHtml(String title, String wasmPath, String mjsPath) {
           src="/root_dart/pkg/test_runner/lib/src/test_controller.js">
   </script>
   <script type="module">
-  let dart2wasm_runtime;
-  let moduleInstance;
-  try {
-    const dartModulePromise = WebAssembly.compileStreaming(fetch('$wasmPath'));
-    const imports = {};
-    dart2wasm_runtime = await import('$mjsPath');
-    moduleInstance =
-        await dart2wasm_runtime.instantiate(dartModulePromise, imports);
-  } catch (exception) {
-    console.error(`Failed to fetch and instantiate wasm module: \${exception}`);
-    console.error('See https://flutter.dev/wasm for more information.');
-  }
+  const dartModulePromise = WebAssembly.compileStreaming(fetch('$wasmPath'));
+  const imports = {};
+  let dart2wasm_runtime = await import('$mjsPath');
+  let moduleInstance =
+      await dart2wasm_runtime.instantiate(dartModulePromise, imports);
 
   dartMainRunner(() => {
-    if (moduleInstance) {
-      dart2wasm_runtime.invoke(moduleInstance);
-    }
+    dart2wasm_runtime.invoke(moduleInstance);
   });
   </script>
 </body>
