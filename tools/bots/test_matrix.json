@@ -554,13 +554,13 @@
     "dart2wasm-hostasserts-linux-x64-d8": {
       "options": {
         "host-checked": true,
-        "timeout": 240,
+        "timeout": 240
       }
     },
     "dart2wasm-hostasserts-linux-x64-chrome": {
       "options": {
         "host-checked": true,
-        "timeout": 240,
+        "timeout": 240
       }
     },
     "vm-aot-android-(debug|product|release)-arm_x64": {
