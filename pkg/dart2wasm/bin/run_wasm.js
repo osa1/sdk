@@ -28,10 +28,11 @@ const jsRuntimeArg = 0;
 const wasmArg = 1;
 const ffiArg = 2;
 
-var self = this;
-if (typeof global != "undefined") self = global;  // Node.js.
-
-// Event loop implementation below copied from dart2js:
+// d8's `setTimeout` doesn't work as expected (it doesn't wait before calling
+// the callback), and d8 also doesn't have `setInterval` and `queueMicrotask`.
+// So we define our own event loop with these functions.
+//
+// The code below is copied form dart2js, with some modifications:
 // sdk/lib/_internal/js_runtime/lib/preambles/d8.js
 (function(self, scriptArguments) {
   // Using strict mode to avoid accidentally defining global variables.
@@ -44,11 +45,13 @@ if (typeof global != "undefined") self = global;  // Node.js.
   var head = 0;
   var tail = 0;
   var mask = taskQueue.length - 1;
+
   function addTask(elem) {
     taskQueue[head] = elem;
     head = (head + 1) & mask;
     if (head == tail) _growTaskQueue();
   }
+
   function removeTask() {
     if (head == tail) return;
     var result = taskQueue[tail];
@@ -56,6 +59,7 @@ if (typeof global != "undefined") self = global;  // Node.js.
     tail = (tail + 1) & mask;
     return result;
   }
+
   function _growTaskQueue() {
     // head == tail.
     var length = taskQueue.length;
@@ -89,6 +93,8 @@ if (typeof global != "undefined") self = global;  // Node.js.
 
   function addTimer(f, ms) {
     var id = timerIdCounter++;
+    // A callback can be scheduled at most once.
+    console.assert(f.$timerId === undefined);
     f.$timerId = id;
     timerIds[id] = f;
     if (ms == 0 && !isNextTimerDue()) {
@@ -139,12 +145,14 @@ if (typeof global != "undefined") self = global;  // Node.js.
   };
   var originalDate = Date;
   var originalNow = originalDate.now;
+
   function advanceTimeTo(time) {
     var now = originalNow();
     if (timeOffset < time - now) {
       timeOffset = time - now;
     }
   }
+
   function installMockDate() {
     var NewDate = function Date(Y, M, D, h, m, s, ms) {
       if (this instanceof Date) {
@@ -174,6 +182,7 @@ if (typeof global != "undefined") self = global;  // Node.js.
   // Each entry is list of [timeout, callback1 ... callbackn].
   var timerHeap = [];
   var timerIndex = {};
+
   function addDelayedTimer(f, ms) {
     var timeout = now() + ms;
     var timerList = timerIndex[timeout];
@@ -294,8 +303,11 @@ if (typeof global != "undefined") self = global;  // Node.js.
   self.setInterval = addInterval;
   self.clearInterval = cancelTimer;
   self.queueMicrotask = addTask;
+
+  // Signals `Stopwatch._initTicker` to use `Date.now` to get ticks instead of
+  // `performance.now`, as it's not available in d8.
   self.dartUseDateNowForTicks = true;
-})(self, []);
+})(this, []);
 
 // We would like this itself to be a ES module rather than a script, but
 // unfortunately d8 does not return a failed error code if an unhandled
