@@ -38,8 +38,6 @@ const ffiArg = 2;
   // Using strict mode to avoid accidentally defining global variables.
   "use strict"; // Should be first statement of this function.
 
-  // Event loop.
-
   // Task queue as cyclic list queue.
   var taskQueue = new Array(8);  // Length is power of 2.
   var head = 0;
