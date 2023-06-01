@@ -181,35 +181,5 @@ List<String> _makeStringList() => <String>[];
 @pragma("wasm:export", "\$listAdd")
 void _listAdd(List<dynamic> list, dynamic item) => list.add(item);
 
-/// Schedule a callback from JS via `setTimeout`.
-int setTimeout(double millis, dynamic Function() callback) => JS<double>(
-        r"""(ms, c) =>
-            setTimeout(() => dartInstance.exports.$invokeCallback(c),ms)""",
-        millis,
-        callback)
-    .toInt();
-
-/// Cancel a callback scheduled with [setTimeout].
-void clearTimeout(int id) => JS<void>(r"""(id) => clearTimeout(id)""", id);
-
-/// Schedule a periodic callback from JS via `setInterval`.
-int setInterval(double millis, dynamic Function() callback) => JS<double>(
-        r"""(ms, c) =>
-        setInterval(() => dartInstance.exports.$invokeCallback(c), ms)""",
-        millis,
-        callback)
-    .toInt();
-
-/// Cancel a callback scheduled with [setInterval].
-void clearInterval(int id) => JS<void>(r"""(id) => clearInterval(id)""", id);
-
-/// Schedule a callback from JS via queueMicrotask.
-void queueMicrotask(dynamic Function() callback) => JS<void>(r"""(c) =>
-            queueMicrotask(() => dartInstance.exports.$invokeCallback(c))""",
-    callback);
-
-/// JS `Date.now()`
-int dateNow() => JS<double>('() => Date.now()').toInt();
-
 String jsonEncode(String object) => JS<String>(
     "s => stringToDartString(JSON.stringify(stringFromDartString(s)))", object);
