@@ -18,8 +18,8 @@ class _JSEventLoop {
       .toInt();
 
   /// Cancel a callback scheduled with `setTimeout`.
-  static void _clearTimeout(int id) =>
-      JS<void>(r"""(id) => clearTimeout(id)""", id);
+  static void _clearTimeout(int handle) =>
+      JS<void>(r"""(handle) => clearTimeout(handle)""", handle.toDouble());
 
   /// Schedule a periodic callback from JS via `setInterval`.
   static int _setInterval(double ms, dynamic Function() callback) => JS<double>(
@@ -30,8 +30,8 @@ class _JSEventLoop {
       .toInt();
 
   /// Cancel a callback scheduled with `setInterval`.
-  static void _clearInterval(int id) =>
-      JS<void>(r"""(id) => clearInterval(id)""", id);
+  static void _clearInterval(int handle) =>
+      JS<void>(r"""(handle) => clearInterval(handle)""", handle.toDouble());
 
   /// Schedule a callback from JS via `queueMicrotask`.
   static void _queueMicrotask(dynamic Function() callback) => JS<void>(
