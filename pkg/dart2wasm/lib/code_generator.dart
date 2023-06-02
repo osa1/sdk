@@ -905,7 +905,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       if (exceptionDeclaration != null) {
         initializeVariable(exceptionDeclaration, () {
           b.local_get(thrownException);
-          // Type test passed, downcast exception local to the expected type.
+          // Type test passed, downcast the exception to the expected type.
           translator.convertType(
             function,
             thrownException.type,
