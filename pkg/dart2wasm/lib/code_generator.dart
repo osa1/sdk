@@ -804,6 +804,28 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     }
   }
 
+  void initializeVariable(VariableDeclaration node, void pushInitialValue()) {
+    final w.ValueType type = translateType(node.type);
+    w.Local? local;
+    Capture? capture = closures.captures[node];
+    if (capture == null || !capture.written) {
+      local = addLocal(type);
+      locals[node] = local;
+    }
+
+    if (capture != null) {
+      b.local_get(capture.context.currentLocal);
+      pushInitialValue();
+      if (!capture.written) {
+        b.local_tee(local!);
+      }
+      b.struct_set(capture.context.struct, capture.fieldIndex);
+    } else {
+      pushInitialValue();
+      b.local_set(local!);
+    }
+  }
+
   @override
   void visitEmptyStatement(EmptyStatement node) {}
 
@@ -879,26 +901,18 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         b.br_if(catchBlock);
       }
 
-      // If there is an exception declaration, create a local corresponding to
-      // the catch's exception [VariableDeclaration] node.
-      VariableDeclaration? exceptionDeclaration = catch_.exception;
+      final VariableDeclaration? exceptionDeclaration = catch_.exception;
       if (exceptionDeclaration != null) {
-        w.Local guardedException = addLocal(translator.topInfo.nonNullableType);
-        locals[exceptionDeclaration] = guardedException;
-        b.local_get(thrownException);
-        b.local_set(guardedException);
+        initializeVariable(
+            exceptionDeclaration, () => b.local_get(thrownException));
       }
 
-      // If there is a stack trace declaration, then create a local
-      // corresponding to the catch's stack trace [VariableDeclaration] node.
-      VariableDeclaration? stackTraceDeclaration = catch_.stackTrace;
+      final VariableDeclaration? stackTraceDeclaration = catch_.stackTrace;
       if (stackTraceDeclaration != null) {
-        w.Local guardedStackTrace =
-            addLocal(translator.stackTraceInfo.nonNullableType);
-        locals[stackTraceDeclaration] = guardedStackTrace;
-        b.local_get(thrownStackTrace);
-        b.local_set(guardedStackTrace);
+        initializeVariable(
+            stackTraceDeclaration, () => b.local_get(thrownStackTrace));
       }
+
       visitStatement(catch_.body);
 
       // Jump out of the try entirely if we enter any catch block.
