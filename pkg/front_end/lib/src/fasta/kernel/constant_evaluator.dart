@@ -2089,9 +2089,12 @@ class ConstantsTransformer extends RemovingTransformer {
       return evaluateAndTransformWithContext(node, node);
     } else {
       // A record literal is a compile-time constant expression if and only
-      // if all its field expressions are compile-time constant expressions.
+      // if all its field expressions are compile-time constant expressions. If
+      // any of its field expressions are unevaluated constants then the entire
+      // record is an unevaluated constant.
 
       bool allConstant = true;
+      bool hasUnevaluated = false;
 
       List<Constant> positional = [];
 
@@ -2100,6 +2103,9 @@ class ConstantsTransformer extends RemovingTransformer {
         node.positional[i] = result..parent = node;
         if (allConstant && result is ConstantExpression) {
           positional.add(result.constant);
+          if (result.constant is UnevaluatedConstant) {
+            hasUnevaluated = true;
+          }
         } else {
           allConstant = false;
         }
@@ -2111,18 +2117,61 @@ class ConstantsTransformer extends RemovingTransformer {
         expression.value = result..parent = expression;
         if (allConstant && result is ConstantExpression) {
           named[expression.name] = result.constant;
+          if (result.constant is UnevaluatedConstant) {
+            hasUnevaluated = true;
+          }
         } else {
           allConstant = false;
         }
       }
 
       if (allConstant) {
-        Constant constant = constantEvaluator.canonicalize(
-            new RecordConstant(positional, named, node.recordType));
-        return makeConstantExpression(constant, node);
+        if (hasUnevaluated) {
+          return makeConstantExpression(new UnevaluatedConstant(node), node);
+        } else {
+          Constant constant = constantEvaluator.canonicalize(
+              new RecordConstant(positional, named, node.recordType));
+          return makeConstantExpression(constant, node);
+        }
       }
       return node;
     }
+  }
+
+  @override
+  TreeNode visitStringConcatenation(
+      StringConcatenation node, TreeNode? removalSentinel) {
+    bool allConstant = true;
+    for (int index = 0; index < node.expressions.length; index++) {
+      Expression expression = node.expressions[index];
+      Expression result = transform(expression);
+      node.expressions[index] = result..parent = node;
+      if (allConstant) {
+        if (result is ConstantExpression) {
+          DartType staticType = result.type;
+          if (staticType is NullType ||
+              staticType is InterfaceType &&
+                  (staticType.classReference ==
+                          typeEnvironment.coreTypes.boolClass.reference ||
+                      staticType.classReference ==
+                          typeEnvironment.coreTypes.intClass.reference ||
+                      staticType.classReference ==
+                          typeEnvironment.coreTypes.doubleClass.reference ||
+                      staticType.classReference ==
+                          typeEnvironment.coreTypes.stringClass.reference)) {
+            // Ok
+          } else {
+            allConstant = false;
+          }
+        } else if (result is! BasicLiteral) {
+          allConstant = false;
+        }
+      }
+    }
+    if (allConstant) {
+      return evaluateAndTransformWithContext(node, node);
+    }
+    return node;
   }
 
   @override
