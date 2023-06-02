@@ -12,7 +12,7 @@ class Stopwatch {
 
   @patch
   static int _initTicker() {
-    if (JS<bool>("() => !!dartUseDateNowForTicks")) {
+    if (JS<bool>("() => typeof dartUseDateNowForTicks !== \"undefined\"")) {
       // Millisecond precision, as int.
       return 1000;
     } else {
