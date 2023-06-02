@@ -903,8 +903,15 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
       final VariableDeclaration? exceptionDeclaration = catch_.exception;
       if (exceptionDeclaration != null) {
-        initializeVariable(
-            exceptionDeclaration, () => b.local_get(thrownException));
+        initializeVariable(exceptionDeclaration, () {
+          b.local_get(thrownException);
+          // Type test passed, downcast exception local to the expected type.
+          translator.convertType(
+            function,
+            thrownException.type,
+            translator.translateType(exceptionDeclaration.type),
+          );
+        });
       }
 
       final VariableDeclaration? stackTraceDeclaration = catch_.stackTrace;
