@@ -17,7 +17,7 @@ class _JSEventLoop {
           callback)
       .toInt();
 
-  /// Cancel a callback scheduled with [setTimeout].
+  /// Cancel a callback scheduled with `setTimeout`.
   static void _clearTimeout(int id) =>
       JS<void>(r"""(id) => clearTimeout(id)""", id);
 
@@ -29,11 +29,11 @@ class _JSEventLoop {
           callback)
       .toInt();
 
-  /// Cancel a callback scheduled with [setInterval].
+  /// Cancel a callback scheduled with `setInterval`.
   static void _clearInterval(int id) =>
       JS<void>(r"""(id) => clearInterval(id)""", id);
 
-  /// Schedule a callback from JS via queueMicrotask.
+  /// Schedule a callback from JS via `queueMicrotask`.
   static void _queueMicrotask(dynamic Function() callback) => JS<void>(
       r"""(c) =>
               queueMicrotask(() => dartInstance.exports.$invokeCallback(c))""",
