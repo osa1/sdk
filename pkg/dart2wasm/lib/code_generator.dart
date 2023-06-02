@@ -807,7 +807,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   void initializeVariable(VariableDeclaration node, void pushInitialValue()) {
     final w.ValueType type = translateType(node.type);
     w.Local? local;
-    Capture? capture = closures.captures[node];
+    final Capture? capture = closures.captures[node];
     if (capture == null || !capture.written) {
       local = addLocal(type);
       locals[node] = local;
