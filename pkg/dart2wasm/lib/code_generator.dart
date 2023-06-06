@@ -804,6 +804,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     }
   }
 
+  /// Initialize a variable [node] to an initial value which must be left on
+  /// the stack by [pushInitialValue].
+  ///
+  /// This is similar to [visitVariableDeclaration] but it gives more control
+  /// over how the variable is initialized.
   void initializeVariable(VariableDeclaration node, void pushInitialValue()) {
     final w.ValueType type = translateType(node.type);
     w.Local? local;
