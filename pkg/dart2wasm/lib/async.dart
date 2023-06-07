@@ -416,7 +416,7 @@ class Finalizer extends _ExceptionHandler {
 
 /// Represents target of a `break` statement.
 abstract class LabelTarget {
-  void jump(AsyncCodeGenerator codeGen, BreakStatement node);
+  void jump(AsyncCodeGenerator codeGen);
 }
 
 /// Target of a [BreakStatement] that can be implemented with a Wasm `br`
@@ -430,7 +430,7 @@ class DirectLabelTarget implements LabelTarget {
   DirectLabelTarget(this.label);
 
   @override
-  void jump(AsyncCodeGenerator codeGen, BreakStatement node) {
+  void jump(AsyncCodeGenerator codeGen) {
     codeGen.b.br(label);
   }
 }
@@ -447,7 +447,7 @@ class IndirectLabelTarget implements LabelTarget {
   IndirectLabelTarget(this.finalizerDepth, this.stateTarget);
 
   @override
-  void jump(AsyncCodeGenerator codeGen, BreakStatement node) {
+  void jump(AsyncCodeGenerator codeGen) {
     final currentFinalizerDepth = codeGen.exceptionHandlers.numFinalizers;
     final finalizersToRun = currentFinalizerDepth - finalizerDepth;
 
@@ -519,9 +519,9 @@ class AsyncCodeGenerator extends CodeGenerator {
   /// `try` and `catch` blocks around the CFG blocks.
   late final _ExceptionHandlerStack exceptionHandlers;
 
-  /// Maps labelled statements to their CFG targets. Used when jumping to a CFG
-  /// block on `break`.
-  final Map<LabeledStatement, LabelTarget> labelTargets = {};
+  /// Maps jump targets to their CFG targets. Used when jumping to a CFG block
+  /// on `break`. Keys are [LabeledStatement]s or [SwitchCase]s.
+  final Map<TreeNode, LabelTarget> labelTargets = {};
 
   late final ClassInfo asyncSuspendStateInfo =
       translator.classInfo[translator.asyncSuspendStateClass]!;
@@ -940,7 +940,7 @@ class AsyncCodeGenerator extends CodeGenerator {
 
   @override
   void visitBreakStatement(BreakStatement node) {
-    labelTargets[node.target]!.jump(this, node);
+    labelTargets[node.target]!.jump(this);
   }
 
   @override
@@ -955,6 +955,12 @@ class AsyncCodeGenerator extends CodeGenerator {
     // Special cases
     final SwitchCase? defaultCase = switchInfo.defaultCase;
     final SwitchCase? nullCase = switchInfo.nullCase;
+
+    // Add jump infos
+    for (final SwitchCase case_ in node.cases) {
+      labelTargets[case_] = IndirectLabelTarget(
+          exceptionHandlers.numFinalizers, innerTargets[case_]!);
+    }
 
     // When the type is nullable we use two variables: one for the nullable
     // value, one after the null check, with non-nullable type.
@@ -1023,11 +1029,16 @@ class AsyncCodeGenerator extends CodeGenerator {
     }
 
     _emitTargetLabel(after);
+
+    // Remove jump infos
+    for (final SwitchCase case_ in node.cases) {
+      labelTargets.remove(case_);
+    }
   }
 
   @override
   void visitContinueSwitchStatement(ContinueSwitchStatement node) {
-    jumpToTarget(innerTargets[node.target]!);
+    labelTargets[node.target]!.jump(this);
   }
 
   @override
