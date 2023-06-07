@@ -956,12 +956,6 @@ class AsyncCodeGenerator extends CodeGenerator {
     final SwitchCase? defaultCase = switchInfo.defaultCase;
     final SwitchCase? nullCase = switchInfo.nullCase;
 
-    // Add jump infos
-    for (final SwitchCase case_ in node.cases) {
-      labelTargets[case_] = IndirectLabelTarget(
-          exceptionHandlers.numFinalizers, innerTargets[case_]!);
-    }
-
     // When the type is nullable we use two variables: one for the nullable
     // value, one after the null check, with non-nullable type.
     w.Local switchValueNonNullableLocal = addLocal(switchInfo.nonNullableType);
@@ -1021,6 +1015,12 @@ class AsyncCodeGenerator extends CodeGenerator {
       jumpToTarget(defaultLabel);
     }
 
+    // Add jump infos
+    for (final SwitchCase case_ in node.cases) {
+      labelTargets[case_] = IndirectLabelTarget(
+          exceptionHandlers.numFinalizers, innerTargets[case_]!);
+    }
+
     // Emit case bodies
     for (SwitchCase c in node.cases) {
       _emitTargetLabel(innerTargets[c]!);
@@ -1028,12 +1028,12 @@ class AsyncCodeGenerator extends CodeGenerator {
       jumpToTarget(after);
     }
 
-    _emitTargetLabel(after);
-
     // Remove jump infos
     for (final SwitchCase case_ in node.cases) {
       labelTargets.remove(case_);
     }
+
+    _emitTargetLabel(after);
   }
 
   @override
