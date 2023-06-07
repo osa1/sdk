@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:async';
+import "package:async_helper/async_helper.dart";
 
 class Derived<T> implements Future<T> {
   noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -37,5 +38,7 @@ test() async {
 }
 
 main() {
+  asyncStart();
   test();
+  asyncEnd();
 }
