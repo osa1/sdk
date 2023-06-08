@@ -1527,7 +1527,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     w.ValueType? intrinsicResult = intrinsifier.generateInstanceIntrinsic(node);
     if (intrinsicResult != null) return intrinsicResult;
 
-    w.ValueType objectCallWithNullCheck(
+    w.ValueType callWithNullCheck(
         Procedure target, void Function(w.ValueType) onNull) {
       late w.Label done;
       final w.ValueType resultType =
@@ -1550,10 +1550,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     if (node.kind == InstanceAccessKind.Object) {
       switch (target.name.text) {
         case "toString":
-          return objectCallWithNullCheck(
+          return callWithNullCheck(
               target, (resultType) => wrap(StringLiteral("null"), resultType));
         case "noSuchMethod":
-          return objectCallWithNullCheck(target, (resultType) {
+          return callWithNullCheck(target, (resultType) {
             // Object? receiver
             b.ref_null(translator.topInfo.struct);
             // Invocation invocation
