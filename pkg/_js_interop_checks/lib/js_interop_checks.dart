@@ -23,6 +23,7 @@ import 'package:_fe_analyzer_shared/src/messages/codes.dart'
         messageJsInteropOperatorsNotSupported,
         messageJsInteropStaticInteropExternalExtensionMembersWithTypeParameters,
         messageJsInteropStaticInteropGenerativeConstructor,
+        messageJsInteropStaticInteropParameterInitializersAreIgnored,
         messageJsInteropStaticInteropSyntheticConstructor,
         templateJsInteropDartClassExtendsJSClass,
         templateJsInteropJSClassExtendsDartClass,
@@ -70,11 +71,13 @@ class JsInteropChecks extends RecursiveVisitor {
   bool _classHasAnonymousAnnotation = false;
   bool _classHasStaticInteropAnnotation = false;
   bool _inTearoff = false;
+  bool _libraryHasDartJSInteropAnnotation = false;
   bool _libraryHasJSAnnotation = false;
   bool _libraryIsGlobalNamespace = false;
-  // TODO(joshualitt): Remove allow list and deprecate non-strict mode on
-  // Dart2Wasm.
-  bool _nonStrictModeIsAllowed = false;
+
+  // TODO(joshualitt): Today strict mode is just for testing, but we should find
+  // a way to expose this to users who want strict mode guarantees.
+  bool _enforceStrictMode = false;
 
   /// If [enableStrictMode] is true, then static interop methods must use JS
   /// types.
@@ -105,7 +108,7 @@ class JsInteropChecks extends RecursiveVisitor {
     'js_interop_unsafe',
   ];
 
-  /// Libraries that cannot be used when [_nonStrictModeIsAllowed] is false.
+  /// Libraries that cannot be used when [_enforceStrictMode] is true.
   static const _disallowedLibrariesInStrictMode = [
     'package:js/js.dart',
     'package:js/js_util.dart',
@@ -284,11 +287,13 @@ class JsInteropChecks extends RecursiveVisitor {
   @override
   void visitLibrary(Library node) {
     _staticTypeContext.enterLibrary(node);
-    _libraryHasJSAnnotation = hasJSInteropAnnotation(node);
+    _libraryHasDartJSInteropAnnotation = hasDartJSInteropAnnotation(node);
+    _libraryHasJSAnnotation =
+        _libraryHasDartJSInteropAnnotation || hasJSInteropAnnotation(node);
     _libraryIsGlobalNamespace = _isLibraryGlobalNamespace(node);
-    _nonStrictModeIsAllowed = _canLibraryUseNonStrictMode(node);
+    _enforceStrictMode = _shouldEnforceStrictMode(node);
 
-    if (!_nonStrictModeIsAllowed && !node.importUri.isScheme('dart')) {
+    if (_enforceStrictMode && !node.importUri.isScheme('dart')) {
       _checkDisallowedLibrariesInStrictMode(node);
     }
 
@@ -359,18 +364,29 @@ class JsInteropChecks extends RecursiveVisitor {
         }
       }
 
-      if (node.isExtensionMember) {
-        final annotatable = _inlineExtensionIndex.getExtensionAnnotatable(node);
-        if (annotatable != null) {
-          // If a @staticInterop member, check that it uses no type parameters.
-          if (hasStaticInteropAnnotation(annotatable) &&
-              !isAllowedCustomStaticInteropImplementation(node)) {
-            _checkStaticInteropMemberUsesNoTypeParameters(node);
-          }
-          // We do not support external extension members with the 'static'
-          // keyword currently.
-          if (_inlineExtensionIndex.getExtensionDescriptor(node)!.isStatic) {
-            report(messageJsInteropExternalExtensionMemberWithStaticDisallowed);
+      if (_classHasStaticInteropAnnotation ||
+          node.isInlineClassMember ||
+          node.isExtensionMember ||
+          node.enclosingClass == null &&
+              (hasDartJSInteropAnnotation(node) ||
+                  _libraryHasDartJSInteropAnnotation)) {
+        _checkNoParamInitializersForStaticInterop(node.function);
+        if (node.isExtensionMember) {
+          final annotatable =
+              _inlineExtensionIndex.getExtensionAnnotatable(node);
+          if (annotatable != null) {
+            // If a @staticInterop member, check that it uses no type
+            // parameters.
+            if (hasStaticInteropAnnotation(annotatable) &&
+                !isAllowedCustomStaticInteropImplementation(node)) {
+              _checkStaticInteropMemberUsesNoTypeParameters(node);
+            }
+            // We do not support external extension members with the 'static'
+            // keyword currently.
+            if (_inlineExtensionIndex.getExtensionDescriptor(node)!.isStatic) {
+              report(
+                  messageJsInteropExternalExtensionMemberWithStaticDisallowed);
+            }
           }
         }
       }
@@ -496,26 +512,11 @@ class JsInteropChecks extends RecursiveVisitor {
 
   // JS interop library checks
 
-  /// Determine if [node] is part of an allowlist that can opt out of strict
-  /// mode.
-  ///
-  /// This is currently needed to allow some targets to work on dart2wasm.
-  bool _canLibraryUseNonStrictMode(Library node) {
-    // Allow only Flutter and package:test to opt out.
-    final isSDKLibrary = node.importUri.isScheme('dart');
-    final importUriString = node.importUri.toString();
-    return !enableStrictMode ||
-        isSDKLibrary ||
-        importUriString.startsWith('package:ui') ||
-        importUriString.startsWith('package:js') ||
-        importUriString.startsWith('package:flutter') ||
-        importUriString.startsWith('package:flute') ||
-        importUriString.startsWith('package:engine') ||
-        importUriString.startsWith('package:test') ||
-        importUriString.contains('/test/') ||
-        (node.fileUri.toString().contains(RegExp(r'(?<!generated_)tests/')) &&
-            !node.fileUri.toString().contains(RegExp(
-                r'(?<!generated_)tests/lib/js/static_interop_test/strict_mode_test.dart')));
+  /// Determine if [node] enforces strict mode checking. This is currently only
+  /// enabled for testing.
+  bool _shouldEnforceStrictMode(Library node) {
+    return node.fileUri.toString().contains(RegExp(
+        r'(?<!generated_)tests/lib/js/static_interop_test/strict_mode_test.dart'));
   }
 
   void _checkDisallowedLibrariesInStrictMode(Library node) {
@@ -802,6 +803,23 @@ class JsInteropChecks extends RecursiveVisitor {
     }
   }
 
+  /// Reports a warning if static interop function [node] has any parameters
+  /// that have a declared initializer.
+  void _checkNoParamInitializersForStaticInterop(FunctionNode node) {
+    for (final param in [
+      ...node.positionalParameters,
+      ...node.namedParameters
+    ]) {
+      if (param.hasDeclaredInitializer) {
+        _reporter.report(
+            messageJsInteropStaticInteropParameterInitializersAreIgnored,
+            param.fileOffset,
+            param.name!.length,
+            param.location!.file);
+      }
+    }
+  }
+
   void _checkStaticInteropMemberUsesNoTypeParameters(Procedure node) {
     // If the extension has type parameters of its own, it copies those type
     // parameters to the procedure's type parameters (in the front) as well.
@@ -889,11 +907,13 @@ class JsInteropChecks extends RecursiveVisitor {
     // said, for completeness, we may restrict these two types someday, and
     // provide JS types equivalents, but likely only if we have implicit
     // conversions between Dart types and JS types.
-    if (!(_nonStrictModeIsAllowed ||
-        type is VoidType ||
-        type is NullType ||
-        (type is InterfaceType && hasStaticInteropAnnotation(type.classNode)) ||
-        (type is InlineType && hasDartJSInteropAnnotation(type.inlineClass)))) {
+    if (_enforceStrictMode &&
+        !(type is VoidType ||
+            type is NullType ||
+            (type is InterfaceType &&
+                hasStaticInteropAnnotation(type.classNode)) ||
+            (type is InlineType &&
+                hasDartJSInteropAnnotation(type.inlineClass)))) {
       _reporter.report(
           templateJsInteropStrictModeViolation.withArguments(type, true),
           node.fileOffset,
