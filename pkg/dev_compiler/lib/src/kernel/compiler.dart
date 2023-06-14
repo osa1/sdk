@@ -279,7 +279,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// members.
   // TODO(srujzs): Is there some way to share this from the js_util_optimizer to
   // avoid having to recompute?
-  final _inlineExtensionIndex = InlineExtensionIndex();
+  final InlineExtensionIndex _inlineExtensionIndex;
 
   final Class _jsArrayClass;
   final Class _privateSymbolClass;
@@ -367,7 +367,9 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         _assertInteropMethod = sdk.getTopLevelMember(
             'dart:_runtime', 'assertInterop') as Procedure,
         _futureOrNormalizer = FutureOrNormalizer(_coreTypes),
-        _typeRecipeGenerator = TypeRecipeGenerator(_coreTypes, _hierarchy);
+        _typeRecipeGenerator = TypeRecipeGenerator(_coreTypes, _hierarchy),
+        _inlineExtensionIndex = InlineExtensionIndex(
+            _coreTypes, _staticTypeContext.typeEnvironment);
 
   @override
   Library? get currentLibrary => _currentLibrary;
@@ -524,14 +526,54 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       }
       var universeClass =
           rtiLibrary.classes.firstWhere((cls) => cls.name == '_Universe');
-      var typeRules = _typeRecipeGenerator.visitedInterfaceTypeRules;
-      var template = "#._Universe.#(#, JSON.parse('${jsonEncode(typeRules)}'))";
-      var addRulesStatement = js.call(template, [
-        emitLibraryName(rtiLibrary),
-        _emitMemberName('addRules', memberClass: universeClass),
-        runtimeCall('typeUniverse')
-      ]).toStatement();
-      moduleItems.add(addRulesStatement);
+      var typeRules = _typeRecipeGenerator.liveInterfaceTypeRules;
+      if (typeRules.isNotEmpty) {
+        var template = '#._Universe.#(#, JSON.parse(#))';
+        var addRulesStatement = js.call(template, [
+          emitLibraryName(rtiLibrary),
+          _emitMemberName('addRules', memberClass: universeClass),
+          runtimeCall('typeUniverse'),
+          js.string(jsonEncode(typeRules), "'")
+        ]).toStatement();
+        moduleItems.add(addRulesStatement);
+      }
+      // Update type rules for `LegacyJavaScriptObject` to add all interop
+      // types in this module as a supertype.
+      var updateRules = _typeRecipeGenerator.updateLegacyJavaScriptObjectRules;
+      if (updateRules.isNotEmpty) {
+        // All JavaScript interop classes should be mutual subtypes with
+        // `LegacyJavaScriptObject`. To achieve this the rules are manually
+        // added here. There is special redirecting rule logic in the dart:_rti
+        // library for interop types because otherwise they would duplicate
+        // a lot of supertype information.
+        var updateRulesStatement =
+            js.statement('#._Universe.#(#, JSON.parse(#))', [
+          emitLibraryName(rtiLibrary),
+          _emitMemberName('addOrUpdateRules', memberClass: universeClass),
+          runtimeCall('typeUniverse'),
+          js.string(jsonEncode(updateRules), "'")
+        ]);
+        moduleItems.add(updateRulesStatement);
+      }
+      var jsInteropTypeRecipes =
+          _typeRecipeGenerator.visitedJsInteropTypeRecipes;
+      if (jsInteropTypeRecipes.isNotEmpty) {
+        // Update the `LegacyJavaScriptObject` class with the type tags for all
+        // interop types in this module. This is the quick path for simple type
+        // tests that matches the rules encoded above.
+        var legacyJavaScriptObjectClass = _coreTypes.index
+            .getClass('dart:_interceptors', 'LegacyJavaScriptObject');
+        var legacyJavaScriptObjectClassRef = _emitClassRef(
+            legacyJavaScriptObjectClass.getThisType(
+                _coreTypes, Nullability.nonNullable));
+        var interopRecipesArray = js_ast.stringArray([
+          _typeRecipeGenerator.interfaceTypeRecipe(legacyJavaScriptObjectClass),
+          ...jsInteropTypeRecipes
+        ]);
+        var jsInteropRules = runtimeStatement('addRtiResources(#, #)',
+            [legacyJavaScriptObjectClassRef, interopRecipesArray]);
+        moduleItems.add(jsInteropRules);
+      }
     }
 
     // Visit directives (for exports)
@@ -1514,10 +1556,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// Emits non-external static fields for a class, and initialize them eagerly
   /// if possible, otherwise define them as lazy properties.
   void _emitStaticFieldsAndAccessors(Class c, List<js_ast.Statement> body) {
-    var fields = c.fields
-        .where(
-            (f) => f.isStatic && !f.isExternal && !isRedirectingFactoryField(f))
-        .toList();
+    var fields = c.fields.where((f) => f.isStatic && !f.isExternal).toList();
     var fieldNames = Set.from(fields.map((f) => f.name));
     var staticSetters = c.procedures.where(
         (p) => p.isStatic && p.isAccessor && fieldNames.contains(p.name));
@@ -1867,9 +1906,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     if (cls == null) return false;
     var cachedResult = _typeParametersInHierarchyCache[cls];
     if (cachedResult != null) return cachedResult;
-    var hasTypeParameters = cls.typeParameters.isNotEmpty
-        ? true
-        : _typeParametersInHierarchy(cls.superclass);
+    var hasTypeParameters = cls.typeParameters.isNotEmpty ||
+        (cls.isMixinApplication &&
+            _typeParametersInHierarchy(cls.mixedInClass)) ||
+        _typeParametersInHierarchy(cls.superclass);
     _typeParametersInHierarchyCache[cls] = hasTypeParameters;
     return hasTypeParameters;
   }
@@ -2088,15 +2128,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
           propertyName('constructor'), js.fun(r'function() { return []; }')));
     }
 
-    Set<Member>? redirectingFactories;
     var staticFieldNames = <Name>{};
     for (var m in c.fields) {
       if (m.isStatic) {
-        if (isRedirectingFactoryField(m)) {
-          redirectingFactories = getRedirectingFactories(m).toSet();
-        } else {
-          staticFieldNames.add(m.name);
-        }
+        staticFieldNames.add(m.name);
       } else if (_extensionTypes.isNativeClass(c)) {
         jsMethods.addAll(_emitNativeFieldAccessors(m));
       } else if (virtualFields.containsKey(m)) {
@@ -2135,7 +2170,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         // TODO(jmesserly): is there any other kind of forwarding stub?
         jsMethods.addAll(_emitCovarianceCheckStub(m));
       } else if (m.isFactory) {
-        if (redirectingFactories?.contains(m) ?? false) {
+        if (m.isRedirectingFactory) {
           // Skip redirecting factories (they've already been resolved).
         } else {
           jsMethods.add(_emitFactoryConstructor(m));
@@ -5200,7 +5235,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         return runtimeCall('#(#)', [memberName, jsReceiver]);
       }
       // Otherwise generate this as a normal typed property get.
-    } else if (member == null) {
+    } else if (member == null &&
+        // Records have no member node for the element getters so avoid emitting
+        // a dynamic get when the types are known statically.
+        receiver.getStaticType(_staticTypeContext) is! RecordType) {
       return runtimeCall('dload$_replSuffix(#, #)', [jsReceiver, jsName]);
     }
 
@@ -6042,6 +6080,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       }
 
       if (args.length == 1) {
+        if (name == 'getInterceptor') {
+          var argExpression = args.single.accept(this);
+          return runtimeCall('getInterceptorForRti(#)', [argExpression]);
+        }
         if (name == 'JS_GET_NAME') {
           var staticGet = args.single as StaticGet;
           var enumField = staticGet.target as Field;
@@ -6187,10 +6229,11 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     }
     if (target.isExternal &&
         target.isInlineClassMember &&
-        hasObjectLiteralAnnotation(target)) {
-      // Only JS interop inline class object literal constructors have the
-      // `@ObjectLiteral(...)` annotation.
-      assert(node.arguments.positional.isEmpty);
+        target.function.namedParameters.isNotEmpty) {
+      // JS interop checks assert that only external inline class factories have
+      // named parameters. We could do a more robust check by visiting all
+      // inline classes and recording descriptors, but that's expensive.
+      assert(target.function.positionalParameters.isEmpty);
       return _emitObjectLiteral(
           Arguments(node.arguments.positional,
               types: node.arguments.types, named: node.arguments.named),

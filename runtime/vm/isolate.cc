@@ -1566,7 +1566,6 @@ Isolate::Isolate(IsolateGroup* isolate_group,
     : BaseIsolate(),
       current_tag_(UserTag::null()),
       default_tag_(UserTag::null()),
-      ic_miss_code_(Code::null()),
       field_table_(new FieldTable(/*isolate=*/this)),
       finalizers_(GrowableObjectArray::null()),
       isolate_group_(isolate_group),
@@ -1687,10 +1686,7 @@ Isolate* Isolate::InitIsolate(const char* name_prefix,
   //
   // Though the [result] isolate is still in a state where no memory has been
   // allocated, which means it's safe to GC the isolate group until here.
-  if (!Thread::EnterIsolate(result)) {
-    delete result;
-    return nullptr;
-  }
+  Thread::EnterIsolate(result);
 
   // Setup the isolate message handler.
   MessageHandler* handler = new IsolateMessageHandler(result);
@@ -2545,7 +2541,6 @@ void Isolate::VisitObjectPointers(ObjectPointerVisitor* visitor,
   // Visit the objects directly referenced from the isolate structure.
   visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&current_tag_));
   visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&default_tag_));
-  visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&ic_miss_code_));
   visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&tag_table_));
   visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&sticky_error_));
   visitor->VisitPointer(reinterpret_cast<ObjectPtr*>(&finalizers_));
@@ -3028,10 +3023,6 @@ void Isolate::set_current_tag(const UserTag& tag) {
 
 void Isolate::set_default_tag(const UserTag& tag) {
   default_tag_ = tag.ptr();
-}
-
-void Isolate::set_ic_miss_code(const Code& code) {
-  ic_miss_code_ = code.ptr();
 }
 
 ErrorPtr Isolate::StealStickyError() {
@@ -3519,7 +3510,9 @@ void Isolate::WaitForOutstandingSpawns() {
   }
 }
 
-void* Isolate::CreateSyncFfiCallback(Zone* zone, const Function& function) {
+FfiCallbackMetadata::Trampoline Isolate::CreateSyncFfiCallback(
+    Zone* zone,
+    const Function& function) {
   return FfiCallbackMetadata::Instance()->CreateSyncFfiCallback(
       this, zone, function, &ffi_callback_sync_list_head_);
 }

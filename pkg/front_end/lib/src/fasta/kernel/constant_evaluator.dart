@@ -64,18 +64,6 @@ Component transformComponent(
     CoreTypes? coreTypes,
     ClassHierarchy? hierarchy,
     ExhaustivenessDataForTesting? exhaustivenessDataForTesting}) {
-  // ignore: unnecessary_null_comparison
-  assert(evaluateAnnotations != null);
-  // ignore: unnecessary_null_comparison
-  assert(desugarSets != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableTripleShift != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstFunctions != null);
-  // ignore: unnecessary_null_comparison
-  assert(errorOnUnevaluatedConstant != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstructorTearOff != null);
   coreTypes ??= new CoreTypes(component);
   hierarchy ??= new ClassHierarchy(component, coreTypes);
 
@@ -106,16 +94,6 @@ ConstantEvaluationData transformLibraries(
     required bool errorOnUnevaluatedConstant,
     required bool enableConstructorTearOff,
     ExhaustivenessDataForTesting? exhaustivenessDataForTesting}) {
-  // ignore: unnecessary_null_comparison
-  assert(evaluateAnnotations != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableTripleShift != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstFunctions != null);
-  // ignore: unnecessary_null_comparison
-  assert(errorOnUnevaluatedConstant != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstructorTearOff != null);
   final ConstantsTransformer constantsTransformer = new ConstantsTransformer(
       target,
       environmentDefines,
@@ -151,16 +129,6 @@ void transformProcedure(
     required bool enableConstFunctions,
     required bool enableConstructorTearOff,
     required bool errorOnUnevaluatedConstant}) {
-  // ignore: unnecessary_null_comparison
-  assert(evaluateAnnotations != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableTripleShift != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstFunctions != null);
-  // ignore: unnecessary_null_comparison
-  assert(errorOnUnevaluatedConstant != null);
-  // ignore: unnecessary_null_comparison
-  assert(enableConstructorTearOff != null);
   final ConstantsTransformer constantsTransformer = new ConstantsTransformer(
       target,
       environmentDefines,
@@ -503,7 +471,6 @@ class ConstantsTransformer extends RemovingTransformer {
       transformTypeParameterList(node.typeParameters, node);
       transformConstructorList(node.constructors, node);
       transformProcedureList(node.procedures, node);
-      transformRedirectingFactoryList(node.redirectingFactories, node);
     });
     _staticTypeContext = oldStaticTypeContext;
     return node;
@@ -579,22 +546,6 @@ class ConstantsTransformer extends RemovingTransformer {
   }
 
   @override
-  RedirectingFactory visitRedirectingFactory(
-      RedirectingFactory node, TreeNode? removalSentinel) {
-    // Currently unreachable as the compiler doesn't produce
-    // RedirectingFactoryConstructor.
-    _matchCacheIndex = 0;
-    StaticTypeContext? oldStaticTypeContext = _staticTypeContext;
-    _staticTypeContext = new StaticTypeContext(node, typeEnvironment);
-    constantEvaluator.withNewEnvironment(() {
-      transformAnnotations(node.annotations, node);
-      node.function = transform(node.function)..parent = node;
-    });
-    _staticTypeContext = oldStaticTypeContext;
-    return node;
-  }
-
-  @override
   TypeParameter visitTypeParameter(
       TypeParameter node, TreeNode? removalSentinel) {
     transformAnnotations(node.annotations, node);
@@ -657,10 +608,7 @@ class ConstantsTransformer extends RemovingTransformer {
   TreeNode visitFunctionDeclaration(
       FunctionDeclaration node, TreeNode? removalSentinel) {
     if (enableConstFunctions) {
-      // ignore: unnecessary_null_comparison
-      if (node.function != null) {
-        node.function = transform(node.function)..parent = node;
-      }
+      node.function = transform(node.function)..parent = node;
       constantEvaluator.env.addVariableValue(
           node.variable, new FunctionValue(node.function, null));
     } else {
@@ -1609,27 +1557,23 @@ class ConstantsTransformer extends RemovingTransformer {
   TreeNode visitSwitchStatement(
       SwitchStatement node, TreeNode? removalSentinel) {
     TreeNode result = super.visitSwitchStatement(node, removalSentinel);
-    Library library = currentLibrary;
-    // ignore: unnecessary_null_comparison
-    if (library != null) {
-      for (SwitchCase switchCase in node.cases) {
-        for (Expression caseExpression in switchCase.expressions) {
-          if (caseExpression is ConstantExpression) {
-            if (!constantEvaluator.hasPrimitiveEqual(caseExpression.constant,
-                staticTypeContext: staticTypeContext)) {
-              constantEvaluator.errorReporter.report(
-                  constantEvaluator.createLocatedMessage(
-                      caseExpression,
-                      templateConstEvalCaseImplementsEqual.withArguments(
-                          caseExpression.constant,
-                          staticTypeContext.nonNullable ==
-                              Nullability.nonNullable)),
-                  null);
-            }
-          } else {
-            // If caseExpression is not ConstantExpression, an error is
-            // reported elsewhere.
+    for (SwitchCase switchCase in node.cases) {
+      for (Expression caseExpression in switchCase.expressions) {
+        if (caseExpression is ConstantExpression) {
+          if (!constantEvaluator.hasPrimitiveEqual(caseExpression.constant,
+              staticTypeContext: staticTypeContext)) {
+            constantEvaluator.errorReporter.report(
+                constantEvaluator.createLocatedMessage(
+                    caseExpression,
+                    templateConstEvalCaseImplementsEqual.withArguments(
+                        caseExpression.constant,
+                        staticTypeContext.nonNullable ==
+                            Nullability.nonNullable)),
+                null);
           }
+        } else {
+          // If caseExpression is not ConstantExpression, an error is
+          // reported elsewhere.
         }
       }
     }
@@ -2313,6 +2257,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
 
   final bool enableTripleShift;
   final bool enableConstFunctions;
+  bool inInlineClassConstConstructor = false;
 
   final Map<Constant, Constant> canonicalizationCache;
   final Map<Node, Constant?> nodeCache;
@@ -2871,8 +2816,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(type != null);
     return canonicalize(new TypeLiteralConstant(type));
   }
 
@@ -2912,8 +2855,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(type != null);
 
     final ListConstantBuilder builder = new ListConstantBuilder(
         node, convertType(type), this,
@@ -2949,8 +2890,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positional != null);
 
     Map<String, Constant>? named = _evaluateNamedArguments(node.named);
     if (named == null) {
@@ -2959,8 +2898,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(named != null);
 
     if (shouldBeUnevaluated) {
       return unevaluated(
@@ -3003,8 +2940,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(type != null);
 
     final SetConstantBuilder builder =
         new SetConstantBuilder(node, convertType(type), this);
@@ -3050,8 +2985,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(keyType != null);
 
     DartType? valueType = _evaluateDartType(node, node.valueType);
     if (valueType == null) {
@@ -3060,8 +2993,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(valueType != null);
 
     final MapConstantBuilder builder = new MapConstantBuilder(
         node, convertType(keyType), convertType(valueType), this);
@@ -3127,8 +3058,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positional != null);
 
     final Map<String, Constant>? named =
         _evaluateNamedArguments(node.arguments.named);
@@ -3138,8 +3067,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(named != null);
 
     bool isSymbol = klass == coreTypes.internalSymbolClass;
     if (isSymbol && shouldBeUnevaluated) {
@@ -3174,8 +3101,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(types != null);
 
     final List<DartType> typeArguments = convertTypes(types);
 
@@ -3307,8 +3232,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       'unary-'
     };
 
-    // ignore: unnecessary_null_comparison
-    if (name == null) return false;
     if (name == '') return true;
 
     final List<String> parts = name.split('.');
@@ -3463,8 +3386,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
             return error;
           }
           assert(_gotError == null);
-          // ignore: unnecessary_null_comparison
-          assert(types != null);
 
           List<Constant>? positionalArguments =
               _evaluatePositionalArguments(init.arguments.positional);
@@ -3474,8 +3395,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
             return error;
           }
           assert(_gotError == null);
-          // ignore: unnecessary_null_comparison
-          assert(positionalArguments != null);
           Map<String, Constant>? namedArguments =
               _evaluateNamedArguments(init.arguments.named);
           if (namedArguments == null) {
@@ -3484,8 +3403,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
             return error;
           }
           assert(_gotError == null);
-          // ignore: unnecessary_null_comparison
-          assert(namedArguments != null);
           error = handleConstructorInvocation(
               init.target, types, positionalArguments, namedArguments, caller);
           if (error != null) return error;
@@ -3504,8 +3421,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
             return error;
           }
           assert(_gotError == null);
-          // ignore: unnecessary_null_comparison
-          assert(positionalArguments != null);
 
           Map<String, Constant>? namedArguments =
               _evaluateNamedArguments(init.arguments.named);
@@ -3515,8 +3430,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
             return error;
           }
           assert(_gotError == null);
-          // ignore: unnecessary_null_comparison
-          assert(namedArguments != null);
 
           error = handleConstructorInvocation(init.target, typeArguments,
               positionalArguments, namedArguments, caller);
@@ -3544,8 +3457,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
         instanceBuilder!.unusedArguments.add(_wrap(constant));
       }
 
-      // ignore: unnecessary_null_comparison
-      if (enableConstFunctions && constructor.function != null) {
+      if (enableConstFunctions) {
         AbortConstant? error = executeConstructorBody(constructor);
         if (error != null) return error;
       }
@@ -3643,8 +3555,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positionalArguments != null);
 
     if (shouldBeUnevaluated) {
       return unevaluated(
@@ -3688,8 +3598,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positionalArguments != null);
 
     if (shouldBeUnevaluated) {
       return unevaluated(
@@ -3733,8 +3641,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
     }
 
     final Constant receiver = env.lookupVariable(node.variable)!;
-    // ignore: unnecessary_null_comparison
-    assert(receiver != null);
     if (receiver is AbortConstant) return receiver;
 
     return _evaluateFunctionInvocation(node, receiver, node.arguments);
@@ -3751,8 +3657,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positional != null);
 
     // Evaluate type arguments of the function invoked.
     List<DartType>? types = _evaluateTypeArguments(node, arguments);
@@ -3762,8 +3666,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(types != null);
 
     // Evaluate named arguments of the function invoked.
     final Map<String, Constant>? named =
@@ -3774,8 +3676,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(named != null);
 
     if (receiver is FunctionValue) {
       return _handleFunctionInvocation(
@@ -4048,8 +3948,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
         return error;
       }
       assert(_gotError == null);
-      // ignore: unnecessary_null_comparison
-      assert(typeArguments != null);
 
       // Evaluate named arguments of the method invoked.
       final Map<String, Constant>? namedArguments =
@@ -4060,8 +3958,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
         return error;
       }
       assert(_gotError == null);
-      // ignore: unnecessary_null_comparison
-      assert(namedArguments != null);
 
       if (receiver is FunctionValue && name == Name.callName) {
         return _handleFunctionInvocation(receiver.function, typeArguments,
@@ -4392,7 +4288,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
     // TODO(kustermann): The heuristic of allowing all [VariableGet]s on [Let]
     // variables might allow more than it should.
     final VariableDeclaration variable = node.variable;
-    if (enableConstFunctions) {
+    if (enableConstFunctions || inInlineClassConstConstructor) {
       return env.lookupVariable(variable) ??
           createEvaluationErrorConstant(
               node,
@@ -4420,7 +4316,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
 
   @override
   Constant visitVariableSet(VariableSet node) {
-    if (enableConstFunctions) {
+    if (enableConstFunctions || inInlineClassConstConstructor) {
       final VariableDeclaration variable = node.variable;
       Constant value = _evaluateSubexpression(node.value);
       if (value is AbortConstant) return value;
@@ -4616,8 +4512,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(types != null);
 
     final List<DartType> typeArguments = convertTypes(types);
 
@@ -4629,8 +4523,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(positional != null);
 
     final Map<String, Constant>? named =
         _evaluateNamedArguments(arguments.named);
@@ -4640,15 +4532,13 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(named != null);
 
     if (shouldBeUnevaluated) {
       return unevaluated(
           node,
           new StaticInvocation(
               target, unevaluatedArguments(positional, named, arguments.types),
-              isConst: true));
+              isConst: node.isConst));
     }
     if (target.kind == ProcedureKind.Factory) {
       if (target.isConst) {
@@ -4675,7 +4565,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
                 node,
                 new StaticInvocation(target,
                     unevaluatedArguments(positional, named, arguments.types),
-                    isConst: true));
+                    isConst: node.isConst));
           }
         } else if (target.isExternal) {
           return createEvaluationErrorConstant(
@@ -4735,6 +4625,20 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
           return doubleSpecialCases(left, right) ?? evaluateIdentical();
         }
         return evaluateIdentical();
+      }
+    } else if (target.isInlineClassMember) {
+      if (target.isConst) {
+        bool oldInInlineClassConstructor = inInlineClassConstConstructor;
+        inInlineClassConstConstructor = true;
+        Constant result = _handleFunctionInvocation(
+            node.target.function, typeArguments, positional, named);
+        inInlineClassConstConstructor = oldInInlineClassConstructor;
+        return result;
+      } else {
+        return createEvaluationErrorConstant(
+            node,
+            templateNotConstantExpression
+                .withArguments('Invocation of non-const inline class member'));
       }
     } else if (target.isExtensionMember) {
       return createEvaluationErrorConstant(node, messageConstEvalExtension);
@@ -4815,8 +4719,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(type != null);
     return ensureIsSubtype(constant, type, node);
   }
 
@@ -4839,12 +4741,8 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       return error;
     }
     assert(_gotError == null);
-    // ignore: unnecessary_null_comparison
-    assert(type != null);
 
     bool performIs(Constant constant, {required bool strongMode}) {
-      // ignore: unnecessary_null_comparison
-      assert(strongMode != null);
       if (strongMode) {
         return isSubtype(constant, type, SubtypeCheckMode.withNullabilities);
       } else {
@@ -4970,8 +4868,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
           return error;
         }
         assert(_gotError == null);
-        // ignore: unnecessary_null_comparison
-        assert(types != null);
 
         return canonicalize(
             new InstantiationConstant(constant, convertTypes(types)));
@@ -5140,6 +5036,25 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
     if (mode == SubtypeCheckMode.ignoringNullabilities) {
       constantType = rawLegacyErasure(constantType) ?? constantType;
     }
+    if (type is RecordType && constant is RecordConstant) {
+      if (type.positional.length != constant.positional.length ||
+          type.named.length != constant.named.length ||
+          !type.named.every(
+              (namedType) => constant.named.containsKey(namedType.name))) {
+        return false;
+      }
+      for (int i = 0; i < type.positional.length; i++) {
+        final DartType fieldType = type.positional[i];
+        final Constant fieldValue = constant.positional[i];
+        if (!isSubtype(fieldValue, fieldType, mode)) return false;
+      }
+      for (int i = 0; i < type.named.length; i++) {
+        final NamedType namedFieldType = type.named[i];
+        final Constant fieldValue = constant.named[namedFieldType.name]!;
+        if (!isSubtype(fieldValue, namedFieldType.type, mode)) return false;
+      }
+      return true;
+    }
     bool result = typeEnvironment.isSubtypeOf(constantType, type, mode);
     if (targetingJavaScript && !result) {
       if (constantType is InterfaceType &&
@@ -5229,8 +5144,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
         return null;
       }
       assert(_gotError == null);
-      // ignore: unnecessary_null_comparison
-      assert(type != null);
       result[i] = type;
     }
     return result;
@@ -5339,7 +5252,7 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
 
   T withNewEnvironment<T>(T fn()) {
     final EvaluationEnvironment oldEnv = env;
-    if (enableConstFunctions) {
+    if (enableConstFunctions || inInlineClassConstConstructor) {
       env = new EvaluationEnvironment.withParent(env);
     } else {
       env = new EvaluationEnvironment();
@@ -5470,8 +5383,11 @@ class StatementConstantEvaluator extends StatementVisitor<ExecutionStatus> {
   ConstantEvaluator exprEvaluator;
 
   StatementConstantEvaluator(this.exprEvaluator) {
-    if (!exprEvaluator.enableConstFunctions) {
-      throw new UnsupportedError("Const functions feature is not enabled.");
+    if (!exprEvaluator.enableConstFunctions &&
+        !exprEvaluator.inInlineClassConstConstructor) {
+      throw new UnsupportedError("Statement evaluation is only supported when "
+          "in inline class const constructors or when the const functions "
+          "feature is enabled.");
     }
   }
 

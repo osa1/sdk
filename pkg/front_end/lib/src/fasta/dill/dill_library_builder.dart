@@ -7,11 +7,6 @@ library fasta.dill_library_builder;
 import 'dart:convert' show jsonDecode;
 
 import 'package:kernel/ast.dart';
-import 'package:kernel/src/redirecting_factory_body.dart'
-    show
-        RedirectingFactoryBody,
-        getRedirectingFactories,
-        isRedirectingFactoryField;
 
 import '../builder/builder.dart';
 import '../builder/class_builder.dart';
@@ -188,13 +183,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       classBuilder.addConstructor(constructor, tearOffs[constructor.name.text]);
     }
     for (Field field in cls.fields) {
-      if (isRedirectingFactoryField(field)) {
-        for (Procedure target in getRedirectingFactories(field)) {
-          RedirectingFactoryBody.restoreFromDill(target);
-        }
-      } else {
-        classBuilder.addField(field);
-      }
+      classBuilder.addField(field);
     }
   }
 
@@ -347,8 +336,6 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       String name;
       if (sourceBuildersMap?.containsKey(reference) == true) {
         declaration = sourceBuildersMap![reference]!;
-        // ignore: unnecessary_null_comparison
-        assert(declaration != null);
         if (declaration is ModifierBuilder) {
           name = declaration.name!;
         } else {
@@ -401,14 +388,6 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
           declaration =
               library.exportScope.lookupLocalMember(name, setter: false)!;
           exportScope.addLocalMember(name, declaration, setter: false);
-        }
-        // ignore: unnecessary_null_comparison
-        if (declaration == null) {
-          internalProblem(
-              templateUnspecified.withArguments(
-                  "Exported element '$name' not found in '$libraryUri'."),
-              -1,
-              fileUri);
         }
       }
 

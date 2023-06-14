@@ -442,6 +442,8 @@ import 'invalid_visibility_annotation_test.dart'
     as invalid_visibility_annotation;
 import 'invalid_visible_for_overriding_annotation_test.dart'
     as invalid_visible_for_overriding_annotation;
+import 'invalid_visible_outside_template_annotation_test.dart'
+    as invalid_visible_outside_template_annotation;
 import 'invocation_of_extension_without_call_test.dart'
     as invocation_of_extension_without_call;
 import 'invocation_of_non_function_expression_test.dart'
@@ -507,6 +509,10 @@ import 'mixin_of_type_alias_expands_to_type_parameter_test.dart'
 import 'mixin_on_sealed_class_test.dart' as mixin_on_sealed_class;
 import 'mixin_on_type_alias_expands_to_type_parameter_test.dart'
     as mixin_on_type_alias_expands_to_type_parameter;
+import 'mixin_subtype_of_base_is_not_base_test.dart'
+    as mixin_subtype_of_base_is_not_base;
+import 'mixin_subtype_of_final_is_not_base_test.dart'
+    as mixin_subtype_of_final_is_not_base;
 import 'mixin_super_class_constraint_deferred_class_test.dart'
     as mixin_super_class_constraint_deferred_class;
 import 'mixin_super_class_constraint_disallowed_class_test.dart'
@@ -1164,6 +1170,7 @@ main() {
     invalid_use_of_visible_for_testing_member.main();
     invalid_visibility_annotation.main();
     invalid_visible_for_overriding_annotation.main();
+    invalid_visible_outside_template_annotation.main();
     invocation_of_extension_without_call.main();
     invocation_of_non_function_expression.main();
     label_in_outer_scope.main();
@@ -1205,6 +1212,8 @@ main() {
     mixin_of_type_alias_expands_to_type_parameter.main();
     mixin_on_sealed_class.main();
     mixin_on_type_alias_expands_to_type_parameter.main();
+    mixin_subtype_of_base_is_not_base.main();
+    mixin_subtype_of_final_is_not_base.main();
     mixin_super_class_constraint_deferred_class.main();
     mixin_super_class_constraint_disallowed_class.main();
     mixin_super_class_constraint_non_interface.main();

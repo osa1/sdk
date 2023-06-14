@@ -368,259 +368,6 @@ const v = int;
     _assertHasPrimitiveEqualityTrue('v');
   }
 
-  test_identical_constructorReference_aliasIsNotGeneric() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC = C<int>;
-const a = identical(MyC.new, C<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_differentBound() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T extends num> = C<T>;
-const a = identical(MyC.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_differentCount() async {
-    await resolveTestCode('''
-class C<T, U> {}
-typedef MyC<T> = C<T, int>;
-const a = identical(MyC.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_differentCount2() async {
-    await resolveTestCode('''
-class C<T, U> {}
-typedef MyC<T> = C;
-const a = identical(MyC.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_differentOrder() async {
-    await resolveTestCode('''
-class C<T, U> {}
-typedef MyC<T, U> = C<U, T>;
-const a = identical(MyC.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_instantiated() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T extends num> = C<T>;
-const a = identical(MyC<int>.new, C<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsNotProperRename_mixedInstantiations() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T extends num> = C<T>;
-const a = identical(MyC<int>.new, (MyC.new)<int>);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsProperRename_instantiated() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T> = C<T>;
-const a = identical(MyC<int>.new, MyC<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsProperRename_mixedInstantiations() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T> = C<T>;
-const a = identical(MyC<int>.new, (MyC.new)<int>);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsProperRename_mutualSubtypes_dynamic() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T extends Object?> = C<T>;
-const a = identical(MyC<int>.new, MyC<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsProperRename_mutualSubtypes_futureOr() async {
-    await resolveTestCode('''
-class C<T extends num> {}
-typedef MyC<T extends FutureOr<num>> = C<T>;
-const a = identical(MyC<int>.new, MyC<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_aliasIsProperRename_uninstantiated() async {
-    await resolveTestCode('''
-class C<T> {}
-typedef MyC<T> = C<T>;
-const a = identical(MyC.new, MyC.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_explicitTypeArgs_differentClasses() async {
-    await resolveTestCode('''
-class C<T> {}
-class D<T> {}
-const a = identical(C<int>.new, D<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_explicitTypeArgs_differentConstructors() async {
-    await resolveTestCode('''
-class C<T> {
-  C();
-  C.named();
-}
-const a = identical(C<int>.new, C<int>.named);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_explicitTypeArgs_differentTypeArgs() async {
-    await resolveTestCode('''
-class C<T> {}
-const a = identical(C<int>.new, C<String>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_explicitTypeArgs_sameElement() async {
-    await resolveTestCode('''
-class C<T> {}
-const a = identical(C<int>.new, C<int>.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_inferredTypeArgs_sameElement() async {
-    await resolveTestCode('''
-class C<T> {}
-const C<int> Function() c1 = C.new;
-const c2 = C<int>.new;
-const a = identical(c1, c2);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_notInstantiated_differentClasses() async {
-    await resolveTestCode('''
-class C<T> {}
-class D<T> {}
-const a = identical(C.new, D.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_notInstantiated_differentConstructors() async {
-    await resolveTestCode('''
-class C<T> {
-  C();
-  C.named();
-}
-const a = identical(C.new, C.named);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
-  test_identical_constructorReference_notInstantiated_sameElement() async {
-    await resolveTestCode('''
-class C<T> {}
-const a = identical(C.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(true),
-    );
-  }
-
-  test_identical_constructorReference_onlyOneHasTypeArgs() async {
-    await resolveTestCode('''
-class C<T> {}
-const a = identical(C<int>.new, C.new);
-''');
-    expect(
-      _evaluateConstant('a'),
-      _boolValue(false),
-    );
-  }
-
   test_identical_functionReference_explicitTypeArgs_differentElements() async {
     await resolveTestCode('''
 void foo<T>(T a) {}
@@ -930,6 +677,322 @@ const void Function(int p) h = b ? g : g;
     assertType(result.type, 'void Function(int, {int? q})');
     assertElement(result.toFunctionValue(), findElement.topFunction('f'));
     _assertTypeArguments(result, ['int']);
+  }
+
+  test_visitConditionalExpression_unknownCondition() async {
+    await assertNoErrorsInCode('''
+const bool kIsWeb = identical(0, 0.0);
+const x = kIsWeb ? 0 : 1;
+''');
+    _assertValue('x', r'''
+int <unknown>
+  variable: self::@variable::x
+''');
+  }
+
+  test_visitConditionalExpression_unknownCondition_errorInConstructor() async {
+    await assertErrorsInCode(r'''
+const bool kIsWeb = identical(0, 0.0);
+
+var a = 2;
+const x = A(kIsWeb ? 0 : a);
+
+class A {
+  const A(int _);
+}
+''', [
+      error(CompileTimeErrorCode.CONST_CONSTRUCTOR_PARAM_TYPE_MISMATCH, 63, 14),
+      error(CompileTimeErrorCode.INVALID_CONSTANT, 76, 1),
+      error(CompileTimeErrorCode.CONST_INITIALIZED_WITH_NON_CONSTANT_VALUE, 76,
+          1),
+    ]);
+    _assertValue('x', r'''
+A
+  variable: self::@variable::x
+''');
+  }
+
+  test_visitConditionalExpression_unknownCondition_undefinedIdentifier() async {
+    await assertErrorsInCode(r'''
+const bool kIsWeb = identical(0, 0.0);
+const x = kIsWeb ? a : b;
+''', [
+      error(CompileTimeErrorCode.UNDEFINED_IDENTIFIER, 58, 1),
+      error(CompileTimeErrorCode.CONST_INITIALIZED_WITH_NON_CONSTANT_VALUE, 58,
+          1),
+      error(CompileTimeErrorCode.UNDEFINED_IDENTIFIER, 62, 1),
+    ]);
+    _assertNull('x');
+  }
+
+  test_visitConstructorDeclaration_field_asExpression_nonConst() async {
+    await assertErrorsInCode(r'''
+dynamic y = 2;
+class A {
+  const A();
+  final x = y as num;
+}
+''', [
+      error(
+          CompileTimeErrorCode
+              .CONST_CONSTRUCTOR_WITH_FIELD_INITIALIZED_BY_NON_CONST,
+          27,
+          5),
+    ]);
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotGeneric() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC = C<int>;
+const a = identical(MyC.new, C<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_differentBound() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T extends num> = C<T>;
+const a = identical(MyC.new, C.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_differentCount() async {
+    await assertNoErrorsInCode('''
+class C<T, U> {}
+typedef MyC<T> = C<T, int>;
+const a = identical(MyC.new, C.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_differentCount2() async {
+    await assertNoErrorsInCode('''
+class C<T, U> {}
+typedef MyC<T> = C;
+const a = identical(MyC.new, C.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_differentOrder() async {
+    await assertNoErrorsInCode('''
+class C<T, U> {}
+typedef MyC<T, U> = C<U, T>;
+const a = identical(MyC.new, C.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_instantiated() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T extends num> = C<T>;
+const a = identical(MyC<int>.new, C<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsNotProperRename_mixedInstantiations() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T extends num> = C<T>;
+const a = identical(MyC<int>.new, (MyC.new)<int>);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsProperRename_instantiated() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T> = C<T>;
+const a = identical(MyC<int>.new, MyC<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsProperRename_mixedInstantiations() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T> = C<T>;
+const a = identical(MyC<int>.new, (MyC.new)<int>);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsProperRename_mutualSubtypes_dynamic() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T extends Object?> = C<T>;
+const a = identical(MyC<int>.new, MyC<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsProperRename_mutualSubtypes_futureOr() async {
+    await assertNoErrorsInCode('''
+import 'dart:async';
+class C<T extends FutureOr<num>> {}
+typedef MyC<T extends num> = C<T>;
+const a = identical(MyC<int>.new, MyC<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_aliasIsProperRename_uninstantiated() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+typedef MyC<T> = C<T>;
+const a = identical(MyC.new, MyC.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_explicitTypeArgs_differentClasses() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+class D<T> {}
+const a = identical(C<int>.new, D<int>.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_explicitTypeArgs_differentConstructors() async {
+    await assertNoErrorsInCode('''
+class C<T> {
+  C();
+  C.named();
+}
+const a = identical(C<int>.new, C<int>.named);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_explicitTypeArgs_differentTypeArgs() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+const a = identical(C<int>.new, C<String>.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_explicitTypeArgs_sameElement() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+const a = identical(C<int>.new, C<int>.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_inferredTypeArgs_sameElement() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+const C<int> Function() c1 = C.new;
+const c2 = C<int>.new;
+const a = identical(c1, c2);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_notInstantiated_differentClasses() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+class D<T> {}
+const a = identical(C.new, D.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_notInstantiated_differentConstructors() async {
+    await assertNoErrorsInCode('''
+class C<T> {
+  C();
+  C.named();
+}
+const a = identical(C.new, C.named);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_notInstantiated_sameElement() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+const a = identical(C.new, C.new);
+''');
+    _assertValue('a', r'''
+bool true
+  variable: self::@variable::a
+''');
+  }
+
+  test_visitConstructorReference_identical_onlyOneHasTypeArgs() async {
+    await assertNoErrorsInCode('''
+class C<T> {}
+const a = identical(C<int>.new, C.new);
+''');
+    _assertValue('a', r'''
+bool false
+  variable: self::@variable::a
+''');
   }
 
   test_visitFunctionReference_explicitTypeArgs_complexExpression() async {
@@ -1297,6 +1360,24 @@ const void Function(int a) h = g;
     final featureSet = result.libraryElement.featureSet;
     final has = value.hasPrimitiveEquality(featureSet);
     expect(has, isTrue);
+  }
+
+  void _assertNull(String variableName) {
+    final variable = findElement.topVar(variableName) as ConstVariableElement;
+    final evaluationResult = variable.evaluationResult;
+    if (evaluationResult == null) {
+      fail('Not evaluated: $this');
+    }
+    expect(evaluationResult.value, isNull);
+  }
+
+  void _assertValue(String variableName, String expectedText) {
+    final variable = findElement.topVar(variableName) as ConstVariableElement;
+    final evaluationResult = variable.evaluationResult;
+    if (evaluationResult == null) {
+      fail('Not evaluated: $this');
+    }
+    assertDartObjectText(evaluationResult.value, expectedText);
   }
 }
 

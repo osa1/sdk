@@ -1,4 +1,4 @@
-library test.qualified.main /*isNonNullableByDefault*/;
+library test.qualified.main;
 //
 // Problems in library:
 //
@@ -53,7 +53,6 @@ class IllegalSupertype extends core::Object {
     ;
 }
 class C<T extends core::Object? = dynamic> extends core::Object { // from org-dartlang-testcase:///qualified_part.dart
-  static final field dynamic _redirecting# = <dynamic>[self::C::b]/*isLegacy*/;
   constructor •() → self::C<self::C::T%>
     ;
   constructor a() → self::C<self::C::T%>
@@ -64,7 +63,7 @@ class C<T extends core::Object? = dynamic> extends core::Object { // from org-da
 static method main() → dynamic
   ;
 
-library test.qualified.lib /*isNonNullableByDefault*/;
+library test.qualified.lib;
 import self as lib;
 import "dart:core" as core;
 import "qualified.dart" as self;
@@ -73,7 +72,6 @@ import "org-dartlang-testcase:///qualified.dart" as main;
 
 typedef VoidFunction = () → void;
 class C<T extends core::Object? = dynamic> extends self::C<lib::C::T%> {
-  static final field dynamic _redirecting# = <dynamic>[lib::C::b]/*isLegacy*/;
   constructor •() → lib::C<lib::C::T%>
     ;
   constructor a() → lib::C<lib::C::T%>
@@ -91,9 +89,3 @@ abstract class Mixin extends core::Object /*isMixinDeclaration*/  {
   method foo() → dynamic
     ;
 }
-
-
-Extra constant evaluation status:
-Evaluated: ConstructorTearOff @ org-dartlang-testcase:///qualified_part.dart:7:7 -> ConstructorTearOffConstant(C.b)
-Evaluated: ConstructorTearOff @ org-dartlang-testcase:///qualified_lib.dart:9:7 -> ConstructorTearOffConstant(C.b)
-Extra constant evaluation: evaluated: 7, effectively constant: 2

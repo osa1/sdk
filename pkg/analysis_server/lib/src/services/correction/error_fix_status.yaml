@@ -1051,6 +1051,10 @@ CompileTimeErrorCode.MIXIN_OF_TYPE_ALIAS_EXPANDS_TO_TYPE_PARAMETER:
   status: noFix
 CompileTimeErrorCode.MIXIN_ON_TYPE_ALIAS_EXPANDS_TO_TYPE_PARAMETER:
   status: noFix
+CompileTimeErrorCode.MIXIN_SUBTYPE_OF_BASE_IS_NOT_BASE:
+  status: needsEvaluation
+CompileTimeErrorCode.MIXIN_SUBTYPE_OF_FINAL_IS_NOT_BASE:
+  status: needsEvaluation
 CompileTimeErrorCode.MIXIN_SUPER_CLASS_CONSTRAINT_DEFERRED_CLASS:
   status: needsFix
   notes: |-
@@ -3529,6 +3533,8 @@ WarningCode.INVALID_VISIBILITY_ANNOTATION:
   status: hasFix
 WarningCode.INVALID_VISIBLE_FOR_OVERRIDING_ANNOTATION:
   status: hasFix
+WarningCode.INVALID_VISIBLE_OUTSIDE_TEMPLATE_ANNOTATION:
+  status: needsEvaluation
 WarningCode.MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_ONE:
   status: hasFix
 WarningCode.MISSING_OVERRIDE_OF_MUST_BE_OVERRIDDEN_TWO:

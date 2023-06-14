@@ -93,23 +93,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -205,18 +209,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x29;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+    Isolate_has_resumption_breakpoints_offset = 0x25;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x8;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0xc;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x28;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x24;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x10;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -798,23 +800,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -910,18 +916,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+    Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x10;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x50;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x48;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x20;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -1505,23 +1509,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -1617,18 +1625,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x29;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+    Isolate_has_resumption_breakpoints_offset = 0x25;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x8;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0xc;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x28;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x24;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x10;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -2209,23 +2215,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -2321,18 +2331,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+    Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x10;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x50;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x48;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x20;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -2919,23 +2927,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -3031,18 +3043,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+    Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x10;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x50;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x48;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x20;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -3626,23 +3636,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -3738,18 +3752,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+    Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x10;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x50;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x48;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x20;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -4334,23 +4346,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -4446,18 +4462,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x29;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+    Isolate_has_resumption_breakpoints_offset = 0x25;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x8;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0xc;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x28;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x24;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x10;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -5040,23 +5054,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -5152,18 +5170,16 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word
-    Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+    Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
     0x10;
 static constexpr dart::compiler::target::word
     IsolateGroup_cached_class_table_table_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x50;
+static constexpr dart::compiler::target::word Isolate_single_step_offset = 0x48;
 static constexpr dart::compiler::target::word Isolate_user_tag_offset = 0x20;
 static constexpr dart::compiler::target::word LinkedHashBase_data_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -5747,23 +5763,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -5857,9 +5877,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -6444,23 +6462,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -6554,9 +6576,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -7143,23 +7163,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -7253,9 +7277,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -7839,23 +7861,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -7949,9 +7975,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -8541,23 +8565,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -8651,9 +8679,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -9240,23 +9266,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -9350,9 +9380,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -9940,23 +9968,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
     0xffff;
 static constexpr dart::compiler::target::word String_kMaxElements = 0x1fffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x8;
@@ -10050,9 +10082,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x1c;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x14;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x18;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x24;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x1c;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x20;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x10;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -10638,23 +10668,27 @@ static constexpr dart::compiler::target::word RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kDestinationType = 0x2;
+    SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AbstractType_flags_offset = 0x10;
@@ -10748,9 +10782,7 @@ static constexpr dart::compiler::target::word ICData_state_bits_offset = 0x34;
 static constexpr dart::compiler::target::word Int32x4_value_offset = 0x8;
 static constexpr dart::compiler::target::word Isolate_current_tag_offset = 0x28;
 static constexpr dart::compiler::target::word Isolate_default_tag_offset = 0x30;
-static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x48;
-static constexpr dart::compiler::target::word Isolate_ic_miss_code_offset =
-    0x38;
+static constexpr dart::compiler::target::word Isolate_finalizers_offset = 0x40;
 static constexpr dart::compiler::target::word IsolateGroup_object_store_offset =
     0x20;
 static constexpr dart::compiler::target::word IsolateGroup_class_table_offset =
@@ -11348,23 +11380,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -11477,11 +11513,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x24;
+    0x20;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x29;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x1c;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x25;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -11489,7 +11523,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x28;
+    0x24;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x10;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -12129,23 +12163,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -12258,11 +12296,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
+    0x40;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -12270,7 +12306,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x50;
+    0x48;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x20;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -12913,23 +12949,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -13042,11 +13082,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
+    0x40;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -13054,7 +13092,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x50;
+    0x48;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x20;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -13696,23 +13734,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -13825,11 +13867,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
+    0x40;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -13837,7 +13877,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x50;
+    0x48;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x20;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -14479,23 +14519,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -14608,11 +14652,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
+    0x40;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -14620,7 +14662,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x50;
+    0x48;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x20;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -15264,23 +15306,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -15393,11 +15439,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x24;
+    0x20;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x29;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x1c;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x25;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -15405,7 +15449,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x28;
+    0x24;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x10;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -16046,23 +16090,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -16175,11 +16223,9 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
+    0x40;
 static constexpr dart::compiler::target::word
-    AOT_Isolate_has_resumption_breakpoints_offset = 0x51;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    AOT_Isolate_has_resumption_breakpoints_offset = 0x49;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -16187,7 +16233,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_cached_class_table_table_offset = 0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_single_step_offset =
-    0x50;
+    0x48;
 static constexpr dart::compiler::target::word AOT_Isolate_user_tag_offset =
     0x20;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_data_offset =
@@ -16827,23 +16873,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -16954,9 +17004,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x24;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x1c;
+    0x20;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -17599,23 +17647,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -17726,9 +17778,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    0x40;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -18374,23 +18424,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -18501,9 +18555,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    0x40;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -19148,23 +19200,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -19275,9 +19331,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    0x40;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -19922,23 +19976,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -20049,9 +20107,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    0x40;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word
@@ -20698,23 +20754,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fffa;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0xfffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -20825,9 +20885,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x18;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x24;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x1c;
+    0x20;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -21471,23 +21529,27 @@ static constexpr dart::compiler::target::word AOT_RecordShape_kNumFieldsMask =
 static constexpr dart::compiler::target::word AOT_String_kMaxElements =
     0x1fffffffffffffff;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x5;
+    AOT_OneByteString_kMaxNewSpaceElements = 0x3fff0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x1;
+    AOT_TwoByteString_kMaxNewSpaceElements = 0x1fff8;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kDestinationType = 0x2;
+    AOT_SubtypeTestCache_kFunctionTypeArguments = 0x4;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x7;
+    AOT_SubtypeTestCache_kInstanceCidOrSignature = 0x0;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x6;
+    AOT_SubtypeTestCache_kDestinationType = 0x1;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x3;
+    AOT_SubtypeTestCache_kInstanceDelayedFunctionTypeArguments = 0x6;
 static constexpr dart::compiler::target::word
-    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x4;
+    AOT_SubtypeTestCache_kInstanceParentFunctionTypeArguments = 0x5;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstanceTypeArguments = 0x2;
+static constexpr dart::compiler::target::word
+    AOT_SubtypeTestCache_kInstantiatorTypeArguments = 0x3;
 static constexpr dart::compiler::target::word
     AOT_SubtypeTestCache_kTestEntryLength = 0x8;
 static constexpr dart::compiler::target::word AOT_SubtypeTestCache_kTestResult =
-    0x0;
+    0x7;
 static constexpr dart::compiler::target::word AOT_TypeArguments_kMaxElements =
     0x7ffffffffffffff;
 static constexpr dart::compiler::target::word AOT_AbstractType_flags_offset =
@@ -21598,9 +21660,7 @@ static constexpr dart::compiler::target::word AOT_Isolate_current_tag_offset =
 static constexpr dart::compiler::target::word AOT_Isolate_default_tag_offset =
     0x30;
 static constexpr dart::compiler::target::word AOT_Isolate_finalizers_offset =
-    0x48;
-static constexpr dart::compiler::target::word AOT_Isolate_ic_miss_code_offset =
-    0x38;
+    0x40;
 static constexpr dart::compiler::target::word
     AOT_IsolateGroup_object_store_offset = 0x20;
 static constexpr dart::compiler::target::word

@@ -786,6 +786,8 @@ class OneByteString : public AllStatic {
   static word InstanceSize();
   FINAL_CLASS();
 
+  static const word kMaxNewSpaceElements;
+
  private:
   static word element_offset(intptr_t index);
 };
@@ -796,6 +798,8 @@ class TwoByteString : public AllStatic {
   static word InstanceSize(intptr_t length);
   static word InstanceSize();
   FINAL_CLASS();
+
+  static const word kMaxNewSpaceElements;
 
  private:
   static word element_offset(intptr_t index);
@@ -1121,11 +1125,6 @@ class StreamInfo : public AllStatic {
   static word enabled_offset();
 };
 
-class VMHandles : public AllStatic {
- public:
-  static constexpr intptr_t kOffsetOfRawPtrInHandle = kWordSize;
-};
-
 class MonomorphicSmiableCall : public AllStatic {
  public:
   static word expected_cid_offset();
@@ -1336,7 +1335,6 @@ class Isolate : public AllStatic {
   static word default_tag_offset();
   static word current_tag_offset();
   static word user_tag_offset();
-  static word ic_miss_code_offset();
   static word finalizers_offset();
 #if !defined(PRODUCT)
   static word single_step_offset();

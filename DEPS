@@ -53,7 +53,7 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "736b818b7613f3f971a0b1bf539ffb6131d08caf",
+  "co19_rev": "672e21d5bbd6b4b555f8cf4e7f8119881392e579",
   # This line prevents conflicts when both packages are rolled simultaneously.
   "co19_2_rev": "ae846ed2a987a2d2dbe4b9e9c68448a21f91ef5b",
 
@@ -126,7 +126,7 @@ vars = {
   "collection_rev": "a37bd51c63b7720799869e3448eafbc19c88bfa6",
   "convert_rev": "9a387f0554381537afc61212c58df3beaabbbce1",
   "crypto_rev": "216931ae7dce946e41adb3904d3b33095dfaf51a",
-  "csslib_rev": "b2b9b55ada8ba0c6efb1eb9db0983ac4f6ab522d",
+  "csslib_rev": "be2e11eedd4b1f12a674fd9246b9f8dd2da9aa5d",
   # Note: Updates to dart_style have to be coordinated with the infrastructure
   # team so that the internal formatter `tools/sdks/dart-sdk/bin/dart format`
   # matches the version here. Please follow this process to make updates:
@@ -138,30 +138,30 @@ vars = {
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
   "dart_style_rev": "2956b1a705953f880a5dae9d3a0969df0fc45e99", # disable rev_sdk_deps.dart
-  "dartdoc_rev": "0c8feac6cb21cfd773dde9e4b820b519e7778e07",
+  "dartdoc_rev": "57994242382fa71f4dd6f9ad5d3cffe82e5276c2",
   "ffi_rev": "f582ca022042323af061f35ccd24b6c4d38f7bd1",
   "file_rev": "5d9a6027756b5846e8f5380f983390f61f564a75",
   "fixnum_rev": "d9b9a2a288d5eb467fb1597e80beb063b05cd4f6",
   "glob_rev": "109121d9993c1ef8d078e185160a9d477c82defd",
-  "html_rev": "92eacabadf40aa24c8f4289682ef2822c5d7e414",
-  "http_rev": "5312366ce3b5dc2abc19f3a649332ad21ad77892",
+  "html_rev": "b3b820bc36ed17673268360d8b569bdc66c22123",
+  "http_rev": "ba7eb6023c89ffc5cbfe15a6cba2f8006e6f6dac",
   "http_multi_server_rev": "a209cd59d99b52ff08b32ba37bdc9fc1a79bc9f2",
-  "http_parser_rev": "1ef3e56ebc5e505dbf375f2e27faa40956eb0da1",
+  "http_parser_rev": "19466c0daf9138ab20877f34dbcf4479b31d33d6",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "json_rpc_2_rev": "73467f3651669af4870260fea4e99d7ba6ccb7ec",
-  "leak_tracker_rev": "f17da619a987aec1b89b0e29ec198a5e3361fea1",
+  "leak_tracker_rev": "f17da619a987aec1b89b0e29ec198a5e3361fea1", # https://dart-review.googlesource.com/c/sdk/+/308248
   "linter_rev": "27b46ce246204a2c0170a4bd5b23b94095e89a22", # disable rev_sdk_deps.dart
-  "lints_rev": "fc74ce055334da53b1bd5de46ef3b3f47d36cba4",
+  "lints_rev": "4b79906085d48fc4eee241a80e1a1b177dbdaf23",
   "logging_rev": "f2fe2ac2a61a269b2e0ce65be330f7af1bc67428",
   "markdown_rev": "bd6ae8d741327e24319f3e036d57107f91229843",
   "matcher_rev": "7e1011772566a8d1817c725a71f091e2791721c8",
   "mime_rev": "24448401f621b9e154d165c900a3c8decd8a23f4",
-  "mockito_rev": "cca4858ad0f1e3930ebdcc6faf4a918616cca48c",
-  "native_rev": "c851e69448594b1942e62e0d9f92e47d99575b99",
+  "mockito_rev": "1d6064adf043d1fce013d2d205a3fdc655c90043",
+  "native_rev": "2de88135e25577d851c95b04af0ceb74b706f285",
   "package_config_rev": "203de2022af26b3ab2bcec18cc49614d9e502897",
-  "path_rev": "f8d15c2775835fd61ea5e06bb0ab99232f5ec446",
-  "pool_rev": "a10a0f918802f7b3856cb1f4c78f9073f28a0dd8",
-  "protobuf_rev": "da6953c65a93f02908f79d7d8402af843a60dcff",
+  "path_rev": "592505f67d0563f72c933c2ba100ea7d4f3cb873",
+  "pool_rev": "c6b1b2c22663c084a82c9bfe409c196fb38eea53",
+  "protobuf_rev": "edf8e923c3ba6d94bc24066f677356debf9cc031",
   "pub_rev": "078c7fea0be2656debc675646806da14fa94f853", # disable rev_sdk_deps.dart
   "pub_semver_rev": "3930557ee0b20ef528713952c318139409edadb4",
   "shelf_rev": "ce379aa3c22024edb2df3657fd564f1f463406e6",
@@ -173,18 +173,18 @@ vars = {
   "stream_channel_rev": "b1d3384638064a4f25beacef3be770e2c4534408",
   "string_scanner_rev": "6bb314f2176598a5ecc4770a3bbd42626e18b576",
   "sync_http_rev": "c3d6ad48ec997c56b7f076bc9f8b4134c4a9225c",
-  "term_glyph_rev": "9d8956f4a355cc8c7e4695438266852488e3bbd4",
-  "test_rev": "7a6c98d015a62daaee35bfdb1288ae659d31abc6",
+  "term_glyph_rev": "4daa34eea4bd6d9780aaeadbf6665af3ebb402fd",
+  "test_rev": "e7ae6139b85312b5229a6b139a14554992fe6e85",
   "test_descriptor_rev": "be7ce0751d85abd1ef605d14d359f499e1ba8fe2",
   "test_process_rev": "5ff212250f6cc5f850b26295e7c8123bd5238ea3",
   "test_reflective_loader_rev": "40d61b16647cd61b02d806fea46362ef07e7c502",
   "tools_rev": "8d6e8b82e3eef8b2f5e3ec9bdd3dd1a2ad3e13f5",
-  "typed_data_rev": "693f48e3d1d528f6f26d7069a2ad29b460650455",
+  "typed_data_rev": "8d29573ab6fd26a272dc846255eda66a01abae01",
   "usage_rev": "6ee09084596f9829371bb836f9d1ca05820f29ea",
   "vector_math_rev": "a3aca093bcffdee641dd9ef1f2cf3707cbb843bd",
   "watcher_rev": "3f17faa2d09dca3e23bc07a01f2045ec0cd2837d",
   "web_socket_channel_rev": "eae225866551ea7b51a380064521186a232bc0a4",
-  "webdev_rev": "b10d62b83288f92560bf9c05a06c4dc0a3cf84e8",
+  "webdev_rev": "81ae77aab6c289175583d81869e558427676028a",
   "webdriver_rev": "d0f78d004a5ea7bfc8c492639248b0a1b04c1d62",
   "webkit_inspection_protocol_rev": "39a3c297ff573635e7936b015ce4f3466e4739d6",
   "yaml_rev": "0b9041de94b00bc54e8d38daecfe9075b5623996",
@@ -517,7 +517,7 @@ deps = {
               "version": Var("clang_version"),
           },
       ],
-      "condition": "host_cpu == x64 and host_os == win",
+      "condition": "host_os == win", # On ARM64 Windows too because Fuchsia doesn't provide the host-arm64 toolchain.
       "dep_type": "cipd",
   },
   Var("dart_root") + "/buildtools/linux-arm64/clang": {

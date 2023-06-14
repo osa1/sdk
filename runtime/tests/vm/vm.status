@@ -11,6 +11,7 @@ cc/IsolateReload_PendingStaticCall_DefinedToNSM: Fail # Issue 32981
 cc/IsolateReload_PendingStaticCall_NSMToDefined: Fail, Crash # Issue 32981. Fails on non-Windows, crashes on Windows (because of test.py special handline)
 cc/IsolateReload_PendingUnqualifiedCall_InstanceToStatic: Fail # Issue 32981
 cc/IsolateReload_PendingUnqualifiedCall_StaticToInstance: Fail # Issue 32981
+cc/TTS_STC_ManyAsserts: Pass, Slow # Generates 10k classes that are put into an STC via assert checks.
 dart/analyze_snapshot_binary_test: Pass, Slow # Runs various subprocesses for testing AOT.
 dart/boxmint_test: Pass, Slow # Uses slow path
 dart/byte_array_optimized_test: Pass, Slow
@@ -89,6 +90,7 @@ dart/appjit_cha_deopt_test: SkipSlow
 dart/hash_map_probes_limit_test: SkipSlow # Test includes large program compilation.
 dart/regress_40462_test: SkipSlow
 dart/regress_40753_test: Skip # This test crashes on the bot, but not locally, and infrastructure repeatedly fails to locate its coredump.
+dart/regress_48523_test: Pass, Slow
 dart/trigger_gc_in_native_test: Skip # This test crashes on the bot, but not locally, and infrastructure repeatedly fails to locate its coredump.
 dart/use_strip_flag_test: Pass, Slow # This test can take a longer time to complete.
 dart/v8_snapshot_profile_writer_test: SkipSlow
@@ -219,6 +221,11 @@ dart_2/disassemble_determinism_test: Slow, Pass # Times out on slower bots.
 
 [ $qemu ]
 cc/ManyClasses: Slow, Pass # Generates 100k classes, slow on emulated architectures.
+cc/StressMallocDirectly: Skip # Queries RSS
+cc/StressMallocThroughZones: Skip # Queries RSS
+cc/SweepDontNeed: Skip # Queries RSS
+cc/TTS_STC_ManyAsserts: Skip # OOM crash can occur when growing the STC.
+cc/TypeArguments_Cache_ManyInstantiations: Slow, Pass # Generates 100k classes, slow on emulated architectures.
 
 # On the simulator stack traces produced by the Profiler do not match
 # up with the real Dart stack trace and hence we don't get correct

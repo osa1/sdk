@@ -259,14 +259,11 @@ class KernelTarget extends TargetImplementation {
 
   void _parseCurrentSdkVersion() {
     bool good = false;
-    // ignore: unnecessary_null_comparison
-    if (currentSdkVersionString != null) {
-      List<String> dotSeparatedParts = currentSdkVersionString.split(".");
-      if (dotSeparatedParts.length >= 2) {
-        _currentSdkVersion = new Version(int.tryParse(dotSeparatedParts[0])!,
-            int.tryParse(dotSeparatedParts[1])!);
-        good = true;
-      }
+    List<String> dotSeparatedParts = currentSdkVersionString.split(".");
+    if (dotSeparatedParts.length >= 2) {
+      _currentSdkVersion = new Version(int.tryParse(dotSeparatedParts[0])!,
+          int.tryParse(dotSeparatedParts[1])!);
+      good = true;
     }
     if (!good) {
       throw new StateError(
@@ -853,7 +850,6 @@ class KernelTarget extends TargetImplementation {
     assert(!builder.isExtension);
     // TODO(askesc): Make this check light-weight in the absence of patches.
     if (builder.cls.constructors.isNotEmpty) return;
-    if (builder.cls.redirectingFactories.isNotEmpty) return;
     for (Procedure proc in builder.cls.procedures) {
       if (proc.isFactory) return;
     }
@@ -1552,8 +1548,7 @@ class KernelTarget extends TargetImplementation {
     constants.ConstantCoverage coverage = constantEvaluationData.coverage;
     coverage.constructorCoverage.forEach((Uri fileUri, Set<Reference> value) {
       Source? source = uriToSource[fileUri];
-      // ignore: unnecessary_null_comparison
-      if (source != null && fileUri != null) {
+      if (source != null) {
         source.constantCoverageConstructors ??= new Set<Reference>();
         source.constantCoverageConstructors!.addAll(value);
       }

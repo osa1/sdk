@@ -5,6 +5,7 @@
 import 'package:analysis_server/plugin/edit/fix/fix_core.dart';
 import 'package:analysis_server/plugin/edit/fix/fix_dart.dart';
 import 'package:analysis_server/src/services/correction/base_processor.dart';
+import 'package:analysis_server/src/services/correction/bulk_fix_processor.dart';
 import 'package:analysis_server/src/services/correction/dart/abstract_producer.dart';
 import 'package:analysis_server/src/services/correction/dart/add_async.dart';
 import 'package:analysis_server/src/services/correction/dart/add_await.dart';
@@ -281,7 +282,7 @@ class FixInFileProcessor {
     var workspace = context.workspace;
     var resolveResult = context.resolveResult;
 
-    var correctionContext = CorrectionProducerContext.create(
+    var correctionContext = CorrectionProducerContext.createResolved(
       dartFixContext: context,
       diagnostic: error,
       resolvedResult: resolveResult,
@@ -326,7 +327,7 @@ class FixInFileProcessor {
 
   Future<_FixState> _fixError(DartFixContext fixContext, _FixState fixState,
       CorrectionProducer producer, AnalysisError diagnostic) async {
-    var context = CorrectionProducerContext.create(
+    var context = CorrectionProducerContext.createResolved(
       applyingBulkFixes: true,
       dartFixContext: fixContext,
       diagnostic: diagnostic,
@@ -376,6 +377,9 @@ class FixInFileProcessor {
 
 /// The computer for Dart fixes.
 class FixProcessor extends BaseProcessor {
+  /// Cached results of [canBulkFix].
+  static final Map<ErrorCode, bool> _bulkFixableErrorCodes = {};
+
   static final Map<String, List<MultiProducerGenerator>> lintMultiProducerMap =
       {
     LintNames.deprecated_member_use_from_same_package: [
@@ -1077,7 +1081,8 @@ class FixProcessor extends BaseProcessor {
     ],
     CompileTimeErrorCode.FINAL_NOT_INITIALIZED: [
       AddLate.new,
-      CreateConstructorForFinalFields.new,
+      CreateConstructorForFinalFields.requiredNamed,
+      CreateConstructorForFinalFields.requiredPositional,
     ],
     CompileTimeErrorCode.FINAL_NOT_INITIALIZED_CONSTRUCTOR_1: [
       AddFieldFormalParameters.new,
@@ -1759,7 +1764,7 @@ class FixProcessor extends BaseProcessor {
 
   Future<void> _addFromProducers() async {
     var error = fixContext.error;
-    var context = CorrectionProducerContext.create(
+    var context = CorrectionProducerContext.createResolved(
       dartFixContext: fixContext,
       diagnostic: error,
       resolvedResult: resolvedResult,
@@ -1819,6 +1824,36 @@ class FixProcessor extends BaseProcessor {
         await compute(generator());
       }
     }
+  }
+
+  /// Returns whether [errorCode] is an error that can be fixed in bulk.
+  static bool canBulkFix(ErrorCode errorCode) {
+    bool hasBulkFixProducers(List<ProducerGenerator>? producers) {
+      return producers != null &&
+          producers.any((producer) => producer().canBeAppliedInBulk);
+    }
+
+    return _bulkFixableErrorCodes.putIfAbsent(errorCode, () {
+      if (errorCode is LintCode) {
+        final producers = FixProcessor.lintProducerMap[errorCode.name];
+        if (hasBulkFixProducers(producers)) {
+          return true;
+        }
+
+        return FixProcessor.lintMultiProducerMap.containsKey(errorCode.name);
+      }
+
+      final producers = FixProcessor.nonLintProducerMap[errorCode];
+      if (hasBulkFixProducers(producers)) {
+        return true;
+      }
+
+      // We can't do detailed checks on multi-producers because the set of
+      // producers may vary depending on the resolved unit (we must configure
+      // them before we can determine the producers).
+      return FixProcessor.nonLintMultiProducerMap.containsKey(errorCode) ||
+          BulkFixProcessor.nonLintMultiProducerMap.containsKey(errorCode);
+    });
   }
 
   /// Associate the given correction producer [generator] with the lint with the

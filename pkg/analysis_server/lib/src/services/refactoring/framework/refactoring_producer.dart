@@ -44,6 +44,8 @@ abstract class RefactoringProducer {
   /// Return a list of the parameters to send to the client.
   List<CommandParameter> get parameters;
 
+  RefactoringContext get refactoringContext => _context;
+
   /// Return the search engine used to search outside the resolved library.
   SearchEngine get searchEngine => _context.searchEngine;
 
@@ -51,7 +53,7 @@ abstract class RefactoringProducer {
   Selection? get selection => _context.selection;
 
   /// Return the offset of the first character after the selection range.
-  int get selectionEnd => selectionOffset + selectionLength;
+  int get selectionEnd => _context.selectionEnd;
 
   /// Return the number of selected characters.
   int get selectionLength => _context.selectionLength;
@@ -84,13 +86,10 @@ abstract class RefactoringProducer {
   Future<void> compute(List<Object?> commandArguments, ChangeBuilder builder);
 
   /// Return `true` if this refactoring is available in the given context.
-  bool isAvailable();
+  Future<bool> isAvailable();
 
   /// Return `true` if the selection is inside the given [token].
-  bool selectionIsInToken(Token? token) =>
-      token != null &&
-      selectionOffset >= token.offset &&
-      selectionEnd <= token.end;
+  bool selectionIsInToken(Token? token) => _context.selectionIsInToken(token);
 
   /// Return `true` if the client has support for command parameters of the
   /// provided `kind`. Subclasses that produce command parameters of this kind

@@ -45,8 +45,6 @@ import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/hierarchy/hierarchy_node.dart';
 import '../kernel/kernel_helper.dart';
-import 'package:kernel/src/redirecting_factory_body.dart'
-    show RedirectingFactoryBody, redirectingName;
 import '../kernel/type_algorithms.dart' show computeTypeVariableBuilderVariance;
 import '../kernel/utils.dart' show compareProcedures;
 import '../names.dart' show equalsName;
@@ -537,13 +535,10 @@ class SourceClassBuilder extends ClassBuilderImpl
         for (int i = 0; i < variables.length; i++) {
           DartType argument =
               i < arguments.length ? arguments[i] : const DynamicType();
-          // ignore: unnecessary_null_comparison
-          if (substitutionMap != null) {
-            // TODO(ahe): Investigate if requiring the caller to use
-            // `substituteDeep` from `package:kernel/type_algebra.dart` instead
-            // of `substitute` is faster. If so, we can simply this code.
-            argument = substitute(argument, substitutionMap);
-          }
+          // TODO(ahe): Investigate if requiring the caller to use
+          // `substituteDeep` from `package:kernel/type_algebra.dart` instead
+          // of `substitute` is faster. If so, we can simply this code.
+          argument = substitute(argument, substitutionMap);
           directSubstitutionMap[variables[i]] = argument;
         }
         substitutionMap = directSubstitutionMap;
@@ -943,7 +938,7 @@ class SourceClassBuilder extends ClassBuilderImpl
         .format(
             message.withLocation(fileUri, charOffset, length), Severity.error)
         .plain;
-    factory.body = new RedirectingFactoryBody.error(text);
+    factory.setRedirectingFactoryError(text);
   }
 
   void checkRedirectingFactories(TypeEnvironment typeEnvironment) {
@@ -1041,49 +1036,38 @@ class SourceClassBuilder extends ClassBuilderImpl
         procedure.function.namedParameters;
     DartType returnType = procedure.function.returnType;
 
-    // ignore: unnecessary_null_comparison
-    if (functionTypeParameters != null) {
-      for (TypeParameter functionParameter in functionTypeParameters) {
-        for (TypeParameter typeParameter in typeParameters) {
-          int typeVariance = Variance.combine(Variance.invariant,
-              computeVariance(typeParameter, functionParameter.bound));
-          reportVariancePositionIfInvalid(typeVariance, typeParameter, fileUri,
-              functionParameter.fileOffset);
-        }
-      }
-    }
-    // ignore: unnecessary_null_comparison
-    if (positionalParameters != null) {
-      for (VariableDeclaration formal in positionalParameters) {
-        if (!formal.isCovariantByDeclaration) {
-          for (TypeParameter typeParameter in typeParameters) {
-            int formalVariance = Variance.combine(Variance.contravariant,
-                computeVariance(typeParameter, formal.type));
-            reportVariancePositionIfInvalid(
-                formalVariance, typeParameter, fileUri, formal.fileOffset);
-          }
-        }
-      }
-    }
-    // ignore: unnecessary_null_comparison
-    if (namedParameters != null) {
-      for (VariableDeclaration named in namedParameters) {
-        for (TypeParameter typeParameter in typeParameters) {
-          int namedVariance = Variance.combine(Variance.contravariant,
-              computeVariance(typeParameter, named.type));
-          reportVariancePositionIfInvalid(
-              namedVariance, typeParameter, fileUri, named.fileOffset);
-        }
-      }
-    }
-    // ignore: unnecessary_null_comparison
-    if (returnType != null) {
+    for (TypeParameter functionParameter in functionTypeParameters) {
       for (TypeParameter typeParameter in typeParameters) {
-        int returnTypeVariance = computeVariance(typeParameter, returnType);
-        reportVariancePositionIfInvalid(returnTypeVariance, typeParameter,
-            fileUri, procedure.function.fileOffset,
-            isReturnType: true);
+        int typeVariance = Variance.combine(Variance.invariant,
+            computeVariance(typeParameter, functionParameter.bound));
+        reportVariancePositionIfInvalid(
+            typeVariance, typeParameter, fileUri, functionParameter.fileOffset);
       }
+    }
+    for (VariableDeclaration formal in positionalParameters) {
+      if (!formal.isCovariantByDeclaration) {
+        for (TypeParameter typeParameter in typeParameters) {
+          int formalVariance = Variance.combine(Variance.contravariant,
+              computeVariance(typeParameter, formal.type));
+          reportVariancePositionIfInvalid(
+              formalVariance, typeParameter, fileUri, formal.fileOffset);
+        }
+      }
+    }
+    for (VariableDeclaration named in namedParameters) {
+      for (TypeParameter typeParameter in typeParameters) {
+        int namedVariance = Variance.combine(
+            Variance.contravariant, computeVariance(typeParameter, named.type));
+        reportVariancePositionIfInvalid(
+            namedVariance, typeParameter, fileUri, named.fileOffset);
+      }
+    }
+
+    for (TypeParameter typeParameter in typeParameters) {
+      int returnTypeVariance = computeVariance(typeParameter, returnType);
+      reportVariancePositionIfInvalid(returnTypeVariance, typeParameter,
+          fileUri, procedure.function.fileOffset,
+          isReturnType: true);
     }
   }
 
@@ -1196,8 +1180,6 @@ class SourceClassBuilder extends ClassBuilderImpl
         cls.addField(member);
       } else if (member is Constructor) {
         cls.addConstructor(member);
-      } else if (member is RedirectingFactory) {
-        cls.addRedirectingFactory(member);
       } else {
         unhandled("${member.runtimeType}", "getMember", member.fileOffset,
             member.fileUri);
@@ -1311,48 +1293,6 @@ class SourceClassBuilder extends ClassBuilderImpl
   bool _isPrivateNameInThisLibrary(Name name) =>
       name.isPrivate && name.library == libraryBuilder.library;
 
-  void _addRedirectingConstructor(
-      SourceFactoryBuilder constructorBuilder,
-      SourceLibraryBuilder library,
-      Reference? fieldReference,
-      Reference? getterReference) {
-    // Add a new synthetic field to this class for representing factory
-    // constructors. This is used to support resolving such constructors in
-    // source code.
-    //
-    // The synthetic field looks like this:
-    //
-    //     final _redirecting# = [c1, ..., cn];
-    //
-    // Where each c1 ... cn are an instance of [StaticGet] whose target is
-    // [constructor.target].
-    //
-    // TODO(ahe): Add a kernel node to represent redirecting factory bodies.
-    _RedirectingConstructorsFieldBuilder? constructorsField =
-        origin.scope.lookupLocalMember(redirectingName, setter: false)
-            as _RedirectingConstructorsFieldBuilder?;
-    if (constructorsField == null) {
-      ListLiteral literal = new ListLiteral(<Expression>[]);
-      Name name = new Name(redirectingName, library.library);
-      Field field = new Field.immutable(name,
-          isStatic: true,
-          isFinal: true,
-          initializer: literal,
-          fileUri: cls.fileUri,
-          fieldReference: fieldReference,
-          getterReference: getterReference)
-        ..fileOffset = cls.fileOffset;
-      cls.addField(field);
-      constructorsField = new _RedirectingConstructorsFieldBuilder(field, this);
-      origin.scope
-          .addLocalMember(redirectingName, constructorsField, setter: false);
-    }
-    Field field = constructorsField.field;
-    ListLiteral literal = field.initializer as ListLiteral;
-    literal.expressions.add(
-        new ConstructorTearOff(constructorBuilder.member)..parent = literal);
-  }
-
   int resolveConstructors(SourceLibraryBuilder library) {
     if (constructorReferences == null) return 0;
     for (ConstructorReferenceBuilder ref in constructorReferences!) {
@@ -1407,75 +1347,54 @@ class SourceClassBuilder extends ClassBuilderImpl
             }
           }
 
-          // ignore: unnecessary_null_comparison
-          if (redirectionTarget != null) {
-            Builder? targetBuilder = redirectionTarget.target;
-            if (declaration.next == null) {
-              // Only the first one (that is, the last on in the linked list)
-              // is actually in the kernel tree. This call creates a StaticGet
-              // to [declaration.target] in a field `_redirecting#` which is
-              // only legal to do to things in the kernel tree.
-              Reference? fieldReference;
-              Reference? getterReference;
-              if (referencesFromIndexed != null) {
-                Name name =
-                    new Name(redirectingName, referencesFromIndexed!.library);
-                fieldReference =
-                    referencesFromIndexed!.lookupFieldReference(name);
-                getterReference =
-                    referencesFromIndexed!.lookupGetterReference(name);
-              }
-              _addRedirectingConstructor(
-                  declaration, library, fieldReference, getterReference);
-            }
-            Member? targetNode;
-            if (targetBuilder is FunctionBuilder) {
-              targetNode = targetBuilder.member;
-            } else if (targetBuilder is DillMemberBuilder) {
-              targetNode = targetBuilder.member;
-            } else if (targetBuilder is AmbiguousBuilder) {
-              addProblemForRedirectingFactory(
-                  declaration,
-                  templateDuplicatedDeclarationUse
-                      .withArguments(redirectionTarget.fullNameForErrors),
-                  redirectionTarget.charOffset,
-                  noLength);
-            } else {
-              addProblemForRedirectingFactory(
-                  declaration,
-                  templateRedirectionTargetNotFound
-                      .withArguments(redirectionTarget.fullNameForErrors),
-                  redirectionTarget.charOffset,
-                  noLength);
-            }
-            if (targetNode != null &&
-                targetNode is Constructor &&
-                targetNode.enclosingClass.isAbstract) {
-              addProblemForRedirectingFactory(
-                  declaration,
-                  templateAbstractRedirectedClassInstantiation
-                      .withArguments(redirectionTarget.fullNameForErrors),
-                  redirectionTarget.charOffset,
-                  noLength);
-              targetNode = null;
-            }
-            if (targetNode != null &&
-                targetNode is Constructor &&
-                targetNode.enclosingClass.isEnum) {
-              addProblemForRedirectingFactory(
-                  declaration,
-                  messageEnumFactoryRedirectsToConstructor,
-                  redirectionTarget.charOffset,
-                  noLength);
-              targetNode = null;
-            }
-            if (targetNode != null) {
-              List<DartType> typeArguments = declaration.typeArguments ??
-                  new List<DartType>.filled(
-                      targetNode.enclosingClass!.typeParameters.length,
-                      const UnknownType());
-              declaration.setRedirectingFactoryBody(targetNode, typeArguments);
-            }
+          Builder? targetBuilder = redirectionTarget.target;
+          Member? targetNode;
+          if (targetBuilder is FunctionBuilder) {
+            targetNode = targetBuilder.member;
+          } else if (targetBuilder is DillMemberBuilder) {
+            targetNode = targetBuilder.member;
+          } else if (targetBuilder is AmbiguousBuilder) {
+            addProblemForRedirectingFactory(
+                declaration,
+                templateDuplicatedDeclarationUse
+                    .withArguments(redirectionTarget.fullNameForErrors),
+                redirectionTarget.charOffset,
+                noLength);
+          } else {
+            addProblemForRedirectingFactory(
+                declaration,
+                templateRedirectionTargetNotFound
+                    .withArguments(redirectionTarget.fullNameForErrors),
+                redirectionTarget.charOffset,
+                noLength);
+          }
+          if (targetNode != null &&
+              targetNode is Constructor &&
+              targetNode.enclosingClass.isAbstract) {
+            addProblemForRedirectingFactory(
+                declaration,
+                templateAbstractRedirectedClassInstantiation
+                    .withArguments(redirectionTarget.fullNameForErrors),
+                redirectionTarget.charOffset,
+                noLength);
+            targetNode = null;
+          }
+          if (targetNode != null &&
+              targetNode is Constructor &&
+              targetNode.enclosingClass.isEnum) {
+            addProblemForRedirectingFactory(
+                declaration,
+                messageEnumFactoryRedirectsToConstructor,
+                redirectionTarget.charOffset,
+                noLength);
+            targetNode = null;
+          }
+          if (targetNode != null) {
+            List<DartType> typeArguments = declaration.typeArguments ??
+                new List<DartType>.filled(
+                    targetNode.enclosingClass!.typeParameters.length,
+                    const UnknownType());
+            declaration.setRedirectingFactoryBody(targetNode, typeArguments);
           }
         }
       }
@@ -1509,10 +1428,6 @@ class SourceClassBuilder extends ClassBuilderImpl
       callback(Member interfaceMember, bool isSetter),
       {required bool isInterfaceCheck,
       required bool declaredNeedsLegacyErasure}) {
-    // ignore: unnecessary_null_comparison
-    assert(isInterfaceCheck != null);
-    // ignore: unnecessary_null_comparison
-    assert(declaredNeedsLegacyErasure != null);
     if (declaredMember == interfaceMember) {
       return;
     }
@@ -2424,30 +2339,4 @@ class _SourceClassBuilderAugmentationAccess
   Iterable<SourceClassBuilder>? getAugmentations(
           SourceClassBuilder classDeclaration) =>
       classDeclaration._patches;
-}
-
-class _RedirectingConstructorsFieldBuilder extends DillFieldBuilder
-    with SourceMemberBuilderMixin {
-  _RedirectingConstructorsFieldBuilder(Field field, SourceClassBuilder parent)
-      : super(field, parent);
-
-  @override
-  SourceLibraryBuilder get libraryBuilder =>
-      super.libraryBuilder as SourceLibraryBuilder;
-
-  @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
-      List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
-    // Do nothing.
-  }
-
-  @override
-  void checkVariance(
-      SourceClassBuilder sourceClassBuilder, TypeEnvironment typeEnvironment) {}
-
-  @override
-  void checkTypes(
-      SourceLibraryBuilder library, TypeEnvironment typeEnvironment) {}
 }

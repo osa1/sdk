@@ -92,6 +92,8 @@
   CONSTANT(RecordShape, kMaxNumFields)                                         \
   CONSTANT(RecordShape, kNumFieldsMask)                                        \
   CONSTANT(String, kMaxElements)                                               \
+  CONSTANT(OneByteString, kMaxNewSpaceElements)                                \
+  CONSTANT(TwoByteString, kMaxNewSpaceElements)                                \
   CONSTANT(SubtypeTestCache, kFunctionTypeArguments)                           \
   CONSTANT(SubtypeTestCache, kInstanceCidOrSignature)                          \
   CONSTANT(SubtypeTestCache, kDestinationType)                                 \
@@ -168,7 +170,6 @@
   FIELD(Isolate, default_tag_offset)                                           \
   FIELD(Isolate, finalizers_offset)                                            \
   NOT_IN_PRODUCT(FIELD(Isolate, has_resumption_breakpoints_offset))            \
-  FIELD(Isolate, ic_miss_code_offset)                                          \
   FIELD(IsolateGroup, object_store_offset)                                     \
   FIELD(IsolateGroup, class_table_offset)                                      \
   FIELD(IsolateGroup, cached_class_table_table_offset)                         \

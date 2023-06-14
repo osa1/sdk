@@ -9,7 +9,6 @@ import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
     as shared;
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/session.dart';
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -22,7 +21,6 @@ import 'package:analyzer/error/error.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
 import 'package:analyzer/src/dart/analysis/session.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
-import 'package:analyzer/src/dart/ast/ast_factory.dart';
 import 'package:analyzer/src/dart/ast/token.dart';
 import 'package:analyzer/src/dart/constant/compute.dart';
 import 'package:analyzer/src/dart/constant/evaluation.dart';
@@ -971,7 +969,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl implements ClassElement {
               substitution.substituteType(superParameter.type);
           implicitParameters.add(implicitParameter);
           argumentsForSuperInvocation.add(
-            astFactory.simpleIdentifier(
+            SimpleIdentifierImpl(
               StringToken(TokenType.STRING, implicitParameter.name, -1),
             )
               ..staticElement = implicitParameter
@@ -991,7 +989,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl implements ClassElement {
           superKeyword: Tokens.super_(),
           period: isNamed ? Tokens.period() : null,
           constructorName: isNamed
-              ? (astFactory.simpleIdentifier(
+              ? (SimpleIdentifierImpl(
                   StringToken(TokenType.STRING, superclassConstructor.name, -1),
                 )..staticElement = superclassConstructor)
               : null,
@@ -2052,6 +2050,11 @@ class ElementAnnotationImpl implements ElementAnnotation {
   /// visible for testing.
   static const String _visibleForTestingVariableName = 'visibleForTesting';
 
+  /// The name of the top-level variable used to mark a method as being
+  /// visible outside of template files.
+  static const String _visibleOutsideTemplateVariableName =
+      'visibleOutsideTemplate';
+
   @override
   Element? element;
 
@@ -2197,6 +2200,11 @@ class ElementAnnotationImpl implements ElementAnnotation {
   @override
   bool get isVisibleForTesting =>
       _isPackageMetaGetter(_visibleForTestingVariableName);
+
+  @override
+  bool get isVisibleOutsideTemplate => _isTopGetter(
+      libraryName: _angularMetaLibName,
+      name: _visibleOutsideTemplateVariableName);
 
   @override
   LibraryElement get library => compilationUnit.library;
@@ -2637,6 +2645,18 @@ abstract class ElementImpl implements Element {
     for (var i = 0; i < metadata.length; i++) {
       var annotation = metadata[i];
       if (annotation.isVisibleForTesting) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
+  bool get hasVisibleOutsideTemplate {
+    final metadata = this.metadata;
+    for (var i = 0; i < metadata.length; i++) {
+      var annotation = metadata[i];
+      if (annotation.isVisibleOutsideTemplate) {
         return true;
       }
     }
@@ -5260,6 +5280,9 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement {
   bool get hasVisibleForTesting => false;
 
   @override
+  bool get hasVisibleOutsideTemplate => false;
+
+  @override
   bool get isPrivate {
     throw UnimplementedError();
   }
@@ -5271,6 +5294,8 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement {
   bool get isSynthetic => true;
 
   bool get isVisibleForTemplate => false;
+
+  bool get isVisibleOutsideTemplate => false;
 
   @override
   ElementKind get kind => ElementKind.ERROR;

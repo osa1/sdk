@@ -1501,8 +1501,7 @@ const Code<Message Function(String nameOKEmpty)> codeConstEvalDeferredLibrary =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalDeferredLibrary(String nameOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (nameOKEmpty == null || nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
+  if (nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
   return new Message(codeConstEvalDeferredLibrary,
       problemMessage:
           """'${nameOKEmpty}' can't be used in a constant expression because it's marked as 'deferred' which means it isn't available until loaded.""",
@@ -1588,8 +1587,7 @@ const Code<Message Function(String stringOKEmpty)>
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalFailedAssertionWithMessage(
     String stringOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (stringOKEmpty == null || stringOKEmpty.isEmpty) stringOKEmpty = '(empty)';
+  if (stringOKEmpty.isEmpty) stringOKEmpty = '(empty)';
   return new Message(codeConstEvalFailedAssertionWithMessage,
       problemMessage:
           """This assertion failed with message: ${stringOKEmpty}""",
@@ -1622,8 +1620,7 @@ const Code<Message Function(String nameOKEmpty)> codeConstEvalGetterNotFound =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalGetterNotFound(String nameOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (nameOKEmpty == null || nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
+  if (nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
   return new Message(codeConstEvalGetterNotFound,
       problemMessage: """Variable get not found: '${nameOKEmpty}'""",
       arguments: {'nameOKEmpty': nameOKEmpty});
@@ -1646,8 +1643,7 @@ const Code<Message Function(String nameOKEmpty)>
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalInvalidStaticInvocation(String nameOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (nameOKEmpty == null || nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
+  if (nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
   return new Message(codeConstEvalInvalidStaticInvocation,
       problemMessage:
           """The invocation of '${nameOKEmpty}' is not allowed in a constant expression.""",
@@ -1704,8 +1700,7 @@ const Code<Message Function(String nameOKEmpty)>
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalNonConstantVariableGet(String nameOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (nameOKEmpty == null || nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
+  if (nameOKEmpty.isEmpty) nameOKEmpty = '(unnamed)';
   return new Message(codeConstEvalNonConstantVariableGet,
       problemMessage:
           """The variable '${nameOKEmpty}' is not a constant, only constant expressions are allowed.""",
@@ -1809,8 +1804,7 @@ const Code<Message Function(String stringOKEmpty)>
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsConstEvalUnhandledCoreException(String stringOKEmpty) {
-  // ignore: unnecessary_null_comparison
-  if (stringOKEmpty == null || stringOKEmpty.isEmpty) stringOKEmpty = '(empty)';
+  if (stringOKEmpty.isEmpty) stringOKEmpty = '(empty)';
   return new Message(codeConstEvalUnhandledCoreException,
       problemMessage: """Unhandled core exception: ${stringOKEmpty}""",
       arguments: {'stringOKEmpty': stringOKEmpty});
@@ -2464,18 +2458,8 @@ const Code<
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsDillOutlineSummary(
     int count, int count2, num _num1, num _num2, num _num3) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (_num1 == null) throw 'No number provided';
   String num1 = _num1.toStringAsFixed(3);
-  // ignore: unnecessary_null_comparison
-  if (_num2 == null) throw 'No number provided';
   String num2 = _num2.toStringAsFixed(3).padLeft(12);
-  // ignore: unnecessary_null_comparison
-  if (_num3 == null) throw 'No number provided';
   String num3 = _num3.toStringAsFixed(3).padLeft(12);
   return new Message(codeDillOutlineSummary,
       problemMessage:
@@ -4070,8 +4054,6 @@ Message _withArgumentsExplicitExtensionTypeArgumentMismatch(
     String name, int count) {
   if (name.isEmpty) throw 'No name provided';
   name = demangleMixinApplicationName(name);
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
   return new Message(codeExplicitExtensionTypeArgumentMismatch,
       problemMessage:
           """Explicit extension application of extension '${name}' takes '${count}' type argument(s).""",
@@ -4917,10 +4899,6 @@ const Code<Message Function(int count, int count2)>
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsFfiNativeUnexpectedNumberOfParameters(
     int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeFfiNativeUnexpectedNumberOfParameters,
       problemMessage:
           """Unexpected number of FfiNative annotation parameters. Expected ${count} but has ${count2}.""",
@@ -4946,10 +4924,6 @@ const Code<Message Function(int count, int count2)>
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsFfiNativeUnexpectedNumberOfParametersWithReceiver(
     int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeFfiNativeUnexpectedNumberOfParametersWithReceiver,
       problemMessage:
           """Unexpected number of FfiNative annotation parameters. Expected ${count} but has ${count2}. FfiNative instance method annotation must have receiver as first argument.""",
@@ -5871,8 +5845,6 @@ const Code<Message Function(String name, int count)> codeImplementsRepeated =
 Message _withArgumentsImplementsRepeated(String name, int count) {
   if (name.isEmpty) throw 'No name provided';
   name = demangleMixinApplicationName(name);
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
   return new Message(codeImplementsRepeated,
       problemMessage: """'${name}' can only be implemented once.""",
       correctionMessage: """Try removing ${count} of the occurrences.""",
@@ -6430,10 +6402,6 @@ const Code<Message Function(int count, int count2)>
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsInstantiationTooFewArguments(int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeInstantiationTooFewArguments,
       problemMessage:
           """Too few type arguments: ${count} required, ${count2} given.""",
@@ -6460,10 +6428,6 @@ const Code<Message Function(int count, int count2)>
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsInstantiationTooManyArguments(int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeInstantiationTooManyArguments,
       problemMessage:
           """Too many type arguments: ${count} allowed, but ${count2} found.""",
@@ -7960,6 +7924,51 @@ const MessageCode messageJsInteropExternalMemberNotJSAnnotated = const MessageCo
         r"""Try removing the 'external' keyword or adding a JS interop annotation.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeJsInteropInlineClassMemberNotInterop =
+    messageJsInteropInlineClassMemberNotInterop;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageJsInteropInlineClassMemberNotInterop = const MessageCode(
+    "JsInteropInlineClassMemberNotInterop",
+    problemMessage:
+        r"""Inline class member is marked 'external', but the representation type of its inline class is not a valid JS interop type.""",
+    correctionMessage:
+        r"""Try declaring a valid JS interop representation type, which may include 'dart:js_interop' types, '@staticInterop' types, 'dart:html' types, or other interop inline types.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String name,
+        String
+            string)> templateJsInteropInlineClassNotInterop = const Template<
+        Message Function(String name, String string)>(
+    problemMessageTemplate:
+        r"""Inline class '#name' is marked with a '@JS' annotation, but its representation type is not a valid JS interop type: '#string'.""",
+    correctionMessageTemplate:
+        r"""Try declaring a valid JS interop representation type, which may include 'dart:js_interop' types, '@staticInterop' types, 'dart:html' types, or other interop inline types.""",
+    withArguments: _withArgumentsJsInteropInlineClassNotInterop);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name, String string)>
+    codeJsInteropInlineClassNotInterop =
+    const Code<Message Function(String name, String string)>(
+  "JsInteropInlineClassNotInterop",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsJsInteropInlineClassNotInterop(
+    String name, String string) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  if (string.isEmpty) throw 'No string provided';
+  return new Message(codeJsInteropInlineClassNotInterop,
+      problemMessage:
+          """Inline class '${name}' is marked with a '@JS' annotation, but its representation type is not a valid JS interop type: '${string}'.""",
+      correctionMessage: """Try declaring a valid JS interop representation type, which may include 'dart:js_interop' types, '@staticInterop' types, 'dart:html' types, or other interop inline types.""",
+      arguments: {'name': name, 'string': string});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeJsInteropInlineClassUsedWithWrongJsAnnotation =
     messageJsInteropInlineClassUsedWithWrongJsAnnotation;
 
@@ -8313,6 +8322,19 @@ Message _withArgumentsJsInteropStaticInteropNoJSAnnotation(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeJsInteropStaticInteropParameterInitializersAreIgnored =
+    messageJsInteropStaticInteropParameterInitializersAreIgnored;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageJsInteropStaticInteropParameterInitializersAreIgnored =
+    const MessageCode("JsInteropStaticInteropParameterInitializersAreIgnored",
+        severity: Severity.warning,
+        problemMessage:
+            r"""Initializers for parameters are ignored on static interop external functions.""",
+        correctionMessage:
+            r"""Declare a forwarding non-external function with this initializer, or remove the initializer.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeJsInteropStaticInteropSyntheticConstructor =
     messageJsInteropStaticInteropSyntheticConstructor;
 
@@ -8608,10 +8630,6 @@ const Code<Message Function(int count, int count2)> codeLanguageVersionTooHigh =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsLanguageVersionTooHigh(int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeLanguageVersionTooHigh,
       problemMessage:
           """The specified language version is too high. The highest supported language version is ${count}.${count2}.""",
@@ -10070,6 +10088,150 @@ const MessageCode messageNonPartOfDirectiveInPart = const MessageCode(
         r"""The part-of directive must be the only directive in a part.""",
     correctionMessage:
         r"""Try removing the other directives, or moving them to the library for which this is a part.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateNonPatchClassConflict = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Class '#name' conflicts with an existing class of the same name in the origin library.""",
+    correctionMessageTemplate:
+        r"""Try changing the name of the class or adding an '@patch' annotation.""",
+    withArguments: _withArgumentsNonPatchClassConflict);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeNonPatchClassConflict =
+    const Code<Message Function(String name)>(
+  "NonPatchClassConflict",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonPatchClassConflict(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeNonPatchClassConflict,
+      problemMessage:
+          """Class '${name}' conflicts with an existing class of the same name in the origin library.""",
+      correctionMessage: """Try changing the name of the class or adding an '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateNonPatchClassMemberConflict = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Member '#name' conflicts with an existing member of the same name in the origin class.""",
+    correctionMessageTemplate:
+        r"""Try changing the name of the member or adding an '@patch' annotation.""",
+    withArguments: _withArgumentsNonPatchClassMemberConflict);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeNonPatchClassMemberConflict =
+    const Code<Message Function(String name)>(
+  "NonPatchClassMemberConflict",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonPatchClassMemberConflict(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeNonPatchClassMemberConflict,
+      problemMessage:
+          """Member '${name}' conflicts with an existing member of the same name in the origin class.""",
+      correctionMessage: """Try changing the name of the member or adding an '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateNonPatchConstructorConflict = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Constructor '#name' conflicts with an existing constructor of the same name in the origin class.""",
+    correctionMessageTemplate:
+        r"""Try changing the name of the constructor or adding an '@patch' annotation.""",
+    withArguments: _withArgumentsNonPatchConstructorConflict);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeNonPatchConstructorConflict =
+    const Code<Message Function(String name)>(
+  "NonPatchConstructorConflict",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonPatchConstructorConflict(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeNonPatchConstructorConflict,
+      problemMessage:
+          """Constructor '${name}' conflicts with an existing constructor of the same name in the origin class.""",
+      correctionMessage: """Try changing the name of the constructor or adding an '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateNonPatchLibraryConflict = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Declaration '#name' conflicts with an existing declaration of the same name in the origin library.""",
+    correctionMessageTemplate: r"""Try changing the name of the declaration.""",
+    withArguments: _withArgumentsNonPatchLibraryConflict);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeNonPatchLibraryConflict =
+    const Code<Message Function(String name)>(
+  "NonPatchLibraryConflict",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonPatchLibraryConflict(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeNonPatchLibraryConflict,
+      problemMessage:
+          """Declaration '${name}' conflicts with an existing declaration of the same name in the origin library.""",
+      correctionMessage: """Try changing the name of the declaration.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateNonPatchLibraryMemberConflict = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Member '#name' conflicts with an existing member of the same name in the origin library.""",
+    correctionMessageTemplate:
+        r"""Try changing the name of the member or adding an '@patch' annotation.""",
+    withArguments: _withArgumentsNonPatchLibraryMemberConflict);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeNonPatchLibraryMemberConflict =
+    const Code<Message Function(String name)>(
+  "NonPatchLibraryMemberConflict",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsNonPatchLibraryMemberConflict(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeNonPatchLibraryMemberConflict,
+      problemMessage:
+          """Member '${name}' conflicts with an existing member of the same name in the origin library.""",
+      correctionMessage: """Try changing the name of the member or adding an '@patch' annotation.""",
+      arguments: {'name': name});
+}
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeNonPositiveArrayDimensions =
@@ -11836,18 +11998,8 @@ const Code<
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsSourceBodySummary(
     int count, int count2, num _num1, num _num2, num _num3) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (_num1 == null) throw 'No number provided';
   String num1 = _num1.toStringAsFixed(3);
-  // ignore: unnecessary_null_comparison
-  if (_num2 == null) throw 'No number provided';
   String num2 = _num2.toStringAsFixed(3).padLeft(12);
-  // ignore: unnecessary_null_comparison
-  if (_num3 == null) throw 'No number provided';
   String num3 = _num3.toStringAsFixed(3).padLeft(12);
   return new Message(codeSourceBodySummary,
       problemMessage:
@@ -11891,18 +12043,8 @@ const Code<
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsSourceOutlineSummary(
     int count, int count2, num _num1, num _num2, num _num3) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (_num1 == null) throw 'No number provided';
   String num1 = _num1.toStringAsFixed(3);
-  // ignore: unnecessary_null_comparison
-  if (_num2 == null) throw 'No number provided';
   String num2 = _num2.toStringAsFixed(3).padLeft(12);
-  // ignore: unnecessary_null_comparison
-  if (_num3 == null) throw 'No number provided';
   String num3 = _num3.toStringAsFixed(3).padLeft(12);
   return new Message(codeSourceOutlineSummary,
       problemMessage:
@@ -12540,10 +12682,6 @@ const Code<Message Function(int count, int count2)> codeTooFewArguments =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsTooFewArguments(int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeTooFewArguments,
       problemMessage:
           """Too few positional arguments: ${count} required, ${count2} given.""",
@@ -12570,10 +12708,6 @@ const Code<Message Function(int count, int count2)> codeTooManyArguments =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsTooManyArguments(int count, int count2) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
-  // ignore: unnecessary_null_comparison
-  if (count2 == null) throw 'No count provided';
   return new Message(codeTooManyArguments,
       problemMessage:
           """Too many positional arguments: ${count} allowed, but ${count2} found.""",
@@ -12615,8 +12749,6 @@ const Code<Message Function(int count)> codeTypeArgumentMismatch =
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 Message _withArgumentsTypeArgumentMismatch(int count) {
-  // ignore: unnecessary_null_comparison
-  if (count == null) throw 'No count provided';
   return new Message(codeTypeArgumentMismatch,
       problemMessage: """Expected ${count} type arguments.""",
       arguments: {'count': count});
@@ -13087,6 +13219,149 @@ Message _withArgumentsUnmatchedAugmentationLibraryMember(String name) {
       problemMessage:
           """Augmentation member '${name}' doesn't match a member in the augmented library.""",
       correctionMessage: """Try changing the name to an existing member or removing the 'augment' modifier.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(String name)> templateUnmatchedPatchClass = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Patch class '#name' doesn't match a class in the origin library.""",
+    correctionMessageTemplate:
+        r"""Try changing the name to an existing class or removing the '@patch' annotation.""",
+    withArguments: _withArgumentsUnmatchedPatchClass);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeUnmatchedPatchClass =
+    const Code<Message Function(String name)>(
+  "UnmatchedPatchClass",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsUnmatchedPatchClass(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeUnmatchedPatchClass,
+      problemMessage:
+          """Patch class '${name}' doesn't match a class in the origin library.""",
+      correctionMessage: """Try changing the name to an existing class or removing the '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateUnmatchedPatchClassMember = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Patch member '#name' doesn't match a member in the origin class.""",
+    correctionMessageTemplate:
+        r"""Try changing the name to an existing member or removing the '@patch' annotation.""",
+    withArguments: _withArgumentsUnmatchedPatchClassMember);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeUnmatchedPatchClassMember =
+    const Code<Message Function(String name)>(
+  "UnmatchedPatchClassMember",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsUnmatchedPatchClassMember(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeUnmatchedPatchClassMember,
+      problemMessage:
+          """Patch member '${name}' doesn't match a member in the origin class.""",
+      correctionMessage: """Try changing the name to an existing member or removing the '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateUnmatchedPatchConstructor = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Patch constructor '#name' doesn't match a constructor in the origin class.""",
+    correctionMessageTemplate:
+        r"""Try changing the name to an existing constructor or removing the '@patch' annotation.""",
+    withArguments: _withArgumentsUnmatchedPatchConstructor);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeUnmatchedPatchConstructor =
+    const Code<Message Function(String name)>(
+  "UnmatchedPatchConstructor",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsUnmatchedPatchConstructor(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeUnmatchedPatchConstructor,
+      problemMessage:
+          """Patch constructor '${name}' doesn't match a constructor in the origin class.""",
+      correctionMessage: """Try changing the name to an existing constructor or removing the '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateUnmatchedPatchDeclaration = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Patch '#name' doesn't match a declaration in the origin library.""",
+    correctionMessageTemplate:
+        r"""Try changing the name to an existing declaration or removing the '@patch' annotation.""",
+    withArguments: _withArgumentsUnmatchedPatchDeclaration);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeUnmatchedPatchDeclaration =
+    const Code<Message Function(String name)>(
+  "UnmatchedPatchDeclaration",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsUnmatchedPatchDeclaration(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeUnmatchedPatchDeclaration,
+      problemMessage:
+          """Patch '${name}' doesn't match a declaration in the origin library.""",
+      correctionMessage: """Try changing the name to an existing declaration or removing the '@patch' annotation.""",
+      arguments: {'name': name});
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+    Message Function(
+        String
+            name)> templateUnmatchedPatchLibraryMember = const Template<
+        Message Function(String name)>(
+    problemMessageTemplate:
+        r"""Patch member '#name' doesn't match a member in the origin library.""",
+    correctionMessageTemplate:
+        r"""Try changing the name to an existing member or removing the '@patch' annotation.""",
+    withArguments: _withArgumentsUnmatchedPatchLibraryMember);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)> codeUnmatchedPatchLibraryMember =
+    const Code<Message Function(String name)>(
+  "UnmatchedPatchLibraryMember",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsUnmatchedPatchLibraryMember(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(codeUnmatchedPatchLibraryMember,
+      problemMessage:
+          """Patch member '${name}' doesn't match a member in the origin library.""",
+      correctionMessage: """Try changing the name to an existing member or removing the '@patch' annotation.""",
       arguments: {'name': name});
 }
 

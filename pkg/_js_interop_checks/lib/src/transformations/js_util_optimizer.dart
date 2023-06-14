@@ -16,7 +16,6 @@ import '../js_interop.dart'
         hasDartJSInteropAnnotation,
         hasJSInteropAnnotation,
         hasNativeAnnotation,
-        hasObjectLiteralAnnotation,
         hasStaticInteropAnnotation,
         hasTrustTypesAnnotation;
 
@@ -66,7 +65,7 @@ class JsUtilOptimizer extends Transformer {
   final CoreTypes _coreTypes;
   final StatefulStaticTypeContext _staticTypeContext;
 
-  final InlineExtensionIndex _inlineExtensionIndex = InlineExtensionIndex();
+  late final InlineExtensionIndex _inlineExtensionIndex;
 
   JsUtilOptimizer(this._coreTypes, ClassHierarchy hierarchy)
       : _callMethodTarget =
@@ -108,7 +107,10 @@ class JsUtilOptimizer extends Transformer {
         _listEmptyFactory =
             _coreTypes.index.getProcedure('dart:core', 'List', 'empty'),
         _staticTypeContext = StatefulStaticTypeContext.stacked(
-            TypeEnvironment(_coreTypes, hierarchy));
+            TypeEnvironment(_coreTypes, hierarchy)) {
+    _inlineExtensionIndex =
+        InlineExtensionIndex(_coreTypes, _staticTypeContext.typeEnvironment);
+  }
 
   @override
   visitLibrary(Library node) {
@@ -162,7 +164,7 @@ class JsUtilOptimizer extends Transformer {
           } else if (_inlineExtensionIndex.isMethod(node)) {
             return _getExternalMethodInvocationBuilder(
                 node, shouldTrustType, receiver);
-          } else if (_isNonLiteralConstructor(node)) {
+          } else if (_inlineExtensionIndex.isNonLiteralConstructor(node)) {
             // Get the constructor object using the class name.
             return _getExternalConstructorInvocationBuilder(
                 node, _getObjectOffGlobalThis(node, dottedPrefix.split('.')));
@@ -171,19 +173,6 @@ class JsUtilOptimizer extends Transformer {
       }
     }
     return null;
-  }
-
-  bool _isNonLiteralConstructor(Procedure node) {
-    if (node.isInlineClassMember) {
-      var kind = _inlineExtensionIndex.getInlineDescriptor(node)?.kind;
-      return (kind == InlineClassMemberKind.Constructor ||
-              kind == InlineClassMemberKind.Factory) &&
-          !hasObjectLiteralAnnotation(node);
-    } else {
-      return node.kind == ProcedureKind.Factory &&
-          node.enclosingClass != null &&
-          !hasAnonymousAnnotation(node.enclosingClass!);
-    }
   }
 
   /// Returns the prefixed JS name for the given [node] using the enclosing
@@ -695,6 +684,7 @@ class JsUtilOptimizer extends Transformer {
 /// member in question if needed. We only process JS interop inline classes and
 /// extensions on either JS interop or @Native classes.
 class InlineExtensionIndex {
+  final CoreTypes _coreTypes;
   final Map<Reference, Annotatable> _extensionAnnotatableIndex = {};
   final Map<Reference, Extension> _extensionIndex = {};
   final Map<Reference, ExtensionMemberDescriptor> _extensionMemberIndex = {};
@@ -702,12 +692,16 @@ class InlineExtensionIndex {
   final Map<Reference, InlineClass> _inlineClassIndex = {};
   final Map<Reference, InlineClassMemberDescriptor> _inlineMemberIndex = {};
   final Map<Reference, Reference> _inlineTearOffIndex = {};
+  final Map<Reference, bool> _interopInlineClassIndex = {};
   final Set<Library> _processedExtensionLibraries = {};
   final Set<Library> _processedInlineLibraries = {};
   final Set<Reference> _shouldTrustType = {};
+  final TypeEnvironment _typeEnvironment;
 
-  /// If unprocessed, for all extension members in [library] whose on-type has a
-  /// `@JS` or `@Native` annotation, does the following:
+  InlineExtensionIndex(this._coreTypes, this._typeEnvironment);
+
+  /// If unprocessed, for all extension members in [library] whose on-type is a
+  /// JS interop or `@Native` class, does the following:
   ///
   /// - Maps the member to its on-type in `_extensionAnnotatableIndex`.
   /// - Maps the member to its extension in `_extensionIndex`.
@@ -725,6 +719,7 @@ class InlineExtensionIndex {
       for (var descriptor in extension.members) {
         var reference = descriptor.member;
         var onType = extension.onType;
+        bool isInteropOnType = false;
         Annotatable? cls;
         if (onType is InterfaceType) {
           cls = onType.classNode;
@@ -733,15 +728,17 @@ class InlineExtensionIndex {
           if (hasTrustTypesAnnotation(cls)) {
             _shouldTrustType.add(reference);
           }
+          isInteropOnType =
+              hasJSInteropAnnotation(cls) || hasNativeAnnotation(cls);
         } else if (onType is InlineType) {
-          cls = onType.inlineClass;
+          final inlineClass = onType.inlineClass;
+          cls = inlineClass;
+          isInteropOnType = isInteropInlineClass(inlineClass);
         }
-        if (cls == null) continue;
-        if (hasJSInteropAnnotation(cls) || hasNativeAnnotation(cls)) {
-          _extensionMemberIndex[reference] = descriptor;
-          _extensionAnnotatableIndex[reference] = cls;
-          _extensionIndex[reference] = extension;
-        }
+        if (!isInteropOnType) continue;
+        _extensionMemberIndex[reference] = descriptor;
+        _extensionAnnotatableIndex[reference] = cls!;
+        _extensionIndex[reference] = extension;
         if (descriptor.kind == ExtensionMemberKind.Method ||
             descriptor.kind == ExtensionMemberKind.TearOff) {
           final descriptorName = descriptor.name.text;
@@ -791,9 +788,53 @@ class InlineExtensionIndex {
     return _extensionTearOffIndex[member.reference];
   }
 
-  /// If unprocessed, for all inline class members in [library] whose inline
-  /// class has a `@JS` annotation, does the following:
+  /// Caches and returns whether the ultimate representation type that
+  /// corresponds to [inlineClass]' representation type is an interop type that
+  /// can be statically interoperable.
   ///
+  /// This currently allows the interface type to be:
+  /// - all package:js classes
+  /// - dart:js_types types
+  /// - @Native types that implement JavaScriptObject
+  bool isInteropInlineClass(InlineClass inlineClass) {
+    final reference = inlineClass.reference;
+    if (_interopInlineClassIndex.containsKey(reference)) {
+      return _interopInlineClassIndex[reference]!;
+    }
+    DartType repType = inlineClass.declaredRepresentationType;
+    // TODO(srujzs): This iteration is currently needed since
+    // `instantiatedRepresentationType` doesn't do this for us. Remove this
+    // iteration when the CFE changes this getter.
+    while (repType is InlineType) {
+      repType = repType.instantiatedRepresentationType;
+    }
+    if (repType is InterfaceType) {
+      final cls = repType.classNode;
+      // TODO(srujzs): Note that dart:_js_types types currently use a custom
+      // lowering of @staticInterop. Once
+      // https://github.com/dart-lang/sdk/issues/52687 is handled, we should
+      // modify this if-check to handle the new representation.
+      final javaScriptObject = _coreTypes.index
+          .tryGetClass('dart:_interceptors', 'JavaScriptObject');
+      if (hasStaticInteropAnnotation(cls) ||
+          (javaScriptObject != null &&
+              hasNativeAnnotation(cls) &&
+              _typeEnvironment.isSubtypeOf(
+                  repType,
+                  InterfaceType(javaScriptObject, Nullability.nullable),
+                  SubtypeCheckMode.withNullabilities))) {
+        _interopInlineClassIndex[reference] = true;
+        return true;
+      }
+    }
+    _interopInlineClassIndex[reference] = false;
+    return false;
+  }
+
+  /// If unprocessed, for all inline class members in [library] whose inline
+  /// class is static interop, does the following:
+  ///
+  /// - Maps the inline class to its interop type
   /// - Maps the member to its inline class in `_inlineClassIndex`.
   /// - Maps the member to its descriptor in `_inlineMemberIndex`.
   /// - Maps the tear-off member to the member it tears off in
@@ -801,7 +842,7 @@ class InlineExtensionIndex {
   void _indexInlineClasses(Library library) {
     if (_processedInlineLibraries.contains(library)) return;
     for (var inlineClass in library.inlineClasses) {
-      if (hasJSInteropAnnotation(inlineClass)) {
+      if (isInteropInlineClass(inlineClass)) {
         final descriptorNames = <String, InlineClassMemberDescriptor>{};
         for (var descriptor in inlineClass.members) {
           final reference = descriptor.member;
@@ -841,8 +882,7 @@ class InlineExtensionIndex {
   }
 
   Reference? getInlineMemberForTearOff(Member member) {
-    // Constructor tear-offs are not marked as inline members, so we don't check
-    // if [member] is an inline class member.
+    if (!member.isInlineClassMember) return null;
     _indexInlineClasses(member.enclosingLibrary);
     return _inlineTearOffIndex[member.reference];
   }
@@ -898,4 +938,33 @@ class InlineExtensionIndex {
       InlineClassMemberKind.Operator,
       ExtensionMemberKind.Operator,
       ProcedureKind.Operator);
+
+  /// Return whether [node] is an external static interop constructor/factory.
+  ///
+  /// If [literal] is true, we check if [node] is an object literal constructor,
+  /// and if not, we check that it's a non-literal constructor.
+  bool _isStaticInteropConstructor(Procedure node, {required bool literal}) {
+    if (!node.isExternal) return false;
+    if (node.isInlineClassMember) {
+      final kind = getInlineDescriptor(node)?.kind;
+      final namedParams = node.function.namedParameters;
+      return (kind == InlineClassMemberKind.Constructor ||
+                  kind == InlineClassMemberKind.Factory) &&
+              literal
+          ? namedParams.isNotEmpty
+          : namedParams.isEmpty;
+    } else if (node.kind == ProcedureKind.Factory &&
+        node.enclosingClass != null &&
+        hasJSInteropAnnotation(node.enclosingClass!)) {
+      final isAnonymous = hasAnonymousAnnotation(node.enclosingClass!);
+      return literal ? isAnonymous : !isAnonymous;
+    }
+    return false;
+  }
+
+  bool isLiteralConstructor(Procedure node) =>
+      _isStaticInteropConstructor(node, literal: true);
+
+  bool isNonLiteralConstructor(Procedure node) =>
+      _isStaticInteropConstructor(node, literal: false);
 }
