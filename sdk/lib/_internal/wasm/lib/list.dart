@@ -8,25 +8,6 @@ const int _maxWasmArrayLength = 2147483647; // max i32
 
 @pragma("wasm:entry-point")
 abstract class _ListBase<E> extends ListBase<E> {
-  @pragma("wasm:entry-point")
-  int _length;
-  @pragma("wasm:entry-point")
-  WasmObjectArray<Object?> _data;
-
-  _ListBase(int length, int capacity)
-      : _length = length,
-        _data = WasmObjectArray<Object?>(
-            RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
-
-  _ListBase._withData(this._length, this._data);
-
-  E operator [](int index) {
-    IndexError.check(index, _length, indexable: this, name: "[]");
-    return unsafeCast(_data.read(index));
-  }
-
-  int get length => _length;
-
   List<E> sublist(int start, [int? end]) {
     final int listLength = this.length;
     final int actualEnd = RangeError.checkValidRange(start, end, listLength);
@@ -50,16 +31,6 @@ abstract class _ListBase<E> extends ListBase<E> {
 
 @pragma("wasm:entry-point")
 abstract class _ModifiableList<E> extends _ListBase<E> {
-  _ModifiableList(int length, int capacity) : super(length, capacity);
-
-  _ModifiableList._withData(int length, WasmObjectArray<Object?> data)
-      : super._withData(length, data);
-
-  void operator []=(int index, E value) {
-    IndexError.check(index, _length, indexable: this, name: "[]=");
-    _data.write(index, value);
-  }
-
   // List interface.
   void setRange(int start, int end, Iterable<E> iterable, [int skipCount = 0]) {
     RangeError.checkValidRange(start, end, this.length);
@@ -108,9 +79,16 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
 
 @pragma("wasm:entry-point")
 class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
-  _List._(int length) : super(length, length);
+  @pragma("wasm:entry-point")
+  int _length;
 
-  factory _List(int length) => _List._(length);
+  @pragma("wasm:entry-point")
+  WasmObjectArray<Object?> _data;
+
+  _List(int length)
+      : _length = length,
+        _data = WasmObjectArray<Object?>(
+            RangeError.checkValueInInterval(length, 0, _maxWasmArrayLength));
 
   // Specialization of List.empty constructor for growable == false.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
@@ -180,6 +158,18 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
     return unsafeCast(makeListFixedLength(_GrowableList<E>._ofOther(elements)));
   }
 
+  int get length => _length;
+
+  E operator [](int index) {
+    IndexError.check(index, _length, indexable: this, name: "[]");
+    return unsafeCast(_data.read(index));
+  }
+
+  void operator []=(int index, E value) {
+    IndexError.check(index, _length, indexable: this, name: "[]=");
+    _data.write(index, value);
+  }
+
   Iterator<E> get iterator {
     return new _FixedSizeListIterator<E>(this);
   }
@@ -187,6 +177,26 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
 
 @pragma("wasm:entry-point")
 class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
+  @pragma("wasm:entry-point")
+  int _length;
+
+  @pragma("wasm:entry-point")
+  WasmObjectArray<Object?> _data;
+
+  _ImmutableList(int length, int capacity)
+      : _length = length,
+        _data = WasmObjectArray<Object?>(
+            RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
+
+  _ImmutableList._withData(this._length, this._data);
+
+  int get length => _length;
+
+  E operator [](int index) {
+    IndexError.check(index, _length, indexable: this, name: "[]");
+    return unsafeCast(_data.read(index));
+  }
+
   factory _ImmutableList._uninstantiable() {
     throw new UnsupportedError(
         "_ImmutableList can only be allocated by the runtime");
@@ -199,7 +209,7 @@ class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
 
 // Iterator for lists with fixed size.
 class _FixedSizeListIterator<E> implements Iterator<E> {
-  final _ListBase<E> _list;
+  final _ListBase<E> _list; // _ImmutableList or _List
   final int _length; // Cache list length for faster access.
   int _index;
   E? _current;
@@ -218,7 +228,9 @@ class _FixedSizeListIterator<E> implements Iterator<E> {
       _current = null;
       return false;
     }
-    _current = unsafeCast(_list._data.read(_index));
+    // TODO: We don't need to check length here, maybe add `_unsafeRead` to
+    // `_ListBase`?
+    _current = _list[_index];
     _index++;
     return true;
   }

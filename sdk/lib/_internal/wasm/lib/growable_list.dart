@@ -6,6 +6,12 @@ part of "core_patch.dart";
 
 @pragma("wasm:entry-point")
 class _GrowableList<E> extends _ModifiableList<E> {
+  @pragma("wasm:entry-point")
+  int _length;
+
+  @pragma("wasm:entry-point")
+  WasmObjectArray<Object?> _data;
+
   void insert(int index, E element) {
     if ((index < 0) || (index > length)) {
       throw new RangeError.range(index, 0, length);
@@ -68,7 +74,10 @@ class _GrowableList<E> extends _ModifiableList<E> {
     this.length = this.length - (end - start);
   }
 
-  _GrowableList._(int length, int capacity) : super(length, capacity);
+  _GrowableList._(int length, int capacity)
+      : _length = length,
+        _data = WasmObjectArray<Object?>(
+            RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
 
   factory _GrowableList(int length) {
     return _GrowableList<E>._(length, length);
@@ -147,9 +156,22 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   _GrowableList._withData(WasmObjectArray<Object?> data)
-      : super._withData(data.length, data);
+      : _length = data.length,
+        _data = data;
 
   int get _capacity => _data.length;
+
+  int get length => _length;
+
+  E operator [](int index) {
+    IndexError.check(index, _length, indexable: this, name: "[]");
+    return unsafeCast(_data.read(index));
+  }
+
+  void operator []=(int index, E value) {
+    IndexError.check(index, _length, indexable: this, name: "[]=");
+    _data.write(index, value);
+  }
 
   void set length(int new_length) {
     if (new_length > length) {
