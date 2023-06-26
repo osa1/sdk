@@ -500,17 +500,11 @@ class Intrinsifier {
 
       // Access the underlying array directly.
       ClassInfo info = translator.classInfo[translator.listBaseClass]!;
-      Field arrayField = translator.listBaseClass.fields
-          .firstWhere((f) => f.name.text == '_data');
-      int arrayFieldIndex = translator.fieldIndex[arrayField]!;
-      w.ArrayType arrayType =
-          (info.struct.fields[arrayFieldIndex].type as w.RefType).heapType
-              as w.ArrayType;
       codeGen.wrap(receiver, info.nonNullableType);
-      b.struct_get(info.struct, arrayFieldIndex);
+      b.struct_get(info.struct, FieldIndex.listArray);
       codeGen.wrap(arg, w.NumType.i64);
       b.i32_wrap_i64();
-      b.array_get(arrayType);
+      b.array_get(translator.listArrayType);
       return translator.topInfo.nullableType;
     }
 
@@ -630,22 +624,19 @@ class Intrinsifier {
   }
 
   w.ValueType changeListClassID(StaticInvocation node, Class newClass) {
-    ClassInfo receiverInfo = translator.classInfo[translator.listBaseClass]!;
-    codeGen.wrap(
-        node.arguments.positional.single, receiverInfo.nonNullableType);
-    w.Local receiverLocal =
-        codeGen.function.addLocal(receiverInfo.nonNullableType);
+    ClassInfo topInfo = translator.topInfo;
+    codeGen.wrap(node.arguments.positional.single, topInfo.nonNullableType);
+    w.Local receiverLocal = codeGen.function.addLocal(topInfo.nonNullableType);
     b.local_tee(receiverLocal);
     // We ignore the type argument and just update the classID of the
     // receiver.
     // TODO(joshualitt): If the amount of free space is significant, it
     // might be worth doing a copy here.
     ClassInfo newInfo = translator.classInfo[newClass]!;
-    ClassInfo topInfo = translator.topInfo;
     b.i32_const(newInfo.classId);
     b.struct_set(topInfo.struct, FieldIndex.classId);
     b.local_get(receiverLocal);
-    return newInfo.nonNullableType;
+    return topInfo.nonNullableType;
   }
 
   w.ValueType? generateStaticIntrinsic(StaticInvocation node) {
