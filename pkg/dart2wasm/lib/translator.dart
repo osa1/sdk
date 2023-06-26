@@ -118,7 +118,9 @@ class Translator with KernelNodes {
   late final ClassInfo closureInfo = classInfo[closureClass]!;
   late final ClassInfo stackTraceInfo = classInfo[stackTraceClass]!;
   late final ClassInfo recordInfo = classInfo[coreTypes.recordClass]!;
-  late final w.ArrayType listArrayType = (classInfo[listBaseClass]!
+
+  // All boxed lists use the same array type.
+  late final w.ArrayType boxedListArrayType = (classInfo[fixedLengthListClass]!
           .struct
           .fields[FieldIndex.listArray]
           .type as w.RefType)
@@ -933,6 +935,8 @@ class Translator with KernelNodes {
     return null;
   }
 
+  /// Allocate a new list. If [isGrowable] is set pushes a `_GrowableList` onto
+  /// the stack. Otherwise pushes a `_List`.
   w.ValueType makeList(
       w.DefinedFunction function,
       void generateType(w.Instructions b),
@@ -944,7 +948,7 @@ class Translator with KernelNodes {
     final Class cls = isGrowable ? growableListClass : fixedLengthListClass;
     final ClassInfo info = classInfo[cls]!;
     functions.allocateClass(info.classId);
-    final w.ArrayType arrayType = listArrayType;
+    final w.ArrayType arrayType = boxedListArrayType;
     final w.ValueType elementType = arrayType.elementType.type.unpacked;
 
     b.i32_const(info.classId);
@@ -979,8 +983,9 @@ class Translator with KernelNodes {
   }
 
   /// Indexes a Dart `List` on the stack.
-  void indexList(w.Instructions b, void pushIndex(w.Instructions b)) {
-    ClassInfo info = classInfo[listBaseClass]!;
+  void indexList(
+      w.Instructions b, Class listClass, void pushIndex(w.Instructions b)) {
+    ClassInfo info = classInfo[listClass]!;
     w.ArrayType arrayType =
         (info.struct.fields[FieldIndex.listArray].type as w.RefType).heapType
             as w.ArrayType;
@@ -990,8 +995,8 @@ class Translator with KernelNodes {
   }
 
   /// Pushes a Dart `List`'s length onto the stack as `i32`.
-  void getListLength(w.Instructions b) {
-    ClassInfo info = classInfo[listBaseClass]!;
+  void getListLength(w.Instructions b, Class listClass) {
+    ClassInfo info = classInfo[listClass]!;
     b.struct_get(info.struct, FieldIndex.listLength);
     b.i32_wrap_i64();
   }
@@ -1131,7 +1136,8 @@ class _ClosureDynamicEntryGenerator implements _FunctionGenerator {
     // Push type arguments
     for (int typeIdx = 0; typeIdx < typeCount; typeIdx += 1) {
       b.local_get(typeArgsListLocal);
-      translator.indexList(b, (b) => b.i32_const(typeIdx));
+      translator.indexList(
+          b, translator.fixedLengthListClass, (b) => b.i32_const(typeIdx));
       translator.convertType(
           function, translator.topInfo.nullableType, targetInputs[inputIdx]);
       inputIdx += 1;
@@ -1142,16 +1148,18 @@ class _ClosureDynamicEntryGenerator implements _FunctionGenerator {
       if (posIdx < positionalRequired) {
         // Shape check passed, argument must be passed
         b.local_get(posArgsListLocal);
-        translator.indexList(b, (b) => b.i32_const(posIdx));
+        translator.indexList(
+            b, translator.fixedLengthListClass, (b) => b.i32_const(posIdx));
       } else {
         // Argument may be missing
         b.i32_const(posIdx);
         b.local_get(posArgsListLocal);
-        translator.getListLength(b);
+        translator.getListLength(b, translator.fixedLengthListClass);
         b.i32_lt_u();
         b.if_([], [translator.topInfo.nullableType]);
         b.local_get(posArgsListLocal);
-        translator.indexList(b, (b) => b.i32_const(posIdx));
+        translator.indexList(
+            b, translator.fixedLengthListClass, (b) => b.i32_const(posIdx));
         b.else_();
         translator.constants.instantiateConstant(function, b,
             paramInfo.positional[posIdx]!, translator.topInfo.nullableType);
@@ -1195,7 +1203,7 @@ class _ClosureDynamicEntryGenerator implements _FunctionGenerator {
       if (functionNodeDefaultValue == null && paramInfoDefaultValue == null) {
         // Shape check passed, parameter must be passed
         b.local_get(namedArgsListLocal);
-        translator.indexList(b, (b) {
+        translator.indexList(b, translator.fixedLengthListClass, (b) {
           b.local_get(namedArgValueIndexLocal);
           translator.convertType(
               function, namedArgValueIndexLocal.type, w.NumType.i64);
@@ -1224,7 +1232,7 @@ class _ClosureDynamicEntryGenerator implements _FunctionGenerator {
         }
         b.else_(); // value index not null
         b.local_get(namedArgsListLocal);
-        translator.indexList(b, (b) {
+        translator.indexList(b, translator.fixedLengthListClass, (b) {
           b.local_get(namedArgValueIndexLocal);
           translator.convertType(
               function, namedArgValueIndexLocal.type, w.NumType.i64);

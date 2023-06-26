@@ -37,7 +37,6 @@ mixin KernelNodes {
       index.getClass("dart:core", "_BoxedDouble");
   late final Class boxedIntClass = index.getClass("dart:core", "_BoxedInt");
   late final Class closureClass = index.getClass("dart:core", "_Closure");
-  late final Class listBaseClass = index.getClass("dart:core", "_ListBase");
   late final Class fixedLengthListClass = index.getClass("dart:core", "_List");
   late final Class growableListClass =
       index.getClass("dart:core", "_GrowableList");

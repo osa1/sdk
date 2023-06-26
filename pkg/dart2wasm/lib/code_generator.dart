@@ -2956,7 +2956,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       // Type argument list is either empty or have the right number of types
       // (checked by the forwarder).
       b.local_get(typeArgsLocal);
-      translator.getListLength(b);
+      translator.getListLength(b, translator.growableListClass);
       b.i32_eqz();
       b.if_([], List.generate(memberTypeParams.length, (_) => typeType));
       // No type arguments passed, initialize with defaults
@@ -2968,7 +2968,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
           typeParamIdx < memberTypeParams.length;
           typeParamIdx += 1) {
         b.local_get(typeArgsLocal);
-        translator.indexList(b, (b) => b.i32_const(typeParamIdx));
+        translator.indexList(
+            b, translator.growableListClass, (b) => b.i32_const(typeParamIdx));
         translator.convertType(
             function, translator.topInfo.nullableType, typeType);
       }
@@ -3015,7 +3016,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
           param.name!,
           () {
             b.local_get(positionalArgsLocal);
-            translator.indexList(b, (b) => b.i32_const(positionalParamIdx));
+            translator.indexList(b, translator.fixedLengthListClass,
+                (b) => b.i32_const(positionalParamIdx));
           },
           () {
             types.makeType(this, param.type);
@@ -3049,7 +3051,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
           param.name!,
           () {
             b.local_get(namedArgsLocal);
-            translator.indexList(b,
+            translator.indexList(b, translator.fixedLengthListClass,
                 (b) => b.i32_const(mapNamedParameterToArrayIndex(param.name!)));
           },
           () {
@@ -3078,7 +3080,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     void pushArgument(w.Local listLocal, int listIdx, int wasmInputIdx) {
       b.local_get(listLocal);
-      translator.indexList(b, (b) => b.i32_const(listIdx));
+      translator.indexList(
+          b, translator.fixedLengthListClass, (b) => b.i32_const(listIdx));
       translator.convertType(function, translator.topInfo.nullableType,
           memberWasmInputs[wasmInputIdx]);
     }

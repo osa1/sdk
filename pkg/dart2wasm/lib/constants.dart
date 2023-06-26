@@ -72,7 +72,7 @@ class Constants {
     ib.i32_const(initialIdentityHash);
     ib.ref_null(w.HeapType.none); // Initialized later
     ib.i64_const(0);
-    ib.array_new_fixed(translator.listArrayType, 0);
+    ib.array_new_fixed(translator.boxedListArrayType, 0);
     ib.struct_new(info.struct);
     ib.end(); // end of global initializer expression
 
@@ -449,7 +449,7 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
     translator.functions.allocateClass(info.classId);
     w.RefType type = info.nonNullableType;
     return createConstant(constant, type, lazy: lazy, (function, b) {
-      w.ArrayType arrayType = translator.listArrayType;
+      w.ArrayType arrayType = translator.boxedListArrayType;
       w.ValueType elementType = arrayType.elementType.type.unpacked;
       int length = constant.entries.length;
       b.i32_const(info.classId);

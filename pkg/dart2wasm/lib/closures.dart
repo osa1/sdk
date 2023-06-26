@@ -676,7 +676,7 @@ class ClosureLayouter extends RecursiveVisitor {
     for (int i = 0; i < typeCount; i++) {
       b.local_get(typeParam(i));
     }
-    b.array_new_fixed(translator.listArrayType, typeCount);
+    b.array_new_fixed(translator.boxedListArrayType, typeCount);
     b.struct_new(listInfo.struct);
 
     // Call [_TypeUniverse.substituteFunctionTypeArgument].

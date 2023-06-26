@@ -17,6 +17,7 @@ import 'package:wasm_builder/wasm_builder.dart' as w;
 /// [ClassInfo._addField] (for manually added fields) or by a line in
 /// [FieldIndex.validate] (for fields declared in Dart code).
 class FieldIndex {
+  // `_AsyncSuspendState` fields.
   static const asyncSuspendStateResume = 2;
   static const asyncSuspendStateContext = 3;
   static const asyncSuspendStateTargetIndex = 4;
@@ -25,12 +26,16 @@ class FieldIndex {
   static const asyncSuspendStateCurrentExceptionStackTrace = 7;
   static const asyncSuspendStateCurrentReturnValue = 8;
 
+  // `_List`, `_GrowableList`, `_ImmutableList` fields. These classes must have
+  // the same layout to be able to use the same code generator for
+  // initialization.
+  static const listLength = 3;
+  static const listArray = 4;
+
   static const classId = 0;
   static const boxValue = 1;
   static const identityHash = 1;
   static const stringArray = 2;
-  static const listLength = 3;
-  static const listArray = 4;
   static const hashBaseIndex = 2;
   static const hashBaseData = 4;
   static const closureContext = 2;
@@ -84,13 +89,18 @@ class FieldIndex {
     check(translator.asyncSuspendStateClass, "_currentReturnValue",
         FieldIndex.asyncSuspendStateCurrentReturnValue);
 
+    check(translator.fixedLengthListClass, "_length", FieldIndex.listLength);
+    check(translator.fixedLengthListClass, "_data", FieldIndex.listArray);
+    check(translator.growableListClass, "_length", FieldIndex.listLength);
+    check(translator.growableListClass, "_data", FieldIndex.listArray);
+    check(translator.immutableListClass, "_length", FieldIndex.listLength);
+    check(translator.immutableListClass, "_data", FieldIndex.listArray);
+
     check(translator.boxedBoolClass, "value", FieldIndex.boxValue);
     check(translator.boxedIntClass, "value", FieldIndex.boxValue);
     check(translator.boxedDoubleClass, "value", FieldIndex.boxValue);
     check(translator.oneByteStringClass, "_array", FieldIndex.stringArray);
     check(translator.twoByteStringClass, "_array", FieldIndex.stringArray);
-    check(translator.listBaseClass, "_length", FieldIndex.listLength);
-    check(translator.listBaseClass, "_data", FieldIndex.listArray);
     check(translator.hashFieldBaseClass, "_index", FieldIndex.hashBaseIndex);
     check(translator.hashFieldBaseClass, "_data", FieldIndex.hashBaseData);
     check(translator.closureClass, "context", FieldIndex.closureContext);

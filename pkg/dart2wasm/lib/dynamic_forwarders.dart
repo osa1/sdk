@@ -200,9 +200,9 @@ class Forwarder {
     final w.Instructions b = function.body;
 
     final receiverLocal = function.locals[0]; // ref #Top
-    final typeArgsLocal = function.locals[1]; // ref _ListBase
-    final positionalArgsLocal = function.locals[2]; // ref _ListBase
-    final namedArgsLocal = function.locals[3]; // ref _ListBase
+    final typeArgsLocal = function.locals[1]; // ref _GrowableList
+    final positionalArgsLocal = function.locals[2]; // ref _List
+    final namedArgsLocal = function.locals[3]; // ref _List
 
     // Continuation of this block calls `noSuchMethod` on the receiver.
     final noSuchMethodBlock = b.block();
@@ -233,12 +233,12 @@ class Forwarder {
         if (targetMemberParamInfo.typeParamCount == 0) {
           // typeArgs.length == 0
           b.local_get(typeArgsLocal);
-          translator.getListLength(b);
+          translator.getListLength(b, translator.growableListClass);
           b.i32_eqz();
         } else {
           // typeArgs.length == 0 || typeArgs.length == typeParams.length
           b.local_get(typeArgsLocal);
-          translator.getListLength(b);
+          translator.getListLength(b, translator.growableListClass);
           b.local_tee(numArgsLocal);
           b.i32_eqz();
           b.local_get(numArgsLocal);
@@ -258,7 +258,7 @@ class Forwarder {
         // positionalArgs.length >= nRequired &&
         //   positionalArgs.length <= nTotal
         b.local_get(positionalArgsLocal);
-        translator.getListLength(b);
+        translator.getListLength(b, translator.fixedLengthListClass);
         b.local_tee(numArgsLocal);
         b.i32_const(nRequired);
         b.i32_ge_u();
@@ -289,7 +289,8 @@ class Forwarder {
           b.if_();
           b.local_get(adjustedPositionalArgsLocal);
           b.local_get(positionalArgsLocal);
-          translator.indexList(b, (b) => b.local_get(argIdxLocal));
+          translator.indexList(
+              b, translator.growableListClass, (b) => b.local_get(argIdxLocal));
           b.call(translator.functions
               .getFunction(translator.growableListAdd.reference));
           b.drop();
@@ -331,7 +332,7 @@ class Forwarder {
         if (targetMemberParamInfo.named.isEmpty) {
           // namedArgs.length == 0
           b.local_get(namedArgsLocal);
-          translator.getListLength(b);
+          translator.getListLength(b, translator.fixedLengthListClass);
           b.i32_eqz();
           b.i32_eqz();
           b.br_if(noSuchMethodBlock);
@@ -347,7 +348,7 @@ class Forwarder {
 
           final remainingNamedArgsLocal = numArgsLocal;
           b.local_get(namedArgsLocal);
-          translator.getListLength(b);
+          translator.getListLength(b, translator.fixedLengthListClass);
           b.i32_const(1);
           b.i32_shr_u();
           b.local_set(remainingNamedArgsLocal);
@@ -399,7 +400,7 @@ class Forwarder {
               b.br_if(noSuchMethodBlock);
               b.local_get(adjustedNamedArgsLocal);
               b.local_get(namedArgsLocal);
-              translator.indexList(b, (b) {
+              translator.indexList(b, translator.fixedLengthListClass, (b) {
                 b.local_get(namedParameterIdxLocal);
                 translator.convertType(
                     function, namedParameterIdxLocal.type, w.NumType.i64);
@@ -440,7 +441,7 @@ class Forwarder {
 
               b.local_get(adjustedNamedArgsLocal);
               b.local_get(namedArgsLocal);
-              translator.indexList(b, (b) {
+              translator.indexList(b, translator.fixedLengthListClass, (b) {
                 b.local_get(namedParameterIdxLocal);
                 translator.convertType(
                     function, namedParameterIdxLocal.type, w.NumType.i64);
@@ -609,15 +610,15 @@ enum _ForwarderKind {
   }
 }
 
-/// Generate code that checks shape and type of the closure and generate a call
-/// to its dynamic call vtable entry.
+/// Generate code that checks shape and type of the closure and generates a
+/// call to its dynamic call vtable entry.
 ///
 /// [closureLocal] should be a local of type `ref #ClosureBase` containing a
 /// closure value.
 ///
-/// [typeArgsLocal], [posArgsLocal], [namedArgsLocal] are the locals for type,
-/// positional, and named arguments, respectively. Types of these locals must
-/// be `ref _ListBase`.
+/// [typeArgsLocal] (`_GrowableList`), [posArgsLocal] (`_List`),
+/// [namedArgsLocal] (`_List`) are the locals for type, positional, and named
+/// arguments, respectively.
 ///
 /// [noSuchMethodBlock] is used as the `br` target when the shape check fails.
 void generateDynamicFunctionCall(
@@ -629,11 +630,14 @@ void generateDynamicFunctionCall(
   w.Local namedArgsLocal,
   w.Label noSuchMethodBlock,
 ) {
-  final listArgumentType =
-      translator.classInfo[translator.listBaseClass]!.nonNullableType;
-  assert(typeArgsLocal.type == listArgumentType);
-  assert(posArgsLocal.type == listArgumentType);
-  assert(namedArgsLocal.type == listArgumentType);
+  final listType =
+      translator.classInfo[translator.fixedLengthListClass]!.nonNullableType;
+  final growableListType =
+      translator.classInfo[translator.growableListClass]!.nonNullableType;
+
+  assert(typeArgsLocal.type == growableListType);
+  assert(posArgsLocal.type == listType);
+  assert(namedArgsLocal.type == listType);
 
   final b = function.body;
 
@@ -815,7 +819,7 @@ void _makeEmptyGrowableList(
   Class cls = translator.growableListClass;
   ClassInfo info = translator.classInfo[cls]!;
   translator.functions.allocateClass(info.classId);
-  w.ArrayType arrayType = translator.listArrayType;
+  w.ArrayType arrayType = translator.boxedListArrayType;
 
   b.i32_const(info.classId);
   b.i32_const(initialIdentityHash);
