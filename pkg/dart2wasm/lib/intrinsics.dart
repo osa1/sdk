@@ -624,19 +624,22 @@ class Intrinsifier {
   }
 
   w.ValueType changeListClassID(StaticInvocation node, Class newClass) {
-    ClassInfo topInfo = translator.topInfo;
-    codeGen.wrap(node.arguments.positional.single, topInfo.nonNullableType);
-    w.Local receiverLocal = codeGen.function.addLocal(topInfo.nonNullableType);
+    ClassInfo receiverInfo = translator.classInfo[translator.listBaseClass]!;
+    codeGen.wrap(
+        node.arguments.positional.single, receiverInfo.nonNullableType);
+    w.Local receiverLocal =
+        codeGen.function.addLocal(receiverInfo.nonNullableType);
     b.local_tee(receiverLocal);
     // We ignore the type argument and just update the classID of the
     // receiver.
     // TODO(joshualitt): If the amount of free space is significant, it
     // might be worth doing a copy here.
     ClassInfo newInfo = translator.classInfo[newClass]!;
+    ClassInfo topInfo = translator.topInfo;
     b.i32_const(newInfo.classId);
     b.struct_set(topInfo.struct, FieldIndex.classId);
     b.local_get(receiverLocal);
-    return topInfo.nonNullableType;
+    return newInfo.nonNullableType;
   }
 
   w.ValueType? generateStaticIntrinsic(StaticInvocation node) {
