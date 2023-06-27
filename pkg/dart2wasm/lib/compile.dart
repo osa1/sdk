@@ -35,6 +35,8 @@ import 'package:dart2wasm/records.dart';
 import 'package:dart2wasm/target.dart';
 import 'package:dart2wasm/translator.dart';
 
+import 'package:wasm_builder/wasm_builder.dart' as w;
+
 class CompilerOutput {
   final Uint8List wasmModule;
   final String jsRuntime;
@@ -118,7 +120,65 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
   }
 
   Uint8List wasmModule = translator.translate();
+
+  if (options.translatorOptions.printTypes) {
+    final StructGraph graph = StructGraph();
+    for (final w.DefType ty in translator.m.defTypes) {
+      if (ty is w.StructType) {
+        if (ty.superType == null) {
+          graph.addTopType(ty);
+        } else {
+          graph.addSubtype(ty.superType as w.StructType, ty);
+        }
+      }
+    }
+
+    for (final w.StructType topStruct in graph.topTypes) {
+      graph.getSubtypes(topStruct).print_(0, graph);
+    }
+  }
+
   String jsRuntime =
       jsRuntimeFinalizer.generate(translator.functions.translatedProcedures);
   return CompilerOutput(wasmModule, jsRuntime);
+}
+
+class StructGraph {
+  Map<w.StructType, StructTypeSubtypes> subtypes = {};
+  Set<w.StructType> topTypes = {};
+
+  void addSubtype(w.StructType superType, w.StructType subType) {
+    (subtypes[superType] ??= StructTypeSubtypes(superType))
+        .subtypes
+        .add(subType);
+  }
+
+  void addTopType(w.StructType topType) {
+    topTypes.add(topType);
+  }
+
+  StructTypeSubtypes getSubtypes(w.StructType ty) =>
+      subtypes[ty] ?? StructTypeSubtypes(ty);
+}
+
+class StructTypeSubtypes {
+  w.StructType structType;
+  List<w.StructType> subtypes = [];
+
+  StructTypeSubtypes(this.structType);
+
+  @override
+  int get hashCode => structType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StructTypeSubtypes && structType == other.structType;
+
+  void print_(int level, StructGraph graph) {
+    print(
+        '${' ' * level}${structType.index}: ${structType.name}: ${structType.fields}');
+    for (final w.StructType subType in subtypes) {
+      graph.getSubtypes(subType).print_(level + 2, graph);
+    }
+  }
 }
