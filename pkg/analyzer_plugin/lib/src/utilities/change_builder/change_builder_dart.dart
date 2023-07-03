@@ -415,7 +415,7 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
     }
 
     // return type
-    var returnType = element.returnType;
+    var returnType = element.returnType2;
     if (!isSetter) {
       var typeWritten = writeType(returnType,
           groupName: returnTypeGroupName, methodBeingCopied: element);
@@ -705,7 +705,7 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
 
   @override
   void writeReference(Element element) {
-    if (element.enclosingElement is CompilationUnitElement) {
+    if (element.enclosingElement2 is CompilationUnitElement) {
       _writeLibraryReference(element);
     }
     write(element.displayName);
@@ -1125,10 +1125,10 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
     if (type is TypeParameterType) {
       _initializeEnclosingElements();
       var element = type.element;
-      var enclosing = element.enclosingElement;
+      var enclosing = element.enclosingElement2;
       while (enclosing is GenericFunctionTypeElement ||
           enclosing is ParameterElement) {
-        enclosing = enclosing!.enclosingElement;
+        enclosing = enclosing!.enclosingElement2;
       }
       if (enclosing == _enclosingExecutable ||
           enclosing == _enclosingClass ||

@@ -332,7 +332,7 @@ void Thread::AssertEmptyThreadInvariants() {
   ASSERT(deferred_marking_stack_block_ == nullptr);
   ASSERT(!is_unwind_in_progress_);
 
-  ASSERT(saved_stack_limit_ == 0);
+  ASSERT(saved_stack_limit_ == OSThread::kInvalidStackLimit);
   ASSERT(stack_limit_.load() == 0);
   ASSERT(safepoint_state_ == 0);
 
@@ -401,7 +401,7 @@ void Thread::EnterIsolate(Isolate* isolate) {
   }
 
   isolate->scheduled_mutator_thread_ = thread;
-  ResumeThreadInternal(thread);
+  ResumeDartMutatorThreadInternal(thread);
 }
 
 static bool ShouldSuspend(bool isolate_shutdown, Thread* thread) {
@@ -450,7 +450,7 @@ void Thread::ExitIsolate(bool isolate_shutdown) {
   if (ShouldSuspend(isolate_shutdown, thread)) {
     const auto tag =
         isolate->is_runnable() ? VMTag::kIdleTagId : VMTag::kLoadWaitTagId;
-    SuspendThreadInternal(thread, tag);
+    SuspendDartMutatorThreadInternal(thread, tag);
     {
       // Descheduled isolates are reloadable (if nothing else prevents it).
       RawReloadParticipationScope enable_reload(thread);
@@ -461,7 +461,7 @@ void Thread::ExitIsolate(bool isolate_shutdown) {
     thread->ResetDartMutatorState(isolate);
     thread->ResetMutatorState();
     thread->ResetState();
-    SuspendThreadInternal(thread, VMTag::kInvalidTagId);
+    SuspendDartMutatorThreadInternal(thread, VMTag::kInvalidTagId);
     FreeActiveThread(thread, /*bypass_safepoint=*/false);
   }
 
@@ -526,6 +526,24 @@ void Thread::ExitIsolateGroupAsNonMutator() {
   thread->ResetState();
   SuspendThreadInternal(thread, VMTag::kInvalidTagId);
   FreeActiveThread(thread, /*bypass_safepoint=*/true);
+}
+
+void Thread::ResumeDartMutatorThreadInternal(Thread* thread) {
+  ResumeThreadInternal(thread);
+  if (Dart::vm_isolate() != nullptr &&
+      thread->isolate() != Dart::vm_isolate()) {
+#if defined(USING_SIMULATOR)
+    thread->SetStackLimit(Simulator::Current()->overflow_stack_limit());
+#else
+    thread->SetStackLimit(OSThread::Current()->overflow_stack_limit());
+#endif
+  }
+}
+
+void Thread::SuspendDartMutatorThreadInternal(Thread* thread,
+                                              VMTag::VMTagId tag) {
+  thread->ClearStackLimit();
+  SuspendThreadInternal(thread, tag);
 }
 
 void Thread::ResumeThreadInternal(Thread* thread) {
@@ -599,7 +617,7 @@ Thread* Thread::AddActiveThread(IsolateGroup* group,
   thread->runtime_call_deopt_ability_ = RuntimeCallDeoptAbility::kCanLazyDeopt;
   ASSERT(!thread->IsAtSafepoint());
 
-  ASSERT(thread->saved_stack_limit_ == 0);
+  ASSERT(thread->saved_stack_limit_ == OSThread::kInvalidStackLimit);
   return thread;
 }
 
@@ -676,7 +694,7 @@ void Thread::SetStackLimit(uword limit) {
 }
 
 void Thread::ClearStackLimit() {
-  SetStackLimit(~static_cast<uword>(0));
+  SetStackLimit(OSThread::kInvalidStackLimit);
 }
 
 static bool IsInterruptLimit(uword limit) {
@@ -935,7 +953,7 @@ class RestoreWriteBarrierInvariantVisitor : public ObjectPointerVisitor {
     for (; first != last + 1; first++) {
       ObjectPtr obj = *first;
       // Stores into new-space objects don't need a write barrier.
-      if (obj->IsSmiOrNewObject()) continue;
+      if (obj->IsImmediateOrNewObject()) continue;
 
       // To avoid adding too much work into the remembered set, skip large
       // arrays. Write barrier elimination will not remove the barrier
@@ -1331,10 +1349,10 @@ void Thread::SetupDartMutatorState(Isolate* isolate) {
   field_table_values_ = isolate->field_table_->table();
   isolate->mutator_thread_ = this;
 
-  SetupDartMutatorStateDependingOnSnapshot(isolate);
+  SetupDartMutatorStateDependingOnSnapshot(isolate->group());
 }
 
-void Thread::SetupDartMutatorStateDependingOnSnapshot(Isolate* isolate) {
+void Thread::SetupDartMutatorStateDependingOnSnapshot(IsolateGroup* group) {
   // The snapshot may or may not have been read at this point (on isolate group
   // creation, the first isolate is first time entered before the snapshot is
   // read)
@@ -1342,7 +1360,6 @@ void Thread::SetupDartMutatorStateDependingOnSnapshot(Isolate* isolate) {
   // So we call this code explicitly after snapshot reading time and whenever we
   // enter an isolate with a new thread object.
 #if defined(DART_PRECOMPILED_RUNTIME)
-  auto group = isolate->group();
   auto object_store = group->object_store();
   if (object_store != nullptr) {
     global_object_pool_ = object_store->global_object_pool();
@@ -1365,7 +1382,6 @@ void Thread::ResetDartMutatorState(Isolate* isolate) {
   ASSERT(execution_state() == Thread::kThreadInVM);
 
   isolate->mutator_thread_ = nullptr;
-  saved_stack_limit_ = 0;  // Isolate shutdown may set this to 0xff..
   is_unwind_in_progress_ = false;
 
   field_table_values_ = nullptr;

@@ -340,7 +340,7 @@ class LinterContextImpl implements LinterContext {
   bool canBeConstConstructor(covariant ConstructorDeclarationImpl node) {
     var element = node.declaredElement!;
 
-    final classElement = element.enclosingElement;
+    final classElement = element.enclosingElement2;
     if (classElement is ClassElement && classElement.hasNonFinalField) {
       return false;
     }
@@ -905,6 +905,7 @@ class _ConstantAnalysisErrorListener extends AnalysisErrorListener {
         case CompileTimeErrorCode
               .CONST_CONSTRUCTOR_WITH_FIELD_INITIALIZED_BY_NON_CONST:
         case CompileTimeErrorCode.CONST_EVAL_EXTENSION_METHOD:
+        case CompileTimeErrorCode.CONST_EVAL_METHOD_INVOCATION:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL_INT:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL_NUM_STRING:

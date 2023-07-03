@@ -2636,8 +2636,9 @@ ISOLATE_UNIT_TEST_CASE(ContextScope) {
   EXPECT(found_captured_vars);
 
   const intptr_t local_scope_context_level = 5;
-  const ContextScope& context_scope = ContextScope::Handle(
-      local_scope->PreserveOuterScope(local_scope_context_level));
+  const ContextScope& context_scope =
+      ContextScope::Handle(local_scope->PreserveOuterScope(
+          Function::null_function(), local_scope_context_level));
   LocalScope* outer_scope = LocalScope::RestoreOuterScope(context_scope);
   EXPECT_EQ(3, outer_scope->num_variables());
 
@@ -5631,6 +5632,7 @@ ISOLATE_UNIT_TEST_CASE(FindClosureIndex) {
   const String& function_name = String::Handle(Symbols::New(thread, "foo"));
   function = Function::NewClosureFunction(function_name, parent,
                                           TokenPosition::kMinSource);
+  function.set_kernel_offset(42);
   // Add closure function to class.
   {
     SafepointWriteRwLocker ml(thread, thread->isolate_group()->program_lock());

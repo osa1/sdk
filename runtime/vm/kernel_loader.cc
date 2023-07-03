@@ -1744,9 +1744,12 @@ void KernelLoader::ReadVMAnnotations(const Library& library,
 
   for (intptr_t i = 0; i < annotation_count; ++i) {
     const intptr_t tag = helper_.PeekTag();
-    if (tag == kConstantExpression) {
+    if (tag == kConstantExpression || tag == kFileUriConstantExpression) {
       helper_.ReadByte();      // Skip the tag.
       helper_.ReadPosition();  // Skip fileOffset.
+      if (tag == kFileUriConstantExpression) {
+        helper_.ReadUInt();  // Skip uri.
+      }
       helper_.SkipDartType();  // Skip type.
       const intptr_t index_in_constant_table = helper_.ReadUInt();
 
@@ -1922,7 +1925,7 @@ const Object& KernelLoader::ClassForScriptAt(const Class& klass,
     // Use cache for patch classes. This works best for in-order usages.
     PatchClass& patch_class = PatchClass::ZoneHandle(Z);
     patch_class ^= patch_classes_.At(source_uri_index);
-    if (patch_class.IsNull() || patch_class.origin_class() != klass.ptr()) {
+    if (patch_class.IsNull() || patch_class.wrapped_class() != klass.ptr()) {
       ASSERT(!library_kernel_data_.IsNull());
       patch_class = PatchClass::New(klass, correct_script);
       patch_class.set_library_kernel_data(library_kernel_data_);

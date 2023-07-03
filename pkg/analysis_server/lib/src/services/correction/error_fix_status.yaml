@@ -384,6 +384,8 @@ CompileTimeErrorCode.CONST_EVAL_EXTENSION_METHOD:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_FOR_ELEMENT:
   status: needsEvaluation
+CompileTimeErrorCode.CONST_EVAL_METHOD_INVOCATION:
+  status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION:
   status: noFix
 CompileTimeErrorCode.CONST_EVAL_THROWS_IDBZE:
@@ -2717,9 +2719,7 @@ ParserErrorCode.EXTENSION_DECLARES_ABSTRACT_MEMBER:
   notes: |-
     Provide an empty body for the member.
 ParserErrorCode.EXTENSION_DECLARES_CONSTRUCTOR:
-  status: needsFix
-  notes: |-
-    Remove the constructor.
+  status: hasFix
 ParserErrorCode.EXTENSION_DECLARES_INSTANCE_FIELD:
   status: needsFix
   notes: |-
@@ -3052,9 +3052,7 @@ ParserErrorCode.MISSING_VARIABLE_IN_FOR_EACH:
 ParserErrorCode.MIXED_PARAMETER_GROUPS:
   status: noFix
 ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR:
-  status: needsFix
-  notes: |-
-    Remove the constructor.
+  status: hasFix
 ParserErrorCode.MIXIN_WITH_CLAUSE:
   status: needsEvaluation
 ParserErrorCode.MODIFIER_OUT_OF_ORDER:

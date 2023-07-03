@@ -480,22 +480,8 @@ void StubCodeCompiler::GenerateFfiCallbackTrampolineStub() {
     __ EnterFrame(1 << FP, 0);
     __ ReserveAlignedFrameSpace(0);
 
-#if defined(DART_TARGET_OS_FUCHSIA)
-    // TODO(52579): Remove.
-    if (FLAG_precompiled_mode) {
-      GenerateLoadBSSEntry(BSS::Relocation::DRT_GetFfiCallbackMetadata, R4,
-                           TMP);
-    } else {
-      Label call;
-      __ ldr(R4, Address(PC, 0));
-      __ b(&call);
-      __ Emit(reinterpret_cast<intptr_t>(&DLRT_GetFfiCallbackMetadata));
-      __ Bind(&call);
-    }
-#else
     GenerateLoadFfiCallbackMetadataRuntimeFunction(
         FfiCallbackMetadata::kGetFfiCallbackMetadata, R4);
-#endif  // defined(DART_TARGET_OS_FUCHSIA)
 
     __ blx(R4);
     __ mov(THR, Operand(R0));
@@ -511,6 +497,24 @@ void StubCodeCompiler::GenerateFfiCallbackTrampolineStub() {
 
   __ PopRegisters(argument_registers);
 
+  Label async_callback;
+  Label done;
+
+  // If GetFfiCallbackMetadata returned a null thread, it means that the async
+  // callback was invoked after it was deleted. In this case, do nothing.
+  __ cmp(THR, Operand(0));
+  __ b(&done, EQ);
+
+  // Check the trampoline type to see how the callback should be invoked.
+  __ cmp(
+      R4,
+      Operand(static_cast<uword>(FfiCallbackMetadata::TrampolineType::kAsync)));
+  __ b(&async_callback, EQ);
+
+  // Sync callback. The entry point contains the target function, so just call
+  // it. DLRT_GetThreadForNativeCallbackTrampoline exited the safepoint, so
+  // re-enter it afterwards.
+
   // On entry to the function, there will be four extra slots on the stack:
   // saved THR, R4, R5 and the return address. The target will know to skip
   // them.
@@ -518,6 +522,33 @@ void StubCodeCompiler::GenerateFfiCallbackTrampolineStub() {
 
   // Clobbers R4, R5 and TMP, all saved or volatile.
   __ EnterFullSafepoint(R4, R5);
+
+  __ b(&done);
+  __ Bind(&async_callback);
+
+  // Async callback. The entrypoint marshals the arguments into a message and
+  // sends it over the send port. DLRT_GetThreadForNativeCallbackTrampoline
+  // entered a temporary isolate, so exit it afterwards.
+
+  // On entry to the function, there will be four extra slots on the stack:
+  // saved THR, R4, R5 and the return address. The target will know to skip
+  // them.
+  __ blx(R5);
+
+  // Exit the temporary isolate.
+  {
+    __ EnterFrame(1 << FP, 0);
+    __ ReserveAlignedFrameSpace(0);
+
+    GenerateLoadFfiCallbackMetadataRuntimeFunction(
+        FfiCallbackMetadata::kExitTemporaryIsolate, R4);
+
+    __ blx(R4);
+
+    __ LeaveFrame(1 << FP);
+  }
+
+  __ Bind(&done);
 
   // Returns.
   __ PopList((1 << PC) | (1 << THR) | (1 << R4) | (1 << R5));
@@ -1636,10 +1667,65 @@ COMPILE_ASSERT(kWriteBarrierValueReg == R0);
 COMPILE_ASSERT(kWriteBarrierSlotReg == R9);
 static void GenerateWriteBarrierStubHelper(Assembler* assembler,
                                            bool cards) {
-  Label add_to_mark_stack, remember_card, lost_race;
-  __ tst(R0, Operand(1 << target::ObjectAlignment::kNewObjectBitPosition));
-  __ b(&add_to_mark_stack, ZERO);
+  Label skip_marking;
+  __ Push(R2);
+  __ ldr(TMP, FieldAddress(R0, target::Object::tags_offset()));
+  __ ldr(R2, Address(THR, target::Thread::write_barrier_mask_offset()));
+  __ and_(TMP, TMP, Operand(R2));
+  __ Pop(R2);
+  __ tst(TMP, Operand(target::UntaggedObject::kIncrementalBarrierMask));
+  __ b(&skip_marking, ZERO);
 
+  {
+    // Atomically clear kOldAndNotMarkedBit.
+    Label retry, done;
+    __ PushList((1 << R2) | (1 << R3) | (1 << R4));  // Spill.
+    __ AddImmediate(R3, R0, target::Object::tags_offset() - kHeapObjectTag);
+    // R3: Untagged address of header word (ldrex/strex do not support offsets).
+    __ Bind(&retry);
+    __ ldrex(R2, R3);
+    __ tst(R2, Operand(1 << target::UntaggedObject::kOldAndNotMarkedBit));
+    __ b(&done, ZERO);  // Marked by another thread.
+    __ bic(R2, R2, Operand(1 << target::UntaggedObject::kOldAndNotMarkedBit));
+    __ strex(R4, R2, R3);
+    __ cmp(R4, Operand(1));
+    __ b(&retry, EQ);
+
+    __ ldr(R4, Address(THR, target::Thread::marking_stack_block_offset()));
+    __ ldr(R2, Address(R4, target::MarkingStackBlock::top_offset()));
+    __ add(R3, R4, Operand(R2, LSL, target::kWordSizeLog2));
+    __ str(R0, Address(R3, target::MarkingStackBlock::pointers_offset()));
+    __ add(R2, R2, Operand(1));
+    __ str(R2, Address(R4, target::MarkingStackBlock::top_offset()));
+    __ CompareImmediate(R2, target::MarkingStackBlock::kSize);
+    __ b(&done, NE);
+
+    {
+      LeafRuntimeScope rt(assembler, /*frame_size=*/0,
+                          /*preserve_registers=*/true);
+      __ mov(R0, Operand(THR));
+      rt.Call(kMarkingStackBlockProcessRuntimeEntry, 1);
+    }
+
+    __ Bind(&done);
+    __ clrex();
+    __ PopList((1 << R2) | (1 << R3) | (1 << R4));  // Unspill.
+    __ Ret();
+  }
+
+  Label add_to_remembered_set, remember_card;
+  __ Bind(&skip_marking);
+  __ Push(R2);
+  __ ldr(TMP, FieldAddress(R1, target::Object::tags_offset()));
+  __ ldr(R2, FieldAddress(R0, target::Object::tags_offset()));
+  __ and_(TMP, R2,
+          Operand(TMP, LSR, target::UntaggedObject::kBarrierOverlapShift));
+  __ Pop(R2);
+  __ tst(TMP, Operand(target::UntaggedObject::kGenerationalBarrierMask));
+  __ b(&add_to_remembered_set, NOT_ZERO);
+  __ Ret();
+
+  __ Bind(&add_to_remembered_set);
   if (cards) {
     __ ldr(TMP, FieldAddress(R1, target::Object::tags_offset()));
     __ tst(TMP, Operand(1 << target::UntaggedObject::kCardRememberedBit));
@@ -1655,94 +1741,48 @@ static void GenerateWriteBarrierStubHelper(Assembler* assembler,
 #endif
   }
 
-  // Save values being destroyed.
-  __ PushList((1 << R2) | (1 << R3) | (1 << R4));
-
-  // Atomically clear kOldAndNotRememberedBit.
-  ASSERT(target::Object::tags_offset() == 0);
-  __ sub(R3, R1, Operand(kHeapObjectTag));
-  // R3: Untagged address of header word (ldrex/strex do not support offsets).
-  Label retry;
-  __ Bind(&retry);
-  __ ldrex(R2, R3);
-  __ tst(R2, Operand(1 << target::UntaggedObject::kOldAndNotRememberedBit));
-  __ b(&lost_race, ZERO);
-  __ bic(R2, R2, Operand(1 << target::UntaggedObject::kOldAndNotRememberedBit));
-  __ strex(R4, R2, R3);
-  __ cmp(R4, Operand(1));
-  __ b(&retry, EQ);
-
-  // Load the StoreBuffer block out of the thread. Then load top_ out of the
-  // StoreBufferBlock and add the address to the pointers_.
-  __ ldr(R4, Address(THR, target::Thread::store_buffer_block_offset()));
-  __ ldr(R2, Address(R4, target::StoreBufferBlock::top_offset()));
-  __ add(R3, R4, Operand(R2, LSL, target::kWordSizeLog2));
-  __ str(R1, Address(R3, target::StoreBufferBlock::pointers_offset()));
-
-  // Increment top_ and check for overflow.
-  // R2: top_.
-  // R4: StoreBufferBlock.
-  Label overflow;
-  __ add(R2, R2, Operand(1));
-  __ str(R2, Address(R4, target::StoreBufferBlock::top_offset()));
-  __ CompareImmediate(R2, target::StoreBufferBlock::kSize);
-  // Restore values.
-  __ PopList((1 << R2) | (1 << R3) | (1 << R4));
-  __ b(&overflow, EQ);
-  __ Ret();
-
-  // Handle overflow: Call the runtime leaf function.
-  __ Bind(&overflow);
   {
-    LeafRuntimeScope rt(assembler, /*frame_size=*/0,
-                        /*preserve_registers=*/true);
-    __ mov(R0, Operand(THR));
-    rt.Call(kStoreBufferBlockProcessRuntimeEntry, 1);
+    // Atomically clear kOldAndNotRememberedBit.
+    Label retry, done;
+    __ PushList((1 << R2) | (1 << R3) | (1 << R4));
+    __ AddImmediate(R3, R1, target::Object::tags_offset() - kHeapObjectTag);
+    // R3: Untagged address of header word (ldrex/strex do not support offsets).
+    __ Bind(&retry);
+    __ ldrex(R2, R3);
+    __ tst(R2, Operand(1 << target::UntaggedObject::kOldAndNotRememberedBit));
+    __ b(&done, ZERO);  // Remembered by another thread.
+    __ bic(R2, R2,
+           Operand(1 << target::UntaggedObject::kOldAndNotRememberedBit));
+    __ strex(R4, R2, R3);
+    __ cmp(R4, Operand(1));
+    __ b(&retry, EQ);
+
+    // Load the StoreBuffer block out of the thread. Then load top_ out of the
+    // StoreBufferBlock and add the address to the pointers_.
+    __ ldr(R4, Address(THR, target::Thread::store_buffer_block_offset()));
+    __ ldr(R2, Address(R4, target::StoreBufferBlock::top_offset()));
+    __ add(R3, R4, Operand(R2, LSL, target::kWordSizeLog2));
+    __ str(R1, Address(R3, target::StoreBufferBlock::pointers_offset()));
+
+    // Increment top_ and check for overflow.
+    // R2: top_.
+    // R4: StoreBufferBlock.
+    __ add(R2, R2, Operand(1));
+    __ str(R2, Address(R4, target::StoreBufferBlock::top_offset()));
+    __ CompareImmediate(R2, target::StoreBufferBlock::kSize);
+    __ b(&done, NE);
+
+    {
+      LeafRuntimeScope rt(assembler, /*frame_size=*/0,
+                          /*preserve_registers=*/true);
+      __ mov(R0, Operand(THR));
+      rt.Call(kStoreBufferBlockProcessRuntimeEntry, 1);
+    }
+
+    __ Bind(&done);
+    __ PopList((1 << R2) | (1 << R3) | (1 << R4));
+    __ Ret();
   }
-  __ Ret();
-
-  __ Bind(&add_to_mark_stack);
-  __ PushList((1 << R2) | (1 << R3) | (1 << R4));  // Spill.
-
-  Label marking_retry, marking_overflow;
-  // Atomically clear kOldAndNotMarkedBit.
-  ASSERT(target::Object::tags_offset() == 0);
-  __ sub(R3, R0, Operand(kHeapObjectTag));
-  // R3: Untagged address of header word (ldrex/strex do not support offsets).
-  __ Bind(&marking_retry);
-  __ ldrex(R2, R3);
-  __ tst(R2, Operand(1 << target::UntaggedObject::kOldAndNotMarkedBit));
-  __ b(&lost_race, ZERO);
-  __ bic(R2, R2, Operand(1 << target::UntaggedObject::kOldAndNotMarkedBit));
-  __ strex(R4, R2, R3);
-  __ cmp(R4, Operand(1));
-  __ b(&marking_retry, EQ);
-
-  __ ldr(R4, Address(THR, target::Thread::marking_stack_block_offset()));
-  __ ldr(R2, Address(R4, target::MarkingStackBlock::top_offset()));
-  __ add(R3, R4, Operand(R2, LSL, target::kWordSizeLog2));
-  __ str(R0, Address(R3, target::MarkingStackBlock::pointers_offset()));
-  __ add(R2, R2, Operand(1));
-  __ str(R2, Address(R4, target::MarkingStackBlock::top_offset()));
-  __ CompareImmediate(R2, target::MarkingStackBlock::kSize);
-  __ PopList((1 << R4) | (1 << R2) | (1 << R3));  // Unspill.
-  __ b(&marking_overflow, EQ);
-  __ Ret();
-
-  __ Bind(&marking_overflow);
-  {
-    LeafRuntimeScope rt(assembler, /*frame_size=*/0,
-                        /*preserve_registers=*/true);
-    __ mov(R0, Operand(THR));
-    rt.Call(kMarkingStackBlockProcessRuntimeEntry, 1);
-  }
-  __ Ret();
-
-  __ Bind(&lost_race);
-  __ clrex();
-  __ PopList((1 << R2) | (1 << R3) | (1 << R4));  // Unspill.
-  __ Ret();
-
   if (cards) {
     Label remember_card_slow;
 

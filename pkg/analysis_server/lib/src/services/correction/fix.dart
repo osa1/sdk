@@ -1025,6 +1025,11 @@ class DartFixKind {
     DartFixKindPriority.DEFAULT,
     'Remove const',
   );
+  static const REMOVE_CONSTRUCTOR = FixKind(
+    'dart.fix.remove.constructor',
+    DartFixKindPriority.DEFAULT,
+    'Remove the constructor',
+  );
   static const REMOVE_CONSTRUCTOR_NAME = FixKind(
     'dart.fix.remove.constructorName',
     DartFixKindPriority.DEFAULT,

@@ -327,7 +327,7 @@ class BundleWriter {
     _resolutionSink._writeAnnotationList(element.metadata);
 
     _writeTypeParameters(element.typeParameters, () {
-      _resolutionSink.writeType(element.returnType);
+      _resolutionSink.writeType(element.returnType2);
       _writeList(element.parameters, _writeParameterElement);
     });
   }
@@ -395,7 +395,7 @@ class BundleWriter {
     _writeTypeParameters(element.typeParameters, () {
       _writeList(element.parameters, _writeParameterElement);
       _sink._writeTopLevelInferenceError(element.typeInferenceError);
-      _resolutionSink.writeType(element.returnType);
+      _resolutionSink.writeType(element.returnType2);
     });
   }
 
@@ -476,7 +476,7 @@ class BundleWriter {
     PropertyAccessorElementFlags.write(_sink, element);
 
     _resolutionSink._writeAnnotationList(element.metadata);
-    _resolutionSink.writeType(element.returnType);
+    _resolutionSink.writeType(element.returnType2);
     _writeList(element.parameters, _writeParameterElement);
   }
 
@@ -719,7 +719,7 @@ class ResolutionSink extends _SummaryDataWriter {
       writeByte(AliasedElementTag.genericFunctionElement);
       _writeTypeParameters(element.typeParameters, () {
         _writeFormalParameters(element.parameters, withAnnotations: true);
-        writeType(element.returnType);
+        writeType(element.returnType2);
       }, withAnnotations: true);
     } else {
       throw UnimplementedError('${element.runtimeType}');
@@ -863,7 +863,7 @@ class ResolutionSink extends _SummaryDataWriter {
       return const [];
     }
 
-    var enclosing = declaration.enclosingElement;
+    var enclosing = declaration.enclosingElement2;
     if (enclosing is TypeParameterizedElement) {
       if (enclosing is! InterfaceElement && enclosing is! ExtensionElement) {
         return const <DartType>[];

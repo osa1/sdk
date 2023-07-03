@@ -368,7 +368,7 @@ class InheritanceManager3 {
         continue;
       }
 
-      var class_ = executable.enclosingElement;
+      var class_ = executable.enclosingElement2;
       if (class_ is ClassElement && class_.isDartCoreObject) {
         continue;
       }
@@ -521,7 +521,7 @@ class InheritanceManager3 {
         }
 
         var current = currentList.single;
-        if (candidate.enclosingElement == mixinElement) {
+        if (candidate.enclosingElement2 == mixinElement) {
           namedCandidates[name] = [
             isNonNullableByDefault
                 ? candidate
@@ -720,7 +720,7 @@ class InheritanceManager3 {
     Name name,
     ExecutableElement executable,
   ) {
-    if (executable.enclosingElement == class_) {
+    if (executable.enclosingElement2 == class_) {
       return executable;
     }
 
@@ -778,7 +778,7 @@ class InheritanceManager3 {
       result.isSynthetic = true;
       result.parameters = transformedParameters;
       result.prototype = executable;
-      result.returnType = executable.returnType;
+      result.returnType = executable.returnType2;
       result.typeParameters = executable.typeParameters;
       return result;
     }
@@ -790,7 +790,7 @@ class InheritanceManager3 {
       result.isSynthetic = true;
       result.parameters = transformedParameters;
       result.prototype = executable;
-      result.returnType = executable.returnType;
+      result.returnType = executable.returnType2;
 
       var field = executable.variable;
       var resultField = FieldElementImpl(field.name, -1);
@@ -871,7 +871,7 @@ class InheritanceManager3 {
       field.enclosingElement = targetClass;
       if (firstAccessor.isGetter) {
         field.getter = result;
-        field.type = result.returnType;
+        field.type = result.returnType2;
       } else {
         field.setter = result;
         field.type = result.parameters[0].type;
@@ -910,7 +910,7 @@ class InheritanceManager3 {
   }
 
   static bool _isDeclaredInObject(ExecutableElement element) {
-    var enclosing = element.enclosingElement;
+    var enclosing = element.enclosingElement2;
     return enclosing is ClassElement && enclosing.isDartCoreObject;
   }
 }

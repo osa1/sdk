@@ -1316,8 +1316,7 @@ class ClosureDataSerializationCluster : public SerializationCluster {
       }
       WriteCompressedField(data, parent_function);
       WriteCompressedField(data, closure);
-      s->WriteUnsigned(
-          static_cast<intptr_t>(data->untag()->default_type_arguments_kind_));
+      s->WriteUnsigned(static_cast<uint32_t>(data->untag()->packed_fields_));
     }
   }
 
@@ -1351,8 +1350,7 @@ class ClosureDataDeserializationCluster : public DeserializationCluster {
       }
       data->untag()->parent_function_ = static_cast<FunctionPtr>(d.ReadRef());
       data->untag()->closure_ = static_cast<ClosurePtr>(d.ReadRef());
-      data->untag()->default_type_arguments_kind_ =
-          static_cast<ClosureData::DefaultTypeArgumentsKind>(d.ReadUnsigned());
+      data->untag()->packed_fields_ = d.ReadUnsigned<uint32_t>();
     }
   }
 };
@@ -1388,6 +1386,7 @@ class FfiTrampolineDataSerializationCluster : public SerializationCluster {
       AutoTraceObject(data);
       WriteFromTo(data);
       s->Write<int32_t>(data->untag()->callback_id_);
+      s->Write<uint8_t>(data->untag()->callback_kind_);
     }
   }
 
@@ -1416,6 +1415,7 @@ class FfiTrampolineDataDeserializationCluster : public DeserializationCluster {
                                      FfiTrampolineData::InstanceSize());
       d.ReadFromTo(data);
       data->untag()->callback_id_ = d.Read<int32_t>();
+      data->untag()->callback_kind_ = d.Read<uint8_t>();
     }
   }
 };
@@ -6280,6 +6280,7 @@ class ProgramSerializationRoots : public SerializationRoots {
     HashTables::New<CanonicalTypeParameterSet>(4))                             \
   ONLY_IN_PRODUCT(ONLY_IN_AOT(                                                 \
       V(closure_functions, GrowableObjectArray, GrowableObjectArray::null()))) \
+  ONLY_IN_AOT(V(closure_functions_table, Array, Array::null()))                \
   ONLY_IN_AOT(V(canonicalized_stack_map_entries, CompressedStackMaps,          \
                 CompressedStackMaps::null()))
 
@@ -6934,8 +6935,8 @@ bool Serializer::CreateArtificialNodeIfNeeded(ObjectPtr obj) {
       PatchClassPtr patch_cls = static_cast<PatchClassPtr>(obj);
       type = "PatchClass";
       links.Add(
-          {patch_cls->untag()->patched_class(),
-           V8SnapshotProfileWriter::Reference::Property("patched_class_")});
+          {patch_cls->untag()->wrapped_class(),
+           V8SnapshotProfileWriter::Reference::Property("wrapped_class_")});
       break;
     }
     case kLibraryCid: {

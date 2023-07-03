@@ -8,6 +8,7 @@
 #include "vm/class_finalizer.h"
 
 #include "vm/canonical_tables.h"
+#include "vm/closure_functions_cache.h"
 #include "vm/compiler/jit/compiler.h"
 #include "vm/flags.h"
 #include "vm/hash_table.h"

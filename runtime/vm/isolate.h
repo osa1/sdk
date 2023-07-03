@@ -767,6 +767,9 @@ class IsolateGroup : public IntrusiveDListEntry<IsolateGroup> {
   void RegisterStaticField(const Field& field, const Object& initial_value);
   void FreeStaticField(const Field& field);
 
+  Isolate* EnterTemporaryIsolate();
+  static void ExitTemporaryIsolate();
+
  private:
   friend class Dart;  // For `object_store_ = ` in Dart::Init
   friend class Heap;
@@ -1242,10 +1245,15 @@ class Isolate : public BaseIsolate, public IntrusiveDListEntry<Isolate> {
   FfiCallbackMetadata::Trampoline CreateSyncFfiCallback(
       Zone* zone,
       const Function& function);
+  FfiCallbackMetadata::Trampoline CreateAsyncFfiCallback(
+      Zone* zone,
+      const Function& function,
+      Dart_Port send_port);
+  void DeleteFfiCallback(FfiCallbackMetadata::Trampoline callback);
 
   // Visible for testing.
-  FfiCallbackMetadata::Metadata* ffi_callback_sync_list_head() {
-    return ffi_callback_sync_list_head_;
+  FfiCallbackMetadata::Metadata* ffi_callback_list_head() {
+    return ffi_callback_list_head_;
   }
 
   intptr_t BlockClassFinalization() {
@@ -1635,7 +1643,7 @@ class Isolate : public BaseIsolate, public IntrusiveDListEntry<Isolate> {
   MessageHandler* message_handler_ = nullptr;
   intptr_t defer_finalization_count_ = 0;
   DeoptContext* deopt_context_ = nullptr;
-  FfiCallbackMetadata::Metadata* ffi_callback_sync_list_head_ = nullptr;
+  FfiCallbackMetadata::Metadata* ffi_callback_list_head_ = nullptr;
 
   GrowableObjectArrayPtr tag_table_;
 
@@ -1732,7 +1740,7 @@ class StartIsolateScope {
       ASSERT(Isolate::Current() == nullptr);
       Thread::EnterIsolate(new_isolate_);
       // Ensure this is not a nested 'isolate enter' with prior state.
-      ASSERT(Thread::Current()->saved_stack_limit() == 0);
+      ASSERT(Thread::Current()->top_exit_frame_info() == 0);
     }
   }
 
@@ -1745,7 +1753,7 @@ class StartIsolateScope {
     if (saved_isolate_ != new_isolate_) {
       ASSERT(saved_isolate_ == nullptr);
       // ASSERT that we have bottomed out of all Dart invocations.
-      ASSERT(Thread::Current()->saved_stack_limit() == 0);
+      ASSERT(Thread::Current()->top_exit_frame_info() == 0);
       Thread::ExitIsolate();
     }
   }

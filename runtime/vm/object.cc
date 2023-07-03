@@ -749,6 +749,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   *null_function_type_ = FunctionType::null();
   *null_record_type_ = RecordType::null();
   *null_type_arguments_ = TypeArguments::null();
+  *null_closure_ = Closure::null();
   *empty_type_arguments_ = TypeArguments::null();
   *null_abstract_type_ = AbstractType::null();
   *null_compressed_stackmaps_ = CompressedStackMaps::null();
@@ -4106,42 +4107,13 @@ FunctionPtr Class::GetRecordFieldGetter(const String& getter_name) const {
   return result.ptr();
 }
 
-bool Library::FindPragma(Thread* T,
-                         bool only_core,
-                         const Object& obj,
-                         const String& pragma_name,
-                         bool multiple,
-                         Object* options) {
+bool FindPragmaInMetadata(Thread* T,
+                          const Object& metadata_obj,
+                          const String& pragma_name,
+                          bool multiple,
+                          Object* options) {
   auto IG = T->isolate_group();
   auto Z = T->zone();
-  auto& lib = Library::Handle(Z);
-
-  if (obj.IsLibrary()) {
-    lib = Library::Cast(obj).ptr();
-  } else if (obj.IsClass()) {
-    auto& klass = Class::Cast(obj);
-    if (!klass.has_pragma()) return false;
-    lib = klass.library();
-  } else if (obj.IsFunction()) {
-    auto& function = Function::Cast(obj);
-    if (!function.has_pragma()) return false;
-    lib = Class::Handle(Z, function.Owner()).library();
-  } else if (obj.IsField()) {
-    auto& field = Field::Cast(obj);
-    if (!field.has_pragma()) return false;
-    lib = Class::Handle(Z, field.Owner()).library();
-  } else {
-    UNREACHABLE();
-  }
-
-  if (only_core && !lib.IsAnyCoreLibrary()) {
-    return false;
-  }
-
-  Object& metadata_obj = Object::Handle(Z, lib.GetMetadata(obj));
-  if (metadata_obj.IsUnwindError()) {
-    Report::LongJump(UnwindError::Cast(metadata_obj));
-  }
 
   // If there is a compile-time error while evaluating the metadata, we will
   // simply claim there was no @pragma annotation.
@@ -4191,7 +4163,46 @@ bool Library::FindPragma(Thread* T,
   if (found && options != nullptr) {
     *options = results.ptr();
   }
-  return found;
+  return false;
+}
+
+bool Library::FindPragma(Thread* T,
+                         bool only_core,
+                         const Object& obj,
+                         const String& pragma_name,
+                         bool multiple,
+                         Object* options) {
+  auto Z = T->zone();
+  auto& lib = Library::Handle(Z);
+
+  if (obj.IsLibrary()) {
+    lib = Library::Cast(obj).ptr();
+  } else if (obj.IsClass()) {
+    auto& klass = Class::Cast(obj);
+    if (!klass.has_pragma()) return false;
+    lib = klass.library();
+  } else if (obj.IsFunction()) {
+    auto& function = Function::Cast(obj);
+    if (!function.has_pragma()) return false;
+    lib = Class::Handle(Z, function.Owner()).library();
+  } else if (obj.IsField()) {
+    auto& field = Field::Cast(obj);
+    if (!field.has_pragma()) return false;
+    lib = Class::Handle(Z, field.Owner()).library();
+  } else {
+    UNREACHABLE();
+  }
+
+  if (only_core && !lib.IsAnyCoreLibrary()) {
+    return false;
+  }
+
+  Object& metadata_obj = Object::Handle(Z, lib.GetMetadata(obj));
+  if (metadata_obj.IsUnwindError()) {
+    Report::LongJump(UnwindError::Cast(metadata_obj));
+  }
+
+  return FindPragmaInMetadata(T, metadata_obj, pragma_name, multiple, options);
 }
 
 bool Function::IsDynamicInvocationForwarderName(const String& name) {
@@ -5430,7 +5441,7 @@ const char* Class::GenerateUserVisibleName() const {
   }
   String& name = String::Handle(Name());
   name = Symbols::New(Thread::Current(), String::ScrubName(name));
-  if (name.ptr() == Symbols::FutureImpl().ptr() &&
+  if (name.ptr() == Symbols::_Future().ptr() &&
       library() == Library::AsyncLibrary()) {
     return Symbols::Future().ToCString();
   }
@@ -5475,7 +5486,10 @@ bool Class::NoteImplementor(const Class& implementor) const {
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
 uint32_t Class::Hash() const {
-  return String::HashRawSymbol(Name());
+  return Class::Hash(ptr());
+}
+uint32_t Class::Hash(ClassPtr obj) {
+  return String::HashRawSymbol(obj.untag()->name());
 }
 
 int32_t Class::SourceFingerprint() const {
@@ -7778,26 +7792,15 @@ const char* TypeArguments::ToCString() const {
 }
 
 const char* PatchClass::ToCString() const {
-  const Class& cls = Class::Handle(patched_class());
+  const Class& cls = Class::Handle(wrapped_class());
   const char* cls_name = cls.ToCString();
   return OS::SCreate(Thread::Current()->zone(), "PatchClass for %s", cls_name);
 }
 
-PatchClassPtr PatchClass::New(const Class& patched_class,
-                              const Class& origin_class) {
-  const PatchClass& result = PatchClass::Handle(PatchClass::New());
-  result.set_patched_class(patched_class);
-  result.set_origin_class(origin_class);
-  result.set_script(Script::Handle(origin_class.script()));
-  result.set_library_kernel_offset(-1);
-  return result.ptr();
-}
-
-PatchClassPtr PatchClass::New(const Class& patched_class,
+PatchClassPtr PatchClass::New(const Class& wrapped_class,
                               const Script& script) {
   const PatchClass& result = PatchClass::Handle(PatchClass::New());
-  result.set_patched_class(patched_class);
-  result.set_origin_class(patched_class);
+  result.set_wrapped_class(wrapped_class);
   result.set_script(script);
   result.set_library_kernel_offset(-1);
   return result.ptr();
@@ -7811,12 +7814,8 @@ PatchClassPtr PatchClass::New() {
   return static_cast<PatchClassPtr>(raw);
 }
 
-void PatchClass::set_patched_class(const Class& value) const {
-  untag()->set_patched_class(value.ptr());
-}
-
-void PatchClass::set_origin_class(const Class& value) const {
-  untag()->set_origin_class(value.ptr());
+void PatchClass::set_wrapped_class(const Class& value) const {
+  untag()->set_wrapped_class(value.ptr());
 }
 
 void PatchClass::set_script(const Script& value) const {
@@ -7832,8 +7831,8 @@ uword Function::Hash() const {
   if (IsClosureFunction()) {
     hash = hash ^ token_pos().Hash();
   }
-  if (untag()->owner()->IsClass()) {
-    hash = hash ^ Class::RawCast(untag()->owner())->untag()->id();
+  if (Owner()->IsClass()) {
+    hash = hash ^ Class::Hash(Class::RawCast(Owner()));
   }
   return hash;
 }
@@ -8009,6 +8008,26 @@ void Function::set_context_scope(const ContextScope& value) const {
     const Object& obj = Object::Handle(untag()->data());
     ASSERT(!obj.IsNull());
     ClosureData::Cast(obj).set_context_scope(value);
+    return;
+  }
+  UNREACHABLE();
+}
+
+Function::AwaiterLink Function::awaiter_link() const {
+  if (IsClosureFunction()) {
+    const Object& obj = Object::Handle(untag()->data());
+    ASSERT(!obj.IsNull());
+    return ClosureData::Cast(obj).awaiter_link();
+  }
+  UNREACHABLE();
+  return {};
+}
+
+void Function::set_awaiter_link(Function::AwaiterLink link) const {
+  if (IsClosureFunction()) {
+    const Object& obj = Object::Handle(untag()->data());
+    ASSERT(!obj.IsNull());
+    ClosureData::Cast(obj).set_awaiter_link(link);
     return;
   }
   UNREACHABLE();
@@ -8341,6 +8360,20 @@ void Function::SetFfiCallbackExceptionalReturn(const Instance& value) const {
   const Object& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
   FfiTrampolineData::Cast(obj).set_callback_exceptional_return(value);
+}
+
+FfiCallbackKind Function::GetFfiCallbackKind() const {
+  ASSERT(IsFfiTrampoline());
+  const Object& obj = Object::Handle(data());
+  ASSERT(!obj.IsNull());
+  return FfiTrampolineData::Cast(obj).callback_kind();
+}
+
+void Function::SetFfiCallbackKind(FfiCallbackKind value) const {
+  ASSERT(IsFfiTrampoline());
+  const Object& obj = Object::Handle(data());
+  ASSERT(!obj.IsNull());
+  FfiTrampolineData::Cast(obj).set_callback_kind(value);
 }
 
 const char* Function::KindToCString(UntaggedFunction::Kind kind) {
@@ -10015,6 +10048,7 @@ FunctionPtr Function::New(const FunctionType& signature,
       kind == UntaggedFunction::kImplicitClosureFunction) {
     ASSERT(space == Heap::kOld);
     const ClosureData& data = ClosureData::Handle(ClosureData::New());
+    data.set_awaiter_link({});
     result.set_data(data);
   } else if (kind == UntaggedFunction::kFfiTrampoline) {
     const FfiTrampolineData& data =
@@ -10571,17 +10605,7 @@ ClassPtr Function::Owner() const {
   }
   const Object& obj = Object::Handle(untag()->owner());
   ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).patched_class();
-}
-
-ClassPtr Function::origin() const {
-  ASSERT(untag()->owner() != Object::null());
-  if (untag()->owner()->IsClass()) {
-    return Class::RawCast(untag()->owner());
-  }
-  const Object& obj = Object::Handle(untag()->owner());
-  ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).origin_class();
+  return PatchClass::Cast(obj).wrapped_class();
 }
 
 void Function::InheritKernelOffsetFrom(const Function& src) const {
@@ -11271,20 +11295,43 @@ void FunctionType::set_num_implicit_parameters(intptr_t value) const {
 
 ClosureData::DefaultTypeArgumentsKind ClosureData::default_type_arguments_kind()
     const {
-  return LoadNonPointer(&untag()->default_type_arguments_kind_);
+  return untag()
+      ->packed_fields_
+      .Read<UntaggedClosureData::PackedDefaultTypeArgumentsKind>();
 }
 
 void ClosureData::set_default_type_arguments_kind(
     DefaultTypeArgumentsKind value) const {
-  StoreNonPointer(&untag()->default_type_arguments_kind_, value);
+  untag()
+      ->packed_fields_
+      .Update<UntaggedClosureData::PackedDefaultTypeArgumentsKind>(value);
+}
+
+Function::AwaiterLink ClosureData::awaiter_link() const {
+  const uint8_t depth =
+      untag()
+          ->packed_fields_.Read<UntaggedClosureData::PackedAwaiterLinkDepth>();
+  const uint8_t index =
+      untag()
+          ->packed_fields_.Read<UntaggedClosureData::PackedAwaiterLinkIndex>();
+  return {depth, index};
+}
+
+void ClosureData::set_awaiter_link(Function::AwaiterLink link) const {
+  untag()->packed_fields_.Update<UntaggedClosureData::PackedAwaiterLinkDepth>(
+      link.depth);
+  untag()->packed_fields_.Update<UntaggedClosureData::PackedAwaiterLinkIndex>(
+      link.index);
 }
 
 ClosureDataPtr ClosureData::New() {
   ASSERT(Object::closure_data_class() != Class::null());
-  ObjectPtr raw =
+  ClosureData& data = ClosureData::Handle();
+  data ^=
       Object::Allocate(ClosureData::kClassId, ClosureData::InstanceSize(),
                        Heap::kOld, ClosureData::ContainsCompressedPointers());
-  return static_cast<ClosureDataPtr>(raw);
+  data.set_packed_fields(0);
+  return data.ptr();
 }
 
 const char* ClosureData::ToCString() const {
@@ -11419,6 +11466,10 @@ void FfiTrampolineData::set_is_leaf(bool is_leaf) const {
 void FfiTrampolineData::set_callback_exceptional_return(
     const Instance& value) const {
   untag()->set_callback_exceptional_return(value.ptr());
+}
+
+void FfiTrampolineData::set_callback_kind(FfiCallbackKind kind) const {
+  StoreNonPointer(&untag()->callback_kind_, static_cast<uint8_t>(kind));
 }
 
 FfiTrampolineDataPtr FfiTrampolineData::New() {
@@ -11572,18 +11623,7 @@ ClassPtr Field::Owner() const {
     return Class::Cast(obj).ptr();
   }
   ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).patched_class();
-}
-
-ClassPtr Field::Origin() const {
-  const Field& field = Field::Handle(Original());
-  ASSERT(field.IsOriginal());
-  const Object& obj = Object::Handle(field.untag()->owner());
-  if (obj.IsClass()) {
-    return Class::Cast(obj).ptr();
-  }
-  ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).origin_class();
+  return PatchClass::Cast(obj).wrapped_class();
 }
 
 ScriptPtr Field::Script() const {
@@ -15206,8 +15246,6 @@ void KernelProgramInfo::set_libraries_cache(const Array& cache) const {
   untag()->set_libraries_cache(cache.ptr());
 }
 
-typedef UnorderedHashMap<SmiTraits> IntHashMap;
-
 LibraryPtr KernelProgramInfo::LookupLibrary(Thread* thread,
                                             const Smi& name_index) const {
   REUSABLE_ARRAY_HANDLESCOPE(thread);
@@ -18825,54 +18863,33 @@ void ContextScope::ClearFlagsAt(intptr_t scope_index) const {
   untag()->set_flags_at(scope_index, Smi::New(0));
 }
 
-bool ContextScope::GetFlagAt(intptr_t scope_index, intptr_t mask) const {
+bool ContextScope::GetFlagAt(intptr_t scope_index, intptr_t bit_index) const {
+  const intptr_t mask = 1 << bit_index;
   return (Smi::Value(untag()->flags_at(scope_index)) & mask) != 0;
 }
 
 void ContextScope::SetFlagAt(intptr_t scope_index,
-                             intptr_t mask,
+                             intptr_t bit_index,
                              bool value) const {
+  const intptr_t mask = 1 << bit_index;
   intptr_t flags = Smi::Value(untag()->flags_at(scope_index));
   untag()->set_flags_at(scope_index,
                         Smi::New(value ? flags | mask : flags & ~mask));
 }
 
-bool ContextScope::IsFinalAt(intptr_t scope_index) const {
-  return GetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsFinal);
-}
+#define DEFINE_FLAG_ACCESSORS(Name)                                            \
+  bool ContextScope::Is##Name##At(intptr_t scope_index) const {                \
+    return GetFlagAt(scope_index,                                              \
+                     UntaggedContextScope::VariableDesc::kIs##Name);           \
+  }                                                                            \
+                                                                               \
+  void ContextScope::SetIs##Name##At(intptr_t scope_index, bool value) const { \
+    SetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIs##Name,      \
+              value);                                                          \
+  }
 
-void ContextScope::SetIsFinalAt(intptr_t scope_index, bool is_final) const {
-  SetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsFinal,
-            is_final);
-}
-
-bool ContextScope::IsLateAt(intptr_t scope_index) const {
-  return GetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsLate);
-}
-
-void ContextScope::SetIsLateAt(intptr_t scope_index, bool is_late) const {
-  SetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsLate, is_late);
-}
-
-bool ContextScope::IsConstAt(intptr_t scope_index) const {
-  return GetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsConst);
-}
-
-void ContextScope::SetIsConstAt(intptr_t scope_index, bool is_const) const {
-  SetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsConst,
-            is_const);
-}
-
-bool ContextScope::IsInvisibleAt(intptr_t scope_index) const {
-  return GetFlagAt(scope_index,
-                   UntaggedContextScope::VariableDesc::kIsInvisible);
-}
-
-void ContextScope::SetIsInvisibleAt(intptr_t scope_index,
-                                    bool is_invisible) const {
-  SetFlagAt(scope_index, UntaggedContextScope::VariableDesc::kIsInvisible,
-            is_invisible);
-}
+CONTEXT_SCOPE_VARIABLE_DESC_FLAG_LIST(DEFINE_FLAG_ACCESSORS)
+#undef DEFINE_FLAG_ACCESSORS
 
 intptr_t ContextScope::LateInitOffsetAt(intptr_t scope_index) const {
   return Smi::Value(untag()->late_init_offset_at(scope_index));
@@ -27033,6 +27050,19 @@ static void PrintSymbolicStackFrame(Zone* zone,
   PrintSymbolicStackFrameBody(buffer, function_name, url, line, column);
 }
 
+static bool IsVisibleAsFutureListener(const Function& function) {
+  if (function.is_visible()) {
+    return true;
+  }
+
+  if (function.IsImplicitClosureFunction()) {
+    return function.parent_function() == Function::null() ||
+           Function::is_visible(function.parent_function());
+  }
+
+  return false;
+}
+
 const char* StackTrace::ToCString() const {
   auto const T = Thread::Current();
   auto const zone = T->zone();
@@ -27151,23 +27181,11 @@ const char* StackTrace::ToCString() const {
       }
       const uword pc = code.PayloadStart() + pc_offset;
 
-      // If the function is not to be shown, skip.
-      if (!FLAG_show_invisible_frames && !function.IsNull() &&
-          !function.is_visible()) {
-        continue;
-      }
+      const bool is_future_listener =
+          pc_offset == StackTraceUtils::kFutureListenerPcOffset;
 
       // A visible frame ends any gap we might be in.
       in_gap = false;
-
-      // Zero pc_offset can only occur in the frame produced by the async
-      // unwinding and it corresponds to the next future listener in the
-      // chain. This function is not yet called (it will be called when
-      // the future completes) hence pc_offset is set to 0. This frame
-      // is very different from other frames which have pc_offsets
-      // corresponding to call- or yield-sites in the generated code and
-      // should be handled specially.
-      const bool is_future_listener = pc_offset == 0;
 
 #if defined(DART_PRECOMPILED_RUNTIME)
       // When printing non-symbolic frames, we normally print call
@@ -27175,11 +27193,11 @@ const char* StackTrace::ToCString() const {
       // get an address within the preceding instruction.
       //
       // The one exception is a normal closure registered as a listener on a
-      // future. In this case, the returned pc_offset is 0, as the closure
-      // is invoked with the value of the resolved future. Thus, we must
-      // report the return address, as returning a value before the closure
-      // payload will cause failures to decode the frame using DWARF info.
-      const uword call_addr = is_future_listener ? pc : pc - 1;
+      // future. In this case, the returned pc_offset will be pointing to the
+      // entry pooint of the function, which will be invoked when the future
+      // completes. To make things more uniform stack unwinding code offets
+      // pc_offset by 1 for such cases.
+      const uword call_addr = pc - 1;
 
       if (FLAG_dwarf_stack_traces_mode) {
         if (have_footnote_callback) {
@@ -27213,14 +27231,18 @@ const char* StackTrace::ToCString() const {
         // Note: In AOT mode EmitFunctionEntrySourcePositionDescriptorIfNeeded
         // will take care of emitting a descriptor that would allow us to
         // symbolize stack frame with 0 offset.
-        code.GetInlinedFunctionsAtReturnAddress(pc_offset, &inlined_functions,
-                                                &inlined_token_positions);
+        code.GetInlinedFunctionsAtReturnAddress(
+            is_future_listener ? 0 : pc_offset, &inlined_functions,
+            &inlined_token_positions);
         ASSERT(inlined_functions.length() >= 1);
         for (intptr_t j = inlined_functions.length() - 1; j >= 0; j--) {
-          const auto& inlined = *inlined_functions[j];
+          function = inlined_functions[j]->ptr();
           auto const pos = inlined_token_positions[j];
-          if (FLAG_show_invisible_frames || inlined.is_visible()) {
-            PrintSymbolicStackFrame(zone, &buffer, inlined, pos, frame_index,
+          if (is_future_listener && function.IsImplicitClosureFunction()) {
+            function = function.parent_function();
+          }
+          if (FLAG_show_invisible_frames || function.is_visible()) {
+            PrintSymbolicStackFrame(zone, &buffer, function, pos, frame_index,
                                     /*is_line=*/FLAG_precompiled_mode);
             frame_index++;
           }
@@ -27228,10 +27250,13 @@ const char* StackTrace::ToCString() const {
         continue;
       }
 
-      auto const pos = is_future_listener ? function.token_pos()
-                                          : code.GetTokenIndexOfPC(pc);
-      PrintSymbolicStackFrame(zone, &buffer, function, pos, frame_index);
-      frame_index++;
+      if (FLAG_show_invisible_frames || function.is_visible() ||
+          (is_future_listener && IsVisibleAsFutureListener(function))) {
+        auto const pos = is_future_listener ? function.token_pos()
+                                            : code.GetTokenIndexOfPC(pc);
+        PrintSymbolicStackFrame(zone, &buffer, function, pos, frame_index);
+        frame_index++;
+      }
     }
 
     // Follow the link.

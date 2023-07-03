@@ -814,6 +814,12 @@ class Thread : public ThreadState {
   void set_unboxed_int64_runtime_arg(int64_t value) {
     unboxed_runtime_arg_.int64_storage[0] = value;
   }
+  int64_t unboxed_int64_runtime_second_arg() const {
+    return unboxed_runtime_arg_.int64_storage[1];
+  }
+  void set_unboxed_int64_runtime_second_arg(int64_t value) {
+    unboxed_runtime_arg_.int64_storage[1] = value;
+  }
   double unboxed_double_runtime_arg() const {
     return unboxed_runtime_arg_.double_storage[0];
   }
@@ -1195,7 +1201,7 @@ class Thread : public ThreadState {
   Isolate* isolate_ = nullptr;
   IsolateGroup* isolate_group_ = nullptr;
 
-  uword saved_stack_limit_ = 0;
+  uword saved_stack_limit_ = OSThread::kInvalidStackLimit;
   // The mutator uses this to indicate it wants to OSR (by
   // setting [Thread::kOsrRequest]) before going to runtime which will see this
   // bit.
@@ -1404,8 +1410,12 @@ class Thread : public ThreadState {
   void ResetMutatorState();
 
   void SetupDartMutatorState(Isolate* isolate);
-  void SetupDartMutatorStateDependingOnSnapshot(Isolate* isolate);
+  void SetupDartMutatorStateDependingOnSnapshot(IsolateGroup* group);
   void ResetDartMutatorState(Isolate* isolate);
+
+  static void SuspendDartMutatorThreadInternal(Thread* thread,
+                                               VMTag::VMTagId tag);
+  static void ResumeDartMutatorThreadInternal(Thread* thread);
 
   static void SuspendThreadInternal(Thread* thread, VMTag::VMTagId tag);
   static void ResumeThreadInternal(Thread* thread);

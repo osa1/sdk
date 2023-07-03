@@ -44,8 +44,12 @@ class ConstructorMember extends ExecutableMember
   @override
   String get displayName => declaration.displayName;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   InterfaceElement get enclosingElement => declaration.enclosingElement;
+
+  @override
+  NamedInstanceElement get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   bool get isConst => declaration.isConst;
@@ -91,8 +95,12 @@ class ConstructorMember extends ExecutableMember
     return ConstructorMember(_typeProvider, declaration, substitution, false);
   }
 
+  @Deprecated('Use returnType2 instead')
   @override
   InterfaceType get returnType => type.returnType as InterfaceType;
+
+  @override
+  NamedInstanceType get returnType2 => type.returnType as NamedInstanceType;
 
   @override
   Source get source => _declaration.source!;
@@ -212,9 +220,18 @@ abstract class ExecutableMember extends Member implements ExecutableElement {
     }).toList();
   }
 
+  @Deprecated('Use returnType2 instead')
   @override
   DartType get returnType {
     var result = declaration.returnType;
+    result = _substitution.substituteType(result);
+    result = _toLegacyType(result);
+    return result;
+  }
+
+  @override
+  DartType get returnType2 {
+    var result = declaration.returnType2;
     result = _substitution.substituteType(result);
     result = _toLegacyType(result);
     return result;
@@ -350,8 +367,12 @@ class FieldMember extends VariableMember implements FieldElement {
   @override
   String get displayName => declaration.displayName;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element get enclosingElement => declaration.enclosingElement;
+
+  @override
+  Element get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   PropertyAccessorElement? get getter {
@@ -408,7 +429,7 @@ class FieldMember extends VariableMember implements FieldElement {
   /// from the [definingType], create a field member representing the given
   /// field. Return the member that was created, or the base field if no member
   /// was created.
-  static FieldElement from(FieldElement field, InterfaceType definingType) {
+  static FieldElement from(FieldElement field, NamedInstanceType definingType) {
     if (definingType.typeArguments.isEmpty) {
       return field;
     }
@@ -446,8 +467,12 @@ class FunctionMember extends ExecutableMember implements FunctionElement {
   @override
   FunctionElement get declaration => super.declaration as FunctionElement;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element get enclosingElement => declaration.enclosingElement;
+
+  @override
+  Element get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   bool get isDartCoreIdentical => declaration.isDartCoreIdentical;
@@ -511,8 +536,12 @@ abstract class Member implements Element {
   @override
   String? get documentationComment => _declaration.documentationComment;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element? get enclosingElement => _declaration.enclosingElement;
+
+  @override
+  Element? get enclosingElement2 => _declaration.enclosingElement2;
 
   @override
   bool get hasAlwaysThrows => _declaration.hasAlwaysThrows;
@@ -798,8 +827,12 @@ class MethodMember extends ExecutableMember implements MethodElement {
   @override
   MethodElement get declaration => super.declaration as MethodElement;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element get enclosingElement => declaration.enclosingElement;
+
+  @override
+  Element get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   String get name => declaration.name;
@@ -888,8 +921,12 @@ class ParameterMember extends VariableMember
   @override
   String? get defaultValueCode => declaration.defaultValueCode;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element? get enclosingElement => declaration.enclosingElement;
+
+  @override
+  Element? get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   bool get hasDefaultValue => declaration.hasDefaultValue;
@@ -1026,8 +1063,12 @@ class PropertyAccessorMember extends ExecutableMember
   PropertyAccessorElement get declaration =>
       super.declaration as PropertyAccessorElement;
 
+  @Deprecated('Use enclosingElement2 instead')
   @override
   Element get enclosingElement => declaration.enclosingElement;
+
+  @override
+  Element get enclosingElement2 => declaration.enclosingElement2;
 
   @override
   bool get isGetter => declaration.isGetter;

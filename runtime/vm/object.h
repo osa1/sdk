@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <tuple>
+#include <utility>
 
 #include "include/dart_api.h"
 #include "platform/assert.h"
@@ -457,6 +458,7 @@ class Object {
   V(RecordType, null_record_type)                                              \
   V(TypeArguments, null_type_arguments)                                        \
   V(CompressedStackMaps, null_compressed_stackmaps)                            \
+  V(Closure, null_closure)                                                     \
   V(TypeArguments, empty_type_arguments)                                       \
   V(Array, empty_array)                                                        \
   V(Array, empty_instantiations_cache_array)                                   \
@@ -1192,6 +1194,8 @@ class Class : public Object {
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
   uint32_t Hash() const;
+  static uint32_t Hash(ClassPtr);
+
   int32_t SourceFingerprint() const;
 
   // Return the Type with type arguments filled in with dynamic.
@@ -2101,10 +2105,23 @@ enum Genericity {
   kFunctions,     // Consider type params of current and parent functions.
 };
 
+// Wrapper of a [Class] with different [Script] and kernel binary.
+//
+// We use this as owner of [Field]/[Function] objects that were from a different
+// script/kernel than the actual class object.
+//
+//  * used for corelib patches that live in different .dart files than the
+//    library itself.
+//
+//  * used for library parts that live in different .dart files than the library
+//    itself.
+//
+//  * used in reload to make old [Function]/[Field] objects have the old script
+//    kernel data.
+//
 class PatchClass : public Object {
  public:
-  ClassPtr patched_class() const { return untag()->patched_class(); }
-  ClassPtr origin_class() const { return untag()->origin_class(); }
+  ClassPtr wrapped_class() const { return untag()->wrapped_class(); }
   ScriptPtr script() const { return untag()->script(); }
   ExternalTypedDataPtr library_kernel_data() const {
     return untag()->library_kernel_data();
@@ -2128,17 +2145,13 @@ class PatchClass : public Object {
   }
   static bool IsInFullSnapshot(PatchClassPtr cls) {
     NoSafepointScope no_safepoint;
-    return Class::IsInFullSnapshot(cls->untag()->patched_class());
+    return Class::IsInFullSnapshot(cls->untag()->wrapped_class());
   }
 
-  static PatchClassPtr New(const Class& patched_class,
-                           const Class& origin_class);
-
-  static PatchClassPtr New(const Class& patched_class, const Script& source);
+  static PatchClassPtr New(const Class& wrapped_class, const Script& source);
 
  private:
-  void set_patched_class(const Class& value) const;
-  void set_origin_class(const Class& value) const;
+  void set_wrapped_class(const Class& value) const;
   void set_script(const Script& value) const;
 
   static PatchClassPtr New();
@@ -2818,6 +2831,11 @@ struct NameFormattingParams {
   }
 };
 
+enum class FfiCallbackKind : uint8_t {
+  kSync,
+  kAsync,
+};
+
 class Function : public Object {
  public:
   StringPtr name() const { return untag()->name(); }
@@ -2875,6 +2893,12 @@ class Function : public Object {
   // Can only be called on FFI trampolines.
   void SetFfiCallbackExceptionalReturn(const Instance& value) const;
 
+  // Can only be called on FFI trampolines.
+  FfiCallbackKind GetFfiCallbackKind() const;
+
+  // Can only be called on FFI trampolines.
+  void SetFfiCallbackKind(FfiCallbackKind value) const;
+
   // Return the signature of this function.
   PRECOMPILER_WSR_FIELD_DECLARATION(FunctionType, signature);
   void SetSignature(const FunctionType& value) const;
@@ -2908,14 +2932,13 @@ class Function : public Object {
 
   ClassPtr Owner() const;
   void set_owner(const Object& value) const;
-  ClassPtr origin() const;
   ScriptPtr script() const;
   ObjectPtr RawOwner() const { return untag()->owner(); }
 
   // The NNBD mode of the library declaring this function.
   // TODO(alexmarkov): nnbd_mode() doesn't work for mixins.
   // It should be either removed or fixed.
-  NNBDMode nnbd_mode() const { return Class::Handle(origin()).nnbd_mode(); }
+  NNBDMode nnbd_mode() const { return Class::Handle(Owner()).nnbd_mode(); }
 
   RegExpPtr regexp() const;
   intptr_t string_specialization_cid() const;
@@ -3057,6 +3080,22 @@ class Function : public Object {
 
   ContextScopePtr context_scope() const;
   void set_context_scope(const ContextScope& value) const;
+
+  struct AwaiterLink {
+    // Context depth at which the `@pragma('vm:awaiter-link')` variable
+    // is located.
+    uint8_t depth = UntaggedClosureData::kNoAwaiterLinkDepth;
+    // Context index at which the `@pragma('vm:awaiter-link')` variable
+    // is located.
+    uint8_t index = -1;
+  };
+
+  AwaiterLink awaiter_link() const;
+  void set_awaiter_link(AwaiterLink link) const;
+  bool HasAwaiterLink() const {
+    return IsClosureFunction() &&
+           (awaiter_link().depth != UntaggedClosureData::kNoAwaiterLinkDepth);
+  }
 
   // Enclosing function of this local function.
   FunctionPtr parent_function() const;
@@ -3978,6 +4017,10 @@ class Function : public Object {
   FOR_EACH_FUNCTION_KIND_BIT(DEFINE_ACCESSORS)
 #undef DEFINE_ACCESSORS
 
+  static bool is_visible(FunctionPtr f) {
+    return f.untag()->kind_tag_.Read<VisibleBit>();
+  }
+
 #define DEFINE_ACCESSORS(name, accessor_name)                                  \
   void set_##accessor_name(bool value) const {                                 \
     untag()->kind_tag_.UpdateBool<name##Bit>(value);                           \
@@ -4106,16 +4149,28 @@ class ClosureData : public Object {
     return RoundedAllocationSize(sizeof(UntaggedClosureData));
   }
 
-  static intptr_t default_type_arguments_kind_offset() {
-    return OFFSET_OF(UntaggedClosureData, default_type_arguments_kind_);
+  static intptr_t packed_fields_offset() {
+    return OFFSET_OF(UntaggedClosureData, packed_fields_);
   }
 
   using DefaultTypeArgumentsKind =
       UntaggedClosureData::DefaultTypeArgumentsKind;
+  using PackedDefaultTypeArgumentsKind =
+      UntaggedClosureData::PackedDefaultTypeArgumentsKind;
+
+  static constexpr uint8_t kNoAwaiterLinkDepth =
+      UntaggedClosureData::kNoAwaiterLinkDepth;
 
  private:
   ContextScopePtr context_scope() const { return untag()->context_scope(); }
   void set_context_scope(const ContextScope& value) const;
+
+  void set_packed_fields(uint32_t value) const {
+    untag()->packed_fields_ = value;
+  }
+
+  Function::AwaiterLink awaiter_link() const;
+  void set_awaiter_link(Function::AwaiterLink link) const;
 
   // Enclosing function of this local function.
   PRECOMPILER_WSR_FIELD_DECLARATION(Function, parent_function)
@@ -4161,6 +4216,11 @@ class FfiTrampolineData : public Object {
     return untag()->callback_exceptional_return();
   }
   void set_callback_exceptional_return(const Instance& value) const;
+
+  FfiCallbackKind callback_kind() const {
+    return static_cast<FfiCallbackKind>(untag()->callback_kind_);
+  }
+  void set_callback_kind(FfiCallbackKind kind) const;
 
   int32_t callback_id() const { return untag()->callback_id_; }
   void set_callback_id(int32_t value) const;
@@ -4302,7 +4362,6 @@ class Field : public Object {
   inline void set_field_id_unsafe(intptr_t field_id) const;
 
   ClassPtr Owner() const;
-  ClassPtr Origin() const;  // Either mixin class, or same as owner().
   ScriptPtr Script() const;
   ObjectPtr RawOwner() const;
 
@@ -7227,21 +7286,16 @@ class ContextScope : public Object {
 
   void ClearFlagsAt(intptr_t scope_index) const;
 
-  bool IsFinalAt(intptr_t scope_index) const;
-  void SetIsFinalAt(intptr_t scope_index, bool is_final) const;
-
-  bool IsLateAt(intptr_t scope_index) const;
-  void SetIsLateAt(intptr_t scope_index, bool is_late) const;
-
   intptr_t LateInitOffsetAt(intptr_t scope_index) const;
   void SetLateInitOffsetAt(intptr_t scope_index,
                            intptr_t late_init_offset) const;
 
-  bool IsConstAt(intptr_t scope_index) const;
-  void SetIsConstAt(intptr_t scope_index, bool is_const) const;
+#define DECLARE_FLAG_ACCESSORS(Name)                                           \
+  bool Is##Name##At(intptr_t scope_index) const;                               \
+  void SetIs##Name##At(intptr_t scope_index, bool value) const;
 
-  bool IsInvisibleAt(intptr_t scope_index) const;
-  void SetIsInvisibleAt(intptr_t scope_index, bool is_invisible) const;
+  CONTEXT_SCOPE_VARIABLE_DESC_FLAG_LIST(DECLARE_FLAG_ACCESSORS)
+#undef DECLARE_FLAG_ACCESSORS
 
   AbstractTypePtr TypeAt(intptr_t scope_index) const;
   void SetTypeAt(intptr_t scope_index, const AbstractType& type) const;
@@ -7298,8 +7352,8 @@ class ContextScope : public Object {
     return untag()->VariableDescAddr(index);
   }
 
-  bool GetFlagAt(intptr_t scope_index, intptr_t mask) const;
-  void SetFlagAt(intptr_t scope_index, intptr_t mask, bool value) const;
+  bool GetFlagAt(intptr_t scope_index, intptr_t bit_index) const;
+  void SetFlagAt(intptr_t scope_index, intptr_t bit_index, bool value) const;
 
   FINAL_HEAP_OBJECT_IMPLEMENTATION(ContextScope, Object);
   friend class Class;
@@ -12820,14 +12874,6 @@ class WeakProperty : public Instance {
     return RoundedAllocationSize(sizeof(UntaggedWeakProperty));
   }
 
-  static void Clear(WeakPropertyPtr raw_weak) {
-    ASSERT(raw_weak->untag()->next_seen_by_gc_ ==
-           CompressedWeakPropertyPtr(WeakProperty::null()));
-    // This action is performed by the GC. No barrier.
-    raw_weak->untag()->key_ = Object::null();
-    raw_weak->untag()->value_ = Object::null();
-  }
-
  private:
   FINAL_HEAP_OBJECT_IMPLEMENTATION(WeakProperty, Instance);
   friend class Class;
@@ -13469,6 +13515,12 @@ using InstantiationsCacheTable =
 void DumpTypeTable(Isolate* isolate);
 void DumpTypeParameterTable(Isolate* isolate);
 void DumpTypeArgumentsTable(Isolate* isolate);
+
+bool FindPragmaInMetadata(Thread* T,
+                          const Object& metadata_obj,
+                          const String& pragma_name,
+                          bool multiple = false,
+                          Object* options = nullptr);
 
 EntryPointPragma FindEntryPointPragma(IsolateGroup* isolate_group,
                                       const Array& metadata,

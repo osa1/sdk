@@ -2849,8 +2849,9 @@ The following code produces this diagnostic because the field `s` is
 initialized to a non-constant value:
 
 {% prettify dart tag=pre+code %}
+String x = '3';
 class C {
-  final String s = 3.toString();
+  final String s = x;
   [!const!] C();
 }
 {% endprettify %}
@@ -2871,8 +2872,9 @@ If the field can't be initialized to a constant value, then remove the
 keyword `const` from the constructor:
 
 {% prettify dart tag=pre+code %}
+String x = '3';
 class C {
-  final String s = 3.toString();
+  final String s = x;
   C();
 }
 {% endprettify %}
@@ -13437,18 +13439,18 @@ class B extends A {
 
 ### must_return_void
 
-_The return type of the function passed to 'RawVoidCallback' must be 'void'
-rather than '{0}'._
+_The return type of the function passed to 'NativeCallable.listener' must be
+'void' rather than '{0}'._
 
 #### Description
 
 The analyzer produces this diagnostic when you pass a function
-that doesn't return `void` to the `RawVoidCallback` constructor.
+that doesn't return `void` to the `NativeCallable.listener` constructor.
 
-`RawVoidCallback` creates a native callback that can be invoked
-from any thread. The native code that invokes the callback sends a message
-back to the isolate that created the callback, and doesn't wait for a
-response. So it isn't possible to return a result from the callback.
+`NativeCallable.listener` creates a native callable that can be invoked
+from any thread. The native code that invokes the callable sends a message
+back to the isolate that created the callable, and doesn't wait for a
+response. So it isn't possible to return a result from the callable.
 
 For more information about FFI, see [C interop using dart:ffi][ffi].
 
@@ -13463,7 +13465,7 @@ import 'dart:ffi';
 int f(int i) => i * 2;
 
 void g() {
-  RawVoidCallback<Int32 Function(Int32)>([!f!]);
+  NativeCallable<Int32 Function(Int32)>.listener([!f!]);
 }
 {% endprettify %}
 
@@ -13477,7 +13479,7 @@ import 'dart:ffi';
 void f(int i) => print(i * 2);
 
 void g() {
-  RawVoidCallback<Void Function(Int32)>(f);
+  NativeCallable<Void Function(Int32)>.listener(f);
 }
 {% endprettify %}
 

@@ -820,6 +820,22 @@ void IsolateGroup::FreeStaticField(const Field& field) {
   });
 }
 
+Isolate* IsolateGroup::EnterTemporaryIsolate() {
+  Dart_IsolateFlags flags;
+  Isolate::FlagsInitialize(&flags);
+  Isolate* const isolate = Isolate::InitIsolate("temp", this, flags);
+  ASSERT(isolate != nullptr);
+  ASSERT(Isolate::Current() == isolate);
+  return isolate;
+}
+
+void IsolateGroup::ExitTemporaryIsolate() {
+  Thread* thread = Thread::Current();
+  ASSERT(thread != nullptr);
+  thread->set_execution_state(Thread::kThreadInVM);
+  Dart::ShutdownIsolate(thread);
+}
+
 void IsolateGroup::RehashConstants() {
   Thread* thread = Thread::Current();
   StackZone stack_zone(thread);
@@ -2304,14 +2320,14 @@ void Isolate::LowLevelShutdown() {
 
   // Clean up any synchronous FFI callbacks registered with this isolate. Skip
   // if this isolate never registered any.
-  if (ffi_callback_sync_list_head_ != nullptr) {
-    FfiCallbackMetadata::Instance()->DeleteSyncTrampolines(
-        &ffi_callback_sync_list_head_);
+  if (ffi_callback_list_head_ != nullptr) {
+    FfiCallbackMetadata::Instance()->DeleteAllCallbacks(
+        &ffi_callback_list_head_);
   }
 
 #if !defined(PRODUCT)
   if (FLAG_dump_megamorphic_stats) {
-    MegamorphicCacheTable::PrintSizes(this);
+    MegamorphicCacheTable::PrintSizes(thread);
   }
   if (FLAG_dump_symbol_stats) {
     Symbols::DumpStats(group());
@@ -2374,9 +2390,9 @@ void Isolate::Shutdown() {
 
   {
     StackZone zone(thread);
-    HandleScope handle_scope(thread);
     ServiceIsolate::SendIsolateShutdownMessage();
 #if !defined(PRODUCT)
+    HandleScope handle_scope(thread);
     debugger()->Shutdown();
     Profiler::IsolateShutdown(thread);
 #endif
@@ -3514,7 +3530,20 @@ FfiCallbackMetadata::Trampoline Isolate::CreateSyncFfiCallback(
     Zone* zone,
     const Function& function) {
   return FfiCallbackMetadata::Instance()->CreateSyncFfiCallback(
-      this, zone, function, &ffi_callback_sync_list_head_);
+      this, zone, function, &ffi_callback_list_head_);
+}
+
+FfiCallbackMetadata::Trampoline Isolate::CreateAsyncFfiCallback(
+    Zone* zone,
+    const Function& function,
+    Dart_Port send_port) {
+  return FfiCallbackMetadata::Instance()->CreateAsyncFfiCallback(
+      this, zone, function, send_port, &ffi_callback_list_head_);
+}
+
+void Isolate::DeleteFfiCallback(FfiCallbackMetadata::Trampoline callback) {
+  FfiCallbackMetadata::Instance()->DeleteCallback(callback,
+                                                  &ffi_callback_list_head_);
 }
 
 #if !defined(PRODUCT)

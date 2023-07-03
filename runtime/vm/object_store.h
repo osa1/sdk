@@ -169,6 +169,7 @@ class ObjectPointerVisitor;
   RW(Smi, last_libraries_count)                                                \
   RW(Array, loading_units)                                                     \
   RW(GrowableObjectArray, closure_functions)                                   \
+  RW(Array, closure_functions_table)                                           \
   RW(GrowableObjectArray, pending_classes)                                     \
   RW(Array, record_field_names_map)                                            \
   ARW_RELAXED(Array, record_field_names)                                       \
@@ -198,8 +199,6 @@ class ObjectPointerVisitor;
   RW(Field, sync_star_iterator_current)                                        \
   RW(Field, sync_star_iterator_state)                                          \
   RW(Field, sync_star_iterator_yield_star_iterable)                            \
-  ARW_RELAXED(Smi, future_timeout_future_index)                                \
-  ARW_RELAXED(Smi, future_wait_future_index)                                   \
   RW(CompressedStackMaps, canonicalized_stack_map_entries)                     \
   RW(ObjectPool, global_object_pool)                                           \
   RW(Array, unique_dynamic_targets)                                            \
@@ -281,6 +280,7 @@ class ObjectPointerVisitor;
   RW(Code, await_stub)                                                         \
   RW(Code, await_with_type_check_stub)                                         \
   RW(Code, clone_suspend_state_stub)                                           \
+  RW(Code, ffi_async_callback_send_stub)                                       \
   RW(Code, init_async_stub)                                                    \
   RW(Code, resume_stub)                                                        \
   RW(Code, return_async_stub)                                                  \
@@ -376,6 +376,7 @@ class ObjectPointerVisitor;
   DO(await_stub, Await)                                                        \
   DO(await_with_type_check_stub, AwaitWithTypeCheck)                           \
   DO(clone_suspend_state_stub, CloneSuspendState)                              \
+  DO(ffi_async_callback_send_stub, FfiAsyncCallbackSend)                       \
   DO(init_async_stub, InitAsync)                                               \
   DO(resume_stub, Resume)                                                      \
   DO(return_async_stub, ReturnAsync)                                           \

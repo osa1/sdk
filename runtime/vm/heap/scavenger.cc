@@ -321,7 +321,7 @@ class ScavengerVisitorBase : public ObjectPointerVisitor {
       MournWeakProperties();
       MournWeakReferences();
       MournWeakArrays();
-      MournFinalized(this);
+      MournFinalizerEntries();
     }
     page_space_->ReleaseLock(freelist_);
     thread_ = nullptr;
@@ -352,7 +352,7 @@ class ScavengerVisitorBase : public ObjectPointerVisitor {
     // ScavengePointer cannot be called recursively.
     ObjectPtr raw_obj = *p;
 
-    if (raw_obj->IsSmiOrOldObject()) {
+    if (raw_obj->IsImmediateOrOldObject()) {
       return;
     }
 
@@ -382,7 +382,8 @@ class ScavengerVisitorBase : public ObjectPointerVisitor {
     // ScavengePointer cannot be called recursively.
     ObjectPtr raw_obj = p->Decompress(heap_base);
 
-    if (raw_obj->IsSmiOrOldObject()) {  // Could be tested without decompression
+    // Could be tested without decompression.
+    if (raw_obj->IsImmediateOrOldObject()) {
       return;
     }
 
@@ -554,9 +555,51 @@ class ScavengerVisitorBase : public ObjectPointerVisitor {
     return !IsForwarding(ReadHeaderRelaxed(raw));
   }
 
-  void MournWeakProperties();
-  void MournWeakReferences();
-  void MournWeakArrays();
+  void MournWeakProperties() {
+    WeakPropertyPtr current = delayed_.weak_properties.Release();
+    while (current != WeakProperty::null()) {
+      WeakPropertyPtr next = current->untag()->next_seen_by_gc();
+      current->untag()->next_seen_by_gc_ = WeakProperty::null();
+      current->untag()->key_ = Object::null();
+      current->untag()->value_ = Object::null();
+      current = next;
+    }
+  }
+
+  void MournWeakReferences() {
+    WeakReferencePtr current = delayed_.weak_references.Release();
+    while (current != WeakReference::null()) {
+      WeakReferencePtr next = current->untag()->next_seen_by_gc();
+      current->untag()->next_seen_by_gc_ = WeakReference::null();
+      ForwardOrSetNullIfCollected(current->heap_base(),
+                                  &current->untag()->target_);
+      current = next;
+    }
+  }
+
+  void MournWeakArrays() {
+    WeakArrayPtr current = delayed_.weak_arrays.Release();
+    while (current != WeakArray::null()) {
+      WeakArrayPtr next = current->untag()->next_seen_by_gc();
+      current->untag()->next_seen_by_gc_ = WeakArray::null();
+      intptr_t length = Smi::Value(current->untag()->length());
+      for (intptr_t i = 0; i < length; i++) {
+        ForwardOrSetNullIfCollected(current->heap_base(),
+                                    &(current->untag()->data()[i]));
+      }
+      current = next;
+    }
+  }
+
+  void MournFinalizerEntries() {
+    FinalizerEntryPtr current = delayed_.finalizer_entries.Release();
+    while (current != FinalizerEntry::null()) {
+      FinalizerEntryPtr next = current->untag()->next_seen_by_gc();
+      current->untag()->next_seen_by_gc_ = FinalizerEntry::null();
+      MournFinalizerEntry(this, current);
+      current = next;
+    }
+  }
 
   Thread* thread_;
   Scavenger* scavenger_;
@@ -572,9 +615,6 @@ class ScavengerVisitorBase : public ObjectPointerVisitor {
   Page* tail_ = nullptr;  // Allocating from here.
   Page* scan_ = nullptr;  // Resolving from here.
 
-  template <typename GCVisitorType>
-  friend void MournFinalized(GCVisitorType* visitor);
-
   DISALLOW_COPY_AND_ASSIGN(ScavengerVisitorBase);
 };
 
@@ -583,7 +623,7 @@ typedef ScavengerVisitorBase<true> ParallelScavengerVisitor;
 
 static bool IsUnreachable(ObjectPtr* ptr) {
   ObjectPtr raw_obj = *ptr;
-  if (raw_obj->IsSmiOrOldObject()) {
+  if (raw_obj->IsImmediateOrOldObject()) {
     return false;
   }
   uword raw_addr = UntaggedObject::ToAddr(raw_obj);
@@ -1349,7 +1389,7 @@ intptr_t ScavengerVisitorBase<parallel>::ProcessCopied(ObjectPtr raw_obj) {
     WeakPropertyPtr raw_weak = static_cast<WeakPropertyPtr>(raw_obj);
     // The fate of the weak property is determined by its key.
     ObjectPtr raw_key = raw_weak->untag()->key();
-    if (!raw_key->IsSmiOrOldObject()) {
+    if (!raw_key->IsImmediateOrOldObject()) {
       uword header = ReadHeaderRelaxed(raw_key);
       if (!IsForwarding(header)) {
         // Key is white.  Enqueue the weak property.
@@ -1363,7 +1403,7 @@ intptr_t ScavengerVisitorBase<parallel>::ProcessCopied(ObjectPtr raw_obj) {
     WeakReferencePtr raw_weak = static_cast<WeakReferencePtr>(raw_obj);
     // The fate of the weak reference target is determined by its target.
     ObjectPtr raw_target = raw_weak->untag()->target();
-    if (!raw_target->IsSmiOrOldObject()) {
+    if (!raw_target->IsImmediateOrOldObject()) {
       uword header = ReadHeaderRelaxed(raw_target);
       if (!IsForwarding(header)) {
         // Target is white. Enqueue the weak reference. Always visit type
@@ -1414,7 +1454,7 @@ void ScavengerVisitorBase<parallel>::ProcessOldFinalizerEntry(
   // keys, and finalizers in new space won't be reclaimed until after they
   // are promoted.
   // This will only visit the strong references, end enqueue the entry.
-  // This enables us to update external space in MournFinalized.
+  // This enables us to update external space in MournFinalizerEntries.
   const Heap::Space before_gc_space = SpaceForExternal(raw_entry);
   UntaggedFinalizerEntry::VisitFinalizerEntryPointers(raw_entry, this);
   if (before_gc_space == Heap::kNew) {
@@ -1500,86 +1540,13 @@ void Scavenger::MournWeakTables() {
       /*at_safepoint=*/true);
 }
 
-template <bool parallel>
-void ScavengerVisitorBase<parallel>::MournWeakProperties() {
-  ASSERT(!scavenger_->abort_);
-
-  // The queued weak properties at this point do not refer to reachable keys,
-  // so we clear their key and value fields.
-  WeakPropertyPtr cur_weak = delayed_.weak_properties.Release();
-  while (cur_weak != WeakProperty::null()) {
-    WeakPropertyPtr next_weak =
-        cur_weak->untag()->next_seen_by_gc_.Decompress(cur_weak->heap_base());
-    // Reset the next pointer in the weak property.
-    cur_weak->untag()->next_seen_by_gc_ = WeakProperty::null();
-
-#if defined(DEBUG)
-    ObjectPtr raw_key = cur_weak->untag()->key();
-    uword raw_addr = UntaggedObject::ToAddr(raw_key);
-    uword header = *reinterpret_cast<uword*>(raw_addr);
-    ASSERT(!IsForwarding(header));
-    ASSERT(raw_key->IsHeapObject());
-    ASSERT(raw_key->IsNewObject());  // Key still points into from space.
-#endif                               // defined(DEBUG)
-
-    WeakProperty::Clear(cur_weak);
-
-    // Advance to next weak property in the queue.
-    cur_weak = next_weak;
-  }
-}
-
-template <bool parallel>
-void ScavengerVisitorBase<parallel>::MournWeakReferences() {
-  ASSERT(!scavenger_->abort_);
-
-  // The queued weak references at this point either should have their target
-  // updated or should be cleared.
-  WeakReferencePtr cur_weak = delayed_.weak_references.Release();
-  while (cur_weak != WeakReference::null()) {
-    WeakReferencePtr next_weak =
-        cur_weak->untag()->next_seen_by_gc_.Decompress(cur_weak->heap_base());
-    // Reset the next pointer in the weak reference.
-    cur_weak->untag()->next_seen_by_gc_ = WeakReference::null();
-
-    // If we did not mark the target through a weak property in a later round,
-    // then the target is dead and we should clear it.
-    ForwardOrSetNullIfCollected(cur_weak->heap_base(),
-                                &cur_weak->untag()->target_);
-
-    // Advance to next weak reference in the queue.
-    cur_weak = next_weak;
-  }
-}
-
-template <bool parallel>
-void ScavengerVisitorBase<parallel>::MournWeakArrays() {
-  ASSERT(!scavenger_->abort_);
-  WeakArrayPtr cur_weak = delayed_.weak_arrays.Release();
-  while (cur_weak != WeakArray::null()) {
-    WeakArrayPtr next_weak =
-        cur_weak->untag()->next_seen_by_gc_.Decompress(cur_weak->heap_base());
-    // Reset the next pointer in the weak reference.
-    cur_weak->untag()->next_seen_by_gc_ = WeakArray::null();
-
-    intptr_t length = Smi::Value(cur_weak->untag()->length());
-    for (intptr_t i = 0; i < length; i++) {
-      ForwardOrSetNullIfCollected(cur_weak->heap_base(),
-                                  &(cur_weak->untag()->data()[i]));
-    }
-
-    // Advance to next weak reference in the queue.
-    cur_weak = next_weak;
-  }
-}
-
 // Returns whether the object referred to in `ptr_address` was GCed this GC.
 template <bool parallel>
 bool ScavengerVisitorBase<parallel>::ForwardOrSetNullIfCollected(
     uword heap_base,
     CompressedObjectPtr* ptr_address) {
   ObjectPtr raw = ptr_address->Decompress(heap_base);
-  if (raw->IsSmiOrOldObject()) {
+  if (raw->IsImmediateOrOldObject()) {
     // Object already null (which is old) or not touched during this GC.
     return false;
   }
@@ -1746,6 +1713,7 @@ void Scavenger::Scavenge(Thread* thread, GCType type, GCReason reason) {
     }
     promo_candidate_words += page->promo_candidate_words();
   }
+  heap_->old_space()->PauseConcurrentMarking();
   SemiSpace* from = Prologue(reason);
 
   intptr_t bytes_promoted;
@@ -1780,6 +1748,7 @@ void Scavenger::Scavenge(Thread* thread, GCType type, GCReason reason) {
   MournWeakHandles();
   MournWeakTables();
   heap_->old_space()->ResetProgressBars();
+  heap_->old_space()->ResumeConcurrentMarking();
 
   // Restore write-barrier assumptions.
   heap_->isolate_group()->RememberLiveTemporaries();

@@ -97,7 +97,7 @@ class TypeArgumentsVerifier {
       return;
     }
 
-    var enumElement = constructorElement.enclosingElement;
+    var enumElement = constructorElement.enclosingElement2;
     var typeParameters = enumElement.typeParameters;
 
     var typeArgumentList = node.arguments?.typeArguments;
@@ -117,7 +117,7 @@ class TypeArgumentsVerifier {
     }
 
     // Check that type arguments are regular-bounded.
-    var typeArguments = constructorElement.returnType.typeArguments;
+    var typeArguments = constructorElement.returnType2.typeArguments;
     var substitution = Substitution.fromPairs(typeParameters, typeArguments);
     for (var i = 0; i < typeArguments.length; i++) {
       var typeParameter = typeParameters[i];

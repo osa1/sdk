@@ -1672,7 +1672,7 @@ Expected parent: (${parent.runtimeType}) $parent
   }
 
   String _elementToReferenceString(Element element) {
-    final enclosingElement = element.enclosingElement;
+    final enclosingElement = element.enclosingElement2;
     final reference = (element as ElementImpl).reference;
     if (reference != null) {
       return _referenceToString(reference);
@@ -1891,7 +1891,7 @@ Expected parent: (${parent.runtimeType}) $parent
       _withIndent(() {
         _sink.writeln('GenericFunctionTypeElement');
         _writeParameterElements(element.parameters);
-        _writeType('returnType', element.returnType);
+        _writeType('returnType', element.returnType2);
         _writeType('type', element.type);
       });
     }

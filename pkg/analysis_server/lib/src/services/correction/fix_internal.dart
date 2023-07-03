@@ -128,6 +128,7 @@ import 'package:analysis_server/src/services/correction/dart/remove_break.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_character.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_comparison.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_const.dart';
+import 'package:analysis_server/src/services/correction/dart/remove_constructor.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_constructor_name.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_dead_code.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_dead_if_null.dart';
@@ -1447,6 +1448,9 @@ class FixProcessor extends BaseProcessor {
       InsertSemicolon.new,
       ReplaceWithArrow.new,
     ],
+    ParserErrorCode.EXTENSION_DECLARES_CONSTRUCTOR: [
+      RemoveConstructor.new,
+    ],
     ParserErrorCode.GETTER_WITH_PARAMETERS: [
       RemoveParametersInGetterDeclaration.new,
     ],
@@ -1470,6 +1474,9 @@ class FixProcessor extends BaseProcessor {
     ],
     ParserErrorCode.MISSING_FUNCTION_BODY: [
       ConvertIntoBlockBody.new,
+    ],
+    ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR: [
+      RemoveConstructor.new,
     ],
     ParserErrorCode.RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA: [
       AddTrailingComma.new,

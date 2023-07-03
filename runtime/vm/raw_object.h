@@ -1104,9 +1104,8 @@ class UntaggedPatchClass : public UntaggedObject {
  private:
   RAW_HEAP_OBJECT_IMPLEMENTATION(PatchClass);
 
-  COMPRESSED_POINTER_FIELD(ClassPtr, patched_class)
-  VISIT_FROM(patched_class)
-  COMPRESSED_POINTER_FIELD(ClassPtr, origin_class)
+  COMPRESSED_POINTER_FIELD(ClassPtr, wrapped_class)
+  VISIT_FROM(wrapped_class)
   COMPRESSED_POINTER_FIELD(ScriptPtr, script)
   COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, library_kernel_data)
   VISIT_TO(library_kernel_data)
@@ -1399,7 +1398,21 @@ class UntaggedClosureData : public UntaggedObject {
                     compiler::target::kSmiBits,
                 "Default type arguments kind must fit in a Smi");
 
-  DefaultTypeArgumentsKind default_type_arguments_kind_;
+  static constexpr uint8_t kNoAwaiterLinkDepth = 0xFF;
+
+  AtomicBitFieldContainer<uint32_t> packed_fields_;
+
+  using PackedDefaultTypeArgumentsKind =
+      BitField<decltype(packed_fields_), DefaultTypeArgumentsKind, 0, 8>;
+  using PackedAwaiterLinkDepth =
+      BitField<decltype(packed_fields_),
+               uint8_t,
+               PackedDefaultTypeArgumentsKind::kNextBit,
+               8>;
+  using PackedAwaiterLinkIndex = BitField<decltype(packed_fields_),
+                                          uint8_t,
+                                          PackedAwaiterLinkDepth::kNextBit,
+                                          8>;
 
   friend class Function;
   friend class UnitDeserializationRoots;
@@ -1435,6 +1448,9 @@ class UntaggedFfiTrampolineData : public UntaggedObject {
 
   // Whether this is a leaf call - i.e. one that doesn't call back into Dart.
   bool is_leaf_;
+
+  // The kind of callback this is. See FfiCallbackKind.
+  uint8_t callback_kind_;
 };
 
 class UntaggedField : public UntaggedObject {
@@ -2324,6 +2340,13 @@ class UntaggedContext : public UntaggedObject {
                                 ObjectPtr);  // num_variables_
 };
 
+#define CONTEXT_SCOPE_VARIABLE_DESC_FLAG_LIST(V)                               \
+  V(Final)                                                                     \
+  V(Const)                                                                     \
+  V(Late)                                                                      \
+  V(Invisible)                                                                 \
+  V(AwaiterLink)
+
 class UntaggedContextScope : public UntaggedObject {
   RAW_HEAP_OBJECT_IMPLEMENTATION(ContextScope);
 
@@ -2334,10 +2357,11 @@ class UntaggedContextScope : public UntaggedObject {
     CompressedSmiPtr token_pos;
     CompressedStringPtr name;
     CompressedSmiPtr flags;
-    static constexpr intptr_t kIsFinal = 1 << 0;
-    static constexpr intptr_t kIsConst = 1 << 1;
-    static constexpr intptr_t kIsLate = 1 << 2;
-    static constexpr intptr_t kIsInvisible = 1 << 3;
+    enum FlagBits {
+#define DECLARE_BIT(Name) kIs##Name,
+      CONTEXT_SCOPE_VARIABLE_DESC_FLAG_LIST(DECLARE_BIT)
+#undef DECLARE_BIT
+    };
     CompressedSmiPtr late_init_offset;
     union {
       CompressedAbstractTypePtr type;
@@ -3521,7 +3545,7 @@ class UntaggedFinalizerBase : public UntaggedInstance {
   COMPRESSED_POINTER_FIELD(FinalizerEntryPtr, entries_collected)
 
   template <typename GCVisitorType>
-  friend void MournFinalized(GCVisitorType* visitor);
+  friend void MournFinalizerEntry(GCVisitorType*, FinalizerEntryPtr);
   friend class GCMarker;
   template <bool>
   friend class MarkingVisitorBase;
@@ -3546,7 +3570,7 @@ class UntaggedFinalizer : public UntaggedFinalizerBase {
   }
 
   template <typename GCVisitorType>
-  friend void MournFinalized(GCVisitorType* visitor);
+  friend void MournFinalizerEntry(GCVisitorType*, FinalizerEntryPtr);
   friend class GCMarker;
   template <bool>
   friend class MarkingVisitorBase;
@@ -3597,7 +3621,7 @@ class UntaggedFinalizerEntry : public UntaggedInstance {
   template <typename Type, typename PtrType>
   friend class GCLinkedList;
   template <typename GCVisitorType>
-  friend void MournFinalized(GCVisitorType* visitor);
+  friend void MournFinalizerEntry(GCVisitorType*, FinalizerEntryPtr);
   friend class GCMarker;
   template <bool>
   friend class MarkingVisitorBase;
