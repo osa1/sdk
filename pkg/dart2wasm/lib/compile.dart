@@ -29,6 +29,7 @@ import 'package:vm/transformations/type_flow/transformer.dart' as globalTypeFlow
     show transformComponent;
 
 import 'package:dart2wasm/compiler_options.dart' as compiler;
+import 'package:dart2wasm/class_info.dart';
 import 'package:dart2wasm/js/runtime_generator.dart' as js;
 import 'package:dart2wasm/record_class_generator.dart';
 import 'package:dart2wasm/records.dart';
@@ -123,6 +124,8 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
 
   if (options.translatorOptions.printTypes) {
     final StructGraph graph = StructGraph();
+
+    // Add struct types to the graph.
     for (final w.DefType ty in translator.m.defTypes) {
       if (ty is w.StructType) {
         if (ty.superType == null) {
@@ -131,6 +134,11 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
           graph.addSubtype(ty.superType as w.StructType, ty);
         }
       }
+    }
+
+    // Add classes to the structs.
+    for (final entry in translator.classInfo.entries) {
+      graph.addStructClass(entry.value.struct, entry.value);
     }
 
     for (final w.StructType topStruct in graph.topTypes) {
@@ -146,6 +154,7 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
 class StructGraph {
   Map<w.StructType, StructTypeSubtypes> subtypes = {};
   Set<w.StructType> topTypes = {};
+  Map<w.StructType, Set<ClassInfo>> structClasses = {};
 
   void addSubtype(w.StructType superType, w.StructType subType) {
     (subtypes[superType] ??= StructTypeSubtypes(superType))
@@ -159,6 +168,9 @@ class StructGraph {
 
   StructTypeSubtypes getSubtypes(w.StructType ty) =>
       subtypes[ty] ?? StructTypeSubtypes(ty);
+
+  void addStructClass(w.StructType struct, ClassInfo cls) =>
+      structClasses.putIfAbsent(struct, () => {}).add(cls);
 }
 
 class StructTypeSubtypes {
@@ -175,8 +187,16 @@ class StructTypeSubtypes {
       other is StructTypeSubtypes && structType == other.structType;
 
   void print_(int level, StructGraph graph) {
+    final Set<ClassInfo> structClassInfos =
+        graph.structClasses[structType] ?? {};
+    final List<String> structClasses = [];
+    for (ClassInfo info in structClassInfos) {
+      if (info.cls != null) {
+        structClasses.add(info.cls?.name ?? '#Top');
+      }
+    }
     print(
-        '${' ' * level}${structType.index}: ${structType.name}: ${structType.fields}');
+        '${' ' * level}${structType.index}: ${structType.name}: ${structType.fields} (${structClasses.join(',')})');
     for (final w.StructType subType in subtypes) {
       graph.getSubtypes(subType).print_(level + 2, graph);
     }
