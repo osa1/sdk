@@ -13,7 +13,7 @@ config("binaryen_warnings") {
 
   if (!is_clang) {
     # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86465#c16
-    cflags = [ "-Wno-maybe-uninitialized" ]
+    cflags += [ "-Wno-maybe-uninitialized" ]
   }
 }
 
