@@ -77,3 +77,8 @@ typedef _Smi = int; // For compatibility with VM patch files
 
 String _symbolToString(Symbol s) =>
     _internal.Symbol.getName(s as _internal.Symbol);
+
+@pragma("wasm:entry-point")
+void _testingMultipleReturns() {
+  print("Test");
+}

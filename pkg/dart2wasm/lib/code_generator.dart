@@ -559,8 +559,14 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
   void _implicitReturn() {
     if (outputs.isNotEmpty) {
-      w.ValueType returnType = outputs.single;
+      w.ValueType returnType = outputs[0];
       if (returnType is w.RefType && returnType.nullable) {
+        if (outputs.length == 2) {
+          b.ref_null(returnType.heapType.bottomType);
+          b.i32_const(123);
+          return;
+        }
+
         // Dart body may have an implicit return null.
         b.ref_null(returnType.heapType.bottomType);
       } else {

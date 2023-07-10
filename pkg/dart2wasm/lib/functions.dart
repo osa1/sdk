@@ -120,6 +120,10 @@ class FunctionCollector {
     allocateClass(translator.classInfo[translator.boxedBoolClass]!.classId);
     allocateClass(translator.classInfo[translator.boxedIntClass]!.classId);
     allocateClass(translator.classInfo[translator.boxedDoubleClass]!.classId);
+
+    getFunction(translator.index
+        .getTopLevelProcedure('dart:core', '_testingMultipleReturns')
+        .reference);
   }
 
   w.BaseFunction? getExistingFunction(Reference target) {
@@ -270,6 +274,13 @@ w.FunctionType _makeFunctionType(Translator translator, Reference target,
   }
   inputs.addAll(typeParameters);
   inputs.addAll(params.map(translateType));
+
+  print(member.name.text);
+
+  if (member.name.text == '_testingMultipleReturns') {
+    return translator.m
+        .addFunctionType(inputs, [translateType(returnType), w.NumType.i32]);
+  }
 
   final bool emptyOutputList = member is Constructor ||
       member is Procedure && member.isSetter ||
