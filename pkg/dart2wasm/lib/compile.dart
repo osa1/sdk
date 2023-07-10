@@ -29,11 +29,14 @@ import 'package:vm/transformations/type_flow/transformer.dart' as globalTypeFlow
     show transformComponent;
 
 import 'package:dart2wasm/compiler_options.dart' as compiler;
+import 'package:dart2wasm/class_info.dart';
 import 'package:dart2wasm/js/runtime_generator.dart' as js;
 import 'package:dart2wasm/record_class_generator.dart';
 import 'package:dart2wasm/records.dart';
 import 'package:dart2wasm/target.dart';
 import 'package:dart2wasm/translator.dart';
+
+import 'package:wasm_builder/wasm_builder.dart' as w;
 
 class CompilerOutput {
   final Uint8List wasmModule;
@@ -118,7 +121,84 @@ Future<CompilerOutput?> compileToModule(compiler.CompilerOptions options,
   }
 
   Uint8List wasmModule = translator.translate();
+
+  if (options.translatorOptions.printTypes) {
+    final StructGraph graph = StructGraph();
+
+    // Add struct types to the graph.
+    for (final w.DefType ty in translator.m.defTypes) {
+      if (ty is w.StructType) {
+        if (ty.superType == null) {
+          graph.addTopType(ty);
+        } else {
+          graph.addSubtype(ty.superType as w.StructType, ty);
+        }
+      }
+    }
+
+    // Add classes to the structs.
+    for (final entry in translator.classInfo.entries) {
+      graph.addStructClass(entry.value.struct, entry.value);
+    }
+
+    for (final w.StructType topStruct in graph.topTypes) {
+      graph.getSubtypes(topStruct).print_(0, graph);
+    }
+  }
+
   String jsRuntime =
       jsRuntimeFinalizer.generate(translator.functions.translatedProcedures);
   return CompilerOutput(wasmModule, jsRuntime);
+}
+
+class StructGraph {
+  Map<w.StructType, StructTypeSubtypes> subtypes = {};
+  Set<w.StructType> topTypes = {};
+  Map<w.StructType, Set<ClassInfo>> structClasses = {};
+
+  void addSubtype(w.StructType superType, w.StructType subType) {
+    (subtypes[superType] ??= StructTypeSubtypes(superType))
+        .subtypes
+        .add(subType);
+  }
+
+  void addTopType(w.StructType topType) {
+    topTypes.add(topType);
+  }
+
+  StructTypeSubtypes getSubtypes(w.StructType ty) =>
+      subtypes[ty] ?? StructTypeSubtypes(ty);
+
+  void addStructClass(w.StructType struct, ClassInfo cls) =>
+      structClasses.putIfAbsent(struct, () => {}).add(cls);
+}
+
+class StructTypeSubtypes {
+  w.StructType structType;
+  List<w.StructType> subtypes = [];
+
+  StructTypeSubtypes(this.structType);
+
+  @override
+  int get hashCode => structType.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StructTypeSubtypes && structType == other.structType;
+
+  void print_(int level, StructGraph graph) {
+    final Set<ClassInfo> structClassInfos =
+        graph.structClasses[structType] ?? {};
+    final List<String> structClasses = [];
+    for (ClassInfo info in structClassInfos) {
+      if (info.cls != null) {
+        structClasses.add(info.cls?.name ?? '#Top');
+      }
+    }
+    print(
+        '${' ' * level}${structType.index}: ${structType.name}: ${structType.fields} (${structClasses.join(',')})');
+    for (final w.StructType subType in subtypes) {
+      graph.getSubtypes(subType).print_(level + 2, graph);
+    }
+  }
 }

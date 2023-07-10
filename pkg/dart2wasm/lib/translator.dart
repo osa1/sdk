@@ -38,6 +38,7 @@ class TranslatorOptions {
   bool omitTypeChecks = false;
   bool polymorphicSpecialization = false;
   bool printKernel = false;
+  bool printTypes = false;
   bool printWasm = false;
   // If the default value for [useStringref] is changed, also update the
   // `sdk/bin/dart2wasm` script.

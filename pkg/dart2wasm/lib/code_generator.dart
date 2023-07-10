@@ -438,6 +438,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   void generateBody(Member member) {
+    if (options.printTypes) {
+      print(
+          '${member.enclosingClass?.name}.${member.name.text} : ${translator.functions.getFunctionType(member.reference)}');
+    }
+
     setupParametersAndContexts(member);
     if (member is Constructor) {
       generateInitializerList(member);
