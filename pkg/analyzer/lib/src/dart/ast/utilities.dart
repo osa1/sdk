@@ -1012,6 +1012,7 @@ class AstComparator implements AstVisitor<bool> {
     return isEqualNodes(
             node.documentationComment, other.documentationComment) &&
         _isEqualNodeLists(node.metadata, other.metadata) &&
+        isEqualTokens(node.augmentKeyword, other.augmentKeyword) &&
         isEqualTokens(node.externalKeyword, other.externalKeyword) &&
         isEqualTokens(node.modifierKeyword, other.modifierKeyword) &&
         isEqualNodes(node.returnType, other.returnType) &&
@@ -1032,11 +1033,30 @@ class AstComparator implements AstVisitor<bool> {
   }
 
   @override
+  bool visitMixinAugmentationDeclaration(MixinAugmentationDeclaration node) {
+    final other = _other as MixinAugmentationDeclaration;
+    return isEqualNodes(
+            node.documentationComment, other.documentationComment) &&
+        _isEqualNodeLists(node.metadata, other.metadata) &&
+        isEqualTokens(node.augmentKeyword, other.augmentKeyword) &&
+        isEqualTokens(node.baseKeyword, other.baseKeyword) &&
+        isEqualTokens(node.mixinKeyword, other.mixinKeyword) &&
+        isEqualTokens(node.name, other.name) &&
+        isEqualNodes(node.typeParameters, other.typeParameters) &&
+        isEqualNodes(node.onClause, other.onClause) &&
+        isEqualNodes(node.implementsClause, other.implementsClause) &&
+        isEqualTokens(node.leftBracket, other.leftBracket) &&
+        _isEqualNodeLists(node.members, other.members) &&
+        isEqualTokens(node.rightBracket, other.rightBracket);
+  }
+
+  @override
   bool visitMixinDeclaration(MixinDeclaration node) {
     MixinDeclaration other = _other as MixinDeclaration;
     return isEqualNodes(
             node.documentationComment, other.documentationComment) &&
         _isEqualNodeLists(node.metadata, other.metadata) &&
+        isEqualTokens(node.baseKeyword, other.baseKeyword) &&
         isEqualTokens(node.mixinKeyword, other.mixinKeyword) &&
         isEqualTokens(node.name, other.name) &&
         isEqualNodes(node.typeParameters, other.typeParameters) &&
@@ -2909,24 +2929,6 @@ class NodeReplacer extends ThrowingAstVisitor<bool> {
   }
 
   @override
-  bool visitMethodDeclaration(covariant MethodDeclarationImpl node) {
-    if (identical(node.returnType, _oldNode)) {
-      node.returnType = _newNode as TypeAnnotationImpl;
-      return true;
-    } else if (identical(node.parameters, _oldNode)) {
-      node.parameters = _newNode as FormalParameterListImpl;
-      return true;
-    } else if (identical(node.typeParameters, _oldNode)) {
-      node.typeParameters = _newNode as TypeParameterListImpl;
-      return true;
-    } else if (identical(node.body, _oldNode)) {
-      node.body = _newNode as FunctionBodyImpl;
-      return true;
-    }
-    return visitAnnotatedNode(node);
-  }
-
-  @override
   bool visitMethodInvocation(covariant MethodInvocationImpl node) {
     if (identical(node.target, _oldNode)) {
       node.target = _newNode as ExpressionImpl;
@@ -2939,28 +2941,6 @@ class NodeReplacer extends ThrowingAstVisitor<bool> {
       return true;
     } else if (identical(node.typeArguments, _oldNode)) {
       node.typeArguments = _newNode as TypeArgumentListImpl;
-      return true;
-    }
-    return visitNode(node);
-  }
-
-  @override
-  bool visitMixinDeclaration(covariant MixinDeclarationImpl node) {
-    if (identical(node.documentationComment, _oldNode)) {
-      node.documentationComment = _newNode as CommentImpl;
-      return true;
-    } else if (_replaceInList(node.metadata)) {
-      return true;
-    } else if (identical(node.typeParameters, _oldNode)) {
-      node.typeParameters = _newNode as TypeParameterListImpl;
-      return true;
-    } else if (identical(node.onClause, _oldNode)) {
-      node.onClause = _newNode as OnClauseImpl;
-      return true;
-    } else if (identical(node.implementsClause, _oldNode)) {
-      node.implementsClause = _newNode as ImplementsClauseImpl;
-      return true;
-    } else if (_replaceInList(node.members)) {
       return true;
     }
     return visitNode(node);

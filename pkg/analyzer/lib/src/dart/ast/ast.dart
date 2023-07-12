@@ -1447,6 +1447,8 @@ abstract class AstVisitor<R> {
 
   R? visitMethodInvocation(MethodInvocation node);
 
+  R? visitMixinAugmentationDeclaration(MixinAugmentationDeclaration node);
+
   R? visitMixinDeclaration(MixinDeclaration node);
 
   R? visitNamedExpression(NamedExpression node);
@@ -2755,35 +2757,13 @@ abstract final class ClassDeclaration
   /// does not extend any other class.
   ExtendsClause? get extendsClause;
 
-  /// Returns the implements clause for the class/mixin, or `null` if the
-  /// class/mixin does not implement any interfaces.
-  @override
-  ImplementsClause? get implementsClause;
-
   /// Return the 'inline' keyword, or `null` if the keyword was absent.
   @experimental
   Token? get inlineKeyword;
 
-  /// Returns the left curly bracket.
-  @override
-  Token get leftBracket;
-
-  /// Returns the members defined by the class/mixin.
-  @override
-  NodeList<ClassMember> get members;
-
   /// Return the native clause for this class, or `null` if the class does not
   /// have a native clause.
   NativeClause? get nativeClause;
-
-  /// Returns the right curly bracket.
-  @override
-  Token get rightBracket;
-
-  /// Returns the type parameters for the class/mixin, or `null` if the
-  /// class/mixin does not have any type parameters.
-  @override
-  TypeParameterList? get typeParameters;
 }
 
 final class ClassDeclarationImpl extends ClassOrAugmentationDeclarationImpl
@@ -11933,6 +11913,9 @@ final class MapPatternImpl extends DartPatternImpl implements MapPattern {
 /// children of a class declaration. When the experiment is enabled, these nodes
 /// can also be children of an extension declaration.
 abstract final class MethodDeclaration implements ClassMember {
+  /// The token for the 'augment' keyword.
+  Token? get augmentKeyword;
+
   /// Return the body of the method.
   FunctionBody get body;
 
@@ -11986,119 +11969,78 @@ abstract final class MethodDeclaration implements ClassMember {
   TypeParameterList? get typeParameters;
 }
 
-/// A method declaration.
-///
-///    methodDeclaration ::=
-///        methodSignature [FunctionBody]
-///
-///    methodSignature ::=
-///        'external'? ('abstract' | 'static')? [Type]? ('get' | 'set')?
-///        methodName [TypeParameterList] [FormalParameterList]
-///
-///    methodName ::=
-///        [SimpleIdentifier]
-///      | 'operator' [SimpleIdentifier]
 final class MethodDeclarationImpl extends ClassMemberImpl
     implements MethodDeclaration {
-  /// The token for the 'external' keyword, or `null` if the constructor is not
-  /// external.
+  @override
+  final Token? augmentKeyword;
+
   @override
   final Token? externalKeyword;
 
-  /// The token representing the 'abstract' or 'static' keyword, or `null` if
-  /// neither modifier was specified.
   @override
   final Token? modifierKeyword;
 
-  /// The return type of the method, or `null` if no return type was declared.
-  TypeAnnotationImpl? _returnType;
+  @override
+  final TypeAnnotationImpl? returnType;
 
-  /// The token representing the 'get' or 'set' keyword, or `null` if this is a
-  /// method declaration rather than a property declaration.
   @override
   final Token? propertyKeyword;
 
-  /// The token representing the 'operator' keyword, or `null` if this method
-  /// does not declare an operator.
   @override
   final Token? operatorKeyword;
 
   @override
   final Token name;
 
-  /// The type parameters associated with the method, or `null` if the method is
-  /// not a generic method.
-  TypeParameterListImpl? _typeParameters;
+  @override
+  final TypeParameterListImpl? typeParameters;
 
-  /// The parameters associated with the method, or `null` if this method
-  /// declares a getter.
-  FormalParameterListImpl? _parameters;
+  @override
+  final FormalParameterListImpl? parameters;
 
-  /// The body of the method.
-  FunctionBodyImpl _body;
+  @override
+  final FunctionBodyImpl body;
 
-  /// Return the element associated with this method, or `null` if the AST
-  /// structure has not been resolved. The element can either be a
-  /// [MethodElement], if this represents the declaration of a normal method, or
-  /// a [PropertyAccessorElement] if this represents the declaration of either a
-  /// getter or a setter.
   @override
   ExecutableElementImpl? declaredElement;
 
-  /// Initialize a newly created method declaration. Either or both of the
-  /// [comment] and [metadata] can be `null` if the declaration does not have
-  /// the corresponding attribute. The [externalKeyword] can be `null` if the
-  /// method is not external. The [modifierKeyword] can be `null` if the method
-  /// is neither abstract nor static. The [returnType] can be `null` if no
-  /// return type was specified. The [propertyKeyword] can be `null` if the
-  /// method is neither a getter or a setter. The [operatorKeyword] can be
-  /// `null` if the method does not implement an operator. The [parameters] must
-  /// be `null` if this method declares a getter.
   MethodDeclarationImpl({
     required super.comment,
     required super.metadata,
+    required this.augmentKeyword,
     required this.externalKeyword,
     required this.modifierKeyword,
-    required TypeAnnotationImpl? returnType,
+    required this.returnType,
     required this.propertyKeyword,
     required this.operatorKeyword,
     required this.name,
-    required TypeParameterListImpl? typeParameters,
-    required FormalParameterListImpl? parameters,
-    required FunctionBodyImpl body,
-  })  : _returnType = returnType,
-        _typeParameters = typeParameters,
-        _parameters = parameters,
-        _body = body {
-    _becomeParentOf(_returnType);
-    _becomeParentOf(_typeParameters);
-    _becomeParentOf(_parameters);
-    _becomeParentOf(_body);
+    required this.typeParameters,
+    required this.parameters,
+    required this.body,
+  }) {
+    _becomeParentOf(returnType);
+    _becomeParentOf(typeParameters);
+    _becomeParentOf(parameters);
+    _becomeParentOf(body);
   }
 
   @override
-  FunctionBodyImpl get body => _body;
-
-  set body(FunctionBodyImpl functionBody) {
-    _body = _becomeParentOf(functionBody);
-  }
-
-  @override
-  Token get endToken => _body.endToken;
+  Token get endToken => body.endToken;
 
   @override
   Token get firstTokenAfterCommentAndMetadata {
-    return Token.lexicallyFirst(externalKeyword, modifierKeyword) ??
-        _returnType?.beginToken ??
+    return augmentKeyword ??
+        Token.lexicallyFirst(externalKeyword, modifierKeyword) ??
+        returnType?.beginToken ??
         Token.lexicallyFirst(propertyKeyword, operatorKeyword) ??
         name;
   }
 
   @override
   bool get isAbstract {
-    FunctionBody body = _body;
+    final body = this.body;
     return externalKeyword == null &&
-        (body is EmptyFunctionBody && !body.semicolon.isSynthetic);
+        (body is EmptyFunctionBodyImpl && !body.semicolon.isSynthetic);
   }
 
   @override
@@ -12114,28 +12056,8 @@ final class MethodDeclarationImpl extends ClassMemberImpl
   bool get isStatic => modifierKeyword?.keyword == Keyword.STATIC;
 
   @override
-  FormalParameterListImpl? get parameters => _parameters;
-
-  set parameters(FormalParameterListImpl? parameters) {
-    _parameters = _becomeParentOf(parameters);
-  }
-
-  @override
-  TypeAnnotationImpl? get returnType => _returnType;
-
-  set returnType(TypeAnnotationImpl? type) {
-    _returnType = _becomeParentOf(type);
-  }
-
-  @override
-  TypeParameterListImpl? get typeParameters => _typeParameters;
-
-  set typeParameters(TypeParameterListImpl? typeParameters) {
-    _typeParameters = _becomeParentOf(typeParameters);
-  }
-
-  @override
   ChildEntities get _childEntities => super._childEntities
+    ..addToken('augmentKeyword', augmentKeyword)
     ..addToken('externalKeyword', externalKeyword)
     ..addToken('modifierKeyword', modifierKeyword)
     ..addNode('returnType', returnType)
@@ -12151,10 +12073,10 @@ final class MethodDeclarationImpl extends ClassMemberImpl
   @override
   void visitChildren(AstVisitor visitor) {
     super.visitChildren(visitor);
-    _returnType?.accept(visitor);
-    _typeParameters?.accept(visitor);
-    _parameters?.accept(visitor);
-    _body.accept(visitor);
+    returnType?.accept(visitor);
+    typeParameters?.accept(visitor);
+    parameters?.accept(visitor);
+    body.accept(visitor);
   }
 }
 
@@ -12389,6 +12311,35 @@ abstract final class MixinAugmentationDeclaration
   MixinAugmentationElement? get declaredElement;
 }
 
+final class MixinAugmentationDeclarationImpl
+    extends MixinOrAugmentationDeclarationImpl
+    implements MixinAugmentationDeclaration {
+  @override
+  MixinAugmentationElementImpl? declaredElement;
+
+  @override
+  final Token augmentKeyword;
+
+  MixinAugmentationDeclarationImpl({
+    required super.comment,
+    required super.metadata,
+    required this.augmentKeyword,
+    required super.baseKeyword,
+    required super.mixinKeyword,
+    required super.name,
+    required super.typeParameters,
+    required super.onClause,
+    required super.implementsClause,
+    required super.leftBracket,
+    required super.members,
+    required super.rightBracket,
+  });
+
+  @override
+  E? accept<E>(AstVisitor<E> visitor) =>
+      visitor.visitMixinAugmentationDeclaration(this);
+}
+
 /// The declaration of a mixin.
 ///
 ///    mixinDeclaration ::=
@@ -12398,158 +12349,29 @@ abstract final class MixinDeclaration
     implements MixinOrAugmentationDeclaration {
   @override
   MixinElement? get declaredElement;
-
-  /// Returns the implements clause for the class/mixin, or `null` if the
-  /// class/mixin does not implement any interfaces.
-  @override
-  ImplementsClause? get implementsClause;
-
-  /// Returns the left curly bracket.
-  @override
-  Token get leftBracket;
-
-  /// Returns the members defined by the class/mixin.
-  @override
-  NodeList<ClassMember> get members;
-
-  /// Returns the right curly bracket.
-  @override
-  Token get rightBracket;
-
-  /// Returns the type parameters for the class/mixin, or `null` if the
-  /// class/mixin does not have any type parameters.
-  @override
-  TypeParameterList? get typeParameters;
 }
 
-/// The declaration of a mixin.
-///
-///    mixinDeclaration ::=
-///        metadata? 'base'? 'mixin' [SimpleIdentifier]
-///        [TypeParameterList]? [RequiresClause]? [ImplementsClause]?
-///        '{' [ClassMember]* '}'
-final class MixinDeclarationImpl extends NamedCompilationUnitMemberImpl
+final class MixinDeclarationImpl extends MixinOrAugmentationDeclarationImpl
     implements MixinDeclaration {
-  /// Return the 'augment' keyword, or `null` if the keyword was absent.
-  final Token? augmentKeyword;
-
-  /// Return the 'base' keyword, or `null` if the keyword was absent.
-  @override
-  final Token? baseKeyword;
-
-  @override
-  final Token mixinKeyword;
-
-  /// The type parameters for the class or mixin,
-  /// or `null` if the declaration does not have any type parameters.
-  TypeParameterListImpl? _typeParameters;
-
-  /// The on clause for the mixin, or `null` if the mixin does not have any
-  /// super-class constraints.
-  OnClauseImpl? _onClause;
-
-  /// The implements clause for the class or mixin,
-  /// or `null` if the declaration does not implement any interfaces.
-  ImplementsClauseImpl? _implementsClause;
-
   @override
   MixinElementImpl? declaredElement;
 
-  /// The left curly bracket.
-  @override
-  final Token leftBracket;
-
-  /// The members defined by the class or mixin.
-  final NodeListImpl<ClassMemberImpl> _members = NodeListImpl._();
-
-  /// The right curly bracket.
-  @override
-  final Token rightBracket;
-
-  /// Initialize a newly created mixin declaration. Either or both of the
-  /// [comment] and [metadata] can be `null` if the mixin does not have the
-  /// corresponding attribute. The [typeParameters] can be `null` if the mixin
-  /// does not have any type parameters. Either or both of the [onClause],
-  /// and [implementsClause] can be `null` if the mixin does not have the
-  /// corresponding clause. The list of [members] can be `null` if the mixin
-  /// does not have any members.
   MixinDeclarationImpl({
     required super.comment,
     required super.metadata,
-    required this.augmentKeyword,
-    required this.baseKeyword,
-    required this.mixinKeyword,
+    required super.baseKeyword,
+    required super.mixinKeyword,
     required super.name,
-    required TypeParameterListImpl? typeParameters,
-    required OnClauseImpl? onClause,
-    required ImplementsClauseImpl? implementsClause,
-    required this.leftBracket,
-    required List<ClassMemberImpl> members,
-    required this.rightBracket,
-  })  : _typeParameters = typeParameters,
-        _onClause = onClause,
-        _implementsClause = implementsClause {
-    _becomeParentOf(_typeParameters);
-    _becomeParentOf(_onClause);
-    _becomeParentOf(_implementsClause);
-    _members._initialize(this, members);
-  }
-
-  @override
-  Token get endToken => rightBracket;
-
-  @override
-  Token get firstTokenAfterCommentAndMetadata {
-    return baseKeyword ?? mixinKeyword;
-  }
-
-  @override
-  ImplementsClauseImpl? get implementsClause => _implementsClause;
-
-  set implementsClause(ImplementsClauseImpl? implementsClause) {
-    _implementsClause = _becomeParentOf(implementsClause);
-  }
-
-  @override
-  NodeListImpl<ClassMemberImpl> get members => _members;
-
-  @override
-  OnClauseImpl? get onClause => _onClause;
-
-  set onClause(OnClauseImpl? onClause) {
-    _onClause = _becomeParentOf(onClause);
-  }
-
-  @override
-  TypeParameterListImpl? get typeParameters => _typeParameters;
-
-  set typeParameters(TypeParameterListImpl? typeParameters) {
-    _typeParameters = _becomeParentOf(typeParameters);
-  }
-
-  @override
-  ChildEntities get _childEntities => super._childEntities
-    ..addToken('baseKeyword', baseKeyword)
-    ..addToken('mixinKeyword', mixinKeyword)
-    ..addToken('name', name)
-    ..addNode('typeParameters', typeParameters)
-    ..addNode('onClause', onClause)
-    ..addNode('implementsClause', implementsClause)
-    ..addToken('leftBracket', leftBracket)
-    ..addNodeList('members', members)
-    ..addToken('rightBracket', rightBracket);
+    required super.typeParameters,
+    required super.onClause,
+    required super.implementsClause,
+    required super.leftBracket,
+    required super.members,
+    required super.rightBracket,
+  });
 
   @override
   E? accept<E>(AstVisitor<E> visitor) => visitor.visitMixinDeclaration(this);
-
-  @override
-  void visitChildren(AstVisitor visitor) {
-    super.visitChildren(visitor);
-    _typeParameters?.accept(visitor);
-    _onClause?.accept(visitor);
-    _implementsClause?.accept(visitor);
-    members.accept(visitor);
-  }
 }
 
 /// Shared interface between [MixinDeclaration] and
@@ -12586,6 +12408,85 @@ abstract final class MixinOrAugmentationDeclaration
   /// Returns the type parameters for the mixin, or `null` if the mixin does
   /// not have any type parameters.
   TypeParameterList? get typeParameters;
+}
+
+sealed class MixinOrAugmentationDeclarationImpl
+    extends NamedCompilationUnitMemberImpl
+    implements MixinOrAugmentationDeclaration {
+  @override
+  final Token? baseKeyword;
+
+  @override
+  final Token mixinKeyword;
+
+  @override
+  final TypeParameterListImpl? typeParameters;
+
+  @override
+  final OnClauseImpl? onClause;
+
+  @override
+  final ImplementsClauseImpl? implementsClause;
+
+  @override
+  final Token leftBracket;
+
+  @override
+  final NodeListImpl<ClassMemberImpl> members = NodeListImpl._();
+
+  @override
+  final Token rightBracket;
+
+  MixinOrAugmentationDeclarationImpl({
+    required super.comment,
+    required super.metadata,
+    required this.baseKeyword,
+    required this.mixinKeyword,
+    required super.name,
+    required this.typeParameters,
+    required this.onClause,
+    required this.implementsClause,
+    required this.leftBracket,
+    required List<ClassMemberImpl> members,
+    required this.rightBracket,
+  }) {
+    _becomeParentOf(typeParameters);
+    _becomeParentOf(onClause);
+    _becomeParentOf(implementsClause);
+    this.members._initialize(this, members);
+  }
+
+  Token? get augmentKeyword => null;
+
+  @override
+  Token get endToken => rightBracket;
+
+  @override
+  Token get firstTokenAfterCommentAndMetadata {
+    return augmentKeyword ?? baseKeyword ?? mixinKeyword;
+  }
+
+  @override
+  ChildEntities get _childEntities => super._childEntities
+    ..addToken('augmentKeyword', augmentKeyword)
+    ..addToken('baseKeyword', baseKeyword)
+    ..addToken('mixinKeyword', mixinKeyword)
+    ..addToken('name', name)
+    ..addNode('typeParameters', typeParameters)
+    ..addNode('onClause', onClause)
+    ..addNode('implementsClause', implementsClause)
+    ..addToken('leftBracket', leftBracket)
+    ..addNodeList('members', members)
+    ..addToken('rightBracket', rightBracket);
+
+  @override
+  void visitChildren(AstVisitor visitor) {
+    super.visitChildren(visitor);
+    typeParameters?.accept(visitor);
+    onClause?.accept(visitor);
+    implementsClause?.accept(visitor);
+    members.accept(visitor);
+  }
 }
 
 /// A node that declares a single name within the scope of a compilation unit.

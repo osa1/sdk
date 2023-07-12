@@ -637,11 +637,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     if (enableDds) {
       logger?.call('Starting a DDS instance for $uri');
       try {
-        final dds = await DartDevelopmentService.startDartDevelopmentService(
-          vmServiceUriToHttp(uri),
-          enableAuthCodes: enableAuthCodes,
-          ipv6: ipv6,
-        );
+        final dds = await startDds(uri, uriConverter());
         _dds = dds;
         uri = dds.wsUri!;
       } on DartDevelopmentServiceException catch (e) {
@@ -725,6 +721,12 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     _debuggerInitializedCompleter.complete();
   }
 
+  // This is intended for subclasses to override to provide a URI converter to
+  // resolve package URIs to local paths.
+  UriConverter? uriConverter() {
+    return null;
+  }
+
   void sendDebuggerUris(Uri uri) {
     // Send a custom event with the VM Service URI as the editor might want to
     // know about this (for example so it can connect an embedded DevTools to
@@ -734,6 +736,15 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
         'vmServiceUri': uri.toString(),
       }),
       eventType: 'dart.debuggerUris',
+    );
+  }
+
+  Future<DartDevelopmentService> startDds(Uri uri, UriConverter? uriConverter) {
+    return DartDevelopmentService.startDartDevelopmentService(
+      vmServiceUriToHttp(uri),
+      enableAuthCodes: enableAuthCodes,
+      ipv6: ipv6,
+      uriConverter: uriConverter,
     );
   }
 
@@ -794,7 +805,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
         if (isolateManager.autoResumeStartingIsolates) {
           await isolateManager.resumeIsolate(isolate);
         } else {
-          isolateManager.sendStoppedOnEntryEvent(thread.threadId);
+          isolateManager.sendStoppedOnEntryEvent(thread.isolateNumber);
         }
       }
     }));
@@ -958,11 +969,18 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
       }
     }
 
-    if (thread == null || frameIndex == null) {
-      // TODO(dantup): Dart-Code evaluates these in the context of the rootLib
-      // rather than just not supporting it. Consider something similar (or
-      // better here).
-      throw UnimplementedError('Global evaluation not currently supported');
+    // To support global evaluation, we allow passing a file:/// URI in the
+    // context argument.
+    final context = args.context;
+    final targetScriptFileUri = context != null &&
+            context.startsWith('file://') &&
+            context.endsWith('.dart')
+        ? Uri.tryParse(context)
+        : null;
+
+    if ((thread == null || frameIndex == null) && targetScriptFileUri == null) {
+      throw UnimplementedError(
+          'Global evaluation not currently supported without a Dart script context');
     }
 
     // Parse the expression for trailing format specifiers.
@@ -980,7 +998,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
         // the arguments.
         VariableFormat.fromDapValueFormat(args.format);
 
-    final exceptionReference = thread.exceptionReference;
+    final exceptionReference = thread?.exceptionReference;
     // The value in the constant `frameExceptionExpression` is used as a special
     // expression that evaluates to the exception on the current thread. This
     // allows us to construct evaluateNames that evaluate to the fields down the
@@ -991,16 +1009,35 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
 
     vm.Response? result;
     try {
-      if (exceptionReference != null && isExceptionExpression) {
+      if (thread != null &&
+          exceptionReference != null &&
+          isExceptionExpression) {
         result = await _evaluateExceptionExpression(
           exceptionReference,
           expression,
           thread,
         );
-      } else {
+      } else if (thread != null && frameIndex != null) {
         result = await vmService?.evaluateInFrame(
           thread.isolate.id!,
           frameIndex,
+          expression,
+          disableBreakpoints: true,
+        );
+      } else if (targetScriptFileUri != null &&
+          // Since we can't currently get a thread, we assume the first thread is
+          // a reasonable target for global evaluation.
+          (thread = isolateManager.threads.firstOrNull) != null &&
+          thread != null) {
+        final library = await thread.getLibraryForFileUri(targetScriptFileUri);
+        if (library == null) {
+          // Wrapped in DebugAdapterException in the catch below.
+          throw 'Unable to find the library for $targetScriptFileUri';
+        }
+
+        result = await vmService?.evaluate(
+          thread.isolate.id!,
+          library.id!,
           expression,
           disableBreakpoints: true,
         );
@@ -1028,7 +1065,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
       throw DebugAdapterException(result.message ?? '<error ref>');
     } else if (result is vm.Sentinel) {
       throw DebugAdapterException(result.valueAsString ?? '<collected>');
-    } else if (result is vm.InstanceRef) {
+    } else if (result is vm.InstanceRef && thread != null) {
       final resultString = await _converter.convertVmInstanceRefToDisplayString(
         thread,
         result,
@@ -1599,19 +1636,19 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     //  requests can be used to enforce paging in the client."
     const stackFrameBatchSize = 20;
 
-    final threadId = args.threadId;
-    final thread = isolateManager.getThread(threadId);
+    final isolateNumber = args.threadId;
+    final thread = isolateManager.getThread(isolateNumber);
     final topFrame = thread?.pauseEvent?.topFrame;
     final startFrame = args.startFrame ?? 0;
     final numFrames = args.levels ?? 0;
     var totalFrames = 1;
 
     if (thread == null) {
-      throw DebugAdapterException('No thread with threadId $threadId');
+      throw DebugAdapterException('No thread with threadId $isolateNumber');
     }
 
     if (!thread.paused) {
-      throw DebugAdapterException('Thread $threadId is not paused');
+      throw DebugAdapterException('Thread $isolateNumber is not paused');
     }
 
     final stackFrames = <StackFrame>[];
@@ -1761,7 +1798,7 @@ abstract class DartDebugAdapter<TL extends LaunchRequestArguments,
     final threads = [
       for (final thread in isolateManager.threads)
         Thread(
-          id: thread.threadId,
+          id: thread.isolateNumber,
           name: thread.isolate.name ?? '<unnamed isolate>',
         )
     ];

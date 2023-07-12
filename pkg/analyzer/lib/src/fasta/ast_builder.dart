@@ -1320,6 +1320,7 @@ class AstBuilder extends StackListener {
       MethodDeclarationImpl(
         comment: comment,
         metadata: metadata,
+        augmentKeyword: modifiers?.augmentKeyword,
         externalKeyword: modifiers?.externalKeyword,
         modifierKeyword: modifiers?.abstractKeyword ?? modifiers?.staticKeyword,
         returnType: returnType,
@@ -2503,9 +2504,19 @@ class AstBuilder extends StackListener {
     debugEvent("MixinDeclaration");
 
     final builder = _classLikeBuilder as _MixinDeclarationBuilder;
-    declarations.add(
-      builder.build(),
-    );
+    final augmentKeyword = builder.augmentKeyword;
+
+    if (augmentKeyword != null) {
+      declarations.add(
+        builder.buildAugmentation(
+          augmentKeyword: augmentKeyword,
+        ),
+      );
+    } else {
+      declarations.add(
+        builder.build(),
+      );
+    }
     _classLikeBuilder = null;
   }
 
@@ -6031,6 +6042,24 @@ class _MixinDeclarationBuilder extends _ClassLikeDeclarationBuilder {
 
   MixinDeclarationImpl build() {
     return MixinDeclarationImpl(
+      comment: comment,
+      metadata: metadata,
+      baseKeyword: baseKeyword,
+      mixinKeyword: mixinKeyword,
+      name: name,
+      typeParameters: typeParameters,
+      onClause: onClause,
+      implementsClause: implementsClause,
+      leftBracket: leftBracket,
+      members: members,
+      rightBracket: rightBracket,
+    );
+  }
+
+  MixinAugmentationDeclarationImpl buildAugmentation({
+    required Token augmentKeyword,
+  }) {
+    return MixinAugmentationDeclarationImpl(
       comment: comment,
       metadata: metadata,
       augmentKeyword: augmentKeyword,

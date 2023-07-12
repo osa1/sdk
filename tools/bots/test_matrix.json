@@ -392,65 +392,16 @@
         "use-elf": true
       }
     },
-    "vm-asan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "asan",
-        "timeout": 240
-      }
-    },
-    "vm-lsan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "lsan",
-        "timeout": 240
-      }
-    },
-    "vm-msan-linux-(debug|product|release)-(x64|simarm64|simriscv64)": {
-      "options": {
-        "builder-tag": "msan",
-        "timeout": 240
-      }
-    },
-    "vm-tsan-(linux|mac)-(debug|product|release)-(x64|simarm64|simriscv64)": {
-      "options": {
-        "builder-tag": "tsan",
-        "timeout": 240
-      }
-    },
-    "vm-ubsan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "ubsan",
-        "timeout": 240
-      }
-    },
-    "vm-aot-asan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "asan"
-      }
-    },
-    "vm-aot-lsan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "lsan",
-        "timeout": 240
-      }
-    },
-    "vm-aot-msan-linux-(debug|product|release)-(x64|simarm64|simriscv64)": {
-      "options": {
-        "builder-tag": "msan",
-        "timeout": 240
-      }
-    },
-    "vm-aot-tsan-(linux|mac)-(debug|product|release)-(x64|simarm64|simriscv64)": {
-      "options": {
-        "builder-tag": "tsan",
-        "timeout": 240
-      }
-    },
-    "vm-aot-ubsan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {
-      "options": {
-        "builder-tag": "ubsan",
-        "timeout": 240
-      }
-    },
+    "vm-asan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {},
+    "vm-lsan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {},
+    "vm-msan-linux-(debug|product|release)-(x64|simarm64|simriscv64)": {},
+    "vm-tsan-(linux|mac)-(debug|product|release)-(x64|simarm64|simriscv64)": {},
+    "vm-ubsan-(linux|mac)-(debug|product|release)-(ia32|x64|simarm|simarm64|simriscv32|simriscv64)": {},
+    "vm-aot-asan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {},
+    "vm-aot-lsan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {},
+    "vm-aot-msan-linux-(debug|product|release)-(x64|simarm64|simriscv64)": {},
+    "vm-aot-tsan-(linux|mac)-(debug|product|release)-(x64|simarm64|simriscv64)": {},
+    "vm-aot-ubsan-(linux|mac)-(debug|product|release)-(x64|simarm|simarm64|simriscv32|simriscv64)": {},
     "dart2js-(linux|win)-chrome": {
       "options": {
         "use-sdk": true
@@ -1837,6 +1788,8 @@
           "script": "tools/build.py",
           "arguments": [
             "--no-goma",
+            "dart_precompiled_runtime",
+            "gen_snapshot",
             "runtime"
           ]
         },
@@ -3075,10 +3028,10 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}",
-            "c_compiler",
             "dart_style",
             "native_assets_builder",
             "native_assets_cli",
+            "native_toolchain_c",
             "package_config"
           ]
         },
@@ -3137,7 +3090,7 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}-arm64",
-            "c_compiler",
+            "native_toolchain_c",
             "dart_style",
             "native_assets_builder",
             "native_assets_cli",
@@ -3181,7 +3134,7 @@
           "name": "third_party tested packages",
           "arguments": [
             "-nunittest-asserts-${mode}-${system}",
-            "c_compiler",
+            "native_toolchain_c",
             "dart_style",
             "native_assets_builder",
             "native_assets_cli",

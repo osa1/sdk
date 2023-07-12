@@ -54,6 +54,19 @@ import 'package:analyzer/src/task/api/model.dart' show AnalysisTarget;
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
+/// Information about [ExecutableElement] that is an augmentation.
+///
+/// Clients may not extend, implement or mix-in this class.
+abstract class AugmentationExecutableElement {
+  /// The element that is augmented by this augmentation.
+  ///
+  /// The chain of augmentations should normally end with a [ExecutableElement]
+  /// that is not augmentation, but might end with `null` immediately or
+  /// after a few intermediate augmentations in case of invalid code when an
+  /// augmentation is declared without the corresponding declaration.
+  ExecutableElement? get augmentationTarget;
+}
+
 /// A library augmentation import directive within a library.
 ///
 /// Clients may not extend, implement or mix-in this class.
@@ -75,6 +88,15 @@ abstract class AugmentationImportElement implements _ExistingElement {
 
   /// The interpretation of the URI specified in the directive.
   DirectiveUri get uri;
+}
+
+/// Information about [MethodElement] that is an augmentation.
+///
+/// Clients may not extend, implement or mix-in this class.
+abstract class AugmentationMethodElement
+    implements AugmentationExecutableElement {
+  @override
+  MethodElement? get augmentationTarget;
 }
 
 /// The result of applying augmentations to a [ClassElement].
@@ -220,18 +242,6 @@ abstract class ClassElement
   /// Whether the class or its superclass declares a non-final instance field.
   bool get hasNonFinalField;
 
-  /// Whether the class is abstract. A class is abstract if it has an
-  /// explicit `abstract` modifier. Note, that this definition of
-  /// <i>abstract</i> is different from <i>has unimplemented members</i>.
-  bool get isAbstract;
-
-  /// Whether this class is a base class.
-  ///
-  /// A class is a base class if it has an explicit `base` modifier, or the
-  /// class has a `base` induced modifier and [isSealed] is `true` as well.
-  /// The base modifier allows the class to be extended but not implemented.
-  bool get isBase;
-
   /// Whether the class can be instantiated.
   bool get isConstructable;
 
@@ -246,43 +256,17 @@ abstract class ClassElement
   /// covered all possible instances of the type.
   bool get isExhaustive;
 
-  /// Whether the class is a final class.
-  ///
-  /// A class is a final class if it has an explicit `final` modifier, or the
-  /// class has a `final` induced modifier and [isSealed] is `true` as well.
-  /// The final modifier prohibits this class from being extended, implemented,
-  /// or mixed in.
-  bool get isFinal;
-
   /// Whether the class is an inline class.
   ///
   /// A class is an inline class if it has an explicit `inline` modifier.
   @experimental
   bool get isInline;
 
-  /// Whether the class is an interface class.
-  ///
-  /// A class is an interface class if it has an explicit `interface` modifier,
-  /// or the class has an `interface` induced modifier and [isSealed] is `true`
-  /// as well. The interface modifier allows the class to be implemented, but
-  /// not extended or mixed in.
-  bool get isInterface;
-
   /// Whether the class is a mixin application.
   ///
   /// A class is a mixin application if it was declared using the syntax
   /// `class A = B with C;`.
   bool get isMixinApplication;
-
-  /// Whether the class is a mixin class.
-  ///
-  /// A class is a mixin class if it has an explicit `mixin` modifier.
-  bool get isMixinClass;
-
-  /// Whether the class is a sealed class.
-  ///
-  /// A class is a sealed class if it has an explicit `sealed` modifier.
-  bool get isSealed;
 
   /// Whether the class can validly be used as a mixin when defining
   /// another class.
@@ -347,6 +331,44 @@ abstract class ClassOrAugmentationElement
 
   @override
   ClassElement? get augmentedDeclaration;
+
+  /// Whether the class is abstract. A class is abstract if it has an
+  /// explicit `abstract` modifier. Note, that this definition of
+  /// <i>abstract</i> is different from <i>has unimplemented members</i>.
+  bool get isAbstract;
+
+  /// Whether this class is a base class.
+  ///
+  /// A class is a base class if it has an explicit `base` modifier, or the
+  /// class has a `base` induced modifier and [isSealed] is `true` as well.
+  /// The base modifier allows the class to be extended but not implemented.
+  bool get isBase;
+
+  /// Whether the class is a final class.
+  ///
+  /// A class is a final class if it has an explicit `final` modifier, or the
+  /// class has a `final` induced modifier and [isSealed] is `true` as well.
+  /// The final modifier prohibits this class from being extended, implemented,
+  /// or mixed in.
+  bool get isFinal;
+
+  /// Whether the class is an interface class.
+  ///
+  /// A class is an interface class if it has an explicit `interface` modifier,
+  /// or the class has an `interface` induced modifier and [isSealed] is `true`
+  /// as well. The interface modifier allows the class to be implemented, but
+  /// not extended or mixed in.
+  bool get isInterface;
+
+  /// Whether the class is a mixin class.
+  ///
+  /// A class is a mixin class if it has an explicit `mixin` modifier.
+  bool get isMixinClass;
+
+  /// Whether the class is a sealed class.
+  ///
+  /// A class is a sealed class if it has an explicit `sealed` modifier.
+  bool get isSealed;
 }
 
 /// An element representing a compilation unit.
@@ -358,6 +380,7 @@ abstract class CompilationUnitElement implements UriReferencedElement {
   List<PropertyAccessorElement> get accessors;
 
   /// The class augmentations declared in this compilation unit.
+  @experimental
   List<ClassAugmentationElement> get classAugmentations;
 
   /// The classes declared in this compilation unit.
@@ -383,6 +406,10 @@ abstract class CompilationUnitElement implements UriReferencedElement {
 
   /// The [LineInfo] for the [source].
   LineInfo get lineInfo;
+
+  /// The mixin augmentations declared in this compilation unit.
+  @experimental
+  List<MixinAugmentationElement> get mixinAugmentations;
 
   /// The mixins declared in this compilation unit.
   List<MixinElement> get mixins;
@@ -1169,6 +1196,8 @@ abstract class ElementVisitor<R> {
 
   R? visitMethodElement(MethodElement element);
 
+  R? visitMixinAugmentationElement(MixinAugmentationElement element);
+
   R? visitMixinElement(MixinElement element);
 
   R? visitMultiplyDefinedElement(MultiplyDefinedElement element);
@@ -1286,6 +1315,11 @@ abstract class ExecutableElement implements FunctionTypedElement {
 
   /// Whether the executable element has a body marked as being synchronous.
   bool get isSynchronous;
+
+  /// The augmentation specific information.
+  ///
+  /// Not `null` if this [ExecutableElement] is an augmentation.
+  AugmentationExecutableElement? get maybeAugmentation;
 
   @override
   String get name;
@@ -1637,13 +1671,6 @@ abstract class InterfaceElement
   @override
   InterfaceType get thisType;
 
-  /// The unnamed constructor declared directly in this class.
-  ///
-  /// If the class does not declare any constructors, a synthetic default
-  /// constructor will be returned.
-  /// TODO(scheglov) Deprecate and remove it.
-  ConstructorElement? get unnamedConstructor;
-
   /// The field (synthetic or explicit) defined directly in this class or
   /// augmentation that has the given [name].
   /// TODO(scheglov) Deprecate and remove it.
@@ -1658,11 +1685,6 @@ abstract class InterfaceElement
   /// given [name].
   /// TODO(scheglov) Deprecate and remove it.
   MethodElement? getMethod(String name);
-
-  /// The constructor defined directly in this class or augmentation
-  /// that has the given [name].
-  /// TODO(scheglov) Deprecate and remove it.
-  ConstructorElement? getNamedConstructor(String name);
 
   /// The setter (synthetic or explicit) defined directly in this class or
   /// augmentation that has the given [name].
@@ -2124,20 +2146,6 @@ abstract class LocalVariableElement implements PromotableElement {
   String get name;
 }
 
-/// An element that represents a method augmentation defined within a class.
-///
-/// Clients may not extend, implement or mix-in this class.
-abstract class MethodAugmentationElement implements MethodElement {
-  /// The element that is augmented by this augmentation.
-  ///
-  /// The chain of augmentations should normally end with a [MethodElement]
-  /// that is not [MethodAugmentationElement], but might end with `null`
-  /// immediately or after a few intermediate [MethodAugmentationElement]s in
-  /// case of invalid code when an augmentation is declared without the
-  /// corresponding method declaration.
-  MethodElement? get augmentationTarget;
-}
-
 /// An element that represents a method defined within a class.
 ///
 /// Clients may not extend, implement or mix-in this class.
@@ -2145,12 +2153,15 @@ abstract class MethodElement implements ClassMemberElement, ExecutableElement {
   /// The immediate augmentation of this element, or `null` if there are no
   /// augmentations.
   ///
-  /// [MethodAugmentationElement.augmentationTarget] is the back pointer that
+  /// [AugmentationMethodElement.augmentationTarget] is the back pointer that
   /// will point at this element.
-  MethodAugmentationElement? get augmentation;
+  MethodElement? get augmentation;
 
   @override
   MethodElement get declaration;
+
+  @override
+  AugmentationMethodElement? get maybeAugmentation;
 }
 
 /// A class augmentation, defined by a mixin augmentation declaration.
@@ -2177,25 +2188,6 @@ abstract class MixinElement
   @override
   AugmentedMixinElement get augmented;
 
-  /// Whether the mixin is a base mixin.
-  ///
-  /// A mixin is a base mixin if it has an explicit `base` modifier, or the
-  /// mixin has a `base` induced modifier and [isSealed] is `true` as well.
-  /// The base modifier allows a mixin to be mixed in but not implemented.
-  bool get isBase;
-
-  /// The superclass constraints defined for this mixin.
-  ///
-  /// If the declaration does not have an `on` clause, then the list will
-  /// contain the type for the class `Object`.
-  ///
-  /// <b>Note:</b> Because the element model represents the state of the code,
-  /// it is possible for it to be semantically invalid. In particular, it is not
-  /// safe to assume that the inheritance structure of a class does not contain
-  /// a cycle. Clients that traverse the inheritance structure must explicitly
-  /// guard against infinite loops.
-  List<InterfaceType> get superclassConstraints;
-
   /// Whether the element, assuming that it is within scope, is
   /// implementable to classes, mixins, and enums in the given [library].
   bool isImplementableIn(LibraryElement library);
@@ -2216,6 +2208,24 @@ abstract class MixinOrAugmentationElement
 
   @override
   MixinElement? get augmentedDeclaration;
+
+  /// Whether the mixin is a base mixin.
+  ///
+  /// A mixin is a base mixin if it has an explicit `base` modifier.
+  /// The base modifier allows a mixin to be mixed in, but not implemented.
+  bool get isBase;
+
+  /// The superclass constraints defined for this mixin.
+  ///
+  /// If the declaration does not have an `on` clause, then the list will
+  /// contain the type for the class `Object`.
+  ///
+  /// <b>Note:</b> Because the element model represents the state of the code,
+  /// it is possible for it to be semantically invalid. In particular, it is not
+  /// safe to assume that the inheritance structure of a class does not contain
+  /// a cycle. Clients that traverse the inheritance structure must explicitly
+  /// guard against infinite loops.
+  List<InterfaceType> get superclassConstraints;
 }
 
 /// A pseudo-element that represents multiple elements defined within a single
@@ -2248,6 +2258,18 @@ abstract class NamedInstanceElement
   @experimental
   @override
   AugmentedNamedInstanceElement get augmented;
+
+  /// The unnamed constructor declared directly in this class.
+  ///
+  /// If the class does not declare any constructors, a synthetic default
+  /// constructor will be returned.
+  /// TODO(scheglov) Deprecate and remove it.
+  ConstructorElement? get unnamedConstructor;
+
+  /// The constructor defined directly in this class or augmentation
+  /// that has the given [name].
+  /// TODO(scheglov) Deprecate and remove it.
+  ConstructorElement? getNamedConstructor(String name);
 
   /// Create the [DartType] for this element with the given [typeArguments]
   /// and [nullabilitySuffix].

@@ -40,6 +40,7 @@ String getLibraryText({
 
 class ElementTextConfiguration {
   bool Function(Object) filter;
+  bool withAugmentedWithoutAugmentation = false;
   bool withCodeRanges = false;
   bool withConstantInitializers = true;
   bool withConstructors = true;
@@ -151,11 +152,17 @@ class _ElementWriter {
   }
 
   void _writeAugmentation(InterfaceOrAugmentationElementMixin e) {
-    if (e case ClassOrAugmentationElementMixin e) {
-      final augmentation = e.augmentation;
-      if (augmentation != null) {
-        _elementPrinter.writeNamedElement('augmentation', augmentation);
-      }
+    switch (e) {
+      case ClassOrAugmentationElementMixin e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
+      case MixinOrAugmentationElementMixin e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
     }
   }
 
@@ -188,21 +195,30 @@ class _ElementWriter {
 
   void _writeAugmented(InstanceElementImpl e) {
     // TODO(scheglov) enable for other types
-    if (e is! ClassElementImpl) {
+    if (!(e is ClassElementImpl || e is MixinElementImpl)) {
       return;
     }
 
     // No augmentation, not interesting.
     if (e.augmentation == null) {
-      return;
+      expect(e.augmented, TypeMatcher<NotAugmentedInstanceElementImpl>());
+      if (!configuration.withAugmentedWithoutAugmentation) {
+        return;
+      }
     }
 
     _sink.writelnWithIndent('augmented');
     _sink.withIndent(() {
       final augmented = e.augmented;
       switch (augmented) {
-        case AugmentedInterfaceElementImpl():
+        case AugmentedClassElement():
           _elementPrinter.writeTypeList('mixins', augmented.mixins);
+          _elementPrinter.writeTypeList('interfaces', augmented.interfaces);
+        case AugmentedMixinElement():
+          _elementPrinter.writeTypeList(
+            'superclassConstraints',
+            augmented.superclassConstraints,
+          );
           _elementPrinter.writeTypeList('interfaces', augmented.interfaces);
       }
       // TODO(scheglov) Add other types and properties
@@ -520,28 +536,30 @@ class _ElementWriter {
         _sink.write('augment ');
       }
 
-      if (e is ClassElementImpl) {
-        _sink.writeIf(e.isAbstract, 'abstract ');
-        _sink.writeIf(e.isMacro, 'macro ');
-        _sink.writeIf(e.isSealed, 'sealed ');
-        _sink.writeIf(e.isBase, 'base ');
-        _sink.writeIf(e.isInterface, 'interface ');
-        _sink.writeIf(e.isFinal, 'final ');
-        _sink.writeIf(e.isInline, 'inline ');
-        _sink.writeIf(e.isMixinClass, 'mixin ');
-      }
-      _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
-
-      if (e is EnumElementImpl) {
-        _sink.write('enum ');
-      } else if (e is MixinElementImpl) {
-        _sink.writeIf(e.isBase, 'base ');
-        _sink.write('mixin ');
-      } else {
-        _sink.write('class ');
-      }
-      if (e is ClassElementImpl) {
-        _sink.writeIf(e.isMixinApplication, 'alias ');
+      switch (e) {
+        case ClassOrAugmentationElementMixin():
+          _sink.writeIf(e.isAbstract, 'abstract ');
+          _sink.writeIf(e.isMacro, 'macro ');
+          _sink.writeIf(e.isSealed, 'sealed ');
+          _sink.writeIf(e.isBase, 'base ');
+          _sink.writeIf(e.isInterface, 'interface ');
+          _sink.writeIf(e.isFinal, 'final ');
+          if (e is ClassElementImpl) {
+            _sink.writeIf(e.isInline, 'inline ');
+          }
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.writeIf(e.isMixinClass, 'mixin ');
+          _sink.write('class ');
+          if (e is ClassElementImpl) {
+            _sink.writeIf(e.isMixinApplication, 'alias ');
+          }
+        case EnumElementImpl():
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.write('enum ');
+        case MixinOrAugmentationElementMixin():
+          _sink.writeIf(e.isBase, 'base ');
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.write('mixin ');
       }
 
       _writeName(e);
@@ -565,10 +583,12 @@ class _ElementWriter {
         }
       }
 
-      if (e is MixinElementImpl) {
-        var superclassConstraints = e.superclassConstraints;
-        if (superclassConstraints.isEmpty) {
-          throw StateError('At least Object is expected.');
+      if (e is MixinOrAugmentationElementMixin) {
+        final superclassConstraints = e.superclassConstraints;
+        if (e is MixinElementImpl) {
+          if (superclassConstraints.isEmpty) {
+            throw StateError('At least Object is expected.');
+          }
         }
         _elementPrinter.writeTypeList(
           'superclassConstraints',
@@ -1079,6 +1099,11 @@ class _ElementWriter {
     _writeElements('enums', e.enums, _writeInterfaceOrAugmentationElement);
     _writeElements('extensions', e.extensions, _writeExtensionElement);
     _writeElements('mixins', e.mixins, _writeInterfaceOrAugmentationElement);
+    _writeElements(
+      'mixinAugmentations',
+      e.mixinAugmentations,
+      _writeInterfaceOrAugmentationElement,
+    );
     _writeElements('typeAliases', e.typeAliases, _writeTypeAliasElement);
     _writeElements(
       'topLevelVariables',

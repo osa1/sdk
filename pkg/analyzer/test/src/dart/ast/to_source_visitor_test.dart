@@ -2464,6 +2464,16 @@ void f(x) {
     );
   }
 
+  void test_visitMethodDeclaration_augment() {
+    final code = 'augment void foo() {}';
+    final findNode = _parseStringToFindNode('''
+class A {
+  $code
+}
+''');
+    _assertSource(code, findNode.singleMethodDeclaration);
+  }
+
   void test_visitMethodDeclaration_external() {
     final code = 'external foo();';
     final findNode = _parseStringToFindNode('''
@@ -2652,6 +2662,24 @@ void f() {
 }
 ''');
     _assertSource(code, findNode.methodInvocation(code));
+  }
+
+  void test_visitMixinAugmentationDeclaration() {
+    final code = 'augment mixin M {}';
+    var findNode = _parseStringToFindNode(code);
+    _assertSource(
+      code,
+      findNode.singleMixinAugmentationDeclaration,
+    );
+  }
+
+  void test_visitMixinAugmentationDeclaration_base() {
+    final code = 'augment base mixin M {}';
+    var findNode = _parseStringToFindNode(code);
+    _assertSource(
+      code,
+      findNode.singleMixinAugmentationDeclaration,
+    );
   }
 
   void test_visitMixinDeclaration_base() {
