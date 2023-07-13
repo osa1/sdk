@@ -136,9 +136,10 @@ abstract class _TypedList extends _TypedListBase {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The base class for all [ByteData] implementations. This provides slow
-/// implementations for get and set methods using [getUint8] and [setUint8].
-/// Implementations can override the methods to provide a more efficient
-/// implementation based on the actual Wasm array type used.
+/// implementations for get and set methods using abstract [getUint8] and
+/// [setUint8] methods. Implementations should implement [getUint8] and
+/// [setUint8], and override get/set methods for elements matching the buffer
+/// element type to provide fast access.
 abstract class _ByteData2 implements ByteData {
   final int offsetInBytes;
   final int lengthInBytes;
@@ -369,32 +370,45 @@ class _I16ByteData2 extends _ByteData2 {
 
   @override
   int getUint8(int byteOffset) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    return (_data.readUnsigned(byteIndex) >>
+            (8 * (byteOffset % elementSizeInBytes))) &
+        0xFF;
   }
 
   @override
   void setUint8(int byteOffset, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int getInt16(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final element = _data.readUnsigned(byteIndex);
+    final byteElementIndex = byteOffset % elementSizeInBytes;
+    final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
+    final b2 = byteElementIndex == 1 ? value : (element >> 8);
+    final newValue = (b2 << 8) & b1;
+    _data.write(byteIndex, newValue);
   }
 
   @override
   int getUint16(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
-  }
-
-  @override
-  void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final elementLittleEndian = _data.readUnsigned(byteIndex);
+    if (endian == Endian.little) {
+      return elementLittleEndian;
+    } else {
+      return (((elementLittleEndian & 0xFF) << 8) | (elementLittleEndian >> 8));
+    }
   }
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    if (endian == Endian.big) {
+      value = (value & 0xFF) << 8 & (value >> 8);
+    }
+    _data.write(byteIndex, value);
   }
 }
 
