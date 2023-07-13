@@ -5,8 +5,12 @@
 import 'dart:_internal'
     show
         ClassID,
+        doubleToIntBits,
         ExpandIterable,
+        floatToIntBits,
         FollowedByIterable,
+        intBitsToDouble,
+        intBitsToFloat,
         IterableElementError,
         ListMapView,
         Lists,
@@ -143,92 +147,180 @@ abstract class _ByteData2 implements ByteData {
 
   @override
   int getInt8(int byteOffset) {
-    throw 'TODO';
+    return getUint8(byteOffset).toSigned(8);
   }
 
   @override
   void setInt8(int byteOffset, int value) {
-    throw 'TODO';
+    setUint8(byteOffset, value.toUnsigned(8));
   }
 
   @override
   int getInt16(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    return getUint16(byteOffset, endian).toSigned(16);
   }
 
   @override
   void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    setUint16(byteOffset, value.toUnsigned(16), endian);
   }
 
   @override
   int getUint16(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = getUint8(byteOffset);
+    final b2 = getUint8(byteOffset + 1);
+    if (endian == Endian.little) {
+      return (b2 << 8) | b1;
+    } else {
+      return (b1 << 8) | b2;
+    }
   }
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = value & 0xFF;
+    final b2 = (value >> 8) & 0xFF;
+    if (endian == Endian.little) {
+      setUint8(byteOffset, b1);
+      setUint8(byteOffset + 1, b2);
+    } else {
+      setUint8(byteOffset, b2);
+      setUint8(byteOffset + 1, b1);
+    }
   }
 
   @override
   int getInt32(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    return getUint32(byteOffset, endian).toSigned(32);
   }
 
   @override
   void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    setUint32(byteOffset, value.toUnsigned(32), endian);
   }
 
   @override
   int getUint32(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = getUint8(byteOffset);
+    final b2 = getUint8(byteOffset + 1);
+    final b3 = getUint8(byteOffset + 2);
+    final b4 = getUint8(byteOffset + 3);
+    if (endian == Endian.little) {
+      return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+    } else {
+      return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+    }
   }
 
   @override
   void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = value & 0xFF;
+    final b2 = (value >> 8) & 0xFF;
+    final b3 = (value >> 16) & 0xFF;
+    final b4 = (value >> 24) & 0xFF;
+    if (endian == Endian.little) {
+      setUint8(byteOffset, b1);
+      setUint8(byteOffset + 1, b2);
+      setUint8(byteOffset + 2, b3);
+      setUint8(byteOffset + 3, b4);
+    } else {
+      setUint8(byteOffset, b4);
+      setUint8(byteOffset + 1, b3);
+      setUint8(byteOffset + 2, b2);
+      setUint8(byteOffset + 3, b1);
+    }
   }
 
   @override
   int getInt64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    return getUint64(byteOffset, endian);
   }
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    setUint64(byteOffset, value, endian);
   }
 
   @override
   int getUint64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = getUint8(byteOffset);
+    final b2 = getUint8(byteOffset + 1);
+    final b3 = getUint8(byteOffset + 2);
+    final b4 = getUint8(byteOffset + 3);
+    final b5 = getUint8(byteOffset + 4);
+    final b6 = getUint8(byteOffset + 5);
+    final b7 = getUint8(byteOffset + 6);
+    final b8 = getUint8(byteOffset + 7);
+    if (endian == Endian.little) {
+      return (b1 << 56) |
+          (b2 << 48) |
+          (b3 << 40) |
+          (b4 << 32) |
+          (b5 << 24) |
+          (b6 << 16) |
+          (b7 << 8) |
+          b8;
+    } else {
+      return (b8 << 56) |
+          (b7 << 48) |
+          (b6 << 40) |
+          (b5 << 32) |
+          (b4 << 24) |
+          (b3 << 16) |
+          (b2 << 8) |
+          b1;
+    }
   }
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final b1 = value & 0xFF;
+    final b2 = (value >> 8) & 0xFF;
+    final b3 = (value >> 16) & 0xFF;
+    final b4 = (value >> 24) & 0xFF;
+    final b5 = (value >> 32) & 0xFF;
+    final b6 = (value >> 40) & 0xFF;
+    final b7 = (value >> 48) & 0xFF;
+    final b8 = (value >> 56) & 0xFF;
+    if (endian == Endian.little) {
+      setUint8(byteOffset, b1);
+      setUint8(byteOffset + 1, b2);
+      setUint8(byteOffset + 2, b3);
+      setUint8(byteOffset + 3, b4);
+      setUint8(byteOffset + 4, b5);
+      setUint8(byteOffset + 5, b6);
+      setUint8(byteOffset + 6, b7);
+      setUint8(byteOffset + 7, b8);
+    } else {
+      setUint8(byteOffset, b8);
+      setUint8(byteOffset + 1, b7);
+      setUint8(byteOffset + 2, b6);
+      setUint8(byteOffset + 3, b5);
+      setUint8(byteOffset + 4, b4);
+      setUint8(byteOffset + 5, b3);
+      setUint8(byteOffset + 6, b2);
+      setUint8(byteOffset + 7, b1);
+    }
   }
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    return intBitsToFloat(getUint32(byteOffset, endian));
   }
 
   @override
   void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    setUint32(byteOffset, floatToIntBits(value), endian);
   }
 
   @override
   double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    return intBitsToDouble(getUint64(byteOffset, endian));
   }
 
   @override
   void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    setUint64(byteOffset, doubleToIntBits(value), endian);
   }
 }
 
