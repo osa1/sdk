@@ -752,13 +752,10 @@ class _F32ByteBuffer2 extends _ByteBufferBase {
 
   @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    length ??=
-        (this.lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
-
-    _rangeCheck(this.lengthInBytes, offsetInBytes,
-        length * Float32List.bytesPerElement);
-
     offsetInBytes += this.offsetInBytes;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
     if (offsetInBytes % Float32List.bytesPerElement != 0) {
       return _SlowF32List._(this, offsetInBytes, length);
     } else {
@@ -784,13 +781,10 @@ class _F64ByteBuffer2 extends _ByteBufferBase {
 
   @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    length ??=
-        (this.lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
-
-    _rangeCheck(this.lengthInBytes, offsetInBytes,
-        length * Float64List.bytesPerElement);
-
     offsetInBytes += this.offsetInBytes;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
     if (offsetInBytes % Float64List.bytesPerElement != 0) {
       return _SlowF64List._(this, offsetInBytes, length);
     } else {
