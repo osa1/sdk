@@ -695,34 +695,34 @@ mixin _TypedListCommonOperationsMixin {
 
   @override
   String join([String separator = ""]) {
-    StringBuffer buffer = new StringBuffer();
+    StringBuffer buffer = StringBuffer();
     buffer.writeAll(this as Iterable, separator);
     return buffer.toString();
   }
 
   @override
   void clear() {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   @override
   bool remove(Object? element) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   @override
   void removeRange(int start, int end) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   @override
   void replaceRange(int start, int end, Iterable iterable) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   @override
   set length(int newLength) {
-    throw new UnsupportedError("Cannot resize a fixed-length list");
+    throw UnsupportedError("Cannot resize a fixed-length list");
   }
 }
 
@@ -731,22 +731,22 @@ mixin _IntListMixin2 implements List<int> {
   int get offsetInBytes;
   ByteBuffer get buffer;
 
-  Iterable<T> whereType<T>() => new WhereTypeIterable<T>(this);
+  Iterable<T> whereType<T>() => WhereTypeIterable<T>(this);
 
   Iterable<int> followedBy(Iterable<int> other) =>
-      new FollowedByIterable<int>.firstEfficient(this, other);
+      FollowedByIterable<int>.firstEfficient(this, other);
 
   List<R> cast<R>() => List.castFrom<int, R>(this);
   void set first(int value) {
     if (this.length == 0) {
-      throw new IndexError.withLength(0, length, indexable: this);
+      throw IndexError.withLength(0, length, indexable: this);
     }
     this[0] = value;
   }
 
   void set last(int value) {
     if (this.length == 0) {
-      throw new IndexError.withLength(0, length, indexable: this);
+      throw IndexError.withLength(0, length, indexable: this);
     }
     this[this.length - 1] = value;
   }
@@ -779,7 +779,7 @@ mixin _IntListMixin2 implements List<int> {
   }
 
   void shuffle([Random? random]) {
-    random ??= new Random();
+    random ??= Random();
     var i = this.length;
     while (i > 1) {
       int pos = random.nextInt(i);
@@ -790,35 +790,35 @@ mixin _IntListMixin2 implements List<int> {
     }
   }
 
-  Iterable<int> where(bool f(int element)) => new WhereIterable<int>(this, f);
+  Iterable<int> where(bool f(int element)) => WhereIterable<int>(this, f);
 
-  Iterable<int> take(int n) => new SubListIterable<int>(this, 0, n);
+  Iterable<int> take(int n) => SubListIterable<int>(this, 0, n);
 
   Iterable<int> takeWhile(bool test(int element)) =>
-      new TakeWhileIterable<int>(this, test);
+      TakeWhileIterable<int>(this, test);
 
-  Iterable<int> skip(int n) => new SubListIterable<int>(this, n, null);
+  Iterable<int> skip(int n) => SubListIterable<int>(this, n, null);
 
   Iterable<int> skipWhile(bool test(int element)) =>
-      new SkipWhileIterable<int>(this, test);
+      SkipWhileIterable<int>(this, test);
 
-  Iterable<int> get reversed => new ReversedListIterable<int>(this);
+  Iterable<int> get reversed => ReversedListIterable<int>(this);
 
-  Map<int, int> asMap() => new ListMapView<int>(this);
+  Map<int, int> asMap() => ListMapView<int>(this);
 
   Iterable<int> getRange(int start, [int? end]) {
     int endIndex = RangeError.checkValidRange(start, end, this.length);
-    return new SubListIterable<int>(this, start, endIndex);
+    return SubListIterable<int>(this, start, endIndex);
   }
 
-  Iterator<int> get iterator => new _TypedListIterator<int>(this);
+  Iterator<int> get iterator => _TypedListIterator<int>(this);
 
   List<int> toList({bool growable = true}) {
-    return new List<int>.from(this, growable: growable);
+    return List<int>.from(this, growable: growable);
   }
 
   Set<int> toSet() {
-    return new Set<int>.from(this);
+    return Set<int>.from(this);
   }
 
   void forEach(void f(int element)) {
@@ -846,10 +846,10 @@ mixin _IntListMixin2 implements List<int> {
     return initialValue;
   }
 
-  Iterable<T> map<T>(T f(int element)) => new MappedIterable<int, T>(this, f);
+  Iterable<T> map<T>(T f(int element)) => MappedIterable<int, T>(this, f);
 
   Iterable<T> expand<T>(Iterable<T> f(int element)) =>
-      new ExpandIterable<int, T>(this, f);
+      ExpandIterable<int, T>(this, f);
 
   bool every(bool f(int element)) {
     var len = this.length;
@@ -913,19 +913,19 @@ mixin _IntListMixin2 implements List<int> {
   }
 
   void add(int value) {
-    throw new UnsupportedError("Cannot add to a fixed-length list");
+    throw UnsupportedError("Cannot add to a fixed-length list");
   }
 
   void addAll(Iterable<int> value) {
-    throw new UnsupportedError("Cannot add to a fixed-length list");
+    throw UnsupportedError("Cannot add to a fixed-length list");
   }
 
   void insert(int index, int value) {
-    throw new UnsupportedError("Cannot insert into a fixed-length list");
+    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void insertAll(int index, Iterable<int> values) {
-    throw new UnsupportedError("Cannot insert into a fixed-length list");
+    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void sort([int compare(int a, int b)?]) {
@@ -954,19 +954,19 @@ mixin _IntListMixin2 implements List<int> {
   }
 
   int removeLast() {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   int removeAt(int index) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   void removeWhere(bool test(int element)) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   void retainWhere(bool test(int element)) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   int get first {
@@ -1047,22 +1047,22 @@ mixin _DoubleListMixin2 implements List<double> {
   int get offsetInBytes;
   ByteBuffer get buffer;
 
-  Iterable<T> whereType<T>() => new WhereTypeIterable<T>(this);
+  Iterable<T> whereType<T>() => WhereTypeIterable<T>(this);
 
   Iterable<double> followedBy(Iterable<double> other) =>
-      new FollowedByIterable<double>.firstEfficient(this, other);
+      FollowedByIterable<double>.firstEfficient(this, other);
 
   List<R> cast<R>() => List.castFrom<double, R>(this);
   void set first(double value) {
     if (this.length == 0) {
-      throw new IndexError.withLength(0, length, indexable: this);
+      throw IndexError.withLength(0, length, indexable: this);
     }
     this[0] = value;
   }
 
   void set last(double value) {
     if (this.length == 0) {
-      throw new IndexError.withLength(0, length, indexable: this);
+      throw IndexError.withLength(0, length, indexable: this);
     }
     this[this.length - 1] = value;
   }
@@ -1095,7 +1095,7 @@ mixin _DoubleListMixin2 implements List<double> {
   }
 
   void shuffle([Random? random]) {
-    random ??= new Random();
+    random ??= Random();
     var i = this.length;
     while (i > 1) {
       int pos = random.nextInt(i);
@@ -1107,35 +1107,35 @@ mixin _DoubleListMixin2 implements List<double> {
   }
 
   Iterable<double> where(bool f(double element)) =>
-      new WhereIterable<double>(this, f);
+      WhereIterable<double>(this, f);
 
-  Iterable<double> take(int n) => new SubListIterable<double>(this, 0, n);
+  Iterable<double> take(int n) => SubListIterable<double>(this, 0, n);
 
   Iterable<double> takeWhile(bool test(double element)) =>
-      new TakeWhileIterable<double>(this, test);
+      TakeWhileIterable<double>(this, test);
 
-  Iterable<double> skip(int n) => new SubListIterable<double>(this, n, null);
+  Iterable<double> skip(int n) => SubListIterable<double>(this, n, null);
 
   Iterable<double> skipWhile(bool test(double element)) =>
-      new SkipWhileIterable<double>(this, test);
+      SkipWhileIterable<double>(this, test);
 
-  Iterable<double> get reversed => new ReversedListIterable<double>(this);
+  Iterable<double> get reversed => ReversedListIterable<double>(this);
 
-  Map<int, double> asMap() => new ListMapView<double>(this);
+  Map<int, double> asMap() => ListMapView<double>(this);
 
   Iterable<double> getRange(int start, [int? end]) {
     int endIndex = RangeError.checkValidRange(start, end, this.length);
-    return new SubListIterable<double>(this, start, endIndex);
+    return SubListIterable<double>(this, start, endIndex);
   }
 
-  Iterator<double> get iterator => new _TypedListIterator<double>(this);
+  Iterator<double> get iterator => _TypedListIterator<double>(this);
 
   List<double> toList({bool growable = true}) {
-    return new List<double>.from(this, growable: growable);
+    return List<double>.from(this, growable: growable);
   }
 
   Set<double> toSet() {
-    return new Set<double>.from(this);
+    return Set<double>.from(this);
   }
 
   void forEach(void f(double element)) {
@@ -1163,11 +1163,10 @@ mixin _DoubleListMixin2 implements List<double> {
     return initialValue;
   }
 
-  Iterable<T> map<T>(T f(double element)) =>
-      new MappedIterable<double, T>(this, f);
+  Iterable<T> map<T>(T f(double element)) => MappedIterable<double, T>(this, f);
 
   Iterable<T> expand<T>(Iterable<T> f(double element)) =>
-      new ExpandIterable<double, T>(this, f);
+      ExpandIterable<double, T>(this, f);
 
   bool every(bool f(double element)) {
     var len = this.length;
@@ -1231,19 +1230,19 @@ mixin _DoubleListMixin2 implements List<double> {
   }
 
   void add(double value) {
-    throw new UnsupportedError("Cannot add to a fixed-length list");
+    throw UnsupportedError("Cannot add to a fixed-length list");
   }
 
   void addAll(Iterable<double> value) {
-    throw new UnsupportedError("Cannot add to a fixed-length list");
+    throw UnsupportedError("Cannot add to a fixed-length list");
   }
 
   void insert(int index, double value) {
-    throw new UnsupportedError("Cannot insert into a fixed-length list");
+    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void insertAll(int index, Iterable<double> values) {
-    throw new UnsupportedError("Cannot insert into a fixed-length list");
+    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void sort([int compare(double a, double b)?]) {
@@ -1272,19 +1271,19 @@ mixin _DoubleListMixin2 implements List<double> {
   }
 
   double removeLast() {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   double removeAt(int index) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   void removeWhere(bool test(double element)) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   void retainWhere(bool test(double element)) {
-    throw new UnsupportedError("Cannot remove from a fixed-length list");
+    throw UnsupportedError("Cannot remove from a fixed-length list");
   }
 
   double get first {
@@ -1405,7 +1404,7 @@ class _I8List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
@@ -1413,7 +1412,7 @@ class _I8List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1452,7 +1451,7 @@ class _U8List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readUnsigned(_offsetInElements + index);
@@ -1460,7 +1459,7 @@ class _U8List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1499,7 +1498,7 @@ class _I16List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
@@ -1507,7 +1506,7 @@ class _I16List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1546,7 +1545,7 @@ class _U16List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readUnsigned(_offsetInElements + index);
@@ -1554,7 +1553,7 @@ class _U16List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1593,7 +1592,7 @@ class _I32List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
@@ -1601,7 +1600,7 @@ class _I32List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1640,7 +1639,7 @@ class _U32List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readUnsigned(_offsetInElements + index);
@@ -1648,7 +1647,7 @@ class _U32List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1687,7 +1686,7 @@ class _I64List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
@@ -1695,7 +1694,7 @@ class _I64List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1734,7 +1733,7 @@ class _U64List
   @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.readUnsigned(_offsetInElements + index);
@@ -1742,7 +1741,7 @@ class _U64List
 
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1781,7 +1780,7 @@ class _F32List
   @override
   double operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.read(_offsetInElements + index);
@@ -1789,7 +1788,7 @@ class _F32List
 
   void operator []=(int index, double value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1828,7 +1827,7 @@ class _F64List
   @override
   double operator [](int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     return _data.read(_offsetInElements + index);
@@ -1836,7 +1835,7 @@ class _F64List
 
   void operator []=(int index, double value) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
     _data.write(_offsetInElements + index, value);
@@ -1861,7 +1860,7 @@ class _SlowListBase {
 
   void _indexRangeCheck(int index) {
     if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
+      throw IndexError.withLength(index, length,
           indexable: this, name: "index");
     }
   }
