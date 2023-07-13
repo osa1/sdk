@@ -534,12 +534,18 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
+    return _SlowF32List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
+    return _SlowF64List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -1590,6 +1596,53 @@ class _F32List
   }
 }
 
+class _F64List
+    with
+        _DoubleListMixin2,
+        _TypedDoubleListMixin2<Float64List>,
+        _TypedListCommonOperationsMixin
+    implements Float64List {
+  final WasmFloatArray<WasmF64> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _F64List(this.length)
+      : _data = WasmFloatArray(length),
+        _offsetInElements = 0;
+
+  _F64List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _F64List _createList(int length) => _F64List(length);
+
+  @override
+  _F64ByteBuffer2 get buffer =>
+      _F64ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Float64List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  double operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.read(_offsetInElements + index);
+  }
+
+  void operator []=(int index, double value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Slow lists
@@ -1719,5 +1772,59 @@ class _SlowI64List extends _SlowListBase
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
     _data.setInt64(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
+class _SlowF32List extends _SlowListBase
+    with
+        _DoubleListMixin2,
+        _TypedDoubleListMixin2<_F32List>,
+        _TypedListCommonOperationsMixin
+    implements Float32List {
+  _SlowF32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _F32List _createList(int length) => _F32List(length);
+
+  @override
+  int get elementSizeInBytes => Int64List.bytesPerElement;
+
+  @override
+  double operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getFloat32(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, double value) {
+    _indexRangeCheck(index);
+    _data.setFloat32(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
+class _SlowF64List extends _SlowListBase
+    with
+        _DoubleListMixin2,
+        _TypedDoubleListMixin2<_F64List>,
+        _TypedListCommonOperationsMixin
+    implements Float64List {
+  _SlowF64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _F64List _createList(int length) => _F64List(length);
+
+  @override
+  int get elementSizeInBytes => Float64List.bytesPerElement;
+
+  @override
+  double operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getFloat64(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, double value) {
+    _indexRangeCheck(index);
+    _data.setFloat64(offsetInBytes + (index * elementSizeInBytes), value);
   }
 }
