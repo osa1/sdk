@@ -333,15 +333,20 @@ class _I32ByteData2 extends _ByteData2 {
   }
 }
 
-class _I64ByteBuffer2 extends ByteBuffer {
-  final WasmIntArray<WasmI64> _data;
-  final int _offsetInBytes;
-  final int length;
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Byte buffers
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  _I64ByteBuffer2(this._data, this._offsetInBytes, this.length);
+/// Base class for [ByteBuffer] implementations. Returns slow lists in all
+/// methods. Implementations should override relevant methods to return fast
+/// lists when possible.
+abstract class _ByteBufferBase extends ByteBuffer {
+  final int offsetInBytes;
+  final int lengthInBytes;
 
-  @override
-  int get lengthInBytes => length * 8;
+  _ByteBufferBase(this.offsetInBytes, this.lengthInBytes);
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
@@ -375,13 +380,84 @@ class _I64ByteBuffer2 extends ByteBuffer {
 
   @override
   Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Int32List.bytesPerElement;
+    return _SlowI32List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
   Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
     throw 'TODO';
   }
+
+  @override
+  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
+    return _SlowI64List._(this, this.offsetInBytes + offsetInBytes, length);
+  }
+
+  @override
+  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+
+  @override
+  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+
+  @override
+  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+
+  @override
+  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+
+  @override
+  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+
+  @override
+  ByteData asByteData([int offsetInBytes = 0, int? length]) {
+    throw 'TODO';
+  }
+}
+
+/// Slow byte buffers have a [ByteData] field which they use to ...
+abstract class _SlowByteBufferBase extends ByteBuffer {}
+
+class _I32ByteBuffer2 extends _ByteBufferBase {
+  final WasmIntArray<WasmI32> _data;
+
+  _I32ByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+
+  @override
+  ByteData asByteData([int offsetInBytes = 0, int? length]) {
+    length ??= this.lengthInBytes - offsetInBytes;
+    return _I32ByteData2._(_data, this.offsetInBytes + offsetInBytes, length);
+  }
+}
+
+class _I32SlowByteBuffer2 extends _ByteBufferBase {
+  final _ByteData2 _data;
+
+  _I32SlowByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+}
+
+class _I64ByteBuffer2 extends _ByteBufferBase {
+  final WasmIntArray<WasmI64> _data;
+
+  _I64ByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
 
   @override
   Int64List asInt64List([int offsetInBytes = 0, int? length]) {
@@ -395,301 +471,28 @@ class _I64ByteBuffer2 extends ByteBuffer {
   }
 
   @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
   ByteData asByteData([int offsetInBytes = 0, int? length]) {
     length ??=
         (this.lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
-    return _I64ByteData2._(_data, _offsetInBytes + offsetInBytes, length);
+    return _I64ByteData2._(_data, offsetInBytes + offsetInBytes, length);
   }
 }
 
-class _I64SlowByteBuffer2 extends ByteBuffer {
+class _I64SlowByteBuffer2 extends _ByteBufferBase {
   final _ByteData2 _data;
-  final int _offsetInBytes;
 
-  _I64SlowByteBuffer2(this._data, this._offsetInBytes);
+  _I64SlowByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
 
   @override
   int get lengthInBytes => _data.lengthInBytes;
-
-  @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
 }
 
-class _I32ByteBuffer2 extends ByteBuffer {
-  final WasmIntArray<WasmI32> _data;
-  final int _offsetInBytes;
-  final int length;
-
-  _I32ByteBuffer2(this._data, this._offsetInBytes, this.length);
-
-  @override
-  int get lengthInBytes => length * Int32List.bytesPerElement;
-
-  @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    // TODO: Range checks
-    length ??=
-        (this.lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
-    return _SlowI64List._(
-        _I32ByteData2._(
-            this._data, _offsetInBytes + offsetInBytes, this.length),
-        _offsetInBytes + offsetInBytes,
-        length);
-  }
-
-  @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    length ??= this.lengthInBytes - offsetInBytes;
-    return _I32ByteData2._(_data, _offsetInBytes + offsetInBytes, length);
-  }
-}
-
-class _I32SlowByteBuffer2 extends ByteBuffer {
-  final _ByteData2 _data;
-  final int _offsetInBytes;
-
-  _I32SlowByteBuffer2(this._data, this._offsetInBytes);
-
-  @override
-  int get lengthInBytes => _data.lengthInBytes;
-
-  @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
-  }
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Mixins
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 mixin _TypedListCommonOperationsMixin {
   int get length;
@@ -1054,6 +857,59 @@ mixin _TypedIntListMixin2<SpawnedType extends List<int>> on _IntListMixin2
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Fast lists
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class _I32List
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_I32List>,
+        _TypedListCommonOperationsMixin
+    implements Int32List {
+  final WasmIntArray<WasmI32> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _I32List(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _I32List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _I32List _createList(int length) => _I32List(length);
+
+  @override
+  _I32ByteBuffer2 get buffer =>
+      _I32ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Int32List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readSigned(_offsetInElements + index);
+  }
+
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
 class _I64List
     with
         _IntListMixin2,
@@ -1074,102 +930,13 @@ class _I64List
   _I64List _createList(int length) => _I64List(length);
 
   @override
-  _I64ByteBuffer2 get buffer => _I64ByteBuffer2(_data, offsetInBytes, length);
-
-  @override
-  int get elementSizeInBytes => 8;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
-
-  @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    return _data.readSigned(_offsetInElements + index);
-  }
-
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    _data.write(_offsetInElements + index, value);
-  }
-}
-
-class _SlowI64List
-    with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I64List>,
-        _TypedListCommonOperationsMixin
-    implements Int64List {
-  final _ByteData2 _data;
-  final int _offsetInBytes;
-  final int length;
-
-  _SlowI64List(this.length)
-      : _data = _I64ByteData2(length), // TODO FIXME this should be I8ByteData
-        _offsetInBytes = 0;
-
-  _SlowI64List._(this._data, this._offsetInBytes, this.length);
-
-  @override
-  _I64List _createList(int length) => _I64List(length);
-
-  @override
-  _I64SlowByteBuffer2 get buffer => _I64SlowByteBuffer2(_data, offsetInBytes);
+  _I64ByteBuffer2 get buffer =>
+      _I64ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
 
   @override
   int get elementSizeInBytes => Int64List.bytesPerElement;
 
   @override
-  int get offsetInBytes => _offsetInBytes;
-
-  @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    return _data.getInt64(_offsetInBytes + (index * 8));
-  }
-
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    _data.setInt64(_offsetInBytes + (index * 8), value);
-  }
-}
-
-class _I32List
-    with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I32List>,
-        _TypedListCommonOperationsMixin
-    implements Int32List {
-  final WasmIntArray<WasmI32> _data;
-  final int _offsetInElements;
-  final int length;
-
-  _I32List(this.length)
-      : _data = WasmIntArray(length),
-        _offsetInElements = 0;
-
-  @override
-  _I32List _createList(int length) => _I32List(length);
-
-  @override
-  _I32ByteBuffer2 get buffer => _I32ByteBuffer2(_data, offsetInBytes, length);
-
-  @override
-  int get elementSizeInBytes => 4;
-
-  @override
   int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
@@ -1190,595 +957,109 @@ class _I32List
   }
 }
 
-class _SlowI32List
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Slow lists
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class _SlowListBase {
+  final ByteBuffer buffer;
+  final int offsetInBytes;
+  final int length;
+
+  final ByteData _data;
+
+  _SlowListBase(this.buffer, this.offsetInBytes, this.length)
+      : _data = buffer.asByteData();
+
+  void _indexRangeCheck(int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+  }
+}
+
+/*
+class _SlowI16List extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_I16List>,
+        _TypedListCommonOperationsMixin
+    implements Int16List {
+  _SlowI16List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _I16List _createList(int length) => _I16List(length);
+
+  @override
+  int get elementSizeInBytes => Int16List.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getInt16(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setInt16(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+*/
+
+class _SlowI32List extends _SlowListBase
     with
         _IntListMixin2,
         _TypedIntListMixin2<_I32List>,
         _TypedListCommonOperationsMixin
     implements Int32List {
-  final _ByteData2 _data;
-  final int offsetInBytes;
-  final int length;
-
-  _SlowI32List(this.length)
-      : _data = _I32ByteData2(length), // TODO FIXME this should be I8ByteData
-        offsetInBytes = 0;
-
-  _SlowI32List._(this._data, this.offsetInBytes, this.length);
+  _SlowI32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
 
   @override
   _I32List _createList(int length) => _I32List(length);
-
-  @override
-  _I32SlowByteBuffer2 get buffer => _I32SlowByteBuffer2(_data, offsetInBytes);
 
   @override
   int get elementSizeInBytes => Int32List.bytesPerElement;
 
   @override
   int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    return _data.getInt32(offsetInBytes + (index * Int32List.bytesPerElement));
+    _indexRangeCheck(index);
+    return _data.getInt32(offsetInBytes + (index * elementSizeInBytes));
   }
 
   void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    _data.setInt32(offsetInBytes + (index * Int32List.bytesPerElement), value);
+    _indexRangeCheck(index);
+    _data.setInt32(offsetInBytes + (index * elementSizeInBytes), value);
   }
 }
 
-/*
-abstract class _ByteBuffer2 extends ByteBuffer {
-  int _getInt8(int offsetInBytes);
-
-  void _setInt8(int offsetInBytes, int value);
-
-  int _getUint8(int offsetInBytes);
-
-  void _setUint8(int offsetInBytes, int value);
-
-  int _getInt16(int offsetInBytes);
-
-  void _setInt16(int offsetInBytes, int value);
-
-  int _getUint16(int offsetInBytes);
-
-  int _getInt32(int offsetInBytes);
-
-  void _setInt32(int offsetInBytes, int value);
-
-  int _getUint32(int offsetInBytes);
-
-  void _setUint32(int offsetInBytes, int value);
-
-  int _getInt64(int offsetInBytes);
-
-  void _setInt64(int offsetInBytes, int value);
-
-  int _getUint64(int offsetInBytes);
-
-  void _setUint64(int offsetInBytes, int value);
-
-  double _getFloat32(int offsetInBytes);
-
-  void _setFloat32(int offsetInBytes, double value);
-
-  double _getFloat64(int offsetInBytes);
-
-  void _setFloat64(int offsetInBytes, double value);
-}
-
-final class _I64Buffer implements _ByteBuffer2 {
-  final WasmIntArray<WasmI64> _data;
-
-  _I64Buffer(this._data);
-
-  _I64Buffer.newWithLength(int length) : _data = WasmIntArray(length);
-
-  @override
-  int get lengthInBytes => _data.length * 8;
-
-  @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asUint8List';
-  }
-
-  @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asInt8List';
-  }
-
-  @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asUint8ClampedList';
-  }
-
-  @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asUint16List';
-  }
-
-  @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asInt16List';
-  }
-
-  @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asUint32List';
-  }
-
-  @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asInt32List';
-  }
-
-  @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asUint64List';
-  }
-
-  @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    length ??= (this.lengthInBytes - offsetInBytes) ~/ 8;
-    // TODO: range check
-    return _Int64List2(this, offsetInBytes, length);
-  }
-
-  @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asInt32x4List';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asFloat32List';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asFloat64List';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asFloat32x4List';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asFloat64x2List';
-  }
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    throw '_I64Buffer.asByteData';
-  }
-
-  @override
-  int _getInt8(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt8(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint8(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setUint8(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getInt16(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt16(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint16(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getInt32(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt32(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint32(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setUint32(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getInt64(int offsetInBytes) {
-    if (offsetInBytes % 8 == 0) {
-      return _data.readSigned(offsetInBytes ~/ 8);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  void _setInt64(int offsetInBytes, int value) {
-    if (offsetInBytes % 8 == 0) {
-      return _data.write(offsetInBytes ~/ 8, value);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  int _getUint64(int offsetInBytes) {
-    if (offsetInBytes % 8 == 0) {
-      return _data.readUnsigned(offsetInBytes ~/ 8);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  void _setUint64(int offsetInBytes, int value) {
-    if (offsetInBytes % 8 == 0) {
-      return _data.write(offsetInBytes ~/ 8, value);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  double _getFloat32(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setFloat32(int offsetInBytes, double value) {
-    throw 'TODO';
-  }
-
-  @override
-  double _getFloat64(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setFloat64(int offsetInBytes, double value) {
-    throw 'TODO';
-  }
-}
-
-final class _I32Buffer implements _ByteBuffer2 {
-  final WasmIntArray<WasmI32> _data;
-
-  _I32Buffer(this._data);
-
-  _I32Buffer.newWithLength(int length) : _data = WasmIntArray(length);
-
-  @override
-  int get lengthInBytes => _data.length * 8;
-
-  @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asUint8List';
-  }
-
-  @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asInt8List';
-  }
-
-  @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asUint8ClampedList';
-  }
-
-  @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asUint16List';
-  }
-
-  @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asInt16List';
-  }
-
-  @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asUint32List';
-  }
-
-  @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asInt32List';
-  }
-
-  @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asUint64List';
-  }
-
-  @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    length ??= (this.lengthInBytes - offsetInBytes) ~/ 4;
-    // TODO: range check
-    return _Int64List2(this, offsetInBytes, length);
-  }
-
-  @override
-  Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asInt32x4List';
-  }
-
-  @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asFloat32List';
-  }
-
-  @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asFloat64List';
-  }
-
-  @override
-  Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asFloat32x4List';
-  }
-
-  @override
-  Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asFloat64x2List';
-  }
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    throw '_I32Buffer.asByteData';
-  }
-
-  @override
-  int _getInt8(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt8(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint8(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setUint8(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getInt16(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt16(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint16(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getInt32(int offsetInBytes) {
-    if (offsetInBytes % 4 == 0) {
-      return _data.readSigned(offsetInBytes ~/ 4);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  void _setInt32(int offsetInBytes, int value) {
-    if (offsetInBytes % 4 == 0) {
-      _data.write(offsetInBytes ~/ 4, value);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  int _getUint32(int offsetInBytes) {
-    if (offsetInBytes % 4 == 0) {
-      return _data.readUnsigned(offsetInBytes ~/ 4);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  void _setUint32(int offsetInBytes, int value) {
-    if (offsetInBytes % 4 == 0) {
-      _data.write(offsetInBytes ~/ 4, value);
-    } else {
-      throw 'TODO';
-    }
-  }
-
-  @override
-  int _getInt64(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setInt64(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  int _getUint64(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setUint64(int offsetInBytes, int value) {
-    throw 'TODO';
-  }
-
-  @override
-  double _getFloat32(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setFloat32(int offsetInBytes, double value) {
-    throw 'TODO';
-  }
-
-  @override
-  double _getFloat64(int offsetInBytes) {
-    throw 'TODO';
-  }
-
-  @override
-  void _setFloat64(int offsetInBytes, double value) {
-    throw 'TODO';
-  }
-}
-
-final class _Int64List2
+class _SlowI64List extends _SlowListBase
     with
-        _IntListMixin,
-        _TypedIntListMixin<Int64List>,
+        _IntListMixin2,
+        _TypedIntListMixin2<_I64List>,
         _TypedListCommonOperationsMixin
     implements Int64List {
-  final _ByteBuffer2 _buffer;
-  final int _offsetInBytes;
-  final int _length;
-
-  _Int64List2(this._buffer, this._offsetInBytes, this._length);
-
-  @pragma("wasm:entry-point")
-  factory _Int64List2._newWithLength(int length) =>
-      _Int64List2(_I64Buffer.newWithLength(length), 0, length);
+  _SlowI64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
 
   @override
-  int get length => _buffer.lengthInBytes ~/ elementSizeInBytes;
+  _I64List _createList(int length) => _I64List(length);
+
+  @override
+  int get elementSizeInBytes => Int64List.bytesPerElement;
 
   @override
   int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    return _buffer._getInt64(index);
+    _indexRangeCheck(index);
+    return _data.getInt64(offsetInBytes + (index * elementSizeInBytes));
   }
 
   void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    _buffer._setInt64(index, value);
+    _indexRangeCheck(index);
+    _data.setInt64(offsetInBytes + (index * elementSizeInBytes), value);
   }
-
-  @override
-  _ByteBuffer get buffer =>
-      throw 'Will be fixed when _ByteBuffer2 is renamed to _ByteBuffer';
-
-  @override
-  int get elementSizeInBytes => 8;
-
-  @override
-  int get lengthInBytes => _buffer.lengthInBytes;
-
-  @override
-  Int64List _createList(int length) {
-    return _Int64List2._newWithLength(length);
-  }
-
-  @override
-  int get offsetInBytes => _offsetInBytes;
 }
-
-final class _Int32List2
-    with
-        _IntListMixin,
-        _TypedIntListMixin<Int32List>,
-        _TypedListCommonOperationsMixin
-    implements Int32List {
-  final _ByteBuffer2 _buffer;
-  final int _offsetInBytes;
-  final int _length;
-
-  _Int32List2(this._buffer, this._offsetInBytes, this._length);
-
-  @pragma("wasm:entry-point")
-  factory _Int32List2._newWithLength(int length) =>
-      _Int32List2(_I32Buffer.newWithLength(length), 0, length);
-
-  @override
-  int get length => _buffer.lengthInBytes ~/ elementSizeInBytes;
-
-  @override
-  int operator [](int index) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    return _buffer._getInt32(index);
-  }
-
-  void operator []=(int index, int value) {
-    if (index < 0 || index >= length) {
-      throw new IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-    _buffer._setInt32(index, value);
-  }
-
-  @override
-  _ByteBuffer get buffer =>
-      throw 'Will be fixed when _ByteBuffer2 is renamed to _ByteBuffer';
-
-  @override
-  int get elementSizeInBytes => 8;
-
-  @override
-  int get lengthInBytes => _buffer.lengthInBytes;
-
-  @override
-  Int32List _createList(int length) {
-    return _Int32List2._newWithLength(length);
-  }
-
-  @override
-  int get offsetInBytes => _offsetInBytes;
-}
-*/
