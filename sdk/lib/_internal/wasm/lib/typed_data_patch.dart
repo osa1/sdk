@@ -135,18 +135,11 @@ abstract class _TypedList extends _TypedListBase {
 /// implementations for get and set methods using [getUint8] and [setUint8].
 /// Implementations can override the methods to provide a more efficient
 /// implementation based on the actual Wasm array type used.
-///
-/// This also adds a new method to [ByteData] to be able to create [ByteData]
-/// with different offset and length, sharing the same Wasm array.
 abstract class _ByteData2 implements ByteData {
   final int offsetInBytes;
   final int lengthInBytes;
 
   _ByteData2(this.offsetInBytes, this.lengthInBytes);
-
-  _ByteData2 withOffsetAndLength(int offsetInBytes, int? lengthInBytes) {
-    throw 'TODO';
-  }
 
   @override
   int getInt8(int byteOffset) {
@@ -413,7 +406,9 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??= (this.lengthInBytes - offsetInBytes) ~/ Int8List.bytesPerElement;
+    return _SlowI8List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -428,7 +423,10 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Int16List.bytesPerElement;
+    return _SlowI16List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -480,18 +478,6 @@ abstract class _ByteBufferBase extends ByteBuffer {
   @override
   Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
     throw 'TODO';
-  }
-}
-
-class _SlowByteBuffer extends _ByteBufferBase {
-  final _ByteData2 _data;
-
-  _SlowByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
-      : super(offsetInBytes, lengthInBytes);
-
-  @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    return _data.withOffsetAndLength(offsetInBytes, length);
   }
 }
 
