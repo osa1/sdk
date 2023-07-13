@@ -147,7 +147,7 @@ abstract class _ByteData2 implements ByteData {
   }
 
   @override
-  int setInt8(int byteOffset, int value) {
+  void setInt8(int byteOffset, int value) {
     throw 'TODO';
   }
 
@@ -239,7 +239,8 @@ class _I8ByteData2 extends _ByteData2 {
       : super(offsetInBytes, lengthInBytes);
 
   @override
-  ByteBuffer get buffer => _I8ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+  _I8ByteBuffer2 get buffer =>
+      _I8ByteBuffer2(_data, offsetInBytes, lengthInBytes);
 
   @override
   int get elementSizeInBytes => Int8List.bytesPerElement;
@@ -250,7 +251,7 @@ class _I8ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setUint8(int byteOffset, int value) {
+  void setUint8(int byteOffset, int value) {
     throw 'TODO';
   }
 }
@@ -262,7 +263,8 @@ class _I16ByteData2 extends _ByteData2 {
       : super(offsetInBytes, lengthInBytes);
 
   @override
-  ByteBuffer get buffer => _I16ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+  _I16ByteBuffer2 get buffer =>
+      _I16ByteBuffer2(_data, offsetInBytes, lengthInBytes);
 
   @override
   int get elementSizeInBytes => Int16List.bytesPerElement;
@@ -273,7 +275,7 @@ class _I16ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setUint8(int byteOffset, int value) {
+  void setUint8(int byteOffset, int value) {
     throw 'TODO';
   }
 
@@ -288,12 +290,12 @@ class _I16ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 
   @override
-  int setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 }
@@ -305,7 +307,8 @@ class _I32ByteData2 extends _ByteData2 {
       : super(offsetInBytes, lengthInBytes);
 
   @override
-  ByteBuffer get buffer => _I32ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+  _I32ByteBuffer2 get buffer =>
+      _I32ByteBuffer2(_data, offsetInBytes, lengthInBytes);
 
   @override
   int get elementSizeInBytes => Int32List.bytesPerElement;
@@ -316,7 +319,7 @@ class _I32ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setUint8(int byteOffset, int value) {
+  void setUint8(int byteOffset, int value) {
     throw 'TODO';
   }
 
@@ -331,12 +334,12 @@ class _I32ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 
   @override
-  int setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 }
@@ -348,7 +351,8 @@ class _I64ByteData2 extends _ByteData2 {
       : super(offsetInBytes, lengthInBytes);
 
   @override
-  ByteBuffer get buffer => _I64ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+  _I64ByteBuffer2 get buffer =>
+      _I64ByteBuffer2(_data, offsetInBytes, lengthInBytes);
 
   @override
   int get elementSizeInBytes => Int64List.bytesPerElement;
@@ -359,7 +363,7 @@ class _I64ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setUint8(int byteOffset, int value) {
+  void setUint8(int byteOffset, int value) {
     throw 'TODO';
   }
 
@@ -374,12 +378,80 @@ class _I64ByteData2 extends _ByteData2 {
   }
 
   @override
-  int setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 
   @override
-  int setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw 'TODO';
+  }
+}
+
+class _F32ByteData2 extends _ByteData2 {
+  final WasmFloatArray<WasmF32> _data;
+
+  _F32ByteData2._(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+
+  @override
+  _F32ByteBuffer2 get buffer =>
+      _F32ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  int get elementSizeInBytes => Float32List.bytesPerElement;
+
+  @override
+  int getUint8(int byteOffset) {
+    throw 'TODO';
+  }
+
+  @override
+  void setUint8(int byteOffset, int value) {
+    throw 'TODO';
+  }
+
+  @override
+  double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
+    throw 'TODO';
+  }
+
+  @override
+  void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
+    throw 'TODO';
+  }
+}
+
+class _F64ByteData2 extends _ByteData2 {
+  final WasmFloatArray<WasmF64> _data;
+
+  _F64ByteData2._(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+
+  @override
+  _F64ByteBuffer2 get buffer =>
+      _F64ByteBuffer2(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  int get elementSizeInBytes => Float64List.bytesPerElement;
+
+  @override
+  int getUint8(int byteOffset) {
+    throw 'TODO';
+  }
+
+  @override
+  void setUint8(int byteOffset, int value) {
+    throw 'TODO';
+  }
+
+  @override
+  double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
+    throw 'TODO';
+  }
+
+  @override
+  void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
     throw 'TODO';
   }
 }
@@ -550,6 +622,36 @@ class _I64ByteBuffer2 extends _ByteBufferBase {
     length ??=
         (this.lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
     return _I64ByteData2._(_data, offsetInBytes + offsetInBytes, length);
+  }
+}
+
+class _F32ByteBuffer2 extends _ByteBufferBase {
+  final WasmFloatArray<WasmF32> _data;
+
+  _F32ByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+
+  // TODO: Override asFloat32List.
+
+  @override
+  ByteData asByteData([int offsetInBytes = 0, int? length]) {
+    length ??= this.lengthInBytes - offsetInBytes;
+    return _F32ByteData2._(_data, this.offsetInBytes + offsetInBytes, length);
+  }
+}
+
+class _F64ByteBuffer2 extends _ByteBufferBase {
+  final WasmFloatArray<WasmF64> _data;
+
+  _F64ByteBuffer2(this._data, int offsetInBytes, int lengthInBytes)
+      : super(offsetInBytes, lengthInBytes);
+
+  // TODO: Override asFloat64List.
+
+  @override
+  ByteData asByteData([int offsetInBytes = 0, int? length]) {
+    length ??= this.lengthInBytes - offsetInBytes;
+    return _F64ByteData2._(_data, this.offsetInBytes + offsetInBytes, length);
   }
 }
 
