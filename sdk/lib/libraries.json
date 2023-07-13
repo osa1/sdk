@@ -275,7 +275,6 @@
       "typed_data": {
         "uri": "typed_data/typed_data.dart",
         "patches": [
-          "_internal/vm/lib/typed_data_patch.dart",
           "_internal/wasm/lib/typed_data_patch.dart",
           "_internal/wasm/lib/simd_patch.dart"
         ]
