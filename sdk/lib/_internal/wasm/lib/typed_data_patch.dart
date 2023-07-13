@@ -473,7 +473,10 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Uint8List.bytesPerElement;
+    return _SlowU8List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -490,7 +493,10 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Uint16List.bytesPerElement;
+    return _SlowU16List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -503,7 +509,10 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Uint32List.bytesPerElement;
+    return _SlowU32List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -516,7 +525,10 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    // TODO: range checks
+    length ??=
+        (this.lengthInBytes - offsetInBytes) ~/ Uint64List.bytesPerElement;
+    return _SlowU64List._(this, this.offsetInBytes + offsetInBytes, length);
   }
 
   @override
@@ -1408,6 +1420,53 @@ class _I8List
   }
 }
 
+class _U8List
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U8List>,
+        _TypedListCommonOperationsMixin
+    implements Uint8List {
+  final WasmIntArray<WasmI8> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _U8List(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _U8List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _U8List _createList(int length) => _U8List(length);
+
+  @override
+  _I8ByteBuffer2 get buffer =>
+      _I8ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Uint8List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readUnsigned(_offsetInElements + index);
+  }
+
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
 class _I16List
     with
         _IntListMixin2,
@@ -1444,6 +1503,53 @@ class _I16List
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
+  }
+
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
+class _U16List
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U16List>,
+        _TypedListCommonOperationsMixin
+    implements Uint16List {
+  final WasmIntArray<WasmI16> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _U16List(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _U16List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _U16List _createList(int length) => _U16List(length);
+
+  @override
+  _I16ByteBuffer2 get buffer =>
+      _I16ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Uint16List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readUnsigned(_offsetInElements + index);
   }
 
   void operator []=(int index, int value) {
@@ -1502,6 +1608,53 @@ class _I32List
   }
 }
 
+class _U32List
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U32List>,
+        _TypedListCommonOperationsMixin
+    implements Uint32List {
+  final WasmIntArray<WasmI32> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _U32List(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _U32List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _U32List _createList(int length) => _U32List(length);
+
+  @override
+  _I32ByteBuffer2 get buffer =>
+      _I32ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Uint32List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readUnsigned(_offsetInElements + index);
+  }
+
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
 class _I64List
     with
         _IntListMixin2,
@@ -1538,6 +1691,53 @@ class _I64List
           indexable: this, name: "index");
     }
     return _data.readSigned(_offsetInElements + index);
+  }
+
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value);
+  }
+}
+
+class _U64List
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U64List>,
+        _TypedListCommonOperationsMixin
+    implements Uint64List {
+  final WasmIntArray<WasmI64> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _U64List(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _U64List._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _U64List _createList(int length) => _U64List(length);
+
+  @override
+  _I64ByteBuffer2 get buffer =>
+      _I64ByteBuffer2(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Uint64List.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw new IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readUnsigned(_offsetInElements + index);
   }
 
   void operator []=(int index, int value) {
@@ -1680,7 +1880,7 @@ class _SlowI8List extends _SlowListBase
   _I8List _createList(int length) => _I8List(length);
 
   @override
-  int get elementSizeInBytes => Int16List.bytesPerElement;
+  int get elementSizeInBytes => Int8List.bytesPerElement;
 
   @override
   int operator [](int index) {
@@ -1691,6 +1891,33 @@ class _SlowI8List extends _SlowListBase
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
     _data.setInt8(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
+class _SlowU8List extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U8List>,
+        _TypedListCommonOperationsMixin
+    implements Uint8List {
+  _SlowU8List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _U8List _createList(int length) => _U8List(length);
+
+  @override
+  int get elementSizeInBytes => Int8List.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setUint8(offsetInBytes + (index * elementSizeInBytes), value);
   }
 }
 
@@ -1721,6 +1948,33 @@ class _SlowI16List extends _SlowListBase
   }
 }
 
+class _SlowU16List extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U16List>,
+        _TypedListCommonOperationsMixin
+    implements Uint16List {
+  _SlowU16List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _U16List _createList(int length) => _U16List(length);
+
+  @override
+  int get elementSizeInBytes => Int16List.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getUint16(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setUint16(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
 class _SlowI32List extends _SlowListBase
     with
         _IntListMixin2,
@@ -1748,6 +2002,33 @@ class _SlowI32List extends _SlowListBase
   }
 }
 
+class _SlowU32List extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U32List>,
+        _TypedListCommonOperationsMixin
+    implements Uint32List {
+  _SlowU32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _U32List _createList(int length) => _U32List(length);
+
+  @override
+  int get elementSizeInBytes => Int32List.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getUint32(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setUint32(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
 class _SlowI64List extends _SlowListBase
     with
         _IntListMixin2,
@@ -1772,6 +2053,33 @@ class _SlowI64List extends _SlowListBase
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
     _data.setInt64(offsetInBytes + (index * elementSizeInBytes), value);
+  }
+}
+
+class _SlowU64List extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U64List>,
+        _TypedListCommonOperationsMixin
+    implements Uint64List {
+  _SlowU64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _U64List _createList(int length) => _U64List(length);
+
+  @override
+  int get elementSizeInBytes => Int64List.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getUint64(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setUint64(offsetInBytes + (index * elementSizeInBytes), value);
   }
 }
 
