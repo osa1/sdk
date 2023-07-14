@@ -795,6 +795,10 @@ class _I8ByteBuffer extends _ByteBufferBase {
       : super(offsetInBytes, lengthInBytes);
 
   @override
+  bool operator ==(Object other) =>
+      other is _I8ByteBuffer && identical(_data, other._data);
+
+  @override
   Int8List asInt8List([int offsetInBytes = 0, int? length]) {
     offsetInBytes += this.offsetInBytes;
     length ??= (lengthInBytes - offsetInBytes) ~/ Int8List.bytesPerElement;
@@ -826,6 +830,10 @@ class _I16ByteBuffer extends _ByteBufferBase {
 
   _I16ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _I16ByteBuffer && identical(_data, other._data);
 
   @override
   Int16List asInt16List([int offsetInBytes = 0, int? length]) {
@@ -871,6 +879,10 @@ class _I32ByteBuffer extends _ByteBufferBase {
       : super(offsetInBytes, lengthInBytes);
 
   @override
+  bool operator ==(Object other) =>
+      other is _I32ByteBuffer && identical(_data, other._data);
+
+  @override
   Int32List asInt32List([int offsetInBytes = 0, int? length]) {
     offsetInBytes += this.offsetInBytes;
     length ??= (lengthInBytes - offsetInBytes) ~/ Int32List.bytesPerElement;
@@ -912,6 +924,10 @@ class _I64ByteBuffer extends _ByteBufferBase {
 
   _I64ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _I64ByteBuffer && identical(_data, other._data);
 
   @override
   Int64List asInt64List([int offsetInBytes = 0, int? length]) {
@@ -957,6 +973,10 @@ class _F32ByteBuffer extends _ByteBufferBase {
       : super(offsetInBytes, lengthInBytes);
 
   @override
+  bool operator ==(Object other) =>
+      other is _F32ByteBuffer && identical(_data, other._data);
+
+  @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
     offsetInBytes += this.offsetInBytes;
     length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
@@ -984,6 +1004,10 @@ class _F64ByteBuffer extends _ByteBufferBase {
 
   _F64ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _F64ByteBuffer && identical(_data, other._data);
 
   @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
