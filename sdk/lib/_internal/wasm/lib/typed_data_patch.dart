@@ -2223,7 +2223,7 @@ class _SlowU8List extends _SlowListBase
   _U8List _createList(int length) => _U8List(length);
 
   @override
-  int get elementSizeInBytes => Int8List.bytesPerElement;
+  int get elementSizeInBytes => Uint8List.bytesPerElement;
 
   @override
   int operator [](int index) {
@@ -2279,7 +2279,7 @@ class _SlowU16List extends _SlowListBase
   _U16List _createList(int length) => _U16List(length);
 
   @override
-  int get elementSizeInBytes => Int16List.bytesPerElement;
+  int get elementSizeInBytes => Uint16List.bytesPerElement;
 
   @override
   int operator [](int index) {
@@ -2335,7 +2335,7 @@ class _SlowU32List extends _SlowListBase
   _U32List _createList(int length) => _U32List(length);
 
   @override
-  int get elementSizeInBytes => Int32List.bytesPerElement;
+  int get elementSizeInBytes => Uint32List.bytesPerElement;
 
   @override
   int operator [](int index) {
@@ -2391,7 +2391,7 @@ class _SlowU64List extends _SlowListBase
   _U64List _createList(int length) => _U64List(length);
 
   @override
-  int get elementSizeInBytes => Int64List.bytesPerElement;
+  int get elementSizeInBytes => Uint64List.bytesPerElement;
 
   @override
   int operator [](int index) {
@@ -2419,7 +2419,7 @@ class _SlowF32List extends _SlowListBase
   _F32List _createList(int length) => _F32List(length);
 
   @override
-  int get elementSizeInBytes => Int64List.bytesPerElement;
+  int get elementSizeInBytes => Float32List.bytesPerElement;
 
   @override
   double operator [](int index) {
