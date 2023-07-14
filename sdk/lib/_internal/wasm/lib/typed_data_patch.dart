@@ -1011,7 +1011,7 @@ mixin _TypedListCommonOperationsMixin {
   int get elementSizeInBytes;
 
   @override
-  bool get isEmpty => length != 0;
+  bool get isEmpty => length == 0;
 
   @override
   bool get isNotEmpty => !isEmpty;
