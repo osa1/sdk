@@ -435,32 +435,72 @@ class _I64ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    return (_data.readUnsigned(byteIndex) >>
+            (8 * (byteOffset % elementSizeInBytes))) &
+        0xFF;
   }
 
   @override
   void setUint8(int byteOffset, int value) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final element = _data.readUnsigned(byteIndex);
+    final byteElementIndex = byteOffset % elementSizeInBytes;
+    final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
+    final b2 = byteElementIndex == 1 ? value : ((element >> 8) & 0xFF);
+    final b3 = byteElementIndex == 2 ? value : ((element >> 16) & 0xFF);
+    final b4 = byteElementIndex == 3 ? value : ((element >> 24) & 0xFF);
+    final b5 = byteElementIndex == 4 ? value : ((element >> 32) & 0xFF);
+    final b6 = byteElementIndex == 5 ? value : ((element >> 40) & 0xFF);
+    final b7 = byteElementIndex == 6 ? value : ((element >> 48) & 0xFF);
+    final b8 = byteElementIndex == 7 ? value : ((element >> 56) & 0xFF);
+    final newValue = (b8 << 56) |
+        (b7 << 48) |
+        (b6 << 40) |
+        (b5 << 32) |
+        (b4 << 24) |
+        (b3 << 16) |
+        (b2 << 8) |
+        b1;
+    _data.write(byteIndex, newValue);
   }
 
   @override
   int getInt64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readSigned(byteOffset ~/ elementSizeInBytes);
+    } else {
+      return super.getInt64(byteOffset, endian);
+    }
   }
 
   @override
   int getUint64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readUnsigned(byteOffset ~/ elementSizeInBytes);
+    } else {
+      return super.getInt64(byteOffset, endian);
+    }
   }
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(byteOffset ~/ elementSizeInBytes, value);
+    } else {
+      super.setInt64(byteOffset, value, endian);
+    }
   }
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(byteOffset ~/ elementSizeInBytes, value);
+    } else {
+      super.setUint64(byteOffset, value, endian);
+    }
   }
 }
 
