@@ -72,6 +72,7 @@ abstract class UnmodifiableFloat64x2ListView implements Float64x2List {
           list.offsetInBytes,
           list.length);
 }
+*/
 
 @patch
 class Int32x4 {
@@ -111,6 +112,7 @@ class Float64x2 {
   factory Float64x2.fromFloat32x4(Float32x4 v) = _NaiveFloat64x2.fromFloat32x4;
 }
 
+/*
 final class _NaiveInt32x4List extends Object
     with ListMixin<Int32x4>, FixedLengthListMixin<Int32x4>
     implements Int32x4List {
@@ -293,6 +295,7 @@ final class _NaiveFloat64x2List extends Object
         _storage.sublist(start * 2, stop * 2));
   }
 }
+*/
 
 final class _NaiveFloat32x4 implements Float32x4 {
   final double x;
@@ -870,4 +873,3 @@ final class _NaiveInt32x4 implements Int32x4 {
 }
 
 String _int32ToHex(int i) => i.toRadixString(16).padLeft(8, '0');
-*/
