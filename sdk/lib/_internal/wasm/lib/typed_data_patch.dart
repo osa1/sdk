@@ -39,6 +39,12 @@ void _rangeCheck(int listLength, int start, int length) {
   }
 }
 
+void _offsetAlignmentCheck(int offset, int alignment) {
+  if ((offset % alignment) != 0) {
+    throw RangeError('Offset ($offset) must be a multiple of $alignment');
+  }
+}
+
 final class _TypedListIterator<E> implements Iterator<E> {
   final List<E> _array;
   final int _length;
@@ -673,104 +679,112 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint16List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint16List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint16List.bytesPerElement);
-    return _SlowU16List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint16List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
+    return _SlowU16List._(this, totalOffset, length);
   }
 
   @override
   Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int16List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int16List.bytesPerElement);
-    return _SlowI16List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int16List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int16List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
+    return _SlowI16List._(this, totalOffset, length);
   }
 
   @override
   Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint32List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint32List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint32List.bytesPerElement);
-    return _SlowU32List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
+    return _SlowU32List._(this, totalOffset, length);
   }
 
   @override
   Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int32List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int32List.bytesPerElement);
-    return _SlowI32List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int32List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
+    return _SlowI32List._(this, totalOffset, length);
   }
 
   @override
   Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint64List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint64List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint64List.bytesPerElement);
-    return _SlowU64List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
+    return _SlowU64List._(this, totalOffset, length);
   }
 
   @override
   Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int64List.bytesPerElement);
-    return _SlowI64List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int64List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
+    return _SlowI64List._(this, totalOffset, length);
   }
 
   @override
   Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int32x4List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int32x4List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int32x4List.bytesPerElement);
+        lengthInBytes, totalOffset, length * Int32x4List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int32x4List.bytesPerElement);
     return _NaiveInt32x4List._externalStorage(
-        _SlowI32List._(this, offsetInBytes, length * 4));
+        _SlowI32List._(this, totalOffset, length * 4));
   }
 
   @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float32List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
-    return _SlowF32List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Float32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
+    return _SlowF32List._(this, totalOffset, length);
   }
 
   @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float64List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
-    return _SlowF64List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Float64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
+    return _SlowF64List._(this, totalOffset, length);
   }
 
   @override
   Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float32x4List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float32x4List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float32x4List.bytesPerElement);
+        lengthInBytes, totalOffset, length * Float32x4List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float32x4List.bytesPerElement);
     return _NaiveFloat32x4List._externalStorage(
-        _SlowF32List._(this, offsetInBytes, length * 4));
+        _SlowF32List._(this, totalOffset, length * 4));
   }
 
   @override
   Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float64x2List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float64x2List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float64x2List.bytesPerElement);
+        lengthInBytes, totalOffset, length * Float64x2List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float64x2List.bytesPerElement);
     return _NaiveFloat64x2List._externalStorage(
-        _SlowF64List._(this, offsetInBytes, length * 2));
+        _SlowF64List._(this, totalOffset, length * 2));
   }
 }
 
@@ -786,28 +800,26 @@ class _I8ByteBuffer extends _ByteBufferBase {
 
   @override
   Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int8List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int8List.bytesPerElement);
-    return _I8List._(_data, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int8List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int8List.bytesPerElement);
+    return _I8List._(_data, totalOffset, length);
   }
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint8List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint8List.bytesPerElement);
-    return _U8List._(_data, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint8List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Uint8List.bytesPerElement);
+    return _U8List._(_data, totalOffset, length);
   }
 
   @override
   ByteData asByteData([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= lengthInBytes - offsetInBytes;
-    _rangeCheck(lengthInBytes, offsetInBytes, length);
-    return _I8ByteData._(_data, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= lengthInBytes - totalOffset;
+    _rangeCheck(lengthInBytes, totalOffset, length);
+    return _I8ByteData._(_data, totalOffset, length);
   }
 }
 
@@ -823,29 +835,30 @@ class _I16ByteBuffer extends _ByteBufferBase {
 
   @override
   Int16List asInt16List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int16List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int16List.bytesPerElement);
-    if (offsetInBytes % Int16List.bytesPerElement != 0) {
-      return _SlowI16List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int16List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int16List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
+    if (totalOffset % Int16List.bytesPerElement != 0) {
+      return _SlowI16List._(this, totalOffset, length);
     } else {
       return _I16List._(
-          _data, offsetInBytes ~/ Int16List.bytesPerElement, length);
+          _data, totalOffset ~/ Int16List.bytesPerElement, length);
     }
   }
 
   @override
   Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint16List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint16List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint16List.bytesPerElement);
-    if (offsetInBytes % Uint16List.bytesPerElement != 0) {
-      return _SlowU16List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint16List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
+    if (totalOffset % Uint16List.bytesPerElement != 0) {
+      return _SlowU16List._(this, totalOffset, length);
     } else {
       return _U16List._(
-          _data, offsetInBytes ~/ Uint16List.bytesPerElement, length);
+          _data, totalOffset ~/ Uint16List.bytesPerElement, length);
     }
   }
 
@@ -870,29 +883,30 @@ class _I32ByteBuffer extends _ByteBufferBase {
 
   @override
   Int32List asInt32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int32List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int32List.bytesPerElement);
-    if (offsetInBytes % Uint32List.bytesPerElement != 0) {
-      return _SlowI32List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int32List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
+    if (totalOffset % Uint32List.bytesPerElement != 0) {
+      return _SlowI32List._(this, totalOffset, length);
     } else {
       return _I32List._(
-          _data, offsetInBytes ~/ Int32List.bytesPerElement, length);
+          _data, totalOffset ~/ Int32List.bytesPerElement, length);
     }
   }
 
   @override
   Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint32List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint32List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint32List.bytesPerElement);
-    if (offsetInBytes % Uint32List.bytesPerElement != 0) {
-      return _SlowU32List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
+    if (totalOffset % Uint32List.bytesPerElement != 0) {
+      return _SlowU32List._(this, totalOffset, length);
     } else {
       return _U32List._(
-          _data, offsetInBytes ~/ Uint32List.bytesPerElement, length);
+          _data, totalOffset ~/ Uint32List.bytesPerElement, length);
     }
   }
 
@@ -917,29 +931,30 @@ class _I64ByteBuffer extends _ByteBufferBase {
 
   @override
   Int64List asInt64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int64List.bytesPerElement);
-    if (offsetInBytes % Int64List.bytesPerElement != 0) {
-      return _SlowI64List._(this, offsetInBytes, length);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int64List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
+    if (totalOffset % Int64List.bytesPerElement != 0) {
+      return _SlowI64List._(this, totalOffset, length);
     } else {
       return _I64List._(
-          _data, offsetInBytes ~/ Int64List.bytesPerElement, length);
+          _data, totalOffset ~/ Int64List.bytesPerElement, length);
     }
   }
 
   @override
   Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int64List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint64List.bytesPerElement);
-    if (offsetInBytes % Int64List.bytesPerElement != 0) {
-      return _SlowU64List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Uint64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
+    if (totalOffset % Int64List.bytesPerElement != 0) {
+      return _SlowU64List._(this, totalOffset, length);
     } else {
       return _U64List._(
-          _data, offsetInBytes ~/ Uint64List.bytesPerElement, length);
+          _data, totalOffset ~/ Uint64List.bytesPerElement, length);
     }
   }
 
@@ -964,15 +979,16 @@ class _F32ByteBuffer extends _ByteBufferBase {
 
   @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float32List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
-    if (offsetInBytes % Float32List.bytesPerElement != 0) {
-      return _SlowF32List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Float32List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
+    if (totalOffset % Float32List.bytesPerElement != 0) {
+      return _SlowF32List._(this, totalOffset, length);
     } else {
       return _F32List._(
-          _data, offsetInBytes ~/ Float32List.bytesPerElement, length);
+          _data, totalOffset ~/ Float32List.bytesPerElement, length);
     }
   }
 
@@ -997,15 +1013,16 @@ class _F64ByteBuffer extends _ByteBufferBase {
 
   @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Float64List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
-    if (offsetInBytes % Float64List.bytesPerElement != 0) {
-      return _SlowF64List._(this, offsetInBytes, length);
+        lengthInBytes, totalOffset, length * Float64List.bytesPerElement);
+    _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
+    if (totalOffset % Float64List.bytesPerElement != 0) {
+      return _SlowF64List._(this, totalOffset, length);
     } else {
       return _F64List._(
-          _data, offsetInBytes ~/ Int64List.bytesPerElement, length);
+          _data, totalOffset ~/ Int64List.bytesPerElement, length);
     }
   }
 
