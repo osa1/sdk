@@ -732,7 +732,12 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    offsetInBytes += this.offsetInBytes;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Int32x4List.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, offsetInBytes, length * Int32x4List.bytesPerElement);
+    return _NaiveInt32x4List._externalStorage(
+        _SlowI32List._(this, offsetInBytes, length));
   }
 
   @override
@@ -755,12 +760,22 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    offsetInBytes += this.offsetInBytes;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float32x4List.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, offsetInBytes, length * Float32x4List.bytesPerElement);
+    return _NaiveFloat32x4List._externalStorage(
+        _SlowF32List._(this, offsetInBytes, length));
   }
 
   @override
   Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    offsetInBytes += this.offsetInBytes;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float64x2List.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, offsetInBytes, length * Float64x2List.bytesPerElement);
+    return _NaiveFloat64x2List._externalStorage(
+        _SlowF64List._(this, offsetInBytes, length));
   }
 }
 
