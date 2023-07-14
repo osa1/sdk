@@ -1052,7 +1052,7 @@ mixin _TypedListCommonOperationsMixin {
   }
 }
 
-mixin _IntListMixin2 implements List<int> {
+mixin _IntListMixin implements List<int> {
   int get elementSizeInBytes;
   int get offsetInBytes;
   ByteBuffer get buffer;
@@ -1328,7 +1328,7 @@ mixin _IntListMixin2 implements List<int> {
   }
 }
 
-mixin _TypedIntListMixin2<SpawnedType extends List<int>> on _IntListMixin2
+mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     implements List<int> {
   SpawnedType _createList(int length);
 
@@ -1700,8 +1700,8 @@ mixin _TypedDoubleListMixin2<SpawnedType extends List<double>>
 
 class _I8List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I8List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I8List>,
         _TypedListCommonOperationsMixin
     implements Int8List {
   final WasmIntArray<WasmI8> _data;
@@ -1748,8 +1748,8 @@ class _I8List
 
 class _U8List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U8List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U8List>,
         _TypedListCommonOperationsMixin
     implements Uint8List {
   final WasmIntArray<WasmI8> _data;
@@ -1796,8 +1796,8 @@ class _U8List
 
 class _U8ClampedList
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U8ClampedList>,
+        _IntListMixin,
+        _TypedIntListMixin<_U8ClampedList>,
         _TypedListCommonOperationsMixin
     implements Uint8ClampedList {
   final WasmIntArray<WasmI8> _data;
@@ -1844,8 +1844,8 @@ class _U8ClampedList
 
 class _I16List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I16List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I16List>,
         _TypedListCommonOperationsMixin
     implements Int16List {
   final WasmIntArray<WasmI16> _data;
@@ -1892,8 +1892,8 @@ class _I16List
 
 class _U16List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U16List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U16List>,
         _TypedListCommonOperationsMixin
     implements Uint16List {
   final WasmIntArray<WasmI16> _data;
@@ -1940,8 +1940,8 @@ class _U16List
 
 class _I32List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I32List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I32List>,
         _TypedListCommonOperationsMixin
     implements Int32List {
   final WasmIntArray<WasmI32> _data;
@@ -1988,8 +1988,8 @@ class _I32List
 
 class _U32List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U32List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U32List>,
         _TypedListCommonOperationsMixin
     implements Uint32List {
   final WasmIntArray<WasmI32> _data;
@@ -2036,8 +2036,8 @@ class _U32List
 
 class _I64List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I64List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I64List>,
         _TypedListCommonOperationsMixin
     implements Int64List {
   final WasmIntArray<WasmI64> _data;
@@ -2084,8 +2084,8 @@ class _I64List
 
 class _U64List
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U64List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U64List>,
         _TypedListCommonOperationsMixin
     implements Uint64List {
   final WasmIntArray<WasmI64> _data;
@@ -2252,8 +2252,8 @@ class _SlowListBase {
 
 class _SlowI8List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I8List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I8List>,
         _TypedListCommonOperationsMixin
     implements Int8List {
   _SlowI8List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2280,8 +2280,8 @@ class _SlowI8List extends _SlowListBase
 
 class _SlowU8List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U8List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U8List>,
         _TypedListCommonOperationsMixin
     implements Uint8List {
   _SlowU8List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2308,8 +2308,8 @@ class _SlowU8List extends _SlowListBase
 
 class _SlowU8ClampedList extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U8ClampedList>,
+        _IntListMixin,
+        _TypedIntListMixin<_U8ClampedList>,
         _TypedListCommonOperationsMixin
     implements Uint8ClampedList {
   _SlowU8ClampedList._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2337,8 +2337,8 @@ class _SlowU8ClampedList extends _SlowListBase
 
 class _SlowI16List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I16List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I16List>,
         _TypedListCommonOperationsMixin
     implements Int16List {
   _SlowI16List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2365,8 +2365,8 @@ class _SlowI16List extends _SlowListBase
 
 class _SlowU16List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U16List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U16List>,
         _TypedListCommonOperationsMixin
     implements Uint16List {
   _SlowU16List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2393,8 +2393,8 @@ class _SlowU16List extends _SlowListBase
 
 class _SlowI32List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I32List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I32List>,
         _TypedListCommonOperationsMixin
     implements Int32List {
   _SlowI32List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2421,8 +2421,8 @@ class _SlowI32List extends _SlowListBase
 
 class _SlowU32List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U32List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U32List>,
         _TypedListCommonOperationsMixin
     implements Uint32List {
   _SlowU32List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2449,8 +2449,8 @@ class _SlowU32List extends _SlowListBase
 
 class _SlowI64List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_I64List>,
+        _IntListMixin,
+        _TypedIntListMixin<_I64List>,
         _TypedListCommonOperationsMixin
     implements Int64List {
   _SlowI64List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -2477,8 +2477,8 @@ class _SlowI64List extends _SlowListBase
 
 class _SlowU64List extends _SlowListBase
     with
-        _IntListMixin2,
-        _TypedIntListMixin2<_U64List>,
+        _IntListMixin,
+        _TypedIntListMixin<_U64List>,
         _TypedListCommonOperationsMixin
     implements Uint64List {
   _SlowU64List._(ByteBuffer buffer, int offsetInBytes, int length)
