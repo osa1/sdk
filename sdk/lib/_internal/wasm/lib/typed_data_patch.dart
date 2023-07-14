@@ -2331,3 +2331,109 @@ class _SlowF64List extends _SlowListBase
     _data.setFloat64(offsetInBytes + (index * elementSizeInBytes), value);
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Factories
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@patch
+class Int8List {
+  @patch
+  factory Int8List(int length) => _I8List(length);
+
+  @patch
+  factory Int8List.fromList(List<int> elements) =>
+      _I8List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Uint8List {
+  @patch
+  factory Uint8List(int length) => _U8List(length);
+
+  @patch
+  factory Uint8List.fromList(List<int> elements) =>
+      _U8List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Int16List {
+  @patch
+  factory Int16List(int length) => _I16List(length);
+
+  @patch
+  factory Int16List.fromList(List<int> elements) =>
+      _I16List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Uint16List {
+  @patch
+  factory Uint16List(int length) => _U16List(length);
+
+  @patch
+  factory Uint16List.fromList(List<int> elements) =>
+      _U16List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Int32List {
+  @patch
+  factory Int32List(int length) => _I32List(length);
+
+  @patch
+  factory Int32List.fromList(List<int> elements) =>
+      _I32List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Uint32List {
+  @patch
+  factory Uint32List(int length) => _U32List(length);
+
+  @patch
+  factory Uint32List.fromList(List<int> elements) =>
+      _U32List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Int64List {
+  @patch
+  factory Int64List(int length) => _I64List(length);
+
+  @patch
+  factory Int64List.fromList(List<int> elements) =>
+      _I64List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Uint64List {
+  @patch
+  factory Uint64List(int length) => _U64List(length);
+
+  @patch
+  factory Uint64List.fromList(List<int> elements) =>
+      _U64List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Float32List {
+  @patch
+  factory Float32List(int length) => _F32List(length);
+
+  @patch
+  factory Float32List.fromList(List<double> elements) =>
+      _F32List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class Float64List {
+  @patch
+  factory Float64List(int length) => _F64List(length);
+
+  @patch
+  factory Float64List.fromList(List<double> elements) =>
+      _F64List(elements.length)..setRange(0, elements.length, elements);
+}

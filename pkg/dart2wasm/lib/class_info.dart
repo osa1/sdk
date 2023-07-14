@@ -211,16 +211,20 @@ class ClassInfoCollector {
 
   /// Masquerades for implementation classes. For each entry of the map, all
   /// subtypes of the key masquerade as the value.
-  late final Map<Class, Class> _masquerades = {
-    translator.coreTypes.boolClass: translator.coreTypes.boolClass,
-    translator.coreTypes.intClass: translator.coreTypes.intClass,
-    translator.coreTypes.doubleClass: translator.coreTypes.doubleClass,
-    translator.coreTypes.stringClass: translator.coreTypes.stringClass,
-    translator.index.getClass("dart:core", "_Type"):
-        translator.coreTypes.typeClass,
-    translator.index.getClass("dart:core", "_ListBase"):
-        translator.coreTypes.listClass,
-    for (Class cls in const <String>[
+  late final Map<Class, Class> _masquerades = _computeMasquerades();
+
+  Map<Class, Class> _computeMasquerades() {
+    final map = {
+      translator.coreTypes.boolClass: translator.coreTypes.boolClass,
+      translator.coreTypes.intClass: translator.coreTypes.intClass,
+      translator.coreTypes.doubleClass: translator.coreTypes.doubleClass,
+      translator.coreTypes.stringClass: translator.coreTypes.stringClass,
+      translator.index.getClass("dart:core", "_Type"):
+          translator.coreTypes.typeClass,
+      translator.index.getClass("dart:core", "_ListBase"):
+          translator.coreTypes.listClass
+    };
+    for (String name in const <String>[
       "Int8List",
       "Uint8List",
       "Uint8ClampedList",
@@ -235,9 +239,14 @@ class ClassInfoCollector {
       "Int32x4List",
       "Float32x4List",
       "Float64x2List",
-    ].map((name) => translator.index.getClass("dart:typed_data", name)))
-      cls: cls
-  };
+    ]) {
+      final Class? cls = translator.index.tryGetClass("dart:typed_data", name);
+      if (cls != null) {
+        map[cls] = cls;
+      }
+    }
+    return map;
+  }
 
   late final Set<Class> _neverMasquerades = _computeNeverMasquerades();
 
