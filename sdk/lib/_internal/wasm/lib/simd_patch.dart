@@ -40,39 +40,13 @@ class Float64x2List {
       _NaiveFloat64x2List.fromList;
 }
 
-/*
 @patch
 abstract class UnmodifiableInt32x4ListView implements Int32x4List {
   @patch
   factory UnmodifiableInt32x4ListView(Int32x4List list) =>
-      new _UnmodifiableInt32x4ArrayView._(
-          unsafeCast<_TypedList>(unsafeCast<_NaiveInt32x4List>(list)._storage),
-          list.offsetInBytes,
-          list.length);
+      _NaiveUnmodifiableInt32x4List._externalStorage(
+          unsafeCast<_NaiveInt32x4List>(list)._storage);
 }
-
-@patch
-abstract class UnmodifiableFloat32x4ListView implements Float32x4List {
-  @patch
-  factory UnmodifiableFloat32x4ListView(Float32x4List list) =>
-      new _UnmodifiableFloat32x4ArrayView._(
-          unsafeCast<_TypedList>(
-              unsafeCast<_NaiveFloat32x4List>(list)._storage),
-          list.offsetInBytes,
-          list.length);
-}
-
-@patch
-abstract class UnmodifiableFloat64x2ListView implements Float64x2List {
-  @patch
-  factory UnmodifiableFloat64x2ListView(Float64x2List list) =>
-      new _UnmodifiableFloat64x2ArrayView._(
-          unsafeCast<_TypedList>(
-              unsafeCast<_NaiveFloat64x2List>(list)._storage),
-          list.offsetInBytes,
-          list.length);
-}
-*/
 
 @patch
 class Int32x4 {
@@ -175,6 +149,20 @@ final class _NaiveInt32x4List extends Object
   }
 }
 
+final class _NaiveUnmodifiableInt32x4List extends _NaiveInt32x4List
+    implements UnmodifiableInt32x4ListView {
+  _NaiveUnmodifiableInt32x4List._externalStorage(Int32List storage)
+      : super._externalStorage(storage);
+
+  @override
+  void operator []=(int index, Int32x4 value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  // TODO
+  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
+}
+
 final class _NaiveFloat32x4List extends Object
     with ListMixin<Float32x4>, FixedLengthListMixin<Float32x4>
     implements Float32x4List {
@@ -238,6 +226,19 @@ final class _NaiveFloat32x4List extends Object
   }
 }
 
+final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List {
+  _NaiveUnmodifiableFloat32x4List._externalStorage(Float32List storage)
+      : super._externalStorage(storage);
+
+  @override
+  void operator []=(int index, Float32x4 value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  // TODO
+  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
+}
+
 final class _NaiveFloat64x2List extends Object
     with ListMixin<Float64x2>, FixedLengthListMixin<Float64x2>
     implements Float64x2List {
@@ -293,6 +294,19 @@ final class _NaiveFloat64x2List extends Object
     return _NaiveFloat64x2List._externalStorage(
         _storage.sublist(start * 2, stop * 2));
   }
+}
+
+final class _NaiveUnmodifiableFloat64x2List extends _NaiveFloat64x2List {
+  _NaiveUnmodifiableFloat64x2List._externalStorage(Float64List storage)
+      : super._externalStorage(storage);
+
+  @override
+  void operator []=(int index, Float64x2 value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  // TODO
+  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
 }
 
 final class _NaiveFloat32x4 implements Float32x4 {
