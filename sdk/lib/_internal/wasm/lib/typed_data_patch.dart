@@ -2566,6 +2566,13 @@ class _SlowF64List extends _SlowListBase
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @patch
+class ByteData {
+  @patch
+  factory ByteData(int length) =>
+      _I8ByteData._(WasmIntArray(length), 0, length);
+}
+
+@patch
 class Int8List {
   @patch
   factory Int8List(int length) => _I8List(length);
