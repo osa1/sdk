@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import "dart:collection" show ListBase;
 import 'dart:_internal'
     show
         ClassID,
@@ -1050,6 +1051,9 @@ mixin _TypedListCommonOperationsMixin {
   set length(int newLength) {
     throw UnsupportedError("Cannot resize a fixed-length list");
   }
+
+  @override
+  String toString() => ListBase.listToString(this as List);
 }
 
 mixin _IntListMixin implements List<int> {
