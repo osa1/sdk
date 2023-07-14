@@ -502,7 +502,7 @@ class _I64ByteData extends _ByteData {
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getInt64(byteOffset, endian);
+      return super.getUint64(byteOffset, endian);
     }
   }
 
