@@ -10,6 +10,7 @@ import 'dart:math' as math;
 // we implement intrinsics for Wasm SIMD.
 // TODO(joshualitt): Implement SIMD intrinsics and delete this patch.
 
+/*
 @patch
 class Int32x4List {
   @patch
@@ -869,3 +870,4 @@ final class _NaiveInt32x4 implements Int32x4 {
 }
 
 String _int32ToHex(int i) => i.toRadixString(16).padLeft(8, '0');
+*/

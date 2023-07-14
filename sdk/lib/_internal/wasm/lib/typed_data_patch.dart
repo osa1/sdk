@@ -26,6 +26,44 @@ import 'dart:_internal'
 import 'dart:_wasm';
 import 'dart:math' show Random;
 
+void _rangeCheck(int listLength, int start, int length) {
+  if (length < 0) {
+    throw RangeError.value(length);
+  }
+  if (start < 0) {
+    throw RangeError.value(start);
+  }
+  if (start + length > listLength) {
+    throw RangeError.value(start + length);
+  }
+}
+
+final class _TypedListIterator<E> implements Iterator<E> {
+  final List<E> _array;
+  final int _length;
+  int _position;
+  E? _current;
+
+  _TypedListIterator(List<E> array)
+      : _array = array,
+        _length = array.length,
+        _position = -1;
+
+  bool moveNext() {
+    int nextPosition = _position + 1;
+    if (nextPosition < _length) {
+      _current = _array[nextPosition];
+      _position = nextPosition;
+      return true;
+    }
+    _position = _length;
+    _current = null;
+    return false;
+  }
+
+  E get current => _current as E;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Byte data
