@@ -668,7 +668,12 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    throw 'TODO';
+    offsetInBytes += this.offsetInBytes;
+    length ??=
+        (lengthInBytes - offsetInBytes) ~/ Uint8ClampedList.bytesPerElement;
+    _rangeCheck(lengthInBytes, offsetInBytes,
+        length * Uint8ClampedList.bytesPerElement);
+    return _SlowU8ClampedList._(this, offsetInBytes, length);
   }
 
   @override
@@ -1774,6 +1779,54 @@ class _U8List
   }
 }
 
+class _U8ClampedList
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U8ClampedList>,
+        _TypedListCommonOperationsMixin
+    implements Uint8ClampedList {
+  final WasmIntArray<WasmI8> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _U8ClampedList(this.length)
+      : _data = WasmIntArray(length),
+        _offsetInElements = 0;
+
+  _U8ClampedList._(this._data, this._offsetInElements, this.length);
+
+  @override
+  _U8ClampedList _createList(int length) => _U8ClampedList(length);
+
+  @override
+  _I8ByteBuffer get buffer =>
+      _I8ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
+
+  @override
+  int get elementSizeInBytes => Uint8ClampedList.bytesPerElement;
+
+  @override
+  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
+
+  @override
+  int operator [](int index) {
+    if (index < 0 || index >= length) {
+      throw IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    return _data.readUnsigned(_offsetInElements + index);
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    if (index < 0 || index >= length) {
+      throw IndexError.withLength(index, length,
+          indexable: this, name: "index");
+    }
+    _data.write(_offsetInElements + index, value.clamp(0, 255));
+  }
+}
+
 class _I16List
     with
         _IntListMixin2,
@@ -2238,6 +2291,35 @@ class _SlowU8List extends _SlowListBase
   }
 }
 
+class _SlowU8ClampedList extends _SlowListBase
+    with
+        _IntListMixin2,
+        _TypedIntListMixin2<_U8ClampedList>,
+        _TypedListCommonOperationsMixin
+    implements Uint8ClampedList {
+  _SlowU8ClampedList._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super(buffer, offsetInBytes, length);
+
+  @override
+  _U8ClampedList _createList(int length) => _U8ClampedList(length);
+
+  @override
+  int get elementSizeInBytes => Uint8ClampedList.bytesPerElement;
+
+  @override
+  int operator [](int index) {
+    _indexRangeCheck(index);
+    return _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    _indexRangeCheck(index);
+    _data.setUint8(
+        offsetInBytes + (index * elementSizeInBytes), value.clamp(0, 255));
+  }
+}
+
 class _SlowI16List extends _SlowListBase
     with
         _IntListMixin2,
@@ -2491,11 +2573,11 @@ class Uint8List {
 @patch
 class Uint8ClampedList {
   @patch
-  factory Uint8ClampedList(int length) => throw 'Uint8ClampedList';
+  factory Uint8ClampedList(int length) => _U8ClampedList(length);
 
   @patch
   factory Uint8ClampedList.fromList(List<int> elements) =>
-      throw 'Uint8ClampedList.fromList';
+      _U8ClampedList(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
