@@ -583,7 +583,7 @@ class _F64ByteData extends _ByteData {
   int getUint8(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
-    final word = floatToIntBits(_data.read(byteIndex));
+    final word = doubleToIntBits(_data.read(byteIndex));
     return (word >> (8 * (byteOffset % elementSizeInBytes))) & 0xFF;
   }
 
