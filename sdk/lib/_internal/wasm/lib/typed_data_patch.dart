@@ -88,6 +88,14 @@ abstract class _ByteData implements ByteData {
 
   _ByteData(this.offsetInBytes, this.lengthInBytes);
 
+  void _offsetRangeCheck(int byteOffset, int size) {
+    final totalOffset = byteOffset + offsetInBytes;
+    if (byteOffset < 0 || totalOffset + size > lengthInBytes) {
+      throw IndexError.withLength(byteOffset, lengthInBytes - offsetInBytes,
+          indexable: this, name: "index");
+    }
+  }
+
   @override
   int getInt8(int byteOffset) {
     return getUint8(byteOffset).toSigned(8);
@@ -282,11 +290,13 @@ class _I8ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     return _data.readUnsigned(offsetInBytes + byteOffset);
   }
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     _data.write(offsetInBytes + byteOffset, value.toUnsigned(8));
   }
 }
@@ -306,6 +316,7 @@ class _I16ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -315,6 +326,7 @@ class _I16ByteData extends _ByteData {
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -361,6 +373,7 @@ class _I32ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -370,6 +383,7 @@ class _I32ByteData extends _ByteData {
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -438,6 +452,7 @@ class _I64ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -447,6 +462,7 @@ class _I64ByteData extends _ByteData {
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -526,6 +542,7 @@ class _F32ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final word = floatToIntBits(_data.read(byteIndex));
@@ -534,6 +551,7 @@ class _F32ByteData extends _ByteData {
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = floatToIntBits(_data.read(byteIndex));
@@ -582,6 +600,7 @@ class _F64ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final word = doubleToIntBits(_data.read(byteIndex));
@@ -590,6 +609,7 @@ class _F64ByteData extends _ByteData {
 
   @override
   void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = doubleToIntBits(_data.read(byteIndex));
