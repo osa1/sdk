@@ -194,15 +194,6 @@ abstract class _ByteData implements ByteData {
     final b7 = getUint8(byteOffset + 6);
     final b8 = getUint8(byteOffset + 7);
     if (endian == Endian.little) {
-      return (b1 << 56) |
-          (b2 << 48) |
-          (b3 << 40) |
-          (b4 << 32) |
-          (b5 << 24) |
-          (b6 << 16) |
-          (b7 << 8) |
-          b8;
-    } else {
       return (b8 << 56) |
           (b7 << 48) |
           (b6 << 40) |
@@ -211,6 +202,15 @@ abstract class _ByteData implements ByteData {
           (b3 << 16) |
           (b2 << 8) |
           b1;
+    } else {
+      return (b1 << 56) |
+          (b2 << 48) |
+          (b3 << 40) |
+          (b4 << 32) |
+          (b5 << 24) |
+          (b6 << 16) |
+          (b7 << 8) |
+          b8;
     }
   }
 
