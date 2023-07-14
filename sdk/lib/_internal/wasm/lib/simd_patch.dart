@@ -10,7 +10,6 @@ import 'dart:math' as math;
 // we implement intrinsics for Wasm SIMD.
 // TODO(joshualitt): Implement SIMD intrinsics and delete this patch.
 
-/*
 @patch
 class Int32x4List {
   @patch
@@ -41,6 +40,7 @@ class Float64x2List {
       _NaiveFloat64x2List.fromList;
 }
 
+/*
 @patch
 abstract class UnmodifiableInt32x4ListView implements Int32x4List {
   @patch
