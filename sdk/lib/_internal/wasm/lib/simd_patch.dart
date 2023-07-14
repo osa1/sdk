@@ -112,7 +112,6 @@ class Float64x2 {
   factory Float64x2.fromFloat32x4(Float32x4 v) = _NaiveFloat64x2.fromFloat32x4;
 }
 
-/*
 final class _NaiveInt32x4List extends Object
     with ListMixin<Int32x4>, FixedLengthListMixin<Int32x4>
     implements Int32x4List {
@@ -295,7 +294,6 @@ final class _NaiveFloat64x2List extends Object
         _storage.sublist(start * 2, stop * 2));
   }
 }
-*/
 
 final class _NaiveFloat32x4 implements Float32x4 {
   final double x;
