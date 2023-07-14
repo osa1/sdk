@@ -677,8 +677,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Uint16List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Uint16List.bytesPerElement);
-    return _SlowU16List._(
-        this, offsetInBytes, length - (length % Uint16List.bytesPerElement));
+    return _SlowU16List._(this, offsetInBytes, length);
   }
 
   @override
@@ -687,8 +686,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Int16List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Int16List.bytesPerElement);
-    return _SlowI16List._(
-        this, offsetInBytes, length - (length % Int16List.bytesPerElement));
+    return _SlowI16List._(this, offsetInBytes, length);
   }
 
   @override
@@ -697,8 +695,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Uint32List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Uint32List.bytesPerElement);
-    return _SlowU32List._(
-        this, offsetInBytes, length - (length % Uint32List.bytesPerElement));
+    return _SlowU32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -707,8 +704,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Int32List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Int32List.bytesPerElement);
-    return _SlowI32List._(
-        this, offsetInBytes, length - (length % Int32List.bytesPerElement));
+    return _SlowI32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -717,8 +713,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Uint64List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Uint64List.bytesPerElement);
-    return _SlowU64List._(
-        this, offsetInBytes, length - (length % Uint64List.bytesPerElement));
+    return _SlowU64List._(this, offsetInBytes, length);
   }
 
   @override
@@ -727,8 +722,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Int64List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Int64List.bytesPerElement);
-    return _SlowI64List._(
-        this, offsetInBytes, length - (length % Int64List.bytesPerElement));
+    return _SlowI64List._(this, offsetInBytes, length);
   }
 
   @override
@@ -737,8 +731,8 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Int32x4List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Int32x4List.bytesPerElement);
-    return _NaiveInt32x4List._externalStorage(_SlowI32List._(
-        this, offsetInBytes, length - (length % Int32List.bytesPerElement)));
+    return _NaiveInt32x4List._externalStorage(
+        _SlowI32List._(this, offsetInBytes, length * 4));
   }
 
   @override
@@ -747,8 +741,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
-    return _SlowF32List._(
-        this, offsetInBytes, length - (length % Float32List.bytesPerElement));
+    return _SlowF32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -757,28 +750,27 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
-    return _SlowF64List._(
-        this, offsetInBytes, length - (length % Float64List.bytesPerElement));
+    return _SlowF64List._(this, offsetInBytes, length);
   }
 
   @override
   Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
     offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float32List.bytesPerElement;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float32x4List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
-    return _NaiveFloat32x4List._externalStorage(_SlowF32List._(
-        this, offsetInBytes, length - (length % Float32List.bytesPerElement)));
+        lengthInBytes, offsetInBytes, length * Float32x4List.bytesPerElement);
+    return _NaiveFloat32x4List._externalStorage(
+        _SlowF32List._(this, offsetInBytes, length * 4));
   }
 
   @override
   Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
     offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Float64List.bytesPerElement;
+    length ??= (lengthInBytes - offsetInBytes) ~/ Float64x2List.bytesPerElement;
     _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
-    return _NaiveFloat64x2List._externalStorage(_SlowF64List._(
-        this, offsetInBytes, length - (length % Float64List.bytesPerElement)));
+        lengthInBytes, offsetInBytes, length * Float64x2List.bytesPerElement);
+    return _NaiveFloat64x2List._externalStorage(
+        _SlowF64List._(this, offsetInBytes, length * 2));
   }
 }
 
