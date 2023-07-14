@@ -326,24 +326,22 @@ class _I16ByteData extends _ByteData {
 
   @override
   int getUint16(int byteOffset, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
-    final byteIndex = byteOffset ~/ elementSizeInBytes;
-    final elementLittleEndian = _data.readUnsigned(byteIndex);
-    if (endian == Endian.little) {
-      return elementLittleEndian;
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return (((elementLittleEndian & 0xFF) << 8) | (elementLittleEndian >> 8));
+      return super.getUint16(byteOffset, endian);
     }
   }
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
-    final byteIndex = byteOffset ~/ elementSizeInBytes;
-    if (endian == Endian.big) {
-      value = (value & 0xFF) << 8 & (value >> 8);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
+    } else {
+      super.setUint16(byteOffset, value, endian);
     }
-    _data.write(byteIndex, value);
   }
 }
 
@@ -385,8 +383,9 @@ class _I32ByteData extends _ByteData {
 
   @override
   int getInt32(int byteOffset, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      return _data.readSigned(byteOffset ~/ elementSizeInBytes);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readSigned(totalOffset ~/ elementSizeInBytes);
     } else {
       return super.getInt32(byteOffset, endian);
     }
@@ -394,8 +393,9 @@ class _I32ByteData extends _ByteData {
 
   @override
   int getUint32(int byteOffset, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      return _data.readUnsigned(byteOffset ~/ elementSizeInBytes);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
       return super.getUint32(byteOffset, endian);
     }
@@ -403,8 +403,9 @@ class _I32ByteData extends _ByteData {
 
   @override
   void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      _data.write(byteOffset ~/ elementSizeInBytes, value.toUnsigned(32));
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value.toUnsigned(32));
     } else {
       super.setInt32(byteOffset, value, endian);
     }
@@ -412,8 +413,9 @@ class _I32ByteData extends _ByteData {
 
   @override
   void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      _data.write(byteOffset ~/ elementSizeInBytes, value);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
       super.setUint32(byteOffset, value, endian);
     }
@@ -469,8 +471,9 @@ class _I64ByteData extends _ByteData {
 
   @override
   int getInt64(int byteOffset, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      return _data.readSigned(byteOffset ~/ elementSizeInBytes);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readSigned(totalOffset ~/ elementSizeInBytes);
     } else {
       return super.getInt64(byteOffset, endian);
     }
@@ -478,8 +481,9 @@ class _I64ByteData extends _ByteData {
 
   @override
   int getUint64(int byteOffset, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      return _data.readUnsigned(byteOffset ~/ elementSizeInBytes);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
       return super.getInt64(byteOffset, endian);
     }
@@ -487,8 +491,9 @@ class _I64ByteData extends _ByteData {
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      _data.write(byteOffset ~/ elementSizeInBytes, value);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
       super.setInt64(byteOffset, value, endian);
     }
@@ -496,8 +501,9 @@ class _I64ByteData extends _ByteData {
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    if (byteOffset % elementSizeInBytes == 0 && endian == Endian.little) {
-      _data.write(byteOffset ~/ elementSizeInBytes, value);
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
       super.setUint64(byteOffset, value, endian);
     }
@@ -519,22 +525,44 @@ class _F32ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final word = floatToIntBits(_data.read(byteIndex));
+    return (word >> (8 * (byteOffset % elementSizeInBytes))) & 0xFF;
   }
 
   @override
   void setUint8(int byteOffset, int value) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final element = floatToIntBits(_data.read(byteIndex));
+    final byteElementIndex = byteOffset % elementSizeInBytes;
+    final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
+    final b2 = byteElementIndex == 1 ? value : ((element >> 8) & 0xFF);
+    final b3 = byteElementIndex == 2 ? value : ((element >> 16) & 0xFF);
+    final b4 = byteElementIndex == 3 ? value : ((element >> 24) & 0xFF);
+    final newValue = (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+    _data.write(byteIndex, intBitsToFloat(newValue));
   }
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.read(totalOffset ~/ elementSizeInBytes);
+    } else {
+      return super.getFloat32(byteOffset, endian);
+    }
   }
 
   @override
   void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
+    } else {
+      super.setFloat32(byteOffset, value, endian);
+    }
   }
 }
 
@@ -553,22 +581,55 @@ class _F64ByteData extends _ByteData {
 
   @override
   int getUint8(int byteOffset) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final word = floatToIntBits(_data.read(byteIndex));
+    return (word >> (8 * (byteOffset % elementSizeInBytes))) & 0xFF;
   }
 
   @override
   void setUint8(int byteOffset, int value) {
-    throw 'TODO';
+    byteOffset += offsetInBytes;
+    final byteIndex = byteOffset ~/ elementSizeInBytes;
+    final element = doubleToIntBits(_data.read(byteIndex));
+    final byteElementIndex = byteOffset % elementSizeInBytes;
+    final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
+    final b2 = byteElementIndex == 1 ? value : ((element >> 8) & 0xFF);
+    final b3 = byteElementIndex == 2 ? value : ((element >> 16) & 0xFF);
+    final b4 = byteElementIndex == 3 ? value : ((element >> 24) & 0xFF);
+    final b5 = byteElementIndex == 4 ? value : ((element >> 32) & 0xFF);
+    final b6 = byteElementIndex == 5 ? value : ((element >> 40) & 0xFF);
+    final b7 = byteElementIndex == 6 ? value : ((element >> 48) & 0xFF);
+    final b8 = byteElementIndex == 7 ? value : ((element >> 56) & 0xFF);
+    final newValue = (b8 << 56) |
+        (b7 << 48) |
+        (b6 << 40) |
+        (b5 << 32) |
+        (b4 << 24) |
+        (b3 << 16) |
+        (b2 << 8) |
+        b1;
+    _data.write(byteIndex, intBitsToDouble(newValue));
   }
 
   @override
   double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      return _data.read(totalOffset ~/ elementSizeInBytes);
+    } else {
+      return super.getFloat64(byteOffset, endian);
+    }
   }
 
   @override
   void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
-    throw 'TODO';
+    final totalOffset = offsetInBytes + byteOffset;
+    if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
+      _data.write(totalOffset ~/ elementSizeInBytes, value);
+    } else {
+      super.setFloat64(byteOffset, value, endian);
+    }
   }
 }
 
