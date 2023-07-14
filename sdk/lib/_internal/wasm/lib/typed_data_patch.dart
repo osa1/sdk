@@ -2359,6 +2359,16 @@ class Uint8List {
 }
 
 @patch
+class Uint8ClampedList {
+  @patch
+  factory Uint8ClampedList(int length) => throw 'Uint8ClampedList';
+
+  @patch
+  factory Uint8ClampedList.fromList(List<int> elements) =>
+      throw 'Uint8ClampedList.fromList';
+}
+
+@patch
 class Int16List {
   @patch
   factory Int16List(int length) => _I16List(length);
