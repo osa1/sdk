@@ -89,8 +89,7 @@ abstract class _ByteData implements ByteData {
   _ByteData(this.offsetInBytes, this.lengthInBytes);
 
   void _offsetRangeCheck(int byteOffset, int size) {
-    final totalOffset = byteOffset + offsetInBytes;
-    if (byteOffset < 0 || totalOffset + size > lengthInBytes) {
+    if (byteOffset < 0 || byteOffset + size > lengthInBytes) {
       throw IndexError.withLength(byteOffset, lengthInBytes - offsetInBytes,
           indexable: this, name: "index");
     }
