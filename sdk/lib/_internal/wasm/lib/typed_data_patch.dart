@@ -320,7 +320,7 @@ class _I16ByteData extends _ByteData {
     final byteElementIndex = byteOffset % elementSizeInBytes;
     final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
     final b2 = byteElementIndex == 1 ? value : (element >> 8);
-    final newValue = (b2 << 8) & b1;
+    final newValue = (b2 << 8) | b1;
     _data.write(byteIndex, newValue);
   }
 
