@@ -89,22 +89,21 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setInt8(int byteOffset, int value) {
-    setUint8(offsetInBytes + byteOffset, value.toUnsigned(8));
+    setUint8(byteOffset, value.toUnsigned(8));
   }
 
   @override
   int getInt16(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint16(offsetInBytes + byteOffset, endian).toSigned(16);
+    return getUint16(byteOffset, endian).toSigned(16);
   }
 
   @override
   void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint16(offsetInBytes + byteOffset, value.toUnsigned(16), endian);
+    setUint16(byteOffset, value.toUnsigned(16), endian);
   }
 
   @override
   int getUint16(int byteOffset, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = getUint8(byteOffset);
     final b2 = getUint8(byteOffset + 1);
     if (endian == Endian.little) {
@@ -116,7 +115,6 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     if (endian == Endian.little) {
@@ -140,7 +138,6 @@ abstract class _ByteData implements ByteData {
 
   @override
   int getUint32(int byteOffset, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = getUint8(byteOffset);
     final b2 = getUint8(byteOffset + 1);
     final b3 = getUint8(byteOffset + 2);
@@ -154,7 +151,6 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     final b3 = (value >> 16) & 0xFF;
@@ -174,17 +170,16 @@ abstract class _ByteData implements ByteData {
 
   @override
   int getInt64(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint64(offsetInBytes + byteOffset, endian);
+    return getUint64(byteOffset, endian);
   }
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint64(offsetInBytes + byteOffset, value, endian);
+    setUint64(byteOffset, value, endian);
   }
 
   @override
   int getUint64(int byteOffset, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = getUint8(byteOffset);
     final b2 = getUint8(byteOffset + 1);
     final b3 = getUint8(byteOffset + 2);
@@ -216,7 +211,6 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    byteOffset += offsetInBytes;
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     final b3 = (value >> 16) & 0xFF;
@@ -248,22 +242,22 @@ abstract class _ByteData implements ByteData {
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
-    return intBitsToFloat(getUint32(offsetInBytes + byteOffset, endian));
+    return intBitsToFloat(getUint32(byteOffset, endian));
   }
 
   @override
   void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
-    setUint32(offsetInBytes + byteOffset, floatToIntBits(value), endian);
+    setUint32(byteOffset, floatToIntBits(value), endian);
   }
 
   @override
   double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
-    return intBitsToDouble(getUint64(offsetInBytes + byteOffset, endian));
+    return intBitsToDouble(getUint64(byteOffset, endian));
   }
 
   @override
   void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
-    setUint64(offsetInBytes + byteOffset, doubleToIntBits(value), endian);
+    setUint64(byteOffset, doubleToIntBits(value), endian);
   }
 }
 
@@ -2310,7 +2304,7 @@ class _SlowI8List extends _SlowListBase
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setInt8(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setInt8(offsetInBytes + (index), value);
   }
 }
 
