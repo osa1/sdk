@@ -22,6 +22,7 @@ import 'dart:_internal'
         Sort,
         SubListIterable,
         TakeWhileIterable,
+        unsafeCast,
         WhereIterable,
         WhereTypeIterable;
 import 'dart:_wasm';
@@ -671,11 +672,11 @@ class _F64ByteData extends _ByteData {
 /// Base class for [ByteBuffer] implementations. Returns slow lists in all
 /// methods. Implementations should override relevant methods to return fast
 /// lists when possible and implement [asByteData].
-abstract class _ByteBufferBase extends ByteBuffer {
+abstract class _ByteBuffer extends ByteBuffer {
   final int offsetInBytes;
   final int lengthInBytes;
 
-  _ByteBufferBase(this.offsetInBytes, this.lengthInBytes);
+  _ByteBuffer(this.offsetInBytes, this.lengthInBytes);
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
@@ -814,7 +815,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
   }
 }
 
-class _I8ByteBuffer extends _ByteBufferBase {
+class _I8ByteBuffer extends _ByteBuffer {
   final WasmIntArray<WasmI8> _data;
 
   _I8ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -849,7 +850,7 @@ class _I8ByteBuffer extends _ByteBufferBase {
   }
 }
 
-class _I16ByteBuffer extends _ByteBufferBase {
+class _I16ByteBuffer extends _ByteBuffer {
   final WasmIntArray<WasmI16> _data;
 
   _I16ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -897,7 +898,7 @@ class _I16ByteBuffer extends _ByteBufferBase {
   }
 }
 
-class _I32ByteBuffer extends _ByteBufferBase {
+class _I32ByteBuffer extends _ByteBuffer {
   final WasmIntArray<WasmI32> _data;
 
   _I32ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -945,7 +946,7 @@ class _I32ByteBuffer extends _ByteBufferBase {
   }
 }
 
-class _I64ByteBuffer extends _ByteBufferBase {
+class _I64ByteBuffer extends _ByteBuffer {
   final WasmIntArray<WasmI64> _data;
 
   _I64ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -993,7 +994,7 @@ class _I64ByteBuffer extends _ByteBufferBase {
   }
 }
 
-class _F32ByteBuffer extends _ByteBufferBase {
+class _F32ByteBuffer extends _ByteBuffer {
   final WasmFloatArray<WasmF32> _data;
 
   _F32ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -1027,7 +1028,7 @@ class _F32ByteBuffer extends _ByteBufferBase {
   }
 }
 
-class _F64ByteBuffer extends _ByteBufferBase {
+class _F64ByteBuffer extends _ByteBuffer {
   final WasmFloatArray<WasmF64> _data;
 
   _F64ByteBuffer(this._data, int offsetInBytes, int lengthInBytes)
@@ -2293,6 +2294,160 @@ class _F64List
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// Unmodifiable fast lists
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class _UnmodifiableI8List extends _I8List implements UnmodifiableInt8ListView {
+  _UnmodifiableI8List._(
+      WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I8ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableU8List extends _U8List implements UnmodifiableUint8ListView {
+  _UnmodifiableU8List._(
+      WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I8ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableI16List extends _I16List
+    implements UnmodifiableInt16ListView {
+  _UnmodifiableI16List._(
+      WasmIntArray<WasmI16> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I16ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableU16List extends _U16List
+    implements UnmodifiableUint16ListView {
+  _UnmodifiableU16List._(
+      WasmIntArray<WasmI16> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I16ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableI32List extends _I32List
+    implements UnmodifiableInt32ListView {
+  _UnmodifiableI32List._(
+      WasmIntArray<WasmI32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I32ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableU32List extends _U32List
+    implements UnmodifiableUint32ListView {
+  _UnmodifiableU32List._(
+      WasmIntArray<WasmI32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I32ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableI64List extends _I64List
+    implements UnmodifiableInt64ListView {
+  _UnmodifiableI64List._(
+      WasmIntArray<WasmI64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I64ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableU64List extends _U64List
+    implements UnmodifiableUint64ListView {
+  _UnmodifiableU64List._(
+      WasmIntArray<WasmI64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I64ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableF32List extends _F32List
+    implements UnmodifiableFloat32ListView {
+  _UnmodifiableF32List._(
+      WasmFloatArray<WasmF32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, double value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _F32ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableF64List extends _F64List
+    implements UnmodifiableFloat64ListView {
+  _UnmodifiableF64List._(
+      WasmFloatArray<WasmF64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, double value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _F64ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Slow lists
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2642,6 +2797,152 @@ class _SlowF64List extends _SlowListBase
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
+// Unmodifiable slow lists
+//
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class _UnmodifiableSlowI8List extends _SlowI8List
+    implements UnmodifiableInt8ListView {
+  _UnmodifiableSlowI8List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowU8List extends _SlowU8List
+    implements UnmodifiableUint8ListView {
+  _UnmodifiableSlowU8List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowI16List extends _SlowI16List
+    implements UnmodifiableInt16ListView {
+  _UnmodifiableSlowI16List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowU16List extends _SlowU16List
+    implements UnmodifiableUint16ListView {
+  _UnmodifiableSlowU16List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowI32List extends _SlowI32List
+    implements UnmodifiableInt32ListView {
+  _UnmodifiableSlowI32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowU32List extends _SlowU32List
+    implements UnmodifiableUint32ListView {
+  _UnmodifiableSlowU32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowI64List extends _SlowI64List
+    implements UnmodifiableInt64ListView {
+  _UnmodifiableSlowI64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowU64List extends _SlowU64List
+    implements UnmodifiableUint64ListView {
+  _UnmodifiableSlowU64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowF32List extends _SlowF32List
+    implements UnmodifiableFloat32ListView {
+  _UnmodifiableSlowF32List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, double value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+class _UnmodifiableSlowF64List extends _SlowF64List
+    implements UnmodifiableFloat64ListView {
+  _UnmodifiableSlowF64List._(ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, double value) {
+    throw new UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//
 // Factories
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2763,4 +3064,154 @@ class Float64List {
   @patch
   factory Float64List.fromList(List<double> elements) =>
       _F64List(elements.length)..setRange(0, elements.length, elements);
+}
+
+@patch
+class UnmodifiableUint8ListView {
+  @patch
+  factory UnmodifiableUint8ListView(Uint8List list) {
+    if (list is _U8List) {
+      return _UnmodifiableU8List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowU8List>(list);
+      return _UnmodifiableSlowU8List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableInt8ListView {
+  @patch
+  factory UnmodifiableInt8ListView(Int8List list) {
+    if (list is _I8List) {
+      return _UnmodifiableI8List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowI8List>(list);
+      return _UnmodifiableSlowI8List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableUint16ListView {
+  @patch
+  factory UnmodifiableUint16ListView(Uint16List list) {
+    if (list is _U16List) {
+      return _UnmodifiableU16List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowU16List>(list);
+      return _UnmodifiableSlowU16List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableInt16ListView {
+  @patch
+  factory UnmodifiableInt16ListView(Int16List list) {
+    if (list is _I16List) {
+      return _UnmodifiableI16List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowI16List>(list);
+      return _UnmodifiableSlowI16List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableUint32ListView {
+  @patch
+  factory UnmodifiableUint32ListView(Uint32List list) {
+    if (list is _U32List) {
+      return _UnmodifiableU32List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowU32List>(list);
+      return _UnmodifiableSlowU32List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableInt32ListView {
+  @patch
+  factory UnmodifiableInt32ListView(Int32List list) {
+    if (list is _I32List) {
+      return _UnmodifiableI32List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowI32List>(list);
+      return _UnmodifiableSlowI32List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableUint64ListView {
+  @patch
+  factory UnmodifiableUint64ListView(Uint64List list) {
+    if (list is _U64List) {
+      return _UnmodifiableU64List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowU64List>(list);
+      return _UnmodifiableSlowU64List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableInt64ListView {
+  @patch
+  factory UnmodifiableInt64ListView(Int64List list) {
+    if (list is _I64List) {
+      return _UnmodifiableI64List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowI64List>(list);
+      return _UnmodifiableSlowI64List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableFloat32ListView {
+  @patch
+  factory UnmodifiableFloat32ListView(Float32List list) {
+    if (list is _F32List) {
+      return _UnmodifiableF32List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowF32List>(list);
+      return _UnmodifiableSlowF32List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableFloat64ListView {
+  @patch
+  factory UnmodifiableFloat64ListView(Float64List list) {
+    if (list is _F64List) {
+      return _UnmodifiableF64List._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowF64List>(list);
+      return _UnmodifiableSlowF64List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
 }
