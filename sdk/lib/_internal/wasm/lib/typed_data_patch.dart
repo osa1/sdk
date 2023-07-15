@@ -150,12 +150,12 @@ abstract class _ByteData implements ByteData {
 
   @override
   int getInt32(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint32(offsetInBytes + byteOffset, endian).toSigned(32);
+    return getUint32(byteOffset, endian).toSigned(32);
   }
 
   @override
   void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint32(offsetInBytes + byteOffset, value.toUnsigned(32), endian);
+    setUint32(byteOffset, value.toUnsigned(32), endian);
   }
 
   @override
