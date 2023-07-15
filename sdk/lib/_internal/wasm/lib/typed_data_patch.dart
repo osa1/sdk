@@ -679,29 +679,27 @@ abstract class _ByteBufferBase extends ByteBuffer {
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Uint8List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Uint8List.bytesPerElement);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Uint8List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Uint8List.bytesPerElement);
     return _SlowU8List._(this, offsetInBytes, length);
   }
 
   @override
   Int8List asInt8List([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
-    length ??= (lengthInBytes - offsetInBytes) ~/ Int8List.bytesPerElement;
-    _rangeCheck(
-        lengthInBytes, offsetInBytes, length * Int8List.bytesPerElement);
+    final totalOffset = this.offsetInBytes + offsetInBytes;
+    length ??= (lengthInBytes - totalOffset) ~/ Int8List.bytesPerElement;
+    _rangeCheck(lengthInBytes, totalOffset, length * Int8List.bytesPerElement);
     return _SlowI8List._(this, offsetInBytes, length);
   }
 
   @override
   Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
-    offsetInBytes += this.offsetInBytes;
+    final totalOffset = this.offsetInBytes + offsetInBytes;
     length ??=
-        (lengthInBytes - offsetInBytes) ~/ Uint8ClampedList.bytesPerElement;
-    _rangeCheck(lengthInBytes, offsetInBytes,
-        length * Uint8ClampedList.bytesPerElement);
+        (lengthInBytes - totalOffset) ~/ Uint8ClampedList.bytesPerElement;
+    _rangeCheck(
+        lengthInBytes, totalOffset, length * Uint8ClampedList.bytesPerElement);
     return _SlowU8ClampedList._(this, offsetInBytes, length);
   }
 
@@ -712,7 +710,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, totalOffset, length * Uint16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
-    return _SlowU16List._(this, totalOffset, length);
+    return _SlowU16List._(this, offsetInBytes, length);
   }
 
   @override
@@ -721,7 +719,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - totalOffset) ~/ Int16List.bytesPerElement;
     _rangeCheck(lengthInBytes, totalOffset, length * Int16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
-    return _SlowI16List._(this, totalOffset, length);
+    return _SlowI16List._(this, offsetInBytes, length);
   }
 
   @override
@@ -731,7 +729,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, totalOffset, length * Uint32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
-    return _SlowU32List._(this, totalOffset, length);
+    return _SlowU32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -740,7 +738,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - totalOffset) ~/ Int32List.bytesPerElement;
     _rangeCheck(lengthInBytes, totalOffset, length * Int32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
-    return _SlowI32List._(this, totalOffset, length);
+    return _SlowI32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -750,7 +748,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, totalOffset, length * Uint64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
-    return _SlowU64List._(this, totalOffset, length);
+    return _SlowU64List._(this, offsetInBytes, length);
   }
 
   @override
@@ -759,7 +757,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     length ??= (lengthInBytes - totalOffset) ~/ Int64List.bytesPerElement;
     _rangeCheck(lengthInBytes, totalOffset, length * Int64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
-    return _SlowI64List._(this, totalOffset, length);
+    return _SlowI64List._(this, offsetInBytes, length);
   }
 
   @override
@@ -770,7 +768,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
         lengthInBytes, totalOffset, length * Int32x4List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int32x4List.bytesPerElement);
     return _NaiveInt32x4List._externalStorage(
-        _SlowI32List._(this, totalOffset, length * 4));
+        _SlowI32List._(this, offsetInBytes, length * 4));
   }
 
   @override
@@ -780,7 +778,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, totalOffset, length * Float32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
-    return _SlowF32List._(this, totalOffset, length);
+    return _SlowF32List._(this, offsetInBytes, length);
   }
 
   @override
@@ -790,7 +788,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, totalOffset, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
-    return _SlowF64List._(this, totalOffset, length);
+    return _SlowF64List._(this, offsetInBytes, length);
   }
 
   @override
@@ -801,7 +799,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
         lengthInBytes, totalOffset, length * Float32x4List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float32x4List.bytesPerElement);
     return _NaiveFloat32x4List._externalStorage(
-        _SlowF32List._(this, totalOffset, length * 4));
+        _SlowF32List._(this, offsetInBytes, length * 4));
   }
 
   @override
@@ -812,7 +810,7 @@ abstract class _ByteBufferBase extends ByteBuffer {
         lengthInBytes, totalOffset, length * Float64x2List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64x2List.bytesPerElement);
     return _NaiveFloat64x2List._externalStorage(
-        _SlowF64List._(this, totalOffset, length * 2));
+        _SlowF64List._(this, offsetInBytes, length * 2));
   }
 }
 
@@ -868,7 +866,7 @@ class _I16ByteBuffer extends _ByteBufferBase {
     _rangeCheck(lengthInBytes, totalOffset, length * Int16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     if (totalOffset % Int16List.bytesPerElement != 0) {
-      return _SlowI16List._(this, totalOffset, length);
+      return _SlowI16List._(this, offsetInBytes, length);
     } else {
       return _I16List._(
           _data, totalOffset ~/ Int16List.bytesPerElement, length);
@@ -883,7 +881,7 @@ class _I16ByteBuffer extends _ByteBufferBase {
         lengthInBytes, totalOffset, length * Uint16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     if (totalOffset % Uint16List.bytesPerElement != 0) {
-      return _SlowU16List._(this, totalOffset, length);
+      return _SlowU16List._(this, offsetInBytes, length);
     } else {
       return _U16List._(
           _data, totalOffset ~/ Uint16List.bytesPerElement, length);
@@ -916,7 +914,7 @@ class _I32ByteBuffer extends _ByteBufferBase {
     _rangeCheck(lengthInBytes, totalOffset, length * Int32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     if (totalOffset % Uint32List.bytesPerElement != 0) {
-      return _SlowI32List._(this, totalOffset, length);
+      return _SlowI32List._(this, offsetInBytes, length);
     } else {
       return _I32List._(
           _data, totalOffset ~/ Int32List.bytesPerElement, length);
@@ -931,7 +929,7 @@ class _I32ByteBuffer extends _ByteBufferBase {
         lengthInBytes, totalOffset, length * Uint32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     if (totalOffset % Uint32List.bytesPerElement != 0) {
-      return _SlowU32List._(this, totalOffset, length);
+      return _SlowU32List._(this, offsetInBytes, length);
     } else {
       return _U32List._(
           _data, totalOffset ~/ Uint32List.bytesPerElement, length);
@@ -964,7 +962,7 @@ class _I64ByteBuffer extends _ByteBufferBase {
     _rangeCheck(lengthInBytes, totalOffset, length * Int64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     if (totalOffset % Int64List.bytesPerElement != 0) {
-      return _SlowI64List._(this, totalOffset, length);
+      return _SlowI64List._(this, offsetInBytes, length);
     } else {
       return _I64List._(
           _data, totalOffset ~/ Int64List.bytesPerElement, length);
@@ -979,7 +977,7 @@ class _I64ByteBuffer extends _ByteBufferBase {
         lengthInBytes, totalOffset, length * Uint64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     if (totalOffset % Int64List.bytesPerElement != 0) {
-      return _SlowU64List._(this, totalOffset, length);
+      return _SlowU64List._(this, offsetInBytes, length);
     } else {
       return _U64List._(
           _data, totalOffset ~/ Uint64List.bytesPerElement, length);
@@ -1013,7 +1011,7 @@ class _F32ByteBuffer extends _ByteBufferBase {
         lengthInBytes, totalOffset, length * Float32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     if (totalOffset % Float32List.bytesPerElement != 0) {
-      return _SlowF32List._(this, totalOffset, length);
+      return _SlowF32List._(this, offsetInBytes, length);
     } else {
       return _F32List._(
           _data, totalOffset ~/ Float32List.bytesPerElement, length);
@@ -1047,7 +1045,7 @@ class _F64ByteBuffer extends _ByteBufferBase {
         lengthInBytes, totalOffset, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     if (totalOffset % Float64List.bytesPerElement != 0) {
-      return _SlowF64List._(this, totalOffset, length);
+      return _SlowF64List._(this, offsetInBytes, length);
     } else {
       return _F64List._(
           _data, totalOffset ~/ Int64List.bytesPerElement, length);
@@ -2208,7 +2206,7 @@ class _F32List
   final int length;
 
   _F32List(this.length)
-      : _data = WasmFloatArray(length),
+      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _F32List._(this._data, this._offsetInElements, this.length);
@@ -2256,7 +2254,7 @@ class _F64List
   final int length;
 
   _F64List(this.length)
-      : _data = WasmFloatArray(length),
+      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _F64List._(this._data, this._offsetInElements, this.length);
@@ -2420,13 +2418,15 @@ class _SlowI16List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getInt16(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getInt16(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setInt16(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setInt16(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2448,13 +2448,15 @@ class _SlowU16List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getUint16(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getUint16(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setUint16(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setUint16(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2476,13 +2478,15 @@ class _SlowI32List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getInt32(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getInt32(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setInt32(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setInt32(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2504,13 +2508,15 @@ class _SlowU32List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getUint32(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getUint32(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setUint32(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setUint32(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2532,13 +2538,15 @@ class _SlowI64List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getInt64(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getInt64(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setInt64(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setInt64(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2560,13 +2568,15 @@ class _SlowU64List extends _SlowListBase
   @override
   int operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getUint64(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getUint64(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, int value) {
     _indexRangeCheck(index);
-    _data.setUint64(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setUint64(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2588,13 +2598,15 @@ class _SlowF32List extends _SlowListBase
   @override
   double operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getFloat32(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getFloat32(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, double value) {
     _indexRangeCheck(index);
-    _data.setFloat32(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setFloat32(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
@@ -2616,13 +2628,15 @@ class _SlowF64List extends _SlowListBase
   @override
   double operator [](int index) {
     _indexRangeCheck(index);
-    return _data.getFloat64(offsetInBytes + (index * elementSizeInBytes));
+    return _data.getFloat64(
+        offsetInBytes + (index * elementSizeInBytes), Endian.little);
   }
 
   @override
   void operator []=(int index, double value) {
     _indexRangeCheck(index);
-    _data.setFloat64(offsetInBytes + (index * elementSizeInBytes), value);
+    _data.setFloat64(
+        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
   }
 }
 
