@@ -284,6 +284,58 @@ abstract class _ByteData implements ByteData {
   }
 }
 
+mixin _UnmodifiableByteDataMixin on _ByteData {
+  @override
+  void setInt8(int byteOffset, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setUint8(int byteOffset, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+
+  @override
+  void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
+    throw UnsupportedError("Cannot modify an unmodifiable byte data");
+  }
+}
+
 class _I8ByteData extends _ByteData {
   final WasmIntArray<WasmI8> _data;
 
@@ -661,6 +713,48 @@ class _F64ByteData extends _ByteData {
       super.setFloat64(byteOffset, value, endian);
     }
   }
+}
+
+class _UnmodifiableI8ByteData extends _I8ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableI8ByteData._(
+      WasmIntArray<WasmI8> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
+}
+
+class _UnmodifiableI16ByteData extends _I16ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableI16ByteData._(
+      WasmIntArray<WasmI16> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
+}
+
+class _UnmodifiableI32ByteData extends _I32ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableI32ByteData._(
+      WasmIntArray<WasmI32> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
+}
+
+class _UnmodifiableI64ByteData extends _I64ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableI64ByteData._(
+      WasmIntArray<WasmI64> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
+}
+
+class _UnmodifiableF32ByteData extends _F32ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableF32ByteData._(
+      WasmFloatArray<WasmF32> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
+}
+
+class _UnmodifiableF64ByteData extends _F64ByteData
+    with _UnmodifiableByteDataMixin {
+  _UnmodifiableF64ByteData._(
+      WasmFloatArray<WasmF64> _data, int offsetInBytes, int lengthInBytes)
+      : super._(_data, offsetInBytes, lengthInBytes);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2305,7 +2399,7 @@ class _UnmodifiableI8List extends _I8List implements UnmodifiableInt8ListView {
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2319,7 +2413,7 @@ class _UnmodifiableU8List extends _U8List implements UnmodifiableUint8ListView {
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2334,7 +2428,7 @@ class _UnmodifiableI16List extends _I16List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2349,7 +2443,7 @@ class _UnmodifiableU16List extends _U16List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2364,7 +2458,7 @@ class _UnmodifiableI32List extends _I32List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2379,7 +2473,7 @@ class _UnmodifiableU32List extends _U32List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2394,7 +2488,7 @@ class _UnmodifiableI64List extends _I64List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2409,7 +2503,7 @@ class _UnmodifiableU64List extends _U64List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2424,7 +2518,7 @@ class _UnmodifiableF32List extends _F32List
 
   @override
   void operator []=(int index, double value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2439,7 +2533,7 @@ class _UnmodifiableF64List extends _F64List
 
   @override
   void operator []=(int index, double value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2808,7 +2902,7 @@ class _UnmodifiableSlowI8List extends _SlowI8List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2822,7 +2916,7 @@ class _UnmodifiableSlowU8List extends _SlowU8List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2836,7 +2930,7 @@ class _UnmodifiableSlowI16List extends _SlowI16List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2850,7 +2944,7 @@ class _UnmodifiableSlowU16List extends _SlowU16List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2864,7 +2958,7 @@ class _UnmodifiableSlowI32List extends _SlowI32List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2878,7 +2972,7 @@ class _UnmodifiableSlowU32List extends _SlowU32List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2892,7 +2986,7 @@ class _UnmodifiableSlowI64List extends _SlowI64List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2906,7 +3000,7 @@ class _UnmodifiableSlowU64List extends _SlowU64List
 
   @override
   void operator []=(int index, int value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2920,7 +3014,7 @@ class _UnmodifiableSlowF32List extends _SlowF32List
 
   @override
   void operator []=(int index, double value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
@@ -2934,7 +3028,7 @@ class _UnmodifiableSlowF64List extends _SlowF64List
 
   @override
   void operator []=(int index, double value) {
-    throw new UnsupportedError("Cannot modify an unmodifiable list");
+    throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 
   @override
