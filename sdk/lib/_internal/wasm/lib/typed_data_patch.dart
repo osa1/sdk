@@ -27,6 +27,15 @@ import 'dart:_internal'
 import 'dart:_wasm';
 import 'dart:math' show Random;
 
+const int _maxWasmArrayLength = 2147483647; // max i32
+
+int _newArrayLengthCheck(int length) {
+  if (length < 0 || length > _maxWasmArrayLength) {
+    throw RangeError.value(length);
+  }
+  return length;
+}
+
 void _rangeCheck(int listLength, int start, int length) {
   if (length < 0) {
     throw RangeError.value(length);
@@ -1767,7 +1776,7 @@ class _I8List
   final int length;
 
   _I8List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _I8List._(this._data, this._offsetInElements, this.length);
@@ -1815,7 +1824,7 @@ class _U8List
   final int length;
 
   _U8List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _U8List._(this._data, this._offsetInElements, this.length);
@@ -1863,7 +1872,7 @@ class _U8ClampedList
   final int length;
 
   _U8ClampedList(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _U8ClampedList._(this._data, this._offsetInElements, this.length);
@@ -1911,7 +1920,7 @@ class _I16List
   final int length;
 
   _I16List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _I16List._(this._data, this._offsetInElements, this.length);
@@ -1959,7 +1968,7 @@ class _U16List
   final int length;
 
   _U16List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _U16List._(this._data, this._offsetInElements, this.length);
@@ -2007,7 +2016,7 @@ class _I32List
   final int length;
 
   _I32List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _I32List._(this._data, this._offsetInElements, this.length);
@@ -2055,7 +2064,7 @@ class _U32List
   final int length;
 
   _U32List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _U32List._(this._data, this._offsetInElements, this.length);
@@ -2103,7 +2112,7 @@ class _I64List
   final int length;
 
   _I64List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _I64List._(this._data, this._offsetInElements, this.length);
@@ -2151,7 +2160,7 @@ class _U64List
   final int length;
 
   _U64List(this.length)
-      : _data = WasmIntArray(length),
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
         _offsetInElements = 0;
 
   _U64List._(this._data, this._offsetInElements, this.length);
@@ -2626,8 +2635,10 @@ class _SlowF64List extends _SlowListBase
 @patch
 class ByteData {
   @patch
-  factory ByteData(int length) =>
-      _I8ByteData._(WasmIntArray(length), 0, length);
+  factory ByteData(int length) {
+    _newArrayLengthCheck(length);
+    return _I8ByteData._(WasmIntArray(length), 0, length);
+  }
 }
 
 @patch
