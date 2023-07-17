@@ -1608,7 +1608,6 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
-      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");
@@ -1621,10 +1620,24 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
 
     if (count == 0) return;
 
-    List otherList;
-    int otherStart;
-    otherList = from.skip(skipCount).toList(growable: false);
-    otherStart = 0;
+    // Check if the copy is from a typed list to typed list with a matching
+    // array type and to use `array.copy`.
+    // TODO: Make sure these checks are compiled to just a class ID check.
+    // if (this is _U8List && from is _U8List) {
+    //   final WasmIntArray<WasmI8> dest = unsafeCast<_U8List>(this)._data;
+    //   final WasmIntArray<WasmI8> source = from._data;
+    //   TODO: add array.copy
+    // }
+
+    final List<int> otherList;
+    final int otherStart;
+    if (from is List<int>) {
+      otherList = from;
+      otherStart = skipCount;
+    } else {
+      otherList = from.skip(skipCount).toList(growable: false);
+      otherStart = 0;
+    }
     if (otherStart + count > otherList.length) {
       throw IterableElementError.tooFew();
     }
@@ -1940,8 +1953,8 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
 
     if (count == 0) return;
 
-    List otherList;
-    int otherStart;
+    final List otherList;
+    final int otherStart;
     if (from is List<double>) {
       otherList = from;
       otherStart = skipCount;
