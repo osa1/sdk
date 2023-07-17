@@ -88,9 +88,9 @@ final class _TypedListIterator<E> implements Iterator<E> {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /// The base class for all [ByteData] implementations. This provides slow
-/// implementations for get and set methods using abstract [getUint8] and
-/// [setUint8] methods. Implementations should implement [getUint8] and
-/// [setUint8], and override get/set methods for elements matching the buffer
+/// implementations for get and set methods using abstract [getUint8Unchecked]
+/// and [setUint8Unchecked] methods. Implementations should implement these
+/// methods and override get/set methods for elements matching the buffer
 /// element type to provide fast access.
 abstract class _ByteData implements ByteData {
   final int offsetInBytes;
@@ -107,28 +107,72 @@ abstract class _ByteData implements ByteData {
 
   @override
   int getInt8(int byteOffset) {
-    return getUint8(byteOffset).toSigned(8);
+    _offsetRangeCheck(byteOffset, 1);
+    return _getUint8Unchecked(byteOffset).toSigned(8);
+  }
+
+  int _getInt8Unchecked(int byteOffset) {
+    return _getUint8Unchecked(byteOffset).toSigned(8);
   }
 
   @override
   void setInt8(int byteOffset, int value) {
-    setUint8(byteOffset, value.toUnsigned(8));
+    _offsetRangeCheck(byteOffset, 1);
+    _setUint8Unchecked(byteOffset, value.toUnsigned(8));
+  }
+
+  void _setInt8Unchecked(int byteOffset, int value) {
+    _setUint8Unchecked(byteOffset, value.toUnsigned(8));
   }
 
   @override
+  int getUint8(int byteOffset) {
+    _offsetRangeCheck(byteOffset, 1);
+    return _getUint8Unchecked(byteOffset);
+  }
+
+  int _getUint8Unchecked(int byteOffset);
+
+  @override
+  void setUint8(int byteOffset, int value) {
+    _offsetRangeCheck(byteOffset, 1);
+    return _setUint8Unchecked(byteOffset, value);
+  }
+
+  void _setUint8Unchecked(int byteOffset, int value);
+
+  @override
   int getInt16(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint16(byteOffset, endian).toSigned(16);
+    _offsetRangeCheck(byteOffset, 2);
+    return _getUint16Unchecked(byteOffset, endian).toSigned(16);
+  }
+
+  int _getInt16Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    return _getUint16Unchecked(byteOffset, endian).toSigned(16);
   }
 
   @override
   void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint16(byteOffset, value.toUnsigned(16), endian);
+    _offsetRangeCheck(byteOffset, 2);
+    _setUint16Unchecked(byteOffset, value.toUnsigned(16), endian);
+  }
+
+  @override
+  void _setInt16Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
+    _setUint16Unchecked(byteOffset, value.toUnsigned(16), endian);
   }
 
   @override
   int getUint16(int byteOffset, [Endian endian = Endian.big]) {
-    final b1 = getUint8(byteOffset);
-    final b2 = getUint8(byteOffset + 1);
+    _offsetRangeCheck(byteOffset, 2);
+    return _getUint16Unchecked(byteOffset, endian);
+  }
+
+  @override
+  int _getUint16Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    final b1 = _getUint8Unchecked(byteOffset);
+    final b2 = _getUint8Unchecked(byteOffset + 1);
     if (endian == Endian.little) {
       return (b2 << 8) | b1;
     } else {
@@ -138,33 +182,55 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
+    _offsetRangeCheck(byteOffset, 2);
+    _setUint16Unchecked(byteOffset, value, endian);
+  }
+
+  void _setUint16Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     if (endian == Endian.little) {
-      setUint8(byteOffset, b1);
-      setUint8(byteOffset + 1, b2);
+      _setUint8Unchecked(byteOffset, b1);
+      _setUint8Unchecked(byteOffset + 1, b2);
     } else {
-      setUint8(byteOffset, b2);
-      setUint8(byteOffset + 1, b1);
+      _setUint8Unchecked(byteOffset, b2);
+      _setUint8Unchecked(byteOffset + 1, b1);
     }
   }
 
   @override
   int getInt32(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint32(byteOffset, endian).toSigned(32);
+    _offsetRangeCheck(byteOffset, 4);
+    return _getInt32Unchecked(byteOffset, endian);
+  }
+
+  int _getInt32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    return _getUint32Unchecked(byteOffset, endian).toSigned(32);
   }
 
   @override
   void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint32(byteOffset, value.toUnsigned(32), endian);
+    _offsetRangeCheck(byteOffset, 4);
+    _setInt32Unchecked(byteOffset, value, endian);
+  }
+
+  void _setInt32Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
+    _setUint32Unchecked(byteOffset, value.toUnsigned(32), endian);
   }
 
   @override
   int getUint32(int byteOffset, [Endian endian = Endian.big]) {
-    final b1 = getUint8(byteOffset);
-    final b2 = getUint8(byteOffset + 1);
-    final b3 = getUint8(byteOffset + 2);
-    final b4 = getUint8(byteOffset + 3);
+    _offsetRangeCheck(byteOffset, 4);
+    return _getUint32Unchecked(byteOffset, endian);
+  }
+
+  int _getUint32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    final b1 = _getUint8Unchecked(byteOffset);
+    final b2 = _getUint8Unchecked(byteOffset + 1);
+    final b3 = _getUint8Unchecked(byteOffset + 2);
+    final b4 = _getUint8Unchecked(byteOffset + 3);
     if (endian == Endian.little) {
       return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
     } else {
@@ -174,43 +240,66 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
+    _offsetRangeCheck(byteOffset, 4);
+    _setUint32Unchecked(byteOffset, value, endian);
+  }
+
+  void _setUint32Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     final b3 = (value >> 16) & 0xFF;
     final b4 = (value >> 24) & 0xFF;
     if (endian == Endian.little) {
-      setUint8(byteOffset, b1);
-      setUint8(byteOffset + 1, b2);
-      setUint8(byteOffset + 2, b3);
-      setUint8(byteOffset + 3, b4);
+      _setUint8Unchecked(byteOffset, b1);
+      _setUint8Unchecked(byteOffset + 1, b2);
+      _setUint8Unchecked(byteOffset + 2, b3);
+      _setUint8Unchecked(byteOffset + 3, b4);
     } else {
-      setUint8(byteOffset, b4);
-      setUint8(byteOffset + 1, b3);
-      setUint8(byteOffset + 2, b2);
-      setUint8(byteOffset + 3, b1);
+      _setUint8Unchecked(byteOffset, b4);
+      _setUint8Unchecked(byteOffset + 1, b3);
+      _setUint8Unchecked(byteOffset + 2, b2);
+      _setUint8Unchecked(byteOffset + 3, b1);
     }
   }
 
   @override
   int getInt64(int byteOffset, [Endian endian = Endian.big]) {
-    return getUint64(byteOffset, endian);
+    _offsetRangeCheck(byteOffset, 8);
+    return _getInt64Unchecked(byteOffset, endian);
+  }
+
+  int _getInt64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    return _getUint64Unchecked(byteOffset, endian);
   }
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
-    setUint64(byteOffset, value, endian);
+    _offsetRangeCheck(byteOffset, 8);
+    _setUint64Unchecked(byteOffset, value, endian);
+  }
+
+  void _setInt64Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
+    _offsetRangeCheck(byteOffset, 8);
+    _setInt64Unchecked(byteOffset, value, endian);
   }
 
   @override
   int getUint64(int byteOffset, [Endian endian = Endian.big]) {
-    final b1 = getUint8(byteOffset);
-    final b2 = getUint8(byteOffset + 1);
-    final b3 = getUint8(byteOffset + 2);
-    final b4 = getUint8(byteOffset + 3);
-    final b5 = getUint8(byteOffset + 4);
-    final b6 = getUint8(byteOffset + 5);
-    final b7 = getUint8(byteOffset + 6);
-    final b8 = getUint8(byteOffset + 7);
+    _offsetRangeCheck(byteOffset, 8);
+    return _getUint64Unchecked(byteOffset, endian);
+  }
+
+  int _getUint64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    final b1 = _getUint8Unchecked(byteOffset);
+    final b2 = _getUint8Unchecked(byteOffset + 1);
+    final b3 = _getUint8Unchecked(byteOffset + 2);
+    final b4 = _getUint8Unchecked(byteOffset + 3);
+    final b5 = _getUint8Unchecked(byteOffset + 4);
+    final b6 = _getUint8Unchecked(byteOffset + 5);
+    final b7 = _getUint8Unchecked(byteOffset + 6);
+    final b8 = _getUint8Unchecked(byteOffset + 7);
     if (endian == Endian.little) {
       return (b8 << 56) |
           (b7 << 48) |
@@ -234,6 +323,12 @@ abstract class _ByteData implements ByteData {
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
+    _offsetRangeCheck(byteOffset, 8);
+    _setUint64Unchecked(byteOffset, value, endian);
+  }
+
+  void _setUint64Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final b1 = value & 0xFF;
     final b2 = (value >> 8) & 0xFF;
     final b3 = (value >> 16) & 0xFF;
@@ -243,44 +338,66 @@ abstract class _ByteData implements ByteData {
     final b7 = (value >> 48) & 0xFF;
     final b8 = (value >> 56) & 0xFF;
     if (endian == Endian.little) {
-      setUint8(byteOffset, b1);
-      setUint8(byteOffset + 1, b2);
-      setUint8(byteOffset + 2, b3);
-      setUint8(byteOffset + 3, b4);
-      setUint8(byteOffset + 4, b5);
-      setUint8(byteOffset + 5, b6);
-      setUint8(byteOffset + 6, b7);
-      setUint8(byteOffset + 7, b8);
+      _setUint8Unchecked(byteOffset, b1);
+      _setUint8Unchecked(byteOffset + 1, b2);
+      _setUint8Unchecked(byteOffset + 2, b3);
+      _setUint8Unchecked(byteOffset + 3, b4);
+      _setUint8Unchecked(byteOffset + 4, b5);
+      _setUint8Unchecked(byteOffset + 5, b6);
+      _setUint8Unchecked(byteOffset + 6, b7);
+      _setUint8Unchecked(byteOffset + 7, b8);
     } else {
-      setUint8(byteOffset, b8);
-      setUint8(byteOffset + 1, b7);
-      setUint8(byteOffset + 2, b6);
-      setUint8(byteOffset + 3, b5);
-      setUint8(byteOffset + 4, b4);
-      setUint8(byteOffset + 5, b3);
-      setUint8(byteOffset + 6, b2);
-      setUint8(byteOffset + 7, b1);
+      _setUint8Unchecked(byteOffset, b8);
+      _setUint8Unchecked(byteOffset + 1, b7);
+      _setUint8Unchecked(byteOffset + 2, b6);
+      _setUint8Unchecked(byteOffset + 3, b5);
+      _setUint8Unchecked(byteOffset + 4, b4);
+      _setUint8Unchecked(byteOffset + 5, b3);
+      _setUint8Unchecked(byteOffset + 6, b2);
+      _setUint8Unchecked(byteOffset + 7, b1);
     }
   }
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
-    return intBitsToFloat(getUint32(byteOffset, endian));
+    _offsetRangeCheck(byteOffset, 4);
+    return _getFloat32Unchecked(byteOffset, endian);
+  }
+
+  double _getFloat32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    return intBitsToFloat(_getUint32Unchecked(byteOffset, endian));
   }
 
   @override
   void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
-    setUint32(byteOffset, floatToIntBits(value), endian);
+    _offsetRangeCheck(byteOffset, 4);
+    _setFloat32Unchecked(byteOffset, value, endian);
+  }
+
+  void _setFloat32Unchecked(int byteOffset, double value,
+      [Endian endian = Endian.big]) {
+    _setUint32Unchecked(byteOffset, floatToIntBits(value), endian);
   }
 
   @override
   double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
-    return intBitsToDouble(getUint64(byteOffset, endian));
+    _offsetRangeCheck(byteOffset, 8);
+    return _getFloat64Unchecked(byteOffset, endian);
+  }
+
+  double _getFloat64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
+    return intBitsToDouble(_getUint64Unchecked(byteOffset, endian));
   }
 
   @override
   void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
-    setUint64(byteOffset, doubleToIntBits(value), endian);
+    _offsetRangeCheck(byteOffset, 8);
+    _setFloat64Unchecked(byteOffset, value, endian);
+  }
+
+  void _setFloat64Unchecked(int byteOffset, double value,
+      [Endian endian = Endian.big]) {
+    _setUint64Unchecked(byteOffset, doubleToIntBits(value), endian);
   }
 }
 
@@ -350,14 +467,12 @@ class _I8ByteData extends _ByteData {
   int get elementSizeInBytes => Int8List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     return _data.readUnsigned(offsetInBytes + byteOffset);
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     _data.write(offsetInBytes + byteOffset, value.toUnsigned(8));
   }
 }
@@ -376,8 +491,7 @@ class _I16ByteData extends _ByteData {
   int get elementSizeInBytes => Int16List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -386,8 +500,7 @@ class _I16ByteData extends _ByteData {
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -399,22 +512,23 @@ class _I16ByteData extends _ByteData {
   }
 
   @override
-  int getUint16(int byteOffset, [Endian endian = Endian.big]) {
+  int _getUint16Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getUint16(byteOffset, endian);
+      return super._getUint16Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void _setUint16Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setUint16(byteOffset, value, endian);
+      super._setUint16Unchecked(byteOffset, value, endian);
     }
   }
 }
@@ -433,8 +547,7 @@ class _I32ByteData extends _ByteData {
   int get elementSizeInBytes => Int32List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -443,8 +556,7 @@ class _I32ByteData extends _ByteData {
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -458,42 +570,44 @@ class _I32ByteData extends _ByteData {
   }
 
   @override
-  int getInt32(int byteOffset, [Endian endian = Endian.big]) {
+  int _getInt32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readSigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getInt32(byteOffset, endian);
+      return super._getInt32Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  int getUint32(int byteOffset, [Endian endian = Endian.big]) {
+  int _getUint32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getUint32(byteOffset, endian);
+      return super._getUint32Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void _setInt32Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value.toUnsigned(32));
     } else {
-      super.setInt32(byteOffset, value, endian);
+      super._setInt32Unchecked(byteOffset, value, endian);
     }
   }
 
   @override
-  void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void _setUint32Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setUint32(byteOffset, value, endian);
+      super._setUint32Unchecked(byteOffset, value, endian);
     }
   }
 }
@@ -512,8 +626,7 @@ class _I64ByteData extends _ByteData {
   int get elementSizeInBytes => Int64List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     return (_data.readUnsigned(byteIndex) >>
@@ -522,8 +635,7 @@ class _I64ByteData extends _ByteData {
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = _data.readUnsigned(byteIndex);
@@ -548,42 +660,44 @@ class _I64ByteData extends _ByteData {
   }
 
   @override
-  int getInt64(int byteOffset, [Endian endian = Endian.big]) {
+  int _getInt64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readSigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getInt64(byteOffset, endian);
+      return super._getInt64Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  int getUint64(int byteOffset, [Endian endian = Endian.big]) {
+  int _getUint64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.readUnsigned(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getUint64(byteOffset, endian);
+      return super._getUint64Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void _setInt64Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setInt64(byteOffset, value, endian);
+      super._setInt64Unchecked(byteOffset, value, endian);
     }
   }
 
   @override
-  void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) {
+  void _setUint64Unchecked(int byteOffset, int value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setUint64(byteOffset, value, endian);
+      super._setUint64Unchecked(byteOffset, value, endian);
     }
   }
 }
@@ -602,8 +716,7 @@ class _F32ByteData extends _ByteData {
   int get elementSizeInBytes => Float32List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final word = floatToIntBits(_data.read(byteIndex));
@@ -611,8 +724,7 @@ class _F32ByteData extends _ByteData {
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = floatToIntBits(_data.read(byteIndex));
@@ -626,22 +738,23 @@ class _F32ByteData extends _ByteData {
   }
 
   @override
-  double getFloat32(int byteOffset, [Endian endian = Endian.big]) {
+  double _getFloat32Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.read(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getFloat32(byteOffset, endian);
+      return super._getFloat32Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  void setFloat32(int byteOffset, double value, [Endian endian = Endian.big]) {
+  void _setFloat32Unchecked(int byteOffset, double value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setFloat32(byteOffset, value, endian);
+      super._setFloat32Unchecked(byteOffset, value, endian);
     }
   }
 }
@@ -660,8 +773,7 @@ class _F64ByteData extends _ByteData {
   int get elementSizeInBytes => Float64List.bytesPerElement;
 
   @override
-  int getUint8(int byteOffset) {
-    _offsetRangeCheck(byteOffset, 1);
+  int _getUint8Unchecked(int byteOffset) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final word = doubleToIntBits(_data.read(byteIndex));
@@ -669,8 +781,7 @@ class _F64ByteData extends _ByteData {
   }
 
   @override
-  void setUint8(int byteOffset, int value) {
-    _offsetRangeCheck(byteOffset, 1);
+  void _setUint8Unchecked(int byteOffset, int value) {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = doubleToIntBits(_data.read(byteIndex));
@@ -695,22 +806,23 @@ class _F64ByteData extends _ByteData {
   }
 
   @override
-  double getFloat64(int byteOffset, [Endian endian = Endian.big]) {
+  double _getFloat64Unchecked(int byteOffset, [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       return _data.read(totalOffset ~/ elementSizeInBytes);
     } else {
-      return super.getFloat64(byteOffset, endian);
+      return super._getFloat64Unchecked(byteOffset, endian);
     }
   }
 
   @override
-  void setFloat64(int byteOffset, double value, [Endian endian = Endian.big]) {
+  void _setFloat64Unchecked(int byteOffset, double value,
+      [Endian endian = Endian.big]) {
     final totalOffset = offsetInBytes + byteOffset;
     if (totalOffset % elementSizeInBytes == 0 && endian == Endian.little) {
       _data.write(totalOffset ~/ elementSizeInBytes, value);
     } else {
-      super.setFloat64(byteOffset, value, endian);
+      super._setFloat64Unchecked(byteOffset, value, endian);
     }
   }
 }
