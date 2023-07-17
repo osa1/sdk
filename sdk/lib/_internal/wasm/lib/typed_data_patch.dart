@@ -1620,20 +1620,64 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
 
     if (count == 0) return;
 
-    // Check if the copy is from a typed list to typed list with a matching
-    // array type and to use `array.copy`.
-    // TODO: Make sure these checks are compiled to just a class ID check.
-    // if (this is _U8List && from is _U8List) {
-    //   final WasmIntArray<WasmI8> dest = unsafeCast<_U8List>(this)._data;
-    //   final WasmIntArray<WasmI8> source = from._data;
-    //   TODO: add array.copy
-    // }
-
     if (this is TypedData && from is TypedData) {
-      // TODO: We could add a `_totalLengthInBytes` to `_ByteBuffer` and check
-      // if the ranges overlap here.
       final ByteBuffer destBuffer = this.buffer;
       final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+
+      // Use `array.copy` when the source and destination arrays have the same
+      // Wasm array type and byte offsets are multiples of the element size.
+      if (destBuffer is _I8ByteBuffer && fromBuffer is _I8ByteBuffer) {
+        final _I8ByteBuffer fromByteBuffer =
+            unsafeCast<_I8ByteBuffer>(fromBuffer);
+        final _I8ByteBuffer destByteBuffer =
+            unsafeCast<_I8ByteBuffer>(destBuffer);
+        destByteBuffer._data
+            .copy(start, fromByteBuffer._data, skipCount, count);
+        return;
+      } else if (destBuffer is _I16ByteBuffer && fromBuffer is _I16ByteBuffer) {
+        final _I16ByteBuffer fromByteBuffer =
+            unsafeCast<_I16ByteBuffer>(fromBuffer);
+        final _I16ByteBuffer destByteBuffer =
+            unsafeCast<_I16ByteBuffer>(destBuffer);
+        if (fromByteBuffer.offsetInBytes % 2 == 0 &&
+            destByteBuffer.offsetInBytes % 2 == 0) {
+          destByteBuffer._data.copy(
+              start + destByteBuffer.offsetInBytes ~/ 2,
+              fromByteBuffer._data,
+              skipCount + fromByteBuffer.offsetInBytes ~/ 2,
+              count);
+          return;
+        }
+      } else if (destBuffer is _I32ByteBuffer && fromBuffer is _I32ByteBuffer) {
+        final _I32ByteBuffer fromByteBuffer =
+            unsafeCast<_I32ByteBuffer>(fromBuffer);
+        final _I32ByteBuffer destByteBuffer =
+            unsafeCast<_I32ByteBuffer>(destBuffer);
+        if (fromByteBuffer.offsetInBytes % 4 == 0 &&
+            destByteBuffer.offsetInBytes % 4 == 0) {
+          destByteBuffer._data.copy(
+              start + destByteBuffer.offsetInBytes ~/ 4,
+              fromByteBuffer._data,
+              skipCount + fromByteBuffer.offsetInBytes ~/ 4,
+              count);
+          return;
+        }
+      } else if (destBuffer is _I64ByteBuffer && fromBuffer is _I64ByteBuffer) {
+        final _I64ByteBuffer fromByteBuffer =
+            unsafeCast<_I64ByteBuffer>(fromBuffer);
+        final _I64ByteBuffer destByteBuffer =
+            unsafeCast<_I64ByteBuffer>(destBuffer);
+        if (fromByteBuffer.offsetInBytes % 8 == 0 &&
+            destByteBuffer.offsetInBytes % 8 == 0) {
+          destByteBuffer._data.copy(
+              start + destByteBuffer.offsetInBytes ~/ 8,
+              fromByteBuffer._data,
+              skipCount + fromByteBuffer.offsetInBytes ~/ 8,
+              count);
+          return;
+        }
+      }
+
       if (destBuffer == fromBuffer) {
         final fromAsList = from as List<int>;
         final tempBuffer = _createList(count);
@@ -1974,6 +2018,39 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
     if (this is TypedData && from is TypedData) {
       final ByteBuffer destBuffer = this.buffer;
       final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+
+      // Use `array.copy` when the source and destination arrays have the same
+      // Wasm array type.
+      if (destBuffer is _F32ByteBuffer && fromBuffer is _F32ByteBuffer) {
+        final _F32ByteBuffer fromByteBuffer =
+            unsafeCast<_F32ByteBuffer>(fromBuffer);
+        final _F32ByteBuffer destByteBuffer =
+            unsafeCast<_F32ByteBuffer>(destBuffer);
+        if (fromByteBuffer.offsetInBytes % 4 == 0 &&
+            destByteBuffer.offsetInBytes % 4 == 0) {
+          destByteBuffer._data.copy(
+              start + destByteBuffer.offsetInBytes ~/ 4,
+              fromByteBuffer._data,
+              skipCount + fromByteBuffer.offsetInBytes ~/ 4,
+              count);
+          return;
+        }
+      } else if (destBuffer is _F64ByteBuffer && fromBuffer is _F64ByteBuffer) {
+        final _F64ByteBuffer fromByteBuffer =
+            unsafeCast<_F64ByteBuffer>(fromBuffer);
+        final _F64ByteBuffer destByteBuffer =
+            unsafeCast<_F64ByteBuffer>(destBuffer);
+        if (fromByteBuffer.offsetInBytes % 8 == 0 &&
+            destByteBuffer.offsetInBytes % 8 == 0) {
+          destByteBuffer._data.copy(
+              start + destByteBuffer.offsetInBytes ~/ 8,
+              fromByteBuffer._data,
+              skipCount + fromByteBuffer.offsetInBytes ~/ 8,
+              count);
+          return;
+        }
+      }
+
       if (destBuffer == fromBuffer) {
         final fromAsList = from as List<double>;
         final tempBuffer = _createList(count);
