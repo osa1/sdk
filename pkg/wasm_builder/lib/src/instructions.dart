@@ -1111,9 +1111,6 @@ class Instructions with SerializerMixin {
     if (isGlobalInitializer) module.dataReferencedFromGlobalInitializer = true;
   }
 
-  /*
-  TODO: The commit that added array.copy comes after other encoding changes, we
-  need to update other encodings and then add array.copy.
   void array_copy(ArrayType destArrayType, ArrayType sourceArrayType) {
     assert(_verifyTypes([
       RefType.def(destArrayType, nullable: true), // dest
@@ -1126,8 +1123,10 @@ class Instructions with SerializerMixin {
       destArrayType,
       sourceArrayType
     ]));
+    writeBytes(const [0xFB, 0x18]);
+    writeUnsigned(destArrayType.index);
+    writeUnsigned(sourceArrayType.index);
   }
-  */
 
   /// Emit an `i31.new` instruction.
   void i31_new() {

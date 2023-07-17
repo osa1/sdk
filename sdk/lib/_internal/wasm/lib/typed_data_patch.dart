@@ -2017,34 +2017,127 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class _I8List
+abstract class _WasmI8ArrayBase {
+  final WasmIntArray<WasmI8> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmI8ArrayBase(this.length)
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmI8ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 1;
+
+  int get offsetInBytes => _offsetInElements;
+
+  ByteBuffer get buffer => _I8ByteBuffer(_data, offsetInBytes, length);
+}
+
+abstract class _WasmI16ArrayBase {
+  final WasmIntArray<WasmI16> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmI16ArrayBase(this.length)
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmI16ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 2;
+
+  int get offsetInBytes => _offsetInElements * 2;
+
+  ByteBuffer get buffer => _I16ByteBuffer(_data, offsetInBytes, length * 2);
+}
+
+abstract class _WasmI32ArrayBase {
+  final WasmIntArray<WasmI32> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmI32ArrayBase(this.length)
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmI32ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 4;
+
+  int get offsetInBytes => _offsetInElements * 4;
+
+  ByteBuffer get buffer => _I32ByteBuffer(_data, offsetInBytes, length * 4);
+}
+
+abstract class _WasmI64ArrayBase {
+  final WasmIntArray<WasmI64> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmI64ArrayBase(this.length)
+      : _data = WasmIntArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmI64ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 8;
+
+  int get offsetInBytes => _offsetInElements * 8;
+
+  ByteBuffer get buffer => _I64ByteBuffer(_data, offsetInBytes, length * 8);
+}
+
+abstract class _WasmF32ArrayBase {
+  final WasmFloatArray<WasmF32> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmF32ArrayBase(this.length)
+      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmF32ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 4;
+
+  int get offsetInBytes => _offsetInElements * 4;
+
+  ByteBuffer get buffer => _F32ByteBuffer(_data, offsetInBytes, length * 4);
+}
+
+abstract class _WasmF64ArrayBase {
+  final WasmFloatArray<WasmF64> _data;
+  final int _offsetInElements;
+  final int length;
+
+  _WasmF64ArrayBase(this.length)
+      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
+        _offsetInElements = 0;
+
+  _WasmF64ArrayBase._(this._data, this._offsetInElements, this.length);
+
+  int get elementSizeInBytes => 8;
+
+  int get offsetInBytes => _offsetInElements * 8;
+
+  ByteBuffer get buffer => _F64ByteBuffer(_data, offsetInBytes, length * 8);
+}
+
+class _I8List extends _WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_I8List>,
         _TypedListCommonOperationsMixin
     implements Int8List {
-  final WasmIntArray<WasmI8> _data;
-  final int _offsetInElements;
-  final int length;
+  _I8List(int length) : super(length);
 
-  _I8List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _I8List._(this._data, this._offsetInElements, this.length);
+  _I8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _I8List _createList(int length) => _I8List(length);
-
-  @override
-  _I8ByteBuffer get buffer =>
-      _I8ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Int8List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2065,34 +2158,19 @@ class _I8List
   }
 }
 
-class _U8List
+class _U8List extends _WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_U8List>,
         _TypedListCommonOperationsMixin
     implements Uint8List {
-  final WasmIntArray<WasmI8> _data;
-  final int _offsetInElements;
-  final int length;
+  _U8List(int length) : super(length);
 
-  _U8List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _U8List._(this._data, this._offsetInElements, this.length);
+  _U8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _U8List _createList(int length) => _U8List(length);
-
-  @override
-  _I8ByteBuffer get buffer =>
-      _I8ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Uint8List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2113,34 +2191,19 @@ class _U8List
   }
 }
 
-class _U8ClampedList
+class _U8ClampedList extends _WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_U8ClampedList>,
         _TypedListCommonOperationsMixin
     implements Uint8ClampedList {
-  final WasmIntArray<WasmI8> _data;
-  final int _offsetInElements;
-  final int length;
+  _U8ClampedList(int length) : super(length);
 
-  _U8ClampedList(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _U8ClampedList._(this._data, this._offsetInElements, this.length);
+  _U8ClampedList._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _U8ClampedList _createList(int length) => _U8ClampedList(length);
-
-  @override
-  _I8ByteBuffer get buffer =>
-      _I8ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Uint8ClampedList.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2161,36 +2224,21 @@ class _U8ClampedList
   }
 }
 
-class _I16List
+class _I16List extends _WasmI16ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_I16List>,
         _TypedListCommonOperationsMixin
     implements Int16List {
-  final WasmIntArray<WasmI16> _data;
-  final int _offsetInElements;
-  final int length;
+  _I16List(int length) : super(length);
 
-  _I16List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _I16List._(this._data, this._offsetInElements, this.length);
+  _I16List._(WasmIntArray<WasmI16> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _I16List _createList(int length) => _I16List(length);
 
   @override
-  _I16ByteBuffer get buffer =>
-      _I16ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Int16List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
-
-  @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2209,36 +2257,21 @@ class _I16List
   }
 }
 
-class _U16List
+class _U16List extends _WasmI16ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_U16List>,
         _TypedListCommonOperationsMixin
     implements Uint16List {
-  final WasmIntArray<WasmI16> _data;
-  final int _offsetInElements;
-  final int length;
+  _U16List(int length) : super(length);
 
-  _U16List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _U16List._(this._data, this._offsetInElements, this.length);
+  _U16List._(WasmIntArray<WasmI16> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _U16List _createList(int length) => _U16List(length);
 
   @override
-  _I16ByteBuffer get buffer =>
-      _I16ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Uint16List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
-
-  @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2257,36 +2290,21 @@ class _U16List
   }
 }
 
-class _I32List
+class _I32List extends _WasmI32ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_I32List>,
         _TypedListCommonOperationsMixin
     implements Int32List {
-  final WasmIntArray<WasmI32> _data;
-  final int _offsetInElements;
-  final int length;
+  _I32List(int length) : super(length);
 
-  _I32List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _I32List._(this._data, this._offsetInElements, this.length);
+  _I32List._(WasmIntArray<WasmI32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _I32List _createList(int length) => _I32List(length);
 
   @override
-  _I32ByteBuffer get buffer =>
-      _I32ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Int32List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
-
-  @override
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2305,34 +2323,19 @@ class _I32List
   }
 }
 
-class _U32List
+class _U32List extends _WasmI32ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_U32List>,
         _TypedListCommonOperationsMixin
     implements Uint32List {
-  final WasmIntArray<WasmI32> _data;
-  final int _offsetInElements;
-  final int length;
+  _U32List(int length) : super(length);
 
-  _U32List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _U32List._(this._data, this._offsetInElements, this.length);
+  _U32List._(WasmIntArray<WasmI32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _U32List _createList(int length) => _U32List(length);
-
-  @override
-  _I32ByteBuffer get buffer =>
-      _I32ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Uint32List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2353,34 +2356,19 @@ class _U32List
   }
 }
 
-class _I64List
+class _I64List extends _WasmI64ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_I64List>,
         _TypedListCommonOperationsMixin
     implements Int64List {
-  final WasmIntArray<WasmI64> _data;
-  final int _offsetInElements;
-  final int length;
+  _I64List(int length) : super(length);
 
-  _I64List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _I64List._(this._data, this._offsetInElements, this.length);
+  _I64List._(WasmIntArray<WasmI64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _I64List _createList(int length) => _I64List(length);
-
-  @override
-  _I64ByteBuffer get buffer =>
-      _I64ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Int64List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2401,34 +2389,19 @@ class _I64List
   }
 }
 
-class _U64List
+class _U64List extends _WasmI64ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<_U64List>,
         _TypedListCommonOperationsMixin
     implements Uint64List {
-  final WasmIntArray<WasmI64> _data;
-  final int _offsetInElements;
-  final int length;
+  _U64List(int length) : super(length);
 
-  _U64List(this.length)
-      : _data = WasmIntArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _U64List._(this._data, this._offsetInElements, this.length);
+  _U64List._(WasmIntArray<WasmI64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _U64List _createList(int length) => _U64List(length);
-
-  @override
-  _I64ByteBuffer get buffer =>
-      _I64ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Uint64List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   int operator [](int index) {
@@ -2449,34 +2422,19 @@ class _U64List
   }
 }
 
-class _F32List
+class _F32List extends _WasmF32ArrayBase
     with
         _DoubleListMixin,
         _TypedDoubleListMixin<Float32List>,
         _TypedListCommonOperationsMixin
     implements Float32List {
-  final WasmFloatArray<WasmF32> _data;
-  final int _offsetInElements;
-  final int length;
+  _F32List(int length) : super(length);
 
-  _F32List(this.length)
-      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _F32List._(this._data, this._offsetInElements, this.length);
+  _F32List._(WasmFloatArray<WasmF32> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _F32List _createList(int length) => _F32List(length);
-
-  @override
-  _F32ByteBuffer get buffer =>
-      _F32ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Float32List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   double operator [](int index) {
@@ -2497,34 +2455,19 @@ class _F32List
   }
 }
 
-class _F64List
+class _F64List extends _WasmF64ArrayBase
     with
         _DoubleListMixin,
         _TypedDoubleListMixin<Float64List>,
         _TypedListCommonOperationsMixin
     implements Float64List {
-  final WasmFloatArray<WasmF64> _data;
-  final int _offsetInElements;
-  final int length;
+  _F64List(int length) : super(length);
 
-  _F64List(this.length)
-      : _data = WasmFloatArray(_newArrayLengthCheck(length)),
-        _offsetInElements = 0;
-
-  _F64List._(this._data, this._offsetInElements, this.length);
+  _F64List._(WasmFloatArray<WasmF64> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
 
   @override
   _F64List _createList(int length) => _F64List(length);
-
-  @override
-  _F64ByteBuffer get buffer =>
-      _F64ByteBuffer(_data, offsetInBytes, length * elementSizeInBytes);
-
-  @override
-  int get elementSizeInBytes => Float64List.bytesPerElement;
-
-  @override
-  int get offsetInBytes => _offsetInElements * elementSizeInBytes;
 
   @override
   double operator [](int index) {
