@@ -1629,6 +1629,24 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     //   TODO: add array.copy
     // }
 
+    if (this is TypedData && from is TypedData) {
+      // TODO: We could add a `_totalLengthInBytes` to `_ByteBuffer` and check
+      // if the ranges overlap here.
+      final ByteBuffer destBuffer = this.buffer;
+      final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+      if (destBuffer == fromBuffer) {
+        final fromAsList = from as List<int>;
+        final tempBuffer = _createList(count);
+        for (var i = 0; i < count; i++) {
+          tempBuffer[i] = fromAsList[skipCount + i];
+        }
+        for (var i = start; i < end; i++) {
+          this[i] = tempBuffer[i - start];
+        }
+        return;
+      }
+    }
+
     final List<int> otherList;
     final int otherStart;
     if (from is List<int>) {
@@ -1952,6 +1970,22 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
     }
 
     if (count == 0) return;
+
+    if (this is TypedData && from is TypedData) {
+      final ByteBuffer destBuffer = this.buffer;
+      final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+      if (destBuffer == fromBuffer) {
+        final fromAsList = from as List<double>;
+        final tempBuffer = _createList(count);
+        for (var i = 0; i < count; i++) {
+          tempBuffer[i] = fromAsList[skipCount + i];
+        }
+        for (var i = start; i < end; i++) {
+          this[i] = tempBuffer[i - start];
+        }
+        return;
+      }
+    }
 
     final List otherList;
     final int otherStart;
