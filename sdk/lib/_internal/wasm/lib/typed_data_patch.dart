@@ -1643,7 +1643,7 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
 
       // Use `array.copy` when:
       //
-      // 1. Dart array element sizes are the same.
+      // 1. Dart array element types are the same.
       // 2. Wasm array element sizes are the same.
       // 3. Source and destinaton offsets are multiples of element size.
       //
@@ -1653,13 +1653,19 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
       // We don't check for `_F32ByteBuffer` and `_F64ByteBuffer` here as the
       // receiver is an int array and if the buffer is a F32/F64 buffer that
       // means casting needs to happen when reading.
+      //
+      // TODO: Make sure all type tests below are simple class ID checks. If
+      // they're not, rewrite them as class ID checks.
       if (destDartElementSizeInBytes == fromDartElementSizeInBytes) {
         if (destDartElementSizeInBytes == 1 &&
             destBuffer is _I8ByteBuffer &&
             fromBuffer is _I8ByteBuffer) {
-          destBuffer._data.copy(start + destBuffer.offsetInBytes,
-              fromBuffer._data, skipCount + fromBuffer.offsetInBytes, count);
-          return;
+          if (destTypedData is! _U8ClampedList &&
+              destTypedData is! _SlowU8ClampedList) {
+            destBuffer._data.copy(start + destBuffer.offsetInBytes,
+                fromBuffer._data, skipCount + fromBuffer.offsetInBytes, count);
+            return;
+          }
         } else if (destDartElementSizeInBytes == 2 &&
             destBuffer is _I16ByteBuffer &&
             fromBuffer is _I16ByteBuffer) {
@@ -1713,7 +1719,6 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
       throw IterableElementError.tooFew();
     }
     Lists.copy(otherList, otherStart, this, start, count);
-    print('6');
   }
 
   SpawnedType sublist(int start, [int? end]) {
