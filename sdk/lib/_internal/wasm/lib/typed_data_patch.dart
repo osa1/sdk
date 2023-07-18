@@ -461,6 +461,12 @@ class _I8ByteData extends _ByteData {
   _I8ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
 
+  factory _I8ByteData._withMutability(WasmIntArray<WasmI8> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _I8ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableI8ByteData._(data, offsetInBytes, lengthInBytes);
+
   @override
   _UnmodifiableI8ByteData _immutable() =>
       _UnmodifiableI8ByteData._(_data, offsetInBytes, lengthInBytes);
@@ -488,6 +494,12 @@ class _I16ByteData extends _ByteData {
 
   _I16ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  factory _I16ByteData._withMutability(WasmIntArray<WasmI16> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _I16ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableI16ByteData._(data, offsetInBytes, lengthInBytes);
 
   @override
   _UnmodifiableI16ByteData _immutable() =>
@@ -548,6 +560,12 @@ class _I32ByteData extends _ByteData {
 
   _I32ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  factory _I32ByteData._withMutability(WasmIntArray<WasmI32> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _I32ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableI32ByteData._(data, offsetInBytes, lengthInBytes);
 
   @override
   _UnmodifiableI32ByteData _immutable() =>
@@ -631,6 +649,12 @@ class _I64ByteData extends _ByteData {
 
   _I64ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  factory _I64ByteData._withMutability(WasmIntArray<WasmI64> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _I64ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableI64ByteData._(data, offsetInBytes, lengthInBytes);
 
   @override
   _UnmodifiableI64ByteData _immutable() =>
@@ -726,6 +750,12 @@ class _F32ByteData extends _ByteData {
   _F32ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
 
+  factory _F32ByteData._withMutability(WasmFloatArray<WasmF32> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _F32ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableF32ByteData._(data, offsetInBytes, lengthInBytes);
+
   @override
   _UnmodifiableF32ByteData _immutable() =>
       _UnmodifiableF32ByteData._(_data, offsetInBytes, lengthInBytes);
@@ -786,6 +816,12 @@ class _F64ByteData extends _ByteData {
 
   _F64ByteData._(this._data, int offsetInBytes, int lengthInBytes)
       : super(offsetInBytes, lengthInBytes);
+
+  factory _F64ByteData._withMutability(WasmFloatArray<WasmF64> data,
+          int offsetInBytes, int lengthInBytes, bool mutable) =>
+      mutable
+          ? _F64ByteData._(data, offsetInBytes, lengthInBytes)
+          : _UnmodifiableF64ByteData._(data, offsetInBytes, lengthInBytes);
 
   @override
   _UnmodifiableF64ByteData _immutable() =>
@@ -859,6 +895,10 @@ class _UnmodifiableI8ByteData extends _I8ByteData
   _UnmodifiableI8ByteData._(
       WasmIntArray<WasmI8> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _I8ByteBuffer get buffer =>
+      _I8ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 class _UnmodifiableI16ByteData extends _I16ByteData
@@ -867,6 +907,10 @@ class _UnmodifiableI16ByteData extends _I16ByteData
   _UnmodifiableI16ByteData._(
       WasmIntArray<WasmI16> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _I16ByteBuffer get buffer =>
+      _I16ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 class _UnmodifiableI32ByteData extends _I32ByteData
@@ -875,6 +919,10 @@ class _UnmodifiableI32ByteData extends _I32ByteData
   _UnmodifiableI32ByteData._(
       WasmIntArray<WasmI32> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _I32ByteBuffer get buffer =>
+      _I32ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 class _UnmodifiableI64ByteData extends _I64ByteData
@@ -883,6 +931,10 @@ class _UnmodifiableI64ByteData extends _I64ByteData
   _UnmodifiableI64ByteData._(
       WasmIntArray<WasmI64> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _I64ByteBuffer get buffer =>
+      _I64ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 class _UnmodifiableF32ByteData extends _F32ByteData
@@ -891,6 +943,10 @@ class _UnmodifiableF32ByteData extends _F32ByteData
   _UnmodifiableF32ByteData._(
       WasmFloatArray<WasmF32> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _F32ByteBuffer get buffer =>
+      _F32ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 class _UnmodifiableF64ByteData extends _F64ByteData
@@ -899,6 +955,10 @@ class _UnmodifiableF64ByteData extends _F64ByteData
   _UnmodifiableF64ByteData._(
       WasmFloatArray<WasmF64> _data, int offsetInBytes, int lengthInBytes)
       : super._(_data, offsetInBytes, lengthInBytes);
+
+  @override
+  _F64ByteBuffer get buffer =>
+      _F64ByteBuffer._(_data, offsetInBytes, lengthInBytes, false);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1099,8 +1159,7 @@ class _I8ByteBuffer extends _ByteBuffer {
     final totalOffset = this.offsetInBytes + offsetInBytes;
     length ??= lengthInBytes - totalOffset;
     _rangeCheck(lengthInBytes, totalOffset, length);
-    // TODO mutability
-    return _I8ByteData._(_data, totalOffset, length);
+    return _I8ByteData._withMutability(_data, totalOffset, length, _mutable);
   }
 }
 
@@ -1158,8 +1217,7 @@ class _I16ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
-    // TODO: mutability
-    return _I16ByteData._(_data, offsetInBytes, length);
+    return _I16ByteData._withMutability(_data, offsetInBytes, length, _mutable);
   }
 }
 
@@ -1217,8 +1275,7 @@ class _I32ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
-    // TODO mutability
-    return _I32ByteData._(_data, offsetInBytes, length);
+    return _I32ByteData._withMutability(_data, offsetInBytes, length, _mutable);
   }
 }
 
@@ -1276,8 +1333,7 @@ class _I64ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
-    // TODO mutability
-    return _I64ByteData._(_data, offsetInBytes, length);
+    return _I64ByteData._withMutability(_data, offsetInBytes, length, _mutable);
   }
 }
 
@@ -1320,8 +1376,7 @@ class _F32ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
-    // TODO: mutability
-    return _F32ByteData._(_data, offsetInBytes, length);
+    return _F32ByteData._withMutability(_data, offsetInBytes, length, _mutable);
   }
 }
 
@@ -1364,8 +1419,7 @@ class _F64ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
-    // TODO mutability
-    return _F64ByteData._(_data, offsetInBytes, length);
+    return _F64ByteData._withMutability(_data, offsetInBytes, length, _mutable);
   }
 }
 
