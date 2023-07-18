@@ -1600,6 +1600,10 @@ mixin _IntListMixin implements List<int> {
   }
 }
 
+// void _fastCopy<BufferType, WasmArrayType>(BufferType dest, int destIndex, BufferType source, int sourceIndex, int size) {
+//   final destByteOffset = dest.offsetInBytes
+// }
+
 mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     implements List<int> {
   SpawnedType _createList(int length);
@@ -1621,60 +1625,65 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     if (count == 0) return;
 
     if (this is TypedData && from is TypedData) {
-      final ByteBuffer destBuffer = this.buffer;
-      final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+      final TypedData destTypedData = unsafeCast<TypedData>(this);
+      final TypedData fromTypedData = unsafeCast<TypedData>(from);
 
-      // Use `array.copy` when the source and destination arrays have the same
-      // Wasm array type and byte offsets are multiples of the element size.
-      if (destBuffer is _I8ByteBuffer && fromBuffer is _I8ByteBuffer) {
-        final _I8ByteBuffer fromByteBuffer =
-            unsafeCast<_I8ByteBuffer>(fromBuffer);
-        final _I8ByteBuffer destByteBuffer =
-            unsafeCast<_I8ByteBuffer>(destBuffer);
-        destByteBuffer._data
-            .copy(start, fromByteBuffer._data, skipCount, count);
-        return;
-      } else if (destBuffer is _I16ByteBuffer && fromBuffer is _I16ByteBuffer) {
-        final _I16ByteBuffer fromByteBuffer =
-            unsafeCast<_I16ByteBuffer>(fromBuffer);
-        final _I16ByteBuffer destByteBuffer =
-            unsafeCast<_I16ByteBuffer>(destBuffer);
-        if (fromByteBuffer.offsetInBytes % 2 == 0 &&
-            destByteBuffer.offsetInBytes % 2 == 0) {
-          destByteBuffer._data.copy(
-              start + destByteBuffer.offsetInBytes ~/ 2,
-              fromByteBuffer._data,
-              skipCount + fromByteBuffer.offsetInBytes ~/ 2,
-              count);
+      final _ByteBuffer destBuffer =
+          unsafeCast<_ByteBuffer>(destTypedData.buffer);
+      final _ByteBuffer fromBuffer =
+          unsafeCast<_ByteBuffer>(fromTypedData.buffer);
+
+      final destDartElementSizeInBytes = destTypedData.elementSizeInBytes;
+      final fromDartElementSizeInBytes = fromTypedData.elementSizeInBytes;
+
+      final fromBufferByteOffset =
+          fromBuffer.offsetInBytes + (skipCount * fromDartElementSizeInBytes);
+      final destBufferByteOffset =
+          destBuffer.offsetInBytes + (start * destDartElementSizeInBytes);
+
+      // Use `array.copy` when:
+      //
+      // 1. Dart array element sizes are the same.
+      // 2. Wasm array element sizes are the same.
+      // 3. Source and destinaton offsets are multiples of element size.
+      //
+      // (1) is to make sure no sign extension, clamping, or truncation needs
+      // to happen when copying. (2) and (3) are requirements for `array.copy`.
+      //
+      // We don't check for `_F32ByteBuffer` and `_F64ByteBuffer` here as the
+      // receiver is an int array and if the buffer is a F32/F64 buffer that
+      // means casting needs to happen when reading.
+      if (destDartElementSizeInBytes == fromDartElementSizeInBytes) {
+        if (destDartElementSizeInBytes == 1 &&
+            destBuffer is _I8ByteBuffer &&
+            fromBuffer is _I8ByteBuffer) {
+          destBuffer._data.copy(start + destBuffer.offsetInBytes,
+              fromBuffer._data, skipCount + fromBuffer.offsetInBytes, count);
           return;
-        }
-      } else if (destBuffer is _I32ByteBuffer && fromBuffer is _I32ByteBuffer) {
-        final _I32ByteBuffer fromByteBuffer =
-            unsafeCast<_I32ByteBuffer>(fromBuffer);
-        final _I32ByteBuffer destByteBuffer =
-            unsafeCast<_I32ByteBuffer>(destBuffer);
-        if (fromByteBuffer.offsetInBytes % 4 == 0 &&
-            destByteBuffer.offsetInBytes % 4 == 0) {
-          destByteBuffer._data.copy(
-              start + destByteBuffer.offsetInBytes ~/ 4,
-              fromByteBuffer._data,
-              skipCount + fromByteBuffer.offsetInBytes ~/ 4,
-              count);
-          return;
-        }
-      } else if (destBuffer is _I64ByteBuffer && fromBuffer is _I64ByteBuffer) {
-        final _I64ByteBuffer fromByteBuffer =
-            unsafeCast<_I64ByteBuffer>(fromBuffer);
-        final _I64ByteBuffer destByteBuffer =
-            unsafeCast<_I64ByteBuffer>(destBuffer);
-        if (fromByteBuffer.offsetInBytes % 8 == 0 &&
-            destByteBuffer.offsetInBytes % 8 == 0) {
-          destByteBuffer._data.copy(
-              start + destByteBuffer.offsetInBytes ~/ 8,
-              fromByteBuffer._data,
-              skipCount + fromByteBuffer.offsetInBytes ~/ 8,
-              count);
-          return;
+        } else if (destDartElementSizeInBytes == 2 &&
+            destBuffer is _I16ByteBuffer &&
+            fromBuffer is _I16ByteBuffer) {
+          if (fromBufferByteOffset % 2 == 0 && destBufferByteOffset % 2 == 0) {
+            destBuffer._data.copy(destBufferByteOffset ~/ 2, fromBuffer._data,
+                fromBufferByteOffset ~/ 2, count);
+            return;
+          }
+        } else if (destDartElementSizeInBytes == 4 &&
+            destBuffer is _I32ByteBuffer &&
+            fromBuffer is _I32ByteBuffer) {
+          if (fromBufferByteOffset % 4 == 0 && destBufferByteOffset % 4 == 0) {
+            destBuffer._data.copy(destBufferByteOffset ~/ 4, fromBuffer._data,
+                fromBufferByteOffset ~/ 4, count);
+            return;
+          }
+        } else if (destDartElementSizeInBytes == 8 &&
+            destBuffer is _I64ByteBuffer &&
+            fromBuffer is _I64ByteBuffer) {
+          if (fromBufferByteOffset % 8 == 0 && destBufferByteOffset % 8 == 0) {
+            destBuffer._data.copy(destBufferByteOffset ~/ 8, fromBuffer._data,
+                fromBufferByteOffset ~/ 8, count);
+            return;
+          }
         }
       }
 
@@ -1704,6 +1713,7 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
       throw IterableElementError.tooFew();
     }
     Lists.copy(otherList, otherStart, this, start, count);
+    print('6');
   }
 
   SpawnedType sublist(int start, [int? end]) {
@@ -2016,38 +2026,39 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
     if (count == 0) return;
 
     if (this is TypedData && from is TypedData) {
-      final ByteBuffer destBuffer = this.buffer;
-      final ByteBuffer fromBuffer = unsafeCast<TypedData>(from).buffer;
+      final TypedData destTypedData = unsafeCast<TypedData>(this);
+      final TypedData fromTypedData = unsafeCast<TypedData>(from);
 
-      // Use `array.copy` when the source and destination arrays have the same
-      // Wasm array type.
-      if (destBuffer is _F32ByteBuffer && fromBuffer is _F32ByteBuffer) {
-        final _F32ByteBuffer fromByteBuffer =
-            unsafeCast<_F32ByteBuffer>(fromBuffer);
-        final _F32ByteBuffer destByteBuffer =
-            unsafeCast<_F32ByteBuffer>(destBuffer);
-        if (fromByteBuffer.offsetInBytes % 4 == 0 &&
-            destByteBuffer.offsetInBytes % 4 == 0) {
-          destByteBuffer._data.copy(
-              start + destByteBuffer.offsetInBytes ~/ 4,
-              fromByteBuffer._data,
-              skipCount + fromByteBuffer.offsetInBytes ~/ 4,
-              count);
-          return;
-        }
-      } else if (destBuffer is _F64ByteBuffer && fromBuffer is _F64ByteBuffer) {
-        final _F64ByteBuffer fromByteBuffer =
-            unsafeCast<_F64ByteBuffer>(fromBuffer);
-        final _F64ByteBuffer destByteBuffer =
-            unsafeCast<_F64ByteBuffer>(destBuffer);
-        if (fromByteBuffer.offsetInBytes % 8 == 0 &&
-            destByteBuffer.offsetInBytes % 8 == 0) {
-          destByteBuffer._data.copy(
-              start + destByteBuffer.offsetInBytes ~/ 8,
-              fromByteBuffer._data,
-              skipCount + fromByteBuffer.offsetInBytes ~/ 8,
-              count);
-          return;
+      final _ByteBuffer destBuffer =
+          unsafeCast<_ByteBuffer>(destTypedData.buffer);
+      final _ByteBuffer fromBuffer =
+          unsafeCast<_ByteBuffer>(fromTypedData.buffer);
+
+      final destDartElementSizeInBytes = destTypedData.elementSizeInBytes;
+      final fromDartElementSizeInBytes = fromTypedData.elementSizeInBytes;
+
+      // See comments in `_TypedIntListMixin.setRange`.
+      if (destDartElementSizeInBytes == fromDartElementSizeInBytes) {
+        final fromBufferByteOffset =
+            fromBuffer.offsetInBytes + (skipCount * fromDartElementSizeInBytes);
+        final destBufferByteOffset =
+            destBuffer.offsetInBytes + (start * destDartElementSizeInBytes);
+        if (destDartElementSizeInBytes == 4 &&
+            destBuffer is _F32ByteBuffer &&
+            fromBuffer is _F32ByteBuffer) {
+          if (fromBufferByteOffset % 4 == 0 && destBufferByteOffset % 4 == 0) {
+            destBuffer._data.copy(destBufferByteOffset ~/ 4, fromBuffer._data,
+                fromBufferByteOffset ~/ 4, count);
+            return;
+          }
+        } else if (destDartElementSizeInBytes == 8 &&
+            destBuffer is _F64ByteBuffer &&
+            fromBuffer is _F64ByteBuffer) {
+          if (fromBufferByteOffset % 8 == 0 && destBufferByteOffset % 8 == 0) {
+            destBuffer._data.copy(destBufferByteOffset ~/ 8, fromBuffer._data,
+                fromBufferByteOffset ~/ 8, count);
+            return;
+          }
         }
       }
 
