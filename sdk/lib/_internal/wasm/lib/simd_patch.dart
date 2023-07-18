@@ -49,6 +49,22 @@ abstract class UnmodifiableInt32x4ListView implements Int32x4List {
 }
 
 @patch
+abstract class UnmodifiableFloat32x4ListView implements Float32x4List {
+  @patch
+  factory UnmodifiableFloat32x4ListView(Float32x4List list) =>
+      _NaiveUnmodifiableFloat32x4List._externalStorage(
+          unsafeCast<_NaiveFloat32x4List>(list)._storage);
+}
+
+@patch
+abstract class UnmodifiableFloat64x2ListView implements Float64x2List {
+  @patch
+  factory UnmodifiableFloat64x2ListView(Float64x2List list) =>
+      _NaiveUnmodifiableFloat64x2List._externalStorage(
+          unsafeCast<_NaiveFloat64x2List>(list)._storage);
+}
+
+@patch
 class Int32x4 {
   @patch
   factory Int32x4(int x, int y, int z, int w) = _NaiveInt32x4;
@@ -226,7 +242,8 @@ final class _NaiveFloat32x4List extends Object
   }
 }
 
-final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List {
+final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List
+    implements UnmodifiableFloat32x4ListView {
   _NaiveUnmodifiableFloat32x4List._externalStorage(Float32List storage)
       : super._externalStorage(storage);
 
@@ -296,7 +313,8 @@ final class _NaiveFloat64x2List extends Object
   }
 }
 
-final class _NaiveUnmodifiableFloat64x2List extends _NaiveFloat64x2List {
+final class _NaiveUnmodifiableFloat64x2List extends _NaiveFloat64x2List
+    implements UnmodifiableFloat64x2ListView {
   _NaiveUnmodifiableFloat64x2List._externalStorage(Float64List storage)
       : super._externalStorage(storage);
 
