@@ -2610,6 +2610,21 @@ class _UnmodifiableU8List extends _U8List implements UnmodifiableUint8ListView {
   _I8ByteBuffer get buffer => throw 'Unmodifiable list buffer';
 }
 
+class _UnmodifiableU8ClampedList extends _U8ClampedList
+    implements UnmodifiableUint8ClampedListView {
+  _UnmodifiableU8ClampedList._(
+      WasmIntArray<WasmI8> data, int offsetInElements, int length)
+      : super._(data, offsetInElements, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  _I8ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
 class _UnmodifiableI16List extends _I16List
     implements UnmodifiableInt16ListView {
   _UnmodifiableI16List._(
@@ -3113,6 +3128,21 @@ class _UnmodifiableSlowU8List extends _SlowU8List
   ByteBuffer get buffer => throw 'Unmodifiable list buffer';
 }
 
+class _UnmodifiableSlowU8ClampedList extends _SlowU8ClampedList
+    implements UnmodifiableUint8ClampedListView {
+  _UnmodifiableSlowU8ClampedList._(
+      ByteBuffer buffer, int offsetInBytes, int length)
+      : super._(buffer, offsetInBytes, length);
+
+  @override
+  void operator []=(int index, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  @override
+  ByteBuffer get buffer => throw 'Unmodifiable list buffer';
+}
+
 class _UnmodifiableSlowI16List extends _SlowI16List
     implements UnmodifiableInt16ListView {
   _UnmodifiableSlowI16List._(ByteBuffer buffer, int offsetInBytes, int length)
@@ -3375,6 +3405,21 @@ class UnmodifiableInt8ListView {
     } else {
       final slowList = unsafeCast<_SlowI8List>(list);
       return _UnmodifiableSlowI8List._(
+          slowList.buffer, slowList.offsetInBytes, slowList.length);
+    }
+  }
+}
+
+@patch
+class UnmodifiableUint8ClampedListView {
+  @patch
+  factory UnmodifiableUint8ClampedListView(Uint8ClampedList list) {
+    if (list is _U8ClampedList) {
+      return _UnmodifiableU8ClampedList._(
+          list._data, list._offsetInElements, list.length);
+    } else {
+      final slowList = unsafeCast<_SlowU8ClampedList>(list);
+      return _UnmodifiableSlowU8ClampedList._(
           slowList.buffer, slowList.offsetInBytes, slowList.length);
     }
   }
