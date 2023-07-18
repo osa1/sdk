@@ -2400,6 +2400,12 @@ class _I8List extends _WasmI8ArrayBase
   _I8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _I8List._withMutability(WasmIntArray<WasmI8> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _I8List._(buffer, offsetInBytes, length)
+          : _UnmodifiableI8List._(buffer, offsetInBytes, length);
+
   @override
   _I8List _createList(int length) => _I8List(length);
 
@@ -2432,6 +2438,12 @@ class _U8List extends _WasmI8ArrayBase
 
   _U8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
+
+  factory _U8List._withMutability(WasmIntArray<WasmI8> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _U8List._(buffer, offsetInBytes, length)
+          : _UnmodifiableU8List._(buffer, offsetInBytes, length);
 
   @override
   _U8List _createList(int length) => _U8List(length);
@@ -2466,6 +2478,12 @@ class _U8ClampedList extends _WasmI8ArrayBase
   _U8ClampedList._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _U8ClampedList._withMutability(WasmIntArray<WasmI8> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _U8ClampedList._(buffer, offsetInBytes, length)
+          : _UnmodifiableU8ClampedList._(buffer, offsetInBytes, length);
+
   @override
   _U8ClampedList _createList(int length) => _U8ClampedList(length);
 
@@ -2498,6 +2516,12 @@ class _I16List extends _WasmI16ArrayBase
 
   _I16List._(WasmIntArray<WasmI16> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
+
+  factory _I16List._withMutability(WasmIntArray<WasmI16> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _I16List._(buffer, offsetInBytes, length)
+          : _UnmodifiableI16List._(buffer, offsetInBytes, length);
 
   @override
   _I16List _createList(int length) => _I16List(length);
@@ -2532,6 +2556,12 @@ class _U16List extends _WasmI16ArrayBase
   _U16List._(WasmIntArray<WasmI16> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _U16List._withMutability(WasmIntArray<WasmI16> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _U16List._(buffer, offsetInBytes, length)
+          : _UnmodifiableU16List._(buffer, offsetInBytes, length);
+
   @override
   _U16List _createList(int length) => _U16List(length);
 
@@ -2564,6 +2594,12 @@ class _I32List extends _WasmI32ArrayBase
 
   _I32List._(WasmIntArray<WasmI32> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
+
+  factory _I32List._withMutability(WasmIntArray<WasmI32> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _I32List._(buffer, offsetInBytes, length)
+          : _UnmodifiableI32List._(buffer, offsetInBytes, length);
 
   @override
   _I32List _createList(int length) => _I32List(length);
@@ -2598,6 +2634,12 @@ class _U32List extends _WasmI32ArrayBase
   _U32List._(WasmIntArray<WasmI32> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _U32List._withMutability(WasmIntArray<WasmI32> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _U32List._(buffer, offsetInBytes, length)
+          : _UnmodifiableU32List._(buffer, offsetInBytes, length);
+
   @override
   _U32List _createList(int length) => _U32List(length);
 
@@ -2630,6 +2672,12 @@ class _I64List extends _WasmI64ArrayBase
 
   _I64List._(WasmIntArray<WasmI64> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
+
+  factory _I64List._withMutability(WasmIntArray<WasmI64> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _I64List._(buffer, offsetInBytes, length)
+          : _UnmodifiableI64List._(buffer, offsetInBytes, length);
 
   @override
   _I64List _createList(int length) => _I64List(length);
@@ -2664,6 +2712,12 @@ class _U64List extends _WasmI64ArrayBase
   _U64List._(WasmIntArray<WasmI64> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _U64List._withMutability(WasmIntArray<WasmI64> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _U64List._(buffer, offsetInBytes, length)
+          : _UnmodifiableU64List._(buffer, offsetInBytes, length);
+
   @override
   _U64List _createList(int length) => _U64List(length);
 
@@ -2697,6 +2751,12 @@ class _F32List extends _WasmF32ArrayBase
   _F32List._(WasmFloatArray<WasmF32> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  factory _F32List._withMutability(WasmFloatArray<WasmF32> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _F32List._(buffer, offsetInBytes, length)
+          : _UnmodifiableF32List._(buffer, offsetInBytes, length);
+
   @override
   _F32List _createList(int length) => _F32List(length);
 
@@ -2729,6 +2789,12 @@ class _F64List extends _WasmF64ArrayBase
 
   _F64List._(WasmFloatArray<WasmF64> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
+
+  factory _F64List._withMutability(WasmFloatArray<WasmF64> buffer,
+          int offsetInBytes, int length, bool mutable) =>
+      mutable
+          ? _F64List._(buffer, offsetInBytes, length)
+          : _UnmodifiableF64List._(buffer, offsetInBytes, length);
 
   @override
   _F64List _createList(int length) => _F64List(length);
