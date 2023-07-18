@@ -2474,6 +2474,7 @@ class _I8List extends _WasmI8ArrayBase
   _I8List _createList(int length) => _I8List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2483,6 +2484,7 @@ class _I8List extends _WasmI8ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2513,6 +2515,7 @@ class _U8List extends _WasmI8ArrayBase
   _U8List _createList(int length) => _U8List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2522,6 +2525,7 @@ class _U8List extends _WasmI8ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2552,6 +2556,7 @@ class _U8ClampedList extends _WasmI8ArrayBase
   _U8ClampedList _createList(int length) => _U8ClampedList(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2561,6 +2566,7 @@ class _U8ClampedList extends _WasmI8ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2591,6 +2597,7 @@ class _I16List extends _WasmI16ArrayBase
   _I16List _createList(int length) => _I16List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2600,6 +2607,7 @@ class _I16List extends _WasmI16ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2630,6 +2638,7 @@ class _U16List extends _WasmI16ArrayBase
   _U16List _createList(int length) => _U16List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2639,6 +2648,7 @@ class _U16List extends _WasmI16ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2669,6 +2679,7 @@ class _I32List extends _WasmI32ArrayBase
   _I32List _createList(int length) => _I32List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2678,6 +2689,7 @@ class _I32List extends _WasmI32ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2708,6 +2720,7 @@ class _U32List extends _WasmI32ArrayBase
   _U32List _createList(int length) => _U32List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2717,6 +2730,7 @@ class _U32List extends _WasmI32ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2747,6 +2761,7 @@ class _I64List extends _WasmI64ArrayBase
   _I64List _createList(int length) => _I64List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2756,6 +2771,7 @@ class _I64List extends _WasmI64ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2786,6 +2802,7 @@ class _U64List extends _WasmI64ArrayBase
   _U64List _createList(int length) => _U64List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2795,6 +2812,7 @@ class _U64List extends _WasmI64ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2825,6 +2843,7 @@ class _F32List extends _WasmF32ArrayBase
   _F32List _createList(int length) => _F32List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   double operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2834,6 +2853,7 @@ class _F32List extends _WasmF32ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2864,6 +2884,7 @@ class _F64List extends _WasmF64ArrayBase
   _F64List _createList(int length) => _F64List(length);
 
   @override
+  @pragma("wasm:prefer-inline")
   double operator [](int index) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
@@ -2873,6 +2894,7 @@ class _F64List extends _WasmF64ArrayBase
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
     if (index < 0 || index >= length) {
       throw IndexError.withLength(index, length,
