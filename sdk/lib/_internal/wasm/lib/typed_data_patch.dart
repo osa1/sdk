@@ -1083,7 +1083,7 @@ class _I8ByteBuffer extends _ByteBuffer {
     final totalOffset = this.offsetInBytes + offsetInBytes;
     length ??= (lengthInBytes - totalOffset) ~/ Int8List.bytesPerElement;
     _rangeCheck(lengthInBytes, totalOffset, length * Int8List.bytesPerElement);
-    return _I8List._(_data, totalOffset, length);
+    return _I8List._withMutability(_data, totalOffset, length, _mutable);
   }
 
   @override
@@ -1091,7 +1091,7 @@ class _I8ByteBuffer extends _ByteBuffer {
     final totalOffset = this.offsetInBytes + offsetInBytes;
     length ??= (lengthInBytes - totalOffset) ~/ Uint8List.bytesPerElement;
     _rangeCheck(lengthInBytes, totalOffset, length * Uint8List.bytesPerElement);
-    return _U8List._(_data, totalOffset, length);
+    return _U8List._withMutability(_data, totalOffset, length, _mutable);
   }
 
   @override
@@ -1099,6 +1099,7 @@ class _I8ByteBuffer extends _ByteBuffer {
     final totalOffset = this.offsetInBytes + offsetInBytes;
     length ??= lengthInBytes - totalOffset;
     _rangeCheck(lengthInBytes, totalOffset, length);
+    // TODO mutability
     return _I8ByteData._(_data, totalOffset, length);
   }
 }
@@ -1128,10 +1129,11 @@ class _I16ByteBuffer extends _ByteBuffer {
     _rangeCheck(lengthInBytes, totalOffset, length * Int16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     if (totalOffset % Int16List.bytesPerElement != 0) {
-      return _SlowI16List._(this, offsetInBytes, length);
+      return _SlowI16List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _I16List._(
-          _data, totalOffset ~/ Int16List.bytesPerElement, length);
+      return _I16List._withMutability(
+          _data, totalOffset ~/ Int16List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1143,10 +1145,11 @@ class _I16ByteBuffer extends _ByteBuffer {
         lengthInBytes, totalOffset, length * Uint16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     if (totalOffset % Uint16List.bytesPerElement != 0) {
-      return _SlowU16List._(this, offsetInBytes, length);
+      return _SlowU16List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _U16List._(
-          _data, totalOffset ~/ Uint16List.bytesPerElement, length);
+      return _U16List._withMutability(
+          _data, totalOffset ~/ Uint16List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1155,6 +1158,7 @@ class _I16ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
+    // TODO: mutability
     return _I16ByteData._(_data, offsetInBytes, length);
   }
 }
@@ -1184,10 +1188,11 @@ class _I32ByteBuffer extends _ByteBuffer {
     _rangeCheck(lengthInBytes, totalOffset, length * Int32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     if (totalOffset % Uint32List.bytesPerElement != 0) {
-      return _SlowI32List._(this, offsetInBytes, length);
+      return _SlowI32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _I32List._(
-          _data, totalOffset ~/ Int32List.bytesPerElement, length);
+      return _I32List._withMutability(
+          _data, totalOffset ~/ Int32List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1199,10 +1204,11 @@ class _I32ByteBuffer extends _ByteBuffer {
         lengthInBytes, totalOffset, length * Uint32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     if (totalOffset % Uint32List.bytesPerElement != 0) {
-      return _SlowU32List._(this, offsetInBytes, length);
+      return _SlowU32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _U32List._(
-          _data, totalOffset ~/ Uint32List.bytesPerElement, length);
+      return _U32List._withMutability(
+          _data, totalOffset ~/ Uint32List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1211,6 +1217,7 @@ class _I32ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
+    // TODO mutability
     return _I32ByteData._(_data, offsetInBytes, length);
   }
 }
@@ -1240,10 +1247,11 @@ class _I64ByteBuffer extends _ByteBuffer {
     _rangeCheck(lengthInBytes, totalOffset, length * Int64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     if (totalOffset % Int64List.bytesPerElement != 0) {
-      return _SlowI64List._(this, offsetInBytes, length);
+      return _SlowI64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _I64List._(
-          _data, totalOffset ~/ Int64List.bytesPerElement, length);
+      return _I64List._withMutability(
+          _data, totalOffset ~/ Int64List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1255,10 +1263,11 @@ class _I64ByteBuffer extends _ByteBuffer {
         lengthInBytes, totalOffset, length * Uint64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     if (totalOffset % Int64List.bytesPerElement != 0) {
-      return _SlowU64List._(this, offsetInBytes, length);
+      return _SlowU64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _U64List._(
-          _data, totalOffset ~/ Uint64List.bytesPerElement, length);
+      return _U64List._withMutability(
+          _data, totalOffset ~/ Uint64List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1267,6 +1276,7 @@ class _I64ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
+    // TODO mutability
     return _I64ByteData._(_data, offsetInBytes, length);
   }
 }
@@ -1297,10 +1307,11 @@ class _F32ByteBuffer extends _ByteBuffer {
         lengthInBytes, totalOffset, length * Float32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     if (totalOffset % Float32List.bytesPerElement != 0) {
-      return _SlowF32List._(this, offsetInBytes, length);
+      return _SlowF32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _F32List._(
-          _data, totalOffset ~/ Float32List.bytesPerElement, length);
+      return _F32List._withMutability(
+          _data, totalOffset ~/ Float32List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1309,6 +1320,7 @@ class _F32ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
+    // TODO: mutability
     return _F32ByteData._(_data, offsetInBytes, length);
   }
 }
@@ -1339,10 +1351,11 @@ class _F64ByteBuffer extends _ByteBuffer {
         lengthInBytes, totalOffset, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     if (totalOffset % Float64List.bytesPerElement != 0) {
-      return _SlowF64List._(this, offsetInBytes, length);
+      return _SlowF64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
-      return _F64List._(
-          _data, totalOffset ~/ Int64List.bytesPerElement, length);
+      return _F64List._withMutability(
+          _data, totalOffset ~/ Int64List.bytesPerElement, length, _mutable);
     }
   }
 
@@ -1351,6 +1364,7 @@ class _F64ByteBuffer extends _ByteBuffer {
     offsetInBytes += this.offsetInBytes;
     length ??= lengthInBytes - offsetInBytes;
     _rangeCheck(lengthInBytes, offsetInBytes, length);
+    // TODO mutability
     return _F64ByteData._(_data, offsetInBytes, length);
   }
 }
@@ -1755,10 +1769,6 @@ mixin _IntListMixin implements List<int> {
     }
   }
 }
-
-// void _fastCopy<BufferType, WasmArrayType>(BufferType dest, int destIndex, BufferType source, int sourceIndex, int size) {
-//   final destByteOffset = dest.offsetInBytes
-// }
 
 mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     implements List<int> {
