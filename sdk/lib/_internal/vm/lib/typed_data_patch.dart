@@ -401,6 +401,7 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
+      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");
@@ -758,6 +759,7 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
+      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");
@@ -803,8 +805,8 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
       }
     }
 
-    final List<double> otherList;
-    final int otherStart;
+    List otherList;
+    int otherStart;
     if (from is List<double>) {
       otherList = from;
       otherStart = skipCount;
@@ -898,6 +900,7 @@ mixin _Float32x4ListMixin implements List<Float32x4> {
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
+      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");
@@ -1255,6 +1258,7 @@ mixin _Int32x4ListMixin implements List<Int32x4> {
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
+      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");
@@ -1611,6 +1615,7 @@ mixin _Float64x2ListMixin implements List<Float64x2> {
     // Check ranges.
     if (0 > start || start > end || end > length) {
       RangeError.checkValidRange(start, end, length); // Always throws.
+      assert(false);
     }
     if (skipCount < 0) {
       throw RangeError.range(skipCount, 0, null, "skipCount");

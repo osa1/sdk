@@ -32,8 +32,6 @@ final List<Option> options = [
       defaultsTo: _d.translatorOptions.polymorphicSpecialization),
   Flag("print-kernel", (o, value) => o.translatorOptions.printKernel = value,
       defaultsTo: _d.translatorOptions.printKernel),
-  Flag("print-types", (o, value) => o.translatorOptions.printTypes = value,
-      defaultsTo: _d.translatorOptions.printTypes),
   Flag("print-wasm", (o, value) => o.translatorOptions.printWasm = value,
       defaultsTo: _d.translatorOptions.printWasm),
   Flag("stringref", (o, value) => o.translatorOptions.useStringref = value,
