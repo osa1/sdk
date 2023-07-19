@@ -689,6 +689,318 @@ library
 ''');
   }
 
+  test_augmented_mixins_inferredTypeArguments() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart';
+augment class A<T2> with M2 {}
+mixin M2<U2> on M1<U2> {}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment class A<T3> with M3 {}
+mixin M3<U3> on M2<U3> {}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'a.dart';
+import augment 'b.dart';
+class B<S> {}
+class A<T1> extends B<T1> with M1 {}
+mixin M1<U1> on B<U1> {}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class B @56
+        typeParameters
+          covariant S @58
+            defaultType: dynamic
+        constructors
+          synthetic @-1
+      class A @70
+        typeParameters
+          covariant T1 @72
+            defaultType: dynamic
+        augmentation: self::@augmentation::package:test/a.dart::@class::A
+        supertype: B<T1>
+        mixins
+          M1<T1>
+        constructors
+          synthetic @-1
+            superConstructor: ConstructorMember
+              base: self::@class::B::@constructor::new
+              substitution: {S: T1}
+        augmented
+          mixins
+            M1<T1>
+            M2<T1>
+            M3<T1>
+    mixins
+      mixin M1 @107
+        typeParameters
+          covariant U1 @110
+            defaultType: dynamic
+        superclassConstraints
+          B<U1>
+  augmentationImports
+    package:test/a.dart
+      definingUnit
+        classes
+          augment class A @43
+            typeParameters
+              covariant T2 @45
+                defaultType: dynamic
+            augmentationTarget: self::@class::A
+            augmentation: self::@augmentation::package:test/b.dart::@class::A
+            mixins
+              M2<T2>
+        mixins
+          mixin M2 @66
+            typeParameters
+              covariant U2 @69
+                defaultType: dynamic
+            superclassConstraints
+              M1<U2>
+    package:test/b.dart
+      definingUnit
+        classes
+          augment class A @43
+            typeParameters
+              covariant T3 @45
+                defaultType: dynamic
+            augmentationTarget: self::@augmentation::package:test/a.dart::@class::A
+            mixins
+              M3<T3>
+        mixins
+          mixin M3 @66
+            typeParameters
+              covariant U3 @69
+                defaultType: dynamic
+            superclassConstraints
+              M2<U3>
+''');
+  }
+
+  test_inferTypes_method_ofAugment() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment class B {
+  foo(a) => 0;
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+import augment 'b.dart';
+
+class B extends A {}
+''');
+
+    checkElementText(library, r'''
+library
+  imports
+    package:test/a.dart
+  definingUnit
+    classes
+      class B @49
+        augmentation: self::@augmentation::package:test/b.dart::@class::B
+        supertype: A
+        constructors
+          synthetic @-1
+            superConstructor: package:test/a.dart::@class::A::@constructor::new
+        augmented
+          methods
+            self::@augmentation::package:test/b.dart::@class::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      definingUnit
+        classes
+          augment class B @43
+            augmentationTarget: self::@class::B
+            methods
+              foo @49
+                parameters
+                  requiredPositional a @53
+                    type: String
+                returnType: int
+''');
+  }
+
+  test_inferTypes_method_usingAugmentation_interface() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+import 'a.dart';
+augment class B implements A {}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'b.dart';
+
+class B {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class B @32
+        augmentation: self::@augmentation::package:test/b.dart::@class::B
+        constructors
+          synthetic @-1
+        methods
+          foo @38
+            parameters
+              requiredPositional a @42
+                type: String
+            returnType: int
+        augmented
+          interfaces
+            A
+          methods
+            self::@class::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @60
+            augmentationTarget: self::@class::B
+            interfaces
+              A
+''');
+  }
+
+  test_inferTypes_method_usingAugmentation_mixin() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+mixin A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+import 'a.dart';
+augment class B with A {}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'b.dart';
+
+class B {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class B @32
+        augmentation: self::@augmentation::package:test/b.dart::@class::B
+        constructors
+          synthetic @-1
+        methods
+          foo @38
+            parameters
+              requiredPositional a @42
+                type: String
+            returnType: int
+        augmented
+          mixins
+            A
+          methods
+            self::@class::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @60
+            augmentationTarget: self::@class::B
+            mixins
+              A
+''');
+  }
+
+  test_inferTypes_method_withAugment() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment class B {
+  foo(a) => 0;
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+import augment 'b.dart';
+
+class B extends A {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  imports
+    package:test/a.dart
+  definingUnit
+    classes
+      class B @49
+        augmentation: self::@augmentation::package:test/b.dart::@class::B
+        supertype: A
+        constructors
+          synthetic @-1
+            superConstructor: package:test/a.dart::@class::A::@constructor::new
+        methods
+          foo @65
+            parameters
+              requiredPositional a @69
+                type: String
+            returnType: int
+            augmentation: self::@augmentation::package:test/b.dart::@class::B::@method::foo
+        augmented
+          methods
+            self::@augmentation::package:test/b.dart::@class::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      definingUnit
+        classes
+          augment class B @43
+            augmentationTarget: self::@class::B
+            methods
+              foo @49
+                parameters
+                  requiredPositional a @53
+                    type: String
+                returnType: int
+''');
+  }
+
   test_modifiers_abstract() async {
     newFile('$testPackageLibPath/a.dart', r'''
 library augment 'test.dart';
@@ -46216,6 +46528,226 @@ library
             augmentationTarget: self::@mixin::A
             superclassConstraints
               I2<T2>
+''');
+  }
+
+  test_inferTypes_method_ofAugment() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment mixin B {
+  foo(a) => 0;
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+import augment 'b.dart';
+
+mixin B on A {}
+''');
+
+    checkElementText(library, r'''
+library
+  imports
+    package:test/a.dart
+  definingUnit
+    mixins
+      mixin B @49
+        augmentation: self::@augmentation::package:test/b.dart::@mixin::B
+        superclassConstraints
+          A
+        augmented
+          superclassConstraints
+            A
+          methods
+            self::@augmentation::package:test/b.dart::@mixin::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      definingUnit
+        mixins
+          augment mixin B @43
+            augmentationTarget: self::@mixin::B
+            methods
+              foo @49
+                parameters
+                  requiredPositional a @53
+                    type: String
+                returnType: int
+''');
+  }
+
+  test_inferTypes_method_usingAugmentation_interface() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+import 'a.dart';
+augment mixin B implements A {}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'b.dart';
+
+mixin B {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    mixins
+      mixin B @32
+        augmentation: self::@augmentation::package:test/b.dart::@mixin::B
+        superclassConstraints
+          Object
+        methods
+          foo @38
+            parameters
+              requiredPositional a @42
+                type: String
+            returnType: int
+        augmented
+          superclassConstraints
+            Object
+          interfaces
+            A
+          methods
+            self::@mixin::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      imports
+        package:test/a.dart
+      definingUnit
+        mixins
+          augment mixin B @60
+            augmentationTarget: self::@mixin::B
+            interfaces
+              A
+''');
+  }
+
+  test_inferTypes_method_usingAugmentation_superclassConstraint() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+import 'a.dart';
+augment mixin B on A {}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'b.dart';
+
+mixin B {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    mixins
+      mixin B @32
+        augmentation: self::@augmentation::package:test/b.dart::@mixin::B
+        superclassConstraints
+          Object
+        methods
+          foo @38
+            parameters
+              requiredPositional a @42
+                type: String
+            returnType: int
+        augmented
+          superclassConstraints
+            Object
+            A
+          methods
+            self::@mixin::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      imports
+        package:test/a.dart
+      definingUnit
+        mixins
+          augment mixin B @60
+            augmentationTarget: self::@mixin::B
+            superclassConstraints
+              A
+''');
+  }
+
+  test_inferTypes_method_withAugment() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  int foo(String a) => 0;
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment mixin B {
+  foo(a) => 0;
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+import augment 'b.dart';
+
+mixin B on A {
+  foo(a) => 0;
+}
+''');
+
+    checkElementText(library, r'''
+library
+  imports
+    package:test/a.dart
+  definingUnit
+    mixins
+      mixin B @49
+        augmentation: self::@augmentation::package:test/b.dart::@mixin::B
+        superclassConstraints
+          A
+        methods
+          foo @60
+            parameters
+              requiredPositional a @64
+                type: String
+            returnType: int
+            augmentation: self::@augmentation::package:test/b.dart::@mixin::B::@method::foo
+        augmented
+          superclassConstraints
+            A
+          methods
+            self::@augmentation::package:test/b.dart::@mixin::B::@method::foo
+  augmentationImports
+    package:test/b.dart
+      definingUnit
+        mixins
+          augment mixin B @43
+            augmentationTarget: self::@mixin::B
+            methods
+              foo @49
+                parameters
+                  requiredPositional a @53
+                    type: String
+                returnType: int
 ''');
   }
 
