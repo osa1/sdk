@@ -1881,7 +1881,6 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
     if (otherStart + count > otherList.length) {
       throw IterableElementError.tooFew();
     }
-    print("6");
     Lists.copy(otherList, otherStart, this, start, count);
   }
 
