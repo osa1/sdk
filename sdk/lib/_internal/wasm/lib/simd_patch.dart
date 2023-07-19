@@ -175,8 +175,8 @@ final class _NaiveUnmodifiableInt32x4List extends _NaiveInt32x4List
     throw new UnsupportedError("Cannot modify an unmodifiable list");
   }
 
-  // TODO
-  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
+  @override
+  ByteBuffer get buffer => UnmodifiableByteBufferView(super.buffer);
 }
 
 final class _NaiveFloat32x4List extends Object
@@ -252,8 +252,8 @@ final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List
     throw new UnsupportedError("Cannot modify an unmodifiable list");
   }
 
-  // TODO
-  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
+  @override
+  ByteBuffer get buffer => UnmodifiableByteBufferView(super.buffer);
 }
 
 final class _NaiveFloat64x2List extends Object
@@ -323,8 +323,8 @@ final class _NaiveUnmodifiableFloat64x2List extends _NaiveFloat64x2List
     throw new UnsupportedError("Cannot modify an unmodifiable list");
   }
 
-  // TODO
-  // _ByteBuffer get buffer => new _UnmodifiableByteBufferView(buffer);
+  @override
+  ByteBuffer get buffer => UnmodifiableByteBufferView(super.buffer);
 }
 
 final class _NaiveFloat32x4 implements Float32x4 {
