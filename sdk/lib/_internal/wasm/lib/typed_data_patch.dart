@@ -3758,6 +3758,9 @@ class UnmodifiableFloat64ListView {
 class UnmodifiableByteBufferView implements ByteBuffer {
   @patch
   factory UnmodifiableByteBufferView(ByteBuffer data) =>
+      // TODO(omersa): This will break when `data` is `JSArrayBufferImpl`.
+      // Implement an interface for byte buffer that can be made unmodifiable
+      // and implement it in all byte buffers, use that type here.
       _UnmodifiableByteBuffer(unsafeCast<_ByteBuffer>(data));
 }
 
@@ -3765,5 +3768,8 @@ class UnmodifiableByteBufferView implements ByteBuffer {
 class UnmodifiableByteDataView implements ByteData {
   @patch
   factory UnmodifiableByteDataView(ByteData data) =>
+      // TODO(omersa): Same as above, this will break when `data` is
+      // `JSDataViewImpl`. Add an interface for `ByteData` that can be made
+      // immutable, implement it in all `ByteData` subtypes.
       unsafeCast<_ByteData>(data)._immutable();
 }
