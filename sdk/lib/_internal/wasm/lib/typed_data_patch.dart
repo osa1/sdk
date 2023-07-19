@@ -1787,14 +1787,14 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
 
     if (count == 0) return;
 
-    if (this is TypedData && from is TypedData) {
+    if (from is TypedData) {
+      // We only add this mixin to typed lists in this library so we know
+      // `this` is `TypedData`.
       final TypedData destTypedData = unsafeCast<TypedData>(this);
       final TypedData fromTypedData = unsafeCast<TypedData>(from);
 
-      final _ByteBuffer destBuffer =
-          unsafeCast<_ByteBuffer>(destTypedData.buffer);
-      final _ByteBuffer fromBuffer =
-          unsafeCast<_ByteBuffer>(fromTypedData.buffer);
+      final ByteBuffer destBuffer = destTypedData.buffer;
+      final ByteBuffer fromBuffer = fromTypedData.buffer;
 
       final destDartElementSizeInBytes = destTypedData.elementSizeInBytes;
       final fromDartElementSizeInBytes = fromTypedData.elementSizeInBytes;
@@ -1816,9 +1816,6 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
       // We don't check for `_F32ByteBuffer` and `_F64ByteBuffer` here as the
       // receiver is an int array and if the buffer is a F32/F64 buffer that
       // means casting needs to happen when reading.
-      //
-      // TODO: Make sure all type tests below are simple class ID checks. If
-      // they're not, rewrite them as class ID checks.
       if (destDartElementSizeInBytes == fromDartElementSizeInBytes) {
         if (destDartElementSizeInBytes == 1 &&
             destBuffer is _I8ByteBuffer &&
@@ -1856,6 +1853,7 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
         }
       }
 
+      // TODO(#52971): Use unchecked list access functions below.
       if (destBuffer == fromBuffer) {
         final fromAsList = from as List<int>;
         final tempBuffer = _createList(count);
@@ -2194,13 +2192,13 @@ mixin _TypedDoubleListMixin<SpawnedType extends List<double>>
     if (count == 0) return;
 
     if (this is TypedData && from is TypedData) {
+      // We only add this mixin to typed lists in this library so we know
+      // `this` is `TypedData`.
       final TypedData destTypedData = unsafeCast<TypedData>(this);
       final TypedData fromTypedData = unsafeCast<TypedData>(from);
 
-      final _ByteBuffer destBuffer =
-          unsafeCast<_ByteBuffer>(destTypedData.buffer);
-      final _ByteBuffer fromBuffer =
-          unsafeCast<_ByteBuffer>(fromTypedData.buffer);
+      final ByteBuffer destBuffer = destTypedData.buffer;
+      final ByteBuffer fromBuffer = fromTypedData.buffer;
 
       final destDartElementSizeInBytes = destTypedData.elementSizeInBytes;
       final fromDartElementSizeInBytes = fromTypedData.elementSizeInBytes;
@@ -3610,9 +3608,8 @@ class UnmodifiableUint8ListView {
       return _UnmodifiableU8List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowU8List>(list);
       return _UnmodifiableSlowU8List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3625,9 +3622,8 @@ class UnmodifiableInt8ListView {
       return _UnmodifiableI8List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowI8List>(list);
       return _UnmodifiableSlowI8List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3640,9 +3636,8 @@ class UnmodifiableUint8ClampedListView {
       return _UnmodifiableU8ClampedList._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowU8ClampedList>(list);
       return _UnmodifiableSlowU8ClampedList._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3655,9 +3650,8 @@ class UnmodifiableUint16ListView {
       return _UnmodifiableU16List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowU16List>(list);
       return _UnmodifiableSlowU16List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3670,9 +3664,8 @@ class UnmodifiableInt16ListView {
       return _UnmodifiableI16List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowI16List>(list);
       return _UnmodifiableSlowI16List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3685,9 +3678,8 @@ class UnmodifiableUint32ListView {
       return _UnmodifiableU32List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowU32List>(list);
       return _UnmodifiableSlowU32List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3700,9 +3692,8 @@ class UnmodifiableInt32ListView {
       return _UnmodifiableI32List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowI32List>(list);
       return _UnmodifiableSlowI32List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3715,9 +3706,8 @@ class UnmodifiableUint64ListView {
       return _UnmodifiableU64List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowU64List>(list);
       return _UnmodifiableSlowU64List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3730,9 +3720,8 @@ class UnmodifiableInt64ListView {
       return _UnmodifiableI64List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowI64List>(list);
       return _UnmodifiableSlowI64List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3745,9 +3734,8 @@ class UnmodifiableFloat32ListView {
       return _UnmodifiableF32List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowF32List>(list);
       return _UnmodifiableSlowF32List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
@@ -3760,9 +3748,8 @@ class UnmodifiableFloat64ListView {
       return _UnmodifiableF64List._(
           list._data, list._offsetInElements, list.length);
     } else {
-      final slowList = unsafeCast<_SlowF64List>(list);
       return _UnmodifiableSlowF64List._(
-          slowList.buffer, slowList.offsetInBytes, slowList.length);
+          list.buffer, list.offsetInBytes, list.length);
     }
   }
 }
