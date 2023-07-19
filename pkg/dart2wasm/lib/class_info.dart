@@ -47,9 +47,6 @@ class FieldIndex {
   static const functionTypeNamedParameters = 9;
   static const recordTypeNames = 3;
   static const recordTypeFieldTypes = 4;
-  static const byteDataViewLength = 2;
-  static const byteDataViewTypedData = 3;
-  static const byteDataViewOffsetInBytes = 4;
   static const suspendStateIterator = 4;
   static const suspendStateContext = 5;
   static const suspendStateTargetIndex = 6;

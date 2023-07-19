@@ -69,6 +69,7 @@ final class _TypedListIterator<E> implements Iterator<E> {
   bool moveNext() {
     int nextPosition = _position + 1;
     if (nextPosition < _length) {
+      // TODO(#52971): Use unchecked read here.
       _current = _array[nextPosition];
       _position = nextPosition;
       return true;
@@ -86,8 +87,8 @@ final class _TypedListIterator<E> implements Iterator<E> {
 //
 
 /// The base class for all [ByteData] implementations. This provides slow
-/// implementations for get and set methods using abstract [getUint8Unchecked]
-/// and [setUint8Unchecked] methods. Implementations should implement these
+/// implementations for get and set methods using abstract [_getUint8Unchecked]
+/// and [_setUint8Unchecked] methods. Implementations should implement these
 /// methods and override get/set methods for elements matching the buffer
 /// element type to provide fast access.
 abstract class _ByteData implements ByteData {
