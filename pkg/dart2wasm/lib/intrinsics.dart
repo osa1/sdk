@@ -350,6 +350,7 @@ class Intrinsifier {
 
     // WasmIntArray.copy
     // WasmFloatArray.copy
+    // WasmObjectArray.copy
     if (cls.superclass == translator.wasmArrayRefClass && name == 'copy') {
       final DartType elementType =
           (receiverType as InterfaceType).typeArguments.single;
