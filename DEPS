@@ -151,7 +151,7 @@ vars = {
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "json_rpc_2_rev": "509f71eef90ec5afb5486b69dab7fed97b9f1eef",
   "leak_tracker_rev": "515612e0f7b5e2477a82341a302814ef2647ed6e",
-  "linter_rev": "b95c56ac43f34005470e2f8f74bab7662d8898fe", # disable rev_sdk_deps.dart
+  "linter_rev": "6c1920198fc92af215297043609cecb4ac487a2a", # disable rev_sdk_deps.dart
   "lints_rev": "e03dc048796fa4bfb64c11eadcb44b5dc76a5757",
   "logging_rev": "521498757ed3eeae151c2d4796404e8947baa04c",
   "markdown_rev": "ee4e1b36f21a6815385b157f8fff12af28bdcf9a",
@@ -179,7 +179,7 @@ vars = {
   "test_descriptor_rev": "54a4c592226a986abd04ed2cb72dca9bf92787c5",
   "test_process_rev": "b360784a9149b15888aed8d7cf167bb46fe733d5",
   "test_reflective_loader_rev": "0bfaad91ed308ce9da11b48395c8210d7542c16b",
-  "tools_rev": "765701d65ee530782f9ed69a9c5885c921d7e232",
+  "tools_rev": "600ea0a46c79bc457cc00f7558cbdc9bf041c846",
   "typed_data_rev": "a20be901e11eddcbd6e5735fb01b64d28c94c49d",
   "usage_rev": "09bb8472fdafff2c48a19aabbcf57b3af0f43934",
   "vector_math_rev": "c14703830d47818a82ce8a9fcb70029e5e8e6a16",

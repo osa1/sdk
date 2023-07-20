@@ -117,19 +117,17 @@ class AugmentedInlineClassElementImpl extends AugmentedNamedInstanceElementImpl
 abstract class AugmentedInstanceElementImpl
     implements AugmentedInstanceElement {
   @override
-  List<MethodElement> methods = [];
+  List<FieldElement> fields = [];
 
   @override
-  // TODO: implement accessors
-  List<PropertyAccessorElement> get accessors => throw UnimplementedError();
+  List<PropertyAccessorElement> accessors = [];
+
+  @override
+  List<MethodElement> methods = [];
 
   @override
   // TODO: implement declaration
   InstanceElement get declaration => throw UnimplementedError();
-
-  @override
-  // TODO: implement fields
-  List<FieldElement> get fields => throw UnimplementedError();
 
   @override
   // TODO: implement metadata
@@ -137,26 +135,56 @@ abstract class AugmentedInstanceElementImpl
 
   @override
   FieldElement? getField(String name) {
-    // TODO: implement getField
-    throw UnimplementedError();
+    final length = fields.length;
+    for (var i = 0; i < length; i++) {
+      final field = fields[i];
+      if (field.name == name) {
+        return field;
+      }
+    }
+    return null;
   }
 
   @override
   PropertyAccessorElement? getGetter(String name) {
-    // TODO: implement getGetter
-    throw UnimplementedError();
+    final length = accessors.length;
+    for (var i = 0; i < length; i++) {
+      final accessor = accessors[i];
+      if (accessor.isGetter && accessor.name == name) {
+        return accessor;
+      }
+    }
+    return null;
   }
 
   @override
   MethodElement? getMethod(String name) {
-    // TODO: implement getMethod
-    throw UnimplementedError();
+    final length = methods.length;
+    for (var i = 0; i < length; i++) {
+      final method = methods[i];
+      if (method.name == name) {
+        return method;
+      }
+    }
+    return null;
   }
 
   @override
   PropertyAccessorElement? getSetter(String name) {
-    // TODO: implement getSetter
-    throw UnimplementedError();
+    final nameLength = name.length;
+    final length = accessors.length;
+    for (var i = 0; i < length; i++) {
+      final accessor = accessors[i];
+      if (accessor.isSetter) {
+        final accessorName = accessor.name;
+        if (accessorName.length == nameLength + 1) {
+          if (accessorName.startsWith(name)) {
+            return accessor;
+          }
+        }
+      }
+    }
+    return null;
   }
 }
 
@@ -5631,7 +5659,9 @@ abstract class NotAugmentedInstanceElementImpl
 
   @override
   FieldElement? getField(String name) {
-    for (final field in fields) {
+    final length = fields.length;
+    for (var i = 0; i < length; i++) {
+      final field = fields[i];
       if (field.name == name) {
         return field;
       }
@@ -5641,9 +5671,11 @@ abstract class NotAugmentedInstanceElementImpl
 
   @override
   PropertyAccessorElement? getGetter(String name) {
-    for (final getter in accessors) {
-      if (getter.isGetter && getter.name == name) {
-        return getter;
+    final length = accessors.length;
+    for (var i = 0; i < length; i++) {
+      final accessor = accessors[i];
+      if (accessor.isGetter && accessor.name == name) {
+        return accessor;
       }
     }
     return null;
@@ -5651,7 +5683,9 @@ abstract class NotAugmentedInstanceElementImpl
 
   @override
   MethodElement? getMethod(String name) {
-    for (final method in methods) {
+    final length = methods.length;
+    for (var i = 0; i < length; i++) {
+      final method = methods[i];
       if (method.name == name) {
         return method;
       }
@@ -5661,9 +5695,17 @@ abstract class NotAugmentedInstanceElementImpl
 
   @override
   PropertyAccessorElement? getSetter(String name) {
-    for (final setter in accessors) {
-      if (setter.isSetter && setter.name == name) {
-        return setter;
+    final nameLength = name.length;
+    final length = accessors.length;
+    for (var i = 0; i < length; i++) {
+      final accessor = accessors[i];
+      if (accessor.isSetter) {
+        final accessorName = accessor.name;
+        if (accessorName.length == nameLength + 1) {
+          if (accessorName.startsWith(name)) {
+            return accessor;
+          }
+        }
       }
     }
     return null;
@@ -6063,17 +6105,16 @@ class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
 /// A concrete implementation of a [PropertyAccessorElement].
 class PropertyAccessorElementImpl extends ExecutableElementImpl
     implements PropertyAccessorElement {
-  /// The variable associated with this accessor.
-  @override
-  late PropertyInducingElementImpl variable;
+  late PropertyInducingElementImpl _variable;
 
   /// If this method is a synthetic element which is based on another method
   /// with some modifications (such as making some parameters covariant),
   /// this field contains the base method.
   PropertyAccessorElement? prototype;
 
-  @override
-  PropertyAccessorElementImpl? augmentationTarget;
+  PropertyAccessorElementImpl? _augmentation;
+
+  PropertyAccessorElementImpl? _augmentationTarget;
 
   /// Initialize a newly created property accessor element to have the given
   /// [name] and [offset].
@@ -6081,8 +6122,9 @@ class PropertyAccessorElementImpl extends ExecutableElementImpl
 
   /// Initialize a newly created synthetic property accessor element to be
   /// associated with the given [variable].
-  PropertyAccessorElementImpl.forVariable(this.variable, {Reference? reference})
-      : super(variable.name, -1, reference: reference) {
+  PropertyAccessorElementImpl.forVariable(this._variable,
+      {Reference? reference})
+      : super(_variable.name, -1, reference: reference) {
     isAbstract = variable is FieldElementImpl &&
         (variable as FieldElementImpl).isAbstract;
     isStatic = variable.isStatic;
@@ -6090,9 +6132,23 @@ class PropertyAccessorElementImpl extends ExecutableElementImpl
   }
 
   @override
-  PropertyAccessorElement? get augmentation {
-    // TODO(scheglov) implement
-    throw UnimplementedError();
+  PropertyAccessorElementImpl? get augmentation {
+    linkedData?.read(this);
+    return _augmentation;
+  }
+
+  set augmentation(PropertyAccessorElementImpl? value) {
+    _augmentation = value;
+  }
+
+  @override
+  PropertyAccessorElementImpl? get augmentationTarget {
+    linkedData?.read(this);
+    return _augmentationTarget;
+  }
+
+  set augmentationTarget(PropertyAccessorElementImpl? value) {
+    _augmentationTarget = value;
   }
 
   @override
@@ -6166,6 +6222,16 @@ class PropertyAccessorElementImpl extends ExecutableElementImpl
       return considerCanonicalizeString("${super.name}=");
     }
     return super.name;
+  }
+
+  @override
+  PropertyInducingElementImpl get variable {
+    linkedData?.read(this);
+    return _variable;
+  }
+
+  set variable(PropertyInducingElementImpl value) {
+    _variable = value;
   }
 
   @override

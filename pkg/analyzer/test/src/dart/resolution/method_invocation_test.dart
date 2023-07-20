@@ -137,6 +137,269 @@ CascadeExpression
 ''');
   }
 
+  test_class_explicitThis_inAugmentation_augmentationDeclares() async {
+    final a = newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  void foo() {}
+
+  void f() {
+    this.foo();
+  }
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+class A {}
+''');
+
+    await resolveFile2(a.path);
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ThisExpression
+    thisKeyword: this
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_class_explicitThis_inDeclaration_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+class A {
+  void f() {
+    this.foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ThisExpression
+    thisKeyword: this
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_class_implicitStatic_inDeclaration_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  static void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+class A {
+  void f() {
+    foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_class_implicitThis_inDeclaration_augmentationAugments() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  augment void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+class A {
+  void foo() {}
+
+  void f() {
+    foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_class_implicitThis_inDeclaration_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+class A {
+  void f() {
+    foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_hasReceiver_className_augmentationAugments() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  augment static void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+class A {
+  static void foo() {}
+}
+
+void f() {
+  A.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: A
+    staticElement: self::@class::A
+    staticType: null
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_hasReceiver_className_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  static void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+class A {}
+
+void f() {
+  A.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: A
+    staticElement: self::@class::A
+    staticType: null
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
   test_hasReceiver_deferredImportPrefix_loadLibrary_optIn_fromOptOut() async {
     noSoundNullSafety = false;
     newFile('$testPackageLibPath/a.dart', r'''
@@ -316,6 +579,84 @@ FunctionExpressionInvocation
 ''');
   }
 
+  test_hasReceiver_interfaceType_class_augmentationAugments() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  augment void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+class A {
+  void foo() {}
+}
+
+void f(A a) {
+  a.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_hasReceiver_interfaceType_class_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment class A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+class A {}
+
+void f(A a) {
+  a.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@class::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
   test_hasReceiver_interfaceType_enum() async {
     await assertNoErrorsInCode(r'''
 enum E {
@@ -374,6 +715,84 @@ MethodInvocation
   methodName: SimpleIdentifier
     token: foo
     staticElement: self::@mixin::M::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_hasReceiver_interfaceType_mixin_augmentationAugments() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment mixin A {
+  augment void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+mixin A {
+  void foo() {}
+}
+
+void f(A a) {
+  a.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@mixin::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_hasReceiver_interfaceType_mixin_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment mixin A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+mixin A {}
+
+void f(A a) {
+  a.foo();
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: SimpleIdentifier
+    token: a
+    staticElement: self::@function::f::@parameter::a
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@mixin::A::@method::foo
     staticType: void Function()
   argumentList: ArgumentList
     leftParenthesis: (
@@ -1618,6 +2037,80 @@ MethodInvocation
   staticType: int
   typeArgumentTypes
     int
+''');
+  }
+
+  test_mixin_explicitThis_inDeclaration_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment mixin A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+mixin A {
+  void f() {
+    this.foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  target: ThisExpression
+    thisKeyword: this
+    staticType: A
+  operator: .
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@mixin::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
+''');
+  }
+
+  test_mixin_implicitThis_inDeclaration_augmentationDeclares() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart'
+
+augment mixin A {
+  void foo() {}
+}
+''');
+    await assertNoErrorsInCode(r'''
+import augment 'a.dart';
+
+void foo() {}
+
+mixin A {
+  void f() {
+    foo();
+  }
+}
+''');
+
+    final node = findNode.singleMethodInvocation;
+    assertResolvedNodeText(node, r'''
+MethodInvocation
+  methodName: SimpleIdentifier
+    token: foo
+    staticElement: self::@augmentation::package:test/a.dart::@mixin::A::@method::foo
+    staticType: void Function()
+  argumentList: ArgumentList
+    leftParenthesis: (
+    rightParenthesis: )
+  staticInvokeType: void Function()
+  staticType: void
 ''');
   }
 

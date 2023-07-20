@@ -342,6 +342,7 @@ class InheritanceManager3 {
   void _addImplemented(
     Map<Name, ExecutableElement> implemented,
     InterfaceElement element,
+    AugmentedInterfaceElement augmented,
   ) {
     var libraryUri = element.librarySource.uri;
 
@@ -352,8 +353,8 @@ class InheritanceManager3 {
       }
     }
 
-    element.methods.forEach(addMember);
-    element.accessors.forEach(addMember);
+    augmented.methods.forEach(addMember);
+    augmented.accessors.forEach(addMember);
   }
 
   void _addMixinMembers({
@@ -584,11 +585,11 @@ class InheritanceManager3 {
     }
 
     implemented = Map.of(implemented);
-    _addImplemented(implemented, element);
+    _addImplemented(implemented, element, augmented);
 
     // If a class declaration has a member declaration, the signature of that
     // member declaration becomes the signature in the interface.
-    var declared = _getTypeMembers(element);
+    var declared = _getTypeMembers(element, augmented);
 
     // If a class declaration does not have a member declaration with a
     // particular name, but some super-interfaces do have a member with that
@@ -685,7 +686,7 @@ class InheritanceManager3 {
       );
     }
 
-    var declared = _getTypeMembers(element);
+    var declared = _getTypeMembers(element, augmented);
 
     var interface = Map.of(declared);
     var interfaceConflicts = _findMostSpecificFromNamedCandidates(
@@ -696,7 +697,7 @@ class InheritanceManager3 {
     );
 
     var implemented = <Name, ExecutableElement>{};
-    _addImplemented(implemented, element);
+    _addImplemented(implemented, element, augmented);
 
     return Interface._(
       interface,
@@ -886,11 +887,12 @@ class InheritanceManager3 {
 
   static Map<Name, ExecutableElement> _getTypeMembers(
     InterfaceElement element,
+    AugmentedInterfaceElement augmented,
   ) {
     var declared = <Name, ExecutableElement>{};
     var libraryUri = element.librarySource.uri;
 
-    var methods = element.methods;
+    var methods = augmented.methods;
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
       if (!method.isStatic) {
@@ -899,7 +901,7 @@ class InheritanceManager3 {
       }
     }
 
-    var accessors = element.accessors;
+    var accessors = augmented.accessors;
     for (var i = 0; i < accessors.length; i++) {
       var accessor = accessors[i];
       if (!accessor.isStatic) {
