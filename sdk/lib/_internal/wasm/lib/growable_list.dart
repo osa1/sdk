@@ -7,16 +7,34 @@ part of "core_patch.dart";
 @pragma("wasm:entry-point")
 class _GrowableList<E> extends _ModifiableList<E> {
   void insert(int index, E element) {
+    if (index == length) {
+      return add(element);
+    }
+
     if ((index < 0) || (index > length)) {
       throw RangeError.range(index, 0, length);
     }
-    int oldLength = this.length;
-    add(element);
-    if (index == oldLength) {
-      return;
+
+    final WasmObjectArray<Object?> data;
+    if (length == _capacity) {
+      data = WasmObjectArray<Object?>(_nextCapacity(_capacity));
+      if (index != 0) {
+        // Copy elements before the insertion point.
+        data.copy(0, _data, 0, index - 1);
+      }
+    } else {
+      data = _data;
     }
-    Lists.copy(this, index, this, index + 1, oldLength - index);
-    this._data.write(index, element);
+
+    // Shift elements, or copy elements after insertion point if we allocated a
+    // new array.
+    data.copy(index + 1, _data, index, length - index);
+
+    // Insert new element.
+    data.write(index, element);
+
+    _data = data;
+    _length += 1;
   }
 
   E removeAt(int index) {
