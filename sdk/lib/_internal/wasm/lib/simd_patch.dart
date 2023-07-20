@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal' show patch, FixedLengthListMixin;
-import 'dart:_simd_list';
+import 'dart:_simd';
 import 'dart:collection' show ListMixin;
 import 'dart:math' as math;
 

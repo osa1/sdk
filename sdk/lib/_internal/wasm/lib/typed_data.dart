@@ -24,7 +24,7 @@ import 'dart:_internal'
         unsafeCast,
         WhereIterable,
         WhereTypeIterable;
-import 'dart:_simd_list';
+import 'dart:_simd';
 import 'dart:_wasm';
 
 import 'dart:collection' show ListBase;

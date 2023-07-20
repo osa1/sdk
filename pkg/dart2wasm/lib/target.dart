@@ -126,7 +126,7 @@ class WasmTarget extends Target {
   bool mayDefineRestrictedType(Uri uri) =>
       uri.isScheme('dart') &&
       (uri.path == 'core' ||
-          uri.path == '_simd_list' ||
+          uri.path == '_simd' ||
           uri.path == 'typed_data' ||
           uri.path == '_typed_data' ||
           uri.path == '_boxed_double' ||

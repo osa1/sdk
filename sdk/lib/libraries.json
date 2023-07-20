@@ -217,8 +217,8 @@
       "_http": {
         "uri": "_http/http.dart"
       },
-      "_simd_list": {
-        "uri": "_internal/wasm/lib/simd_list.dart"
+      "_simd": {
+        "uri": "_internal/wasm/lib/simd.dart"
       },
       "_typed_data": {
         "uri": "_internal/wasm/lib/typed_data.dart"
