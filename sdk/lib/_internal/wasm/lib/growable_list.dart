@@ -87,9 +87,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
   factory _GrowableList.filled(int length, E fill) {
     final result = _GrowableList<E>(length);
     if (fill != null) {
-      for (int i = 0; i < result.length; i++) {
-        result._data.write(i, fill);
-      }
+      result._data.fill(0, fill, length);
     }
     return result;
   }

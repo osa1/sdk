@@ -375,6 +375,30 @@ class Intrinsifier {
       return codeGen.voidMarker;
     }
 
+    // WasmIntArray.fill
+    // WasmFloatArray.fill
+    // WasmObjectArray.fill
+    if (cls.superclass == translator.wasmArrayRefClass && name == 'fill') {
+      final DartType elementType =
+          (receiverType as InterfaceType).typeArguments.single;
+      final w.ArrayType arrayType =
+          translator.arrayTypeForDartType(elementType);
+
+      final Expression array = receiver;
+      final Expression offset = node.arguments.positional[0];
+      final Expression value = node.arguments.positional[1];
+      final Expression size = node.arguments.positional[2];
+
+      codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
+      codeGen.wrap(offset, w.NumType.i64);
+      b.i32_wrap_i64();
+      codeGen.wrap(value, translator.translateType(elementType));
+      codeGen.wrap(size, w.NumType.i64);
+      b.i32_wrap_i64();
+      b.array_fill(arrayType);
+      return codeGen.voidMarker;
+    }
+
     // Wasm(I32|I64|F32|F64) conversions
     if (cls.superclass?.superclass == translator.wasmTypesBaseClass) {
       w.StorageType receiverType = translator.builtinTypes[cls]!;

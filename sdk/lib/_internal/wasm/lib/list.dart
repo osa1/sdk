@@ -123,10 +123,7 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
   factory _List.filled(int length, E fill) {
     final result = _List<E>(length);
     if (fill != null) {
-      // TODO(omersa): Use `array.fill` here.
-      for (int i = 0; i < result.length; i++) {
-        result[i] = fill;
-      }
+      result._data.fill(0, fill, length);
     }
     return result;
   }
