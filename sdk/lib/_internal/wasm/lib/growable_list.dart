@@ -38,6 +38,9 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   E removeAt(int index) {
+    // TODO(omersa): Check if removal will cause shrinking. If it will create a
+    // new list directly, instead of first removing the element and then
+    // shrinking.
     var result = this[index];
     int newLength = this.length - 1;
     if (index < newLength) {
@@ -186,9 +189,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
     if (shouldShrinkToFit) {
       _shrink(new_capacity, new_length);
     } else {
-      for (int i = new_length; i < length; i++) {
-        _data.write(i, null);
-      }
+      _data.fill(new_length, null, length - new_length);
     }
     _setLength(new_length);
   }
