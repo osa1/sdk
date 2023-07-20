@@ -44,7 +44,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
     var result = this[index];
     int newLength = this.length - 1;
     if (index < newLength) {
-      Lists.copy(this, index + 1, this, index, newLength - index);
+      _data.copy(index, _data, index + 1, newLength - index);
     }
     this.length = newLength;
     return result;
@@ -85,7 +85,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   void removeRange(int start, int end) {
     RangeError.checkValidRange(start, end, this.length);
-    Lists.copy(this, end, this, start, this.length - end);
+    _data.copy(start, _data, end, length - end);
     this.length = this.length - (end - start);
   }
 
