@@ -1023,6 +1023,7 @@ class RestoreWriteBarrierInvariantVisitor : public ObjectPointerVisitor {
 void Thread::RestoreWriteBarrierInvariant(RestoreWriteBarrierInvariantOp op) {
   ASSERT(IsAtSafepoint() || OwnsGCSafepoint());
   ASSERT(IsDartMutatorThread());
+  if (!FLAG_eliminate_write_barriers) return;
 
   const StackFrameIterator::CrossThreadPolicy cross_thread_policy =
       StackFrameIterator::kAllowCrossThreadIteration;
@@ -1140,14 +1141,14 @@ bool Thread::ObjectAtOffset(intptr_t offset, Object* object) {
 
 intptr_t Thread::OffsetFromThread(const RuntimeEntry* runtime_entry) {
 #define COMPUTE_OFFSET(name)                                                   \
-  if (runtime_entry->function() == k##name##RuntimeEntry.function()) {         \
+  if (runtime_entry == &k##name##RuntimeEntry) {                               \
     return Thread::name##_entry_point_offset();                                \
   }
   RUNTIME_ENTRY_LIST(COMPUTE_OFFSET)
 #undef COMPUTE_OFFSET
 
 #define COMPUTE_OFFSET(returntype, name, ...)                                  \
-  if (runtime_entry->function() == k##name##RuntimeEntry.function()) {         \
+  if (runtime_entry == &k##name##RuntimeEntry) {                               \
     return Thread::name##_entry_point_offset();                                \
   }
   LEAF_RUNTIME_ENTRY_LIST(COMPUTE_OFFSET)

@@ -913,6 +913,12 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     Iterable<Supertype> transitiveImplementedTypes(Class cls) {
       var allImplementedTypes = <Supertype>{};
       var toVisit = ListQueue<Supertype>()..addAll(cls.implementedTypes);
+      if (cls.isMixinApplication) {
+        // Implemented types can come through the immediate mixin so we seed
+        // the search with it as well.
+        var mixedInType = cls.mixedInType;
+        if (mixedInType != null) toVisit.add(mixedInType);
+      }
       while (toVisit.isNotEmpty) {
         var supertype = toVisit.removeFirst();
         var superclass = supertype.classNode;
@@ -1724,6 +1730,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         } else {
           type = visitFunctionType(reifiedType);
           if (_options.newRuntimeTypes &&
+              !member.isStatic &&
               reifiedType.typeParameters.isNotEmpty) {
             // Instance methods with generic type parameters require extra
             // information to support dynamic calls. The default values for the
@@ -1733,8 +1740,18 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
               for (var parameter in reifiedType.typeParameters)
                 _emitType(parameter.defaultType)
             ]);
-            var property = js_ast.Property(memberName, defaultTypeArgs);
-            instanceMethodsDefaultTypeArgs.add(property);
+            instanceMethodsDefaultTypeArgs
+                .add(js_ast.Property(memberName, defaultTypeArgs));
+            // As seen below, sometimes the member signatures are added again
+            // using the extension symbol as the name. That logic is duplicated
+            // here to ensure there are always default type arguments accessible
+            // via the same name as the signature.
+            // TODO(52867): Cleanup default type argument duplication.
+            if (extMethods.contains(name) || extAccessors.contains(name)) {
+              instanceMethodsDefaultTypeArgs.add(js_ast.Property(
+                  _declareMemberName(member, useExtension: true),
+                  defaultTypeArgs));
+            }
           }
         }
         var property = js_ast.Property(memberName, type);
@@ -1742,6 +1759,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         signatures.add(property);
         if (!member.isStatic &&
             (extMethods.contains(name) || extAccessors.contains(name))) {
+          // TODO(52867): Cleanup signature duplication.
           signatures.add(js_ast.Property(
               _declareMemberName(member, useExtension: true), type));
         }
@@ -6075,6 +6093,38 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         // Optimize some internal SDK calls by avoiding the insertion of a
         // runtime cast.
         return args.positional.single.accept(this);
+      } else if (_options.newRuntimeTypes &&
+          node.arguments.positional.length == 2 &&
+          node.arguments.types.length == 1 &&
+          node.arguments.named.isEmpty &&
+          target.name.text == 'extractTypeArguments') {
+        // Inline the extraction and method call at compile time because we
+        // don't preserve the original type argument names into the runtime.
+        // Those names are needed in the evaluation string used to extract the
+        // types from the provided instance.
+        var extractionType = node.arguments.types.single;
+        if (extractionType is! InterfaceType) {
+          throw UnsupportedError(
+              'Type arguments can only be extracted from interface types.');
+        }
+        var extractionTypeParameters = extractionType.classNode.typeParameters;
+        if (extractionTypeParameters.isEmpty) {
+          throw UnsupportedError(
+              'The extraction type must have type arguments to be extracted.');
+        }
+        var extractionTypeParameterNames = extractionTypeParameters
+            .map((p) => '${extractionType.classNode.name}.${p.name!}');
+        var instance = node.arguments.positional.first.accept(this);
+        var function = node.arguments.positional.last.accept(this);
+        var extractedTypeArgs = js_ast.ArrayInitializer([
+          for (var recipe in extractionTypeParameterNames)
+            js.call('#.#(#, "$recipe")', [
+              emitLibraryName(rtiLibrary),
+              _emitMemberName('evalInInstance', memberClass: rtiClass),
+              instance
+            ])
+        ]);
+        return runtimeCall('dgcall(#, #, [])', [function, extractedTypeArgs]);
       }
     }
 

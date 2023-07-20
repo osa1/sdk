@@ -44,6 +44,8 @@ class FindNode {
 
   CascadeExpression get singleCascadeExpression => _single();
 
+  ClassDeclaration get singleClassDeclaration => _single();
+
   ConditionalExpression get singleConditionalExpression => _single();
 
   ConstructorFieldInitializer get singleConstructorFieldInitializer =>
@@ -143,6 +145,8 @@ class FindNode {
   SwitchExpression get singleSwitchExpression => _single();
 
   SwitchPatternCase get singleSwitchPatternCase => _single();
+
+  ThisExpression get singleThisExpression => _single();
 
   TopLevelVariableDeclaration get singleTopLevelVariableDeclaration =>
       _single();

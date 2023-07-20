@@ -173,6 +173,7 @@ buffers
 buggy
 builder`s
 bulk
+bullet
 bump
 bypassing
 c
@@ -282,6 +283,7 @@ condensed
 config
 configs
 configured
+connecting
 connectivity
 consecutive
 considerable
@@ -325,6 +327,7 @@ cross
 cruft
 cryptic
 crypto
+cs
 csslib
 cstefantsova
 ctx
@@ -364,6 +367,7 @@ deepest
 deeply
 def
 defaulting
+defeat
 degrades
 degree
 del
@@ -423,6 +427,9 @@ discussion
 disjoint
 disjointness
 dispatched
+dispose
+disposed
+disposes
 distribute
 diverged
 divided
@@ -464,6 +471,7 @@ efficient
 efficiently
 eight
 eighth
+elected
 elem
 eliminating
 elt
@@ -476,6 +484,7 @@ en
 encapsulation
 end'ed
 end's
+endpoint
 enforce
 enforced
 enforces
@@ -508,6 +517,7 @@ estimation
 et
 eval
 evar
+examines
 exchanging
 execute
 executor
@@ -752,6 +762,7 @@ inspector
 inspired
 inst
 instanceof
+instantiable
 instantiator
 integrate
 intends
@@ -779,6 +790,7 @@ introspect
 introspectable
 introspection
 introspector
+introspectors
 ints
 invariants
 io
@@ -813,6 +825,7 @@ k
 kallentu
 kb
 kernel's
+keyed
 kick
 kill
 klass
@@ -975,6 +988,7 @@ nnbd
 node's
 nomenclature
 nominality
+nonetheless
 nonexistent
 nonimplementation
 nonzero
@@ -1279,6 +1293,7 @@ removal
 remover
 renames
 render
+renders
 reordered
 reparse
 repeating
@@ -1330,6 +1345,7 @@ roundtrip
 row
 row's
 rows
+rp
 rparen
 rpc
 rs
@@ -1518,6 +1534,7 @@ subtraction
 subtracts
 suffixed
 suffixing
+sugared
 suggests
 suite
 sum
@@ -1605,6 +1622,7 @@ tokenized
 tokenizer
 tolerate
 tolerated
+tolerates
 toplevel
 topological
 tops
@@ -1619,6 +1637,7 @@ transforming
 translation
 traversal
 traverse
+traverses
 traversing
 trees
 tricky

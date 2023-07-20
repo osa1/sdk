@@ -1491,11 +1491,6 @@ DART_EXPORT void Dart_ShutdownIsolate() {
   {
     StackZone zone(T);
     HandleScope handle_scope(T);
-#if defined(DEBUG)
-    if (T->isolate()->origin_id() == 0) {
-      T->isolate_group()->ValidateConstants();
-    }
-#endif
     Dart::RunShutdownCallback();
   }
   Dart::ShutdownIsolate(T);
@@ -6170,7 +6165,7 @@ Dart_CompileToKernel(const char* script_uri,
                      const uint8_t* platform_kernel,
                      intptr_t platform_kernel_size,
                      bool incremental_compile,
-                     bool snapshot_compile,
+                     bool for_app_jit_snapshot,
                      const char* package_config,
                      Dart_KernelCompilationVerbosityLevel verbosity) {
   API_TIMELINE_DURATION(Thread::Current());
@@ -6182,8 +6177,8 @@ Dart_CompileToKernel(const char* script_uri,
 #else
   result = KernelIsolate::CompileToKernel(
       script_uri, platform_kernel, platform_kernel_size, 0, nullptr,
-      incremental_compile, snapshot_compile, package_config, nullptr, nullptr,
-      verbosity);
+      incremental_compile, for_app_jit_snapshot, package_config, nullptr,
+      nullptr, verbosity);
   if (incremental_compile) {
     Dart_KernelCompilationResult ack_result =
         result.status == Dart_KernelCompilationStatus_Ok ?
@@ -6241,11 +6236,10 @@ DART_EXPORT bool Dart_DetectNullSafety(const char* script_uri,
   // kernel file or the kernel file of the application,
   // figure out the null safety mode by sniffing the kernel file.
   if (kernel_buffer != nullptr) {
-    const char* error = nullptr;
-    std::unique_ptr<kernel::Program> program = kernel::Program::ReadFromBuffer(
-        kernel_buffer, kernel_buffer_size, &error);
-    if (program != nullptr) {
-      return program->compilation_mode() == NNBDCompiledMode::kStrong;
+    const auto null_safety =
+        kernel::Program::DetectNullSafety(kernel_buffer, kernel_buffer_size);
+    if (null_safety != NNBDCompiledMode::kInvalid) {
+      return null_safety == NNBDCompiledMode::kStrong;
     }
   }
 #endif

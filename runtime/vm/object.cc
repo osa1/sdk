@@ -119,8 +119,6 @@ static const intptr_t kInitPrefixLength = strlen(kInitPrefix);
 
 // A cache of VM heap allocated preinitialized empty ic data entry arrays.
 ArrayPtr ICData::cached_icdata_arrays_[kCachedICDataArrayCount];
-// A VM heap allocated preinitialized empty subtype entry array.
-ArrayPtr SubtypeTestCache::cached_array_;
 
 cpp_vtable Object::builtin_vtables_[kNumPredefinedCids] = {};
 
@@ -562,14 +560,12 @@ void Object::InitNullAndBool(IsolateGroup* isolate_group) {
 
   // Allocate and initialize the null instance.
   // 'null_' must be the first object allocated as it is used in allocation to
-  // clear the object.
+  // clear the pointer fields of objects.
   {
     uword address =
         heap->Allocate(thread, Instance::InstanceSize(), Heap::kOld);
     null_ = static_cast<InstancePtr>(address + kHeapObjectTag);
-    // The call below is using 'null_' to initialize itself.
-    InitializeObject(address, kNullCid, Instance::InstanceSize(),
-                     Instance::ContainsCompressedPointers());
+    InitializeObjectVariant<Instance>(address, kNullCid);
     null_->untag()->SetCanonical();
   }
 
@@ -580,16 +576,14 @@ void Object::InitNullAndBool(IsolateGroup* isolate_group) {
   {
     // Allocate a dummy bool object to give true the desired alignment.
     uword address = heap->Allocate(thread, Bool::InstanceSize(), Heap::kOld);
-    InitializeObject(address, kBoolCid, Bool::InstanceSize(),
-                     Bool::ContainsCompressedPointers());
+    InitializeObject<Bool>(address);
     static_cast<BoolPtr>(address + kHeapObjectTag)->untag()->value_ = false;
   }
   {
     // Allocate true.
     uword address = heap->Allocate(thread, Bool::InstanceSize(), Heap::kOld);
     true_ = static_cast<BoolPtr>(address + kHeapObjectTag);
-    InitializeObject(address, kBoolCid, Bool::InstanceSize(),
-                     Bool::ContainsCompressedPointers());
+    InitializeObject<Bool>(address);
     true_->untag()->value_ = true;
     true_->untag()->SetCanonical();
   }
@@ -597,8 +591,7 @@ void Object::InitNullAndBool(IsolateGroup* isolate_group) {
     // Allocate false.
     uword address = heap->Allocate(thread, Bool::InstanceSize(), Heap::kOld);
     false_ = static_cast<BoolPtr>(address + kHeapObjectTag);
-    InitializeObject(address, kBoolCid, Bool::InstanceSize(),
-                     Bool::ContainsCompressedPointers());
+    InitializeObject<Bool>(address);
     false_->untag()->value_ = false;
     false_->untag()->SetCanonical();
   }
@@ -761,6 +754,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   // allocated (RAW_NULL is not available).
   *empty_array_ = Array::null();
   *empty_instantiations_cache_array_ = Array::null();
+  *empty_subtype_test_cache_array_ = Array::null();
 
   Class& cls = Class::Handle();
 
@@ -769,8 +763,7 @@ void Object::Init(IsolateGroup* isolate_group) {
     intptr_t size = Class::InstanceSize();
     uword address = heap->Allocate(thread, size, Heap::kOld);
     class_class_ = static_cast<ClassPtr>(address + kHeapObjectTag);
-    InitializeObject(address, Class::kClassId, size,
-                     Class::ContainsCompressedPointers());
+    InitializeObject<Class>(address);
 
     Class fake;
     // Initialization from Class::New<Class>.
@@ -1009,8 +1002,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   // Allocate and initialize the empty_array instance.
   {
     uword address = heap->Allocate(thread, Array::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kImmutableArrayCid, Array::InstanceSize(0),
-                     Array::ContainsCompressedPointers());
+    InitializeObjectVariant<Array>(address, kImmutableArrayCid, 0);
     Array::initializeHandle(empty_array_,
                             static_cast<ArrayPtr>(address + kHeapObjectTag));
     empty_array_->untag()->set_length(Smi::New(0));
@@ -1026,9 +1018,7 @@ void Object::Init(IsolateGroup* isolate_group) {
         TypeArguments::Cache::kHeaderSize + TypeArguments::Cache::kEntrySize;
     uword address =
         heap->Allocate(thread, Array::InstanceSize(array_size), Heap::kOld);
-    InitializeObject(address, kImmutableArrayCid,
-                     Array::InstanceSize(array_size),
-                     Array::ContainsCompressedPointers());
+    InitializeObjectVariant<Array>(address, kImmutableArrayCid, array_size);
     Array::initializeHandle(empty_instantiations_cache_array_,
                             static_cast<ArrayPtr>(address + kHeapObjectTag));
     empty_instantiations_cache_array_->untag()->set_length(
@@ -1046,12 +1036,33 @@ void Object::Init(IsolateGroup* isolate_group) {
     empty_instantiations_cache_array_->SetCanonical();
   }
 
+  // Allocate and initialize the empty subtype test cache array instance,
+  // which contains a single unoccupied entry.
+  {
+    const intptr_t array_size = SubtypeTestCache::kTestEntryLength;
+    uword address =
+        heap->Allocate(thread, Array::InstanceSize(array_size), Heap::kOld);
+    InitializeObjectVariant<Array>(address, kImmutableArrayCid, array_size);
+    Array::initializeHandle(empty_subtype_test_cache_array_,
+                            static_cast<ArrayPtr>(address + kHeapObjectTag));
+    empty_subtype_test_cache_array_->untag()->set_length(Smi::New(array_size));
+    // Make the first (and only) entry unoccupied by setting its first element
+    // to the null value.
+    empty_subtype_test_cache_array_->SetAt(
+        SubtypeTestCache::kInstanceCidOrSignature, Object::null_object());
+    smi = TypeArguments::Cache::Sentinel();
+    SubtypeTestCacheTable table(*empty_subtype_test_cache_array_);
+    table.At(0).Set<SubtypeTestCache::kInstanceCidOrSignature>(
+        Object::null_object());
+    // The other contents of the array are immaterial.
+    empty_subtype_test_cache_array_->SetCanonical();
+  }
+
   // Allocate and initialize the canonical empty context scope object.
   {
     uword address =
         heap->Allocate(thread, ContextScope::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kContextScopeCid, ContextScope::InstanceSize(0),
-                     ContextScope::ContainsCompressedPointers());
+    InitializeObject<ContextScope>(address, 0);
     ContextScope::initializeHandle(
         empty_context_scope_,
         static_cast<ContextScopePtr>(address + kHeapObjectTag));
@@ -1066,8 +1077,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address =
         heap->Allocate(thread, ObjectPool::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kObjectPoolCid, ObjectPool::InstanceSize(0),
-                     ObjectPool::ContainsCompressedPointers());
+    InitializeObject<ObjectPool>(address, 0);
     ObjectPool::initializeHandle(
         empty_object_pool_,
         static_cast<ObjectPoolPtr>(address + kHeapObjectTag));
@@ -1080,8 +1090,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     const intptr_t instance_size = CompressedStackMaps::InstanceSize(0);
     uword address = heap->Allocate(thread, instance_size, Heap::kOld);
-    InitializeObject(address, kCompressedStackMapsCid, instance_size,
-                     CompressedStackMaps::ContainsCompressedPointers());
+    InitializeObject<CompressedStackMaps>(address, 0);
     CompressedStackMaps::initializeHandle(
         empty_compressed_stackmaps_,
         static_cast<CompressedStackMapsPtr>(address + kHeapObjectTag));
@@ -1093,8 +1102,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address =
         heap->Allocate(thread, PcDescriptors::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kPcDescriptorsCid, PcDescriptors::InstanceSize(0),
-                     PcDescriptors::ContainsCompressedPointers());
+    InitializeObject<PcDescriptors>(address, 0);
     PcDescriptors::initializeHandle(
         empty_descriptors_,
         static_cast<PcDescriptorsPtr>(address + kHeapObjectTag));
@@ -1107,9 +1115,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address = heap->Allocate(thread, LocalVarDescriptors::InstanceSize(0),
                                    Heap::kOld);
-    InitializeObject(address, kLocalVarDescriptorsCid,
-                     LocalVarDescriptors::InstanceSize(0),
-                     LocalVarDescriptors::ContainsCompressedPointers());
+    InitializeObject<LocalVarDescriptors>(address, 0);
     LocalVarDescriptors::initializeHandle(
         empty_var_descriptors_,
         static_cast<LocalVarDescriptorsPtr>(address + kHeapObjectTag));
@@ -1124,9 +1130,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address =
         heap->Allocate(thread, ExceptionHandlers::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kExceptionHandlersCid,
-                     ExceptionHandlers::InstanceSize(0),
-                     ExceptionHandlers::ContainsCompressedPointers());
+    InitializeObject<ExceptionHandlers>(address, 0);
     ExceptionHandlers::initializeHandle(
         empty_exception_handlers_,
         static_cast<ExceptionHandlersPtr>(address + kHeapObjectTag));
@@ -1139,9 +1143,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address =
         heap->Allocate(thread, ExceptionHandlers::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kExceptionHandlersCid,
-                     ExceptionHandlers::InstanceSize(0),
-                     ExceptionHandlers::ContainsCompressedPointers());
+    InitializeObject<ExceptionHandlers>(address, 0);
     ExceptionHandlers::initializeHandle(
         empty_async_exception_handlers_,
         static_cast<ExceptionHandlersPtr>(address + kHeapObjectTag));
@@ -1155,8 +1157,7 @@ void Object::Init(IsolateGroup* isolate_group) {
   {
     uword address =
         heap->Allocate(thread, TypeArguments::InstanceSize(0), Heap::kOld);
-    InitializeObject(address, kTypeArgumentsCid, TypeArguments::InstanceSize(0),
-                     TypeArguments::ContainsCompressedPointers());
+    InitializeObject<TypeArguments>(address, 0);
     TypeArguments::initializeHandle(
         empty_type_arguments_,
         static_cast<TypeArgumentsPtr>(address + kHeapObjectTag));
@@ -1291,6 +1292,8 @@ void Object::Init(IsolateGroup* isolate_group) {
   ASSERT(empty_array_->IsArray());
   ASSERT(!empty_instantiations_cache_array_->IsSmi());
   ASSERT(empty_instantiations_cache_array_->IsArray());
+  ASSERT(!empty_subtype_test_cache_array_->IsSmi());
+  ASSERT(empty_subtype_test_cache_array_->IsArray());
   ASSERT(!empty_type_arguments_->IsSmi());
   ASSERT(empty_type_arguments_->IsTypeArguments());
   ASSERT(!empty_context_scope_->IsSmi());
@@ -2701,67 +2704,94 @@ StringPtr Object::DictionaryName() const {
 void Object::InitializeObject(uword address,
                               intptr_t class_id,
                               intptr_t size,
-                              bool compressed) {
+                              bool compressed,
+                              uword ptr_field_start_offset,
+                              uword ptr_field_end_offset) {
   // Note: we skip the header word here to avoid a racy read in the concurrent
   // marker from observing the null object when it reads into a heap page
   // allocated after marking started.
   uword cur = address + sizeof(UntaggedObject);
+  uword ptr_field_start = address + ptr_field_start_offset;
+  uword ptr_field_end = address + ptr_field_end_offset;
   uword end = address + size;
-  if (class_id == kInstructionsCid) {
-    compiler::target::uword initial_value = kBreakInstructionFiller;
+  // The start of pointer fields should always be past the object header, even
+  // if there are no pointer fields (ptr_field_end < ptr_field_start).
+  ASSERT(cur <= ptr_field_start);
+  // The start of pointer fields can be at the end for empty payload objects.
+  ASSERT(ptr_field_start <= end);
+  // The end of pointer fields should always be before the end, as the end of
+  // pointer fields is inclusive (the address of the last field to initialize).
+  ASSERT(ptr_field_end < end);
+  bool needs_init = true;
+  if (IsTypedDataBaseClassId(class_id) || class_id == kArrayCid) {
+    // If the size is greater than both kNewAllocatableSize and
+    // kAllocatablePageSize, the object must have been allocated to a new
+    // large page, which must already have been zero initialized by the OS.
+    // Note that zero is a GC-safe value.
+    //
+    // For arrays, the caller will then initialize the fields to null with
+    // safepoint checks to avoid blocking for the full duration of
+    // initializing this array.
+    needs_init =
+        IsAllocatableInNewSpace(size) || IsAllocatableViaFreeLists(size);
+  }
+  if (needs_init) {
+    // Initialize the memory prior to any pointer fields with 0. (This loop
+    // and the next will be a no-op if the object has no pointer fields.)
+    uword initial_value = 0;
+    while (cur < ptr_field_start) {
+      *reinterpret_cast<uword*>(cur) = initial_value;
+      cur += kWordSize;
+    }
+    // Initialize any pointer fields with Object::null().
+    initial_value = static_cast<uword>(null_);
+#if defined(DART_COMPRESSED_POINTERS)
+    if (compressed) {
+      initial_value &= 0xFFFFFFFF;
+      initial_value |= initial_value << 32;
+    }
+    const bool has_pointer_fields = ptr_field_start <= ptr_field_end;
+    // If there are compressed pointer fields and the first compressed pointer
+    // field is not at a word start, then initialize it to Object::null().
+    if (compressed && has_pointer_fields &&
+        (ptr_field_start % kWordSize != 0)) {
+      *reinterpret_cast<compressed_uword*>(ptr_field_start) = initial_value;
+    }
+#endif
+    while (cur <= ptr_field_end) {
+      *reinterpret_cast<uword*>(cur) = initial_value;
+      cur += kWordSize;
+    }
+    // Initialize the memory after any pointer fields with 0, unless this is
+    // an instructions object in which case we use the break instruction.
+    initial_value = class_id == kInstructionsCid ? kBreakInstructionFiller : 0;
+#if defined(DART_COMPRESSED_POINTERS)
+    // If there are compressed pointer fields and the last compressed pointer
+    // field is the start of a word, then initialize the other part of the word
+    // to the new initial value.
+    //
+    // (We're guaranteed there's always space in the object after the last
+    // pointer field in this case since objects are allocated in multiples of
+    // the word size.)
+    if (compressed && has_pointer_fields && (ptr_field_end % kWordSize == 0)) {
+      *reinterpret_cast<compressed_uword*>(ptr_field_end +
+                                           kCompressedWordSize) = initial_value;
+    }
+#endif
     while (cur < end) {
-      *reinterpret_cast<compiler::target::uword*>(cur) = initial_value;
-      cur += compiler::target::kWordSize;
+      *reinterpret_cast<uword*>(cur) = initial_value;
+      cur += kWordSize;
     }
   } else {
-    uword initial_value;
-    bool needs_init;
-    if (IsTypedDataBaseClassId(class_id)) {
-      initial_value = 0;
-      // If the size is greater than both kNewAllocatableSize and
-      // kAllocatablePageSize, the object must have been allocated to a new
-      // large page, which must already have been zero initialized by the OS.
-      needs_init =
-          IsAllocatableInNewSpace(size) || IsAllocatableViaFreeLists(size);
-    } else {
-      initial_value = static_cast<uword>(null_);
-#if defined(DART_COMPRESSED_POINTERS)
-      if (compressed) {
-        initial_value &= 0xFFFFFFFF;
-        initial_value |= initial_value << 32;
-      }
-#endif
-      if (class_id == kArrayCid) {
-        // If the size is greater than both kNewAllocatableSize and
-        // kAllocatablePageSize, the object must have been allocated to a new
-        // large page, which must already have been zero initialized by the OS.
-        // Zero is a GC-safe value. The caller will initialize the fields to
-        // null with safepoint checks to avoid blocking for the full duration of
-        // initializing this array.
-        needs_init =
-            IsAllocatableInNewSpace(size) || IsAllocatableViaFreeLists(size);
-        if (!needs_init) {
-          initial_value = 0;  // For ASSERT below.
-        }
-      } else {
-        needs_init = true;
-      }
-    }
-    if (needs_init) {
-      while (cur < end) {
-        *reinterpret_cast<uword*>(cur) = initial_value;
-        cur += kWordSize;
-      }
-    } else {
-      // Check that MemorySanitizer understands this is initialized.
-      MSAN_CHECK_INITIALIZED(reinterpret_cast<void*>(address), size);
+    // Check that MemorySanitizer understands this is initialized.
+    MSAN_CHECK_INITIALIZED(reinterpret_cast<void*>(address), size);
 #if defined(DEBUG)
-      while (cur < end) {
-        ASSERT(*reinterpret_cast<uword*>(cur) == initial_value);
-        cur += kWordSize;
-      }
-#endif
+    const uword initial_value = 0;
+    while (cur < end) {
+      ASSERT_EQUAL(*reinterpret_cast<uword*>(cur), initial_value);
+      cur += kWordSize;
     }
+#endif
   }
   uword tags = 0;
   ASSERT(class_id != kIllegalCid);
@@ -2796,7 +2826,9 @@ void Object::CheckHandle() const {
 ObjectPtr Object::Allocate(intptr_t cls_id,
                            intptr_t size,
                            Heap::Space space,
-                           bool compressed) {
+                           bool compressed,
+                           uword ptr_field_start_offset,
+                           uword ptr_field_end_offset) {
   ASSERT(Utils::IsAligned(size, kObjectAlignment));
   Thread* thread = Thread::Current();
   ASSERT(thread->execution_state() == Thread::kThreadInVM);
@@ -2825,7 +2857,8 @@ ObjectPtr Object::Allocate(intptr_t cls_id,
 
   ObjectPtr raw_obj;
   NoSafepointScope no_safepoint(thread);
-  InitializeObject(address, cls_id, size, compressed);
+  InitializeObject(address, cls_id, size, compressed, ptr_field_start_offset,
+                   ptr_field_end_offset);
   raw_obj = static_cast<ObjectPtr>(address + kHeapObjectTag);
   ASSERT(cls_id == UntaggedObject::ClassIdTag::decode(raw_obj->untag()->tags_));
   if (raw_obj->IsOldObject() && UNLIKELY(thread->is_marking())) {
@@ -2937,8 +2970,12 @@ ObjectPtr Object::Clone(const Object& orig,
   ASSERT(!orig.IsFunctionType() || !FunctionType::Cast(orig).IsGeneric());
   const Class& cls = Class::Handle(orig.clazz());
   intptr_t size = orig.ptr()->untag()->HeapSize();
+  // All fields (including non-SmiPtr fields) will be initialized with Smi 0,
+  // but the contents of the original object are copied over before the thread
+  // is allowed to reach a safepoint.
   ObjectPtr raw_clone =
-      Object::Allocate(cls.id(), size, space, cls.HasCompressedPointers());
+      Object::Allocate(cls.id(), size, space, cls.HasCompressedPointers(),
+                       from_offset<Object>(), to_offset<Object>());
   NoSafepointScope no_safepoint;
   // Copy the body of the original into the clone.
   uword orig_addr = UntaggedObject::ToAddr(orig.ptr());
@@ -3086,14 +3123,7 @@ TypePtr Class::RareType() const {
 template <class FakeObject, class TargetFakeObject>
 ClassPtr Class::New(IsolateGroup* isolate_group, bool register_class) {
   ASSERT(Object::class_class() != Class::null());
-  Class& result = Class::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Class::kClassId, Class::InstanceSize(), Heap::kOld,
-                         Class::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Class::Handle(Object::Allocate<Class>(Heap::kOld));
   Object::VerifyBuiltinVtable<FakeObject>(FakeObject::kClassId);
   NOT_IN_PRECOMPILED(result.set_token_pos(TokenPosition::kNoSource));
   NOT_IN_PRECOMPILED(result.set_end_token_pos(TokenPosition::kNoSource));
@@ -3189,7 +3219,7 @@ void Class::set_can_be_future(bool value) const {
 }
 
 // Initialize class fields of type Array with empty array.
-void Class::InitEmptyFields() {
+void Class::InitEmptyFields() const {
   if (Object::empty_array().ptr() == Array::null()) {
     // The empty array has not been initialized yet.
     return;
@@ -5001,14 +5031,7 @@ bool Class::InjectCIDFields() const {
 template <class FakeInstance, class TargetFakeInstance>
 ClassPtr Class::NewCommon(intptr_t index) {
   ASSERT(Object::class_class() != Class::null());
-  Class& result = Class::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Class::kClassId, Class::InstanceSize(), Heap::kOld,
-                         Class::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Class::Handle(Object::Allocate<Class>(Heap::kOld));
   // Here kIllegalCid means not-yet-assigned.
   Object::VerifyBuiltinVtable<FakeInstance>(index == kIllegalCid ? kInstanceCid
                                                                  : index);
@@ -5458,6 +5481,11 @@ void Class::set_script(const Script& value) const {
 }
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
+KernelProgramInfoPtr Class::KernelProgramInfo() const {
+  const auto& lib = Library::Handle(library());
+  return lib.kernel_program_info();
+}
+
 void Class::set_token_pos(TokenPosition token_pos) const {
   ASSERT(!token_pos.IsClassifying());
   StoreNonPointer(&untag()->token_pos_, token_pos);
@@ -6365,8 +6393,6 @@ static uword Hash64To32(uint64_t v) {
   return static_cast<uint32_t>(v);
 }
 
-typedef UnorderedHashSet<CanonicalInstanceTraits> CanonicalInstancesSet;
-
 InstancePtr Class::LookupCanonicalInstance(Zone* zone,
                                            const Instance& value) const {
   ASSERT(this->ptr() == value.clazz());
@@ -6397,34 +6423,6 @@ InstancePtr Class::InsertCanonicalConstant(Zone* zone,
     this->set_constants(constants.Release());
   }
   return canonical_value.ptr();
-}
-
-void Class::RehashConstants(Zone* zone) const {
-  intptr_t cid = id();
-  if ((cid == kMintCid) || (cid == kDoubleCid)) {
-    // Constants stored as a plain list or in a hashset with a stable hashcode,
-    // which only depends on the actual value of the constant.
-    return;
-  }
-
-  const Array& old_constants = Array::Handle(zone, constants());
-  if (old_constants.IsNull()) return;
-
-  set_constants(Object::null_array());
-
-  CanonicalInstancesSet set(zone, old_constants.ptr());
-  Instance& constant = Instance::Handle(zone);
-  CanonicalInstancesSet::Iterator it(&set);
-  while (it.MoveNext()) {
-    constant ^= set.GetKey(it.Current());
-    ASSERT(!constant.IsNull());
-    // Shape changes lose the canonical bit because they may result/ in merging
-    // constants. E.g., [x1, y1], [x1, y2] -> [x1].
-    DEBUG_ASSERT(constant.IsCanonical() ||
-                 IsolateGroup::Current()->HasAttemptedReload());
-    InsertCanonicalConstant(zone, constant);
-  }
-  set.Release();
 }
 
 bool Class::RequireCanonicalTypeErasureOfConstants(Zone* zone) const {
@@ -6674,10 +6672,7 @@ const char* TypeParameters::ToCString() const {
 
 TypeParametersPtr TypeParameters::New(Heap::Space space) {
   ASSERT(Object::type_parameters_class() != Class::null());
-  ObjectPtr ptr =
-      Object::Allocate(TypeParameters::kClassId, TypeParameters::InstanceSize(),
-                       space, TypeParameters::ContainsCompressedPointers());
-  return static_cast<TypeParametersPtr>(ptr);
+  return Object::Allocate<TypeParameters>(space);
 }
 
 TypeParametersPtr TypeParameters::New(intptr_t count, Heap::Space space) {
@@ -7634,11 +7629,9 @@ TypeArgumentsPtr TypeArguments::New(intptr_t len, Heap::Space space) {
   }
   TypeArguments& result = TypeArguments::Handle();
   {
-    ObjectPtr raw = Object::Allocate(
-        TypeArguments::kClassId, TypeArguments::InstanceSize(len), space,
-        TypeArguments::ContainsCompressedPointers());
+    auto raw = Object::Allocate<TypeArguments>(space, len);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     // Length must be set before we start storing into the array.
     result.SetLength(len);
     result.SetHash(0);
@@ -7803,32 +7796,34 @@ const char* PatchClass::ToCString() const {
 }
 
 PatchClassPtr PatchClass::New(const Class& wrapped_class,
+                              const KernelProgramInfo& info,
                               const Script& script) {
   const PatchClass& result = PatchClass::Handle(PatchClass::New());
   result.set_wrapped_class(wrapped_class);
+  NOT_IN_PRECOMPILED_RUNTIME(
+      result.untag()->set_kernel_program_info(info.ptr()));
   result.set_script(script);
-  result.set_library_kernel_offset(-1);
+  result.set_kernel_library_index(-1);
   return result.ptr();
 }
 
 PatchClassPtr PatchClass::New() {
   ASSERT(Object::patch_class_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(PatchClass::kClassId, PatchClass::InstanceSize(),
-                       Heap::kOld, PatchClass::ContainsCompressedPointers());
-  return static_cast<PatchClassPtr>(raw);
+  return Object::Allocate<PatchClass>(Heap::kOld);
 }
 
 void PatchClass::set_wrapped_class(const Class& value) const {
   untag()->set_wrapped_class(value.ptr());
 }
 
+#if !defined(DART_PRECOMPILED_RUNTIME)
+void PatchClass::set_kernel_program_info(const KernelProgramInfo& info) const {
+  untag()->set_kernel_program_info(info.ptr());
+}
+#endif
+
 void PatchClass::set_script(const Script& value) const {
   untag()->set_script(value.ptr());
-}
-
-void PatchClass::set_library_kernel_data(const ExternalTypedData& data) const {
-  untag()->set_library_kernel_data(data.ptr());
 }
 
 uword Function::Hash() const {
@@ -8397,8 +8392,8 @@ void Function::SetForwardingTarget(const Function& target) const {
 
 // This field is heavily overloaded:
 //   kernel eval function:    Array[0] = Script
-//                            Array[1] = Kernel data
-//                            Array[2] = Kernel offset of enclosing library
+//                            Array[1] = KernelProgramInfo
+//                            Array[2] = Kernel index of enclosing library
 //   method extractor:        Function extracted closure function
 //   implicit getter:         Field
 //   implicit setter:         Field
@@ -8848,6 +8843,14 @@ void Function::set_token_pos(TokenPosition token_pos) const {
 
 void Function::set_kind_tag(uint32_t value) const {
   untag()->kind_tag_ = value;
+}
+
+bool Function::is_eval_function() const {
+  if (data()->IsArray()) {
+    const intptr_t len = Array::LengthOf(Array::RawCast(data()));
+    return len == static_cast<intptr_t>(EvalFunctionData::kLength);
+  }
+  return false;
 }
 
 void Function::set_packed_fields(uint32_t packed_fields) const {
@@ -9994,10 +9997,7 @@ bool Function::IsImplicitStaticClosureFunction(FunctionPtr func) {
 
 FunctionPtr Function::New(Heap::Space space) {
   ASSERT(Object::function_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(Function::kClassId, Function::InstanceSize(), space,
-                       Function::ContainsCompressedPointers());
-  return static_cast<FunctionPtr>(raw);
+  return Object::Allocate<Function>(space);
 }
 
 FunctionPtr Function::New(const FunctionType& signature,
@@ -10629,13 +10629,17 @@ void Function::InheritKernelOffsetFrom(const Field& src) const {
 #endif
 }
 
-void Function::SetKernelDataAndScript(const Script& script,
-                                      const ExternalTypedData& data,
-                                      intptr_t offset) const {
-  Array& data_field = Array::Handle(Array::New(3));
-  data_field.SetAt(0, script);
-  data_field.SetAt(1, data);
-  data_field.SetAt(2, Smi::Handle(Smi::New(offset)));
+void Function::SetKernelLibraryAndEvalScript(
+    const Script& script,
+    const class KernelProgramInfo& kernel_program_info,
+    intptr_t index) const {
+  Array& data_field = Array::Handle(
+      Array::New(static_cast<intptr_t>(EvalFunctionData::kLength)));
+  data_field.SetAt(static_cast<intptr_t>(EvalFunctionData::kScript), script);
+  data_field.SetAt(static_cast<intptr_t>(EvalFunctionData::kKernelProgramInfo),
+                   kernel_program_info);
+  data_field.SetAt(static_cast<intptr_t>(EvalFunctionData::kKernelLibraryIndex),
+                   Smi::Handle(Smi::New(index)));
   set_data(data_field);
 }
 
@@ -10650,12 +10654,10 @@ ScriptPtr Function::script() const {
     const auto& field = Field::Handle(accessor_field());
     return field.IsNull() ? Script::null() : field.Script();
   }
-  Object& data = Object::Handle(this->data());
-  if (data.IsArray()) {
-    Object& script = Object::Handle(Array::Cast(data).At(0));
-    if (script.IsScript()) {
-      return Script::Cast(script).ptr();
-    }
+  if (is_eval_function()) {
+    const auto& fdata = Array::Handle(Array::RawCast(data()));
+    return Script::RawCast(
+        fdata.At(static_cast<intptr_t>(EvalFunctionData::kScript)));
   }
   if (token_pos() == TokenPosition::kMinSource) {
     // Testing for position 0 is an optimization that relies on temporary
@@ -10678,55 +10680,61 @@ ScriptPtr Function::script() const {
   return Class::Cast(obj).script();
 }
 
-ExternalTypedDataPtr Function::KernelData() const {
-  Object& data = Object::Handle(this->data());
-  if (data.IsArray()) {
-    Object& script = Object::Handle(Array::Cast(data).At(0));
-    if (script.IsScript()) {
-      return ExternalTypedData::RawCast(Array::Cast(data).At(1));
-    }
+#if !defined(DART_PRECOMPILED_RUNTIME)
+KernelProgramInfoPtr Function::KernelProgramInfo() const {
+  if (is_eval_function()) {
+    const auto& fdata = Array::Handle(Array::RawCast(data()));
+    return KernelProgramInfo::RawCast(
+        fdata.At(static_cast<intptr_t>(EvalFunctionData::kKernelProgramInfo)));
   }
   if (IsClosureFunction()) {
-    Function& parent = Function::Handle(parent_function());
-    ASSERT(!parent.IsNull());
-    return parent.KernelData();
+    const auto& parent = Function::Handle(parent_function());
+    return parent.KernelProgramInfo();
   }
-
-  const Object& obj = Object::Handle(untag()->owner());
-  if (obj.IsClass()) {
-    Library& lib = Library::Handle(Class::Cast(obj).library());
-    return lib.kernel_data();
+  const auto& owner = Object::Handle(RawOwner());
+  if (owner.IsClass()) {
+    return Class::Cast(owner).KernelProgramInfo();
   }
-  ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).library_kernel_data();
+  return PatchClass::Cast(owner).kernel_program_info();
 }
 
-intptr_t Function::KernelDataProgramOffset() const {
+TypedDataViewPtr Function::KernelLibrary() const {
+  const auto& info = KernelProgramInfo::Handle(KernelProgramInfo());
+  return info.KernelLibrary(KernelLibraryIndex());
+}
+
+intptr_t Function::KernelLibraryOffset() const {
+  const intptr_t kernel_library_index = KernelLibraryIndex();
+  if (kernel_library_index == -1) return 0;
+  const auto& info = KernelProgramInfo::Handle(KernelProgramInfo());
+  return info.KernelLibraryStartOffset(kernel_library_index);
+}
+
+intptr_t Function::KernelLibraryIndex() const {
   if (IsNoSuchMethodDispatcher() || IsInvokeFieldDispatcher() ||
       IsFfiTrampoline()) {
-    return 0;
+    return -1;
   }
-  Object& data = Object::Handle(this->data());
-  if (data.IsArray()) {
-    Object& script = Object::Handle(Array::Cast(data).At(0));
-    if (script.IsScript()) {
-      return Smi::Value(Smi::RawCast(Array::Cast(data).At(2)));
-    }
+  if (is_eval_function()) {
+    const auto& fdata = Array::Handle(Array::RawCast(data()));
+    return Smi::Value(static_cast<SmiPtr>(fdata.At(
+        static_cast<intptr_t>(EvalFunctionData::kKernelLibraryIndex))));
   }
   if (IsClosureFunction()) {
-    Function& parent = Function::Handle(parent_function());
+    const auto& parent = Function::Handle(parent_function());
     ASSERT(!parent.IsNull());
-    return parent.KernelDataProgramOffset();
+    return parent.KernelLibraryIndex();
   }
 
-  const Object& obj = Object::Handle(untag()->owner());
+  const auto& obj = Object::Handle(untag()->owner());
   if (obj.IsClass()) {
-    Library& lib = Library::Handle(Class::Cast(obj).library());
-    return lib.kernel_offset();
+    const auto& lib = Library::Handle(Class::Cast(obj).library());
+    return lib.kernel_library_index();
   }
   ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).library_kernel_offset();
+  return PatchClass::Cast(obj).kernel_library_index();
 }
+#endif
 
 bool Function::HasOptimizedCode() const {
   return HasCode() && Code::Handle(CurrentCode()).is_optimized();
@@ -11331,12 +11339,7 @@ void ClosureData::set_awaiter_link(Function::AwaiterLink link) const {
 
 ClosureDataPtr ClosureData::New() {
   ASSERT(Object::closure_data_class() != Class::null());
-  ClosureData& data = ClosureData::Handle();
-  data ^=
-      Object::Allocate(ClosureData::kClassId, ClosureData::InstanceSize(),
-                       Heap::kOld, ClosureData::ContainsCompressedPointers());
-  data.set_packed_fields(0);
-  return data.ptr();
+  return Object::Allocate<ClosureData>(Heap::kOld);
 }
 
 const char* ClosureData::ToCString() const {
@@ -11378,10 +11381,7 @@ void FunctionType::SetNumOptionalParameters(
 }
 
 FunctionTypePtr FunctionType::New(Heap::Space space) {
-  ObjectPtr raw =
-      Object::Allocate(FunctionType::kClassId, FunctionType::InstanceSize(),
-                       space, FunctionType::ContainsCompressedPointers());
-  return static_cast<FunctionTypePtr>(raw);
+  return Object::Allocate<FunctionType>(space);
 }
 
 FunctionTypePtr FunctionType::New(intptr_t num_parent_type_arguments,
@@ -11479,13 +11479,10 @@ void FfiTrampolineData::set_callback_kind(FfiCallbackKind kind) const {
 
 FfiTrampolineDataPtr FfiTrampolineData::New() {
   ASSERT(Object::ffi_trampoline_data_class() != Class::null());
-  ObjectPtr raw = Object::Allocate(
-      FfiTrampolineData::kClassId, FfiTrampolineData::InstanceSize(),
-      Heap::kOld, FfiTrampolineData::ContainsCompressedPointers());
-  FfiTrampolineDataPtr data = static_cast<FfiTrampolineDataPtr>(raw);
-  data->untag()->callback_id_ = -1;
-  data->untag()->is_leaf_ = false;
-  return data;
+  const auto& data = FfiTrampolineData::Handle(
+      Object::Allocate<FfiTrampolineData>(Heap::kOld));
+  data.set_callback_id(-1);
+  return data.ptr();
 }
 
 const char* FfiTrampolineData::ToCString() const {
@@ -11644,22 +11641,18 @@ ScriptPtr Field::Script() const {
   return PatchClass::Cast(obj).script();
 }
 
+#if !defined(DART_PRECOMPILED_RUNTIME)
+KernelProgramInfoPtr Field::KernelProgramInfo() const {
+  const auto& owner = Object::Handle(RawOwner());
+  if (owner.IsClass()) {
+    return Class::Cast(owner).KernelProgramInfo();
+  }
+  return PatchClass::Cast(owner).kernel_program_info();
+}
+#endif
+
 uint32_t Field::Hash() const {
   return String::HashRawSymbol(name());
-}
-
-ExternalTypedDataPtr Field::KernelData() const {
-  const Object& obj = Object::Handle(this->untag()->owner());
-  // During background JIT compilation field objects are copied
-  // and copy points to the original field via the owner field.
-  if (obj.IsField()) {
-    return Field::Cast(obj).KernelData();
-  } else if (obj.IsClass()) {
-    Library& library = Library::Handle(Class::Cast(obj).library());
-    return library.kernel_data();
-  }
-  ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).library_kernel_data();
 }
 
 void Field::InheritKernelOffsetFrom(const Field& src) const {
@@ -11670,19 +11663,33 @@ void Field::InheritKernelOffsetFrom(const Field& src) const {
 #endif
 }
 
-intptr_t Field::KernelDataProgramOffset() const {
+#if !defined(DART_PRECOMPILED_RUNTIME)
+TypedDataViewPtr Field::KernelLibrary() const {
+  const auto& info = KernelProgramInfo::Handle(KernelProgramInfo());
+  return info.KernelLibrary(KernelLibraryIndex());
+}
+
+intptr_t Field::KernelLibraryOffset() const {
+  const intptr_t kernel_library_index = KernelLibraryIndex();
+  if (kernel_library_index == -1) return 0;
+  const auto& info = KernelProgramInfo::Handle(KernelProgramInfo());
+  return info.KernelLibraryStartOffset(kernel_library_index);
+}
+
+intptr_t Field::KernelLibraryIndex() const {
   const Object& obj = Object::Handle(untag()->owner());
   // During background JIT compilation field objects are copied
   // and copy points to the original field via the owner field.
   if (obj.IsField()) {
-    return Field::Cast(obj).KernelDataProgramOffset();
+    return Field::Cast(obj).KernelLibraryIndex();
   } else if (obj.IsClass()) {
-    Library& lib = Library::Handle(Class::Cast(obj).library());
-    return lib.kernel_offset();
+    const auto& lib = Library::Handle(Class::Cast(obj).library());
+    return lib.kernel_library_index();
   }
   ASSERT(obj.IsPatchClass());
-  return PatchClass::Cast(obj).library_kernel_offset();
+  return PatchClass::Cast(obj).kernel_library_index();
 }
+#endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
 void Field::SetFieldTypeSafe(const AbstractType& value) const {
   ASSERT(IsOriginal());
@@ -11701,10 +11708,7 @@ void Field::SetFieldType(const AbstractType& value) const {
 
 FieldPtr Field::New() {
   ASSERT(Object::field_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(Field::kClassId, Field::InstanceSize(), Heap::kOld,
-                       Field::ContainsCompressedPointers());
-  return static_cast<FieldPtr>(raw);
+  return Object::Allocate<Field>(Heap::kOld);
 }
 
 void Field::InitializeNew(const Field& result,
@@ -12864,61 +12868,25 @@ void Script::LoadSourceFromKernel(const uint8_t* kernel_buffer,
       kernel_buffer, kernel_buffer_len, uri));
   set_source(source);
 }
-#endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
-void Script::set_kernel_program_info(const KernelProgramInfo& info) const {
+void Script::InitializeFromKernel(
+    const KernelProgramInfo& info,
+    intptr_t script_index,
+    const TypedData& line_starts,
+    const TypedDataView& constant_coverage) const {
+  StoreNonPointer(&untag()->kernel_script_index_, script_index);
   untag()->set_kernel_program_info(info.ptr());
+  untag()->set_line_starts(line_starts.ptr());
+  untag()->set_debug_positions(Array::null_array().ptr());
+  NOT_IN_PRODUCT(untag()->set_constant_coverage(constant_coverage.ptr()));
 }
-
-void Script::set_kernel_script_index(const intptr_t kernel_script_index) const {
-  StoreNonPointer(&untag()->kernel_script_index_, kernel_script_index);
-}
-
-TypedDataPtr Script::kernel_string_offsets() const {
-  KernelProgramInfo& program_info =
-      KernelProgramInfo::Handle(kernel_program_info());
-  ASSERT(!program_info.IsNull());
-  return program_info.string_offsets();
-}
-
-void Script::LookupSourceAndLineStarts(Zone* zone) const {
-#if !defined(DART_PRECOMPILED_RUNTIME)
-  if (!IsLazyLookupSourceAndLineStarts()) {
-    return;
-  }
-  const String& uri = String::Handle(zone, resolved_url());
-  ASSERT(uri.IsSymbol());
-  if (uri.Length() > 0) {
-    // Entry included only to provide URI - actual source should already exist
-    // in the VM, so try to find it.
-    Library& lib = Library::Handle(zone);
-    Script& script = Script::Handle(zone);
-    const GrowableObjectArray& libs = GrowableObjectArray::Handle(
-        zone, IsolateGroup::Current()->object_store()->libraries());
-    for (intptr_t i = 0; i < libs.Length(); i++) {
-      lib ^= libs.At(i);
-      script = lib.LookupScript(uri, /* useResolvedUri = */ true);
-      if (!script.IsNull()) {
-        const auto& source = String::Handle(zone, script.Source());
-        const auto& starts = TypedData::Handle(zone, script.line_starts());
-        if (!source.IsNull() || !starts.IsNull()) {
-          set_source(source);
-          set_line_starts(starts);
-          break;
-        }
-      }
-    }
-  }
-  SetLazyLookupSourceAndLineStarts(false);
-#endif  // !defined(DART_PRECOMPILED_RUNTIME)
-}
+#endif
 
 GrowableObjectArrayPtr Script::GenerateLineNumberArray() const {
   Zone* zone = Thread::Current()->zone();
   const GrowableObjectArray& info =
       GrowableObjectArray::Handle(zone, GrowableObjectArray::New());
   const Object& line_separator = Object::Handle(zone);
-  LookupSourceAndLineStarts(zone);
   if (line_starts() == TypedData::null()) {
     // Scripts in the AOT snapshot do not have a line starts array.
     // A well-formed line number array has a leading null.
@@ -12973,7 +12941,6 @@ TokenPosition Script::MaxPosition() const {
             untag()->flags_and_max_position_));
   }
   auto const zone = Thread::Current()->zone();
-  LookupSourceAndLineStarts(zone);
   if (!HasCachedMaxPosition() && line_starts() != TypedData::null()) {
     const auto& starts = TypedData::Handle(zone, line_starts());
     kernel::KernelLineStartsReader reader(starts, zone);
@@ -12998,16 +12965,8 @@ void Script::set_source(const String& value) const {
   untag()->set_source(value.ptr());
 }
 
-void Script::set_line_starts(const TypedData& value) const {
-  untag()->set_line_starts(value.ptr());
-}
-
 #if !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
-void Script::set_constant_coverage(const ExternalTypedData& value) const {
-  untag()->set_constant_coverage(value.ptr());
-}
-
-ExternalTypedDataPtr Script::constant_coverage() const {
+TypedDataViewPtr Script::constant_coverage() const {
   return untag()->constant_coverage();
 }
 #endif  // !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
@@ -13025,24 +12984,13 @@ ArrayPtr Script::debug_positions() const {
   Array& debug_positions_array = Array::Handle(untag()->debug_positions());
   if (debug_positions_array.IsNull()) {
     // This is created lazily. Now we need it.
-    kernel::CollectTokenPositionsFor(*this);
+    CollectTokenPositionsFor();
   }
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
   return untag()->debug_positions();
 }
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
-void Script::SetLazyLookupSourceAndLineStarts(bool value) const {
-  StoreNonPointer(&untag()->flags_and_max_position_,
-                  UntaggedScript::LazyLookupSourceAndLineStartsBit::update(
-                      value, untag()->flags_and_max_position_));
-}
-
-bool Script::IsLazyLookupSourceAndLineStarts() const {
-  return UntaggedScript::LazyLookupSourceAndLineStartsBit::decode(
-      untag()->flags_and_max_position_);
-}
-
 bool Script::HasCachedMaxPosition() const {
   return UntaggedScript::HasCachedMaxPositionBit::decode(
       untag()->flags_and_max_position_);
@@ -13103,7 +13051,6 @@ bool Script::GetTokenLocation(const TokenPosition& token_pos,
   if (!token_pos.IsReal()) return false;
 
   auto const zone = Thread::Current()->zone();
-  LookupSourceAndLineStarts(zone);
   const TypedData& line_starts_data = TypedData::Handle(zone, line_starts());
   if (line_starts_data.IsNull()) return false;
   kernel::KernelLineStartsReader line_starts_reader(line_starts_data, zone);
@@ -13118,7 +13065,6 @@ intptr_t Script::GetTokenLength(const TokenPosition& token_pos) const {
 #else
   if (!HasSource() || !token_pos.IsReal()) return -1;
   auto const zone = Thread::Current()->zone();
-  LookupSourceAndLineStarts(zone);
   // We don't explicitly save this data: Load the source and find it from there.
   const String& source = String::Handle(zone, Source());
   const intptr_t start = token_pos.Pos();
@@ -13144,7 +13090,6 @@ bool Script::TokenRangeAtLine(intptr_t line_number,
   // Line numbers are 1-indexed.
   if (line_number <= 0) return false;
   Zone* zone = Thread::Current()->zone();
-  LookupSourceAndLineStarts(zone);
   const TypedData& line_starts_data = TypedData::Handle(zone, line_starts());
   kernel::KernelLineStartsReader line_starts_reader(line_starts_data, zone);
   if (!line_starts_reader.TokenRangeAtLine(line_number, first_token_index,
@@ -13263,14 +13208,6 @@ StringPtr Script::GetSnippet(intptr_t from_line,
   return String::SubString(src, start, end - start);
 }
 
-ScriptPtr Script::New() {
-  ASSERT(Object::script_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(Script::kClassId, Script::InstanceSize(), Heap::kOld,
-                       Script::ContainsCompressedPointers());
-  return static_cast<ScriptPtr>(raw);
-}
-
 ScriptPtr Script::New(const String& url, const String& source) {
   return Script::New(url, url, source);
 }
@@ -13278,18 +13215,22 @@ ScriptPtr Script::New(const String& url, const String& source) {
 ScriptPtr Script::New(const String& url,
                       const String& resolved_url,
                       const String& source) {
+  ASSERT(Object::script_class() != Class::null());
   Thread* thread = Thread::Current();
   Zone* zone = thread->zone();
-  const Script& result = Script::Handle(zone, Script::New());
+  const Script& result =
+      Script::Handle(zone, Object::Allocate<Script>(Heap::kOld));
   result.set_url(String::Handle(zone, Symbols::New(thread, url)));
   result.set_resolved_url(
       String::Handle(zone, Symbols::New(thread, resolved_url)));
   result.set_source(source);
-  NOT_IN_PRECOMPILED(result.SetLazyLookupSourceAndLineStarts(false));
-  NOT_IN_PRECOMPILED(result.SetHasCachedMaxPosition(false));
-  result.set_kernel_script_index(0);
-  result.set_load_timestamp(
-      FLAG_remove_script_timestamps_for_test ? 0 : OS::GetCurrentTimeMillis());
+  NOT_IN_PRECOMPILED(ASSERT_EQUAL(result.HasCachedMaxPosition(), false));
+  ASSERT_EQUAL(result.kernel_script_index(), 0);
+  if (FLAG_remove_script_timestamps_for_test) {
+    ASSERT_EQUAL(result.load_timestamp(), 0);
+  } else {
+    result.set_load_timestamp(OS::GetCurrentTimeMillis());
+  }
   return result.ptr();
 }
 
@@ -13412,9 +13353,21 @@ void Library::set_private_key(const String& key) const {
   untag()->set_private_key(key.ptr());
 }
 
-void Library::set_kernel_data(const ExternalTypedData& data) const {
-  untag()->set_kernel_data(data.ptr());
+#if !defined(DART_PRECOMPILED_RUNTIME)
+void Library::set_kernel_program_info(const KernelProgramInfo& info) const {
+  untag()->set_kernel_program_info(info.ptr());
 }
+
+TypedDataViewPtr Library::KernelLibrary() const {
+  const auto& info = KernelProgramInfo::Handle(kernel_program_info());
+  return info.KernelLibrary(kernel_library_index());
+}
+
+intptr_t Library::KernelLibraryOffset() const {
+  const auto& info = KernelProgramInfo::Handle(kernel_program_info());
+  return info.KernelLibraryStartOffset(kernel_library_index());
+}
+#endif
 
 void Library::set_loading_unit(const LoadingUnit& value) const {
   untag()->set_loading_unit(value.ptr());
@@ -14304,10 +14257,7 @@ void Library::InitImportList() const {
 
 LibraryPtr Library::New() {
   ASSERT(Object::library_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(Library::kClassId, Library::InstanceSize(), Heap::kOld,
-                       Library ::ContainsCompressedPointers());
-  return static_cast<LibraryPtr>(raw);
+  return Object::Allocate<Library>(Heap::kOld);
 }
 
 LibraryPtr Library::NewLibraryHelper(const String& url, bool import_core_lib) {
@@ -14332,6 +14282,8 @@ LibraryPtr Library::NewLibraryHelper(const String& url, bool import_core_lib) {
   result.untag()->set_used_scripts(list.ptr());
   result.untag()->set_imports(Object::empty_array().ptr());
   result.untag()->set_exports(Object::empty_array().ptr());
+  NOT_IN_PRECOMPILED_RUNTIME(
+      result.untag()->set_kernel_program_info(KernelProgramInfo::null()));
   result.untag()->set_loaded_scripts(Array::null());
   result.set_native_entry_resolver(nullptr);
   result.set_native_entry_symbol_resolver(nullptr);
@@ -14352,7 +14304,8 @@ LibraryPtr Library::NewLibraryHelper(const String& url, bool import_core_lib) {
     result.set_debuggable(true);
   }
   result.set_is_dart_scheme(dart_scheme);
-  NOT_IN_PRECOMPILED(result.set_kernel_offset(0));
+  NOT_IN_PRECOMPILED(
+      result.StoreNonPointer(&result.untag()->kernel_library_index_, -1));
   result.StoreNonPointer(&result.untag()->load_state_,
                          UntaggedLibrary::kAllocated);
   result.StoreNonPointer(&result.untag()->index_, -1);
@@ -15015,10 +14968,7 @@ void LibraryPrefix::AddImport(const Namespace& import) const {
 }
 
 LibraryPrefixPtr LibraryPrefix::New() {
-  ObjectPtr raw =
-      Object::Allocate(LibraryPrefix::kClassId, LibraryPrefix::InstanceSize(),
-                       Heap::kOld, LibraryPrefix::ContainsCompressedPointers());
-  return static_cast<LibraryPrefixPtr>(raw);
+  return Object::Allocate<LibraryPrefix>(Heap::kOld);
 }
 
 LibraryPrefixPtr LibraryPrefix::New(const String& name,
@@ -15171,10 +15121,7 @@ ObjectPtr Namespace::Lookup(const String& name,
 
 NamespacePtr Namespace::New() {
   ASSERT(Object::namespace_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(Namespace::kClassId, Namespace::InstanceSize(),
-                       Heap::kOld, Namespace::ContainsCompressedPointers());
-  return static_cast<NamespacePtr>(raw);
+  return Object::Allocate<Namespace>(Heap::kOld);
 }
 
 NamespacePtr Namespace::New(const Library& target,
@@ -15192,25 +15139,28 @@ NamespacePtr Namespace::New(const Library& target,
 }
 
 KernelProgramInfoPtr KernelProgramInfo::New() {
-  ObjectPtr raw = Object::Allocate(
-      KernelProgramInfo::kClassId, KernelProgramInfo::InstanceSize(),
-      Heap::kOld, KernelProgramInfo::ContainsCompressedPointers());
-  return static_cast<KernelProgramInfoPtr>(raw);
+  return Object::Allocate<KernelProgramInfo>(Heap::kOld);
 }
 
 KernelProgramInfoPtr KernelProgramInfo::New(
+    const TypedDataBase& kernel_component,
+    const TypedDataView& string_data,
+    const TypedDataView& metadata_payloads,
+    const TypedDataView& metadata_mappings,
+    const TypedDataView& constants_table,
     const TypedData& string_offsets,
-    const ExternalTypedData& string_data,
     const TypedData& canonical_names,
-    const ExternalTypedData& metadata_payloads,
-    const ExternalTypedData& metadata_mappings,
-    const ExternalTypedData& constants_table,
     const Array& scripts,
     const Array& libraries_cache,
-    const Array& classes_cache,
-    const Object& retained_kernel_blob) {
-  const KernelProgramInfo& info =
-      KernelProgramInfo::Handle(KernelProgramInfo::New());
+    const Array& classes_cache) {
+  ASSERT(kernel_component.IsExternalOrExternalView());
+  ASSERT(string_data.IsExternalOrExternalView());
+  ASSERT(metadata_payloads.IsExternalOrExternalView());
+  ASSERT(metadata_mappings.IsExternalOrExternalView());
+  ASSERT(constants_table.IsExternalOrExternalView());
+
+  const auto& info = KernelProgramInfo::Handle(KernelProgramInfo::New());
+  info.untag()->set_kernel_component(kernel_component.ptr());
   info.untag()->set_string_offsets(string_offsets.ptr());
   info.untag()->set_string_data(string_data.ptr());
   info.untag()->set_canonical_names(canonical_names.ptr());
@@ -15220,7 +15170,6 @@ KernelProgramInfoPtr KernelProgramInfo::New(
   info.untag()->set_constants_table(constants_table.ptr());
   info.untag()->set_libraries_cache(libraries_cache.ptr());
   info.untag()->set_classes_cache(classes_cache.ptr());
-  info.untag()->set_retained_kernel_blob(retained_kernel_blob.ptr());
   return info.ptr();
 }
 
@@ -15242,8 +15191,40 @@ void KernelProgramInfo::set_constants(const Array& constants) const {
   untag()->set_constants(constants.ptr());
 }
 
-void KernelProgramInfo::set_constants_table(
-    const ExternalTypedData& value) const {
+intptr_t KernelProgramInfo::KernelLibraryStartOffset(
+    intptr_t library_index) const {
+  const auto& blob = TypedDataBase::Handle(kernel_component());
+  const intptr_t library_count =
+      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
+          blob.DataAddr(blob.LengthInBytes() - 2 * 4)));
+  const intptr_t library_start =
+      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
+          blob.DataAddr(blob.LengthInBytes() -
+                        (2 + 1 + (library_count - library_index)) * 4)));
+  return library_start;
+}
+
+TypedDataViewPtr KernelProgramInfo::KernelLibrary(
+    intptr_t library_index) const {
+  const intptr_t start_offset = KernelLibraryStartOffset(library_index);
+  const intptr_t end_offset = KernelLibraryEndOffset(library_index);
+  const auto& component = TypedDataBase::Handle(kernel_component());
+  return component.ViewFromTo(start_offset, end_offset);
+}
+
+intptr_t KernelProgramInfo::KernelLibraryEndOffset(
+    intptr_t library_index) const {
+  const auto& blob = TypedDataBase::Handle(kernel_component());
+  const intptr_t library_count =
+      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
+          blob.DataAddr(blob.LengthInBytes() - 2 * 4)));
+  const intptr_t library_end =
+      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(blob.DataAddr(
+          blob.LengthInBytes() - (2 + (library_count - library_index)) * 4)));
+  return library_end;
+}
+
+void KernelProgramInfo::set_constants_table(const TypedDataView& value) const {
   untag()->set_constants_table(value.ptr());
 }
 
@@ -15576,16 +15557,15 @@ InstructionsPtr Instructions::New(intptr_t size, bool has_monomorphic_entry) {
   }
   Instructions& result = Instructions::Handle();
   {
-    uword aligned_size = Instructions::InstanceSize(size);
-    ObjectPtr raw =
-        Object::Allocate(Instructions::kClassId, aligned_size, Heap::kCode,
-                         Instructions::ContainsCompressedPointers());
+    auto raw = Object::Allocate<Instructions>(Heap::kCode, size);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.SetSize(size);
+    // Set this within the NoSafepointScope as well since it is contained in
+    // the same bitfield as the size.
     result.SetHasMonomorphicEntry(has_monomorphic_entry);
-    result.set_stats(nullptr);
   }
+  ASSERT(result.stats() == nullptr);
   return result.ptr();
 }
 
@@ -15641,21 +15621,14 @@ InstructionsTablePtr InstructionsTable::New(intptr_t length,
   ASSERT(Object::instructions_table_class() != Class::null());
   ASSERT(length >= 0);
   ASSERT(start_pc <= end_pc);
-  Thread* thread = Thread::Current();
-  InstructionsTable& result = InstructionsTable::Handle(thread->zone());
-  {
-    uword size = InstructionsTable::InstanceSize();
-    ObjectPtr raw =
-        Object::Allocate(InstructionsTable::kClassId, size, Heap::kOld,
-                         InstructionsTable::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.set_length(length);
-  }
+  auto* const zone = Thread::Current()->zone();
   const Array& code_objects =
       (length == 0) ? Object::empty_array()
-                    : Array::Handle(Array::New(length, Heap::kOld));
+                    : Array::Handle(zone, Array::New(length, Heap::kOld));
+  const auto& result = InstructionsTable::Handle(
+      zone, Object::Allocate<InstructionsTable>(Heap::kOld));
   result.set_code_objects(code_objects);
+  result.set_length(length);
   result.set_start_pc(start_pc);
   result.set_end_pc(end_pc);
   result.set_rodata(rodata);
@@ -15781,21 +15754,21 @@ ObjectPoolPtr ObjectPool::New(intptr_t len) {
     // This should be caught before we reach here.
     FATAL("Fatal error in ObjectPool::New: invalid length %" Pd "\n", len);
   }
-  ObjectPool& result = ObjectPool::Handle();
-  {
-    uword size = ObjectPool::InstanceSize(len);
-    ObjectPtr raw = Object::Allocate(ObjectPool::kClassId, size, Heap::kOld,
-                                     ObjectPool::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(len);
-    for (intptr_t i = 0; i < len; i++) {
-      result.SetTypeAt(i, ObjectPool::EntryType::kImmediate,
-                       ObjectPool::Patchability::kPatchable);
-    }
+  // We only verify the entry bits in DEBUG, so only allocate a handle there.
+  DEBUG_ONLY(auto& result = ObjectPool::Handle());
+  auto raw = Object::Allocate<ObjectPool>(Heap::kOld, len);
+  NoSafepointScope no_safepoint;
+  raw->untag()->length_ = len;
+#if defined(DEBUG)
+  result = raw;
+  for (intptr_t i = 0; i < len; i++) {
+    // Verify that InitializeObject() already set the payload as expected.
+    ASSERT_EQUAL(result.PatchableAt(i), ObjectPool::Patchability::kPatchable);
+    ASSERT_EQUAL(result.TypeAt(i), ObjectPool::EntryType::kImmediate);
+    ASSERT_EQUAL(result.RawValueAt(i), 0);
   }
-
-  return result.ptr();
+#endif
+  return raw;
 }
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
@@ -15920,14 +15893,12 @@ PcDescriptorsPtr PcDescriptors::New(const void* delta_encoded_data,
   Thread* thread = Thread::Current();
   PcDescriptors& result = PcDescriptors::Handle(thread->zone());
   {
-    ObjectPtr raw = Object::Allocate(
-        PcDescriptors::kClassId, PcDescriptors::InstanceSize(size), Heap::kOld,
-        PcDescriptors::ContainsCompressedPointers());
+    auto raw = Object::Allocate<PcDescriptors>(Heap::kOld, size);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.SetLength(size);
-    result.CopyData(delta_encoded_data, size);
   }
+  result.CopyData(delta_encoded_data, size);
   return result.ptr();
 }
 
@@ -15936,12 +15907,9 @@ PcDescriptorsPtr PcDescriptors::New(intptr_t length) {
   Thread* thread = Thread::Current();
   PcDescriptors& result = PcDescriptors::Handle(thread->zone());
   {
-    uword size = PcDescriptors::InstanceSize(length);
-    ObjectPtr raw =
-        Object::Allocate(PcDescriptors::kClassId, size, Heap::kOld,
-                         PcDescriptors::ContainsCompressedPointers());
+    auto raw = Object::Allocate<PcDescriptors>(Heap::kOld, length);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.SetLength(length);
   }
   return result.ptr();
@@ -16070,12 +16038,9 @@ CodeSourceMapPtr CodeSourceMap::New(intptr_t length) {
   Thread* thread = Thread::Current();
   CodeSourceMap& result = CodeSourceMap::Handle(thread->zone());
   {
-    uword size = CodeSourceMap::InstanceSize(length);
-    ObjectPtr raw =
-        Object::Allocate(CodeSourceMap::kClassId, size, Heap::kOld,
-                         CodeSourceMap::ContainsCompressedPointers());
+    auto raw = Object::Allocate<CodeSourceMap>(Heap::kOld, length);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.SetLength(length);
   }
   return result.ptr();
@@ -16142,15 +16107,15 @@ CompressedStackMapsPtr CompressedStackMaps::New(const void* payload,
   {
     // CompressedStackMaps data objects are associated with a code object,
     // allocate them in old generation.
-    ObjectPtr raw = Object::Allocate(
-        CompressedStackMaps::kClassId, CompressedStackMaps::InstanceSize(size),
-        Heap::kOld, CompressedStackMaps::ContainsCompressedPointers());
+    auto raw = Object::Allocate<CompressedStackMaps>(Heap::kOld, size);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.untag()->payload()->set_flags_and_size(
         UntaggedCompressedStackMaps::GlobalTableBit::encode(is_global_table) |
         UntaggedCompressedStackMaps::UsesTableBit::encode(uses_global_table) |
         UntaggedCompressedStackMaps::SizeField::encode(size));
+    // Perform the copy under the NoSafepointScope since it uses a raw pointer
+    // to the payload, and so the object should not move during the copy.
     auto cursor =
         result.UnsafeMutableNonPointer(result.untag()->payload()->data());
     memcpy(cursor, payload, size);  // NOLINT
@@ -16287,17 +16252,10 @@ LocalVarDescriptorsPtr LocalVarDescriptors::New(intptr_t num_variables) {
         "invalid num_variables %" Pd ". Maximum is: %d\n",
         num_variables, UntaggedLocalVarDescriptors::kMaxIndex);
   }
-  LocalVarDescriptors& result = LocalVarDescriptors::Handle();
-  {
-    uword size = LocalVarDescriptors::InstanceSize(num_variables);
-    ObjectPtr raw =
-        Object::Allocate(LocalVarDescriptors::kClassId, size, Heap::kOld,
-                         LocalVarDescriptors::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.StoreNonPointer(&result.untag()->num_entries_, num_variables);
-  }
-  return result.ptr();
+  auto raw = Object::Allocate<LocalVarDescriptors>(Heap::kOld, num_variables);
+  NoSafepointScope no_safepoint;
+  raw->untag()->num_entries_ = num_variables;
+  return raw;
 }
 
 intptr_t LocalVarDescriptors::Length() const {
@@ -16400,23 +16358,10 @@ ExceptionHandlersPtr ExceptionHandlers::New(intptr_t num_handlers) {
         "invalid num_handlers %" Pd "\n",
         num_handlers);
   }
-  ExceptionHandlers& result = ExceptionHandlers::Handle();
-  {
-    uword size = ExceptionHandlers::InstanceSize(num_handlers);
-    ObjectPtr raw =
-        Object::Allocate(ExceptionHandlers::kClassId, size, Heap::kOld,
-                         ExceptionHandlers::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.StoreNonPointer(
-        &result.untag()->packed_fields_,
-        UntaggedExceptionHandlers::NumEntriesBits::update(num_handlers, 0));
-  }
   const Array& handled_types_data =
       (num_handlers == 0) ? Object::empty_array()
                           : Array::Handle(Array::New(num_handlers, Heap::kOld));
-  result.set_handled_types_data(handled_types_data);
-  return result.ptr();
+  return ExceptionHandlers::New(handled_types_data);
 }
 
 ExceptionHandlersPtr ExceptionHandlers::New(const Array& handled_types_data) {
@@ -16430,15 +16375,11 @@ ExceptionHandlersPtr ExceptionHandlers::New(const Array& handled_types_data) {
   }
   ExceptionHandlers& result = ExceptionHandlers::Handle();
   {
-    uword size = ExceptionHandlers::InstanceSize(num_handlers);
-    ObjectPtr raw =
-        Object::Allocate(ExceptionHandlers::kClassId, size, Heap::kOld,
-                         ExceptionHandlers::ContainsCompressedPointers());
+    auto raw = Object::Allocate<ExceptionHandlers>(Heap::kOld, num_handlers);
     NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.StoreNonPointer(
-        &result.untag()->packed_fields_,
-        UntaggedExceptionHandlers::NumEntriesBits::update(num_handlers, 0));
+    result = raw;
+    result.untag()->packed_fields_ =
+        UntaggedExceptionHandlers::NumEntriesBits::encode(num_handlers);
   }
   result.set_handled_types_data(handled_types_data);
   return result.ptr();
@@ -16516,20 +16457,7 @@ const char* SingleTargetCache::ToCString() const {
 }
 
 SingleTargetCachePtr SingleTargetCache::New() {
-  SingleTargetCache& result = SingleTargetCache::Handle();
-  {
-    // IC data objects are long living objects, allocate them in old generation.
-    ObjectPtr raw = Object::Allocate(
-        SingleTargetCache::kClassId, SingleTargetCache::InstanceSize(),
-        Heap::kOld, SingleTargetCache::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  result.set_target(Code::Handle());
-  result.set_entry_point(0);
-  result.set_lower_limit(kIllegalCid);
-  result.set_upper_limit(kIllegalCid);
-  return result.ptr();
+  return Object::Allocate<SingleTargetCache>(Heap::kOld);
 }
 
 void UnlinkedCall::set_can_patch_to_monomorphic(bool value) const {
@@ -16551,20 +16479,16 @@ const char* UnlinkedCall::ToCString() const {
 }
 
 UnlinkedCallPtr UnlinkedCall::New() {
-  UnlinkedCall& result = UnlinkedCall::Handle();
-  result ^=
-      Object::Allocate(UnlinkedCall::kClassId, UnlinkedCall::InstanceSize(),
-                       Heap::kOld, UnlinkedCall::ContainsCompressedPointers());
+  const auto& result =
+      UnlinkedCall::Handle(Object::Allocate<UnlinkedCall>(Heap::kOld));
   result.set_can_patch_to_monomorphic(!FLAG_precompiled_mode);
   return result.ptr();
 }
 
 MonomorphicSmiableCallPtr MonomorphicSmiableCall::New(classid_t expected_cid,
                                                       const Code& target) {
-  auto& result = MonomorphicSmiableCall::Handle();
-  result ^= Object::Allocate(
-      MonomorphicSmiableCall::kClassId, MonomorphicSmiableCall::InstanceSize(),
-      Heap::kOld, MonomorphicSmiableCall::ContainsCompressedPointers());
+  const auto& result = MonomorphicSmiableCall::Handle(
+      Object::Allocate<MonomorphicSmiableCall>(Heap::kOld));
   result.StoreNonPointer(&result.untag()->expected_cid_, expected_cid);
   result.StoreNonPointer(&result.untag()->entrypoint_, target.EntryPoint());
   return result.ptr();
@@ -17529,20 +17453,14 @@ ICDataPtr ICData::NewDescriptor(Zone* zone,
   ASSERT(!arguments_descriptor.IsNull());
   ASSERT(Object::icdata_class() != Class::null());
   ASSERT(num_args_tested >= 0);
-  ICData& result = ICData::Handle(zone);
-  {
-    // IC data objects are long living objects, allocate them in old generation.
-    ObjectPtr raw =
-        Object::Allocate(ICData::kClassId, ICData::InstanceSize(), Heap::kOld,
-                         ICData::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  // IC data objects are long living objects, allocate them in old generation.
+  const auto& result =
+      ICData::Handle(zone, Object::Allocate<ICData>(Heap::kOld));
   result.set_owner(owner);
   result.set_target_name(target_name);
   result.set_arguments_descriptor(arguments_descriptor);
   NOT_IN_PRECOMPILED(result.set_deopt_id(deopt_id));
-  result.clear_state_bits();
+  ASSERT_EQUAL(result.untag()->state_bits_, 0);
   result.set_rebind_rule(rebind_rule);
   result.SetNumArgsTested(num_args_tested);
   NOT_IN_PRECOMPILED(result.SetReceiversStaticType(receivers_static_type));
@@ -17554,17 +17472,10 @@ bool ICData::IsImmutable() const {
 }
 
 ICDataPtr ICData::New() {
-  ICData& result = ICData::Handle();
-  {
-    // IC data objects are long living objects, allocate them in old generation.
-    ObjectPtr raw =
-        Object::Allocate(ICData::kClassId, ICData::InstanceSize(), Heap::kOld,
-                         ICData::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  // IC data objects are long living objects, allocate them in old generation.
+  const auto& result = ICData::Handle(Object::Allocate<ICData>(Heap::kOld));
+  ASSERT_EQUAL(result.untag()->state_bits_, 0);
   result.set_deopt_id(DeoptId::kNone);
-  result.clear_state_bits();
   return result.ptr();
 }
 
@@ -17747,21 +17658,13 @@ ObjectPtr WeakSerializationReference::New(const Object& target,
           replacement.ptr()) {
     return target.ptr();
   }
-  WeakSerializationReference& result = WeakSerializationReference::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        WeakSerializationReference::kClassId,
-        WeakSerializationReference::InstanceSize(), Heap::kOld,
-        WeakSerializationReference::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-
-    result ^= raw;
-    // Don't nest WSRs, instead just use the old WSR's target.
-    result.untag()->set_target(target.IsWeakSerializationReference()
-                                   ? WeakSerializationReference::Unwrap(target)
-                                   : target.ptr());
-    result.untag()->set_replacement(replacement.ptr());
-  }
+  const auto& result = WeakSerializationReference::Handle(
+      Object::Allocate<WeakSerializationReference>(Heap::kOld));
+  // Don't nest WSRs, instead just use the old WSR's target.
+  result.untag()->set_target(target.IsWeakSerializationReference()
+                                 ? WeakSerializationReference::Unwrap(target)
+                                 : target.ptr());
+  result.untag()->set_replacement(replacement.ptr());
   return result.ptr();
 }
 
@@ -17776,9 +17679,8 @@ WeakArrayPtr WeakArray::New(intptr_t length, Heap::Space space) {
     // This should be caught before we reach here.
     FATAL("Fatal error in WeakArray::New: invalid len %" Pd "\n", length);
   }
-  WeakArrayPtr raw = static_cast<WeakArrayPtr>(
-      Object::Allocate(kWeakArrayCid, WeakArray::InstanceSize(length), space,
-                       WeakArray::ContainsCompressedPointers()));
+  auto raw = Object::Allocate<WeakArray>(space, length);
+  NoSafepointScope no_safepoint;
   raw->untag()->set_length(Smi::New(length));
   return raw;
 }
@@ -18205,20 +18107,18 @@ CodePtr Code::New(intptr_t pointer_offsets_length) {
   ASSERT(Object::code_class() != Class::null());
   Code& result = Code::Handle();
   {
-    uword size = Code::InstanceSize(pointer_offsets_length);
-    ObjectPtr raw = Object::Allocate(Code::kClassId, size, Heap::kOld,
-                                     Code::ContainsCompressedPointers());
+    auto raw = Object::Allocate<Code>(Heap::kOld, pointer_offsets_length);
     NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.set_state_bits(0);
+    result = raw;
+    ASSERT_EQUAL(result.untag()->state_bits_, 0);
     result.set_pointer_offsets_length(pointer_offsets_length);
-#if defined(INCLUDE_IL_PRINTER)
-    result.set_comments(Comments::New(0));
-#endif
-    NOT_IN_PRODUCT(result.set_compile_timestamp(0));
-    result.set_pc_descriptors(Object::empty_descriptors());
-    result.set_compressed_stackmaps(Object::empty_compressed_stackmaps());
   }
+  DEBUG_ASSERT(result.compile_timestamp() == 0);
+#if defined(INCLUDE_IL_PRINTER)
+  result.set_comments(Comments::New(0));
+#endif
+  result.set_pc_descriptors(Object::empty_descriptors());
+  result.set_compressed_stackmaps(Object::empty_compressed_stackmaps());
   return result.ptr();
 }
 
@@ -18749,16 +18649,10 @@ ContextPtr Context::New(intptr_t num_variables, Heap::Space space) {
     FATAL("Fatal error in Context::New: invalid num_variables %" Pd "\n",
           num_variables);
   }
-  Context& result = Context::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        Context::kClassId, Context::InstanceSize(num_variables), space,
-        Context::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.set_num_variables(num_variables);
-  }
-  return result.ptr();
+  auto raw = Object::Allocate<Context>(space, num_variables);
+  NoSafepointScope no_safepoint;
+  raw->untag()->num_variables_ = num_variables;
+  return raw;
 }
 
 const char* Context::ToCString() const {
@@ -18819,17 +18713,14 @@ ContextScopePtr ContextScope::New(intptr_t num_variables, bool is_implicit) {
     FATAL("Fatal error in ContextScope::New: invalid num_variables %" Pd "\n",
           num_variables);
   }
-  intptr_t size = ContextScope::InstanceSize(num_variables);
   ContextScope& result = ContextScope::Handle();
   {
-    ObjectPtr raw =
-        Object::Allocate(ContextScope::kClassId, size, Heap::kOld,
-                         ContextScope::ContainsCompressedPointers());
+    auto raw = Object::Allocate<ContextScope>(Heap::kOld, num_variables);
     NoSafepointScope no_safepoint;
-    result ^= raw;
+    result = raw;
     result.set_num_variables(num_variables);
-    result.set_is_implicit(is_implicit);
   }
+  result.set_is_implicit(is_implicit);
   return result.ptr();
 }
 
@@ -18972,9 +18863,7 @@ const char* ContextScope::ToCString() const {
 }
 
 SentinelPtr Sentinel::New() {
-  return static_cast<SentinelPtr>(
-      Object::Allocate(Sentinel::kClassId, Sentinel::InstanceSize(), Heap::kOld,
-                       Sentinel::ContainsCompressedPointers()));
+  return Object::Allocate<Sentinel>(Heap::kOld);
 }
 
 const char* Sentinel::ToCString() const {
@@ -19020,32 +18909,18 @@ void MegamorphicCache::set_filled_entry_count(intptr_t count) const {
 }
 
 MegamorphicCachePtr MegamorphicCache::New() {
-  MegamorphicCache& result = MegamorphicCache::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        MegamorphicCache::kClassId, MegamorphicCache::InstanceSize(),
-        Heap::kOld, MegamorphicCache::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  result.set_filled_entry_count(0);
-  return result.ptr();
+  return Object::Allocate<MegamorphicCache>(Heap::kOld);
 }
 
 MegamorphicCachePtr MegamorphicCache::New(const String& target_name,
                                           const Array& arguments_descriptor) {
-  MegamorphicCache& result = MegamorphicCache::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        MegamorphicCache::kClassId, MegamorphicCache::InstanceSize(),
-        Heap::kOld, MegamorphicCache::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  auto* const zone = Thread::Current()->zone();
+  const auto& result = MegamorphicCache::Handle(
+      zone, Object::Allocate<MegamorphicCache>(Heap::kOld));
   const intptr_t capacity = kInitialCapacity;
   const Array& buckets =
-      Array::Handle(Array::New(kEntryLength * capacity, Heap::kOld));
-  const Object& handler = Object::Handle();
+      Array::Handle(zone, Array::New(kEntryLength * capacity, Heap::kOld));
+  const Object& handler = Object::Handle(zone);
   for (intptr_t i = 0; i < capacity; ++i) {
     SetEntry(buckets, i, smi_illegal_cid(), handler);
   }
@@ -19182,35 +19057,17 @@ const char* MegamorphicCache::ToCString() const {
                      name.ToCString());
 }
 
-void SubtypeTestCache::Init() {
-  const auto& array =
-      Array::Handle(Array::NewUninitialized(kTestEntryLength, Heap::kOld));
-  // Mark the first (only) entry unoccupied before making this array visible.
-  array.SetAt(kInstanceCidOrSignature, Object::null_object());
-  cached_array_ = array.ptr();
-}
-
-void SubtypeTestCache::Cleanup() {
-  cached_array_ = nullptr;
-}
-
 SubtypeTestCachePtr SubtypeTestCache::New(intptr_t num_inputs) {
   ASSERT(Object::subtypetestcache_class() != Class::null());
   ASSERT(num_inputs >= 1);
   ASSERT(num_inputs <= kMaxInputs);
-  SubtypeTestCache& result = SubtypeTestCache::Handle();
-  {
-    // SubtypeTestCache objects are long living objects, allocate them in the
-    // old generation.
-    ObjectPtr raw = Object::Allocate(
-        SubtypeTestCache::kClassId, SubtypeTestCache::InstanceSize(),
-        Heap::kOld, SubtypeTestCache::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.untag()->num_inputs_ = num_inputs;
-  }
-  result.set_num_occupied(0);
-  result.set_cache(Array::Handle(cached_array_));
+  // SubtypeTestCache objects are long living objects, allocate them in the
+  // old generation.
+  const auto& result =
+      SubtypeTestCache::Handle(Object::Allocate<SubtypeTestCache>(Heap::kOld));
+  ASSERT_EQUAL(result.num_occupied(), 0);
+  result.untag()->num_inputs_ = num_inputs;
+  result.set_cache(Object::empty_subtype_test_cache_array());
   return result.ptr();
 }
 
@@ -19275,7 +19132,7 @@ intptr_t SubtypeTestCache::AddCheck(
   Array& data = Array::Handle(zone, cache());
   bool was_grown;
   data = EnsureCapacity(zone, data, old_num + 1, &was_grown);
-  ASSERT(data.ptr() != cached_array_);
+  ASSERT(data.ptr() != Object::empty_subtype_test_cache_array().ptr());
 
   const auto& loc = FindKeyOrUnused(
       data, num_inputs(), instance_class_id_or_signature, destination_type,
@@ -19411,7 +19268,9 @@ SubtypeTestCache::KeyLocation SubtypeTestCache::FindKeyOrUnused(
     const TypeArguments& instance_parent_function_type_arguments,
     const TypeArguments& instance_delayed_type_arguments) {
   // Fast case for empty STCs.
-  if (array.ptr() == cached_array_) return {0, false};
+  if (array.ptr() == Object::empty_subtype_test_cache_array().ptr()) {
+    return {0, false};
+  }
   const bool is_hash = IsHash(array);
   SubtypeTestCacheTable table(array);
   const intptr_t num_entries = table.Length();
@@ -19671,7 +19530,7 @@ void SubtypeTestCache::GetCheckFromArray(
     TypeArguments* instance_parent_function_type_arguments,
     TypeArguments* instance_delayed_type_arguments,
     Bool* test_result) {
-  ASSERT(array.ptr() != cached_array_);
+  ASSERT(array.ptr() != Object::empty_subtype_test_cache_array().ptr());
   SubtypeTestCacheTable entries(array);
   auto entry = entries[ix];
   // First get the field that determines occupancy. We have to do this with
@@ -19897,7 +19756,7 @@ void SubtypeTestCache::WriteToBufferUnlocked(Zone* zone,
 
 void SubtypeTestCache::Reset() const {
   set_num_occupied(0);
-  set_cache(Array::Handle(cached_array_));
+  set_cache(Object::empty_subtype_test_cache_array());
 }
 
 bool SubtypeTestCache::Equals(const SubtypeTestCache& other) const {
@@ -19964,20 +19823,9 @@ const char* SubtypeTestCache::ToCString() const {
 
 LoadingUnitPtr LoadingUnit::New() {
   ASSERT(Object::loadingunit_class() != Class::null());
-  LoadingUnit& result = LoadingUnit::Handle();
-  {
-    // LoadingUnit objects are long living objects, allocate them in the
-    // old generation.
-    ObjectPtr raw =
-        Object::Allocate(LoadingUnit::kClassId, LoadingUnit::InstanceSize(),
-                         Heap::kOld, LoadingUnit::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  result.set_id(kIllegalId);
-  result.set_loaded(false);
-  result.set_load_outstanding(false);
-  return result.ptr();
+  // LoadingUnit objects are long living objects, allocate them in the
+  // old generation.
+  return Object::Allocate<LoadingUnit>(Heap::kOld);
 }
 
 LoadingUnitPtr LoadingUnit::parent() const {
@@ -20091,10 +19939,7 @@ const char* Error::ToCString() const {
 
 ApiErrorPtr ApiError::New() {
   ASSERT(Object::api_error_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(ApiError::kClassId, ApiError::InstanceSize(), Heap::kOld,
-                       ApiError::ContainsCompressedPointers());
-  return static_cast<ApiErrorPtr>(raw);
+  return Object::Allocate<ApiError>(Heap::kOld);
 }
 
 ApiErrorPtr ApiError::New(const String& message, Heap::Space space) {
@@ -20106,14 +19951,7 @@ ApiErrorPtr ApiError::New(const String& message, Heap::Space space) {
 #endif  // !PRODUCT
 
   ASSERT(Object::api_error_class() != Class::null());
-  ApiError& result = ApiError::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(ApiError::kClassId, ApiError::InstanceSize(), space,
-                         ApiError::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = ApiError::Handle(Object::Allocate<ApiError>(space));
   result.set_message(message);
   return result.ptr();
 }
@@ -20133,10 +19971,7 @@ const char* ApiError::ToCString() const {
 
 LanguageErrorPtr LanguageError::New() {
   ASSERT(Object::language_error_class() != Class::null());
-  ObjectPtr raw =
-      Object::Allocate(LanguageError::kClassId, LanguageError::InstanceSize(),
-                       Heap::kOld, LanguageError::ContainsCompressedPointers());
-  return static_cast<LanguageErrorPtr>(raw);
+  return Object::Allocate<LanguageError>(Heap::kOld);
 }
 
 LanguageErrorPtr LanguageError::NewFormattedV(const Error& prev_error,
@@ -20148,14 +19983,8 @@ LanguageErrorPtr LanguageError::NewFormattedV(const Error& prev_error,
                                               const char* format,
                                               va_list args) {
   ASSERT(Object::language_error_class() != Class::null());
-  LanguageError& result = LanguageError::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(LanguageError::kClassId, LanguageError::InstanceSize(),
-                         space, LanguageError::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result =
+      LanguageError::Handle(Object::Allocate<LanguageError>(space));
   result.set_previous_error(prev_error);
   result.set_script(script);
   result.set_token_pos(token_pos);
@@ -20188,14 +20017,8 @@ LanguageErrorPtr LanguageError::New(const String& formatted_message,
                                     Report::Kind kind,
                                     Heap::Space space) {
   ASSERT(Object::language_error_class() != Class::null());
-  LanguageError& result = LanguageError::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(LanguageError::kClassId, LanguageError::InstanceSize(),
-                         space, LanguageError::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result =
+      LanguageError::Handle(Object::Allocate<LanguageError>(space));
   result.set_formatted_message(formatted_message);
   result.set_kind(kind);
   return result.ptr();
@@ -20214,7 +20037,7 @@ void LanguageError::set_token_pos(TokenPosition token_pos) const {
   StoreNonPointer(&untag()->token_pos_, token_pos);
 }
 
-void LanguageError::set_report_after_token(bool value) {
+void LanguageError::set_report_after_token(bool value) const {
   StoreNonPointer(&untag()->report_after_token_, value);
 }
 
@@ -20260,14 +20083,8 @@ UnhandledExceptionPtr UnhandledException::New(const Instance& exception,
                                               const Instance& stacktrace,
                                               Heap::Space space) {
   ASSERT(Object::unhandled_exception_class() != Class::null());
-  UnhandledException& result = UnhandledException::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        UnhandledException::kClassId, UnhandledException::InstanceSize(), space,
-        UnhandledException::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result =
+      UnhandledException::Handle(Object::Allocate<UnhandledException>(space));
   result.set_exception(exception);
   result.set_stacktrace(stacktrace);
   return result.ptr();
@@ -20275,17 +20092,7 @@ UnhandledExceptionPtr UnhandledException::New(const Instance& exception,
 
 UnhandledExceptionPtr UnhandledException::New(Heap::Space space) {
   ASSERT(Object::unhandled_exception_class() != Class::null());
-  UnhandledException& result = UnhandledException::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        UnhandledException::kClassId, UnhandledException::InstanceSize(), space,
-        UnhandledException::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  result.set_exception(Object::null_instance());
-  result.set_stacktrace(StackTrace::Handle());
-  return result.ptr();
+  return Object::Allocate<UnhandledException>(space);
 }
 
 void UnhandledException::set_exception(const Instance& exception) const {
@@ -20340,16 +20147,10 @@ const char* UnhandledException::ToCString() const {
 
 UnwindErrorPtr UnwindError::New(const String& message, Heap::Space space) {
   ASSERT(Object::unwind_error_class() != Class::null());
-  UnwindError& result = UnwindError::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(UnwindError::kClassId, UnwindError::InstanceSize(),
-                         space, UnwindError::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result =
+      UnwindError::Handle(Object::Allocate<UnwindError>(space));
   result.set_message(message);
-  result.set_is_user_initiated(false);
+  ASSERT_EQUAL(result.is_user_initiated(), false);
   return result.ptr();
 }
 
@@ -20822,19 +20623,6 @@ InstancePtr Instance::CanonicalizeLocked(Thread* thread) const {
   result.SetCanonical();
   return cls.InsertCanonicalConstant(zone, result);
 }
-
-#if defined(DEBUG)
-bool Instance::CheckIsCanonical(Thread* thread) const {
-  Zone* zone = thread->zone();
-  Instance& result = Instance::Handle(zone);
-  const Class& cls = Class::Handle(zone, this->clazz());
-  ASSERT(thread->isolate_group()
-             ->constant_canonicalization_mutex()
-             ->IsOwnedByCurrentThread());
-  result ^= cls.LookupCanonicalInstance(zone, *this);
-  return (result.ptr() == this->ptr());
-}
-#endif  // DEBUG
 
 ObjectPtr Instance::GetField(const Field& field) const {
   if (field.is_unboxed()) {
@@ -21326,9 +21114,15 @@ InstancePtr Instance::NewAlreadyFinalized(const Class& cls, Heap::Space space) {
   ASSERT(cls.is_allocate_finalized());
   intptr_t instance_size = cls.host_instance_size();
   ASSERT(instance_size > 0);
-  ObjectPtr raw = Object::Allocate(cls.id(), instance_size, space,
-                                   Instance::ContainsCompressedPointers());
-  return static_cast<InstancePtr>(raw);
+  // Initialize everything after the object header with Object::null(), since
+  // this isn't a predefined class.
+  const uword ptr_field_end_offset =
+      instance_size - (Instance::ContainsCompressedPointers()
+                           ? kCompressedWordSize
+                           : kWordSize);
+  return static_cast<InstancePtr>(Object::Allocate(
+      cls.id(), instance_size, space, Instance::ContainsCompressedPointers(),
+      from_offset<Instance>(), ptr_field_end_offset));
 }
 
 bool Instance::IsValidFieldOffset(intptr_t offset) const {
@@ -22719,40 +22513,6 @@ AbstractTypePtr Type::Canonicalize(Thread* thread) const {
   return type.ptr();
 }
 
-#if defined(DEBUG)
-bool Type::CheckIsCanonical(Thread* thread) const {
-  const classid_t cid = type_class_id();
-  if (cid == kDynamicCid) {
-    return (ptr() == Object::dynamic_type().ptr());
-  }
-  if (cid == kVoidCid) {
-    return (ptr() == Object::void_type().ptr());
-  }
-  Zone* zone = thread->zone();
-  auto isolate_group = thread->isolate_group();
-  Type& type = Type::Handle(zone);
-  const Class& cls = Class::Handle(zone, type_class());
-
-  // Fast canonical lookup/registry for simple types.
-  if (IsDeclarationTypeOf(cls)) {
-    type = cls.declaration_type();
-    ASSERT(type.IsCanonical());
-    return (ptr() == type.ptr());
-  }
-
-  ObjectStore* object_store = isolate_group->object_store();
-  {
-    ASSERT(thread->isolate_group()
-               ->constant_canonicalization_mutex()
-               ->IsOwnedByCurrentThread());
-    CanonicalTypeSet table(zone, object_store->canonical_types());
-    type ^= table.GetOrNull(CanonicalTypeKey(*this));
-    object_store->set_canonical_types(table.Release());
-  }
-  return (ptr() == type.ptr());
-}
-#endif  // DEBUG
-
 void Type::EnumerateURIs(URIs* uris) const {
   if (IsDynamicType() || IsVoidType() || IsNeverType()) {
     return;
@@ -22883,9 +22643,7 @@ TypeArgumentsPtr Type::GetInstanceTypeArguments(Thread* thread,
 }
 
 TypePtr Type::New(Heap::Space space) {
-  ObjectPtr raw = Object::Allocate(Type::kClassId, Type::InstanceSize(), space,
-                                   Type::ContainsCompressedPointers());
-  return static_cast<TypePtr>(raw);
+  return Object::Allocate<Type>(space);
 }
 
 TypePtr Type::New(const Class& clazz,
@@ -23080,25 +22838,6 @@ AbstractTypePtr FunctionType::Canonicalize(Thread* thread) const {
   }
   return sig.ptr();
 }
-
-#if defined(DEBUG)
-bool FunctionType::CheckIsCanonical(Thread* thread) const {
-  Zone* zone = thread->zone();
-  auto isolate_group = thread->isolate_group();
-  FunctionType& type = FunctionType::Handle(zone);
-  ObjectStore* object_store = isolate_group->object_store();
-  {
-    ASSERT(thread->isolate_group()
-               ->constant_canonicalization_mutex()
-               ->IsOwnedByCurrentThread());
-    CanonicalFunctionTypeSet table(zone,
-                                   object_store->canonical_function_types());
-    type ^= table.GetOrNull(CanonicalFunctionTypeKey(*this));
-    object_store->set_canonical_function_types(table.Release());
-  }
-  return ptr() == type.ptr();
-}
-#endif  // DEBUG
 
 void FunctionType::EnumerateURIs(URIs* uris) const {
   Thread* thread = Thread::Current();
@@ -23421,26 +23160,6 @@ AbstractTypePtr TypeParameter::Canonicalize(Thread* thread) const {
   return type_parameter.ptr();
 }
 
-#if defined(DEBUG)
-bool TypeParameter::CheckIsCanonical(Thread* thread) const {
-  Zone* zone = thread->zone();
-  auto isolate_group = thread->isolate_group();
-
-  TypeParameter& type_parameter = TypeParameter::Handle(zone);
-  ObjectStore* object_store = isolate_group->object_store();
-  {
-    ASSERT(thread->isolate_group()
-               ->constant_canonicalization_mutex()
-               ->IsOwnedByCurrentThread());
-    CanonicalTypeParameterSet table(zone,
-                                    object_store->canonical_type_parameters());
-    type_parameter ^= table.GetOrNull(CanonicalTypeParameterKey(*this));
-    object_store->set_canonical_type_parameters(table.Release());
-  }
-  return (ptr() == type_parameter.ptr());
-}
-#endif  // DEBUG
-
 void TypeParameter::PrintName(NameVisibility name_visibility,
                               BaseTextBuffer* printer) const {
   const TypeParameter& type_param = TypeParameter::Cast(*this);
@@ -23467,10 +23186,7 @@ uword TypeParameter::ComputeHash() const {
 }
 
 TypeParameterPtr TypeParameter::New() {
-  ObjectPtr raw =
-      Object::Allocate(TypeParameter::kClassId, TypeParameter::InstanceSize(),
-                       Heap::kOld, TypeParameter::ContainsCompressedPointers());
-  return static_cast<TypeParameterPtr>(raw);
+  return Object::Allocate<TypeParameter>(Heap::kOld);
 }
 
 TypeParameterPtr TypeParameter::New(const Object& owner,
@@ -23864,13 +23580,7 @@ MintPtr Mint::New(int64_t val, Heap::Space space) {
   ASSERT(!Smi::IsValid(val));
   ASSERT(IsolateGroup::Current()->object_store()->mint_class() !=
          Class::null());
-  Mint& result = Mint::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(Mint::kClassId, Mint::InstanceSize(),
-                                     space, Mint::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Mint::Handle(Object::Allocate<Mint>(space));
   result.set_value(val);
   return result.ptr();
 }
@@ -23966,14 +23676,7 @@ uint32_t Double::CanonicalizeHash() const {
 DoublePtr Double::New(double d, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->double_class() !=
          Class::null());
-  Double& result = Double::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Double::kClassId, Double::InstanceSize(), space,
-                         Double::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Double::Handle(Object::Allocate<Double>(space));
   result.set_value(d);
   return result.ptr();
 }
@@ -24295,14 +23998,6 @@ InstancePtr String::CanonicalizeLocked(Thread* thread) const {
   }
   return Symbols::New(Thread::Current(), *this);
 }
-
-#if defined(DEBUG)
-bool String::CheckIsCanonical(Thread* thread) const {
-  Zone* zone = thread->zone();
-  const String& str = String::Handle(zone, Symbols::Lookup(thread, *this));
-  return (str.ptr() == this->ptr());
-}
-#endif  // DEBUG
 
 StringPtr String::New(const char* cstr, Heap::Space space) {
   ASSERT(cstr != nullptr);
@@ -25074,34 +24769,17 @@ OneByteStringPtr OneByteString::New(intptr_t len, Heap::Space space) {
     // This should be caught before we reach here.
     FATAL("Fatal error in OneByteString::New: invalid len %" Pd "\n", len);
   }
-  {
-    ObjectPtr raw = Object::Allocate(
-        OneByteString::kClassId, OneByteString::InstanceSize(len), space,
-        OneByteString::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    OneByteStringPtr result = static_cast<OneByteStringPtr>(raw);
-#if DART_COMPRESSED_POINTERS
-    // Gap caused by less-than-a-word length_ smi sitting before data_.
-    const intptr_t length_offset =
-        reinterpret_cast<intptr_t>(&result->untag()->length_);
-    const intptr_t data_offset =
-        reinterpret_cast<intptr_t>(result->untag()->data());
-    const intptr_t length_with_gap = data_offset - length_offset;
-    ASSERT(length_with_gap > kCompressedWordSize);
-    ASSERT(length_with_gap == kWordSize);
-    memset(reinterpret_cast<void*>(length_offset), 0, length_with_gap);
-#endif
-    result->untag()->set_length(Smi::New(len));
+  auto result = Object::Allocate<OneByteString>(space, len);
+  NoSafepointScope no_safepoint;
+  result->untag()->set_length(Smi::New(len));
 #if !defined(HASH_IN_OBJECT_HEADER)
-    result->untag()->set_hash(Smi::New(0));
+  result->untag()->set_hash(Smi::New(0));
 #endif
-    OneByteStringPtr s = static_cast<OneByteStringPtr>(result);
-    intptr_t size = OneByteString::UnroundedSize(s);
-    ASSERT(size <= s->untag()->HeapSize());
-    memset(reinterpret_cast<void*>(UntaggedObject::ToAddr(s) + size), 0,
-           s->untag()->HeapSize() - size);
-    return result;
-  }
+  intptr_t size = OneByteString::UnroundedSize(result);
+  ASSERT(size <= result->untag()->HeapSize());
+  memset(reinterpret_cast<void*>(UntaggedObject::ToAddr(result) + size), 0,
+         result->untag()->HeapSize() - size);
+  return result;
 }
 
 OneByteStringPtr OneByteString::New(const uint8_t* characters,
@@ -25283,34 +24961,17 @@ TwoByteStringPtr TwoByteString::New(intptr_t len, Heap::Space space) {
     // This should be caught before we reach here.
     FATAL("Fatal error in TwoByteString::New: invalid len %" Pd "\n", len);
   }
-  String& result = String::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        TwoByteString::kClassId, TwoByteString::InstanceSize(len), space,
-        TwoByteString::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    TwoByteStringPtr s = static_cast<TwoByteStringPtr>(raw);
-#if DART_COMPRESSED_POINTERS
-    // Gap caused by less-than-a-word length_ smi sitting before data_.
-    const intptr_t length_offset =
-        reinterpret_cast<intptr_t>(&s->untag()->length_);
-    const intptr_t data_offset = reinterpret_cast<intptr_t>(s->untag()->data());
-    const intptr_t length_with_gap = data_offset - length_offset;
-    ASSERT(length_with_gap > kCompressedWordSize);
-    ASSERT(length_with_gap == kWordSize);
-    memset(reinterpret_cast<void*>(length_offset), 0, length_with_gap);
-#endif
-    result.SetLength(len);
+  auto s = Object::Allocate<TwoByteString>(space, len);
+  NoSafepointScope no_safepoint;
+  s->untag()->set_length(Smi::New(len));
 #if !defined(HASH_IN_OBJECT_HEADER)
-    result.ptr()->untag()->set_hash(Smi::New(0));
+  s->untag()->set_hash(Smi::New(0));
 #endif
-    intptr_t size = TwoByteString::UnroundedSize(s);
-    ASSERT(size <= s->untag()->HeapSize());
-    memset(reinterpret_cast<void*>(UntaggedObject::ToAddr(s) + size), 0,
-           s->untag()->HeapSize() - size);
-  }
-  return TwoByteString::raw(result);
+  intptr_t size = TwoByteString::UnroundedSize(s);
+  ASSERT(size <= s->untag()->HeapSize());
+  memset(reinterpret_cast<void*>(UntaggedObject::ToAddr(s) + size), 0,
+         s->untag()->HeapSize() - size);
+  return s;
 }
 
 TwoByteStringPtr TwoByteString::New(const uint16_t* utf16_array,
@@ -25443,19 +25104,13 @@ ExternalOneByteStringPtr ExternalOneByteString::New(
     FATAL("Fatal error in ExternalOneByteString::New: invalid len %" Pd "\n",
           len);
   }
-  String& result = String::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        ExternalOneByteString::kClassId, ExternalOneByteString::InstanceSize(),
-        space, ExternalOneByteString::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(len);
+  const auto& result =
+      String::Handle(Object::Allocate<ExternalOneByteString>(space));
 #if !defined(HASH_IN_OBJECT_HEADER)
-    result.ptr()->untag()->set_hash(Smi::New(0));
+  result.ptr()->untag()->set_hash(Smi::New(0));
 #endif
-    SetExternalData(result, data, peer);
-  }
+  result.SetLength(len);
+  SetExternalData(result, data, peer);
   AddFinalizer(result, peer, callback, external_allocation_size);
   return ExternalOneByteString::raw(result);
 }
@@ -25475,19 +25130,13 @@ ExternalTwoByteStringPtr ExternalTwoByteString::New(
     FATAL("Fatal error in ExternalTwoByteString::New: invalid len %" Pd "\n",
           len);
   }
-  String& result = String::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        ExternalTwoByteString::kClassId, ExternalTwoByteString::InstanceSize(),
-        space, ExternalTwoByteString::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(len);
+  const auto& result =
+      String::Handle(Object::Allocate<ExternalTwoByteString>(space));
 #if !defined(HASH_IN_OBJECT_HEADER)
-    result.ptr()->untag()->set_hash(Smi::New(0));
+  result.ptr()->untag()->set_hash(Smi::New(0));
 #endif
-    SetExternalData(result, data, peer);
-  }
+  result.SetLength(len);
+  SetExternalData(result, data, peer);
   AddFinalizer(result, peer, callback, external_allocation_size);
   return ExternalTwoByteString::raw(result);
 }
@@ -25576,18 +25225,14 @@ ArrayPtr Array::NewUninitialized(intptr_t class_id,
     // This should be caught before we reach here.
     FATAL("Fatal error in Array::New: invalid len %" Pd "\n", len);
   }
-  {
-    ArrayPtr raw = static_cast<ArrayPtr>(
-        Object::Allocate(class_id, Array::InstanceSize(len), space,
-                         Array::ContainsCompressedPointers()));
-    NoSafepointScope no_safepoint;
-    raw->untag()->set_length(Smi::New(len));
-    if (UseCardMarkingForAllocation(len)) {
-      ASSERT(raw->IsOldObject());
-      raw->untag()->SetCardRememberedBitUnsynchronized();
-    }
-    return raw;
+  auto raw = Object::AllocateVariant<Array>(class_id, space, len);
+  NoSafepointScope no_safepoint;
+  raw->untag()->set_length(Smi::New(len));
+  if (UseCardMarkingForAllocation(len)) {
+    ASSERT(raw->IsOldObject());
+    raw->untag()->SetCardRememberedBitUnsynchronized();
   }
+  return raw;
 }
 
 ArrayPtr Array::New(intptr_t class_id, intptr_t len, Heap::Space space) {
@@ -25837,16 +25482,10 @@ GrowableObjectArrayPtr GrowableObjectArray::New(const Array& array,
   ASSERT(
       IsolateGroup::Current()->object_store()->growable_object_array_class() !=
       Class::null());
-  GrowableObjectArray& result = GrowableObjectArray::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        GrowableObjectArray::kClassId, GrowableObjectArray::InstanceSize(),
-        space, GrowableObjectArray::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(0);
-    result.SetData(array);
-  }
+  const auto& result =
+      GrowableObjectArray::Handle(Object::Allocate<GrowableObjectArray>(space));
+  result.SetLength(0);
+  result.SetData(array);
   return result.ptr();
 }
 
@@ -25926,14 +25565,7 @@ MapPtr Map::New(intptr_t class_id,
 MapPtr Map::NewUninitialized(intptr_t class_id, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->map_impl_class() !=
          Class::null());
-  Map& result = Map::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(class_id, Map::InstanceSize(), space,
-                                     Map::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  return result.ptr();
+  return Object::AllocateVariant<Map>(class_id, space);
 }
 
 const char* Map::ToCString() const {
@@ -26091,14 +25723,7 @@ SetPtr Set::NewDefault(intptr_t class_id, Heap::Space space) {
 SetPtr Set::NewUninitialized(intptr_t class_id, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->set_impl_class() !=
          Class::null());
-  Set& result = Set::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(class_id, Set::InstanceSize(), space,
-                                     Set::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
-  return result.ptr();
+  return Object::AllocateVariant<Set>(class_id, space);
 }
 
 ConstSetPtr ConstSet::NewDefault(Heap::Space space) {
@@ -26132,14 +25757,7 @@ Float32x4Ptr Float32x4::New(float v0,
                             Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->float32x4_class() !=
          Class::null());
-  Float32x4& result = Float32x4::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Float32x4::kClassId, Float32x4::InstanceSize(), space,
-                         Float32x4::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Float32x4::Handle(Object::Allocate<Float32x4>(space));
   result.set_x(v0);
   result.set_y(v1);
   result.set_z(v2);
@@ -26150,14 +25768,7 @@ Float32x4Ptr Float32x4::New(float v0,
 Float32x4Ptr Float32x4::New(simd128_value_t value, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->float32x4_class() !=
          Class::null());
-  Float32x4& result = Float32x4::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Float32x4::kClassId, Float32x4::InstanceSize(), space,
-                         Float32x4::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Float32x4::Handle(Object::Allocate<Float32x4>(space));
   result.set_value(value);
   return result.ptr();
 }
@@ -26220,14 +25831,7 @@ Int32x4Ptr Int32x4::New(int32_t v0,
                         Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->int32x4_class() !=
          Class::null());
-  Int32x4& result = Int32x4::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Int32x4::kClassId, Int32x4::InstanceSize(), space,
-                         Int32x4::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Int32x4::Handle(Object::Allocate<Int32x4>(space));
   result.set_x(v0);
   result.set_y(v1);
   result.set_z(v2);
@@ -26238,14 +25842,7 @@ Int32x4Ptr Int32x4::New(int32_t v0,
 Int32x4Ptr Int32x4::New(simd128_value_t value, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->int32x4_class() !=
          Class::null());
-  Int32x4& result = Int32x4::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Int32x4::kClassId, Int32x4::InstanceSize(), space,
-                         Int32x4::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Int32x4::Handle(Object::Allocate<Int32x4>(space));
   result.set_value(value);
   return result.ptr();
 }
@@ -26304,14 +25901,7 @@ const char* Int32x4::ToCString() const {
 Float64x2Ptr Float64x2::New(double value0, double value1, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->float64x2_class() !=
          Class::null());
-  Float64x2& result = Float64x2::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Float64x2::kClassId, Float64x2::InstanceSize(), space,
-                         Float64x2::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Float64x2::Handle(Object::Allocate<Float64x2>(space));
   result.set_x(value0);
   result.set_y(value1);
   return result.ptr();
@@ -26320,14 +25910,7 @@ Float64x2Ptr Float64x2::New(double value0, double value1, Heap::Space space) {
 Float64x2Ptr Float64x2::New(simd128_value_t value, Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->float64x2_class() !=
          Class::null());
-  Float64x2& result = Float64x2::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Float64x2::kClassId, Float64x2::InstanceSize(), space,
-                         Float64x2::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = Float64x2::Handle(Object::Allocate<Float64x2>(space));
   result.set_value(value);
   return result.ptr();
 }
@@ -26423,18 +26006,12 @@ TypedDataPtr TypedData::New(intptr_t class_id,
   if (len < 0 || len > TypedData::MaxElements(class_id)) {
     FATAL("Fatal error in TypedData::New: invalid len %" Pd "\n", len);
   }
-  TypedData& result = TypedData::Handle();
-  {
-    const intptr_t length_in_bytes = len * ElementSizeInBytes(class_id);
-    ObjectPtr raw =
-        Object::Allocate(class_id, TypedData::InstanceSize(length_in_bytes),
-                         space, TypedData::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(len);
-    result.RecomputeDataField();
-  }
-  return result.ptr();
+  auto raw = Object::AllocateVariant<TypedData>(
+      class_id, space, len * ElementSizeInBytes(class_id));
+  NoSafepointScope no_safepoint;
+  raw->untag()->set_length(Smi::New(len));
+  raw->untag()->RecomputeDataField();
+  return raw;
 }
 
 TypedDataPtr TypedData::Grow(const TypedData& current,
@@ -26478,16 +26055,10 @@ ExternalTypedDataPtr ExternalTypedData::New(
     MSAN_CHECK_INITIALIZED(data, len);
   }
 
-  ExternalTypedData& result = ExternalTypedData::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(class_id, ExternalTypedData::InstanceSize(), space,
-                         ExternalTypedData::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.SetLength(len);
-    result.SetData(data);
-  }
+  const auto& result = ExternalTypedData::Handle(
+      Object::AllocateVariant<ExternalTypedData>(class_id, space));
+  result.SetLength(len);
+  result.SetData(data);
   return result.ptr();
 }
 
@@ -26501,16 +26072,7 @@ ExternalTypedDataPtr ExternalTypedData::NewFinalizeWithFree(uint8_t* data,
 }
 
 TypedDataViewPtr TypedDataView::New(intptr_t class_id, Heap::Space space) {
-  auto& result = TypedDataView::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(class_id, TypedDataView::InstanceSize(), space,
-                         TypedDataView::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.Clear();
-  }
-  return result.ptr();
+  return Object::AllocateVariant<TypedDataView>(class_id, space);
 }
 
 TypedDataViewPtr TypedDataView::New(intptr_t class_id,
@@ -26521,6 +26083,44 @@ TypedDataViewPtr TypedDataView::New(intptr_t class_id,
   auto& result = TypedDataView::Handle(TypedDataView::New(class_id, space));
   result.InitializeWith(typed_data, offset_in_bytes, length);
   return result.ptr();
+}
+
+bool TypedDataBase::IsExternalOrExternalView() const {
+  if (IsExternalTypedData()) return true;
+  if (IsTypedDataView()) {
+    const auto& backing =
+        TypedDataBase::Handle(TypedDataView::Cast(*this).typed_data());
+    return backing.IsExternalTypedData();
+  }
+  return false;
+}
+
+TypedDataViewPtr TypedDataBase::ViewFromTo(intptr_t start,
+                                           intptr_t end,
+                                           Heap::Space space) const {
+  const intptr_t len = end - start;
+  ASSERT(0 <= len);
+  ASSERT(start < Length());
+  ASSERT((start + len) <= Length());
+
+  const intptr_t cid = GetClassId();
+
+  if (IsTypedDataView()) {
+    const auto& view = TypedDataView::Cast(*this);
+    const auto& td = TypedDataBase::Handle(view.typed_data());
+    const intptr_t view_offset = Smi::Value(view.offset_in_bytes());
+    ASSERT(IsTypedDataViewClassId(cid));
+    return TypedDataView::New(cid, ExternalTypedData::Cast(td),
+                              view_offset + start, len, Heap::kOld);
+  } else if (IsExternalTypedData()) {
+    ASSERT(IsExternalTypedDataClassId(cid));
+    ASSERT(IsTypedDataViewClassId(cid - 1));
+    return TypedDataView::New(cid - 1, *this, start, len, Heap::kOld);
+  }
+  RELEASE_ASSERT(IsTypedData());
+  ASSERT(IsExternalTypedDataClassId(cid));
+  ASSERT(IsTypedDataViewClassId(cid + 1));
+  return TypedDataView::New(cid + 1, *this, start, len, Heap::kOld);
 }
 
 const char* TypedDataBase::ToCString() const {
@@ -26550,9 +26150,7 @@ PointerPtr Pointer::New(uword native_address, Heap::Space space) {
       Class::Handle(IsolateGroup::Current()->class_table()->At(kPointerCid));
   cls.EnsureIsAllocateFinalized(Thread::Current());
 
-  Pointer& result = Pointer::Handle(zone);
-  result ^= Object::Allocate(kPointerCid, Pointer::InstanceSize(), space,
-                             Pointer::ContainsCompressedPointers());
+  const auto& result = Pointer::Handle(zone, Object::Allocate<Pointer>(space));
   result.SetTypeArguments(type_args);
   result.SetNativeAddress(native_address);
 
@@ -26567,13 +26165,10 @@ const char* Pointer::ToCString() const {
 DynamicLibraryPtr DynamicLibrary::New(void* handle,
                                       bool canBeClosed,
                                       Heap::Space space) {
-  DynamicLibrary& result = DynamicLibrary::Handle();
-  result ^=
-      Object::Allocate(kDynamicLibraryCid, DynamicLibrary::InstanceSize(),
-                       space, DynamicLibrary::ContainsCompressedPointers());
-  NoSafepointScope no_safepoint;
+  const auto& result =
+      DynamicLibrary::Handle(Object::Allocate<DynamicLibrary>(space));
+  ASSERT_EQUAL(result.IsClosed(), false);
   result.SetHandle(handle);
-  result.SetClosed(false);
   result.SetCanBeClosed(canBeClosed);
   return result.ptr();
 }
@@ -26592,15 +26187,8 @@ const char* DynamicLibrary::ToCString() const {
 }
 
 CapabilityPtr Capability::New(uint64_t id, Heap::Space space) {
-  Capability& result = Capability::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Capability::kClassId, Capability::InstanceSize(),
-                         space, Capability::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.StoreNonPointer(&result.untag()->id_, id);
-  }
+  const auto& result = Capability::Handle(Object::Allocate<Capability>(space));
+  result.StoreNonPointer(&result.untag()->id_, id);
   return result.ptr();
 }
 
@@ -26622,24 +26210,15 @@ ReceivePortPtr ReceivePort::New(Dart_Port id,
       HasStack() ? GetCurrentStackTrace(0) : StackTrace::Handle();
 #endif  // !defined(PRODUCT)
 
-  ReceivePort& result = ReceivePort::Handle(zone);
-  {
-    ObjectPtr raw =
-        Object::Allocate(ReceivePort::kClassId, ReceivePort::InstanceSize(),
-                         space, ReceivePort::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.untag()->set_send_port(send_port.ptr());
+  const auto& result =
+      ReceivePort::Handle(zone, Object::Allocate<ReceivePort>(space));
+  result.untag()->set_send_port(send_port.ptr());
 #if !defined(PRODUCT)
-    result.untag()->set_debug_name(debug_name.ptr());
-    result.untag()->set_allocation_location(allocation_location_.ptr());
+  result.untag()->set_debug_name(debug_name.ptr());
+  result.untag()->set_allocation_location(allocation_location_.ptr());
 #endif  // !defined(PRODUCT)
-  }
-  if (is_control_port) {
-    PortMap::SetPortState(id, PortMap::kControlPort);
-  } else {
-    PortMap::SetPortState(id, PortMap::kLivePort);
-  }
+  PortMap::SetPortState(
+      id, is_control_port ? PortMap::kControlPort : PortMap::kLivePort);
   return result.ptr();
 }
 
@@ -26655,16 +26234,9 @@ SendPortPtr SendPort::New(Dart_Port id,
                           Dart_Port origin_id,
                           Heap::Space space) {
   ASSERT(id != ILLEGAL_PORT);
-  SendPort& result = SendPort::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(SendPort::kClassId, SendPort::InstanceSize(), space,
-                         SendPort::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.StoreNonPointer(&result.untag()->id_, id);
-    result.StoreNonPointer(&result.untag()->origin_id_, origin_id);
-  }
+  const auto& result = SendPort::Handle(Object::Allocate<SendPort>(space));
+  result.StoreNonPointer(&result.untag()->id_, id);
+  result.StoreNonPointer(&result.untag()->origin_id_, origin_id);
   return result.ptr();
 }
 
@@ -26679,19 +26251,14 @@ static void TransferableTypedDataFinalizer(void* isolate_callback_data,
 
 TransferableTypedDataPtr TransferableTypedData::New(uint8_t* data,
                                                     intptr_t length) {
-  TransferableTypedDataPeer* peer = new TransferableTypedDataPeer(data, length);
+  auto* const peer = new TransferableTypedDataPeer(data, length);
 
   Thread* thread = Thread::Current();
-  TransferableTypedData& result = TransferableTypedData::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        TransferableTypedData::kClassId, TransferableTypedData::InstanceSize(),
-        thread->heap()->SpaceForExternal(length),
-        TransferableTypedData::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    thread->heap()->SetPeer(raw, peer);
-    result ^= raw;
-  }
+  const auto& result =
+      TransferableTypedData::Handle(Object::Allocate<TransferableTypedData>(
+          thread->heap()->SpaceForExternal(length)));
+  thread->heap()->SetPeer(result.ptr(), peer);
+
   // Set up finalizer so it frees allocated memory if handle is
   // garbage-collected.
   FinalizablePersistentHandle* finalizable_ref =
@@ -26815,31 +26382,17 @@ ClosurePtr Closure::New(const TypeArguments& instantiator_type_arguments,
   ASSERT(function_type_arguments.IsCanonical());
   ASSERT(delayed_type_arguments.IsCanonical());
   ASSERT(FunctionType::Handle(function.signature()).IsCanonical());
-  Closure& result = Closure::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(Closure::kClassId, Closure::InstanceSize(), space,
-                         Closure::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.untag()->set_instantiator_type_arguments(
-        instantiator_type_arguments.ptr());
-    result.untag()->set_function_type_arguments(function_type_arguments.ptr());
-    result.untag()->set_delayed_type_arguments(delayed_type_arguments.ptr());
-    result.untag()->set_function(function.ptr());
-    result.untag()->set_context(context.ptr());
+  const auto& result = Closure::Handle(Object::Allocate<Closure>(space));
+  result.untag()->set_instantiator_type_arguments(
+      instantiator_type_arguments.ptr());
+  result.untag()->set_function_type_arguments(function_type_arguments.ptr());
+  result.untag()->set_delayed_type_arguments(delayed_type_arguments.ptr());
+  result.untag()->set_function(function.ptr());
+  result.untag()->set_context(context.ptr());
 #if defined(DART_PRECOMPILED_RUNTIME)
-    result.set_entry_point(function.entry_point());
+  result.set_entry_point(function.entry_point());
 #endif
-  }
   return result.ptr();
-}
-
-ClosurePtr Closure::New() {
-  ObjectPtr raw =
-      Object::Allocate(Closure::kClassId, Closure::InstanceSize(), Heap::kOld,
-                       Closure::ContainsCompressedPointers());
-  return static_cast<ClosurePtr>(raw);
 }
 
 FunctionTypePtr Closure::GetInstantiatedSignature(Zone* zone) const {
@@ -26930,18 +26483,11 @@ bool StackTrace::expand_inlined() const {
 StackTracePtr StackTrace::New(const Array& code_array,
                               const TypedData& pc_offset_array,
                               Heap::Space space) {
-  StackTrace& result = StackTrace::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(StackTrace::kClassId, StackTrace::InstanceSize(),
-                         space, StackTrace::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = StackTrace::Handle(Object::Allocate<StackTrace>(space));
   result.set_code_array(code_array);
   result.set_pc_offset_array(pc_offset_array);
   result.set_expand_inlined(true);  // default.
-  result.set_skip_sync_start_in_parent_stack(false);
+  ASSERT_EQUAL(result.skip_sync_start_in_parent_stack(), false);
   return result.ptr();
 }
 
@@ -26950,14 +26496,7 @@ StackTracePtr StackTrace::New(const Array& code_array,
                               const StackTrace& async_link,
                               bool skip_sync_start_in_parent_stack,
                               Heap::Space space) {
-  StackTrace& result = StackTrace::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(StackTrace::kClassId, StackTrace::InstanceSize(),
-                         space, StackTrace::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result = StackTrace::Handle(Object::Allocate<StackTrace>(space));
   result.set_async_link(async_link);
   result.set_code_array(code_array);
   result.set_pc_offset_array(pc_offset_array);
@@ -27311,28 +26850,25 @@ DEFINE_FLAG_HANDLER(DwarfStackTracesHandler,
 SuspendStatePtr SuspendState::New(intptr_t frame_size,
                                   const Instance& function_data,
                                   Heap::Space space) {
-  SuspendState& result = SuspendState::Handle();
-  const intptr_t instance_size = SuspendState::InstanceSize(
-      frame_size + SuspendState::FrameSizeGrowthGap());
-  {
-    ObjectPtr raw =
-        Object::Allocate(SuspendState::kClassId, instance_size, space,
-                         SuspendState::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
+  ASSERT(frame_size >= 0);
+  const intptr_t num_elements = frame_size + SuspendState::FrameSizeGrowthGap();
 #if !defined(DART_PRECOMPILED_RUNTIME)
-    // Include heap object alignment overhead into the frame capacity.
-    const intptr_t frame_capacity =
-        instance_size - SuspendState::payload_offset();
-    ASSERT(SuspendState::InstanceSize(frame_capacity) == instance_size);
-    ASSERT(frame_size <= frame_capacity);
-    result.set_frame_capacity(frame_capacity);
+  // Include heap object alignment overhead into the frame capacity.
+  const intptr_t instance_size = SuspendState::InstanceSize(num_elements);
+  const intptr_t frame_capacity =
+      instance_size - SuspendState::payload_offset();
+  ASSERT(SuspendState::InstanceSize(frame_capacity) == instance_size);
+  ASSERT(frame_size <= frame_capacity);
 #endif
-    result.set_frame_size(frame_size);
-    result.set_pc(0);
-    result.set_function_data(function_data);
-  }
-  return result.ptr();
+  auto raw = Object::Allocate<SuspendState>(space, num_elements);
+  NoSafepointScope no_safepoint;
+  ASSERT_EQUAL(raw->untag()->pc_, 0);
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  raw->untag()->frame_capacity_ = frame_capacity;
+#endif
+  raw->untag()->frame_size_ = frame_size;
+  raw->untag()->set_function_data(function_data.ptr());
+  return raw;
 }
 
 SuspendStatePtr SuspendState::Clone(Thread* thread,
@@ -27476,19 +27012,12 @@ void RegExp::set_capture_name_map(const Array& array) const {
 }
 
 RegExpPtr RegExp::New(Zone* zone, Heap::Space space) {
-  RegExp& result = RegExp::Handle();
-  {
-    ObjectPtr raw =
-        Object::Allocate(RegExp::kClassId, RegExp::InstanceSize(), space,
-                         RegExp::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-    result.set_type(kUninitialized);
-    result.set_flags(RegExpFlags());
-    result.set_num_bracket_expressions(-1);
-    result.set_num_registers(/*is_one_byte=*/false, -1);
-    result.set_num_registers(/*is_one_byte=*/true, -1);
-  }
+  const auto& result = RegExp::Handle(Object::Allocate<RegExp>(space));
+  ASSERT_EQUAL(result.type(), kUninitialized);
+  ASSERT(result.flags() == RegExpFlags());
+  result.set_num_bracket_expressions(-1);
+  result.set_num_registers(/*is_one_byte=*/false, -1);
+  result.set_num_registers(/*is_one_byte=*/true, -1);
 
   if (!FLAG_interpret_irregexp) {
     auto thread = Thread::Current();
@@ -27580,10 +27109,7 @@ const char* RegExp::ToCString() const {
 WeakPropertyPtr WeakProperty::New(Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->weak_property_class() !=
          Class::null());
-  ObjectPtr raw =
-      Object::Allocate(WeakProperty::kClassId, WeakProperty::InstanceSize(),
-                       space, WeakProperty::ContainsCompressedPointers());
-  return static_cast<WeakPropertyPtr>(raw);
+  return Object::Allocate<WeakProperty>(space);
 }
 
 const char* WeakProperty::ToCString() const {
@@ -27593,10 +27119,7 @@ const char* WeakProperty::ToCString() const {
 WeakReferencePtr WeakReference::New(Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->weak_reference_class() !=
          Class::null());
-  ObjectPtr raw =
-      Object::Allocate(WeakReference::kClassId, WeakReference::InstanceSize(),
-                       space, WeakReference::ContainsCompressedPointers());
-  return static_cast<WeakReferencePtr>(raw);
+  return Object::Allocate<WeakReference>(space);
 }
 const char* WeakReference::ToCString() const {
   TypeArguments& type_args = TypeArguments::Handle(GetTypeArguments());
@@ -27615,11 +27138,7 @@ FinalizerPtr Finalizer::New(Heap::Space space) {
   ASSERT(
       Class::Handle(IsolateGroup::Current()->object_store()->finalizer_class())
           .EnsureIsAllocateFinalized(Thread::Current()) == Error::null());
-
-  ObjectPtr raw =
-      Object::Allocate(Finalizer::kClassId, Finalizer::InstanceSize(), space,
-                       Finalizer::ContainsCompressedPointers());
-  return static_cast<FinalizerPtr>(raw);
+  return Object::Allocate<Finalizer>(space);
 }
 
 const char* Finalizer::ToCString() const {
@@ -27635,10 +27154,7 @@ NativeFinalizerPtr NativeFinalizer::New(Heap::Space space) {
   ASSERT(Class::Handle(
              IsolateGroup::Current()->object_store()->native_finalizer_class())
              .EnsureIsAllocateFinalized(Thread::Current()) == Error::null());
-  ObjectPtr raw = Object::Allocate(
-      NativeFinalizer::kClassId, NativeFinalizer::InstanceSize(), space,
-      NativeFinalizer::ContainsCompressedPointers());
-  return static_cast<NativeFinalizerPtr>(raw);
+  return Object::Allocate<NativeFinalizer>(space);
 }
 
 // Runs the finalizer if not detached, detaches the value and set external size
@@ -27700,11 +27216,9 @@ FinalizerEntryPtr FinalizerEntry::New(const FinalizerBase& finalizer,
                                       Heap::Space space) {
   ASSERT(IsolateGroup::Current()->object_store()->finalizer_entry_class() !=
          Class::null());
-  auto& entry = FinalizerEntry::Handle();
-  entry ^=
-      Object::Allocate(FinalizerEntry::kClassId, FinalizerEntry::InstanceSize(),
-                       space, FinalizerEntry::ContainsCompressedPointers());
-  entry.set_external_size(0);
+  const auto& entry =
+      FinalizerEntry::Handle(Object::Allocate<FinalizerEntry>(space));
+  ASSERT_EQUAL(entry.external_size(), 0);
   entry.set_finalizer(finalizer);
   return entry.ptr();
 }
@@ -27754,14 +27268,8 @@ TypeParameterPtr MirrorReference::GetTypeParameterReferent() const {
 
 MirrorReferencePtr MirrorReference::New(const Object& referent,
                                         Heap::Space space) {
-  MirrorReference& result = MirrorReference::Handle();
-  {
-    ObjectPtr raw = Object::Allocate(
-        MirrorReference::kClassId, MirrorReference::InstanceSize(), space,
-        MirrorReference::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  const auto& result =
+      MirrorReference::Handle(Object::Allocate<MirrorReference>(space));
   result.set_referent(referent);
   return result.ptr();
 }
@@ -27809,13 +27317,7 @@ UserTagPtr UserTag::New(const String& label, Heap::Space space) {
     Exceptions::ThrowByType(Exceptions::kUnsupported, args);
   }
   // No tag with label exists, create and register with isolate tag table.
-  {
-    ObjectPtr raw =
-        Object::Allocate(UserTag::kClassId, UserTag::InstanceSize(), space,
-                         UserTag::ContainsCompressedPointers());
-    NoSafepointScope no_safepoint;
-    result ^= raw;
-  }
+  result = Object::Allocate<UserTag>(space);
   result.set_label(label);
   result.set_streamable(UserTags::IsTagNameStreamable(label.ToCString()));
   AddTagToIsolate(thread, result);
@@ -28241,10 +27743,7 @@ bool RecordType::IsInstantiated(Genericity genericity,
 }
 
 RecordTypePtr RecordType::New(Heap::Space space) {
-  ObjectPtr raw =
-      Object::Allocate(RecordType::kClassId, RecordType::InstanceSize(), space,
-                       RecordType::ContainsCompressedPointers());
-  return static_cast<RecordTypePtr>(raw);
+  return Object::Allocate<RecordType>(space);
 }
 
 RecordTypePtr RecordType::New(RecordShape shape,
@@ -28421,24 +27920,6 @@ AbstractTypePtr RecordType::Canonicalize(Thread* thread) const {
   return rec.ptr();
 }
 
-#if defined(DEBUG)
-bool RecordType::CheckIsCanonical(Thread* thread) const {
-  Zone* zone = thread->zone();
-  auto isolate_group = thread->isolate_group();
-  RecordType& type = RecordType::Handle(zone);
-  ObjectStore* object_store = isolate_group->object_store();
-  {
-    ASSERT(thread->isolate_group()
-               ->constant_canonicalization_mutex()
-               ->IsOwnedByCurrentThread());
-    CanonicalRecordTypeSet table(zone, object_store->canonical_record_types());
-    type ^= table.GetOrNull(CanonicalRecordTypeKey(*this));
-    object_store->set_canonical_record_types(table.Release());
-  }
-  return ptr() == type.ptr();
-}
-#endif  // DEBUG
-
 void RecordType::EnumerateURIs(URIs* uris) const {
   AbstractType& type = AbstractType::Handle();
   const intptr_t num_fields = NumFields();
@@ -28568,16 +28049,10 @@ bool RecordType::IsSubtypeOf(
 RecordPtr Record::New(RecordShape shape, Heap::Space space) {
   const intptr_t num_fields = shape.num_fields();
   ASSERT(num_fields >= 0);
-  Record& result = Record::Handle();
-  {
-    RecordPtr raw = static_cast<RecordPtr>(
-        Object::Allocate(Record::kClassId, Record::InstanceSize(num_fields),
-                         space, Record::ContainsCompressedPointers()));
-    NoSafepointScope no_safepoint;
-    raw->untag()->set_shape(shape.AsSmi());
-    result ^= raw;
-  }
-  return result.ptr();
+  auto raw = Object::Allocate<Record>(space, num_fields);
+  NoSafepointScope no_safepoint;
+  raw->untag()->set_shape(shape.AsSmi());
+  return raw;
 }
 
 const char* Record::ToCString() const {

@@ -7,6 +7,7 @@ import 'dart:isolate';
 
 import 'package:_fe_analyzer_shared/src/macros/bootstrap.dart';
 import 'package:_fe_analyzer_shared/src/macros/executor.dart';
+import 'package:_fe_analyzer_shared/src/macros/executor/protocol.dart';
 import 'package:_fe_analyzer_shared/src/macros/executor/serialization.dart';
 import 'package:_fe_analyzer_shared/src/macros/executor/isolated_executor.dart'
     as isolatedExecutor;
@@ -83,11 +84,13 @@ void main() {
                 macroUri, macroName, '', Arguments([], {}));
             expect(instanceId, isNotNull,
                 reason: 'Can create an instance with no arguments.');
+            executor.disposeMacro(instanceId);
 
             instanceId = await executor.instantiateMacro(
                 macroUri, macroName, '', Arguments([IntArgument(1)], {}));
             expect(instanceId, isNotNull,
                 reason: 'Can create an instance with positional arguments.');
+            executor.disposeMacro(instanceId);
 
             instanceId = await executor.instantiateMacro(
                 macroUri,
@@ -126,21 +129,28 @@ void main() {
                 reason: 'Can create an instance with named arguments.');
           });
 
-          tearDownAll(() {
+          tearDownAll(() async {
+            executor.disposeMacro(instanceId);
+            await expectLater(
+                () => executor.executeTypesPhase(instanceId,
+                    Fixtures.myFunction, TestTypePhaseIntrospector()),
+                throwsA(isA<RemoteException>().having((e) => e.error, 'error',
+                    contains('Unrecognized macro instance'))),
+                reason: 'Should be able to dispose macro instances');
             if (tmpDir.existsSync()) {
               try {
                 // Fails flakily on windows if a process still has the file open
                 tmpDir.deleteSync(recursive: true);
               } catch (_) {}
             }
-            executor.close();
+            await executor.close();
           });
 
           group('run macros', () {
             group('in the types phase', () {
               test('on functions', () async {
-                var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myFunction, FakeIdentifierResolver());
+                var result = await executor.executeTypesPhase(instanceId,
+                    Fixtures.myFunction, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -150,7 +160,7 @@ void main() {
 
               test('on methods', () async {
                 var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myMethod, FakeIdentifierResolver());
+                    instanceId, Fixtures.myMethod, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -160,7 +170,7 @@ void main() {
 
               test('on getters', () async {
                 var result = await executor.executeTypesPhase(instanceId,
-                    Fixtures.myVariableGetter, FakeIdentifierResolver());
+                    Fixtures.myVariableGetter, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -171,7 +181,7 @@ void main() {
 
               test('on setters', () async {
                 var result = await executor.executeTypesPhase(instanceId,
-                    Fixtures.myVariableSetter, FakeIdentifierResolver());
+                    Fixtures.myVariableSetter, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -181,8 +191,8 @@ void main() {
               });
 
               test('on variables', () async {
-                var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myVariable, FakeIdentifierResolver());
+                var result = await executor.executeTypesPhase(instanceId,
+                    Fixtures.myVariable, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -193,7 +203,7 @@ void main() {
 
               test('on constructors', () async {
                 var result = await executor.executeTypesPhase(instanceId,
-                    Fixtures.myConstructor, FakeIdentifierResolver());
+                    Fixtures.myConstructor, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -204,7 +214,7 @@ void main() {
 
               test('on fields', () async {
                 var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myField, FakeIdentifierResolver());
+                    instanceId, Fixtures.myField, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -214,7 +224,7 @@ void main() {
 
               test('on classes', () async {
                 var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myClass, FakeIdentifierResolver());
+                    instanceId, Fixtures.myClass, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -225,7 +235,7 @@ void main() {
 
               test('on enums', () async {
                 var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myEnum, FakeIdentifierResolver());
+                    instanceId, Fixtures.myEnum, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -235,7 +245,7 @@ void main() {
 
               test('on enum values', () async {
                 var result = await executor.executeTypesPhase(instanceId,
-                    Fixtures.myEnumValues.first, FakeIdentifierResolver());
+                    Fixtures.myEnumValues.first, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -245,13 +255,34 @@ void main() {
 
               test('on mixins', () async {
                 var result = await executor.executeTypesPhase(
-                    instanceId, Fixtures.myMixin, FakeIdentifierResolver());
+                    instanceId, Fixtures.myMixin, TestTypePhaseIntrospector());
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
                     result.libraryAugmentations.single.debugString().toString(),
                     equalsIgnoringWhitespace(
                         'class GeneratedByMyMixinOnMyClass {}'));
+              });
+
+              test('on libraries', () async {
+                var result = await executor.executeTypesPhase(
+                  instanceId,
+                  Fixtures.library,
+                  TestTypePhaseIntrospector(),
+                );
+                expect(result.enumValueAugmentations, isEmpty);
+                expect(result.typeAugmentations, isEmpty);
+                expect(
+                  result.libraryAugmentations.single.debugString().toString(),
+                  equalsIgnoringWhitespace('''
+class LibraryInfo {
+  final Uri uri;
+  final String languageVersion;
+  final List<Type> definedTypes;
+  const LibraryInfo(this.uri, this.languageVersion, this.definedTypes);
+}
+'''),
+                );
               });
             });
 
@@ -260,10 +291,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myFunction,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -276,10 +304,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myMethod,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -293,10 +318,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myConstructor,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -315,10 +337,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myVariableGetter,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -331,10 +350,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myVariableSetter,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -347,10 +363,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myVariable,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -363,10 +376,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myField,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -384,10 +394,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myClass,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -398,28 +405,11 @@ void main() {
                     equalsIgnoringWhitespace('''
                 static const List<String> fieldNames = ['myField',];
               '''));
-                expect(
-                    result.libraryAugmentations
-                        .map((code) => code.debugString().toString())
-                        .toList(),
-                    [
-                      equalsIgnoringWhitespace(
-                          "const library = 'package:foo/bar.dart';"),
-                      equalsIgnoringWhitespace(
-                          "const languageVersion = '3.0';"),
-                      equalsIgnoringWhitespace("const definedTypes = "
-                          "['MyClass','MyEnum','MyMixin',];"),
-                    ]);
               });
 
               test('on enums', () async {
-                var result = await executor.executeDeclarationsPhase(
-                    instanceId,
-                    Fixtures.myEnum,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                var result = await executor.executeDeclarationsPhase(instanceId,
+                    Fixtures.myEnum, Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -436,10 +426,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myEnumValues.first,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -456,10 +443,7 @@ void main() {
                 var result = await executor.executeDeclarationsPhase(
                     instanceId,
                     Fixtures.myMixin,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector);
+                    Fixtures.testDeclarationPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, hasLength(1));
                 expect(
@@ -472,6 +456,19 @@ void main() {
               '''));
                 expect(result.libraryAugmentations, isEmpty);
               });
+
+              test('on libraries', () async {
+                var result = await executor.executeDeclarationsPhase(
+                    instanceId,
+                    Fixtures.library,
+                    Fixtures.testDeclarationPhaseIntrospector);
+                expect(result.enumValueAugmentations, isEmpty);
+                expect(result.typeAugmentations, isEmpty);
+                expect(
+                  result.libraryAugmentations.single.debugString().toString(),
+                  equalsIgnoringWhitespace('final LibraryInfo library;'),
+                );
+              });
             });
 
             group('in the definition phase', () {
@@ -479,12 +476,7 @@ void main() {
                 var result = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myFunction,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -504,12 +496,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myMethod,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, isEmpty);
                 expect(definitionResult.typeAugmentations, hasLength(1));
                 var augmentationStrings = definitionResult
@@ -525,12 +512,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myConstructor,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, isEmpty);
                 expect(definitionResult.typeAugmentations, hasLength(1));
                 expect(
@@ -547,12 +529,7 @@ void main() {
                 var result = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myVariableGetter,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -572,12 +549,7 @@ void main() {
                 var result = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myVariableSetter,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -598,12 +570,7 @@ void main() {
                 var result = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myVariable,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(result.enumValueAugmentations, isEmpty);
                 expect(result.typeAugmentations, isEmpty);
                 expect(
@@ -626,39 +593,13 @@ void main() {
                 augment final /*inferred*/String _myVariable = 'new initial value' + augment super;
                 '''),
                     ]));
-
-                result = await executor.executeDefinitionsPhase(
-                    instanceId,
-                    Fixtures.allDeclarationsVariable,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
-                expect(result.enumValueAugmentations, isEmpty);
-                expect(result.typeAugmentations, isEmpty);
-                expect(
-                    result.libraryAugmentations
-                        .map((a) => a.debugString().toString()),
-                    unorderedEquals([
-                      equalsIgnoringWhitespace(
-                          "augment final List<String> allLibraryDeclarations = "
-                          "['MyClass','MyEnum','MyMixin','myFunction',"
-                          "'_myVariable',];"),
-                    ]));
               });
 
               test('on fields', () async {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myField,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, isEmpty);
                 expect(definitionResult.typeAugmentations, hasLength(1));
                 expect(
@@ -673,12 +614,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myClass,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, isEmpty);
                 expect(definitionResult.typeAugmentations, hasLength(1));
                 var augmentationStrings = definitionResult
@@ -698,12 +634,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myEnum,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, hasLength(1));
                 var entryAugmentationStrings = definitionResult
                     .enumValueAugmentations[Fixtures.myEnum.identifier]!
@@ -738,12 +669,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myEnumValues.first,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, hasLength(1));
                 var augmentationStrings = definitionResult
                     .enumValueAugmentations[Fixtures.myEnum.identifier]!
@@ -758,12 +684,7 @@ void main() {
                 var definitionResult = await executor.executeDefinitionsPhase(
                     instanceId,
                     Fixtures.myMixin,
-                    FakeIdentifierResolver(),
-                    Fixtures.testTypeDeclarationResolver,
-                    Fixtures.testTypeResolver,
-                    Fixtures.testTypeIntrospector,
-                    Fixtures.testTypeInferrer,
-                    Fixtures.testLibraryDeclarationsResolver);
+                    Fixtures.testDefinitionPhaseIntrospector);
                 expect(definitionResult.enumValueAugmentations, isEmpty);
                 expect(definitionResult.typeAugmentations, hasLength(1));
                 var augmentationStrings = definitionResult
@@ -775,6 +696,18 @@ void main() {
                     unorderedEquals(
                       mixinMethodDefinitionMatchers,
                     ));
+              });
+
+              test('on libraries', () async {
+                var result = await executor.executeDefinitionsPhase(instanceId,
+                    Fixtures.library, Fixtures.testDefinitionPhaseIntrospector);
+                expect(result.enumValueAugmentations, isEmpty);
+                expect(result.typeAugmentations, isEmpty);
+                expect(
+                    result.libraryAugmentations.single.debugString().toString(),
+                    equalsIgnoringWhitespace('''
+augment final LibraryInfo library = LibraryInfo(Uri.parse('package:foo/bar.dart'), '3.0', [MyClass, MyEnum, MyMixin, ]);
+'''));
               });
             });
           });

@@ -80,7 +80,8 @@ class PrepareRenameHandler extends LspMessageHandler<TextDocumentPositionParams,
   }
 }
 
-class RenameHandler extends LspMessageHandler<RenameParams, WorkspaceEdit?> {
+class RenameHandler extends LspMessageHandler<RenameParams, WorkspaceEdit?>
+    with LspHandlerHelperMixin {
   RenameHandler(super.server);
 
   LspGlobalClientConfiguration get config =>
@@ -222,7 +223,6 @@ class RenameHandler extends LspMessageHandler<RenameParams, WorkspaceEdit?> {
 
       // Check whether we should handle renaming the file to match the class.
       if (_clientSupportsRename && _isClassRename(refactoring)) {
-        final pathContext = server.resourceProvider.pathContext;
         // The rename must always be performed on the file that defines the
         // class which is not necessarily the one where the rename was invoked.
         final declaringFile = (refactoring as RenameUnitMemberRefactoringImpl)
@@ -245,7 +245,8 @@ class RenameHandler extends LspMessageHandler<RenameParams, WorkspaceEdit?> {
                     await _promptToRenameFile(actualFilename, newFilename));
             if (shouldRename) {
               final newPath = pathContext.join(folder, newFilename);
-              final renameEdit = createRenameEdit(declaringFile, newPath);
+              final renameEdit =
+                  createRenameEdit(pathContext, declaringFile, newPath);
               workspaceEdit = mergeWorkspaceEdits([workspaceEdit, renameEdit]);
             }
           }

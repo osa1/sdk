@@ -89,16 +89,17 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
 
     var element = ClassElementImpl(name, nameToken.offset);
     element.isAbstract = node.abstractKeyword != null;
-    element.isMacro = node.macroKeyword != null;
-    if (node.sealedKeyword != null) {
-      element.isSealed = true;
-      element.isAbstract = true;
-    }
+    element.isAugmentation = node.augmentKeyword != null;
     element.isBase = node.baseKeyword != null;
-    element.isInterface = node.interfaceKeyword != null;
     element.isFinal = node.finalKeyword != null;
     element.isInline = node.inlineKeyword != null;
+    element.isInterface = node.interfaceKeyword != null;
+    element.isMacro = node.macroKeyword != null;
     element.isMixinClass = node.mixinKeyword != null;
+    if (node.sealedKeyword != null) {
+      element.isAbstract = true;
+      element.isSealed = true;
+    }
     element.metadata = _buildAnnotations(node.metadata);
     _setCodeRange(element, node);
     _setDocumentation(element, node);
@@ -107,7 +108,9 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     _linker.elementNodes[element] = node;
 
     var reference = _enclosingContext.addClass(name, element);
-    _libraryBuilder.declare(name, reference);
+    if (!element.isAugmentation) {
+      _libraryBuilder.declare(name, reference);
+    }
 
     var holder = _EnclosingContext(reference, element);
     _withEnclosing(holder, () {
@@ -122,6 +125,27 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     node.withClause?.accept(this);
     node.implementsClause?.accept(this);
     _buildClass(node);
+
+    _libraryBuilder.updateAugmentationTarget(name, element, (target) {
+      if (element.isAugmentation) {
+        target.augmentation = element;
+        element.augmentationTarget = target;
+      }
+    });
+
+    if (element.isAugmentation) {
+      switch (_libraryBuilder.getAugmentedBuilder(name)) {
+        case AugmentedClassDeclarationBuilder builder:
+          builder.augment(element);
+      }
+    } else {
+      _libraryBuilder.putAugmentedBuilder(
+        name,
+        AugmentedClassDeclarationBuilder(
+          declaration: element,
+        ),
+      );
+    }
   }
 
   @override
@@ -131,16 +155,16 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
 
     var element = ClassElementImpl(name, nameToken.offset);
     element.isAbstract = node.abstractKeyword != null;
-    element.isMacro = node.macroKeyword != null;
-    if (node.sealedKeyword != null) {
-      element.isSealed = true;
-      element.isAbstract = true;
-    }
     element.isBase = node.baseKeyword != null;
-    element.isInterface = node.interfaceKeyword != null;
     element.isFinal = node.finalKeyword != null;
+    element.isInterface = node.interfaceKeyword != null;
+    element.isMacro = node.macroKeyword != null;
     element.isMixinApplication = true;
     element.isMixinClass = node.mixinKeyword != null;
+    if (node.sealedKeyword != null) {
+      element.isAbstract = true;
+      element.isSealed = true;
+    }
     element.metadata = _buildAnnotations(node.metadata);
     _setCodeRange(element, node);
     _setDocumentation(element, node);
@@ -792,6 +816,7 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     if (node.isGetter) {
       var element = PropertyAccessorElementImpl(name, nameOffset);
       element.isAbstract = node.isAbstract;
+      element.isAugmentation = node.augmentKeyword != null;
       element.isGetter = true;
       element.isStatic = node.isStatic;
 
@@ -810,6 +835,7 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     } else if (node.isSetter) {
       var element = PropertyAccessorElementImpl(name, nameOffset);
       element.isAbstract = node.isAbstract;
+      element.isAugmentation = node.augmentKeyword != null;
       element.isSetter = true;
       element.isStatic = node.isStatic;
 
@@ -827,6 +853,7 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
 
       var element = MethodElementImpl(name, nameOffset);
       element.isAbstract = node.isAbstract;
+      element.isAugmentation = node.augmentKeyword != null;
       element.isStatic = node.isStatic;
 
       reference = _enclosingContext.addMethod(name, element);
@@ -861,6 +888,7 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     var name = nameToken.lexeme;
 
     var element = MixinElementImpl(name, nameToken.offset);
+    element.isAugmentation = node.augmentKeyword != null;
     element.isBase = node.baseKeyword != null;
     element.metadata = _buildAnnotations(node.metadata);
     _setCodeRange(element, node);
@@ -870,7 +898,9 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     _linker.elementNodes[element] = node;
 
     var reference = _enclosingContext.addMixin(name, element);
-    _libraryBuilder.declare(name, reference);
+    if (!element.isAugmentation) {
+      _libraryBuilder.declare(name, reference);
+    }
 
     var holder = _EnclosingContext(reference, element);
     _withEnclosing(holder, () {
@@ -884,6 +914,27 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     node.onClause?.accept(this);
     node.implementsClause?.accept(this);
     _buildMixin(node);
+
+    _libraryBuilder.updateAugmentationTarget(name, element, (target) {
+      if (element.isAugmentation) {
+        target.augmentation = element;
+        element.augmentationTarget = target;
+      }
+    });
+
+    if (element.isAugmentation) {
+      switch (_libraryBuilder.getAugmentedBuilder(name)) {
+        case AugmentedMixinDeclarationBuilder builder:
+          builder.augment(element);
+      }
+    } else {
+      _libraryBuilder.putAugmentedBuilder(
+        name,
+        AugmentedMixinDeclarationBuilder(
+          declaration: element,
+        ),
+      );
+    }
   }
 
   @override
@@ -1135,7 +1186,8 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
       _visitPropertyFirst<FieldDeclaration>(node.members);
     });
 
-    if (!holder.hasConstructors) {
+    // TODO(scheglov) To it after all augmentations
+    if (!element.isAugmentation && !holder.hasConstructors) {
       holder.addConstructor(
         ConstructorElementImpl('', -1)..isSynthetic = true,
       );
@@ -1146,6 +1198,8 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     element.fields = holder.fields;
     element.methods = holder.methods;
 
+    // TODO(scheglov) We cannot do this anymore.
+    // Not for class augmentations, not for classes.
     _resolveConstructorFieldFormals(element);
   }
 
@@ -1196,6 +1250,10 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     required String name,
     required PropertyAccessorElementImpl accessorElement,
   }) {
+    if (accessorElement.isAugmentation) {
+      return;
+    }
+
     var enclosingRef = _enclosingContext.reference;
     var enclosingElement = _enclosingContext.element;
 

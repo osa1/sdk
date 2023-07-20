@@ -32,35 +32,37 @@ abstract class MacroExecutor {
   Future<MacroInstanceIdentifier> instantiateMacro(
       Uri library, String name, String constructor, Arguments arguments);
 
+  /// Disposes a macro [instance] by its identifier.
+  ///
+  /// All macros should be disposed once expanded to prevent memory leaks in the
+  /// client macro executor.
+  ///
+  /// This is a fire and forget API, it does not happen synchronously but there
+  /// is no reason to wait for it to complete, and the client does not send a
+  /// response.
+  void disposeMacro(MacroInstanceIdentifier instance);
+
   /// Runs the type phase for [macro] on a given [declaration].
   ///
   /// Throws an exception if there is an error executing the macro.
   Future<MacroExecutionResult> executeTypesPhase(MacroInstanceIdentifier macro,
-      covariant Declaration declaration, IdentifierResolver identifierResolver);
+      MacroTarget target, TypePhaseIntrospector introspector);
 
   /// Runs the declarations phase for [macro] on a given [declaration].
   ///
   /// Throws an exception if there is an error executing the macro.
   Future<MacroExecutionResult> executeDeclarationsPhase(
       MacroInstanceIdentifier macro,
-      covariant Declaration declaration,
-      IdentifierResolver identifierResolver,
-      TypeDeclarationResolver typeDeclarationResolver,
-      TypeResolver typeResolver,
-      TypeIntrospector typeIntrospector);
+      MacroTarget target,
+      DeclarationPhaseIntrospector introspector);
 
   /// Runs the definitions phase for [macro] on a given [declaration].
   ///
   /// Throws an exception if there is an error executing the macro.
   Future<MacroExecutionResult> executeDefinitionsPhase(
       MacroInstanceIdentifier macro,
-      covariant Declaration declaration,
-      IdentifierResolver identifierResolver,
-      TypeDeclarationResolver typeDeclarationResolver,
-      TypeResolver typeResolver,
-      TypeIntrospector typeIntrospector,
-      TypeInferrer typeInferrer,
-      LibraryDeclarationsResolver libraryDeclarationsResolver);
+      MacroTarget target,
+      DefinitionPhaseIntrospector introspector);
 
   /// Combines multiple [MacroExecutionResult]s into a single library
   /// augmentation file, and returns a [String] representing that file.

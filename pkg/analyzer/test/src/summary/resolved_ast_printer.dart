@@ -1654,7 +1654,7 @@ Expected parent: (${parent.runtimeType}) $parent
 
   void _writeElement(String name, Element? element) {
     if (_withResolution) {
-      _elementPrinter.writeElement(name, element);
+      _elementPrinter.writeNamedElement(name, element);
     }
   }
 
@@ -1885,6 +1885,9 @@ class ResolvedNodeTextConfiguration {
   /// If `true`, linking of [EnumConstantDeclaration] will be checked
   /// TODO(scheglov) Remove after https://github.com/dart-lang/sdk/issues/48380
   bool withCheckingLinking = false;
+
+  /// If `true`, elements of [InterfaceType] should be printed.
+  bool withInterfaceTypeElements = false;
 
   /// If `true`, [Expression.staticParameterElement] should be printed.
   bool withParameterElements = true;

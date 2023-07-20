@@ -32,6 +32,9 @@ class SimpleMacro
         FunctionTypesMacro,
         FunctionDeclarationsMacro,
         FunctionDefinitionMacro,
+        LibraryTypesMacro,
+        LibraryDeclarationsMacro,
+        LibraryDefinitionMacro,
         MethodTypesMacro,
         MethodDeclarationsMacro,
         MethodDefinitionMacro,
@@ -75,21 +78,6 @@ class SimpleMacro
       for (var field in fields) "'${field.identifier.name}',",
       '];',
     ]));
-
-    // TODO: Do this in `buildDeclarationsForLibrary` once that exists.
-    var languageVersion = clazz.library.languageVersion;
-    builder.declareInLibrary(
-        DeclarationCode.fromString("const library = '${clazz.library.uri}';"));
-    builder.declareInLibrary(DeclarationCode.fromString(
-      'const languageVersion = '
-      "'${languageVersion.major}.${languageVersion.minor}';",
-    ));
-    var libraryTypes = await builder.typesOf(clazz.library);
-    builder.declareInLibrary(DeclarationCode.fromParts([
-      'const definedTypes = [',
-      for (var type in libraryTypes) "'${type.identifier.name}',",
-      '];',
-    ]));
   }
 
   @override
@@ -119,7 +107,7 @@ class SimpleMacro
   @override
   FutureOr<void> buildDeclarationsForEnumValue(
       EnumValueDeclaration value, EnumDeclarationBuilder builder) async {
-    final parent = await builder.declarationOf(value.definingEnum);
+    final parent = await builder.typeDeclarationOf(value.definingEnum);
     builder.declareInType(DeclarationCode.fromParts([
       parent.identifier,
       ' ${value.identifier.name}ToString() => ',
@@ -268,7 +256,7 @@ class SimpleMacro
   @override
   FutureOr<void> buildDefinitionForEnumValue(
       EnumValueDeclaration value, EnumValueDefinitionBuilder builder) async {
-    final parent = await builder.declarationOf(value.definingEnum)
+    final parent = await builder.typeDeclarationOf(value.definingEnum)
         as IntrospectableEnumDeclaration;
     final constructor = (await builder.constructorsOf(parent)).first;
     final parts = [
@@ -314,8 +302,7 @@ class SimpleMacro
     await buildDefinitionForFunction(method, builder);
 
     // Test the type declaration resolver
-    var parentClass =
-        await builder.declarationOf(method.definingType) as IntrospectableType;
+    var parentClass = await builder.typeDeclarationOf(method.definingType);
     // Should be able to find ourself in the methods of the parent class.
     (await builder.methodsOf(parentClass))
         .singleWhere((m) => m.identifier == method.identifier);
@@ -327,22 +314,22 @@ class SimpleMacro
     // Test the class introspector
     if (parentClass is IntrospectableClassDeclaration) {
       superClass =
-          (await builder.declarationOf(parentClass.superclass!.identifier));
-      interfaces.addAll(await Future.wait(parentClass.interfaces
-          .map((interface) => builder.declarationOf(interface.identifier))));
+          (await builder.typeDeclarationOf(parentClass.superclass!.identifier));
+      interfaces.addAll(await Future.wait(parentClass.interfaces.map(
+          (interface) => builder.typeDeclarationOf(interface.identifier))));
       mixins.addAll(await Future.wait(parentClass.mixins
-          .map((mixins) => builder.declarationOf(mixins.identifier))));
+          .map((mixins) => builder.typeDeclarationOf(mixins.identifier))));
     } else if (parentClass is IntrospectableMixinDeclaration) {
-      superclassConstraints.addAll(await Future.wait(parentClass
-          .superclassConstraints
-          .map((interface) => builder.declarationOf(interface.identifier))));
-      interfaces.addAll(await Future.wait(parentClass.interfaces
-          .map((interface) => builder.declarationOf(interface.identifier))));
+      superclassConstraints.addAll(await Future.wait(
+          parentClass.superclassConstraints.map(
+              (interface) => builder.typeDeclarationOf(interface.identifier))));
+      interfaces.addAll(await Future.wait(parentClass.interfaces.map(
+          (interface) => builder.typeDeclarationOf(interface.identifier))));
     } else if (parentClass is IntrospectableEnumDeclaration) {
-      interfaces.addAll(await Future.wait(parentClass.interfaces
-          .map((interface) => builder.declarationOf(interface.identifier))));
+      interfaces.addAll(await Future.wait(parentClass.interfaces.map(
+          (interface) => builder.typeDeclarationOf(interface.identifier))));
       mixins.addAll(await Future.wait(parentClass.mixins
-          .map((mixins) => builder.declarationOf(mixins.identifier))));
+          .map((mixins) => builder.typeDeclarationOf(mixins.identifier))));
     }
     var fields = (await builder.fieldsOf(parentClass));
     var methods = (await builder.methodsOf(parentClass));
@@ -418,43 +405,31 @@ class SimpleMacro
   @override
   Future<void> buildDefinitionForVariable(
       VariableDeclaration variable, VariableDefinitionBuilder builder) async {
-    if (variable.identifier.name == 'allLibraryDeclarations') {
-      var allDeclarations =
-          await builder.topLevelDeclarationsOf(variable.library);
-      builder.augment(
-          initializer: ExpressionCode.fromParts([
-        '[',
-        for (var declaration in allDeclarations)
-          "'${declaration.identifier.name}',",
-        ']',
-      ]));
-    } else {
-      var definingClass =
-          variable is FieldDeclaration ? variable.definingType.name : '';
-      builder.augment(
-        getter: DeclarationCode.fromParts([
-          variable.type.code,
-          ' get ',
-          variable.identifier.name,
-          ''' {
+    var definingClass =
+        variable is FieldDeclaration ? variable.definingType.name : '';
+    builder.augment(
+      getter: DeclarationCode.fromParts([
+        variable.type.code,
+        ' get ',
+        variable.identifier.name,
+        ''' {
           print('parentClass: $definingClass');
           print('isExternal: ${variable.isExternal}');
           print('isFinal: ${variable.isFinal}');
           print('isLate: ${variable.isLate}');
           return augment super;
         }''',
-        ]),
-        setter: DeclarationCode.fromParts([
-          'set ',
-          variable.identifier.name,
-          '(',
-          variable.type.code,
-          ' value) { augment super = value; }'
-        ]),
-        initializer:
-            ExpressionCode.fromString("'new initial value' + augment super"),
-      );
-    }
+      ]),
+      setter: DeclarationCode.fromParts([
+        'set ',
+        variable.identifier.name,
+        '(',
+        variable.type.code,
+        ' value) { augment super = value; }'
+      ]),
+      initializer:
+          ExpressionCode.fromString("'new initial value' + augment super"),
+    );
   }
 
   @override
@@ -560,13 +535,53 @@ class SimpleMacro
     var name = 'GeneratedBy${variable.identifier.name.capitalize()}';
     builder.declareType(name, DeclarationCode.fromString('class $name {}'));
   }
+
+  @override
+  void buildDeclarationsForLibrary(
+      Library library, DeclarationBuilder builder) {
+    builder.declareInLibrary(
+        DeclarationCode.fromString("final LibraryInfo library;"));
+  }
+
+  @override
+  Future<void> buildDefinitionForLibrary(
+      Library library, LibraryDefinitionBuilder builder) async {
+    var languageVersion = library.languageVersion;
+    var allDeclarations = await builder.topLevelDeclarationsOf(library);
+    var variableDeclaration =
+        allDeclarations.singleWhere((d) => d.identifier.name == 'library');
+    var variableBuilder =
+        await builder.buildVariable(variableDeclaration.identifier);
+    variableBuilder.augment(
+        initializer: ExpressionCode.fromParts([
+      'LibraryInfo(',
+      "Uri.parse('${library.uri}'), ",
+      "'${languageVersion.major}.${languageVersion.minor}', ",
+      "[",
+      for (var type in allDeclarations)
+        if (type is TypeDeclaration) ...[type.identifier, ', '],
+      "])",
+    ]));
+  }
+
+  @override
+  void buildTypesForLibrary(Library library, TypeBuilder builder) {
+    builder.declareType('LibraryInfo', DeclarationCode.fromString('''
+class LibraryInfo {
+  final Uri uri;
+  final String languageVersion;
+  final List<Type> definedTypes;
+  const LibraryInfo(this.uri, this.languageVersion, this.definedTypes);
+}'''));
+  }
 }
 
 Future<FunctionBodyCode> _buildFunctionAugmentation(
-    FunctionDeclaration function, TypeInferrer inferrer) async {
+    FunctionDeclaration function,
+    DefinitionPhaseIntrospector introspector) async {
   Future<List<Object>> typeParts(TypeAnnotation annotation) async {
     if (annotation is OmittedTypeAnnotation) {
-      var inferred = await inferrer.inferType(annotation);
+      var inferred = await introspector.inferType(annotation);
       return [inferred.code, ' (inferred)'];
     }
     return [annotation.code];

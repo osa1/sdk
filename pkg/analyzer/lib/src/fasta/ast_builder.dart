@@ -1165,6 +1165,7 @@ class AstBuilder extends StackListener {
     declarations.add(
       builder.build(),
     );
+
     _classLikeBuilder = null;
   }
 
@@ -1309,6 +1310,7 @@ class AstBuilder extends StackListener {
       MethodDeclarationImpl(
         comment: comment,
         metadata: metadata,
+        augmentKeyword: modifiers?.augmentKeyword,
         externalKeyword: modifiers?.externalKeyword,
         modifierKeyword: modifiers?.abstractKeyword ?? modifiers?.staticKeyword,
         returnType: returnType,
@@ -2495,6 +2497,7 @@ class AstBuilder extends StackListener {
     declarations.add(
       builder.build(),
     );
+
     _classLikeBuilder = null;
   }
 
@@ -5805,6 +5808,7 @@ class AstBuilder extends StackListener {
 }
 
 class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
+  final Token? augmentKeyword;
   final Token? abstractKeyword;
   final Token? macroKeyword;
   final Token? inlineKeyword;
@@ -5812,7 +5816,6 @@ class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
   final Token? baseKeyword;
   final Token? interfaceKeyword;
   final Token? finalKeyword;
-  final Token? augmentKeyword;
   final Token? mixinKeyword;
   final Token classKeyword;
   final Token name;
@@ -5827,6 +5830,7 @@ class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
     required super.typeParameters,
     required super.leftBracket,
     required super.rightBracket,
+    required this.augmentKeyword,
     required this.abstractKeyword,
     required this.macroKeyword,
     required this.inlineKeyword,
@@ -5834,7 +5838,6 @@ class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
     required this.baseKeyword,
     required this.interfaceKeyword,
     required this.finalKeyword,
-    required this.augmentKeyword,
     required this.mixinKeyword,
     required this.classKeyword,
     required this.name,
@@ -5848,6 +5851,7 @@ class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
     return ClassDeclarationImpl(
       comment: comment,
       metadata: metadata,
+      augmentKeyword: augmentKeyword,
       abstractKeyword: abstractKeyword,
       macroKeyword: macroKeyword,
       inlineKeyword: inlineKeyword,
@@ -5855,7 +5859,6 @@ class _ClassDeclarationBuilder extends _ClassLikeDeclarationBuilder {
       baseKeyword: baseKeyword,
       interfaceKeyword: interfaceKeyword,
       finalKeyword: finalKeyword,
-      augmentKeyword: augmentKeyword,
       mixinKeyword: mixinKeyword,
       classKeyword: classKeyword,
       name: name,

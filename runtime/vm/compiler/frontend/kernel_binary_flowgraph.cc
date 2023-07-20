@@ -275,7 +275,7 @@ Fragment StreamingFlowGraphBuilder::BuildInitializers(
         });
     constructor_initialized_field_offsets.Add(-1);
 
-    ExternalTypedData& kernel_data = ExternalTypedData::Handle(Z);
+    auto& kernel_data = TypedDataView::Handle(Z);
     Array& class_fields = Array::Handle(Z, parent_class.fields());
     Field& class_field = Field::Handle(Z);
     intptr_t next_constructor_initialized_field_index = 0;
@@ -298,7 +298,7 @@ Fragment StreamingFlowGraphBuilder::BuildInitializers(
           is_constructor_initialized = true;
         }
 
-        kernel_data = class_field.KernelData();
+        kernel_data = class_field.KernelLibrary();
         ASSERT(!kernel_data.IsNull());
         AlternativeReadingScopeWithNewData alt(&reader_, &kernel_data,
                                                field_offset);
@@ -1270,7 +1270,8 @@ void StreamingFlowGraphBuilder::ReportUnexpectedTag(const char* variant,
   if ((flow_graph_builder_ == nullptr) || (parsed_function() == nullptr)) {
     KernelReaderHelper::ReportUnexpectedTag(variant, tag);
   } else {
-    H.ReportError(script_, TokenPosition::kNoSource,
+    const auto& script = Script::Handle(Z, Script());
+    H.ReportError(script, TokenPosition::kNoSource,
                   "Unexpected tag %d (%s) in %s, expected %s", tag,
                   Reader::TagName(tag),
                   parsed_function()->function().ToQualifiedCString(), variant);
@@ -2026,7 +2027,8 @@ Fragment StreamingFlowGraphBuilder::BuildInvalidExpression(
 
   // Invalid expression message has pointer to the source code, no need to
   // report it twice.
-  H.ReportError(script(), TokenPosition::kNoSource, "%s", message.ToCString());
+  const auto& script = Script::Handle(Z, Script());
+  H.ReportError(script, TokenPosition::kNoSource, "%s", message.ToCString());
   return Fragment();
 }
 
@@ -4297,7 +4299,8 @@ Fragment StreamingFlowGraphBuilder::BuildBigIntLiteral(
       H.DartString(ReadStringReference());  // read index into string table.
   const Integer& integer = Integer::ZoneHandle(Z, Integer::NewCanonical(value));
   if (integer.IsNull()) {
-    H.ReportError(script_, TokenPosition::kNoSource,
+    const auto& script = Script::Handle(Z, Script());
+    H.ReportError(script, TokenPosition::kNoSource,
                   "Integer literal %s is out of range", value.ToCString());
     UNREACHABLE();
   }

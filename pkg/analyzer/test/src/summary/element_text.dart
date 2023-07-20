@@ -2,13 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary2/export.dart';
 import 'package:analyzer/src/task/inference_error.dart';
 import 'package:collection/collection.dart';
@@ -18,39 +15,9 @@ import '../../util/element_printer.dart';
 import '../../util/tree_string_sink.dart';
 import 'resolved_ast_printer.dart';
 
-/// Set this path to automatically replace expectations in invocations of
-/// [checkElementText] with the new actual texts.
-const String? _testPath = null;
-
-/// The list of replacements that update expectations.
-final List<_Replacement> _replacements = [];
-
-/// The cached content of the file with the [_testPath].
-String? _testCode;
-
-/// The cache line information for the [_testPath] file.
-LineInfo? _testCodeLines;
-
-void applyCheckElementTextReplacements() {
-  if (_testPath != null && _replacements.isNotEmpty) {
-    _replacements.sort((a, b) => b.offset - a.offset);
-    String newCode = _testCode!;
-    for (var replacement in _replacements) {
-      newCode = newCode.substring(0, replacement.offset) +
-          replacement.text +
-          newCode.substring(replacement.end);
-    }
-    File(_testPath!).writeAsStringSync(newCode);
-  }
-}
-
-/// Write the given [library] elements into the canonical text presentation
-/// taking into account the [configuration]. Then compare the actual text with
-/// the given [expected] one.
-void checkElementTextWithConfiguration(
-  LibraryElement library,
-  String expected, {
-  ElementTextConfiguration? configuration,
+String getLibraryText({
+  required LibraryElementImpl library,
+  required ElementTextConfiguration configuration,
 }) {
   final buffer = StringBuffer();
   final sink = TreeStringSink(
@@ -62,70 +29,18 @@ void checkElementTextWithConfiguration(
     configuration: ElementPrinterConfiguration(),
     selfUriStr: '${library.source.uri}',
   );
-  var writer = _ElementWriter(
+  final writer = _ElementWriter(
     sink: sink,
     elementPrinter: elementPrinter,
-    configuration: configuration ?? ElementTextConfiguration(),
+    configuration: configuration,
   );
   writer.writeLibraryElement(library);
-
-  String actualText = buffer.toString();
-  actualText =
-      actualText.split('\n').map((line) => line.trimRight()).join('\n');
-
-  if (_testPath != null && actualText != expected) {
-    if (_testCode == null) {
-      _testCode = File(_testPath!).readAsStringSync();
-      _testCodeLines = LineInfo.fromContent(_testCode!);
-    }
-
-    try {
-      throw 42;
-    } catch (e, trace) {
-      String traceString = trace.toString();
-
-      // Assuming traceString contains "$_testPath:$invocationLine:$column",
-      // figure out the value of invocationLine.
-
-      int testFilePathOffset = traceString.lastIndexOf(_testPath!);
-      expect(testFilePathOffset, isNonNegative);
-
-      // Sanity check: there must be ':' after the path.
-      expect(traceString[testFilePathOffset + _testPath!.length], ':');
-
-      int lineOffset = testFilePathOffset + _testPath!.length + ':'.length;
-      int invocationLine = int.parse(traceString.substring(
-          lineOffset, traceString.indexOf(':', lineOffset)));
-      int invocationOffset =
-          _testCodeLines!.getOffsetOfLine(invocationLine - 1);
-
-      const String rawStringPrefix = "r'''";
-      int expectationOffset =
-          _testCode!.indexOf(rawStringPrefix, invocationOffset);
-
-      // Sanity check: there must be no other strings or blocks.
-      expect(_testCode!.substring(invocationOffset, expectationOffset),
-          isNot(anyOf(contains("'"), contains('"'), contains('}'))));
-
-      expectationOffset += rawStringPrefix.length;
-      int expectationEnd = _testCode!.indexOf("'''", expectationOffset);
-
-      _replacements.add(
-          _Replacement(expectationOffset, expectationEnd, '\n$actualText'));
-    }
-  }
-
-  // Print the actual text to simplify copy/paste into the expectation.
-  // if (actualText != expected) {
-  //   print('-------- Actual --------');
-  //   print('$actualText------------------------');
-  // }
-
-  expect(actualText, expected);
+  return buffer.toString();
 }
 
 class ElementTextConfiguration {
   bool Function(Object) filter;
+  bool withAugmentedWithoutAugmentation = false;
   bool withCodeRanges = false;
   bool withConstantInitializers = true;
   bool withConstructors = true;
@@ -198,33 +113,6 @@ class _ElementWriter {
     expect(element.nonSynthetic, same(element));
   }
 
-  /// Assert that the [accessor] of the [property] is correctly linked to
-  /// the same enclosing element as the [property].
-  void _assertSyntheticAccessorEnclosing(
-      PropertyInducingElement property, PropertyAccessorElement accessor) {
-    if (accessor.isSynthetic) {
-      // Usually we have a non-synthetic property, and a synthetic accessor.
-    } else {
-      // But it is possible to have a non-synthetic setter.
-      // class A {
-      //   final int foo;
-      //   set foo(int newValue) {}
-      // }
-      expect(accessor.isSetter, isTrue);
-    }
-
-    expect(accessor.variable, same(property));
-
-    var propertyEnclosing = property.enclosingElement2;
-    expect(accessor.enclosingElement2, same(propertyEnclosing));
-
-    if (propertyEnclosing is CompilationUnitElement) {
-      expect(propertyEnclosing.accessors, contains(accessor));
-    } else if (propertyEnclosing is InterfaceElement) {
-      expect(propertyEnclosing.accessors, contains(accessor));
-    }
-  }
-
   ResolvedAstPrinter _createAstPrinter() {
     return ResolvedAstPrinter(
       sink: _sink,
@@ -236,31 +124,45 @@ class _ElementWriter {
     );
   }
 
-  /// TODO(scheglov) Replace with reference?
-  String _getElementLocationString(Element? element) {
-    if (element == null || element is MultiplyDefinedElement) {
-      return 'null';
+  void _validateAugmentedInstanceElement(InstanceElementImpl e) {
+    final augmented = e.augmented;
+
+    // Find the end of the augmentations chain.
+    // It will be a declaration in valid code.
+    InstanceElementImpl? endOfAugmentations = e;
+    while (endOfAugmentations != null && endOfAugmentations.isAugmentation) {
+      endOfAugmentations = endOfAugmentations.augmentationTarget;
     }
 
-    String onlyName(String uri) {
-      if (uri.startsWith('file:///')) {
-        return uri.substring(uri.lastIndexOf('/') + 1);
-      }
-      return uri;
+    // If does not end with a declaration.
+    if (endOfAugmentations == null) {
+      expect(augmented, isNull);
+      return;
     }
 
-    var location = element.location!;
-    List<String> components = location.components.toList();
-    if (components.isNotEmpty) {
-      components[0] = onlyName(components[0]);
+    // ...otherwise we must have the augmented data.
+    expect(augmented, isNotNull);
+    expect(augmented, same(endOfAugmentations.augmented));
+  }
+
+  void _writeAugmentation(ElementImpl e) {
+    switch (e) {
+      case ClassElementImpl e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
+      case MixinElementImpl e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
+      case PropertyAccessorElementImpl e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
     }
-    if (components.length >= 2) {
-      components[1] = onlyName(components[1]);
-      if (components[0] == components[1]) {
-        components.removeAt(0);
-      }
-    }
-    return components.join(';');
   }
 
   void _writeAugmentationElement(LibraryAugmentationElementImpl e) {
@@ -281,6 +183,86 @@ class _ElementWriter {
     });
   }
 
+  void _writeAugmentationTarget(ElementImpl e) {
+    switch (e) {
+      case InterfaceElementImpl e:
+        if (e.isAugmentation) {
+          _elementPrinter.writeNamedElement(
+            'augmentationTarget',
+            e.augmentationTarget,
+          );
+        }
+      case PropertyAccessorElementImpl e:
+        if (e.isAugmentation) {
+          _elementPrinter.writeNamedElement(
+            'augmentationTarget',
+            e.augmentationTarget,
+          );
+        }
+    }
+  }
+
+  void _writeAugmented(InstanceElementImpl e) {
+    // TODO(scheglov) enable for other types
+    if (!(e is ClassElementImpl || e is MixinElementImpl)) {
+      return;
+    }
+
+    if (e.isAugmentation) {
+      return;
+    }
+
+    // No augmentation, not interesting.
+    if (e.augmentation == null) {
+      expect(e.augmented, TypeMatcher<NotAugmentedInstanceElementImpl>());
+      if (!configuration.withAugmentedWithoutAugmentation) {
+        return;
+      }
+    }
+
+    final augmented = e.augmented;
+    if (augmented == null) {
+      return;
+    }
+
+    void writeFields() {
+      final sorted = augmented.fields.sortedBy((e) => e.name);
+      _elementPrinter.writeElementList('fields', sorted);
+    }
+
+    void writeAccessors() {
+      final sorted = augmented.accessors.sortedBy((e) => e.name);
+      _elementPrinter.writeElementList('accessors', sorted);
+    }
+
+    void writeMethods() {
+      final sorted = augmented.methods.sortedBy((e) => e.name);
+      _elementPrinter.writeElementList('methods', sorted);
+    }
+
+    _sink.writelnWithIndent('augmented');
+    _sink.withIndent(() {
+      switch (augmented) {
+        case AugmentedClassElement():
+          _elementPrinter.writeTypeList('mixins', augmented.mixins);
+          _elementPrinter.writeTypeList('interfaces', augmented.interfaces);
+          writeFields();
+          writeAccessors();
+          writeMethods();
+        case AugmentedMixinElement():
+          _elementPrinter.writeTypeList(
+            'superclassConstraints',
+            augmented.superclassConstraints,
+          );
+          _elementPrinter.writeTypeList('interfaces', augmented.interfaces);
+          writeFields();
+          writeAccessors();
+          writeMethods();
+      }
+      // TODO(scheglov) Add other types and properties
+    });
+  }
+
   void _writeBodyModifiers(ExecutableElement e) {
     if (e.isAsynchronous) {
       expect(e.isSynchronous, isFalse);
@@ -297,79 +279,6 @@ class _ElementWriter {
     if (e is ExecutableElementImpl && e.invokesSuperSelf) {
       _sink.write(' invokesSuperSelf');
     }
-  }
-
-  void _writeClassElement(InterfaceElement e) {
-    _sink.writeIndentedLine(() {
-      if (e is ClassElement) {
-        _sink.writeIf(e.isAbstract, 'abstract ');
-        _sink.writeIf(e.isMacro, 'macro ');
-        _sink.writeIf(e.isSealed, 'sealed ');
-        _sink.writeIf(e.isBase, 'base ');
-        _sink.writeIf(e.isInterface, 'interface ');
-        _sink.writeIf(e.isFinal, 'final ');
-        _sink.writeIf(e.isInline, 'inline ');
-        _sink.writeIf(e.isMixinClass, 'mixin ');
-      }
-      _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
-
-      if (e is EnumElement) {
-        _sink.write('enum ');
-      } else if (e is MixinElement) {
-        _sink.writeIf(e.isBase, 'base ');
-        _sink.write('mixin ');
-      } else {
-        _sink.write('class ');
-      }
-      if (e is ClassElement) {
-        _sink.writeIf(e.isMixinApplication, 'alias ');
-      }
-
-      _writeName(e);
-    });
-
-    _sink.withIndent(() {
-      _writeDocumentation(e);
-      _writeMetadata(e);
-      _writeSinceSdkVersion(e);
-      _writeCodeRange(e);
-      _writeTypeParameterElements(e.typeParameters);
-
-      final supertype = e.supertype;
-      if (supertype != null &&
-          (supertype.element.name != 'Object' || e.mixins.isNotEmpty)) {
-        _writeType('supertype', supertype);
-      }
-
-      if (e is MixinElement) {
-        var superclassConstraints = e.superclassConstraints;
-        if (superclassConstraints.isEmpty) {
-          throw StateError('At least Object is expected.');
-        }
-        _elementPrinter.writeTypeList(
-          'superclassConstraints',
-          superclassConstraints,
-        );
-      }
-
-      _elementPrinter.writeTypeList('mixins', e.mixins);
-      _elementPrinter.writeTypeList('interfaces', e.interfaces);
-
-      _writeElements('fields', e.fields, _writePropertyInducingElement);
-
-      var constructors = e.constructors;
-      if (e is MixinElement) {
-        expect(constructors, isEmpty);
-      } else if (configuration.withConstructors) {
-        expect(constructors, isNotEmpty);
-        _writeElements('constructors', constructors, _writeConstructorElement);
-      }
-
-      _writeElements('accessors', e.accessors, _writePropertyAccessorElement);
-      _writeElements('methods', e.methods, _writeMethodElement);
-    });
-
-    _assertNonSyntheticElementSelf(e);
   }
 
   void _writeCodeRange(Element e) {
@@ -446,13 +355,16 @@ class _ElementWriter {
         final enclosingElement = superConstructor.enclosingElement2;
         if (enclosingElement is ClassElement &&
             !enclosingElement.isDartCoreObject) {
-          _elementPrinter.writeElement('superConstructor', superConstructor);
+          _elementPrinter.writeNamedElement(
+            'superConstructor',
+            superConstructor,
+          );
         }
       }
 
       var redirectedConstructor = e.redirectedConstructor;
       if (redirectedConstructor != null) {
-        _elementPrinter.writeElement(
+        _elementPrinter.writeNamedElement(
           'redirectedConstructor',
           redirectedConstructor,
         );
@@ -535,8 +447,7 @@ class _ElementWriter {
         } else if (exported is ExportedReferenceExported) {
           _sink.write('exported${exported.locations} ');
         }
-        // TODO(scheglov) Use the same writer as for resolved AST.
-        _sink.write(exported.reference);
+        _elementPrinter.writeReference(exported.reference);
       });
     }
   }
@@ -557,12 +468,10 @@ class _ElementWriter {
   }
 
   void _writeExportNamespace(LibraryElement e) {
-    var map = e.exportNamespace.definedNames;
-    var names = map.keys.toList()..sort();
-    for (var name in names) {
-      var element = map[name];
-      var elementLocationStr = _getElementLocationString(element);
-      _sink.writelnWithIndent('$name: $elementLocationStr');
+    final map = e.exportNamespace.definedNames;
+    final sortedEntries = map.entries.sortedBy((entry) => entry.key);
+    for (final entry in sortedEntries) {
+      _elementPrinter.writeNamedElement(entry.key, entry.value);
     }
   }
 
@@ -583,7 +492,7 @@ class _ElementWriter {
     _sink.withIndent(() {
       _writeElements('fields', e.fields, _writePropertyInducingElement);
       _writeElements('accessors', e.accessors, _writePropertyAccessorElement);
-      _writeElements('methods', e.methods, _writeMethodElement);
+      _writeMethods(e.methods);
     });
 
     _assertNonSyntheticElementSelf(e);
@@ -593,7 +502,7 @@ class _ElementWriter {
     if (e is FieldFormalParameterElement) {
       var field = e.field;
       if (field != null) {
-        _elementPrinter.writeElement('field', field);
+        _elementPrinter.writeNamedElement('field', field);
       } else {
         _sink.writelnWithIndent('field: <null>');
       }
@@ -645,6 +554,92 @@ class _ElementWriter {
     }
   }
 
+  void _writeInterfaceElement(InterfaceElementImpl e) {
+    _sink.writeIndentedLine(() {
+      if (e.isAugmentation) {
+        _sink.write('augment ');
+      }
+
+      switch (e) {
+        case ClassElementImpl():
+          _sink.writeIf(e.isAbstract, 'abstract ');
+          _sink.writeIf(e.isMacro, 'macro ');
+          _sink.writeIf(e.isSealed, 'sealed ');
+          _sink.writeIf(e.isBase, 'base ');
+          _sink.writeIf(e.isInterface, 'interface ');
+          _sink.writeIf(e.isFinal, 'final ');
+          _sink.writeIf(e.isInline, 'inline ');
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.writeIf(e.isMixinClass, 'mixin ');
+          _sink.write('class ');
+          _sink.writeIf(e.isMixinApplication, 'alias ');
+        case EnumElementImpl():
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.write('enum ');
+        case MixinElementImpl():
+          _sink.writeIf(e.isBase, 'base ');
+          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _sink.write('mixin ');
+      }
+
+      _writeName(e);
+    });
+
+    _sink.withIndent(() {
+      _writeDocumentation(e);
+      _writeMetadata(e);
+      _writeSinceSdkVersion(e);
+      _writeCodeRange(e);
+      _writeTypeParameterElements(e.typeParameters);
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
+
+      if (!e.isAugmentation) {
+        final supertype = e.supertype;
+        if (supertype != null &&
+            (supertype.element.name != 'Object' || e.mixins.isNotEmpty)) {
+          _writeType('supertype', supertype);
+        }
+      }
+
+      if (e is MixinElementImpl) {
+        final superclassConstraints = e.superclassConstraints;
+        if (!e.isAugmentation) {
+          if (superclassConstraints.isEmpty) {
+            throw StateError('At least Object is expected.');
+          }
+        }
+        _elementPrinter.writeTypeList(
+          'superclassConstraints',
+          superclassConstraints,
+        );
+      }
+
+      _elementPrinter.writeTypeList('mixins', e.mixins);
+      _elementPrinter.writeTypeList('interfaces', e.interfaces);
+
+      _writeElements('fields', e.fields, _writePropertyInducingElement);
+
+      var constructors = e.constructors;
+      if (e is MixinElement) {
+        expect(constructors, isEmpty);
+      } else if (configuration.withConstructors) {
+        if (!e.isAugmentation) {
+          expect(constructors, isNotEmpty);
+        }
+        _writeElements('constructors', constructors, _writeConstructorElement);
+      }
+
+      _writeElements('accessors', e.accessors, _writePropertyAccessorElement);
+      _writeMethods(e.methods);
+
+      _validateAugmentedInstanceElement(e);
+      _writeAugmented(e);
+    });
+
+    _assertNonSyntheticElementSelf(e);
+  }
+
   void _writeLibraryAugmentations(LibraryElementImpl e) {
     if (configuration.withLibraryAugmentations) {
       final augmentations = e.augmentations;
@@ -653,7 +648,7 @@ class _ElementWriter {
         _sink.withIndent(() {
           for (final element in augmentations) {
             _sink.writeIndent();
-            _elementPrinter.writeElement0(element);
+            _elementPrinter.writeElement(element);
           }
         });
       }
@@ -674,9 +669,6 @@ class _ElementWriter {
 
     _writeElements('exports', e.libraryExports, _writeExportElement);
 
-    _writeElements('augmentationImports', e.augmentationImports,
-        _writeAugmentationImportElement);
-
     _sink.writelnWithIndent('definingUnit');
     _sink.withIndent(() {
       _writeUnitElement(e.definingCompilationUnit);
@@ -685,6 +677,9 @@ class _ElementWriter {
     if (e is LibraryElementImpl) {
       _writeLibraryAugmentations(e);
     }
+
+    _writeElements('augmentationImports', e.augmentationImports,
+        _writeAugmentationImportElement);
   }
 
   void _writeMetadata(Element element) {
@@ -704,6 +699,7 @@ class _ElementWriter {
 
   void _writeMethodElement(MethodElement e) {
     _sink.writeIndentedLine(() {
+      _sink.writeIf(e.isAugmentation, 'augment ');
       _sink.writeIf(e.isSynthetic, 'synthetic ');
       _sink.writeIf(e.isStatic, 'static ');
       _sink.writeIf(e.isAbstract, 'abstract ');
@@ -724,6 +720,18 @@ class _ElementWriter {
       _writeParameterElements(e.parameters);
       _writeType('returnType', e.returnType2);
       _writeNonSyntheticElement(e);
+
+      if (e.isAugmentation) {
+        _elementPrinter.writeNamedElement(
+          'augmentationTarget',
+          e.augmentationTarget,
+        );
+      }
+
+      final augmentation = e.augmentation;
+      if (augmentation != null) {
+        _elementPrinter.writeNamedElement('augmentation', augmentation);
+      }
     });
 
     if (e.isSynthetic && e.enclosingElement2 is EnumElementImpl) {
@@ -734,9 +742,23 @@ class _ElementWriter {
     }
   }
 
+  void _writeMethods(List<MethodElement> elements) {
+    _writeElements('methods', elements, _writeMethodElement);
+  }
+
   void _writeName(Element e) {
-    // TODO(scheglov) Use 'name' everywhere.
-    var name = e is ConstructorElement ? e.name : e.displayName;
+    final String name;
+    switch (e) {
+      case ExtensionElement(name: null):
+        name = '<null>';
+      default:
+        name = e.name!;
+    }
+
+    if (e is PropertyAccessorElement && e.isSetter) {
+      expect(name, endsWith('='));
+    }
+
     _sink.write(name);
     _sink.write(name.isNotEmpty ? ' @' : '@');
     _sink.write(e.nameOffset);
@@ -767,7 +789,7 @@ class _ElementWriter {
 
   void _writeNonSyntheticElement(Element e) {
     if (configuration.withNonSynthetic) {
-      _elementPrinter.writeElement('nonSynthetic', e.nonSynthetic);
+      _elementPrinter.writeNamedElement('nonSynthetic', e.nonSynthetic);
     }
   }
 
@@ -826,7 +848,7 @@ class _ElementWriter {
 
     _sink.withIndent(() {
       _writeMetadata(e);
-      if (uri is DirectiveUriWithUnit) {
+      if (uri is DirectiveUriWithUnitImpl) {
         _writeUnitElement(uri.unit);
       }
     });
@@ -845,18 +867,6 @@ class _ElementWriter {
       expect(variableEnclosing.fields, contains(variable));
     }
 
-    if (e.isGetter) {
-      expect(variable.getter, same(e));
-      if (variable.setter != null) {
-        expect(variable.setter!.variable, same(variable));
-      }
-    } else {
-      expect(variable.setter, same(e));
-      if (variable.getter != null) {
-        expect(variable.getter!.variable, same(variable));
-      }
-    }
-
     if (e.isSynthetic) {
       expect(e.nameOffset, -1);
     } else {
@@ -867,6 +877,7 @@ class _ElementWriter {
     }
 
     _sink.writeIndentedLine(() {
+      _sink.writeIf(e.isAugmentation, 'augment ');
       _sink.writeIf(e.isSynthetic, 'synthetic ');
       _sink.writeIf(e.isStatic, 'static ');
       _sink.writeIf(e.isAbstract, 'abstract ');
@@ -900,6 +911,8 @@ class _ElementWriter {
       _writeType('returnType', e.returnType2);
       _writeNonSyntheticElement(e);
       writeLinking();
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
     });
   }
 
@@ -913,11 +926,6 @@ class _ElementWriter {
       expect(e.nameOffset, -1);
     } else {
       expect(e.getter, isNotNull);
-      _assertSyntheticAccessorEnclosing(e, e.getter!);
-
-      if (e.setter != null) {
-        _assertSyntheticAccessorEnclosing(e, e.setter!);
-      }
 
       if (!e.isTempAugmentation) {
         expect(e.nameOffset, isPositive);
@@ -969,6 +977,8 @@ class _ElementWriter {
       _writeConstantInitializer(e);
       _writeNonSyntheticElement(e);
       writeLinking();
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
     });
   }
 
@@ -994,7 +1004,7 @@ class _ElementWriter {
     if (e is SuperFormalParameterElement) {
       var superParameter = e.superConstructorParameter;
       if (superParameter != null) {
-        _elementPrinter.writeElement(
+        _elementPrinter.writeNamedElement(
           'superConstructorParameter',
           superParameter,
         );
@@ -1102,11 +1112,11 @@ class _ElementWriter {
     _writeElements('typeParameters', elements, _writeTypeParameterElement);
   }
 
-  void _writeUnitElement(CompilationUnitElement e) {
-    _writeElements('classes', e.classes, _writeClassElement);
-    _writeElements('enums', e.enums, _writeClassElement);
+  void _writeUnitElement(CompilationUnitElementImpl e) {
+    _writeElements('classes', e.classes, _writeInterfaceElement);
+    _writeElements('enums', e.enums, _writeInterfaceElement);
     _writeElements('extensions', e.extensions, _writeExtensionElement);
-    _writeElements('mixins', e.mixins, _writeClassElement);
+    _writeElements('mixins', e.mixins, _writeInterfaceElement);
     _writeElements('typeAliases', e.typeAliases, _writeTypeAliasElement);
     _writeElements(
       'topLevelVariables',
@@ -1139,20 +1149,5 @@ class _IdMap {
     } else {
       return '???';
     }
-  }
-}
-
-class _Replacement {
-  final int offset;
-  final int end;
-  final String text;
-
-  _Replacement(this.offset, this.end, this.text);
-}
-
-extension on ClassElement {
-  bool get isMacro {
-    final self = this;
-    return self is ClassElementImpl && self.isMacro;
   }
 }

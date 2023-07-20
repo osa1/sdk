@@ -26,7 +26,7 @@ extension ElementAnnotationExtensions on ElementAnnotation {
         }
       }
     } else if (element is ConstructorElement) {
-      instanceElement = element.enclosingElement2;
+      instanceElement = element.enclosingElement2.augmented?.declaration;
     }
     if (instanceElement == null) {
       return const <TargetKind>{};
@@ -113,6 +113,38 @@ extension ExecutableElementExtensionQuestion on ExecutableElement? {
       return self.parameters.firstOrNull?.type;
     }
     return null;
+  }
+}
+
+extension InterfaceElementExtension on InterfaceElement {
+  /// The result of applying augmentations.
+  ///
+  /// The target must be a declaration, not an augmentation.
+  /// This getter will throw, if this is not the case.
+  AugmentedInterfaceElement get augmentedOfDeclaration {
+    if (isAugmentation) {
+      throw StateError(
+        'The target must be a declaration, not an augmentation.',
+      );
+    }
+    // This is safe because declarations always have it.
+    return augmented!;
+  }
+}
+
+extension MixinElementExtension on MixinElement {
+  /// The result of applying augmentations.
+  ///
+  /// The target must be a declaration, not an augmentation.
+  /// This getter will throw, if this is not the case.
+  AugmentedMixinElement get augmentedOfDeclaration {
+    if (isAugmentation) {
+      throw StateError(
+        'The target must be a declaration, not an augmentation.',
+      );
+    }
+    // This is safe because declarations always have it.
+    return augmented!;
   }
 }
 

@@ -88,15 +88,20 @@ class BaseTextBuffer;
 // ContainsCompressedPointers() returns the same value for AllStatic class and
 // class used for handles.
 #define ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(object, handle)           \
-  static_assert(std::is_base_of<dart::handle##Ptr, dart::object##Ptr>::value,  \
+ public: /* NOLINT */                                                          \
+  using UntaggedObjectType = dart::Untagged##object;                           \
+  using ObjectPtrType = dart::object##Ptr;                                     \
+  static_assert(std::is_base_of<dart::handle##Ptr, ObjectPtrType>::value,      \
                 #object "Ptr must be a subtype of " #handle "Ptr");            \
   static_assert(dart::handle::ContainsCompressedPointers() ==                  \
-                    dart::Untagged##object::kContainsCompressedPointers,       \
+                    UntaggedObjectType::kContainsCompressedPointers,           \
                 "Pointer compression in Untagged" #object                      \
                 " must match pointer compression in Untagged" #handle);        \
   static constexpr bool ContainsCompressedPointers() {                         \
-    return dart::Untagged##object::kContainsCompressedPointers;                \
-  }
+    return UntaggedObjectType::kContainsCompressedPointers;                    \
+  }                                                                            \
+                                                                               \
+ private: /* NOLINT */
 
 #define BASE_OBJECT_IMPLEMENTATION(object, super)                              \
  public: /* NOLINT */                                                          \
@@ -462,6 +467,7 @@ class Object {
   V(TypeArguments, empty_type_arguments)                                       \
   V(Array, empty_array)                                                        \
   V(Array, empty_instantiations_cache_array)                                   \
+  V(Array, empty_subtype_test_cache_array)                                     \
   V(ContextScope, empty_context_scope)                                         \
   V(ObjectPool, empty_object_pool)                                             \
   V(CompressedStackMaps, empty_compressed_stackmaps)                           \
@@ -701,7 +707,49 @@ class Object {
   static ObjectPtr Allocate(intptr_t cls_id,
                             intptr_t size,
                             Heap::Space space,
-                            bool compressed);
+                            bool compressed,
+                            uword ptr_field_start_offset,
+                            uword ptr_field_end_offset);
+
+  // Templates of Allocate that retrieve the appropriate values to pass from
+  // the class.
+
+  template <typename T>
+  DART_FORCE_INLINE static typename T::ObjectPtrType Allocate(
+      Heap::Space space) {
+    return static_cast<typename T::ObjectPtrType>(Allocate(
+        T::kClassId, T::InstanceSize(), space, T::ContainsCompressedPointers(),
+        Object::from_offset<T>(), Object::to_offset<T>()));
+  }
+  template <typename T>
+  DART_FORCE_INLINE static typename T::ObjectPtrType Allocate(
+      Heap::Space space,
+      intptr_t elements) {
+    return static_cast<typename T::ObjectPtrType>(
+        Allocate(T::kClassId, T::InstanceSize(elements), space,
+                 T::ContainsCompressedPointers(), Object::from_offset<T>(),
+                 Object::to_offset<T>(elements)));
+  }
+
+  // Additional versions that also take a class_id for types like Array, Map,
+  // and Set that have more than one possible class id.
+
+  template <typename T>
+  DART_FORCE_INLINE static typename T::ObjectPtrType AllocateVariant(
+      intptr_t class_id,
+      Heap::Space space) {
+    return static_cast<typename T::ObjectPtrType>(Allocate(
+        class_id, T::InstanceSize(), space, T::ContainsCompressedPointers(),
+        Object::from_offset<T>(), Object::to_offset<T>()));
+  }
+  template <typename T>
+  DART_FORCE_INLINE static typename T::ObjectPtrType
+  AllocateVariant(intptr_t class_id, Heap::Space space, intptr_t elements) {
+    return static_cast<typename T::ObjectPtrType>(
+        Allocate(class_id, T::InstanceSize(elements), space,
+                 T::ContainsCompressedPointers(), Object::from_offset<T>(),
+                 Object::to_offset<T>(elements)));
+  }
 
   static constexpr intptr_t RoundedAllocationSize(intptr_t size) {
     return Utils::RoundUp(size, kObjectAlignment);
@@ -818,6 +866,30 @@ class Object {
   ObjectPtr ptr_;  // The raw object reference.
 
  protected:
+  // The first offset in an allocated object of the given type that contains a
+  // (possibly compressed) object pointer. Used to initialize object pointer
+  // fields to Object::null() instead of 0.
+  //
+  // Always returns an offset after the object header tags.
+  template <typename T>
+  DART_FORCE_INLINE static uword from_offset() {
+    return UntaggedObject::from_offset<typename T::UntaggedObjectType>();
+  }
+
+  // The last offset in an allocated object of the given type that contains a
+  // (possibly compressed) object pointer. Used to initialize object pointer
+  // fields to Object::null() instead of 0.
+  //
+  // Takes an optional argument that is the number of elements in the payload,
+  // which is ignored if the object never contains a payload.
+  //
+  // If there are no pointer fields in the object, then
+  // to_offset<T>() < from_offset<T>().
+  template <typename T>
+  DART_FORCE_INLINE static uword to_offset(intptr_t length = 0) {
+    return UntaggedObject::to_offset<typename T::UntaggedObjectType>(length);
+  }
+
   void AddCommonObjectProperties(JSONObject* jsobj,
                                  const char* protocol_type,
                                  bool ref) const;
@@ -831,7 +903,47 @@ class Object {
   static void InitializeObject(uword address,
                                intptr_t id,
                                intptr_t size,
-                               bool compressed);
+                               bool compressed,
+                               uword ptr_field_start_offset,
+                               uword ptr_field_end_offset);
+
+  // Templates of InitializeObject that retrieve the appropriate values to pass
+  // from the class.
+
+  template <typename T>
+  DART_FORCE_INLINE static void InitializeObject(uword address) {
+    return InitializeObject(address, T::kClassId, T::InstanceSize(),
+                            T::ContainsCompressedPointers(),
+                            Object::from_offset<T>(), Object::to_offset<T>());
+  }
+  template <typename T>
+  DART_FORCE_INLINE static void InitializeObject(uword address,
+                                                 intptr_t elements) {
+    return InitializeObject(address, T::kClassId, T::InstanceSize(elements),
+                            T::ContainsCompressedPointers(),
+                            Object::from_offset<T>(),
+                            Object::to_offset<T>(elements));
+  }
+
+  // Additional versions that also take a class_id for types like Array, Map,
+  // and Set that have more than one possible class id.
+
+  template <typename T>
+  DART_FORCE_INLINE static void InitializeObjectVariant(uword address,
+                                                        intptr_t class_id) {
+    return InitializeObject(address, class_id, T::InstanceSize(),
+                            T::ContainsCompressedPointers(),
+                            Object::from_offset<T>(), Object::to_offset<T>());
+  }
+  template <typename T>
+  DART_FORCE_INLINE static void InitializeObjectVariant(uword address,
+                                                        intptr_t class_id,
+                                                        intptr_t elements) {
+    return InitializeObject(address, class_id, T::InstanceSize(elements),
+                            T::ContainsCompressedPointers(),
+                            Object::from_offset<T>(),
+                            Object::to_offset<T>(elements));
+  }
 
   static void RegisterClass(const Class& cls,
                             const String& name,
@@ -1168,6 +1280,10 @@ class Class : public Object {
 
   ScriptPtr script() const { return untag()->script(); }
   void set_script(const Script& value) const;
+
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  KernelProgramInfoPtr KernelProgramInfo() const;
+#endif
 
   TokenPosition token_pos() const {
 #if defined(DART_PRECOMPILED_RUNTIME)
@@ -1573,8 +1689,6 @@ class Class : public Object {
 
   InstancePtr InsertCanonicalConstant(Zone* zone,
                                       const Instance& constant) const;
-
-  void RehashConstants(Zone* zone) const;
 
   bool RequireCanonicalTypeErasureOfConstants(Zone* zone) const;
 
@@ -2064,7 +2178,7 @@ class Class : public Object {
   intptr_t ComputeNumTypeArguments() const;
 
   // Assigns empty array to all raw class array fields.
-  void InitEmptyFields();
+  void InitEmptyFields() const;
 
   static FunctionPtr CheckFunctionType(const Function& func, MemberKind kind);
   FunctionPtr LookupFunctionReadLocked(const String& name,
@@ -2123,22 +2237,24 @@ class PatchClass : public Object {
  public:
   ClassPtr wrapped_class() const { return untag()->wrapped_class(); }
   ScriptPtr script() const { return untag()->script(); }
-  ExternalTypedDataPtr library_kernel_data() const {
-    return untag()->library_kernel_data();
-  }
-  void set_library_kernel_data(const ExternalTypedData& data) const;
 
-  intptr_t library_kernel_offset() const {
+  intptr_t kernel_library_index() const {
 #if !defined(DART_PRECOMPILED_RUNTIME)
-    return untag()->library_kernel_offset_;
+    return untag()->kernel_library_index_;
 #else
     return -1;
 #endif
   }
-  void set_library_kernel_offset(intptr_t offset) const {
-    NOT_IN_PRECOMPILED(
-        StoreNonPointer(&untag()->library_kernel_offset_, offset));
+  void set_kernel_library_index(intptr_t index) const {
+    NOT_IN_PRECOMPILED(StoreNonPointer(&untag()->kernel_library_index_, index));
   }
+
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  KernelProgramInfoPtr kernel_program_info() const {
+    return untag()->kernel_program_info();
+  }
+  void set_kernel_program_info(const KernelProgramInfo& info) const;
+#endif
 
   static intptr_t InstanceSize() {
     return RoundedAllocationSize(sizeof(UntaggedPatchClass));
@@ -2148,7 +2264,9 @@ class PatchClass : public Object {
     return Class::IsInFullSnapshot(cls->untag()->wrapped_class());
   }
 
-  static PatchClassPtr New(const Class& wrapped_class, const Script& source);
+  static PatchClassPtr New(const Class& wrapped_class,
+                           const KernelProgramInfo& info,
+                           const Script& source);
 
  private:
   void set_wrapped_class(const Class& value) const;
@@ -2933,6 +3051,9 @@ class Function : public Object {
   ClassPtr Owner() const;
   void set_owner(const Object& value) const;
   ScriptPtr script() const;
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  KernelProgramInfoPtr KernelProgramInfo() const;
+#endif
   ObjectPtr RawOwner() const { return untag()->owner(); }
 
   // The NNBD mode of the library declaring this function.
@@ -3427,13 +3548,15 @@ class Function : public Object {
     set_optimized_call_site_count(value);
   }
 
-  void SetKernelDataAndScript(const Script& script,
-                              const ExternalTypedData& data,
-                              intptr_t offset) const;
+  void SetKernelLibraryAndEvalScript(
+      const Script& script,
+      const class KernelProgramInfo& kernel_program_info,
+      intptr_t index) const;
 
-  intptr_t KernelDataProgramOffset() const;
+  intptr_t KernelLibraryOffset() const;
+  intptr_t KernelLibraryIndex() const;
 
-  ExternalTypedDataPtr KernelData() const;
+  TypedDataViewPtr KernelLibrary() const;
 
   bool IsOptimizable() const;
   void SetIsOptimizable(bool value) const;
@@ -4096,6 +4219,12 @@ class Function : public Object {
 #undef DEFINE_BIT
 
  private:
+  enum class EvalFunctionData {
+    kScript,
+    kKernelProgramInfo,
+    kKernelLibraryIndex,
+    kLength,
+  };
   enum NativeFunctionData {
     kNativeName,
     kTearOff,
@@ -4118,6 +4247,7 @@ class Function : public Object {
   void set_eval_script(const Script& value) const;
   void set_num_optional_parameters(intptr_t value) const;  // Encoded value.
   void set_kind_tag(uint32_t value) const;
+  bool is_eval_function() const;
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
   ArrayPtr positional_parameter_names() const {
@@ -4334,9 +4464,9 @@ class Field : public Object {
 
   void InheritKernelOffsetFrom(const Field& src) const;
 
-  ExternalTypedDataPtr KernelData() const;
-
-  intptr_t KernelDataProgramOffset() const;
+  TypedDataViewPtr KernelLibrary() const;
+  intptr_t KernelLibraryOffset() const;
+  intptr_t KernelLibraryIndex() const;
 
   // Called during class finalization.
   inline void SetOffset(intptr_t host_offset_in_bytes,
@@ -4363,6 +4493,9 @@ class Field : public Object {
 
   ClassPtr Owner() const;
   ScriptPtr Script() const;
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  KernelProgramInfoPtr KernelProgramInfo() const;
+#endif
   ObjectPtr RawOwner() const;
 
   uint32_t Hash() const;
@@ -4751,7 +4884,6 @@ class Script : public Object {
   StringPtr Source() const;
   bool IsPartOfDartColonLibrary() const;
 
-  void LookupSourceAndLineStarts(Zone* zone) const;
   GrowableObjectArrayPtr GenerateLineNumberArray() const;
 
   intptr_t line_offset() const { return 0; }
@@ -4763,15 +4895,17 @@ class Script : public Object {
   // The load time in milliseconds since epoch.
   int64_t load_timestamp() const { return untag()->load_timestamp_; }
 
-  KernelProgramInfoPtr kernel_program_info() const {
-    return untag()->kernel_program_info();
-  }
-  void set_kernel_program_info(const KernelProgramInfo& info) const;
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  // Initializes thie script object from a kernel file.
+  void InitializeFromKernel(const KernelProgramInfo& info,
+                            intptr_t script_index,
+                            const TypedData& line_starts,
+                            const TypedDataView& constant_coverage) const;
+#endif
 
+  // The index of this script into the [KernelProgramInfo] object's source
+  // table.
   intptr_t kernel_script_index() const { return untag()->kernel_script_index_; }
-  void set_kernel_script_index(const intptr_t kernel_script_index) const;
-
-  TypedDataPtr kernel_string_offsets() const;
 
   static intptr_t line_starts_offset() {
     return OFFSET_OF(UntaggedScript, line_starts_);
@@ -4780,14 +4914,8 @@ class Script : public Object {
   TypedDataPtr line_starts() const;
 
 #if !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
-  ExternalTypedDataPtr constant_coverage() const;
-
-  void set_constant_coverage(const ExternalTypedData& value) const;
+  TypedDataViewPtr constant_coverage() const;
 #endif  // !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
-
-  void set_line_starts(const TypedData& value) const;
-
-  void set_debug_positions(const Array& value) const;
 
   LibraryPtr FindLibrary() const;
   StringPtr GetLine(intptr_t line_number, Heap::Space space = Heap::kNew) const;
@@ -4831,14 +4959,21 @@ class Script : public Object {
 #if !defined(DART_PRECOMPILED_RUNTIME)
   void LoadSourceFromKernel(const uint8_t* kernel_buffer,
                             intptr_t kernel_buffer_len) const;
-  bool IsLazyLookupSourceAndLineStarts() const;
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
+  void CollectTokenPositionsFor() const;
+  ArrayPtr CollectConstConstructorCoverageFrom() const;
+
  private:
+  KernelProgramInfoPtr kernel_program_info() const {
+    return untag()->kernel_program_info();
+  }
+
+  void set_debug_positions(const Array& value) const;
+
 #if !defined(DART_PRECOMPILED_RUNTIME)
   bool HasCachedMaxPosition() const;
 
-  void SetLazyLookupSourceAndLineStarts(bool value) const;
   void SetHasCachedMaxPosition(bool value) const;
   void SetCachedMaxPosition(intptr_t value) const;
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
@@ -4847,8 +4982,6 @@ class Script : public Object {
   void set_source(const String& value) const;
   void set_load_timestamp(int64_t value) const;
   ArrayPtr debug_positions() const;
-
-  static ScriptPtr New();
 
   FINAL_HEAP_OBJECT_IMPLEMENTATION(Script, Object);
   friend class Class;
@@ -5140,23 +5273,29 @@ class Library : public Object {
 
   inline intptr_t UrlHash() const;
 
-  ExternalTypedDataPtr kernel_data() const { return untag()->kernel_data(); }
-  void set_kernel_data(const ExternalTypedData& data) const;
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  KernelProgramInfoPtr kernel_program_info() const {
+    return untag()->kernel_program_info();
+  }
+  void set_kernel_program_info(const KernelProgramInfo& info) const;
+  TypedDataViewPtr KernelLibrary() const;
+  intptr_t KernelLibraryOffset() const;
+#endif
 
-  intptr_t kernel_offset() const {
+  intptr_t kernel_library_index() const {
 #if defined(DART_PRECOMPILED_RUNTIME)
     return 0;
 #else
-    return untag()->kernel_offset_;
+    return untag()->kernel_library_index_;
 #endif
   }
 
-  void set_kernel_offset(intptr_t value) const {
+  void set_kernel_library_index(intptr_t value) const {
 #if defined(DART_PRECOMPILED_RUNTIME)
     UNREACHABLE();
 #else
     ASSERT(value >= 0);
-    StoreNonPointer(&untag()->kernel_offset_, value);
+    StoreNonPointer(&untag()->kernel_library_index_, value);
 #endif
   }
 
@@ -5325,16 +5464,16 @@ class Namespace : public Object {
 
 class KernelProgramInfo : public Object {
  public:
-  static KernelProgramInfoPtr New(const TypedData& string_offsets,
-                                  const ExternalTypedData& string_data,
+  static KernelProgramInfoPtr New(const TypedDataBase& kernel_component,
+                                  const TypedDataView& string_data,
+                                  const TypedDataView& metadata_payload,
+                                  const TypedDataView& metadata_mappings,
+                                  const TypedDataView& constants_table,
+                                  const TypedData& string_offsets,
                                   const TypedData& canonical_names,
-                                  const ExternalTypedData& metadata_payload,
-                                  const ExternalTypedData& metadata_mappings,
-                                  const ExternalTypedData& constants_table,
                                   const Array& scripts,
                                   const Array& libraries_cache,
-                                  const Array& classes_cache,
-                                  const Object& retained_kernel_blob);
+                                  const Array& classes_cache);
 
   static intptr_t InstanceSize() {
     return RoundedAllocationSize(sizeof(UntaggedKernelProgramInfo));
@@ -5342,23 +5481,30 @@ class KernelProgramInfo : public Object {
 
   TypedDataPtr string_offsets() const { return untag()->string_offsets(); }
 
-  ExternalTypedDataPtr string_data() const { return untag()->string_data(); }
+  TypedDataBasePtr kernel_component() const {
+    return untag()->kernel_component();
+  }
+  TypedDataViewPtr string_data() const { return untag()->string_data(); }
 
   TypedDataPtr canonical_names() const { return untag()->canonical_names(); }
 
-  ExternalTypedDataPtr metadata_payloads() const {
+  TypedDataViewPtr metadata_payloads() const {
     return untag()->metadata_payloads();
   }
 
-  ExternalTypedDataPtr metadata_mappings() const {
+  TypedDataViewPtr metadata_mappings() const {
     return untag()->metadata_mappings();
   }
 
-  ExternalTypedDataPtr constants_table() const {
+  intptr_t KernelLibraryStartOffset(intptr_t library_index) const;
+  intptr_t KernelLibraryEndOffset(intptr_t library_index) const;
+  TypedDataViewPtr KernelLibrary(intptr_t library_index) const;
+
+  TypedDataViewPtr constants_table() const {
     return untag()->constants_table();
   }
 
-  void set_constants_table(const ExternalTypedData& value) const;
+  void set_constants_table(const TypedDataView& value) const;
 
   ArrayPtr scripts() const { return untag()->scripts(); }
   void set_scripts(const Array& scripts) const;
@@ -7599,9 +7745,6 @@ class SubtypeTestCache : public Object {
     return RoundedAllocationSize(sizeof(UntaggedSubtypeTestCache));
   }
 
-  static void Init();
-  static void Cleanup();
-
   static intptr_t cache_offset() {
     return OFFSET_OF(UntaggedSubtypeTestCache, cache_);
   }
@@ -7749,10 +7892,6 @@ class SubtypeTestCache : public Object {
                              BaseTextBuffer* buffer,
                              const char* line_prefix = nullptr) const;
 
-  // An array where each entry is an array that is a VM heap allocated
-  // preinitialized empty subtype entry array.
-  static ArrayPtr cached_array_;
-
   FINAL_HEAP_OBJECT_IMPLEMENTATION(SubtypeTestCache, Object);
   friend class Class;
   friend class FieldInvalidator;
@@ -7885,7 +8024,7 @@ class LanguageError : public Error {
   void set_token_pos(TokenPosition value) const;
 
   bool report_after_token() const { return untag()->report_after_token_; }
-  void set_report_after_token(bool value);
+  void set_report_after_token(bool value) const;
 
   void set_kind(uint8_t value) const;
 
@@ -7988,11 +8127,6 @@ class Instance : public Object {
   virtual void CanonicalizeFieldsLocked(Thread* thread) const;
 
   InstancePtr CopyShallowToOldSpace(Thread* thread) const;
-
-#if defined(DEBUG)
-  // Check if instance is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
 
   ObjectPtr GetField(const Field& field) const;
 
@@ -8888,14 +9022,6 @@ class AbstractType : public Instance {
   // Return the canonical version of this type.
   virtual AbstractTypePtr Canonicalize(Thread* thread) const;
 
-#if defined(DEBUG)
-  // Check if abstract type is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const {
-    UNREACHABLE();
-    return false;
-  }
-#endif  // DEBUG
-
   // Add the pair <name, uri> to the list, if not already present.
   static void AddURI(URIs* uris, const String& name, const String& uri);
 
@@ -9169,10 +9295,6 @@ class Type : public AbstractType {
       FunctionTypeMapping* function_type_mapping) const;
 
   virtual AbstractTypePtr Canonicalize(Thread* thread) const;
-#if defined(DEBUG)
-  // Check if type is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
   virtual void EnumerateURIs(URIs* uris) const;
   virtual void PrintName(NameVisibility visibility,
                          BaseTextBuffer* printer) const;
@@ -9309,10 +9431,6 @@ class FunctionType : public AbstractType {
       FunctionTypeMapping* function_type_mapping) const;
 
   virtual AbstractTypePtr Canonicalize(Thread* thread) const;
-#if defined(DEBUG)
-  // Check if type is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
   virtual void EnumerateURIs(URIs* uris) const;
   virtual void PrintName(NameVisibility visibility,
                          BaseTextBuffer* printer) const;
@@ -9615,10 +9733,6 @@ class TypeParameter : public AbstractType {
       FunctionTypeMapping* function_type_mapping) const;
 
   virtual AbstractTypePtr Canonicalize(Thread* thread) const;
-#if defined(DEBUG)
-  // Check if type parameter is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
   virtual void EnumerateURIs(URIs* uris) const { return; }
   virtual void PrintName(NameVisibility visibility,
                          BaseTextBuffer* printer) const;
@@ -10072,11 +10186,6 @@ class String : public Instance {
   // Caller must hold IsolateGroup::constant_canonicalization_mutex_.
   virtual InstancePtr CanonicalizeLocked(Thread* thread) const;
 
-#if defined(DEBUG)
-  // Check if string is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
-
   bool IsSymbol() const { return ptr()->untag()->IsCanonical(); }
 
   bool IsOneByteString() const {
@@ -10309,8 +10418,6 @@ class StringHasher : public ValueObject {
 
 class OneByteString : public AllStatic {
  public:
-  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(OneByteString, String);
-
   static uint16_t CharAt(const String& str, intptr_t index) {
     ASSERT(str.IsOneByteString());
     return OneByteString::CharAt(static_cast<OneByteStringPtr>(str.ptr()),
@@ -10434,6 +10541,8 @@ class OneByteString : public AllStatic {
     return &str.UnsafeMutableNonPointer(untag(str)->data())[0];
   }
 
+  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(OneByteString, String);
+
   friend class Class;
   friend class ExternalOneByteString;
   friend class FlowGraphSerializer;
@@ -10449,8 +10558,6 @@ class OneByteString : public AllStatic {
 
 class TwoByteString : public AllStatic {
  public:
-  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(TwoByteString, String);
-
   static uint16_t CharAt(const String& str, intptr_t index) {
     ASSERT(str.IsTwoByteString());
     return TwoByteString::CharAt(static_cast<TwoByteStringPtr>(str.ptr()),
@@ -10558,6 +10665,8 @@ class TwoByteString : public AllStatic {
     return &str.UnsafeMutableNonPointer(untag(str)->data())[0];
   }
 
+  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(TwoByteString, String);
+
   friend class Class;
   friend class FlowGraphSerializer;
   friend class ImageWriter;
@@ -10570,8 +10679,6 @@ class TwoByteString : public AllStatic {
 
 class ExternalOneByteString : public AllStatic {
  public:
-  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(ExternalOneByteString, String);
-
   static uint16_t CharAt(const String& str, intptr_t index) {
     ASSERT(str.IsExternalOneByteString());
     return ExternalOneByteString::CharAt(
@@ -10653,6 +10760,8 @@ class ExternalOneByteString : public AllStatic {
     return -kWordSize;
   }
 
+  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(ExternalOneByteString, String);
+
   friend class Class;
   friend class String;
   friend class StringHasher;
@@ -10663,8 +10772,6 @@ class ExternalOneByteString : public AllStatic {
 
 class ExternalTwoByteString : public AllStatic {
  public:
-  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(ExternalTwoByteString, String);
-
   static uint16_t CharAt(const String& str, intptr_t index) {
     ASSERT(str.IsExternalTwoByteString());
     return ExternalTwoByteString::CharAt(
@@ -10741,6 +10848,8 @@ class ExternalTwoByteString : public AllStatic {
     // Indicates this class cannot be extended by dart code.
     return -kWordSize;
   }
+
+  ALLSTATIC_CONTAINS_COMPRESSED_IMPLEMENTATION(ExternalTwoByteString, String);
 
   friend class Class;
   friend class String;
@@ -11328,10 +11437,6 @@ class RecordType : public AbstractType {
       FunctionTypeMapping* function_type_mapping) const;
 
   virtual AbstractTypePtr Canonicalize(Thread* thread) const;
-#if defined(DEBUG)
-  // Check if type is canonical.
-  virtual bool CheckIsCanonical(Thread* thread) const;
-#endif  // DEBUG
   virtual void EnumerateURIs(URIs* uris) const;
   virtual void PrintName(NameVisibility visibility,
                          BaseTextBuffer* printer) const;
@@ -11517,6 +11622,11 @@ class TypedDataBase : public PointerBase {
       return static_cast<TypedDataElementType>(index);
     }
   }
+
+  bool IsExternalOrExternalView() const;
+  TypedDataViewPtr ViewFromTo(intptr_t start,
+                              intptr_t end,
+                              Heap::Space space = Heap::kNew) const;
 
   void* DataAddr(intptr_t byte_offset) const {
     ASSERT((byte_offset == 0) ||
@@ -11766,7 +11876,7 @@ class TypedDataView : public TypedDataBase {
     return OFFSET_OF(UntaggedTypedDataView, offset_in_bytes_);
   }
 
-  InstancePtr typed_data() const { return untag()->typed_data(); }
+  TypedDataBasePtr typed_data() const { return untag()->typed_data(); }
 
   void InitializeWith(const TypedDataBase& typed_data,
                       intptr_t offset_in_bytes,
@@ -12347,8 +12457,6 @@ class Closure : public Instance {
   FunctionTypePtr GetInstantiatedSignature(Zone* zone) const;
 
  private:
-  static ClosurePtr New();
-
   FINAL_HEAP_OBJECT_IMPLEMENTATION(Closure, Instance);
   friend class Class;
 };

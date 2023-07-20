@@ -870,6 +870,7 @@ class ToSourceVisitor implements AstVisitor<void> {
   @override
   void visitMethodDeclaration(MethodDeclaration node) {
     _visitNodeList(node.metadata, separator: ' ', suffix: ' ');
+    _visitToken(node.augmentKeyword, suffix: ' ');
     _visitToken(node.externalKeyword, suffix: ' ');
     _visitToken(node.modifierKeyword, suffix: ' ');
     _visitNode(node.returnType, suffix: ' ');
@@ -895,6 +896,7 @@ class ToSourceVisitor implements AstVisitor<void> {
   @override
   void visitMixinDeclaration(MixinDeclaration node) {
     _visitNodeList(node.metadata, separator: ' ', suffix: ' ');
+    _visitToken(node.augmentKeyword, suffix: ' ');
     _visitToken(node.baseKeyword, suffix: ' ');
     sink.write('mixin ');
     _visitToken(node.name);

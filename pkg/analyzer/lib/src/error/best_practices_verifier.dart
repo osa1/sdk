@@ -36,6 +36,7 @@ import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/lint/linter.dart';
 import 'package:analyzer/src/workspace/workspace.dart';
 import 'package:meta/meta.dart';
+import 'package:path/path.dart' as path;
 
 /// Instances of the class `BestPracticesVerifier` traverse an AST structure
 /// looking for violations of Dart best practices.
@@ -104,6 +105,7 @@ class BestPracticesVerifier extends RecursiveAstVisitor<void> {
     required DeclaredVariables declaredVariables,
     required AnalysisOptions analysisOptions,
     required WorkspacePackage? workspacePackage,
+    required path.Context pathContext,
   })  : _nullType = typeProvider.nullType,
         _typeSystem = typeSystem,
         _isNonNullableByDefault = typeSystem.isNonNullableByDefault,
@@ -130,6 +132,7 @@ class BestPracticesVerifier extends RecursiveAstVisitor<void> {
           inheritanceManager,
           analysisOptions,
           workspacePackage,
+          pathContext,
         ) {
     _deprecatedVerifier.pushInDeprecatedValue(_currentLibrary.hasDeprecated);
     _inDoNotStoreMember = _currentLibrary.hasDoNotStore;
@@ -195,8 +198,12 @@ class BestPracticesVerifier extends RecursiveAstVisitor<void> {
   }
 
   @override
-  void visitClassDeclaration(ClassDeclaration node) {
-    var element = node.declaredElement as ClassElementImpl;
+  void visitClassDeclaration(covariant ClassDeclarationImpl node) {
+    var element = node.declaredElement!;
+    if (element.isAugmentation) {
+      return;
+    }
+
     _enclosingClass = element;
     _invalidAccessVerifier._enclosingClass = element;
 
@@ -608,8 +615,12 @@ class BestPracticesVerifier extends RecursiveAstVisitor<void> {
   }
 
   @override
-  void visitMixinDeclaration(MixinDeclaration node) {
-    var element = node.declaredElement as MixinElementImpl;
+  void visitMixinDeclaration(covariant MixinDeclarationImpl node) {
+    var element = node.declaredElement!;
+    if (element.isAugmentation) {
+      return;
+    }
+
     _enclosingClass = element;
     _invalidAccessVerifier._enclosingClass = _enclosingClass;
 

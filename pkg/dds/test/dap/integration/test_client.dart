@@ -297,6 +297,7 @@ class DapTestClient {
     bool? evaluateToStringInDebugViews,
     bool? sendLogsToClient,
     bool? sendCustomProgressEvents,
+    bool? allowAnsiColorOutput,
   }) {
     return sendRequest(
       DartLaunchRequestArguments(
@@ -318,6 +319,7 @@ class DapTestClient {
         // traffic in a custom event.
         sendLogsToClient: sendLogsToClient ?? captureVmServiceTraffic,
         sendCustomProgressEvents: sendCustomProgressEvents,
+        allowAnsiColorOutput: allowAnsiColorOutput,
       ),
       // We can't automatically pick the command when using a custom type
       // (DartLaunchRequestArguments).
@@ -1163,6 +1165,29 @@ extension DapTestClientExtension on DapTestClient {
     final response = await evaluate(
       expression,
       frameId: frameId,
+      format: format,
+    );
+    expect(response.success, isTrue);
+    expect(response.command, equals('evaluate'));
+    final body =
+        EvaluateResponseBody.fromJson(response.body as Map<String, Object?>);
+
+    expect(body.result, equals(expectedResult));
+
+    return body;
+  }
+
+  /// Evaluates [expression] without a frame and  expects a specific
+  /// [expectedResult].
+  Future<EvaluateResponseBody> expectGlobalEvalResult(
+    String expression,
+    String expectedResult, {
+    String? context,
+    ValueFormat? format,
+  }) async {
+    final response = await evaluate(
+      expression,
+      context: context,
       format: format,
     );
     expect(response.success, isTrue);

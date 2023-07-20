@@ -1,3 +1,22 @@
+## 3.2.0
+
+### Language
+
+### Libraries
+
+#### `dart:js_interop`
+
+- **JSNumber.toDart and Object.toJS**:
+  `JSNumber.toDart` is removed in favor of `toDartDouble` and `toDartInt` to
+  make the type explicit. `Object.toJS` is also removed in favor of
+  `Object.toJSBox`. Previously, this function would allow Dart objects to flow
+  into JS unwrapped on the JS backends. Now, there's an explicit wrapper that is
+  added and unwrapped via `JSBoxedDartObject.toDart`. Similarly,
+  `JSExportedDartObject` is renamed to `JSBoxedDartObject` and the extensions
+  `ObjectToJSExportedDartObject` and `JSExportedDartObjectToObject` are renamed
+  to `ObjectToJSBoxedDartObject` and `JSBoxedDartObjectToObject` in order to
+  avoid confusion with `@JSExport`.
+
 ## 3.1.0
 
 ### Language
@@ -12,6 +31,14 @@
     `StreamTransformer`.
 
 [#52334]: https://dartbug.com/52334
+
+#### `dart:convert`
+
+- **Breaking change** [#52801][]:
+  - Changed return types of `utf8.encode()` and `Utf8Codec.encode()` from
+    `List<int>` to `Uint8List`.
+
+[#52801]: https://dartbug.com/52801
 
 #### `dart:core`
 
@@ -35,6 +62,10 @@
 
 [#51486]: https://github.com/dart-lang/sdk/issues/51486
 [#52027]: https://github.com/dart-lang/sdk/issues/52027
+
+#### `dart:isolate`
+
+- Added `Isolate.packageConfigSync` and `Isolate.resolvePackageUriSync` APIs.
 
 #### `dart:js_interop`
 

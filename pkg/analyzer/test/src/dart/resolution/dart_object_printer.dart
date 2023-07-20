@@ -4,7 +4,6 @@
 
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/constant/value.dart';
-import 'package:analyzer/src/dart/element/element.dart';
 import 'package:collection/collection.dart';
 
 import '../../../util/element_printer.dart';
@@ -38,49 +37,22 @@ class DartObjectPrinter {
         _sink.write('double ');
         _sink.writeln(object.toDoubleValue());
       } else if (type.isDartCoreInt) {
-        _sink.write('int ');
-        _sink.writeln(object.toIntValue());
+        _writeInteger(object);
       } else if (type.isDartCoreNull) {
         _sink.writeln('Null null');
       } else if (type.isDartCoreString) {
-        _sink.write('String ');
-        _sink.writeln(object.toStringValue());
-      } else if (type is InterfaceType && state is ListState) {
-        _sink.writeln('List');
-        _sink.withIndent(() {
-          // TODO(scheglov) ListState must know its element type.
-          _elementPrinter.writeNamedType(
-            'elementType',
-            type.typeArguments[0],
-          );
-          final elements = object.toListValue()!;
-          if (elements.isNotEmpty) {
-            _sink.writelnWithIndent('elements');
-            _sink.withIndent(() {
-              for (final element in elements) {
-                _sink.writeIndent();
-                write(element);
-              }
-            });
-          }
-        });
-      } else if (object.isUserDefinedObject) {
-        _writelnType(type);
-        _sink.withIndent(() {
-          final fields = object.fields;
-          if (fields != null) {
-            final sortedFields = fields.entries.sortedBy((e) => e.key);
-            for (final entry in sortedFields) {
-              _sink.writeIndent();
-              _sink.write('${entry.key}: ');
-              write(entry.value);
-            }
-          }
-        });
-      } else if (state is RecordState) {
-        _writeRecord(type, state);
+        _writeString(object);
       } else if (state is FunctionState) {
-        _writeFunction(type, state);
+        _writeFunctionState(type, state);
+      } else if (state is GenericState) {
+        _writeGenericState(type, state);
+      } else if (state is ListState) {
+        _writeListState(state);
+      } else if (state is RecordState) {
+        _writeRecordState(type, state);
+      } else if (state is TypeState) {
+        _sink.write('Type ');
+        _sink.writeln(state);
       } else {
         throw UnimplementedError();
       }
@@ -90,14 +62,54 @@ class DartObjectPrinter {
     }
   }
 
-  void _writeFunction(DartType type, FunctionState state) {
+  void _writeFunctionState(DartType type, FunctionState state) {
     _elementPrinter.writeType(type);
 
     _sink.withIndent(() {
-      _elementPrinter.writeElement('element', state.element);
+      _elementPrinter.writeNamedElement('element', state.element);
     });
 
     _writeTypeArguments(state.typeArguments);
+  }
+
+  void _writeGenericState(DartType type, GenericState state) {
+    _writelnType(type);
+    _sink.withIndent(() {
+      final fields = state.fields;
+      final sortedFields = fields.entries.sortedBy((e) => e.key);
+      for (final entry in sortedFields) {
+        _sink.writeIndent();
+        _sink.write('${entry.key}: ');
+        write(entry.value);
+      }
+    });
+  }
+
+  void _writeInteger(DartObjectImpl object) {
+    _sink.write('int ');
+    final intValue = object.toIntValue();
+    if (_configuration.withHexIntegers && intValue != null) {
+      _sink.writeln('0x${intValue.toRadixString(16)}');
+    } else {
+      _sink.writeln(intValue);
+    }
+  }
+
+  void _writeListState(ListState state) {
+    _sink.writeln('List');
+    _sink.withIndent(() {
+      _elementPrinter.writeNamedType('elementType', state.elementType);
+      final elements = state.elements;
+      if (elements.isNotEmpty) {
+        _sink.writelnWithIndent('elements');
+        _sink.withIndent(() {
+          for (final element in elements) {
+            _sink.writeIndent();
+            write(element);
+          }
+        });
+      }
+    });
   }
 
   void _writelnType(DartType type) {
@@ -110,7 +122,7 @@ class DartObjectPrinter {
     }
   }
 
-  void _writeRecord(DartType type, RecordState state) {
+  void _writeRecordState(DartType type, RecordState state) {
     _sink.write('Record');
     _elementPrinter.writeType(type);
 
@@ -142,6 +154,17 @@ class DartObjectPrinter {
     });
   }
 
+  void _writeString(DartObjectImpl object) {
+    _sink.write('String ');
+
+    final stringValue = object.toStringValue();
+    if (stringValue == null || stringValue.isEmpty) {
+      _sink.writeln('<empty>');
+    } else {
+      _sink.writeln(stringValue);
+    }
+  }
+
   void _writeTypeArguments(List<DartType>? typeArguments) {
     _sink.withIndent(() {
       _elementPrinter.writeTypeList('typeArguments', typeArguments);
@@ -150,15 +173,15 @@ class DartObjectPrinter {
 
   void _writeVariable(DartObjectImpl object) {
     final variable = object.variable;
-    // TODO(scheglov) must be always
-    if (variable is VariableElementImpl) {
+    if (variable != null) {
       _sink.withIndent(() {
-        _elementPrinter.writeElement('variable', variable);
+        _elementPrinter.writeNamedElement('variable', variable);
       });
     }
   }
 }
 
 class DartObjectPrinterConfiguration {
+  bool withHexIntegers = false;
   bool withTypeArguments = false;
 }

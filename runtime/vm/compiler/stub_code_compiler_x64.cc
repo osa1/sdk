@@ -70,7 +70,7 @@ void StubCodeCompiler::EnsureIsNewOrRemembered(bool preserve_registers) {
 // [Thread::tsan_utils_->setjmp_buffer_]).
 static void WithExceptionCatchingTrampoline(Assembler* assembler,
                                             std::function<void()> fun) {
-#if defined(USING_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
+#if defined(TARGET_USES_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
   const Register kTsanUtilsReg = RAX;
 
   // Reserve space for arguments and align frame before entering C++ world.
@@ -138,17 +138,17 @@ static void WithExceptionCatchingTrampoline(Assembler* assembler,
   // pushed old [Thread::tsan_utils_->setjmp_buffer_].
   __ Bind(&do_native_call);
   __ MoveRegister(kSavedRspReg, RSP);
-#endif  // defined(USING_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
+#endif  // defined(TARGET_USES_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
 
   fun();
 
-#if defined(USING_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
+#if defined(TARGET_USES_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
   __ MoveRegister(RSP, kSavedRspReg);
   __ AddImmediate(RSP, Immediate(kJumpBufferSize));
   const Register kTsanUtilsReg2 = kSavedRspReg;
   __ movq(kTsanUtilsReg2, Address(THR, target::Thread::tsan_utils_offset()));
   __ popq(Address(kTsanUtilsReg2, target::TsanUtils::setjmp_buffer_offset()));
-#endif  // defined(USING_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
+#endif  // defined(TARGET_USES_THREAD_SANITIZER) && !defined(USING_SIMULATOR)
 }
 
 // Input parameters:
@@ -1444,15 +1444,16 @@ void StubCodeCompiler::GenerateAllocateArrayStub() {
   __ pushq(AllocateArrayABI::kLengthReg);         // Array length as Smi.
   __ pushq(AllocateArrayABI::kTypeArgumentsReg);  // Element type.
   __ CallRuntime(kAllocateArrayRuntimeEntry, 2);
-  __ popq(AllocateArrayABI::kTypeArgumentsReg);  // Pop element type argument.
-  __ popq(AllocateArrayABI::kLengthReg);         // Pop array length argument.
-  __ popq(AllocateArrayABI::kResultReg);         // Pop allocated object.
 
   // Write-barrier elimination might be enabled for this array (depending on the
   // array length). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
-  EnsureIsNewOrRemembered();
+  __ movq(AllocateArrayABI::kResultReg, Address(RSP, 2 * target::kWordSize));
+  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
 
+  __ popq(AllocateArrayABI::kTypeArgumentsReg);  // Pop element type argument.
+  __ popq(AllocateArrayABI::kLengthReg);         // Pop array length argument.
+  __ popq(AllocateArrayABI::kResultReg);         // Pop allocated object.
   __ LeaveStubFrame();
   __ ret();
 }

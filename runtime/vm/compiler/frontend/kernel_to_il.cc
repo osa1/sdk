@@ -95,9 +95,9 @@ FlowGraphBuilder::FlowGraphBuilder(
       catch_block_(nullptr),
       prepend_type_arguments_(Function::ZoneHandle(zone_)),
       throw_new_null_assertion_(Function::ZoneHandle(zone_)) {
-  const Script& script =
-      Script::Handle(Z, parsed_function->function().script());
-  H.InitFromScript(script);
+  const auto& info = KernelProgramInfo::Handle(
+      Z, parsed_function->function().KernelProgramInfo());
+  H.InitFromKernelProgramInfo(info);
 }
 
 FlowGraphBuilder::~FlowGraphBuilder() {}
@@ -810,8 +810,8 @@ FlowGraph* FlowGraphBuilder::BuildGraph() {
   }
 #endif
 
-  auto& kernel_data = ExternalTypedData::Handle(Z, function.KernelData());
-  intptr_t kernel_data_program_offset = function.KernelDataProgramOffset();
+  auto& kernel_data = TypedDataView::Handle(Z, function.KernelLibrary());
+  intptr_t kernel_data_program_offset = function.KernelLibraryOffset();
 
   StreamingFlowGraphBuilder streaming_flow_graph_builder(
       this, kernel_data, kernel_data_program_offset);

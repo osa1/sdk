@@ -416,10 +416,14 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }
 
   @override
-  void visitClassDeclaration(ClassDeclaration node) {
+  void visitClassDeclaration(covariant ClassDeclarationImpl node) {
     var outerClass = _enclosingClass;
     try {
-      var element = node.declaredElement as ClassElementImpl;
+      var element = node.declaredElement!;
+      if (element.isAugmentation) {
+        return;
+      }
+
       _isInNativeClass = node.nativeClause != null;
       _enclosingClass = element;
 
@@ -1007,7 +1011,12 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     // TODO(scheglov) Verify for all mixin errors.
     var outerClass = _enclosingClass;
     try {
-      _enclosingClass = node.declaredElement!;
+      var element = node.declaredElement!;
+      if (element.isAugmentation) {
+        return;
+      }
+
+      _enclosingClass = element;
 
       List<ClassMember> members = node.members;
       _duplicateDefinitionVerifier.checkMixin(node);
@@ -1025,7 +1034,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
       _checkForConflictingClassMembers();
       _checkForFinalNotInitializedInClass(members);
-      _checkForMainFunction1(node.name, node.declaredElement!);
+      _checkForMainFunction1(node.name, element);
       _checkForWrongTypeParameterVarianceInSuperinterfaces();
       //      _checkForBadFunctionUse(node);
       super.visitMixinDeclaration(node);
@@ -4666,7 +4675,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }) {
     if (_enclosingExecutable.inStaticMethod || _isInStaticVariableDeclaration) {
       if (element is TypeParameterElement &&
-          element.enclosingElement2 is InterfaceElement) {
+          element.enclosingElement2 is InstanceElement) {
         // The class's type parameters are not in scope for static methods.
         // However all other type parameters are legal (e.g. the static method's
         // type parameters, or a local function's type parameters).

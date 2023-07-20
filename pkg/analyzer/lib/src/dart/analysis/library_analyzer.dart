@@ -49,6 +49,7 @@ import 'package:analyzer/src/services/lint.dart';
 import 'package:analyzer/src/task/strong/checker.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:collection/collection.dart';
+import 'package:path/path.dart' as path;
 
 class AnalysisForCompletionResult {
   final CompilationUnit parsedUnit;
@@ -66,6 +67,7 @@ class LibraryAnalyzer {
   final DeclaredVariables _declaredVariables;
   final LibraryFileKind _library;
   final InheritanceManager3 _inheritance;
+  final path.Context _pathContext;
 
   final LibraryElementImpl _libraryElement;
 
@@ -77,7 +79,7 @@ class LibraryAnalyzer {
   final TestingData? _testingData;
 
   LibraryAnalyzer(this._analysisOptions, this._declaredVariables,
-      this._libraryElement, this._inheritance, this._library,
+      this._libraryElement, this._inheritance, this._library, this._pathContext,
       {TestingData? testingData})
       : _testingData = testingData;
 
@@ -342,6 +344,7 @@ class LibraryAnalyzer {
       _inheritance,
       analysisOptions,
       file.workspacePackage,
+      _pathContext,
     );
     for (var linter in analysisOptions.lintRules) {
       linter.reporter = errorReporter;
@@ -432,6 +435,7 @@ class LibraryAnalyzer {
         inheritanceManager: _inheritance,
         analysisOptions: _analysisOptions,
         workspacePackage: _library.file.workspacePackage,
+        pathContext: _pathContext,
       ),
     );
 
@@ -575,7 +579,7 @@ class LibraryAnalyzer {
 
   void _resolveAugmentationImportDirective({
     required AugmentationImportDirectiveImpl directive,
-    required AugmentationImportElement element,
+    required AugmentationImportElementImpl element,
     required AugmentationImportState state,
     required ErrorReporter errorReporter,
     required Set<AugmentationFileKind> seenAugmentations,
@@ -638,7 +642,8 @@ class LibraryAnalyzer {
     units[augmentationFile] = augmentationUnit;
 
     final importedAugmentation = element.importedAugmentation!;
-    augmentationUnit.element = importedAugmentation.definingCompilationUnit;
+    augmentationUnit.declaredElement =
+        importedAugmentation.definingCompilationUnit;
 
     for (final directive in augmentationUnit.directives) {
       if (directive is AugmentationImportDirectiveImpl) {
@@ -657,12 +662,12 @@ class LibraryAnalyzer {
   /// Recursively parses augmentations and parts.
   void _resolveDirectives({
     required LibraryOrAugmentationFileKind containerKind,
-    required LibraryOrAugmentationElement containerElement,
+    required LibraryOrAugmentationElementImpl containerElement,
     required Map<FileState, CompilationUnitImpl> units,
   }) {
     final containerFile = containerKind.file;
     final containerUnit = _parse(containerFile);
-    containerUnit.element = containerElement.definingCompilationUnit;
+    containerUnit.declaredElement = containerElement.definingCompilationUnit;
     units[containerFile] = containerUnit;
 
     final containerErrorReporter = _getErrorReporter(containerFile);
@@ -725,11 +730,11 @@ class LibraryAnalyzer {
     }
   }
 
-  void _resolveFile(FileState file, CompilationUnit unit) {
+  void _resolveFile(FileState file, CompilationUnitImpl unit) {
     var source = file.source;
     var errorListener = _getErrorListener(file);
 
-    var unitElement = unit.declaredElement as CompilationUnitElementImpl;
+    var unitElement = unit.declaredElement!;
 
     unit.accept(
       ResolutionVisitor(
@@ -984,8 +989,8 @@ class LibraryAnalyzer {
     units[includedFile] = partUnit;
 
     final partElementUri = partElement.uri;
-    if (partElementUri is DirectiveUriWithUnit) {
-      partUnit.element = partElementUri.unit;
+    if (partElementUri is DirectiveUriWithUnitImpl) {
+      partUnit.declaredElement = partElementUri.unit;
     }
 
     final partSource = includedKind.file.source;

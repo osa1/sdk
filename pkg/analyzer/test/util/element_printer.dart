@@ -67,13 +67,7 @@ class ElementPrinter {
     }
   }
 
-  void writeElement(String name, Element? element) {
-    _sink.writeWithIndent('$name: ');
-    writeElement0(element);
-  }
-
-  /// TODO(scheglov) rename [writeElement] to `writeNamedElement`, and this.
-  void writeElement0(Element? element) {
+  void writeElement(Element? element) {
     switch (element) {
       case null:
         _sink.writeln('<null>');
@@ -95,9 +89,26 @@ class ElementPrinter {
     }
   }
 
+  void writeElementList(String name, List<Element> elements) {
+    _sink.writeElements(name, elements, (element) {
+      _sink.writeIndent();
+      writeElement(element);
+    });
+  }
+
+  void writeNamedElement(String name, Element? element) {
+    _sink.writeWithIndent('$name: ');
+    writeElement(element);
+  }
+
   void writeNamedType(String name, DartType? type) {
     _sink.writeWithIndent('$name: ');
     writeType(type);
+  }
+
+  void writeReference(Reference reference) {
+    final str = _referenceToString(reference);
+    _sink.write(str);
   }
 
   void writeType(DartType? type) {
@@ -105,10 +116,18 @@ class ElementPrinter {
       var typeStr = _typeStr(type);
       _sink.writeln(typeStr);
 
+      if (type is InterfaceType) {
+        if (_configuration.withInterfaceTypeElements) {
+          _sink.withIndent(() {
+            writeNamedElement('element', type.element);
+          });
+        }
+      }
+
       var alias = type.alias;
       if (alias != null) {
         _sink.withIndent(() {
-          writeElement('alias', alias.element);
+          writeNamedElement('alias', alias.element);
           _sink.withIndent(() {
             writeTypeList('typeArguments', alias.typeArguments);
           });
@@ -228,7 +247,7 @@ class ElementPrinter {
   void _writeMember(Member element) {
     _sink.writeln(_nameOfMemberClass(element));
     _sink.withIndent(() {
-      writeElement('base', element.declaration);
+      writeNamedElement('base', element.declaration);
 
       if (element.isLegacy) {
         _sink.writelnWithIndent('isLegacy: true');
@@ -243,7 +262,7 @@ class ElementPrinter {
       if (_configuration.withRedirectedConstructors) {
         if (element is ConstructorMember) {
           final redirected = element.redirectedConstructor;
-          writeElement('redirectedConstructor', redirected);
+          writeNamedElement('redirectedConstructor', redirected);
         }
       }
     });
@@ -259,5 +278,6 @@ class ElementPrinter {
 }
 
 class ElementPrinterConfiguration {
+  bool withInterfaceTypeElements = false;
   bool withRedirectedConstructors = false;
 }

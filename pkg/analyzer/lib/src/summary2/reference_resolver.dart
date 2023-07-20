@@ -58,8 +58,8 @@ class ReferenceResolver extends ThrowingAstVisitor<void> {
 
     node.typeParameters?.accept(this);
     node.extendsClause?.accept(this);
-    node.implementsClause?.accept(this);
     node.withClause?.accept(this);
+    node.implementsClause?.accept(this);
 
     scope = InterfaceScope(scope, element);
     LinkingNodeContext(node, scope);

@@ -34,7 +34,7 @@ import 'package:meta/meta.dart';
 
 class CompletionHandler
     extends LspMessageHandler<CompletionParams, CompletionList>
-    with LspPluginRequestHandlerMixin {
+    with LspPluginRequestHandlerMixin, LspHandlerHelperMixin {
   /// A [Future] used by tests to allow inserting a delay between resolving
   /// the initial unit and the completion code running.
   @visibleForTesting
@@ -136,7 +136,6 @@ class CompletionHandler
     final offset = offsetResult.result;
 
     Future<ErrorOr<_CompletionResults>>? serverResultsFuture;
-    final pathContext = server.resourceProvider.pathContext;
     final fileExtension = pathContext.extension(path.result);
 
     final maxResults = server.lspClientConfiguration

@@ -59,6 +59,7 @@ class StackFrame;
 
 #define VISIT_FROM(first)                                                      \
   DEFINE_CONTAINS_COMPRESSED(decltype(first##_))                               \
+  static constexpr bool kContainsPointerFields = true;                         \
   base_ptr_type<decltype(first##_)>::type* from() {                            \
     return reinterpret_cast<base_ptr_type<decltype(first##_)>::type*>(         \
         &first##_);                                                            \
@@ -69,6 +70,7 @@ class StackFrame;
                     is_compressed_ptr<elem_type>::value,                       \
                 "Payload elements must be object pointers");                   \
   DEFINE_CONTAINS_COMPRESSED(elem_type)                                        \
+  static constexpr bool kContainsPointerFields = true;                         \
   base_ptr_type<elem_type>::type* from() {                                     \
     const uword payload_start = reinterpret_cast<uword>(this) + sizeof(*this); \
     ASSERT(Utils::IsAligned(payload_start, sizeof(elem_type)));                \
@@ -77,6 +79,8 @@ class StackFrame;
 
 #define VISIT_TO(last)                                                         \
   CHECK_CONTAIN_COMPRESSED(decltype(last##_));                                 \
+  static_assert(kContainsPointerFields,                                        \
+                "Must have a corresponding VISIT_FROM");                       \
   base_ptr_type<decltype(last##_)>::type* to(intptr_t length = 0) {            \
     return reinterpret_cast<base_ptr_type<decltype(last##_)>::type*>(          \
         &last##_);                                                             \
@@ -86,6 +90,8 @@ class StackFrame;
   static_assert(is_uncompressed_ptr<elem_type>::value ||                       \
                     is_compressed_ptr<elem_type>::value,                       \
                 "Payload elements must be object pointers");                   \
+  static_assert(kContainsPointerFields,                                        \
+                "Must have a corresponding VISIT_FROM");                       \
   CHECK_CONTAIN_COMPRESSED(elem_type);                                         \
   base_ptr_type<elem_type>::type* to(intptr_t length) {                        \
     const uword payload_start = reinterpret_cast<uword>(this) + sizeof(*this); \
@@ -508,6 +514,28 @@ class UntaggedObject {
  protected:
   // Automatically inherited by subclasses unless overridden.
   static constexpr bool kContainsCompressedPointers = false;
+  // Automatically inherited by subclasses unless overridden.
+  static constexpr bool kContainsPointerFields = false;
+
+  // The first offset in an allocated object of the given type that contains a
+  // (possibly compressed) object pointer. Used to initialize object pointer
+  // fields to Object::null() instead of 0.
+  //
+  // Always returns an offset after the object header tags.
+  template <typename T>
+  DART_FORCE_INLINE static uword from_offset();
+
+  // The last offset in an allocated object of the given untagged type that
+  // contains a (possibly compressed) object pointer. Used to initialize object
+  // pointer fields to Object::null() instead of 0.
+  //
+  // Takes an optional argument that is the number of elements in the payload,
+  // which is ignored if the object never contains a payload.
+  //
+  // If there are no pointer fields in the object, then
+  // to_offset<T>() < from_offset<T>().
+  template <typename T>
+  DART_FORCE_INLINE static uword to_offset(intptr_t length = 0);
 
   // All writes to heap objects should ultimately pass through one of the
   // methods below or their counterparts in Object, to ensure that the
@@ -796,6 +824,37 @@ class UntaggedObject {
   DISALLOW_IMPLICIT_CONSTRUCTORS(UntaggedObject);
 };
 
+// Note that the below templates for from_offset and to_offset for objects
+// with pointer fields assume that the range from from() and to() cover all
+// pointer fields. If this is not the case (e.g., the next_seen_by_gc_ field
+// in WeakArray/WeakProperty/WeakReference), then specialize the definitions.
+
+template <typename T>
+DART_FORCE_INLINE uword UntaggedObject::from_offset() {
+  if constexpr (T::kContainsPointerFields) {
+    return reinterpret_cast<uword>(reinterpret_cast<T*>(kOffsetOfPtr)->from()) -
+           kOffsetOfPtr;
+  } else {
+    // Non-zero to ensure to_offset() < from_offset() in this case, as
+    // to_offset() is the offset to the last pointer field, not past it.
+    return sizeof(UntaggedObject);
+  }
+}
+
+template <typename T>
+DART_FORCE_INLINE uword UntaggedObject::to_offset(intptr_t length) {
+  if constexpr (T::kContainsPointerFields) {
+    return reinterpret_cast<uword>(
+               reinterpret_cast<T*>(kOffsetOfPtr)->to(length)) -
+           kOffsetOfPtr;
+  } else {
+    USE(length);
+    // Zero to ensure to_offset() < from_offset() in this case, as
+    // from_offset() is guaranteed to return an offset after the header tags.
+    return 0;
+  }
+}
+
 inline intptr_t ObjectPtr::GetClassId() const {
   return untag()->GetClassId();
 }
@@ -1013,7 +1072,6 @@ class UntaggedClass : public UntaggedObject {
   // Not preserved in AOT snapshots.
   COMPRESSED_POINTER_FIELD(TypeArgumentsPtr,
                            declaration_instance_type_arguments)
-
 #if !defined(DART_PRECOMPILED_RUNTIME)
   // Stub code for allocation of instances.
   COMPRESSED_POINTER_FIELD(CodePtr, allocation_stub)
@@ -1107,8 +1165,12 @@ class UntaggedPatchClass : public UntaggedObject {
   COMPRESSED_POINTER_FIELD(ClassPtr, wrapped_class)
   VISIT_FROM(wrapped_class)
   COMPRESSED_POINTER_FIELD(ScriptPtr, script)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, library_kernel_data)
-  VISIT_TO(library_kernel_data)
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  COMPRESSED_POINTER_FIELD(KernelProgramInfoPtr, kernel_program_info)
+  VISIT_TO(kernel_program_info)
+#else
+  VISIT_TO(script)
+#endif
 
   CompressedObjectPtr* to_snapshot(Snapshot::Kind kind) {
     switch (kind) {
@@ -1117,7 +1179,12 @@ class UntaggedPatchClass : public UntaggedObject {
       case Snapshot::kFull:
       case Snapshot::kFullCore:
       case Snapshot::kFullJIT:
-        return reinterpret_cast<CompressedObjectPtr*>(&library_kernel_data_);
+#if !defined(DART_PRECOMPILED_RUNTIME)
+        return reinterpret_cast<CompressedObjectPtr*>(&kernel_program_info_);
+#else
+        UNREACHABLE();
+        return nullptr;
+#endif
       case Snapshot::kNone:
       case Snapshot::kInvalid:
         break;
@@ -1126,7 +1193,7 @@ class UntaggedPatchClass : public UntaggedObject {
     return nullptr;
   }
 
-  NOT_IN_PRECOMPILED(intptr_t library_kernel_offset_);
+  NOT_IN_PRECOMPILED(intptr_t kernel_library_index_);
 
   friend class Function;
 };
@@ -1525,7 +1592,7 @@ class alignas(8) UntaggedScript : public UntaggedObject {
   COMPRESSED_POINTER_FIELD(StringPtr, resolved_url)
   COMPRESSED_POINTER_FIELD(TypedDataPtr, line_starts)
 #if !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, constant_coverage)
+  COMPRESSED_POINTER_FIELD(TypedDataViewPtr, constant_coverage)
 #endif  // !defined(PRODUCT) && !defined(DART_PRECOMPILED_RUNTIME)
   COMPRESSED_POINTER_FIELD(ArrayPtr, debug_positions)
   COMPRESSED_POINTER_FIELD(KernelProgramInfoPtr, kernel_program_info)
@@ -1625,7 +1692,9 @@ class UntaggedLibrary : public UntaggedObject {
   // List of re-exported Namespaces.
   COMPRESSED_POINTER_FIELD(ArrayPtr, exports)
   COMPRESSED_POINTER_FIELD(ArrayPtr, dependencies)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, kernel_data)
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  COMPRESSED_POINTER_FIELD(KernelProgramInfoPtr, kernel_program_info)
+#endif
   CompressedObjectPtr* to_snapshot(Snapshot::Kind kind) {
     switch (kind) {
       case Snapshot::kFullAOT:
@@ -1633,7 +1702,12 @@ class UntaggedLibrary : public UntaggedObject {
       case Snapshot::kFull:
       case Snapshot::kFullCore:
       case Snapshot::kFullJIT:
-        return reinterpret_cast<CompressedObjectPtr*>(&kernel_data_);
+#if !defined(DART_PRECOMPILED_RUNTIME)
+        return reinterpret_cast<CompressedObjectPtr*>(&kernel_program_info_);
+#else
+        UNREACHABLE();
+        return nullptr;
+#endif
       case Snapshot::kNone:
       case Snapshot::kInvalid:
         break;
@@ -1659,7 +1733,7 @@ class UntaggedLibrary : public UntaggedObject {
   uint8_t flags_;         // BitField for LibraryFlags.
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
-  uint32_t kernel_offset_;
+  uint32_t kernel_library_index_;
 #endif  // !defined(DART_PRECOMPILED_RUNTIME)
 
   friend class Class;
@@ -1695,22 +1769,25 @@ class UntaggedNamespace : public UntaggedObject {
   }
 };
 
+// Contains information about a kernel [Component].
+//
+// Used to access string tables, canonical name tables, constants, metadata, ...
 class UntaggedKernelProgramInfo : public UntaggedObject {
   RAW_HEAP_OBJECT_IMPLEMENTATION(KernelProgramInfo);
 
+  COMPRESSED_POINTER_FIELD(TypedDataBasePtr, kernel_component)
+  VISIT_FROM(kernel_component)
   COMPRESSED_POINTER_FIELD(TypedDataPtr, string_offsets)
-  VISIT_FROM(string_offsets)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, string_data)
+  COMPRESSED_POINTER_FIELD(TypedDataViewPtr, string_data)
   COMPRESSED_POINTER_FIELD(TypedDataPtr, canonical_names)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, metadata_payloads)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, metadata_mappings)
+  COMPRESSED_POINTER_FIELD(TypedDataViewPtr, metadata_payloads)
+  COMPRESSED_POINTER_FIELD(TypedDataViewPtr, metadata_mappings)
   COMPRESSED_POINTER_FIELD(ArrayPtr, scripts)
   COMPRESSED_POINTER_FIELD(ArrayPtr, constants)
-  COMPRESSED_POINTER_FIELD(ExternalTypedDataPtr, constants_table)
+  COMPRESSED_POINTER_FIELD(TypedDataViewPtr, constants_table)
   COMPRESSED_POINTER_FIELD(ArrayPtr, libraries_cache)
   COMPRESSED_POINTER_FIELD(ArrayPtr, classes_cache)
-  COMPRESSED_POINTER_FIELD(ObjectPtr, retained_kernel_blob)
-  VISIT_TO(retained_kernel_blob)
+  VISIT_TO(classes_cache)
 
   CompressedObjectPtr* to_snapshot(Snapshot::Kind kind) {
     return reinterpret_cast<CompressedObjectPtr*>(&constants_table_);
@@ -1747,6 +1824,14 @@ class UntaggedWeakArray : public UntaggedObject {
   template <bool>
   friend class ScavengerVisitorBase;
 };
+
+// WeakArray is special in that it has a pointer field which is not
+// traversed by pointer visitors, and thus not in the range [from(),to()]:
+// next_seen_by_gc, which is before the other fields.
+template <>
+DART_FORCE_INLINE uword UntaggedObject::from_offset<UntaggedWeakArray>() {
+  return OFFSET_OF(UntaggedWeakArray, next_seen_by_gc_);
+}
 
 class UntaggedCode : public UntaggedObject {
   RAW_HEAP_OBJECT_IMPLEMENTATION(Code);
@@ -2388,9 +2473,8 @@ class UntaggedContextScope : public UntaggedObject {
     OPEN_ARRAY_START(CompressedObjectPtr, CompressedObjectPtr);
   }
   const VariableDesc* VariableDescAddr(intptr_t index) const {
-    ASSERT((index >= 0) && (index < num_variables_ + 1));
     // data() points to the first component of the first descriptor.
-    return &(reinterpret_cast<const VariableDesc*>(data())[index]);
+    return reinterpret_cast<const VariableDesc*>(data()) + index;
   }
 
 #define DEFINE_ACCESSOR(type, name)                                            \
@@ -3495,6 +3579,15 @@ class UntaggedWeakProperty : public UntaggedInstance {
   friend class SlowObjectCopy;  // For OFFSET_OF
 };
 
+// WeakProperty is special in that it has a pointer field which is not
+// traversed by pointer visitors, and thus not in the range [from(),to()]:
+// next_seen_by_gc, which is after the other fields.
+template <>
+DART_FORCE_INLINE uword
+UntaggedObject::to_offset<UntaggedWeakProperty>(intptr_t length) {
+  return OFFSET_OF(UntaggedWeakProperty, next_seen_by_gc_);
+}
+
 class UntaggedWeakReference : public UntaggedInstance {
   RAW_HEAP_OBJECT_IMPLEMENTATION(WeakReference);
 
@@ -3520,6 +3613,15 @@ class UntaggedWeakReference : public UntaggedInstance {
   friend class FastObjectCopy;  // For OFFSET_OF
   friend class SlowObjectCopy;  // For OFFSET_OF
 };
+
+// WeakReference is special in that it has a pointer field which is not
+// traversed by pointer visitors, and thus not in the range [from(),to()]:
+// next_seen_by_gc, which is after the other fields.
+template <>
+DART_FORCE_INLINE uword
+UntaggedObject::to_offset<UntaggedWeakReference>(intptr_t length) {
+  return OFFSET_OF(UntaggedWeakReference, next_seen_by_gc_);
+}
 
 class UntaggedFinalizerBase : public UntaggedInstance {
   RAW_HEAP_OBJECT_IMPLEMENTATION(FinalizerBase);
@@ -3631,6 +3733,15 @@ class UntaggedFinalizerEntry : public UntaggedInstance {
   friend class ScavengerFinalizerVisitor;
   friend class ObjectGraph;
 };
+
+// FinalizerEntry is special in that it has a pointer field which is not
+// traversed by pointer visitors, and thus not in the range [from(),to()]:
+// next_seen_by_gc, which is after the other fields.
+template <>
+DART_FORCE_INLINE uword
+UntaggedObject::to_offset<UntaggedFinalizerEntry>(intptr_t length) {
+  return OFFSET_OF(UntaggedFinalizerEntry, next_seen_by_gc_);
+}
 
 // MirrorReferences are used by mirrors to hold reflectees that are VM
 // internal objects, such as libraries, classes, functions or types.

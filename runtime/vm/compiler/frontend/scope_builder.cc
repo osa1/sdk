@@ -29,10 +29,8 @@ ScopeBuilder::ScopeBuilder(ParsedFunction* parsed_function)
       helper_(
           zone_,
           &translation_helper_,
-          Script::Handle(Z, parsed_function->function().script()),
-          ExternalTypedData::Handle(Z,
-                                    parsed_function->function().KernelData()),
-          parsed_function->function().KernelDataProgramOffset()),
+          TypedDataView::Handle(Z, parsed_function->function().KernelLibrary()),
+          parsed_function->function().KernelLibraryOffset()),
       constant_reader_(&helper_, &active_class_),
       inferred_type_metadata_helper_(&helper_, &constant_reader_),
       procedure_attributes_metadata_helper_(&helper_),
@@ -40,7 +38,9 @@ ScopeBuilder::ScopeBuilder(ParsedFunction* parsed_function)
                        &constant_reader_,
                        &active_class_,
                        /*finalize=*/true) {
-  H.InitFromScript(helper_.script());
+  const auto& kernel_program_info = KernelProgramInfo::Handle(
+      Z, parsed_function->function().KernelProgramInfo());
+  H.InitFromKernelProgramInfo(kernel_program_info);
   ASSERT(type_translator_.active_class_ == &active_class_);
 }
 
@@ -177,8 +177,8 @@ ScopeBuildingResult* ScopeBuilder::BuildScopes() {
           for (intptr_t i = 0; i < class_fields.Length(); ++i) {
             class_field ^= class_fields.At(i);
             if (!class_field.is_static()) {
-              ExternalTypedData& kernel_data =
-                  ExternalTypedData::Handle(Z, class_field.KernelData());
+              const auto& kernel_data =
+                  TypedDataView::Handle(Z, class_field.KernelLibrary());
               ASSERT(!kernel_data.IsNull());
               intptr_t field_offset = class_field.kernel_offset();
               AlternativeReadingScopeWithNewData alt(
@@ -462,7 +462,8 @@ ScopeBuildingResult* ScopeBuilder::BuildScopes() {
 }
 
 void ScopeBuilder::ReportUnexpectedTag(const char* variant, Tag tag) {
-  H.ReportError(helper_.script(), TokenPosition::kNoSource,
+  const auto& script = Script::Handle(Z, Script());
+  H.ReportError(script, TokenPosition::kNoSource,
                 "Unexpected tag %d (%s) in %s, expected %s", tag,
                 Reader::TagName(tag),
                 parsed_function_->function().ToQualifiedCString(), variant);
@@ -505,8 +506,8 @@ void ScopeBuilder::VisitConstructor() {
     for (intptr_t i = 0; i < class_fields.Length(); ++i) {
       class_field ^= class_fields.At(i);
       if (!class_field.is_static()) {
-        ExternalTypedData& kernel_data =
-            ExternalTypedData::Handle(Z, class_field.KernelData());
+        const auto& kernel_data =
+            TypedDataView::Handle(Z, class_field.KernelLibrary());
         ASSERT(!kernel_data.IsNull());
         intptr_t field_offset = class_field.kernel_offset();
         AlternativeReadingScopeWithNewData alt(&helper_.reader_, &kernel_data,
@@ -1894,8 +1895,7 @@ LocalVariable* ScopeBuilder::LookupVariable(
 StringIndex ScopeBuilder::GetNameFromVariableDeclaration(
     intptr_t kernel_offset,
     const Function& function) {
-  ExternalTypedData& kernel_data =
-      ExternalTypedData::Handle(Z, function.KernelData());
+  const auto& kernel_data = TypedDataView::Handle(Z, function.KernelLibrary());
   ASSERT(!kernel_data.IsNull());
 
   // Temporarily go to the variable declaration, read the name.
