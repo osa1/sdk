@@ -10,6 +10,7 @@ const int _maxWasmArrayLength = 2147483647; // max i32
 abstract class _ListBase<E> extends ListBase<E> {
   @pragma("wasm:entry-point")
   int _length;
+
   @pragma("wasm:entry-point")
   WasmObjectArray<Object?> _data;
 
@@ -78,7 +79,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
       }
       for (int i = start; i < end; i++) {
         if (!it.moveNext()) return;
-        this[i] = it.current;
+        _data.write(i, it.current);
       }
     }
   }
