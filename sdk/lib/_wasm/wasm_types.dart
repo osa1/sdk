@@ -202,6 +202,8 @@ class WasmObjectArray<T extends Object?> extends WasmArrayRef {
 
   external T read(int index);
   external void write(int index, T value);
+  external void copy(
+      int offset, WasmObjectArray<T> source, int sourceOffset, int size);
 }
 
 /// Wasm typed function reference.

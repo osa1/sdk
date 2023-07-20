@@ -68,7 +68,8 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
     if (identical(this, iterable)) {
-      Lists.copy(this, skipCount, this, start, length);
+      _data.copy(
+          start, unsafeCast<_ListBase<E>>(iterable)._data, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
