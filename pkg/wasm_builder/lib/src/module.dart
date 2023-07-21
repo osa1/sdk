@@ -1032,7 +1032,8 @@ class NameSection extends CustomSection {
   NameSection(super.module);
 
   @override
-  bool get isNotEmpty => module.functionNameCount > 0;
+  bool get isNotEmpty =>
+      module.functionNameCount > 0 || module.typeNameCount > 0;
 
   @override
   void serializeContents() {
