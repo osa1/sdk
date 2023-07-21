@@ -37,7 +37,7 @@ final RegExp _locationRegExp =
     RegExp('(file:)?[a-zA-Z0-9_./]+.dart:[0-9]+:[0-9]+');
 
 SwitchHeadDefault get default_ =>
-    SwitchHeadDefault(location: computeLocation());
+    SwitchHeadDefault._(location: computeLocation());
 
 Expression get nullLiteral => new NullLiteral._(location: computeLocation());
 
@@ -226,8 +226,8 @@ Statement ifCase(Expression expression, PossiblyGuardedPattern pattern,
 CollectionElement ifCaseElement(
   Expression expression,
   PossiblyGuardedPattern pattern,
-  CollectionElement ifTrue, [
-  CollectionElement? ifFalse,
+  ProtoCollectionElement ifTrue, [
+  ProtoCollectionElement? ifFalse,
 ]) {
   var location = computeLocation();
   var guardedPattern = pattern._asGuardedPattern;
@@ -235,22 +235,34 @@ CollectionElement ifCaseElement(
     expression,
     guardedPattern.pattern,
     guardedPattern.guard,
-    ifTrue,
-    ifFalse,
+    ifTrue.asCollectionElement,
+    ifFalse?.asCollectionElement,
     location: location,
   );
 }
 
-CollectionElement ifElement(Expression condition, CollectionElement ifTrue,
-    [CollectionElement? ifFalse]) {
+CollectionElement ifElement(Expression condition, ProtoCollectionElement ifTrue,
+    [ProtoCollectionElement? ifFalse]) {
   var location = computeLocation();
-  return new IfElement._(condition, ifTrue, ifFalse, location: location);
+  return new IfElement._(
+      condition, ifTrue.asCollectionElement, ifFalse?.asCollectionElement,
+      location: location);
 }
 
 Expression intLiteral(int value, {bool? expectConversionToDouble}) =>
     new IntLiteral(value,
         expectConversionToDouble: expectConversionToDouble,
         location: computeLocation());
+
+/// Creates a list literal containing the given [elements].
+///
+/// [elementType] is the explicit type argument of the list literal.
+/// TODO(paulberry): support list literals with an inferred type argument.
+Expression listLiteral(List<ProtoCollectionElement> elements,
+        {required String elementType}) =>
+    ListLiteral._([
+      for (var element in elements) element.asCollectionElement
+    ], Type(elementType), location: computeLocation());
 
 Pattern listPattern(List<ListPatternElement> elements, {String? elementType}) =>
     ListPattern._(elementType == null ? null : Type(elementType), elements,
@@ -346,11 +358,11 @@ Statement patternForIn(
 CollectionElement patternForInElement(
   Pattern pattern,
   Expression expression,
-  CollectionElement body, {
+  ProtoCollectionElement body, {
   bool hasAwait = false,
 }) {
   var location = computeLocation();
-  return new PatternForInElement(pattern, expression, body,
+  return new PatternForInElement(pattern, expression, body.asCollectionElement,
       hasAwait: hasAwait, location: location);
 }
 
@@ -392,13 +404,13 @@ Expression switchExpr(Expression expression, List<ExpressionCase> cases) =>
     new SwitchExpression._(expression, cases, location: computeLocation());
 
 SwitchStatementMember switchStatementMember(
-  List<SwitchHead> cases,
+  List<ProtoSwitchHead> cases,
   List<ProtoStatement> body, {
   bool hasLabels = false,
 }) {
   var location = computeLocation();
   return SwitchStatementMember._(
-    cases,
+    [for (var case_ in cases) case_.asSwitchHead],
     Block._(body, location: location),
     hasLabels: hasLabels,
     location: computeLocation(),
@@ -974,25 +986,16 @@ class CheckUnassigned extends Statement {
 
 /// Representation of a collection element in the pseudo-Dart language used for
 /// type analysis testing.
-abstract class CollectionElement extends Node {
+abstract class CollectionElement extends Node
+    with ProtoCollectionElement<CollectionElement> {
   CollectionElement({required super.location}) : super._();
 
-  /// Wraps `this` in such a way that, when the test is run, it will verify that
-  /// the IR produced matches [expectedIR].
+  @override
+  CollectionElement get asCollectionElement => this;
+
+  @override
   CollectionElement checkIR(String expectedIR) =>
-      CheckCollectionElementIR._(this, expectedIR, location: computeLocation());
-
-  /// Creates a [Statement] that, when analyzed, will analyze `this`, supplying
-  /// [type] as the context (for `List` and `Set` literals).
-  Statement inContextElementType(String type) =>
-      CollectionElementInContext(this, CollectionElementContextType(type),
-          location: computeLocation());
-
-  /// Creates a [Statement] that, when analyzed, will analyze `this`, supplying
-  /// [keyType] and [valueType] as the context (for `Map` literals).
-  Statement inContextMapEntry(String keyType, String valueType) =>
-      CollectionElementInContext(
-          this, CollectionElementContextMapEntry._(keyType, valueType),
+      CheckCollectionElementIR._(asCollectionElement, expectedIR,
           location: computeLocation());
 
   void preVisit(PreVisitor visitor);
@@ -1014,7 +1017,7 @@ class CollectionElementContextMapEntry extends CollectionElementContext {
 class CollectionElementContextType extends CollectionElementContext {
   final Type elementType;
 
-  CollectionElementContextType(String type) : elementType = Type(type);
+  CollectionElementContextType._(this.elementType);
 }
 
 /// TODO(scheglov) This is a weird statement. We need `ListLiteral`, etc.
@@ -1286,12 +1289,13 @@ class Equal extends Expression {
 /// Representation of an expression in the pseudo-Dart language used for flow
 /// analysis testing.  Methods in this class may be used to create more complex
 /// expressions based on this one.
-abstract class Expression extends Node with ProtoStatement {
+abstract class Expression extends Node
+    with ProtoStatement<Expression>, ProtoCollectionElement<Expression> {
   Expression({required super.location}) : super._();
 
-  /// Creates a [CollectionElement] that, when analyzed, will analyze `this`.
+  @override
   CollectionElement get asCollectionElement =>
-      ExpressionCollectionElement(this, location: computeLocation());
+      ExpressionCollectionElement(this, location: location);
 
   @override
   Statement get asStatement =>
@@ -2236,6 +2240,33 @@ class LabeledStatement extends Statement {
   @override
   void visit(Harness h) {
     h.typeAnalyzer.analyzeLabeledStatement(this, body);
+  }
+}
+
+/// Representation of a list literal in the pseudo-Dart language used for flow
+/// analysis testing.
+class ListLiteral extends Expression {
+  final List<CollectionElement> elements;
+  final Type elementType;
+
+  ListLiteral._(this.elements, this.elementType, {required super.location});
+
+  @override
+  void preVisit(PreVisitor visitor) {
+    for (var element in elements) {
+      element.preVisit(visitor);
+    }
+  }
+
+  @override
+  ExpressionTypeAnalysisResult<Type> visit(Harness h, Type context) {
+    for (var element in elements) {
+      element.visit(h, CollectionElementContextType._(elementType));
+    }
+    h.irBuilder.apply('list', [for (var _ in elements) Kind.collectionElement],
+        Kind.expression,
+        location: location);
+    return SimpleTypeAnalysisResult(type: h.typeAnalyzer.listType(elementType));
   }
 }
 
@@ -3382,13 +3413,12 @@ class PlaceholderExpression extends Expression {
 /// Mixin containing logic shared by [Pattern] and [GuardedPattern].  Both of
 /// these types can be used in a case where a pattern with an optional guard is
 /// expected.
-mixin PossiblyGuardedPattern on Node {
-  SwitchHead get switchCase {
-    return SwitchHeadCase._(
-      _asGuardedPattern,
-      location: location,
-    );
-  }
+mixin PossiblyGuardedPattern on Node implements ProtoSwitchHead {
+  @override
+  SwitchHead get asSwitchHead => SwitchHeadCase._(
+        _asGuardedPattern,
+        location: location,
+      );
 
   /// Converts `this` to a [GuardedPattern], including a `null` guard if
   /// necessary.
@@ -3477,6 +3507,38 @@ class Property extends PromotableLValue {
   }
 }
 
+/// Common functionality shared by constructs that can be used where a
+/// collection element is expected, in in the pseudo-Dart language used for flow
+/// analysis testing.
+///
+/// The reason this mixin is distinct from the [CollectionElement] class is
+/// because both [Expression]s and other [CollectionElement]s (`if` and `for`
+/// elements) can be used where a collection element is expected (because an
+/// expression inside a collection simply becomes an
+/// [ExpressionCollectionElement]).
+mixin ProtoCollectionElement<Self extends ProtoCollectionElement<dynamic>> {
+  /// Converts `this` to a [CollectionElement]. If it's already a
+  /// [CollectionElement], it is returned unchanged. If it's an [Expression],
+  /// it's converted into a collection element.
+  ///
+  /// In general, tests shouldn't need to call this getter directly; instead
+  /// they should simply be able to use either an [Expression] or some other
+  /// [CollectionElement] in a context where a [CollectionElement] is expected,
+  /// and the test infrastructure will call this getter as needed.
+  CollectionElement get asCollectionElement;
+
+  /// Wraps `this` in such a way that, when the test is run, it will verify that
+  /// the IR produced matches [expectedIR].
+  Self checkIR(String expectedIR);
+
+  /// Creates a [Statement] that, when analyzed, will analyze `this`, supplying
+  /// [keyType] and [valueType] as the context (for `Map` literals).
+  Statement inContextMapEntry(String keyType, String valueType) =>
+      CollectionElementInContext(asCollectionElement,
+          CollectionElementContextMapEntry._(keyType, valueType),
+          location: computeLocation());
+}
+
 /// Common functionality shared by constructs that can be used where a statement
 /// is expected, in in the pseudo-Dart language used for flow analysis testing.
 ///
@@ -3484,7 +3546,7 @@ class Property extends PromotableLValue {
 /// [Expression]s and [Statement]s can be used where a statement is expected
 /// (because an [Expression] in a statement context simply becomes an expression
 /// statement).
-mixin ProtoStatement on Node {
+mixin ProtoStatement<Self extends ProtoStatement<dynamic>> {
   /// Converts `this` to a [Statement]. If it's already a [Statement], it is
   /// returned unchanged. If it's an [Expression], it's converted into an
   /// expression statement.
@@ -3497,7 +3559,7 @@ mixin ProtoStatement on Node {
 
   /// Wraps `this` in such a way that, when the test is run, it will verify that
   /// the IR produced matches [expectedIR].
-  ProtoStatement checkIR(String expectedIR);
+  Self checkIR(String expectedIR);
 
   /// If `this` is a statement `x`, creates a pseudo-expression that models
   /// execution of `x` followed by evaluation of [expr].  This can be used to
@@ -3505,6 +3567,21 @@ mixin ProtoStatement on Node {
   /// visited.
   Expression thenExpr(Expression expr) =>
       WrappedExpression._(asStatement, expr, null, location: computeLocation());
+}
+
+/// Common interface shared by constructs that can be used where a switch head
+/// (pattern with optional guard, or `default`) is expected, in the pseudo-Dart
+/// language used for flow analysis testing.
+abstract class ProtoSwitchHead {
+  /// Converts `this` to a [SwitchHead]. If it's already a [SwitchHead], it is
+  /// returned unchanged. If it's a [PossiblyGuardedPattern], it's converted
+  /// into a [SwitchHeadCase]
+  ///
+  /// In general, tests shouldn't need to call this getter directly; instead
+  /// they should simply be able to use a [Pattern], [GuardedPattern], or
+  /// [default_] in a context where a switch head is expected, and the test
+  /// infrastructure will call this getter as needed.
+  SwitchHead get asSwitchHead;
 }
 
 class RecordPattern extends Pattern {
@@ -3644,7 +3721,7 @@ class Return extends Statement {
 
 /// Representation of a statement in the pseudo-Dart language used for flow
 /// analysis testing.
-abstract class Statement extends Node with ProtoStatement {
+abstract class Statement extends Node with ProtoStatement<Statement> {
   Statement({required super.location}) : super._();
 
   @override
@@ -3699,8 +3776,11 @@ class SwitchExpression extends Expression {
   }
 }
 
-abstract class SwitchHead extends Node {
+abstract class SwitchHead extends Node implements ProtoSwitchHead {
   SwitchHead._({required super.location}) : super._();
+
+  @override
+  SwitchHead get asSwitchHead => this;
 
   SwitchStatementMember then(List<ProtoStatement> body) {
     return SwitchStatementMember._(
@@ -3722,7 +3802,7 @@ class SwitchHeadCase extends SwitchHead {
 }
 
 class SwitchHeadDefault extends SwitchHead {
-  SwitchHeadDefault({required super.location}) : super._();
+  SwitchHeadDefault._({required super.location}) : super._();
 }
 
 class SwitchStatement extends Statement {
