@@ -52,7 +52,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   bool remove(Object? element) {
     for (int i = 0; i < this.length; i++) {
-      if (this._data.read(i) == element) {
+      if (_data.read(i) == element) {
         removeAt(i);
         return true;
       }
@@ -204,7 +204,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
       _growToNextCapacity();
     }
     _setLength(len + 1);
-    this._data.write(len, value);
+    _data.write(len, value);
   }
 
   void addAll(Iterable<E> iterable) {
@@ -233,7 +233,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
       while (len < _capacity) {
         int newLen = len + 1;
         this._setLength(newLen);
-        this._data.write(len, it.current);
+        _data.write(len, it.current);
         if (!it.moveNext()) return;
         if (this.length != newLen) throw ConcurrentModificationError(this);
         len = newLen;
@@ -269,7 +269,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   void _grow(int new_capacity) {
     var newData = WasmObjectArray<Object?>(new_capacity);
-    newData.copy(0, this._data, 0, length);
+    newData.copy(0, _data, 0, length);
     _data = newData;
   }
 
@@ -279,7 +279,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   void _shrink(int new_capacity, int new_length) {
     var newData = _allocateData(new_capacity);
-    newData.copy(0, this._data, 0, new_length);
+    newData.copy(0, _data, 0, new_length);
     _data = newData;
   }
 

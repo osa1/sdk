@@ -39,7 +39,7 @@ abstract class _ListBase<E> extends ListBase<E> {
   void forEach(f(E element)) {
     final initialLength = length;
     for (int i = 0; i < initialLength; i++) {
-      f(unsafeCast<E>(this._data.read(i)));
+      f(unsafeCast<E>(_data.read(i)));
       if (length != initialLength) throw ConcurrentModificationError(this);
     }
   }
@@ -68,8 +68,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
     if (identical(this, iterable)) {
-      _data.copy(
-          start, unsafeCast<_ListBase<E>>(iterable)._data, skipCount, length);
+      _data.copy(start, _data, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
