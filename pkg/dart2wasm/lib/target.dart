@@ -92,8 +92,6 @@ class WasmTarget extends Target {
 
   @override
   List<String> get extraRequiredLibraries => const <String>[
-        'dart:async',
-        'dart:ffi',
         'dart:_boxed_double',
         'dart:_boxed_int',
         'dart:_http',
@@ -101,27 +99,29 @@ class WasmTarget extends Target {
         'dart:_js_helper',
         'dart:_js_types',
         'dart:_string',
-        'dart:typed_data',
-        'dart:nativewrappers',
+        'dart:_wasm',
+        'dart:async',
+        'dart:developer',
+        'dart:ffi',
         'dart:io',
+        'dart:js',
         'dart:js_interop',
         'dart:js_interop_unsafe',
-        'dart:js',
         'dart:js_util',
-        'dart:_wasm',
-        'dart:developer',
+        'dart:nativewrappers',
+        'dart:typed_data',
       ];
 
   @override
   List<String> get extraIndexedLibraries => const <String>[
         'dart:_js_helper',
         'dart:_js_types',
-        'dart:collection',
-        'dart:typed_data',
-        'dart:js_interop',
-        'dart:js_util',
         'dart:_string',
         'dart:_wasm',
+        'dart:collection',
+        'dart:js_interop',
+        'dart:js_util',
+        'dart:typed_data',
       ];
 
   @override
