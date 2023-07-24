@@ -17,21 +17,21 @@ class String {
   factory String.fromCharCode(int charCode) {
     if (charCode >= 0) {
       if (charCode <= 0xff) {
-        return OneByteString._allocate(1).._setAt(0, charCode);
+        return OneByteString.allocate(1)..setAt(0, charCode);
       }
       if (charCode <= 0xffff) {
-        return TwoByteString._allocate(1).._setAt(0, charCode);
+        return TwoByteString.allocate(1)..setAt(0, charCode);
       }
       if (charCode <= 0x10ffff) {
         int low = 0xDC00 | (charCode & 0x3ff);
         int bits = charCode - 0x10000;
         int high = 0xD800 | (bits >> 10);
-        return TwoByteString._allocate(2)
-          .._setAt(0, high)
-          .._setAt(1, low);
+        return TwoByteString.allocate(2)
+          ..setAt(0, high)
+          ..setAt(1, low);
       }
     }
-    throw new RangeError.range(charCode, 0, 0x10ffff);
+    throw RangeError.range(charCode, 0, 0x10ffff);
   }
 
   @patch
