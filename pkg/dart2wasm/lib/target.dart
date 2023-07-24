@@ -96,10 +96,11 @@ class WasmTarget extends Target {
         'dart:ffi',
         'dart:_boxed_double',
         'dart:_boxed_int',
-        'dart:_internal',
         'dart:_http',
+        'dart:_internal',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_string',
         'dart:typed_data',
         'dart:nativewrappers',
         'dart:io',
@@ -127,6 +128,7 @@ class WasmTarget extends Target {
       uri.isScheme('dart') &&
       (uri.path == 'core' ||
           uri.path == '_simd' ||
+          uri.path == '_string' ||
           uri.path == 'typed_data' ||
           uri.path == '_typed_data' ||
           uri.path == '_boxed_double' ||

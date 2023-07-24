@@ -334,6 +334,9 @@
       }
     ],
     "libraries": {
+      "_string": {
+        "uri": "_internal/wasm/lib/string.dart"
+      },
       "_typed_data": {
         "uri": "_internal/wasm/lib/typed_data.dart"
       },
