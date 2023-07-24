@@ -120,6 +120,7 @@ class WasmTarget extends Target {
         'dart:typed_data',
         'dart:js_interop',
         'dart:js_util',
+        'dart:_string',
         'dart:_wasm',
       ];
 
@@ -416,11 +417,11 @@ class WasmTarget extends Target {
     for (int i = 0; i < value.length; ++i) {
       if (value.codeUnitAt(i) > maxLatin1) {
         return _twoByteString ??=
-            coreTypes.index.getClass('dart:core', '_TwoByteString');
+            coreTypes.index.getClass('dart:_string', 'TwoByteString');
       }
     }
     return _oneByteString ??=
-        coreTypes.index.getClass('dart:core', '_OneByteString');
+        coreTypes.index.getClass('dart:_string', 'OneByteString');
   }
 
   @override
