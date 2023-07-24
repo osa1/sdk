@@ -5,7 +5,7 @@
 library fasta.source_loader;
 
 import 'dart:collection' show Queue;
-import 'dart:convert' show Utf8Encoder;
+import 'dart:convert' show utf8;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:_fe_analyzer_shared/src/parser/class_member_parser.dart'
@@ -28,8 +28,7 @@ import 'package:front_end/src/fasta/kernel/benchmarker.dart'
 import 'package:front_end/src/fasta/kernel/exhaustiveness.dart';
 import 'package:front_end/src/fasta/source/source_type_alias_builder.dart';
 import 'package:kernel/ast.dart';
-import 'package:kernel/class_hierarchy.dart'
-    show ClassHierarchy, HandleAmbiguousSupertypes;
+import 'package:kernel/class_hierarchy.dart' show ClassHierarchy;
 import 'package:kernel/core_types.dart' show CoreTypes;
 import 'package:kernel/reference_from_index.dart' show ReferenceFromIndex;
 import 'package:kernel/target/targets.dart';
@@ -960,7 +959,7 @@ severity: $severity
   }
 
   Uint8List synthesizeSourceForMissingFile(Uri uri, Message? message) {
-    return const Utf8Encoder().convert(switch ("$uri") {
+    return utf8.encode(switch ("$uri") {
       "dart:core" => defaultDartCoreSource,
       "dart:async" => defaultDartAsyncSource,
       "dart:collection" => defaultDartCollectionSource,
@@ -2574,27 +2573,18 @@ severity: $severity
   }
 
   void computeHierarchy() {
-    List<AmbiguousTypesRecord>? ambiguousTypesRecords = [];
-    HandleAmbiguousSupertypes onAmbiguousSupertypes =
-        (Class cls, Supertype a, Supertype b) {
-      if (ambiguousTypesRecords != null) {
-        ambiguousTypesRecords.add(new AmbiguousTypesRecord(cls, a, b));
-      }
-    };
     if (_hierarchy == null) {
       hierarchy = new ClassHierarchy(computeFullComponent(), coreTypes,
-          onAmbiguousSupertypes: onAmbiguousSupertypes);
+          onAmbiguousSupertypes: (Class cls, Supertype a, Supertype b) {
+        // Ignore errors. These have already been reported by the class
+        // hierarchy builder.
+      });
     } else {
-      hierarchy.onAmbiguousSupertypes = onAmbiguousSupertypes;
       Component component = computeFullComponent();
       hierarchy.coreTypes = coreTypes;
       hierarchy.applyTreeChanges(const [], component.libraries, const [],
           reissueAmbiguousSupertypesFor: component);
     }
-    for (AmbiguousTypesRecord record in ambiguousTypesRecords) {
-      handleAmbiguousSupertypes(record.cls, record.a, record.b);
-    }
-    ambiguousTypesRecords = null;
     ticker.logMs("Computed class hierarchy");
   }
 
@@ -2604,17 +2594,6 @@ severity: $severity
     }
     ticker.logMs("Computed show and hide elements");
   }
-
-  void handleAmbiguousSupertypes(Class cls, Supertype a, Supertype b) {
-    addProblem(
-        templateAmbiguousSupertypes.withArguments(cls.name, a.asInterfaceType,
-            b.asInterfaceType, cls.enclosingLibrary.isNonNullableByDefault),
-        cls.fileOffset,
-        noLength,
-        cls.fileUri);
-  }
-
-  void ignoreAmbiguousSupertypes(Class cls, Supertype a, Supertype b) {}
 
   /// Creates an [InterfaceType] for the `dart:core` type by the given [name].
   ///
@@ -2877,10 +2856,6 @@ severity: $severity
 
     typeInferenceEngine.isTypeInferencePrepared = true;
 
-    // Since finalization of covariance may have added forwarding stubs, we need
-    // to recompute the class hierarchy so that method compilation will properly
-    // target those forwarding stubs.
-    hierarchy.onAmbiguousSupertypes = ignoreAmbiguousSupertypes;
     ticker.logMs("Performed top level inference");
   }
 
@@ -3313,14 +3288,6 @@ class Endian {
   static final Endian host = null;
 }
 """;
-
-class AmbiguousTypesRecord {
-  final Class cls;
-  final Supertype a;
-  final Supertype b;
-
-  const AmbiguousTypesRecord(this.cls, this.a, this.b);
-}
 
 class SourceLoaderDataForTesting {
   final Map<TreeNode, TreeNode> _aliasMap = {};
