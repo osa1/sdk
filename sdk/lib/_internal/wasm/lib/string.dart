@@ -967,7 +967,7 @@ abstract final class StringBase implements String {
   String toLowerCase() => _toLowerCase(this);
 
   // Concatenate ['start', 'end'[ elements of 'strings'.
-  static String _concatRange(List<String> strings, int start, int end) {
+  static String concatRange(List<String> strings, int start, int end) {
     if ((end - start) == 1) {
       return strings[start];
     }

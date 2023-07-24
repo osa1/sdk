@@ -128,6 +128,7 @@ wasm:
       - _internal/vm_shared/lib/null_patch.dart
       - _internal/wasm/lib/date_patch_patch.dart
       - _internal/wasm/lib/int_patch.dart
+      - _internal/wasm/lib/string_buffer_patch.dart
       - _internal/wasm/lib/string_patch.dart
       - _internal/wasm/lib/sync_star_patch.dart
       - _internal/wasm/lib/weak_patch.dart
@@ -148,6 +149,7 @@ wasm_stringref:
       - _internal/vm_shared/lib/null_patch.dart
       - _internal/wasm/lib/date_patch_patch.dart
       - _internal/wasm/lib/int_patch.dart
+      - _internal/wasm/lib/string_buffer_patch.dart
       - _internal/wasm/lib/string_stringref_patch.dart
       - _internal/wasm/lib/sync_star_patch.dart
       - _internal/wasm/lib/weak_patch.dart
@@ -170,6 +172,7 @@ wasm_js_compatibility:
         - _internal/vm_shared/lib/null_patch.dart
         - _internal/wasm/lib/date_patch_patch.dart
         - _internal/wasm/lib/int_patch.dart
+        - _internal/wasm/lib/string_buffer_patch.dart
         - _internal/wasm/lib/string_patch.dart
         - _internal/wasm/lib/sync_star_patch.dart
         - _internal/wasm/lib/weak_patch.dart
