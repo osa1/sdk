@@ -1035,10 +1035,9 @@ class Closures {
     member.accept(find);
   }
 
-  void collectContexts(TreeNode node, {TreeNode? container}) {
+  void collectContexts(TreeNode node) {
     if (captures.isNotEmpty || isThisCaptured) {
-      node.accept(
-          ContextCollector(this, container, translator.options.enableAsserts));
+      node.accept(ContextCollector(this, translator.options.enableAsserts));
     }
   }
 
@@ -1238,11 +1237,7 @@ class ContextCollector extends RecursiveVisitor {
   Context? currentContext;
   final bool enableAsserts;
 
-  ContextCollector(this.closures, TreeNode? container, this.enableAsserts) {
-    if (container != null) {
-      currentContext = closures.contexts[container]!;
-    }
-  }
+  ContextCollector(this.closures, this.enableAsserts);
 
   @override
   void visitAssertStatement(AssertStatement node) {
