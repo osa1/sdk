@@ -4,18 +4,17 @@
 
 import '../ir/ir.dart' as ir;
 import 'builder.dart';
+import 'util.dart';
 
 class MemoriesBuilder with Builder<ir.Memories> {
   final _definedMemories = <ir.DefinedMemory>[];
   final _importedMemories = <ir.Import>[];
-  bool _anyMemoriesDefined = false;
+  int _idCount = 0;
 
-  /// This is guarded by [_anyMemoriesDefined].
-  int get _index => _importedMemories.length + _definedMemories.length;
+  ir.FinalizableIndex get _index => ir.FinalizableIndex(_idCount++);
 
   /// Add a new memory to the module.
   ir.DefinedMemory define(bool shared, int minSize, [int? maxSize]) {
-    _anyMemoriesDefined = true;
     final memory = ir.DefinedMemory(_index, shared, minSize, maxSize);
     _definedMemories.add(memory);
     return memory;
@@ -27,9 +26,6 @@ class MemoriesBuilder with Builder<ir.Memories> {
   /// using [defined].
   ir.ImportedMemory import(String module, String name, bool shared, int minSize,
       [int? maxSize]) {
-    if (_anyMemoriesDefined) {
-      throw "All memory imports must be specified before any definitions.";
-    }
     final memory =
         ir.ImportedMemory(module, name, _index, shared, minSize, maxSize);
     _importedMemories.add(memory);
@@ -37,5 +33,8 @@ class MemoriesBuilder with Builder<ir.Memories> {
   }
 
   @override
-  ir.Memories forceBuild() => ir.Memories(_importedMemories, _definedMemories);
+  ir.Memories forceBuild() {
+    finalizeImportsAndDefinitions(_importedMemories, _definedMemories);
+    return ir.Memories(_importedMemories, _definedMemories);
+  }
 }
