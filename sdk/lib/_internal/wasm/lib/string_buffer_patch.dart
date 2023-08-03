@@ -4,6 +4,7 @@
 
 import "dart:_internal" show patch;
 import "dart:_string" show StringBase, TwoByteString;
+import "dart:_growable_list" show GrowableList;
 
 import "dart:typed_data" show Uint16List;
 
@@ -167,11 +168,7 @@ class StringBuffer {
     _partsCodeUnitsSinceCompaction += length;
 
     if (localParts == null) {
-      // Empirically this is a good capacity to minimize total bytes allocated.
-      // _parts = GrowableList.withCapacity(10)..add(str);
-      // TODO(omersa): Uncomment the line above after moving list
-      // implementations to a library.
-      _parts = [str];
+      _parts = GrowableList.withCapacity(10)..add(str);
     } else {
       localParts.add(str);
       int partsSinceCompaction = localParts.length - _partsCompactionIndex;
