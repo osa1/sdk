@@ -549,11 +549,15 @@ class Intrinsifier {
     String? className = translator.getPragma(target, "wasm:class-id");
     if (className != null) {
       List<String> libAndClass = className.split("#");
+      assert(libAndClass.length == 2);
+      final String lib = libAndClass[0];
+      final String clsName = libAndClass[1];
       Class cls = translator.libraries
-          .firstWhere(
-              (l) => l.name == libAndClass[0] && l.importUri.scheme == 'dart')
+          .firstWhere((l) => l.name == lib && l.importUri.scheme == 'dart',
+              orElse: () => throw "Can't find library $lib")
           .classes
-          .firstWhere((c) => c.name == libAndClass[1]);
+          .firstWhere((c) => c.name == clsName,
+              orElse: () => throw "Can't find class $clsName in library $lib");
       int classId = translator.classInfo[cls]!.classId;
       b.i64_const(classId);
       return w.NumType.i64;
