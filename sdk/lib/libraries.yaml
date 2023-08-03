@@ -182,6 +182,18 @@ wasm_js_compatibility:
         - _internal/wasm_js_compatibility/lib/typed_data_patch.dart
         - _internal/wasm/lib/simd_patch.dart
 
+wasm_base:
+  include:
+    - target: "wasm_common"
+  libraries:
+    _typed_data:
+      uri: _internal/wasm/lib/typed_data.dart
+    typed_data:
+      uri: typed_data/typed_data.dart
+      patches:
+        - _internal/wasm/lib/typed_data_patch.dart
+        - _internal/wasm/lib/simd_patch.dart
+
 wasm_common:
   libraries:
     _boxed_double:
@@ -270,18 +282,6 @@ wasm_common:
     math:
       uri: math/math.dart
       patches: _internal/wasm/lib/math_patch.dart
-
-wasm_base:
-  include:
-    - target: "wasm_common"
-  libraries:
-    _typed_data:
-      uri: _internal/wasm/lib/typed_data.dart
-    typed_data:
-      uri: typed_data/typed_data.dart
-      patches:
-        - _internal/wasm/lib/typed_data_patch.dart
-        - _internal/wasm/lib/simd_patch.dart
 
 dart2js:
   include:
