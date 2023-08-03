@@ -13,14 +13,16 @@ mixin KernelNodes {
   late final LibraryIndex index = LibraryIndex(component, [
     "dart:_boxed_double",
     "dart:_boxed_int",
+    "dart:_growable_list",
     "dart:_internal",
+    "dart:_list",
+    "dart:_string",
+    "dart:_wasm",
     "dart:async",
     "dart:collection",
     "dart:core",
     "dart:ffi",
     "dart:typed_data",
-    "dart:_string",
-    "dart:_wasm",
   ]);
 
   // dart:_boxed_double classes
