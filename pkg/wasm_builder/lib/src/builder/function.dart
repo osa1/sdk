@@ -5,8 +5,7 @@
 part of 'functions.dart';
 
 /// A function defined in a module.
-class FunctionBuilder extends ir.BaseFunction
-    with IndexableBuilder<ir.DefinedFunction> {
+class FunctionBuilder extends ir.BaseFunction with Builder<ir.DefinedFunction> {
   /// All local variables defined in the function, including its inputs.
   List<ir.Local> get locals => body.locals;
 
@@ -27,8 +26,8 @@ class FunctionBuilder extends ir.BaseFunction
 
   @override
   ir.DefinedFunction forceBuild() =>
-      ir.DefinedFunction(body.build(), finalizableIndex, type, functionName);
+      ir.DefinedFunction(body.build(), index, type, functionName);
 
   @override
-  String toString() => exportedName ?? "#$finalizableIndex";
+  String toString() => exportedName ?? "#$index";
 }

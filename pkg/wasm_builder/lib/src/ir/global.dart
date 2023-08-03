@@ -5,15 +5,14 @@
 part of 'globals.dart';
 
 /// An (imported or defined) global variable.
-abstract class Global with Indexable implements Exportable {
-  @override
-  final FinalizableIndex finalizableIndex;
+abstract class Global implements Exportable {
+  final int index;
   final GlobalType type;
 
-  Global(this.finalizableIndex, this.type);
+  Global(this.index, this.type);
 
   @override
-  String toString() => "$finalizableIndex";
+  String toString() => "$index";
 
   @override
   Export export(String name) => GlobalExport(name, this);
@@ -23,7 +22,7 @@ abstract class Global with Indexable implements Exportable {
 class DefinedGlobal extends Global implements Serializable {
   final Instructions initializer;
 
-  DefinedGlobal(this.initializer, super.finalizableIndex, super.type);
+  DefinedGlobal(this.initializer, super.index, super.type);
 
   @override
   void serialize(Serializer s) {
@@ -39,7 +38,7 @@ class ImportedGlobal extends Global implements Import {
   @override
   final String name;
 
-  ImportedGlobal(this.module, this.name, super.finalizableIndex, super.type);
+  ImportedGlobal(this.module, this.name, super.index, super.type);
 
   @override
   void serialize(Serializer s) {

@@ -4,7 +4,6 @@
 
 import '../ir/ir.dart' as ir;
 import 'builder.dart';
-import 'util.dart';
 
 part 'global.dart';
 
@@ -12,14 +11,16 @@ class GlobalsBuilder with Builder<ir.Globals> {
   final ModuleBuilder _module;
   final _importedGlobals = <ir.Import>[];
   final _globalBuilders = <GlobalBuilder>[];
-  int _idCount = 0;
+  bool _anyGlobalsDefined = false;
 
   GlobalsBuilder(this._module);
 
-  ir.FinalizableIndex get _index => ir.FinalizableIndex(_idCount++);
+  /// This is guarded by [_anyGlobalsDefined].
+  int get _index => _importedGlobals.length + _globalBuilders.length;
 
   /// Defines a new global variable in this module.
   GlobalBuilder define(ir.GlobalType type) {
+    _anyGlobalsDefined = true;
     final global = GlobalBuilder(_module, _index, type);
     _globalBuilders.add(global);
     return global;
@@ -30,15 +31,15 @@ class GlobalsBuilder with Builder<ir.Globals> {
   /// All imported globals must be specified before any globals are declared
   /// using [Globals.define].
   ir.ImportedGlobal import(String module, String name, ir.GlobalType type) {
+    if (_anyGlobalsDefined) {
+      throw "All global imports must be specified before any definitions.";
+    }
     final global = ir.ImportedGlobal(module, name, _index, type);
     _importedGlobals.add(global);
     return global;
   }
 
   @override
-  ir.Globals forceBuild() {
-    final built = finalizeImportsAndBuilders<ir.DefinedGlobal>(
-        _importedGlobals, _globalBuilders);
-    return ir.Globals(_importedGlobals, built);
-  }
+  ir.Globals forceBuild() => ir.Globals(
+      _importedGlobals, _globalBuilders.map((g) => g.build()).toList());
 }
