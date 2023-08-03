@@ -218,7 +218,7 @@ class ClassInfoCollector {
       translator.coreTypes.stringClass: translator.coreTypes.stringClass,
       translator.index.getClass("dart:core", "_Type"):
           translator.coreTypes.typeClass,
-      translator.index.getClass("dart:core", "_ListBase"):
+      translator.index.getClass("dart:_list", "ListImplBase"):
           translator.coreTypes.listClass
     };
     for (final name in const <String>[

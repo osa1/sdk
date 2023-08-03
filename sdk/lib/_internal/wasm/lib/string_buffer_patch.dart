@@ -168,7 +168,7 @@ class StringBuffer {
 
     if (localParts == null) {
       // Empirically this is a good capacity to minimize total bytes allocated.
-      // _parts = _GrowableList.withCapacity(10)..add(str);
+      // _parts = GrowableList.withCapacity(10)..add(str);
       // TODO(omersa): Uncomment the line above after moving list
       // implementations to a library.
       _parts = [str];

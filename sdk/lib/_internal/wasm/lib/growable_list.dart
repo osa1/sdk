@@ -2,10 +2,16 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of "core_patch.dart";
+library dart._growable_list;
+
+import "dart:_internal";
+import "dart:_list";
+import "dart:_wasm";
+
+const int _maxWasmArrayLength = 2147483647; // max i32
 
 @pragma("wasm:entry-point")
-class _GrowableList<E> extends _ModifiableList<E> {
+class GrowableList<E> extends ModifiableList<E> {
   void insert(int index, E element) {
     if (index == length) {
       return add(element);
@@ -20,21 +26,21 @@ class _GrowableList<E> extends _ModifiableList<E> {
       data = WasmObjectArray<Object?>(_nextCapacity(_capacity));
       if (index != 0) {
         // Copy elements before the insertion point.
-        data.copy(0, _data, 0, index - 1);
+        data.copy(0, internalData, 0, index - 1);
       }
     } else {
-      data = _data;
+      data = internalData;
     }
 
     // Shift elements, or copy elements after insertion point if we allocated a
     // new array.
-    data.copy(index + 1, _data, index, length - index);
+    data.copy(index + 1, internalData, index, length - index);
 
     // Insert new element.
     data.write(index, element);
 
-    _data = data;
-    _length += 1;
+    internalData = data;
+    internalLength += 1;
   }
 
   E removeAt(int index) {
@@ -44,7 +50,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
     var result = this[index];
     int newLength = this.length - 1;
     if (index < newLength) {
-      _data.copy(index, _data, index + 1, newLength - index);
+      internalData.copy(index, internalData, index + 1, newLength - index);
     }
     this.length = newLength;
     return result;
@@ -52,7 +58,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   bool remove(Object? element) {
     for (int i = 0; i < this.length; i++) {
-      if (_data.read(i) == element) {
+      if (internalData.read(i) == element) {
         removeAt(i);
         return true;
       }
@@ -64,10 +70,10 @@ class _GrowableList<E> extends _ModifiableList<E> {
     if (index < 0 || index > length) {
       throw RangeError.range(index, 0, length);
     }
-    if (iterable is! _ListBase) {
+    if (iterable is! ListImplBase) {
       // Read out all elements before making room to ensure consistency of the
       // modified list in case the iterator throws.
-      iterable = _List.of(iterable);
+      iterable = FixedLengthList.of(iterable);
     }
     int insertionLength = iterable.length;
     int capacity = _capacity;
@@ -85,66 +91,66 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   void removeRange(int start, int end) {
     RangeError.checkValidRange(start, end, this.length);
-    _data.copy(start, _data, end, length - end);
+    internalData.copy(start, internalData, end, length - end);
     this.length = this.length - (end - start);
   }
 
-  _GrowableList._(int length, int capacity) : super(length, capacity);
+  GrowableList._(int length, int capacity) : super(length, capacity);
 
-  factory _GrowableList(int length) {
-    return _GrowableList<E>._(length, length);
+  factory GrowableList(int length) {
+    return GrowableList<E>._(length, length);
   }
 
-  factory _GrowableList.withCapacity(int capacity) {
-    return _GrowableList<E>._(0, capacity);
+  factory GrowableList.withCapacity(int capacity) {
+    return GrowableList<E>._(0, capacity);
   }
 
   // Specialization of List.empty constructor for growable == true.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _GrowableList.empty() => _GrowableList(0);
+  factory GrowableList.empty() => GrowableList(0);
 
   // Specialization of List.filled constructor for growable == true.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _GrowableList.filled(int length, E fill) {
-    final result = _GrowableList<E>(length);
+  factory GrowableList.filled(int length, E fill) {
+    final result = GrowableList<E>(length);
     if (fill != null) {
-      result._data.fill(0, fill, length);
+      result.internalData.fill(0, fill, length);
     }
     return result;
   }
 
   // Specialization of List.generate constructor for growable == true.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _GrowableList.generate(int length, E generator(int index)) {
-    final result = _GrowableList<E>(length);
+  factory GrowableList.generate(int length, E generator(int index)) {
+    final result = GrowableList<E>(length);
     for (int i = 0; i < result.length; ++i) {
-      result._data.write(i, generator(i));
+      result.internalData.write(i, generator(i));
     }
     return result;
   }
 
   // Specialization of List.of constructor for growable == true.
-  factory _GrowableList.of(Iterable<E> elements) {
-    if (elements is _ListBase) {
-      return _GrowableList._ofListBase(unsafeCast(elements));
+  factory GrowableList.of(Iterable<E> elements) {
+    if (elements is ListImplBase) {
+      return GrowableList._ofListBase(unsafeCast(elements));
     }
     if (elements is EfficientLengthIterable) {
-      return _GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
+      return GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
     }
-    return _GrowableList._ofOther(elements);
+    return GrowableList.ofOther(elements);
   }
 
-  factory _GrowableList._ofListBase(_ListBase<E> elements) {
+  factory GrowableList._ofListBase(ListImplBase<E> elements) {
     final int length = elements.length;
-    final list = _GrowableList<E>(length);
-    list._data.copy(0, elements._data, 0, length);
+    final list = GrowableList<E>(length);
+    list.internalData.copy(0, elements.internalData, 0, length);
     return list;
   }
 
-  factory _GrowableList._ofEfficientLengthIterable(
+  factory GrowableList._ofEfficientLengthIterable(
       EfficientLengthIterable<E> elements) {
     final int length = elements.length;
-    final list = _GrowableList<E>(length);
+    final list = GrowableList<E>(length);
     if (length > 0) {
       int i = 0;
       for (var element in elements) {
@@ -155,47 +161,47 @@ class _GrowableList<E> extends _ModifiableList<E> {
     return list;
   }
 
-  factory _GrowableList._ofOther(Iterable<E> elements) {
-    final list = _GrowableList<E>(0);
+  factory GrowableList.ofOther(Iterable<E> elements) {
+    final list = GrowableList<E>(0);
     for (var elements in elements) {
       list.add(elements);
     }
     return list;
   }
 
-  _GrowableList._withData(WasmObjectArray<Object?> data)
-      : super._withData(data.length, data);
+  GrowableList.withData(WasmObjectArray<Object?> data)
+      : super.withData(data.length, data);
 
-  int get _capacity => _data.length;
+  int get _capacity => internalData.length;
 
-  void set length(int new_length) {
-    if (new_length > length) {
+  void set length(int newLength) {
+    if (newLength > length) {
       // Verify that element type is nullable.
       null as E;
-      if (new_length > _capacity) {
-        _grow(new_length);
+      if (newLength > _capacity) {
+        _grow(newLength);
       }
-      _setLength(new_length);
+      _setLength(newLength);
       return;
     }
-    final int new_capacity = new_length;
+    final int newCapacity = newLength;
     // We are shrinking. Pick the method which has fewer writes.
-    // In the shrink-to-fit path, we write |new_capacity + new_length| words
+    // In the shrink-to-fit path, we write |newCapacity + newLength| words
     // (null init + copy).
-    // In the non-shrink-to-fit path, we write |length - new_length| words
+    // In the non-shrink-to-fit path, we write |length - newLength| words
     // (null overwrite).
     final bool shouldShrinkToFit =
-        (new_capacity + new_length) < (length - new_length);
+        (newCapacity + newLength) < (length - newLength);
     if (shouldShrinkToFit) {
-      _shrink(new_capacity, new_length);
+      _shrink(newCapacity, newLength);
     } else {
-      _data.fill(new_length, null, length - new_length);
+      internalData.fill(newLength, null, length - newLength);
     }
-    _setLength(new_length);
+    _setLength(newLength);
   }
 
-  void _setLength(int new_length) {
-    _length = new_length;
+  void _setLength(int newLength) {
+    internalLength = newLength;
   }
 
   void add(E value) {
@@ -204,7 +210,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
       _growToNextCapacity();
     }
     _setLength(len + 1);
-    _data.write(len, value);
+    internalData.write(len, value);
   }
 
   void addAll(Iterable<E> iterable) {
@@ -233,7 +239,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
       while (len < _capacity) {
         int newLen = len + 1;
         this._setLength(newLen);
-        _data.write(len, it.current);
+        internalData.write(len, it.current);
         if (!it.moveNext()) return;
         if (this.length != newLen) throw ConcurrentModificationError(this);
         len = newLen;
@@ -267,50 +273,50 @@ class _GrowableList<E> extends _ModifiableList<E> {
   // Grow from 0 to 3, and then double + 1.
   int _nextCapacity(int old_capacity) => (old_capacity * 2) | 3;
 
-  void _grow(int new_capacity) {
-    var newData = WasmObjectArray<Object?>(new_capacity);
-    newData.copy(0, _data, 0, length);
-    _data = newData;
+  void _grow(int newCapacity) {
+    var newData = WasmObjectArray<Object?>(newCapacity);
+    newData.copy(0, internalData, 0, length);
+    internalData = newData;
   }
 
   void _growToNextCapacity() {
     _grow(_nextCapacity(_capacity));
   }
 
-  void _shrink(int new_capacity, int new_length) {
-    var newData = _allocateData(new_capacity);
-    newData.copy(0, _data, 0, new_length);
-    _data = newData;
+  void _shrink(int newCapacity, int newinternalLength) {
+    var newData = _allocateData(newCapacity);
+    newData.copy(0, internalData, 0, newinternalLength);
+    internalData = newData;
   }
 
   Iterator<E> get iterator {
-    return _GrowableListIterator<E>(this);
+    return GrowableListIterator<E>(this);
   }
 }
 
 // Iterator for growable lists.
-class _GrowableListIterator<E> implements Iterator<E> {
-  final _GrowableList<E> _list;
-  final int _length; // Cache list length for modification check.
+class GrowableListIterator<E> implements Iterator<E> {
+  final GrowableList<E> _list;
+  final int internalLength; // Cache list length for modification check.
   int _index;
   E? _current;
 
-  _GrowableListIterator(_GrowableList<E> list)
+  GrowableListIterator(GrowableList<E> list)
       : _list = list,
-        _length = list.length,
+        internalLength = list.length,
         _index = 0;
 
   E get current => _current as E;
 
   bool moveNext() {
-    if (_list.length != _length) {
+    if (_list.length != internalLength) {
       throw ConcurrentModificationError(_list);
     }
-    if (_index >= _length) {
+    if (_index >= internalLength) {
       _current = null;
       return false;
     }
-    _current = unsafeCast(_list._data.read(_index));
+    _current = unsafeCast(_list.internalData.read(_index));
     _index++;
     return true;
   }

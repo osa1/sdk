@@ -2,44 +2,49 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of "core_patch.dart";
+library dart._list;
+
+import "dart:_growable_list";
+import "dart:_internal";
+import "dart:_wasm";
+import "dart:collection";
 
 const int _maxWasmArrayLength = 2147483647; // max i32
 
 @pragma("wasm:entry-point")
-abstract class _ListBase<E> extends ListBase<E> {
+abstract class ListImplBase<E> extends ListBase<E> {
   @pragma("wasm:entry-point")
-  int _length;
+  int internalLength;
 
   @pragma("wasm:entry-point")
-  WasmObjectArray<Object?> _data;
+  WasmObjectArray<Object?> internalData;
 
-  _ListBase(int length, int capacity)
-      : _length = length,
-        _data = WasmObjectArray<Object?>(
+  ListImplBase(int length, int capacity)
+      : internalLength = length,
+        internalData = WasmObjectArray<Object?>(
             RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
 
-  _ListBase._withData(this._length, this._data);
+  ListImplBase.withData(this.internalLength, this.internalData);
 
   E operator [](int index) {
-    IndexError.check(index, _length, indexable: this, name: "[]");
-    return unsafeCast(_data.read(index));
+    IndexError.check(index, internalLength, indexable: this, name: "[]");
+    return unsafeCast(internalData.read(index));
   }
 
-  int get length => _length;
+  int get length => internalLength;
 
   List<E> sublist(int start, [int? end]) {
     final int listLength = this.length;
     final int actualEnd = RangeError.checkValidRange(start, end, listLength);
     int length = actualEnd - start;
     if (length == 0) return <E>[];
-    return _GrowableList<E>(length)..setRange(0, length, this, start);
+    return GrowableList<E>(length)..setRange(0, length, this, start);
   }
 
   void forEach(f(E element)) {
     final initialLength = length;
     for (int i = 0; i < initialLength; i++) {
-      f(unsafeCast<E>(_data.read(i)));
+      f(unsafeCast<E>(internalData.read(i)));
       if (length != initialLength) throw ConcurrentModificationError(this);
     }
   }
@@ -50,15 +55,15 @@ abstract class _ListBase<E> extends ListBase<E> {
 }
 
 @pragma("wasm:entry-point")
-abstract class _ModifiableList<E> extends _ListBase<E> {
-  _ModifiableList(int length, int capacity) : super(length, capacity);
+abstract class ModifiableList<E> extends ListImplBase<E> {
+  ModifiableList(int length, int capacity) : super(length, capacity);
 
-  _ModifiableList._withData(int length, WasmObjectArray<Object?> data)
-      : super._withData(length, data);
+  ModifiableList.withData(int length, WasmObjectArray<Object?> data)
+      : super.withData(length, data);
 
   void operator []=(int index, E value) {
-    IndexError.check(index, _length, indexable: this, name: "[]=");
-    _data.write(index, value);
+    IndexError.check(index, internalLength, indexable: this, name: "[]=");
+    internalData.write(index, value);
   }
 
   // List interface.
@@ -68,7 +73,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
     if (identical(this, iterable)) {
-      _data.copy(start, _data, skipCount, length);
+      internalData.copy(start, internalData, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
@@ -79,7 +84,7 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
       }
       for (int i = start; i < end; i++) {
         if (!it.moveNext()) return;
-        _data.write(i, it.current);
+        internalData.write(i, it.current);
       }
     }
   }
@@ -108,57 +113,58 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
 }
 
 @pragma("wasm:entry-point")
-class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
-  _List._(int length) : super(length, length);
+class FixedLengthList<E> extends ModifiableList<E>
+    with FixedLengthListMixin<E> {
+  FixedLengthList._(int length) : super(length, length);
 
-  factory _List(int length) => _List._(length);
+  factory FixedLengthList(int length) => FixedLengthList._(length);
 
   // Specialization of List.empty constructor for growable == false.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _List.empty() => _List<E>(0);
+  factory FixedLengthList.empty() => FixedLengthList<E>(0);
 
   // Specialization of List.filled constructor for growable == false.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _List.filled(int length, E fill) {
-    final result = _List<E>(length);
+  factory FixedLengthList.filled(int length, E fill) {
+    final result = FixedLengthList<E>(length);
     if (fill != null) {
-      result._data.fill(0, fill, length);
+      result.internalData.fill(0, fill, length);
     }
     return result;
   }
 
   // Specialization of List.generate constructor for growable == false.
   // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory _List.generate(int length, E generator(int index)) {
-    final result = _List<E>(length);
+  factory FixedLengthList.generate(int length, E generator(int index)) {
+    final result = FixedLengthList<E>(length);
     for (int i = 0; i < result.length; ++i) {
-      result._data.write(i, generator(i));
+      result.internalData.write(i, generator(i));
     }
     return result;
   }
 
   // Specialization of List.of constructor for growable == false.
-  factory _List.of(Iterable<E> elements) {
-    if (elements is _ListBase) {
-      return _List._ofListBase(unsafeCast(elements));
+  factory FixedLengthList.of(Iterable<E> elements) {
+    if (elements is ListImplBase) {
+      return FixedLengthList._ofListBase(unsafeCast(elements));
     }
     if (elements is EfficientLengthIterable) {
-      return _List._ofEfficientLengthIterable(unsafeCast(elements));
+      return FixedLengthList._ofEfficientLengthIterable(unsafeCast(elements));
     }
-    return _List._ofOther(elements);
+    return FixedLengthList.ofOther(elements);
   }
 
-  factory _List._ofListBase(_ListBase<E> elements) {
+  factory FixedLengthList._ofListBase(ListImplBase<E> elements) {
     final int length = elements.length;
-    final list = _List<E>(length);
-    list._data.copy(0, elements._data, 0, length);
+    final list = FixedLengthList<E>(length);
+    list.internalData.copy(0, elements.internalData, 0, length);
     return list;
   }
 
-  factory _List._ofEfficientLengthIterable(
+  factory FixedLengthList._ofEfficientLengthIterable(
       EfficientLengthIterable<E> elements) {
     final int length = elements.length;
-    final list = _List<E>(length);
+    final list = FixedLengthList<E>(length);
     if (length > 0) {
       int i = 0;
       for (var element in elements) {
@@ -169,12 +175,12 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
     return list;
   }
 
-  factory _List._ofOther(Iterable<E> elements) {
-    // The static type of `makeListFixedLength` is `List<E>`, not `_List<E>`,
+  factory FixedLengthList.ofOther(Iterable<E> elements) {
+    // The static type of `makeListFixedLength` is `List<E>`, not `FixedLengthList<E>`,
     // but we know that is what it does.  `makeListFixedLength` is too generally
     // typed since it is available on the web platform which has different
     // system List types.
-    return unsafeCast(makeListFixedLength(_GrowableList<E>._ofOther(elements)));
+    return unsafeCast(makeListFixedLength(GrowableList<E>.ofOther(elements)));
   }
 
   Iterator<E> get iterator {
@@ -183,7 +189,7 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
 }
 
 @pragma("wasm:entry-point")
-class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
+class _ImmutableList<E> extends ListImplBase<E> with UnmodifiableListMixin<E> {
   factory _ImmutableList._uninstantiable() {
     throw UnsupportedError(
         "_ImmutableList can only be allocated by the runtime");
@@ -196,26 +202,26 @@ class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
 
 // Iterator for lists with fixed size.
 class _FixedSizeListIterator<E> implements Iterator<E> {
-  final _ListBase<E> _list;
-  final int _length; // Cache list length for faster access.
+  final ListImplBase<E> _list;
+  final int internalLength; // Cache list length for faster access.
   int _index;
   E? _current;
 
-  _FixedSizeListIterator(_ListBase<E> list)
+  _FixedSizeListIterator(ListImplBase<E> list)
       : _list = list,
-        _length = list.length,
+        internalLength = list.length,
         _index = 0 {
-    assert(list is _List<E> || list is _ImmutableList<E>);
+    assert(list is FixedLengthList<E> || list is _ImmutableList<E>);
   }
 
   E get current => _current as E;
 
   bool moveNext() {
-    if (_index >= _length) {
+    if (_index >= internalLength) {
       _current = null;
       return false;
     }
-    _current = unsafeCast(_list._data.read(_index));
+    _current = unsafeCast(_list.internalData.read(_index));
     _index++;
     return true;
   }

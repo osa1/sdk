@@ -45,12 +45,13 @@ mixin KernelNodes {
   // dart:core various classes
   late final Class boxedBoolClass = index.getClass("dart:core", "_BoxedBool");
   late final Class closureClass = index.getClass("dart:core", "_Closure");
-  late final Class listBaseClass = index.getClass("dart:core", "_ListBase");
-  late final Class fixedLengthListClass = index.getClass("dart:core", "_List");
+  late final Class listBaseClass = index.getClass("dart:_list", "ListImplBase");
+  late final Class fixedLengthListClass =
+      index.getClass("dart:_list", "FixedLengthList");
   late final Class growableListClass =
-      index.getClass("dart:core", "_GrowableList");
+      index.getClass("dart:_growable_list", "GrowableList");
   late final Class immutableListClass =
-      index.getClass("dart:core", "_ImmutableList");
+      index.getClass("dart:_list", "_ImmutableList");
   late final Class stringBaseClass =
       index.getClass("dart:_string", "StringBase");
   late final Class oneByteStringClass =
@@ -162,7 +163,7 @@ mixin KernelNodes {
       .procedures
       .firstWhere((p) => p.name.text == "add");
   late final Procedure growableListAdd =
-      index.getProcedure("dart:core", "_GrowableList", "add");
+      index.getProcedure("dart:_growable_list", "GrowableList", "add");
   late final Procedure hashImmutableIndexNullable = index.getProcedure(
       "dart:collection", "_HashAbstractImmutableBase", "get:_indexNullable");
 

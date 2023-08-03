@@ -129,15 +129,15 @@
       "core": {
         "uri": "core/core.dart",
         "patches": [
-          "_internal/wasm/lib/core_patch.dart",
-          "_internal/vm_shared/lib/array_patch.dart",
           "_internal/vm_shared/lib/bigint_patch.dart",
           "_internal/vm_shared/lib/bool_patch.dart",
           "_internal/vm_shared/lib/date_patch.dart",
           "_internal/vm_shared/lib/map_patch.dart",
           "_internal/vm_shared/lib/null_patch.dart",
+          "_internal/wasm/lib/core_patch.dart",
           "_internal/wasm/lib/date_patch_patch.dart",
           "_internal/wasm/lib/int_patch.dart",
+          "_internal/wasm/lib/list_patch.dart",
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
@@ -156,15 +156,15 @@
       "core": {
         "uri": "core/core.dart",
         "patches": [
-          "_internal/wasm/lib/core_patch.dart",
-          "_internal/vm_shared/lib/array_patch.dart",
           "_internal/vm_shared/lib/bigint_patch.dart",
           "_internal/vm_shared/lib/bool_patch.dart",
           "_internal/vm_shared/lib/date_patch.dart",
           "_internal/vm_shared/lib/map_patch.dart",
           "_internal/vm_shared/lib/null_patch.dart",
+          "_internal/wasm/lib/core_patch.dart",
           "_internal/wasm/lib/date_patch_patch.dart",
           "_internal/wasm/lib/int_patch.dart",
+          "_internal/wasm/lib/list_patch.dart",
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_stringref_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
@@ -186,15 +186,15 @@
       "core": {
         "uri": "core/core.dart",
         "patches": [
-          "_internal/wasm/lib/core_patch.dart",
-          "_internal/vm_shared/lib/array_patch.dart",
           "_internal/vm_shared/lib/bigint_patch.dart",
           "_internal/vm_shared/lib/bool_patch.dart",
           "_internal/vm_shared/lib/date_patch.dart",
           "_internal/vm_shared/lib/map_patch.dart",
           "_internal/vm_shared/lib/null_patch.dart",
+          "_internal/wasm/lib/core_patch.dart",
           "_internal/wasm/lib/date_patch_patch.dart",
           "_internal/wasm/lib/int_patch.dart",
+          "_internal/wasm/lib/list_patch.dart",
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
@@ -221,8 +221,14 @@
       "_double_helper": {
         "uri": "_internal/wasm/lib/double_helper.dart"
       },
+      "_growable_list": {
+        "uri": "_internal/wasm/lib/growable_list.dart"
+      },
       "_http": {
         "uri": "_http/http.dart"
+      },
+      "_list": {
+        "uri": "_internal/wasm/lib/list.dart"
       },
       "_simd": {
         "uri": "_internal/wasm/lib/simd.dart"

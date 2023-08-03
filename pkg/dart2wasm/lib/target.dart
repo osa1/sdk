@@ -94,10 +94,12 @@ class WasmTarget extends Target {
   List<String> get extraRequiredLibraries => const <String>[
         'dart:_boxed_double',
         'dart:_boxed_int',
+        'dart:_growable_list',
         'dart:_http',
         'dart:_internal',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_list',
         'dart:_string',
         'dart:_wasm',
         'dart:async',
@@ -114,8 +116,10 @@ class WasmTarget extends Target {
 
   @override
   List<String> get extraIndexedLibraries => const <String>[
+        'dart:_growable_list',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_list',
         'dart:_string',
         'dart:_wasm',
         'dart:collection',
@@ -154,7 +158,7 @@ class WasmTarget extends Target {
     final Field little =
         coreTypes.index.getField('dart:typed_data', 'Endian', 'little');
     host.isConst = true;
-    host.initializer = new CloneVisitorNotMembers().clone(little.initializer!)
+    host.initializer = CloneVisitorNotMembers().clone(little.initializer!)
       ..parent = host;
   }
 
@@ -323,7 +327,7 @@ class WasmTarget extends Target {
             ListLiteral(arguments.positional),
             MapLiteral(List<MapLiteralEntry>.from(
                 arguments.named.map((NamedExpression arg) {
-              return new MapLiteralEntry(SymbolLiteral(arg.name), arg.value);
+              return MapLiteralEntry(SymbolLiteral(arg.name), arg.value);
             })), keyType: coreTypes.symbolNonNullableRawType)
               ..isConst = (arguments.named.isEmpty)
           ]));
@@ -378,13 +382,13 @@ class WasmTarget extends Target {
   @override
   Class concreteListLiteralClass(CoreTypes coreTypes) {
     return _growableList ??=
-        coreTypes.index.getClass('dart:core', '_GrowableList');
+        coreTypes.index.getClass('dart:_growable_list', 'GrowableList');
   }
 
   @override
   Class concreteConstListLiteralClass(CoreTypes coreTypes) {
     return _immutableList ??=
-        coreTypes.index.getClass('dart:core', '_ImmutableList');
+        coreTypes.index.getClass('dart:_list', '_ImmutableList');
   }
 
   @override
