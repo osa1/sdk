@@ -249,6 +249,9 @@
       "_list": {
         "uri": "_internal/wasm/lib/list.dart"
       },
+      "_unboxed_int_list": {
+        "uri": "_internal/wasm/lib/unboxed_int_list.dart"
+      },
       "_simd": {
         "uri": "_internal/wasm/lib/simd.dart"
       },

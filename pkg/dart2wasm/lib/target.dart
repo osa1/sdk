@@ -99,6 +99,7 @@ class WasmTarget extends Target {
         'dart:_internal',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_unboxed_int_list',
         'dart:_list',
         'dart:_string',
         'dart:_wasm',
