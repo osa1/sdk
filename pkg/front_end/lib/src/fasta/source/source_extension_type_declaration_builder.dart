@@ -19,14 +19,11 @@ import '../builder/type_alias_builder.dart';
 import '../builder/type_builder.dart';
 import '../builder/type_declaration_builder.dart';
 import '../builder/type_variable_builder.dart';
-import '../fasta_codes.dart'
-    show
-        messagePatchDeclarationMismatch,
-        messagePatchDeclarationOrigin,
-        noLength;
 import '../kernel/kernel_helper.dart';
+import '../messages.dart';
 import '../problems.dart';
 import '../scope.dart';
+import '../type_inference/type_inference_engine.dart';
 import '../util/helpers.dart';
 import 'class_declaration.dart';
 import 'source_builder_mixins.dart';
@@ -123,10 +120,96 @@ class SourceExtensionTypeDeclarationBuilder
       {required bool addMembersToLibrary}) {
     if (interfaceBuilders != null) {
       for (int i = 0; i < interfaceBuilders!.length; ++i) {
-        DartType? interface =
-            interfaceBuilders![i].build(libraryBuilder, TypeUse.superType);
+        TypeBuilder typeBuilder = interfaceBuilders![i];
+        TypeAliasBuilder? aliasBuilder =
+            typeBuilder.declaration is TypeAliasBuilder
+                ? typeBuilder.declaration as TypeAliasBuilder
+                : null;
+        DartType interface =
+            typeBuilder.build(libraryBuilder, TypeUse.superType);
+        Message? errorMessage;
+        List<LocatedMessage>? errorContext;
         if (interface is ExtensionType) {
-          extensionTypeDeclaration.implements.add(interface);
+          if (interface.isPotentiallyNullable) {
+            errorMessage =
+                templateSuperExtensionTypeIsNullableAliased.withArguments(
+                    typeBuilder.fullNameForErrors,
+                    interface,
+                    libraryBuilder.isNonNullableByDefault);
+            if (aliasBuilder != null) {
+              errorContext = [
+                messageTypedefCause.withLocation(
+                    aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
+              ];
+            }
+          } else {
+            extensionTypeDeclaration.implements.add(interface);
+          }
+        } else if (interface is InterfaceType) {
+          if (interface.isPotentiallyNullable) {
+            errorMessage =
+                templateSuperExtensionTypeIsNullableAliased.withArguments(
+                    typeBuilder.fullNameForErrors,
+                    interface,
+                    libraryBuilder.isNonNullableByDefault);
+            if (aliasBuilder != null) {
+              errorContext = [
+                messageTypedefCause.withLocation(
+                    aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
+              ];
+            }
+          } else {
+            Class cls = interface.classNode;
+            if (LibraryBuilder.isObject(cls, coreLibrary) ||
+                LibraryBuilder.isFunction(cls, coreLibrary) ||
+                LibraryBuilder.isRecord(cls, coreLibrary)) {
+              if (aliasBuilder != null) {
+                errorMessage =
+                    templateSuperExtensionTypeIsIllegalAliased.withArguments(
+                        typeBuilder.fullNameForErrors,
+                        interface,
+                        libraryBuilder.isNonNullableByDefault);
+                errorContext = [
+                  messageTypedefCause.withLocation(
+                      aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
+                ];
+              } else {
+                errorMessage = templateSuperExtensionTypeIsIllegal
+                    .withArguments(typeBuilder.fullNameForErrors);
+              }
+            } else {
+              extensionTypeDeclaration.implements.add(interface);
+            }
+          }
+        } else if (interface is TypeParameterType) {
+          errorMessage = templateSuperExtensionTypeIsTypeVariable
+              .withArguments(typeBuilder.fullNameForErrors);
+          if (aliasBuilder != null) {
+            errorContext = [
+              messageTypedefCause.withLocation(
+                  aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
+            ];
+          }
+        } else {
+          if (aliasBuilder != null) {
+            errorMessage =
+                templateSuperExtensionTypeIsIllegalAliased.withArguments(
+                    typeBuilder.fullNameForErrors,
+                    interface,
+                    libraryBuilder.isNonNullableByDefault);
+            errorContext = [
+              messageTypedefCause.withLocation(
+                  aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
+            ];
+          } else {
+            errorMessage = templateSuperExtensionTypeIsIllegal
+                .withArguments(typeBuilder.fullNameForErrors);
+          }
+        }
+        if (errorMessage != null) {
+          libraryBuilder.addProblem(errorMessage, typeBuilder.charOffset!,
+              noLength, typeBuilder.fileUri,
+              context: errorContext);
         }
       }
     }
@@ -138,6 +221,21 @@ class SourceExtensionTypeDeclarationBuilder
       if (typeBuilder.isExplicit) {
         representationType =
             typeBuilder.build(libraryBuilder, TypeUse.fieldType);
+        if (typeParameters != null) {
+          IncludesTypeParametersNonCovariantly checker =
+              new IncludesTypeParametersNonCovariantly(
+                  extensionTypeDeclaration.typeParameters,
+                  // We are checking the returned type (field/getter type or return
+                  // type of a method) and this is a covariant position.
+                  initialVariance: Variance.covariant);
+          if (representationType.accept(checker)) {
+            libraryBuilder.addProblem(
+                messageNonCovariantTypeParameterInRepresentationType,
+                typeBuilder.charOffset!,
+                noLength,
+                typeBuilder.fileUri);
+          }
+        }
       } else {
         representationType = const DynamicType();
       }
