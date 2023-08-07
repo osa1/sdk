@@ -232,6 +232,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "Try marking the function body with either 'async' or 'async*'.",
   );
 
+  static const CompileTimeErrorCode AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE =
+      CompileTimeErrorCode(
+    'AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE',
+    "The 'await' expression can't be used for an expression with an extension "
+        "type that is not a subtype of 'Future'.",
+    correctionMessage: "Try updating the extension type to implement 'Future'.",
+  );
+
   ///  Parameters:
   ///  0: the name of the base class being implemented
   static const CompileTimeErrorCode BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY =
@@ -805,6 +813,12 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "Try using 'new' to create the instance, or changing the import to not "
         "be deferred.",
     hasPublishedDocs: true,
+  );
+
+  static const CompileTimeErrorCode CONST_EVAL_ASSERTION_FAILURE =
+      CompileTimeErrorCode(
+    'CONST_EVAL_ASSERTION_FAILURE',
+    "The assertion in this constant expression failed.",
   );
 
   static const CompileTimeErrorCode CONST_EVAL_EXTENSION_METHOD =
@@ -3534,6 +3548,18 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'NON_CONST_MAP_AS_EXPRESSION_STATEMENT',
     "A non-constant map or set literal without type arguments can't be used as "
         "an expression statement.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE =
+      CompileTimeErrorCode(
+    'NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE',
+    "An extension type parameter can't be used in a non-covariant position of "
+        "its representation type.",
+    correctionMessage:
+        "Try removing the type parameters from function parameter types and "
+        "type parameter bounds.",
   );
 
   ///  Parameters:

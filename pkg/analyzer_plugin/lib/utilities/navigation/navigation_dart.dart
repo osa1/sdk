@@ -62,6 +62,17 @@ AstNode _getNavigationTargetNode(AstNode node) {
     current = parent;
   }
 
+  // Consider the angle brackets for type arguments part of the leading type,
+  // otherwise we don't navigate in the common situation of having the type name
+  // selected, where VS Code provides the end of the selection as the position
+  // to search.
+  //
+  // In `A^<String>` node will be TypeArgumentList and we will never find A if
+  // we start visiting from there.
+  if (current is TypeArgumentList && parent != null) {
+    current = parent;
+  }
+
   return current;
 }
 
@@ -190,7 +201,7 @@ class _DartNavigationComputerVisitor extends RecursiveAstVisitor<void> {
   void visitAnnotation(Annotation node) {
     var element = node.element;
     if (element is ConstructorElement && element.isSynthetic) {
-      element = element.enclosingElement2;
+      element = element.enclosingElement;
     }
     var name = node.name;
     if (name is PrefixedIdentifier) {
@@ -539,7 +550,7 @@ class _DartNavigationComputerVisitor extends RecursiveAstVisitor<void> {
       RedirectingConstructorInvocation node) {
     Element? element = node.staticElement;
     if (element != null && element.isSynthetic) {
-      element = element.enclosingElement2;
+      element = element.enclosingElement;
     }
     // add region
     computer._addRegionForToken(node.thisKeyword, element);
@@ -568,7 +579,7 @@ class _DartNavigationComputerVisitor extends RecursiveAstVisitor<void> {
   void visitSuperConstructorInvocation(SuperConstructorInvocation node) {
     Element? element = node.staticElement;
     if (element != null && element.isSynthetic) {
-      element = element.enclosingElement2;
+      element = element.enclosingElement;
     }
     // add region
     computer._addRegionForToken(node.superKeyword, element);

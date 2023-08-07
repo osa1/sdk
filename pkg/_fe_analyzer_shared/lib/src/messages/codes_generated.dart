@@ -2234,6 +2234,16 @@ Message _withArgumentsCyclicRedirectingFactoryConstructors(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeCyclicRepresentationDependency =
+    messageCyclicRepresentationDependency;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageCyclicRepresentationDependency = const MessageCode(
+    "CyclicRepresentationDependency",
+    problemMessage:
+        r"""An extension type can't depend on itself through its representation type.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name)> templateCyclicTypedef =
     const Template<Message Function(String name)>(
         problemMessageTemplate:
@@ -4245,6 +4255,17 @@ Message _withArgumentsExtensionMemberConflictsWithObjectMember(String name) {
           """This extension member conflicts with Object member '${name}'.""",
       arguments: {'name': name});
 }
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeExtensionTypeDeclarationCause =
+    messageExtensionTypeDeclarationCause;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageExtensionTypeDeclarationCause = const MessageCode(
+    "ExtensionTypeDeclarationCause",
+    severity: Severity.context,
+    problemMessage:
+        r"""The issue arises via this extension type declaration.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeExternalClass = messageExternalClass;
@@ -7803,7 +7824,7 @@ const Template<
             name)> templateJsInteropExportDisallowedMember = const Template<
         Message Function(String name)>(
     problemMessageTemplate:
-        r"""Member '#name' is not a concrete instance member, and therefore can't be exported.""",
+        r"""Member '#name' is not a concrete instance member or declares type parameters, and therefore can't be exported.""",
     correctionMessageTemplate:
         r"""Remove the `@JSExport` annotation from the member, and use an instance member to call this member instead.""",
     withArguments: _withArgumentsJsInteropExportDisallowedMember);
@@ -7820,7 +7841,7 @@ Message _withArgumentsJsInteropExportDisallowedMember(String name) {
   name = demangleMixinApplicationName(name);
   return new Message(codeJsInteropExportDisallowedMember,
       problemMessage:
-          """Member '${name}' is not a concrete instance member, and therefore can't be exported.""",
+          """Member '${name}' is not a concrete instance member or declares type parameters, and therefore can't be exported.""",
       correctionMessage: """Remove the `@JSExport` annotation from the member, and use an instance member to call this member instead.""",
       arguments: {'name': name});
 }

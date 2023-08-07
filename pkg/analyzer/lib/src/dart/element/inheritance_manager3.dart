@@ -197,7 +197,9 @@ class InheritanceManager3 {
       _findMostSpecificFromNamedCandidates(
         element,
         inheritedMap,
-        interface.overridden,
+        element is ExtensionTypeElement
+            ? interface.redeclared
+            : interface.overridden,
         doTopMerge: false,
       );
     }
@@ -376,7 +378,7 @@ class InheritanceManager3 {
         continue;
       }
 
-      var class_ = executable.enclosingElement2;
+      var class_ = executable.enclosingElement;
       if (class_ is ClassElement && class_.isDartCoreObject) {
         continue;
       }
@@ -530,7 +532,7 @@ class InheritanceManager3 {
         }
 
         var current = currentList.single;
-        if (candidate.enclosingElement2 == mixinElement) {
+        if (candidate.enclosingElement == mixinElement) {
           namedCandidates[name] = [
             isNonNullableByDefault
                 ? candidate
@@ -853,7 +855,7 @@ class InheritanceManager3 {
     Name name,
     ExecutableElement executable,
   ) {
-    if (executable.enclosingElement2 == class_) {
+    if (executable.enclosingElement == class_) {
       return executable;
     }
 
@@ -911,7 +913,7 @@ class InheritanceManager3 {
       result.isSynthetic = true;
       result.parameters = transformedParameters;
       result.prototype = executable;
-      result.returnType = executable.returnType2;
+      result.returnType = executable.returnType;
       result.typeParameters = executable.typeParameters;
       return result;
     }
@@ -923,7 +925,7 @@ class InheritanceManager3 {
       result.isSynthetic = true;
       result.parameters = transformedParameters;
       result.prototype = executable;
-      result.returnType = executable.returnType2;
+      result.returnType = executable.returnType;
 
       var field = executable.variable;
       var resultField = FieldElementImpl(field.name, -1);
@@ -1004,7 +1006,7 @@ class InheritanceManager3 {
       field.enclosingElement = targetClass;
       if (firstAccessor.isGetter) {
         field.getter = result;
-        field.type = result.returnType2;
+        field.type = result.returnType;
       } else {
         field.setter = result;
         field.type = result.parameters[0].type;
@@ -1044,7 +1046,7 @@ class InheritanceManager3 {
   }
 
   static bool _isDeclaredInObject(ExecutableElement element) {
-    var enclosing = element.enclosingElement2;
+    var enclosing = element.enclosingElement;
     return enclosing is ClassElement && enclosing.isDartCoreObject;
   }
 }

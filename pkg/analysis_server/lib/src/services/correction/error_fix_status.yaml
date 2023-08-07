@@ -212,6 +212,8 @@ CompileTimeErrorCode.AWAIT_IN_LATE_LOCAL_VARIABLE_INITIALIZER:
     The fix is to remove the `late` modifier.
 CompileTimeErrorCode.AWAIT_IN_WRONG_CONTEXT:
   status: hasFix
+CompileTimeErrorCode.AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE:
+  status: noFix
 CompileTimeErrorCode.BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY:
   status: noFix
   notes: |-
@@ -384,6 +386,8 @@ CompileTimeErrorCode.CONST_DEFERRED_CLASS:
   status: needsFix
   notes: |-
     Remove the `deferred` keyword from the import.
+CompileTimeErrorCode.CONST_EVAL_ASSERTION_FAILURE:
+  status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_EXTENSION_METHOD:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_FOR_ELEMENT:
@@ -1183,6 +1187,8 @@ CompileTimeErrorCode.NON_CONSTANT_RELATIONAL_PATTERN_EXPRESSION:
   notes: |-
     Make the pattern expression a constant.
 CompileTimeErrorCode.NON_CONSTANT_SET_ELEMENT:
+  status: noFix
+CompileTimeErrorCode.NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE:
   status: noFix
 CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION:
   status: hasFix
