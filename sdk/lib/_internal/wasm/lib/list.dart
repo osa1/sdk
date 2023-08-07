@@ -72,9 +72,11 @@ abstract class ModifiableList<E> extends ListImplBase<E> {
     int length = end - start;
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
-    if (identical(this, iterable)) {
-      internalData.copy(start, internalData, skipCount, length);
+    if (iterable is ListImplBase) {
+      internalData.copy(start, unsafeCast<ListImplBase>(iterable).internalData,
+          skipCount, length);
     } else if (iterable is List<E>) {
+      // TODO: Use unchecked reads and writes.
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
       Iterator<E> it = iterable.iterator;
@@ -184,7 +186,7 @@ class FixedLengthList<E> extends ModifiableList<E>
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
   }
 }
 
@@ -196,7 +198,7 @@ class _ImmutableList<E> extends ListImplBase<E> with UnmodifiableListMixin<E> {
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
   }
 }
 
