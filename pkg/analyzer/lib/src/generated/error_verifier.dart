@@ -21,6 +21,7 @@ import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/element/class_hierarchy.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart';
+import 'package:analyzer/src/dart/element/non_covariant_type_parameter_position.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_provider.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
@@ -111,11 +112,11 @@ class EnclosingExecutableContext {
   bool get isSynchronous => !isAsynchronous;
 
   DartType get returnType {
-    return catchErrorOnErrorReturnType ?? element!.returnType2;
+    return catchErrorOnErrorReturnType ?? element!.returnType;
   }
 
   static bool _inFactoryConstructor(Element? element) {
-    var enclosing = element?.enclosingElement2;
+    var enclosing = element?.enclosingElement;
     if (enclosing == null) {
       return false;
     }
@@ -126,7 +127,7 @@ class EnclosingExecutableContext {
   }
 
   static bool _inStaticMethod(Element? element) {
-    var enclosing = element?.enclosingElement2;
+    var enclosing = element?.enclosingElement;
     if (enclosing == null) {
       return false;
     }
@@ -354,7 +355,9 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     if (_isNonNullableByDefault) {
       checkForUseOfVoidResult(node.expression);
     }
+
     _checkForAwaitInLateLocalVariableInitializer(node);
+    _checkForAwaitOfExtensionTypeNotFuture(node);
     super.visitAwaitExpression(node);
   }
 
@@ -698,7 +701,11 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
       _enclosingClass = declarationElement;
 
+      _duplicateDefinitionVerifier.checkExtensionType(node, declarationElement);
+      _checkForConflictingClassMembers();
       _constructorFieldsVerifier.enterExtensionType(node, declarationElement);
+      _checkForNonCovariantTypeParameterPositionInRepresentationType(
+          node, element);
       // TODO(scheglov) Add checks.
 
       super.visitExtensionTypeDeclaration(node);
@@ -790,7 +797,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
     ExecutableElement functionElement = node.declaredElement!;
-    if (functionElement.enclosingElement2 is! CompilationUnitElement) {
+    if (functionElement.enclosingElement is! CompilationUnitElement) {
       _hiddenElements!.declare(functionElement);
     }
 
@@ -1752,7 +1759,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         errorReporter.reportErrorForNode(
           CompileTimeErrorCode.ASSIGNMENT_TO_FINAL_NO_SETTER,
           highlightedNode,
-          [variable.name, variable.enclosingElement2.displayName],
+          [variable.name, variable.enclosingElement.displayName],
         );
       } else {
         errorReporter.reportErrorForNode(
@@ -1781,6 +1788,22 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         CompileTimeErrorCode.AWAIT_IN_LATE_LOCAL_VARIABLE_INITIALIZER,
         node.awaitKeyword,
       );
+    }
+  }
+
+  void _checkForAwaitOfExtensionTypeNotFuture(AwaitExpression node) {
+    final expression = node.expression;
+    final expressionType = expression.typeOrThrow;
+    if (expressionType.element is ExtensionTypeElement) {
+      final anyFuture = typeSystem.typeProvider.futureType(
+        typeSystem.objectQuestion,
+      );
+      if (!typeSystem.isSubtypeOf(expressionType, anyFuture)) {
+        errorReporter.reportErrorForToken(
+          CompileTimeErrorCode.AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE,
+          node.awaitKeyword,
+        );
+      }
     }
   }
 
@@ -1998,14 +2021,15 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
             CompileTimeErrorCode.CONFLICTING_STATIC_AND_INSTANCE, method, [
           _enclosingClass!.displayName,
           name,
-          inherited.enclosingElement2.displayName,
+          inherited.enclosingElement.displayName,
         ]);
-      } else if (inherited is PropertyAccessorElement) {
+      } else if (inherited is PropertyAccessorElement &&
+          _enclosingClass is! ExtensionTypeElement) {
         errorReporter.reportErrorForElement(
             CompileTimeErrorCode.CONFLICTING_METHOD_AND_FIELD, method, [
           _enclosingClass!.displayName,
           name,
-          inherited.enclosingElement2.displayName
+          inherited.enclosingElement.displayName
         ]);
       }
     }
@@ -2025,14 +2049,15 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
             CompileTimeErrorCode.CONFLICTING_STATIC_AND_INSTANCE, accessor, [
           _enclosingClass!.displayName,
           name,
-          inherited.enclosingElement2.displayName,
+          inherited.enclosingElement.displayName,
         ]);
-      } else if (inherited is MethodElement) {
+      } else if (inherited is MethodElement &&
+          _enclosingClass is! ExtensionTypeElement) {
         errorReporter.reportErrorForElement(
             CompileTimeErrorCode.CONFLICTING_FIELD_AND_METHOD, accessor, [
           _enclosingClass!.displayName,
           name,
-          inherited.enclosingElement2.displayName
+          inherited.enclosingElement.displayName
         ]);
       }
     }
@@ -2290,11 +2315,11 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       errorReporter.reportErrorForNode(
           CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_MIXIN_WITH_FIELD,
           constructor.returnType,
-          ["'${field.enclosingElement2.name}.${field.name}'"]);
+          ["'${field.enclosingElement.name}.${field.name}'"]);
       return true;
     } else if (instanceFields.length > 1) {
       var fieldNames = instanceFields
-          .map((field) => "'${field.enclosingElement2.name}.${field.name}'")
+          .map((field) => "'${field.enclosingElement.name}.${field.name}'")
           .join(', ');
       errorReporter.reportErrorForNode(
           CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_MIXIN_WITH_FIELDS,
@@ -2318,7 +2343,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         errorReporter.reportErrorForNode(
             CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_NON_CONST_SUPER,
             initializer,
-            [element.enclosingElement2.displayName]);
+            [element.enclosingElement.displayName]);
         return true;
       }
     }
@@ -2356,7 +2381,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       return;
     }
     // check if there is non-final field
-    final classElement = constructorElement.enclosingElement2;
+    final classElement = constructorElement.enclosingElement;
     if (classElement is! ClassElement || !classElement.hasNonFinalField) {
       return;
     }
@@ -3124,7 +3149,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     if (element is PropertyAccessorElement && element.isSetter) {
       return;
     }
-    if (element.hasImplicitReturnType && element.returnType2 is DynamicType) {
+    if (element.hasImplicitReturnType && element.returnType is DynamicType) {
       errorReporter.reportErrorForToken(LanguageCode.IMPLICIT_DYNAMIC_RETURN,
           functionName, [element.displayName]);
     }
@@ -3196,7 +3221,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         // OK, instance member
         return;
       }
-      Element enclosingElement = element.enclosingElement2;
+      Element enclosingElement = element.enclosingElement;
       if (enclosingElement is ExtensionElement) {
         if (target is ExtensionOverride) {
           // OK, target is an extension override
@@ -3304,7 +3329,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     var constructorElement = node.staticElement;
     if (constructorElement != null &&
         constructorElement.isGenerative &&
-        constructorElement.enclosingElement2 is EnumElement) {
+        constructorElement.enclosingElement is EnumElement) {
       if (_currentLibrary.featureSet.isEnabled(Feature.enhanced_enums)) {
         errorReporter.reportErrorForNode(
           CompileTimeErrorCode.INVALID_REFERENCE_TO_GENERATIVE_ENUM_CONSTRUCTOR,
@@ -3347,7 +3372,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       return;
     }
     // not a class member
-    Element enclosingElement = element.enclosingElement2;
+    Element enclosingElement = element.enclosingElement;
     if (enclosingElement is! InterfaceElement &&
         enclosingElement is! ExtensionElement) {
       return;
@@ -3469,7 +3494,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     }
 
     // We should only check exported declarations, i.e. top-level.
-    if (declaredElement.enclosingElement2 is! CompilationUnitElement) {
+    if (declaredElement.enclosingElement is! CompilationUnitElement) {
       return;
     }
 
@@ -3882,7 +3907,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
               namedType, [
             name,
             namedType.name2.lexeme,
-            inheritedMember.enclosingElement2.name!
+            inheritedMember.enclosingElement.name!
           ]);
           return true;
         }
@@ -4084,6 +4109,35 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     /// TODO(srawlins): Add any tests showing this is reported.
     errorReporter.reportErrorForNode(
         CompileTimeErrorCode.NON_CONST_MAP_AS_EXPRESSION_STATEMENT, literal);
+  }
+
+  void _checkForNonCovariantTypeParameterPositionInRepresentationType(
+    ExtensionTypeDeclaration node,
+    ExtensionTypeElement element,
+  ) {
+    final typeParameters = node.typeParameters?.typeParameters;
+    if (typeParameters == null) {
+      return;
+    }
+
+    final representationType = element.representation.type;
+
+    for (final typeParameterNode in typeParameters) {
+      final typeParameterElement = typeParameterNode.declaredElement!;
+      final nonCovariant = representationType.accept(
+        NonCovariantTypeParameterPositionVisitor(
+          [typeParameterElement],
+          initialVariance: Variance.covariant,
+        ),
+      );
+      if (nonCovariant) {
+        errorReporter.reportErrorForNode(
+          CompileTimeErrorCode
+              .NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE,
+          typeParameterNode,
+        );
+      }
+    }
   }
 
   void _checkForNonFinalFieldInEnum(FieldDeclaration node) {
@@ -4410,7 +4464,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       redirectedElement,
       redirectedConstructor,
     );
-    var redirectedClass = redirectedElement?.enclosingElement2;
+    var redirectedClass = redirectedElement?.enclosingElement;
     if (redirectedClass is ClassElement &&
         redirectedClass.isAbstract &&
         redirectedElement != null &&
@@ -4713,7 +4767,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }) {
     if (_enclosingExecutable.inStaticMethod || _isInStaticVariableDeclaration) {
       if (element is TypeParameterElement &&
-          element.enclosingElement2 is InstanceElement) {
+          element.enclosingElement is InstanceElement) {
         // The class's type parameters are not in scope for static methods.
         // However all other type parameters are legal (e.g. the static method's
         // type parameters, or a local function's type parameters).
@@ -4956,7 +5010,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     if (element == null || element is TypeParameterElement) {
       return;
     }
-    var enclosingElement = element.enclosingElement2;
+    var enclosingElement = element.enclosingElement;
     if (identical(enclosingElement, _enclosingClass)) {
       return;
     }

@@ -1127,6 +1127,9 @@ CompileTimeErrorCode:
       16.30 Await Expressions: It is a compile-time error if the function
       immediately enclosing _a_ is not declared asynchronous. (Where _a_ is the
       await expression.)
+  AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE:
+    problemMessage: "The 'await' expression can't be used for an expression with an extension type that is not a subtype of 'Future'."
+    correctionMessage: Try updating the extension type to implement 'Future'.
   BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY:
     sharedName: INVALID_USE_OF_TYPE_OUTSIDE_LIBRARY
     problemMessage: "The class '{0}' can't be implemented outside of its library because it's a base class."
@@ -2575,6 +2578,8 @@ CompileTimeErrorCode:
 
       const json2 = convert.JsonCodec();
       ```
+  CONST_EVAL_ASSERTION_FAILURE:
+    problemMessage: "The assertion in this constant expression failed."
   CONST_EVAL_EXTENSION_METHOD:
     problemMessage: "Extension methods can't be used in constant expressions."
   CONST_EVAL_FOR_ELEMENT:
@@ -10954,6 +10959,10 @@ CompileTimeErrorCode:
       13.2 Expression Statements: It is a compile-time error if a non-constant
       map literal that has no explicit type arguments appears in a place where a
       statement is expected.
+  NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE:
+    problemMessage: "An extension type parameter can't be used in a non-covariant position of its representation type."
+    correctionMessage: "Try removing the type parameters from function parameter types and type parameter bounds."
+    comment: No parameters.
   NON_EXHAUSTIVE_SWITCH_EXPRESSION:
     problemMessage: "The type '{0}' is not exhaustively matched by the switch cases since it doesn't match '{1}'."
     correctionMessage: "Try adding a wildcard pattern or cases that match '{2}'."
