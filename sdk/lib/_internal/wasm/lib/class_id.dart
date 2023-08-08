@@ -38,7 +38,7 @@ class ClassID {
   external static int get cidFixedLengthList;
   @pragma("wasm:class-id", "dart._list#ListImplBase")
   external static int get cidListBase;
-  @pragma("wasm:class-id", "dart._growable_list#GrowableList")
+  @pragma("wasm:class-id", "dart._list#GrowableList")
   external static int get cidGrowableList;
   @pragma("wasm:class-id", "dart._list#_ImmutableList")
   external static int get cidImmutableList;

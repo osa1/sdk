@@ -94,7 +94,6 @@ class WasmTarget extends Target {
   List<String> get extraRequiredLibraries => const <String>[
         'dart:_boxed_double',
         'dart:_boxed_int',
-        'dart:_growable_list',
         'dart:_http',
         'dart:_internal',
         'dart:_js_helper',
@@ -117,7 +116,6 @@ class WasmTarget extends Target {
 
   @override
   List<String> get extraIndexedLibraries => const <String>[
-        'dart:_growable_list',
         'dart:_js_helper',
         'dart:_js_types',
         'dart:_list',
@@ -385,7 +383,7 @@ class WasmTarget extends Target {
   @override
   Class concreteListLiteralClass(CoreTypes coreTypes) {
     return _growableList ??=
-        coreTypes.index.getClass('dart:_growable_list', 'GrowableList');
+        coreTypes.index.getClass('dart:_list', 'GrowableList');
   }
 
   @override

@@ -27,10 +27,10 @@ class ListFactorySpecializer {
         //     .getProcedure('dart._unboxed_int_list', 'FixedLengthUnboxedIntList', ''),
         _fixedLengthUnboxedIntListFilledFactory = _coreTypes.index.getProcedure(
             'dart:_unboxed_int_list', 'FixedLengthUnboxedIntList', 'filled'),
-        _growableListFactory = _coreTypes.index
-            .getProcedure('dart:_growable_list', 'GrowableList', ''),
+        _growableListFactory =
+            _coreTypes.index.getProcedure('dart:_list', 'GrowableList', ''),
         _growableListFilledFactory = _coreTypes.index
-            .getProcedure('dart:_growable_list', 'GrowableList', 'filled'),
+            .getProcedure('dart:_list', 'GrowableList', 'filled'),
         _growableUnboxedIntListFilledFactory = _coreTypes.index.getProcedure(
             'dart:_unboxed_int_list', 'GrowableUnboxedIntList', 'filled') {
     print("Initializing list factory transformer");

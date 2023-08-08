@@ -2,33 +2,23 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:_growable_list';
-import 'dart:_internal';
+import 'dart:_internal'
+    show makeFixedListUnmodifiable, makeListFixedLength, patch;
 import 'dart:_list';
-import 'dart:_unboxed_int_list';
 
 @patch
 class List<E> {
   @patch
   factory List.empty({bool growable = false}) {
-    if (E == int) {
-      return unsafeCast<List<E>>(
-          growable ? GrowableUnboxedIntList(0) : FixedLengthUnboxedIntList(0));
-    } else {
-      return growable ? <E>[] : FixedLengthList<E>(0);
-    }
+    return growable ? <E>[] : FixedLengthList<E>(0);
   }
 
   @patch
   factory List.filled(int length, E fill, {bool growable = false}) {
-    if (E == int) {
-      return unsafeCast<List<E>>(growable
-          ? GrowableUnboxedIntList.filled(length, unsafeCast<int>(fill))
-          : FixedLengthUnboxedIntList.filled(length, unsafeCast<int>(fill)));
+    if (growable) {
+      return GrowableList<E>.filled(length, fill);
     } else {
-      return growable
-          ? GrowableList<E>.filled(length, fill)
-          : FixedLengthList<E>.filled(length, fill);
+      return FixedLengthList<E>.filled(length, fill);
     }
   }
 

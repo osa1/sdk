@@ -240,9 +240,6 @@
       "_double_helper": {
         "uri": "_internal/wasm/lib/double_helper.dart"
       },
-      "_growable_list": {
-        "uri": "_internal/wasm/lib/growable_list.dart"
-      },
       "_http": {
         "uri": "_http/http.dart"
       },
