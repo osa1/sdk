@@ -20,11 +20,11 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   // Specialization of List.empty constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
   factory _GrowableList.empty() => _GrowableList(0);
 
   // Specialization of List.filled constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
   factory _GrowableList.filled(int length, E fill) {
     final result = _GrowableList<E>(length);
     if (fill != null) {
@@ -34,7 +34,7 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   // Specialization of List.generate constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
   factory _GrowableList.generate(int length, E generator(int index)) {
     final result = _GrowableList<E>(length);
     for (int i = 0; i < result.length; ++i) {

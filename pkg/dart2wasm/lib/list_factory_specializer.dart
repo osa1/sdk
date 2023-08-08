@@ -44,8 +44,6 @@ class ListFactorySpecializer {
             coreTypes.index.getProcedure('dart:core', '_List', 'filled'),
         _fixedListGenerateFactory =
             coreTypes.index.getProcedure('dart:core', '_List', 'generate') {
-    print("Initializing list factory transformer");
-
     _transformers[_listFilledFactory] = _transformListFilledFactory;
     _transformers[_listEmptyFactory] = _transformListEmptyFactory;
     _transformers[_listGenerateFactory] = _transformListGenerateFactory;
@@ -67,7 +65,6 @@ class ListFactorySpecializer {
   TreeNode _transformListFilledFactory(StaticInvocation node) {
     final args = node.arguments;
     assert(args.positional.length == 2);
-    final type = args.types[0];
     final length = args.positional[0];
     final fill = args.positional[1];
     final fillingWithNull = _isNullConstant(fill);
@@ -76,9 +73,6 @@ class ListFactorySpecializer {
     // `List.filled(..., growable: f())`.
     final bool? growable =
         _getConstantOptionalArgument(args, 'growable', false);
-
-    print(
-        "Checking to transform list factory, type = $type, length = $length, fill = $fill, location = ${node.location}");
 
     if (growable == null) {
       // TODO: Add `_ModifiableList` factory with growable argument.
