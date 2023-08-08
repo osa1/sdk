@@ -13,7 +13,6 @@ mixin KernelNodes {
   late final LibraryIndex index = LibraryIndex(component, [
     "dart:_boxed_double",
     "dart:_boxed_int",
-    "dart:_growable_list",
     "dart:_internal",
     "dart:_list",
     "dart:_string",
@@ -51,7 +50,7 @@ mixin KernelNodes {
   late final Class fixedLengthListClass =
       index.getClass("dart:_list", "FixedLengthList");
   late final Class growableListClass =
-      index.getClass("dart:_growable_list", "GrowableList");
+      index.getClass("dart:_list", "GrowableList");
   late final Class immutableListClass =
       index.getClass("dart:_list", "_ImmutableList");
   late final Class stringBaseClass =
@@ -165,7 +164,7 @@ mixin KernelNodes {
       .procedures
       .firstWhere((p) => p.name.text == "add");
   late final Procedure growableListAdd =
-      index.getProcedure("dart:_growable_list", "GrowableList", "add");
+      index.getProcedure("dart:_list", "GrowableList", "add");
   late final Procedure hashImmutableIndexNullable = index.getProcedure(
       "dart:collection", "_HashAbstractImmutableBase", "get:_indexNullable");
 

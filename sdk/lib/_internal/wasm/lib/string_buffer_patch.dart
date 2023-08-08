@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show patch;
+import "dart:_list" show GrowableList;
 import "dart:_string" show StringBase, TwoByteString;
-import "dart:_growable_list" show GrowableList;
 
 import "dart:typed_data" show Uint16List;
 
