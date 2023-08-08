@@ -729,6 +729,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       }
     }
     try {
+      _checkForExtensionTypeDeclaresInstanceField(node);
       _checkForNotInitializedNonNullableStaticField(node);
       _checkForWrongTypeParameterVarianceInField(node);
       _checkForLateFinalFieldWithConstConstructor(node);
@@ -1580,7 +1581,9 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
               mixinName, CompileTimeErrorCode.MIXIN_DEFERRED_CLASS)) {
             problemReported = true;
           }
-          if (mixinElement is MixinElement) {
+          if (mixinType.element is ExtensionTypeElement) {
+            // Already reported.
+          } else if (mixinElement is MixinElement) {
             if (_checkForMixinSuperclassConstraints(
                 mixinNameIndex, mixinName)) {
               problemReported = true;
@@ -2847,17 +2850,38 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }
 
   void _checkForExtensionDeclaresMemberOfObject(MethodDeclaration node) {
-    if (_enclosingExtension == null) return;
+    if (_enclosingExtension != null) {
+      if (node.hasObjectMemberName) {
+        errorReporter.reportErrorForToken(
+          CompileTimeErrorCode.EXTENSION_DECLARES_MEMBER_OF_OBJECT,
+          node.name,
+        );
+      }
+    }
 
-    var name = node.name.lexeme;
-    if (name == '==' ||
-        name == 'hashCode' ||
-        name == 'toString' ||
-        name == 'runtimeType' ||
-        name == FunctionElement.NO_SUCH_METHOD_METHOD_NAME) {
+    if (_enclosingClass is ExtensionTypeElement) {
+      if (node.hasObjectMemberName) {
+        errorReporter.reportErrorForToken(
+          CompileTimeErrorCode.EXTENSION_TYPE_DECLARES_MEMBER_OF_OBJECT,
+          node.name,
+        );
+      }
+    }
+  }
+
+  void _checkForExtensionTypeDeclaresInstanceField(FieldDeclaration node) {
+    if (_enclosingClass is! ExtensionTypeElement) {
+      return;
+    }
+
+    if (node.isStatic) {
+      return;
+    }
+
+    for (final field in node.fields.variables) {
       errorReporter.reportErrorForToken(
-        CompileTimeErrorCode.EXTENSION_DECLARES_MEMBER_OF_OBJECT,
-        node.name,
+        CompileTimeErrorCode.EXTENSION_TYPE_DECLARES_INSTANCE_FIELD,
+        field.name,
       );
     }
   }
