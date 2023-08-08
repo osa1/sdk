@@ -168,6 +168,7 @@ class StringBuffer {
     _partsCodeUnitsSinceCompaction += length;
 
     if (localParts == null) {
+      // Empirically this is a good capacity to minimize total bytes allocated.
       _parts = GrowableList.withCapacity(10)..add(str);
     } else {
       localParts.add(str);
