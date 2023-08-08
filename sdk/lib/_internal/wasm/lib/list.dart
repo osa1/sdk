@@ -13,24 +13,24 @@ const int _maxWasmArrayLength = 2147483647; // max i32
 @pragma("wasm:entry-point")
 abstract class ListImplBase<E> extends ListBase<E> {
   @pragma("wasm:entry-point")
-  int internalLength;
+  int _length;
 
   @pragma("wasm:entry-point")
-  WasmObjectArray<Object?> internalData;
+  WasmObjectArray<Object?> _data;
 
   ListImplBase(int length, int capacity)
-      : internalLength = length,
-        internalData = WasmObjectArray<Object?>(
+      : _length = length,
+        _data = WasmObjectArray<Object?>(
             RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
 
-  ListImplBase.withData(this.internalLength, this.internalData);
+  ListImplBase.withData(this._length, this._data);
 
   E operator [](int index) {
-    IndexError.check(index, internalLength, indexable: this, name: "[]");
-    return unsafeCast(internalData.read(index));
+    IndexError.check(index, _length, indexable: this, name: "[]");
+    return unsafeCast(_data.read(index));
   }
 
-  int get length => internalLength;
+  int get length => _length;
 
   List<E> sublist(int start, [int? end]) {
     final int listLength = this.length;
@@ -43,7 +43,7 @@ abstract class ListImplBase<E> extends ListBase<E> {
   void forEach(f(E element)) {
     final initialLength = length;
     for (int i = 0; i < initialLength; i++) {
-      f(unsafeCast<E>(internalData.read(i)));
+      f(unsafeCast<E>(_data.read(i)));
       if (length != initialLength) throw ConcurrentModificationError(this);
     }
   }
@@ -61,8 +61,8 @@ abstract class ModifiableList<E> extends ListImplBase<E> {
       : super.withData(length, data);
 
   void operator []=(int index, E value) {
-    IndexError.check(index, internalLength, indexable: this, name: "[]=");
-    internalData.write(index, value);
+    IndexError.check(index, _length, indexable: this, name: "[]=");
+    _data.write(index, value);
   }
 
   // List interface.
@@ -72,7 +72,7 @@ abstract class ModifiableList<E> extends ListImplBase<E> {
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
     if (identical(this, iterable)) {
-      internalData.copy(start, internalData, skipCount, length);
+      _data.copy(start, _data, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
@@ -83,7 +83,7 @@ abstract class ModifiableList<E> extends ListImplBase<E> {
       }
       for (int i = start; i < end; i++) {
         if (!it.moveNext()) return;
-        internalData.write(i, it.current);
+        _data.write(i, it.current);
       }
     }
   }
@@ -127,7 +127,7 @@ class FixedLengthList<E> extends ModifiableList<E>
   factory FixedLengthList.filled(int length, E fill) {
     final result = FixedLengthList<E>(length);
     if (fill != null) {
-      result.internalData.fill(0, fill, length);
+      result._data.fill(0, fill, length);
     }
     return result;
   }
@@ -137,7 +137,7 @@ class FixedLengthList<E> extends ModifiableList<E>
   factory FixedLengthList.generate(int length, E generator(int index)) {
     final result = FixedLengthList<E>(length);
     for (int i = 0; i < result.length; ++i) {
-      result.internalData.write(i, generator(i));
+      result._data.write(i, generator(i));
     }
     return result;
   }
@@ -156,7 +156,7 @@ class FixedLengthList<E> extends ModifiableList<E>
   factory FixedLengthList._ofListBase(ListImplBase<E> elements) {
     final int length = elements.length;
     final list = FixedLengthList<E>(length);
-    list.internalData.copy(0, elements.internalData, 0, length);
+    list._data.copy(0, elements._data, 0, length);
     return list;
   }
 
@@ -183,7 +183,7 @@ class FixedLengthList<E> extends ModifiableList<E>
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
   }
 }
 
@@ -195,20 +195,20 @@ class _ImmutableList<E> extends ListImplBase<E> with UnmodifiableListMixin<E> {
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
   }
 }
 
 // Iterator for lists with fixed size.
 class _FixedSizeListIterator<E> implements Iterator<E> {
   final ListImplBase<E> _list;
-  final int internalLength; // Cache list length for faster access.
+  final int _length; // Cache list length for faster access.
   int _index;
   E? _current;
 
   _FixedSizeListIterator(ListImplBase<E> list)
       : _list = list,
-        internalLength = list.length,
+        _length = list.length,
         _index = 0 {
     assert(list is FixedLengthList<E> || list is _ImmutableList<E>);
   }
@@ -216,11 +216,11 @@ class _FixedSizeListIterator<E> implements Iterator<E> {
   E get current => _current as E;
 
   bool moveNext() {
-    if (_index >= internalLength) {
+    if (_index >= _length) {
       _current = null;
       return false;
     }
-    _current = unsafeCast(_list.internalData.read(_index));
+    _current = unsafeCast(_list._data.read(_index));
     _index++;
     return true;
   }
@@ -242,21 +242,21 @@ class GrowableList<E> extends ModifiableList<E> {
       data = WasmObjectArray<Object?>(_nextCapacity(_capacity));
       if (index != 0) {
         // Copy elements before the insertion point.
-        data.copy(0, internalData, 0, index - 1);
+        data.copy(0, _data, 0, index - 1);
       }
     } else {
-      data = internalData;
+      data = _data;
     }
 
     // Shift elements, or copy elements after insertion point if we allocated a
     // new array.
-    data.copy(index + 1, internalData, index, length - index);
+    data.copy(index + 1, _data, index, length - index);
 
     // Insert new element.
     data.write(index, element);
 
-    internalData = data;
-    internalLength += 1;
+    _data = data;
+    _length += 1;
   }
 
   E removeAt(int index) {
@@ -266,7 +266,7 @@ class GrowableList<E> extends ModifiableList<E> {
     var result = this[index];
     int newLength = this.length - 1;
     if (index < newLength) {
-      internalData.copy(index, internalData, index + 1, newLength - index);
+      _data.copy(index, _data, index + 1, newLength - index);
     }
     this.length = newLength;
     return result;
@@ -274,7 +274,7 @@ class GrowableList<E> extends ModifiableList<E> {
 
   bool remove(Object? element) {
     for (int i = 0; i < this.length; i++) {
-      if (internalData.read(i) == element) {
+      if (_data.read(i) == element) {
         removeAt(i);
         return true;
       }
@@ -307,7 +307,7 @@ class GrowableList<E> extends ModifiableList<E> {
 
   void removeRange(int start, int end) {
     RangeError.checkValidRange(start, end, this.length);
-    internalData.copy(start, internalData, end, length - end);
+    _data.copy(start, _data, end, length - end);
     this.length = this.length - (end - start);
   }
 
@@ -330,7 +330,7 @@ class GrowableList<E> extends ModifiableList<E> {
   factory GrowableList.filled(int length, E fill) {
     final result = GrowableList<E>(length);
     if (fill != null) {
-      result.internalData.fill(0, fill, length);
+      result._data.fill(0, fill, length);
     }
     return result;
   }
@@ -340,7 +340,7 @@ class GrowableList<E> extends ModifiableList<E> {
   factory GrowableList.generate(int length, E generator(int index)) {
     final result = GrowableList<E>(length);
     for (int i = 0; i < result.length; ++i) {
-      result.internalData.write(i, generator(i));
+      result._data.write(i, generator(i));
     }
     return result;
   }
@@ -359,7 +359,7 @@ class GrowableList<E> extends ModifiableList<E> {
   factory GrowableList._ofListBase(ListImplBase<E> elements) {
     final int length = elements.length;
     final list = GrowableList<E>(length);
-    list.internalData.copy(0, elements.internalData, 0, length);
+    list._data.copy(0, elements._data, 0, length);
     return list;
   }
 
@@ -388,7 +388,7 @@ class GrowableList<E> extends ModifiableList<E> {
   GrowableList.withData(WasmObjectArray<Object?> data)
       : super.withData(data.length, data);
 
-  int get _capacity => internalData.length;
+  int get _capacity => _data.length;
 
   void set length(int newLength) {
     if (newLength > length) {
@@ -411,13 +411,13 @@ class GrowableList<E> extends ModifiableList<E> {
     if (shouldShrinkToFit) {
       _shrink(newCapacity, newLength);
     } else {
-      internalData.fill(newLength, null, length - newLength);
+      _data.fill(newLength, null, length - newLength);
     }
     _setLength(newLength);
   }
 
   void _setLength(int newLength) {
-    internalLength = newLength;
+    _length = newLength;
   }
 
   void add(E value) {
@@ -426,7 +426,7 @@ class GrowableList<E> extends ModifiableList<E> {
       _growToNextCapacity();
     }
     _setLength(len + 1);
-    internalData.write(len, value);
+    _data.write(len, value);
   }
 
   void addAll(Iterable<E> iterable) {
@@ -455,7 +455,7 @@ class GrowableList<E> extends ModifiableList<E> {
       while (len < _capacity) {
         int newLen = len + 1;
         this._setLength(newLen);
-        internalData.write(len, it.current);
+        _data.write(len, it.current);
         if (!it.moveNext()) return;
         if (this.length != newLen) throw ConcurrentModificationError(this);
         len = newLen;
@@ -491,8 +491,8 @@ class GrowableList<E> extends ModifiableList<E> {
 
   void _grow(int newCapacity) {
     var newData = WasmObjectArray<Object?>(newCapacity);
-    newData.copy(0, internalData, 0, length);
-    internalData = newData;
+    newData.copy(0, _data, 0, length);
+    _data = newData;
   }
 
   void _growToNextCapacity() {
@@ -501,8 +501,8 @@ class GrowableList<E> extends ModifiableList<E> {
 
   void _shrink(int newCapacity, int newinternalLength) {
     var newData = _allocateData(newCapacity);
-    newData.copy(0, internalData, 0, newinternalLength);
-    internalData = newData;
+    newData.copy(0, _data, 0, newinternalLength);
+    _data = newData;
   }
 
   Iterator<E> get iterator {
@@ -513,26 +513,26 @@ class GrowableList<E> extends ModifiableList<E> {
 // Iterator for growable lists.
 class GrowableListIterator<E> implements Iterator<E> {
   final GrowableList<E> _list;
-  final int internalLength; // Cache list length for modification check.
+  final int _length; // Cache list length for modification check.
   int _index;
   E? _current;
 
   GrowableListIterator(GrowableList<E> list)
       : _list = list,
-        internalLength = list.length,
+        _length = list.length,
         _index = 0;
 
   E get current => _current as E;
 
   bool moveNext() {
-    if (_list.length != internalLength) {
+    if (_list.length != _length) {
       throw ConcurrentModificationError(_list);
     }
-    if (_index >= internalLength) {
+    if (_index >= _length) {
       _current = null;
       return false;
     }
-    _current = unsafeCast(_list.internalData.read(_index));
+    _current = unsafeCast(_list._data.read(_index));
     _index++;
     return true;
   }
