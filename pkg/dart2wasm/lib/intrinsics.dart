@@ -554,11 +554,11 @@ class Intrinsifier {
       final String className = libAndClassNameParts[1];
       Class cls = translator.libraries
           .firstWhere((l) => l.name == lib && l.importUri.scheme == 'dart',
-              orElse: () => throw 'Library $lib not found (${node.location})')
+              orElse: () => throw 'Library $lib not found (${target.location})')
           .classes
           .firstWhere((c) => c.name == className,
               orElse: () => throw 'Class $className not found in library $lib '
-                  '(${node.location})');
+                  '(${target.location})');
       int classId = translator.classInfo[cls]!.classId;
       b.i64_const(classId);
       return w.NumType.i64;
