@@ -12,6 +12,80 @@ const int _maxWasmArrayLength = 2147483647; // max i32
 
 @pragma("wasm:entry-point")
 class GrowableList<E> extends ModifiableList<E> {
+  GrowableList._(int length, int capacity) : super(length, capacity);
+
+  GrowableList.withData(WasmObjectArray<Object?> data)
+      : super.withData(data.length, data);
+
+  factory GrowableList(int length) => GrowableList<E>._(length, length);
+
+  factory GrowableList.withCapacity(int capacity) =>
+      GrowableList<E>._(0, capacity);
+
+  // Specialization of List.empty constructor for growable == true.
+  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  factory GrowableList.empty() => GrowableList(0);
+
+  // Specialization of List.filled constructor for growable == true.
+  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  factory GrowableList.filled(int length, E fill) {
+    final result = GrowableList<E>(length);
+    if (fill != null) {
+      result.internalData.fill(0, fill, length);
+    }
+    return result;
+  }
+
+  // Specialization of List.generate constructor for growable == true.
+  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
+  factory GrowableList.generate(int length, E generator(int index)) {
+    final result = GrowableList<E>(length);
+    for (int i = 0; i < result.length; ++i) {
+      result.internalData.write(i, generator(i));
+    }
+    return result;
+  }
+
+  // Specialization of List.of constructor for growable == true.
+  factory GrowableList.of(Iterable<E> elements) {
+    if (elements is ListImplBase) {
+      return GrowableList._ofListBase(unsafeCast(elements));
+    }
+    if (elements is EfficientLengthIterable) {
+      return GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
+    }
+    return GrowableList.ofOther(elements);
+  }
+
+  factory GrowableList._ofListBase(ListImplBase<E> elements) {
+    final int length = elements.length;
+    final list = GrowableList<E>(length);
+    list.internalData.copy(0, elements.internalData, 0, length);
+    return list;
+  }
+
+  factory GrowableList._ofEfficientLengthIterable(
+      EfficientLengthIterable<E> elements) {
+    final int length = elements.length;
+    final list = GrowableList<E>(length);
+    if (length > 0) {
+      int i = 0;
+      for (var element in elements) {
+        list[i++] = element;
+      }
+      if (i != length) throw ConcurrentModificationError(elements);
+    }
+    return list;
+  }
+
+  factory GrowableList.ofOther(Iterable<E> elements) {
+    final list = GrowableList<E>(0);
+    for (var elements in elements) {
+      list.add(elements);
+    }
+    return list;
+  }
+
   void insert(int index, E element) {
     if (index == length) {
       return add(element);
@@ -94,83 +168,6 @@ class GrowableList<E> extends ModifiableList<E> {
     internalData.copy(start, internalData, end, length - end);
     this.length = this.length - (end - start);
   }
-
-  GrowableList._(int length, int capacity) : super(length, capacity);
-
-  factory GrowableList(int length) {
-    return GrowableList<E>._(length, length);
-  }
-
-  factory GrowableList.withCapacity(int capacity) {
-    return GrowableList<E>._(0, capacity);
-  }
-
-  // Specialization of List.empty constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory GrowableList.empty() => GrowableList(0);
-
-  // Specialization of List.filled constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory GrowableList.filled(int length, E fill) {
-    final result = GrowableList<E>(length);
-    if (fill != null) {
-      result.internalData.fill(0, fill, length);
-    }
-    return result;
-  }
-
-  // Specialization of List.generate constructor for growable == true.
-  // Used by pkg/vm/lib/transformations/list_factory_specializer.dart.
-  factory GrowableList.generate(int length, E generator(int index)) {
-    final result = GrowableList<E>(length);
-    for (int i = 0; i < result.length; ++i) {
-      result.internalData.write(i, generator(i));
-    }
-    return result;
-  }
-
-  // Specialization of List.of constructor for growable == true.
-  factory GrowableList.of(Iterable<E> elements) {
-    if (elements is ListImplBase) {
-      return GrowableList._ofListBase(unsafeCast(elements));
-    }
-    if (elements is EfficientLengthIterable) {
-      return GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
-    }
-    return GrowableList.ofOther(elements);
-  }
-
-  factory GrowableList._ofListBase(ListImplBase<E> elements) {
-    final int length = elements.length;
-    final list = GrowableList<E>(length);
-    list.internalData.copy(0, elements.internalData, 0, length);
-    return list;
-  }
-
-  factory GrowableList._ofEfficientLengthIterable(
-      EfficientLengthIterable<E> elements) {
-    final int length = elements.length;
-    final list = GrowableList<E>(length);
-    if (length > 0) {
-      int i = 0;
-      for (var element in elements) {
-        list[i++] = element;
-      }
-      if (i != length) throw ConcurrentModificationError(elements);
-    }
-    return list;
-  }
-
-  factory GrowableList.ofOther(Iterable<E> elements) {
-    final list = GrowableList<E>(0);
-    for (var elements in elements) {
-      list.add(elements);
-    }
-    return list;
-  }
-
-  GrowableList.withData(WasmObjectArray<Object?> data)
-      : super.withData(data.length, data);
 
   int get _capacity => internalData.length;
 

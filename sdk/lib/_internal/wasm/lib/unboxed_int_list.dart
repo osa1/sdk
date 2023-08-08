@@ -20,6 +20,7 @@ abstract class UnboxedIntListBase extends ListBase<int> {
         _data = WasmIntArray<WasmI64>(
             RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
 
+  @pragma('wasm:prefer-inline')
   int operator [](int index) {
     IndexError.check(index, _length, indexable: this, name: "[]");
     return _data.readSigned(index);
@@ -54,6 +55,7 @@ abstract class UnboxedIntListBase extends ListBase<int> {
 abstract class ModifiableUnboxedIntList extends UnboxedIntListBase {
   ModifiableUnboxedIntList(int length, int capacity) : super(length, capacity);
 
+  @pragma('wasm:prefer-inline')
   void operator []=(int index, int value) {
     IndexError.check(index, _length, indexable: this, name: "[]=");
     _data.write(index, value);

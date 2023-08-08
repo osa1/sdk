@@ -122,6 +122,7 @@ class WasmTarget extends Target {
         'dart:_js_types',
         'dart:_list',
         'dart:_string',
+        'dart:_unboxed_int_list',
         'dart:_wasm',
         'dart:collection',
         'dart:js_interop',
