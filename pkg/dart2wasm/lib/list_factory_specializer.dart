@@ -5,6 +5,20 @@
 import 'package:kernel/ast.dart';
 import 'package:kernel/core_types.dart' show CoreTypes;
 
+/// Replaces invocation of `List` factory constructors with factories of
+/// dart2wasm-specific classes.
+///
+/// ```
+/// List.empty() => _List.empty()
+/// List.empty(growable: false) => _List.empty()
+/// List.empty(growable: true) => _GrowableList.empty()
+/// List.filled(n, null, growable: true) => _GrowableList(n)
+/// List.filled(n, x, growable: true) => _GrowableList.filled(n, x)
+/// List.filled(n, null) => _List(n)
+/// List.filled(n, x) => _List.filled(n, x)
+/// List.generate(n, y) => _GrowableList.generate(n, y)
+/// List.generate(n, y, growable: false) => _List.generate(n, y)
+/// ```
 class ListFactorySpecializer {
   final Map<Member, TreeNode Function(StaticInvocation node)> _transformers =
       {};
