@@ -141,7 +141,11 @@
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
-          "_internal/wasm/lib/weak_patch.dart"
+          "_internal/wasm/lib/weak_patch.dart",
+          "_internal/wasm/lib/boxed_double.dart",
+          "_internal/wasm/lib/boxed_int.dart",
+          "_internal/wasm/lib/double_helper.dart",
+          "_internal/wasm/lib/int_helper.dart"
         ]
       }
     }
@@ -168,7 +172,11 @@
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_stringref_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
-          "_internal/wasm/lib/weak_patch.dart"
+          "_internal/wasm/lib/weak_patch.dart",
+          "_internal/wasm/lib/boxed_double.dart",
+          "_internal/wasm/lib/boxed_int.dart",
+          "_internal/wasm/lib/double_helper.dart",
+          "_internal/wasm/lib/int_helper.dart"
         ]
       }
     }
@@ -195,7 +203,11 @@
           "_internal/wasm/lib/string_buffer_patch.dart",
           "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
-          "_internal/wasm/lib/weak_patch.dart"
+          "_internal/wasm/lib/weak_patch.dart",
+          "_internal/wasm/lib/boxed_double.dart",
+          "_internal/wasm/lib/boxed_int.dart",
+          "_internal/wasm/lib/double_helper.dart",
+          "_internal/wasm/lib/int_helper.dart"
         ]
       },
       "typed_data": {

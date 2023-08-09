@@ -57,7 +57,7 @@ final class _BoxedInt extends int {
       throw IntegerDivisionByZeroException();
     }
 
-    return int_helper.div_s(a, b);
+    return _div_s(a, b);
   }
 
   @pragma("wasm:prefer-inline")
@@ -74,8 +74,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator >>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (int_helper.lt_u(shift, 64)) {
-      return int_helper.shr_s(value, shift);
+    if (_lt_u(shift, 64)) {
+      return _shr_s(value, shift);
     }
 
     if (shift < 0) {
@@ -83,14 +83,14 @@ final class _BoxedInt extends int {
     }
 
     // shift >= 64, 0 or -1 depending on sign: `this >= 0 ? 0 : -1`
-    return int_helper.shr_s(value, 63);
+    return _shr_s(value, 63);
   }
 
   @pragma("wasm:prefer-inline")
   int operator >>>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (int_helper.lt_u(shift, 64)) {
-      return int_helper.shr_u(value, shift);
+    if (_lt_u(shift, 64)) {
+      return _shr_u(value, shift);
     }
 
     if (shift < 0) {
@@ -104,8 +104,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator <<(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (int_helper.lt_u(shift, 64)) {
-      return int_helper.shl(value, shift);
+    if (_lt_u(shift, 64)) {
+      return _shl(value, shift);
     }
 
     if (shift < 0) {
@@ -200,7 +200,7 @@ final class _BoxedInt extends int {
       } else {
         // If abs(other) > MAX_EXACT_INT_TO_DOUBLE, then other has an integer
         // value (no bits below the decimal point).
-        other = double_helper.toInt(other);
+        other = _toInt(other);
       }
     }
     if (this < other) {
@@ -289,7 +289,7 @@ final class _BoxedInt extends int {
     return this.toDouble().toStringAsPrecision(precision);
   }
 
-  String toRadixString(int radix) => int_helper.intToRadixString(value, radix);
+  String toRadixString(int radix) => _intToRadixString(value, radix);
 
   // Returns pow(this, e) % m.
   int modPow(int e, int m) {
@@ -414,11 +414,11 @@ final class _BoxedInt extends int {
     return _binaryGcd(x, y, false);
   }
 
-  int get hashCode => int_helper.intHashCode(this);
+  int get hashCode => _intHashCode(this);
 
   external int operator ~();
   external int get bitLength;
 
   @override
-  String toString() => int_helper.intToString(value);
+  String toString() => _intToString(value);
 }

@@ -25,9 +25,9 @@ final class _BoxedDouble extends double {
 
   static int _doubleHashCode(double value) {
     const int maxInt = 0x7FFFFFFFFFFFFFFF;
-    int intValue = double_helper.toInt(value);
+    int intValue = _toInt(value);
     if (intValue.toDouble() == value && intValue != maxInt) {
-      return int_helper.intHashCode(intValue);
+      return _intHashCode(intValue);
     }
     int bits = doubleToIntBits(value);
     return (bits ^ (bits >>> 32)) & 0x3FFFFFFF;
@@ -95,10 +95,10 @@ final class _BoxedDouble extends double {
       return (a * b) / (a * b);
     }
 
-    if (int_helper.le_u(aBits << 1, bBits << 1)) {
+    if (_le_u(aBits << 1, bBits << 1)) {
       if ((aBits << 1) == (bBits << 1)) {
         // abs(a) == abs(b), so remainder = +/- 0.0 depending on sign of a
-        return double_helper.copysign(0.0, a);
+        return _copysign(0.0, a);
       }
 
       // abs(a) < abs(b), so b = 0 * a rem. a
@@ -137,7 +137,7 @@ final class _BoxedDouble extends double {
         // remainder is positive
         if (remainder == 0) {
           // a divides into b exactly, so remainder = +/- 0.0 depending on sign of a
-          return double_helper.copysign(0.0, a);
+          return _copysign(0.0, a);
         }
 
         aBits = remainder;
@@ -153,7 +153,7 @@ final class _BoxedDouble extends double {
       // remainder is positive
       if (remainder == 0) {
         // a divides into b exactly, so remainder = +/- 0.0 depending on sign of a
-        return double_helper.copysign(0.0, a);
+        return _copysign(0.0, a);
       }
 
       aBits = remainder;
@@ -203,7 +203,7 @@ final class _BoxedDouble extends double {
   bool get isNegative {
     // Sign bit set, not NaN
     int bits = doubleToIntBits(this);
-    return int_helper.le_u(bits ^ _signMask, _exponentMask);
+    return _le_u(bits ^ _signMask, _exponentMask);
   }
 
   @pragma("wasm:prefer-inline")
@@ -229,7 +229,7 @@ final class _BoxedDouble extends double {
 
   @pragma("wasm:prefer-inline")
   double abs() {
-    return double_helper.copysign(value, 0.0);
+    return _copysign(value, 0.0);
   }
 
   @pragma("wasm:prefer-inline")
@@ -271,8 +271,8 @@ final class _BoxedDouble extends double {
 
     // Add 0.5 to the absolute value of the number and truncate the result.
     final int shift = (_exponentBias + _mantissaBits - 1) - exponent;
-    final int adjust = int_helper.shl(1, shift);
-    final int mask = int_helper.shl(-2, shift);
+    final int adjust = _shl(1, shift);
+    final int mask = _shl(-2, shift);
     final int rounded = (bits + adjust) & mask;
     return intBitsToDouble(rounded);
   }
@@ -296,7 +296,7 @@ final class _BoxedDouble extends double {
     if (!isFinite) {
       throw UnsupportedError("Infinity or NaN toInt");
     }
-    return double_helper.toInt(value);
+    return _toInt(value);
   }
 
   @pragma("wasm:prefer-inline")
@@ -470,7 +470,7 @@ final class _BoxedDouble extends double {
             return GREATER;
           }
         }
-        return double_helper.toInt(value).compareTo(other);
+        return _toInt(value).compareTo(other);
       } else {
         return EQUAL;
       }

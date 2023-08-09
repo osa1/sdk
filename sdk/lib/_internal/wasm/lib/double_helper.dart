@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// Wasm i64.trunc_sat_f64_s instruction
-external int toInt(double value);
+external int _toInt(double value);
 
 /// Wasm f64.copysign instruction
-external double copysign(double value, double other);
+external double _copysign(double value, double other);

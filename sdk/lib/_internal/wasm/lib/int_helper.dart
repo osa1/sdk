@@ -6,33 +6,33 @@ import "dart:_internal"
     show allocateOneByteString, unsafeCast, writeIntoOneByteString;
 
 /// Wasm i64.div_s instruction
-external int div_s(int value, int divisor);
+external int _div_s(int value, int divisor);
 
 /// Wasm i64.le_u instruction
-external bool le_u(int value, int other);
+external bool _le_u(int value, int other);
 
 /// Wasm i64.lt_u instruction
-external bool lt_u(int value, int other);
+external bool _lt_u(int value, int other);
 
 /// Wasm i64.shr_s instruction
-external int shr_s(int value, int shift);
+external int _shr_s(int value, int shift);
 
 /// Wasm i64.shr_u instruction
-external int shr_u(int value, int shift);
+external int _shr_u(int value, int shift);
 
 /// Wasm i64.shl instruction
-external int shl(int value, int shift);
+external int _shl(int value, int shift);
 
 const _digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-String intToRadixString(int value, int radix) {
+String _intToRadixString(int value, int radix) {
   if (radix < 2 || 36 < radix) {
     throw new RangeError.range(radix, 2, 36, "radix");
   }
   if (radix & (radix - 1) == 0) {
     return _toPow2String(value, radix);
   }
-  if (radix == 10) return intToString(value);
+  if (radix == 10) return _intToString(value);
   final bool isNegative = value < 0;
   value = isNegative ? -value : value;
   if (value < 0) {
@@ -191,7 +191,7 @@ int _positiveBase10Length(int smi) {
   return 9 + _positiveBase10Length(smi);
 }
 
-String intToString(int value) {
+String _intToString(int value) {
   if (value < 100 && value > -100) {
     // Issue(https://dartbug.com/39639): The analyzer incorrectly reports the
     // result type as `num`.
@@ -284,7 +284,7 @@ String _negativeToString(int negSmi) {
   return result;
 }
 
-int intHashCode(int value) {
+int _intHashCode(int value) {
   const int magic = 0x2D51;
   int lower = (value & 0xFFFFFFFF) * magic;
   int upper = (value >>> 32) * magic;
