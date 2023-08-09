@@ -2271,6 +2271,7 @@ CompileTimeErrorCode:
     sharedName: COLLECTION_ELEMENT_FROM_DEFERRED_LIBRARY
     problemMessage: "Constant values from a deferred library can't be used as values in a 'const' constructor."
     correctionMessage: "Try removing the keyword 'const' from the constructor or removing the keyword 'deferred' from the import."
+    hasPublishedDocs: true
     comment: No parameters.
   CONST_CONSTRUCTOR_PARAM_TYPE_MISMATCH:
     problemMessage: "A value of type '{0}' can't be assigned to a parameter of type '{1}' in a const constructor."
@@ -5069,6 +5070,17 @@ CompileTimeErrorCode:
     comment: |-
       Parameters:
       0: the display string of the disallowed type
+  EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT:
+    problemMessage: "The extension type '{0}' has more than one distinct member named '{1}' from implemented types."
+    correctionMessage: Try redeclaring the corresponding member in this extension type.
+    comment: |-
+      Parameters:
+      0: the name of the extension type
+      1: the name of the conflicting member
+  EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF:
+    problemMessage: "The extension type representation can't depend on itself."
+    correctionMessage: Try specifying a different type.
+    comment: No parameters.
   EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER:
     sharedName: EXTERNAL_WITH_INITIALIZER
     problemMessage: External fields can't have initializers.
@@ -19411,7 +19423,7 @@ FfiCode:
       }
       ```
   SUBTYPE_OF_FFI_CLASS_IN_EXTENDS:
-    removed: 3.0
+    removedIn: "3.0"
     sharedName: SUBTYPE_OF_FFI_CLASS
     problemMessage: "The class '{0}' can't extend '{1}'."
     correctionMessage: "Try extending 'Struct' or 'Union'."
@@ -19462,7 +19474,7 @@ FfiCode:
       final class C {}
       ```
   SUBTYPE_OF_FFI_CLASS_IN_IMPLEMENTS:
-    removed: 3.0
+    removedIn: "3.0"
     sharedName: SUBTYPE_OF_FFI_CLASS
     problemMessage: "The class '{0}' can't implement '{1}'."
     correctionMessage: "Try implementing 'Allocator' or 'Finalizable'."
@@ -19472,7 +19484,7 @@ FfiCode:
       1: the name of the class being extended, implemented, or mixed in
     hasPublishedDocs: true
   SUBTYPE_OF_FFI_CLASS_IN_WITH:
-    removed: 3.0
+    removedIn: "3.0"
     sharedName: SUBTYPE_OF_FFI_CLASS
     problemMessage: "The class '{0}' can't mix in '{1}'."
     correctionMessage: "Try extending 'Struct' or 'Union'."

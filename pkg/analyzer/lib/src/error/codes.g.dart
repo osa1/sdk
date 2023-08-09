@@ -682,6 +682,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try removing the keyword 'const' from the constructor or removing the "
         "keyword 'deferred' from the import.",
+    hasPublishedDocs: true,
     uniqueName: 'CONST_CONSTRUCTOR_CONSTANT_FROM_DEFERRED_LIBRARY',
   );
 
@@ -1621,6 +1622,26 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     "Extension types can't implement '{0}'.",
     correctionMessage:
         "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the extension type
+  ///  1: the name of the conflicting member
+  static const CompileTimeErrorCode EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT',
+    "The extension type '{0}' has more than one distinct member named '{1}' "
+        "from implemented types.",
+    correctionMessage:
+        "Try redeclaring the corresponding member in this extension type.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF = CompileTimeErrorCode(
+    'EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF',
+    "The extension type representation can't depend on itself.",
+    correctionMessage: "Try specifying a different type.",
   );
 
   static const CompileTimeErrorCode EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER =
