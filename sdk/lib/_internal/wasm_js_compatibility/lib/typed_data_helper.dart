@@ -351,7 +351,8 @@ final class _UnmodifiableFloat64x2ListViewImpl
 ///
 /// It is a compile-time error for a class to attempt to extend or implement
 /// UnmodifiableFloat32ListView.
-final class _UnmodifiableFloat32ListViewImpl extends UnmodifiableListBase<double>
+final class _UnmodifiableFloat32ListViewImpl
+    extends UnmodifiableListBase<double>
     with _UnmodifiableListMixin<double, Float32List, Float32List>
     implements UnmodifiableFloat32ListView {
   final Float32List _list;
@@ -365,7 +366,8 @@ final class _UnmodifiableFloat32ListViewImpl extends UnmodifiableListBase<double
 ///
 /// It is a compile-time error for a class to attempt to extend or implement
 /// UnmodifiableFloat64ListView.
-final class _UnmodifiableFloat64ListViewImpl extends UnmodifiableListBase<double>
+final class _UnmodifiableFloat64ListViewImpl
+    extends UnmodifiableListBase<double>
     with _UnmodifiableListMixin<double, Float64List, Float64List>
     implements UnmodifiableFloat64ListView {
   final Float64List _list;

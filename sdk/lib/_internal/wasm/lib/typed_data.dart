@@ -1160,7 +1160,8 @@ class _I16ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Int16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     if (offsetInBytes % Int16List.bytesPerElement != 0) {
-      return _SlowI16List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowI16List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _I16List._withMutability(
           _data, offsetInBytes ~/ Int16List.bytesPerElement, length, _mutable);
@@ -1174,7 +1175,8 @@ class _I16ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Uint16List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     if (offsetInBytes % Uint16List.bytesPerElement != 0) {
-      return _SlowU16List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowU16List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _U16List._withMutability(
           _data, offsetInBytes ~/ Uint16List.bytesPerElement, length, _mutable);
@@ -1210,7 +1212,8 @@ class _I32ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Int32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     if (offsetInBytes % Uint32List.bytesPerElement != 0) {
-      return _SlowI32List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowI32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _I32List._withMutability(
           _data, offsetInBytes ~/ Int32List.bytesPerElement, length, _mutable);
@@ -1224,7 +1227,8 @@ class _I32ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Uint32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     if (offsetInBytes % Uint32List.bytesPerElement != 0) {
-      return _SlowU32List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowU32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _U32List._withMutability(
           _data, offsetInBytes ~/ Uint32List.bytesPerElement, length, _mutable);
@@ -1260,7 +1264,8 @@ class _I64ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Int64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     if (offsetInBytes % Int64List.bytesPerElement != 0) {
-      return _SlowI64List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowI64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _I64List._withMutability(
           _data, offsetInBytes ~/ Int64List.bytesPerElement, length, _mutable);
@@ -1274,7 +1279,8 @@ class _I64ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Uint64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     if (offsetInBytes % Int64List.bytesPerElement != 0) {
-      return _SlowU64List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowU64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _U64List._withMutability(
           _data, offsetInBytes ~/ Uint64List.bytesPerElement, length, _mutable);
@@ -1310,7 +1316,8 @@ class _F32ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Float32List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     if (offsetInBytes % Float32List.bytesPerElement != 0) {
-      return _SlowF32List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowF32List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _F32List._withMutability(_data,
           offsetInBytes ~/ Float32List.bytesPerElement, length, _mutable);
@@ -1346,7 +1353,8 @@ class _F64ByteBuffer extends _ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     if (offsetInBytes % Float64List.bytesPerElement != 0) {
-      return _SlowF64List._withMutability(this, offsetInBytes, length, _mutable);
+      return _SlowF64List._withMutability(
+          this, offsetInBytes, length, _mutable);
     } else {
       return _F64List._withMutability(
           _data, offsetInBytes ~/ Int64List.bytesPerElement, length, _mutable);
@@ -1364,7 +1372,8 @@ class _F64ByteBuffer extends _ByteBufferBase {
 class _UnmodifiableByteBuffer implements UnmodifiableByteBufferView {
   final _ByteBufferBase _buffer;
 
-  _UnmodifiableByteBuffer(_ByteBufferBase buffer) : _buffer = buffer._immutable();
+  _UnmodifiableByteBuffer(_ByteBufferBase buffer)
+      : _buffer = buffer._immutable();
 
   @override
   int get lengthInBytes => _buffer.lengthInBytes;
@@ -2390,8 +2399,8 @@ class _I8List extends _WasmI8ArrayBase
   _I8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
-  factory _I8List._withMutability(WasmIntArray<WasmI8> buffer, int offsetInBytes,
-          int length, bool mutable) =>
+  factory _I8List._withMutability(WasmIntArray<WasmI8> buffer,
+          int offsetInBytes, int length, bool mutable) =>
       mutable
           ? _I8List._(buffer, offsetInBytes, length)
           : _UnmodifiableI8List._(buffer, offsetInBytes, length);
@@ -2431,8 +2440,8 @@ class _U8List extends _WasmI8ArrayBase
   _U8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
-  factory _U8List._withMutability(WasmIntArray<WasmI8> buffer, int offsetInBytes,
-          int length, bool mutable) =>
+  factory _U8List._withMutability(WasmIntArray<WasmI8> buffer,
+          int offsetInBytes, int length, bool mutable) =>
       mutable
           ? _U8List._(buffer, offsetInBytes, length)
           : _UnmodifiableU8List._(buffer, offsetInBytes, length);
