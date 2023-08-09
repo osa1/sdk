@@ -11,8 +11,6 @@ mixin KernelNodes {
   Component get component;
 
   late final LibraryIndex index = LibraryIndex(component, [
-    "dart:_boxed_double",
-    "dart:_boxed_int",
     "dart:_internal",
     "dart:async",
     "dart:collection",
@@ -25,11 +23,10 @@ mixin KernelNodes {
 
   // dart:_boxed_double classes
   late final Class boxedDoubleClass =
-      index.getClass("dart:_boxed_double", "BoxedDouble");
+      index.getClass("dart:core", "BoxedDouble");
 
   // dart:_boxed_int classes
-  late final Class boxedIntClass =
-      index.getClass("dart:_boxed_int", "BoxedInt");
+  late final Class boxedIntClass = index.getClass("dart:core", "BoxedInt");
 
   // dart:_internal classes
   late final Class symbolClass = index.getClass("dart:_internal", "Symbol");
