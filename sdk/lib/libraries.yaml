@@ -134,8 +134,6 @@ wasm:
         - _internal/wasm/lib/weak_patch.dart
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
-        - _internal/wasm/lib/double_helper.dart
-        - _internal/wasm/lib/int_helper.dart
 
 wasm_stringref:
   include:
@@ -159,8 +157,6 @@ wasm_stringref:
         - _internal/wasm/lib/weak_patch.dart
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
-        - _internal/wasm/lib/double_helper.dart
-        - _internal/wasm/lib/int_helper.dart
 
 wasm_js_compatibility:
   include:
@@ -184,8 +180,6 @@ wasm_js_compatibility:
         - _internal/wasm/lib/weak_patch.dart
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
-        - _internal/wasm/lib/double_helper.dart
-        - _internal/wasm/lib/int_helper.dart
     typed_data:
       uri: typed_data/typed_data.dart
       patches:
@@ -213,8 +207,6 @@ wasm_common:
       patches:
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
-        - _internal/wasm/lib/double_helper.dart
-        - _internal/wasm/lib/int_helper.dart
     _http:
       uri: _http/http.dart
     _internal:

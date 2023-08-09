@@ -143,9 +143,7 @@
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
           "_internal/wasm/lib/boxed_double.dart",
-          "_internal/wasm/lib/boxed_int.dart",
-          "_internal/wasm/lib/double_helper.dart",
-          "_internal/wasm/lib/int_helper.dart"
+          "_internal/wasm/lib/boxed_int.dart"
         ]
       }
     }
@@ -174,9 +172,7 @@
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
           "_internal/wasm/lib/boxed_double.dart",
-          "_internal/wasm/lib/boxed_int.dart",
-          "_internal/wasm/lib/double_helper.dart",
-          "_internal/wasm/lib/int_helper.dart"
+          "_internal/wasm/lib/boxed_int.dart"
         ]
       }
     }
@@ -205,9 +201,7 @@
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
           "_internal/wasm/lib/boxed_double.dart",
-          "_internal/wasm/lib/boxed_int.dart",
-          "_internal/wasm/lib/double_helper.dart",
-          "_internal/wasm/lib/int_helper.dart"
+          "_internal/wasm/lib/boxed_int.dart"
         ]
       },
       "typed_data": {
@@ -245,9 +239,7 @@
         "uri": "core/core.dart",
         "patches": [
           "_internal/wasm/lib/boxed_double.dart",
-          "_internal/wasm/lib/boxed_int.dart",
-          "_internal/wasm/lib/double_helper.dart",
-          "_internal/wasm/lib/int_helper.dart"
+          "_internal/wasm/lib/boxed_int.dart"
         ]
       },
       "_http": {
