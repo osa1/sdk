@@ -89,7 +89,6 @@ class ListFactorySpecializer {
         _getConstantOptionalArgument(args, 'growable', false);
 
     if (growable == null) {
-      // TODO: Add `_ModifiableList` factory with growable argument.
       return node;
     }
 
