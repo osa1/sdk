@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library dart._double_helper;
-
 /// Wasm i64.trunc_sat_f64_s instruction
 external int toInt(double value);
 

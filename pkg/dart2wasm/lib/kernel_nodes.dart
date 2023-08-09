@@ -23,10 +23,10 @@ mixin KernelNodes {
 
   // dart:_boxed_double classes
   late final Class boxedDoubleClass =
-      index.getClass("dart:core", "BoxedDouble");
+      index.getClass("dart:core", "_BoxedDouble");
 
   // dart:_boxed_int classes
-  late final Class boxedIntClass = index.getClass("dart:core", "BoxedInt");
+  late final Class boxedIntClass = index.getClass("dart:core", "_BoxedInt");
 
   // dart:_internal classes
   late final Class symbolClass = index.getClass("dart:_internal", "Symbol");

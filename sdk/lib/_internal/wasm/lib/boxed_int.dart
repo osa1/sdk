@@ -2,21 +2,16 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library dart._boxed_int;
-
-import 'dart:_boxed_double';
-import 'dart:_double_helper' as double_helper;
-import 'dart:_int_helper' as int_helper;
 import 'dart:_internal' show unsafeCast;
 
 @pragma("wasm:entry-point")
-final class BoxedInt extends int {
+final class _BoxedInt extends int {
   // A boxed int contains an unboxed int.
   @pragma("wasm:entry-point")
   int value = 0;
 
   /// Dummy factory to silence error about missing superclass constructor.
-  external factory BoxedInt();
+  external factory _BoxedInt();
 
   external num operator +(num other);
   external num operator -(num other);
@@ -30,12 +25,12 @@ final class BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator ~/(num other) => other is int
       ? _truncDiv(this.value, other)
-      : BoxedDouble.truncDiv(toDouble(), unsafeCast<double>(other));
+      : _BoxedDouble.truncDiv(toDouble(), unsafeCast<double>(other));
 
   @pragma("wasm:prefer-inline")
   num operator %(num other) => other is int
       ? _modulo(this, other)
-      : BoxedDouble.modulo(toDouble(), unsafeCast<double>(other));
+      : _BoxedDouble.modulo(toDouble(), unsafeCast<double>(other));
 
   static int _modulo(int a, int b) {
     int rem = a - (a ~/ b) * b;
@@ -68,7 +63,7 @@ final class BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   num remainder(num other) => other is int
       ? this - (this ~/ other) * other
-      : BoxedDouble.computeRemainder(toDouble(), unsafeCast<double>(other));
+      : _BoxedDouble.computeRemainder(toDouble(), unsafeCast<double>(other));
 
   external int operator -();
 

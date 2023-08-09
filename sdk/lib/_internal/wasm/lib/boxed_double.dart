@@ -2,21 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library dart._boxed_double;
-
-import 'dart:_double_helper' as double_helper;
-import 'dart:_int_helper' as int_helper;
 import 'dart:_internal' show doubleToIntBits, intBitsToDouble;
 import 'dart:_js_helper' show JS;
 
 @pragma("wasm:entry-point")
-final class BoxedDouble extends double {
+final class _BoxedDouble extends double {
   // A boxed double contains an unboxed double.
   @pragma("wasm:entry-point")
   double value = 0.0;
 
   /// Dummy factory to silence error about missing superclass constructor.
-  external factory BoxedDouble();
+  external factory _BoxedDouble();
 
   static const int _mantissaBits = 52;
   static const int _exponentBits = 11;
