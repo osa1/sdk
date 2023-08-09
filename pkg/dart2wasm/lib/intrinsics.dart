@@ -46,6 +46,12 @@ class Intrinsifier {
         '<=': (b) => b.i64_le_s(),
         '>': (b) => b.i64_gt_s(),
         '>=': (b) => b.i64_ge_s(),
+        '_div_s': (b) => b.i64_div_s(),
+        '_shl': (b) => b.i64_shl(),
+        '_shr_s': (b) => b.i64_shr_s(),
+        '_shr_u': (b) => b.i64_shr_u(),
+        '_le_u': (b) => b.i64_le_u(),
+        '_lt_u': (b) => b.i64_lt_u(),
       }
     },
     doubleType: {
@@ -58,31 +64,10 @@ class Intrinsifier {
         '<=': (b) => b.f64_le(),
         '>': (b) => b.f64_gt(),
         '>=': (b) => b.f64_ge(),
+        '_copysign': (b) => b.f64_copysign(),
       }
     },
   };
-
-  /// Some Wasm intrinsics have no equivalent public member. Thus, these
-  /// intrinsics must be top level static members.
-  static final Map<w.ValueType, Map<w.ValueType, Map<String, CodeGenCallback>>>
-      privateBinaryOperatorMap = {
-    intType: {
-      intType: {
-        'div_s': (b) => b.i64_div_s(),
-        'shl': (b) => b.i64_shl(),
-        'shr_s': (b) => b.i64_shr_s(),
-        'shr_u': (b) => b.i64_shr_u(),
-        'le_u': (b) => b.i64_le_u(),
-        'lt_u': (b) => b.i64_lt_u(),
-      }
-    },
-    doubleType: {
-      doubleType: {
-        'copysign': (b) => b.f64_copysign(),
-      }
-    },
-  };
-
   static final Map<w.ValueType, Map<String, CodeGenCallback>> unaryOperatorMap =
       {
     intType: {
@@ -111,25 +96,17 @@ class Intrinsifier {
       'truncateToDouble': (b) {
         b.f64_trunc();
       },
-    },
-  };
-
-  /// See note on [privateBinaryOperatorMap].
-  static final Map<w.ValueType, Map<String, CodeGenCallback>>
-      privateUnaryOperatorMap = {
-    doubleType: {
-      'toInt': (b) {
+      '_toInt': (b) {
         b.i64_trunc_sat_f64_s();
       },
     },
   };
-
   static final Map<String, w.ValueType> unaryResultMap = {
     'toDouble': w.NumType.f64,
     'floorToDouble': w.NumType.f64,
     'ceilToDouble': w.NumType.f64,
     'truncateToDouble': w.NumType.f64,
-    'toInt': w.NumType.i64,
+    '_toInt': w.NumType.i64,
   };
 
   Translator get translator => codeGen.translator;
@@ -146,8 +123,8 @@ class Intrinsifier {
       op == '<=' ||
       op == '>' ||
       op == '>=' ||
-      op == 'le_u' ||
-      op == 'lt_u';
+      op == '_le_u' ||
+      op == '_lt_u';
 
   Intrinsifier(this.codeGen);
 
@@ -226,43 +203,6 @@ class Intrinsifier {
       return w.NumType.i64;
     }
 
-    return null;
-  }
-
-  w.ValueType? _generateUnaryIntrinsic(
-      String name,
-      Expression operand,
-      DartType operandType,
-      Map<w.ValueType, Map<String, CodeGenCallback>> operatorMap) {
-    w.ValueType opType = translator.translateType(operandType);
-    var code = operatorMap[opType]?[name];
-    if (code != null) {
-      codeGen.wrap(operand, opType);
-      code(b);
-      return unaryResultMap[name] ?? opType;
-    }
-    return null;
-  }
-
-  w.ValueType? _generateBinaryIntrinsic(
-      String name,
-      Expression left,
-      Expression right,
-      DartType leftDartType,
-      Map<w.ValueType, Map<w.ValueType, Map<String, CodeGenCallback>>>
-          operatorMap) {
-    DartType argType = dartTypeOf(right);
-    if (argType is VoidType) return null;
-    w.ValueType leftType = translator.translateType(leftDartType);
-    w.ValueType rightType = translator.translateType(argType);
-    var code = operatorMap[leftType]?[rightType]?[name];
-    if (code != null) {
-      w.ValueType outType = isComparison(name) ? w.NumType.i32 : leftType;
-      codeGen.wrap(left, leftType);
-      codeGen.wrap(right, rightType);
-      code(b);
-      return outType;
-    }
     return null;
   }
 
@@ -494,11 +434,31 @@ class Intrinsifier {
     }
 
     if (node.arguments.positional.length == 1) {
-      return _generateBinaryIntrinsic(node.name.text, node.receiver,
-          node.arguments.positional.single, receiverType, binaryOperatorMap);
+      // Binary operator
+      Expression left = node.receiver;
+      Expression right = node.arguments.positional.single;
+      DartType argType = dartTypeOf(right);
+      if (argType is VoidType) return null;
+      w.ValueType leftType = translator.translateType(receiverType);
+      w.ValueType rightType = translator.translateType(argType);
+      var code = binaryOperatorMap[leftType]?[rightType]?[name];
+      if (code != null) {
+        w.ValueType outType = isComparison(name) ? w.NumType.i32 : leftType;
+        codeGen.wrap(left, leftType);
+        codeGen.wrap(right, rightType);
+        code(b);
+        return outType;
+      }
     } else if (node.arguments.positional.isEmpty) {
-      return _generateUnaryIntrinsic(
-          node.name.text, node.receiver, receiverType, unaryOperatorMap);
+      // Unary operator
+      Expression operand = node.receiver;
+      w.ValueType opType = translator.translateType(receiverType);
+      var code = unaryOperatorMap[opType]?[name];
+      if (code != null) {
+        codeGen.wrap(operand, opType);
+        code(b);
+        return unaryResultMap[name] ?? opType;
+      }
     }
 
     return null;
@@ -547,18 +507,14 @@ class Intrinsifier {
     Member target = node.target;
 
     // ClassID getters
-    String? libAndClassName = translator.getPragma(target, "wasm:class-id");
-    if (libAndClassName != null) {
-      List<String> libAndClassNameParts = libAndClassName.split("#");
-      final String lib = libAndClassNameParts[0];
-      final String className = libAndClassNameParts[1];
+    String? className = translator.getPragma(target, "wasm:class-id");
+    if (className != null) {
+      List<String> libAndClass = className.split("#");
       Class cls = translator.libraries
-          .firstWhere((l) => l.name == lib && l.importUri.scheme == 'dart',
-              orElse: () => throw 'Library $lib not found (${target.location})')
+          .firstWhere(
+              (l) => l.name == libAndClass[0] && l.importUri.scheme == 'dart')
           .classes
-          .firstWhere((c) => c.name == className,
-              orElse: () => throw 'Class $className not found in library $lib '
-                  '(${target.location})');
+          .firstWhere((c) => c.name == libAndClass[1]);
       int classId = translator.classInfo[cls]!.classId;
       b.i64_const(classId);
       return w.NumType.i64;
@@ -643,26 +599,14 @@ class Intrinsifier {
             return w.NumType.i32;
           }
           break;
-        case "_getTypeRulesSupers":
-          return translator.types.makeTypeRulesSupers(b);
-        case "_getTypeRulesSubstitutions":
-          return translator.types.makeTypeRulesSubstitutions(b);
-        case "_getTypeNames":
-          return translator.types.makeTypeNames(b);
-      }
-    }
-
-    // dart:_object_helper static functions.
-    if (node.target.enclosingLibrary.name == 'dart._object_helper') {
-      switch (name) {
-        case "getHash":
+        case "_getHash":
           Expression arg = node.arguments.positional[0];
           w.ValueType objectType = translator.objectInfo.nonNullableType;
           codeGen.wrap(arg, objectType);
           b.struct_get(translator.objectInfo.struct, FieldIndex.identityHash);
           b.i64_extend_i32_u();
           return w.NumType.i64;
-        case "setHash":
+        case "_setHash":
           Expression arg = node.arguments.positional[0];
           Expression hash = node.arguments.positional[1];
           w.ValueType objectType = translator.objectInfo.nonNullableType;
@@ -671,24 +615,12 @@ class Intrinsifier {
           b.i32_wrap_i64();
           b.struct_set(translator.objectInfo.struct, FieldIndex.identityHash);
           return codeGen.voidMarker;
-      }
-    }
-
-    // dart:_double_helper and dart:_int_helper static functions.
-    if (node.target.enclosingLibrary.name == 'dart._double_helper' ||
-        node.target.enclosingLibrary.name == 'dart._int_helper') {
-      if (node.arguments.positional.length == 1) {
-        final operand = node.arguments.positional.single;
-        return _generateUnaryIntrinsic(node.name.text, operand,
-            dartTypeOf(operand), privateUnaryOperatorMap);
-      } else if (node.arguments.positional.length == 2) {
-        final left = node.arguments.positional[0];
-        return _generateBinaryIntrinsic(
-            node.name.text,
-            left,
-            node.arguments.positional[1],
-            dartTypeOf(left),
-            privateBinaryOperatorMap);
+        case "_getTypeRulesSupers":
+          return translator.types.makeTypeRulesSupers(b);
+        case "_getTypeRulesSubstitutions":
+          return translator.types.makeTypeRulesSubstitutions(b);
+        case "_getTypeNames":
+          return translator.types.makeTypeNames(b);
       }
     }
 
