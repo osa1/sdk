@@ -1556,6 +1556,9 @@ class ElementAnnotationImpl implements ElementAnnotation {
   /// protected.
   static const String _protectedVariableName = 'protected';
 
+  /// The name of the top-level variable used to mark a member as redeclaring.
+  static const String _redeclareVariableName = 'redeclare';
+
   /// The name of the top-level variable used to mark a class or mixin as being
   /// reopened.
   static const String _reopenVariableName = 'reopen';
@@ -1709,6 +1712,9 @@ class ElementAnnotationImpl implements ElementAnnotation {
 
   @override
   bool get isProxy => false;
+
+  @override
+  bool get isRedeclare => _isPackageMetaGetter(_redeclareVariableName);
 
   @override
   bool get isReopen => _isPackageMetaGetter(_reopenVariableName);
@@ -2967,8 +2973,13 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
   @override
   late final DartType typeErasure;
 
-  /// Whether the element has direct or indirect reference to itself.
-  bool hasSelfReference = false;
+  /// Whether the element has direct or indirect reference to itself,
+  /// in representation.
+  bool hasRepresentationSelfReference = false;
+
+  /// Whether the element has direct or indirect reference to itself,
+  /// in implemented superinterfaces.
+  bool hasImplementsSelfReference = false;
 
   ExtensionTypeElementImpl(super.name, super.nameOffset);
 

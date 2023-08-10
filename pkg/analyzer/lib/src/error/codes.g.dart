@@ -1308,6 +1308,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EMPTY_MAP_PATTERN',
     "A map pattern must have at least one entry.",
     correctionMessage: "Try replacing it with an object pattern 'Map()'.",
+    hasPublishedDocs: true,
   );
 
   static const CompileTimeErrorCode ENUM_CONSTANT_SAME_NAME_AS_ENCLOSING =
@@ -1598,6 +1599,23 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER',
+    "Extension type constructors can't declare super formal parameters.",
+    correctionMessage: "Try removing the super formal parameter declaration.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION = CompileTimeErrorCode(
+    'EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION',
+    "Extension type constructors can't include superinitializers.",
+    correctionMessage: "Try removing the superconstructor invocation.",
+  );
+
+  ///  No parameters.
   static const CompileTimeErrorCode EXTENSION_TYPE_DECLARES_INSTANCE_FIELD =
       CompileTimeErrorCode(
     'EXTENSION_TYPE_DECLARES_INSTANCE_FIELD',
@@ -1620,6 +1638,26 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
       CompileTimeErrorCode(
     'EXTENSION_TYPE_IMPLEMENTS_DISALLOWED_TYPE',
     "Extension types can't implement '{0}'.",
+    correctionMessage:
+        "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode EXTENSION_TYPE_IMPLEMENTS_ITSELF =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_ITSELF',
+    "The extension type can't implement itself.",
+    correctionMessage:
+        "Try removing the superinterface that references this extension type.",
+  );
+
+  ///  Parameters:
+  ///  0: the implemented not extension type
+  ///  1: the ultimate representation type
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE = CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE',
+    "'{0}' is not a supertype of '{1}', the ultimate representation type.",
     correctionMessage:
         "Try specifying a different type, or remove the type from the list.",
   );
@@ -3033,6 +3071,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try specifying the getter name explicitly, or using a variable "
         "pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -4493,6 +4532,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'REST_ELEMENT_IN_MAP_PATTERN',
     "A map pattern can't contain a rest pattern.",
     correctionMessage: "Try removing the rest pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -6587,6 +6627,7 @@ class WarningCode extends AnalyzerErrorCode {
     "The annotation 'visibleOutsideTemplate' can only be applied to a member "
         "of a class, enum, or mixin that is annotated with "
         "'visibleForTemplate'.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
