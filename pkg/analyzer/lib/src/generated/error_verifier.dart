@@ -707,10 +707,12 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
       _duplicateDefinitionVerifier.checkExtensionType(node, declarationElement);
       _checkForConflictingClassMembers();
+      _checkForConflictingGenerics(node);
       _constructorFieldsVerifier.enterExtensionType(node, declarationElement);
       _checkForNonCovariantTypeParameterPositionInRepresentationType(
           node, element);
       _checkForExtensionTypeRepresentationDependsOnItself(node, element);
+      _checkForExtensionTypeImplementsDeferred(node);
       _checkForExtensionTypeImplementsItself(node, element);
       _checkForExtensionTypeMemberConflicts(
         node: node,
@@ -2045,8 +2047,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
           name,
           inherited.enclosingElement.displayName,
         ]);
-      } else if (inherited is PropertyAccessorElement &&
-          _enclosingClass is! ExtensionTypeElement) {
+      } else if (inherited is PropertyAccessorElement) {
         errorReporter.reportErrorForElement(
             CompileTimeErrorCode.CONFLICTING_METHOD_AND_FIELD, method, [
           _enclosingClass!.displayName,
@@ -2073,8 +2074,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
           name,
           inherited.enclosingElement.displayName,
         ]);
-      } else if (inherited is MethodElement &&
-          _enclosingClass is! ExtensionTypeElement) {
+      } else if (inherited is MethodElement) {
         errorReporter.reportErrorForElement(
             CompileTimeErrorCode.CONFLICTING_FIELD_AND_METHOD, accessor, [
           _enclosingClass!.displayName,
@@ -2175,6 +2175,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
           CompileTimeErrorCode.CONFLICTING_GENERIC_INTERFACES,
           node.name,
           [
+            _enclosingClass!.kind.displayName,
             _enclosingClass!.name,
             error.first.getDisplayString(withNullability: true),
             error.second.getDisplayString(withNullability: true),
@@ -2912,6 +2913,22 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       errorReporter.reportErrorForToken(
         CompileTimeErrorCode.EXTENSION_TYPE_DECLARES_INSTANCE_FIELD,
         field.name,
+      );
+    }
+  }
+
+  void _checkForExtensionTypeImplementsDeferred(
+    ExtensionTypeDeclarationImpl node,
+  ) {
+    final clause = node.implementsClause;
+    if (clause == null) {
+      return;
+    }
+
+    for (final type in clause.interfaces) {
+      _checkForExtendsOrImplementsDeferredClass(
+        type,
+        CompileTimeErrorCode.IMPLEMENTS_DEFERRED_CLASS,
       );
     }
   }

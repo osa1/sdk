@@ -585,6 +585,11 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
 
     _setOrCreateMetadataElements(element, node.metadata);
 
+    _setOrCreateMetadataElements(
+      element.representation,
+      node.representation.fieldMetadata,
+    );
+
     _withElementWalker(ElementWalker.forExtensionType(element), () {
       _withNameScope(() {
         _buildTypeParameterElements(node.typeParameters);
@@ -1780,16 +1785,38 @@ class ResolutionVisitor extends RecursiveAstVisitor<void> {
       return;
     }
 
-    if (type.element is! ExtensionTypeElement) {
-      final erasure = declaredElement.typeErasure;
-      if (!typeSystem.isSubtypeOf(erasure, type)) {
-        _errorReporter.reportErrorForNode(
-          CompileTimeErrorCode
-              .EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE,
-          node,
-          [type, erasure],
-        );
+    // When `type` is an extension type.
+    if (type is InterfaceTypeImpl) {
+      final implementedRepresentation = type.representationType;
+      if (implementedRepresentation != null) {
+        final declaredRepresentation = declaredElement.representation.type;
+        if (!typeSystem.isSubtypeOf(
+          declaredRepresentation,
+          implementedRepresentation,
+        )) {
+          _errorReporter.reportErrorForNode(
+            CompileTimeErrorCode
+                .EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE,
+            node,
+            [
+              implementedRepresentation,
+              type.element.name,
+              declaredRepresentation,
+              declaredElement.name,
+            ],
+          );
+        }
+        return;
       }
+    }
+
+    final erasure = declaredElement.typeErasure;
+    if (!typeSystem.isSubtypeOf(erasure, type)) {
+      _errorReporter.reportErrorForNode(
+        CompileTimeErrorCode.EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE,
+        node,
+        [type, erasure],
+      );
     }
   }
 

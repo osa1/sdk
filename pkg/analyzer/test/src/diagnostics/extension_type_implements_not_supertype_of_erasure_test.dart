@@ -9,12 +9,12 @@ import '../dart/resolution/context_collection_resolution.dart';
 
 main() {
   defineReflectiveSuite(() {
-    defineReflectiveTests(ExtensionTypeImplementsDisallowedTypeTest);
+    defineReflectiveTests(ExtensionTypeImplementsNotSupertypeOfErasureTest);
   });
 }
 
 @reflectiveTest
-class ExtensionTypeImplementsDisallowedTypeTest
+class ExtensionTypeImplementsNotSupertypeOfErasureTest
     extends PubPackageResolutionTest {
   test_notSupertype() async {
     await assertErrorsInCode('''

@@ -521,13 +521,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  Parameters:
-  ///  0: the name of the class implementing the conflicting interface
-  ///  1: the first conflicting type
-  ///  2: the second conflicting type
+  ///  0: the name of the kind of the element implementing the conflicting interface
+  ///  1: the name of the element implementing the conflicting interface
+  ///  2: the first conflicting type
+  ///  3: the second conflicting type
   static const CompileTimeErrorCode CONFLICTING_GENERIC_INTERFACES =
       CompileTimeErrorCode(
     'CONFLICTING_GENERIC_INTERFACES',
-    "The class '{0}' can't implement both '{1}' and '{2}' because the type "
+    "The {0} '{1}' can't implement both '{2}' and '{3}' because the type "
         "arguments are different.",
     hasPublishedDocs: true,
   );
@@ -1658,6 +1659,21 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
       EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE = CompileTimeErrorCode(
     'EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE',
     "'{0}' is not a supertype of '{1}', the ultimate representation type.",
+    correctionMessage:
+        "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  Parameters:
+  ///  0: the representation type of the implemented extension type
+  ///  1: the name of the implemented extension type
+  ///  2: the representation type of the this extension type
+  ///  3: the name of the this extension type
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE',
+    "'{0}', the representation type of '{1}', is not a supertype of '{2}', the "
+        "representation type of '{3}'.",
     correctionMessage:
         "Try specifying a different type, or remove the type from the list.",
   );
