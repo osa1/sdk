@@ -394,6 +394,8 @@ CompileTimeErrorCode.CONST_EVAL_FOR_ELEMENT:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_METHOD_INVOCATION:
   status: needsEvaluation
+CompileTimeErrorCode.CONST_EVAL_PROPERTY_ACCESS:
+  status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION:
   status: noFix
 CompileTimeErrorCode.CONST_EVAL_THROWS_IDBZE:
@@ -457,10 +459,6 @@ CompileTimeErrorCode.CONTINUE_LABEL_INVALID:
   status: noFix
 CompileTimeErrorCode.COULD_NOT_INFER:
   status: noFix
-CompileTimeErrorCode.DEFAULT_LIST_CONSTRUCTOR:
-  status: noFix
-  notes: |-
-    Removed in Dart 3.0.
 CompileTimeErrorCode.DEFAULT_VALUE_IN_REDIRECTING_FACTORY_CONSTRUCTOR:
   status: needsFix
   notes: |-
@@ -3118,6 +3116,11 @@ ParserErrorCode.MULTIPLE_POSITIONAL_PARAMETER_GROUPS:
   status: needsFix
   notes: |-
     Merge the groups.
+ParserErrorCode.MULTIPLE_REPRESENTATION_FIELDS:
+  status: needsFix
+  notes: |-
+    Remove extra fields.
+    Maybe wrap into a record.
 ParserErrorCode.MULTIPLE_VARIABLES_IN_FOR_EACH:
   status: noFix
 ParserErrorCode.MULTIPLE_VARIANCE_MODIFIERS:
@@ -3203,6 +3206,9 @@ ParserErrorCode.REDIRECTION_IN_NON_FACTORY_CONSTRUCTOR:
   status: needsFix
   notes: |-
     Remove the redirection.
+ParserErrorCode.REPRESENTATION_FIELD_MODIFIER:
+  status: needsFix
+  notes: Remove it.
 ParserErrorCode.SEALED_ENUM:
   status: needsEvaluation
 ParserErrorCode.SEALED_MIXIN:
