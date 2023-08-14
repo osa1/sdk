@@ -559,27 +559,6 @@ class Intrinsifier {
     String name = node.name.text;
     Class? cls = node.target.enclosingClass;
 
-    if (node.target.enclosingLibrary.name == 'dart._object_helper') {
-      switch (name) {
-        case "getHash":
-          Expression arg = node.arguments.positional[0];
-          w.ValueType objectType = translator.objectInfo.nonNullableType;
-          codeGen.wrap(arg, objectType);
-          b.struct_get(translator.objectInfo.struct, FieldIndex.identityHash);
-          b.i64_extend_i32_u();
-          return w.NumType.i64;
-        case "setHash":
-          Expression arg = node.arguments.positional[0];
-          Expression hash = node.arguments.positional[1];
-          w.ValueType objectType = translator.objectInfo.nonNullableType;
-          codeGen.wrap(arg, objectType);
-          codeGen.wrap(hash, w.NumType.i64);
-          b.i32_wrap_i64();
-          b.struct_set(translator.objectInfo.struct, FieldIndex.identityHash);
-          return codeGen.voidMarker;
-      }
-    }
-
     // dart:core static functions
     if (node.target.enclosingLibrary == translator.coreTypes.coreLibrary) {
       switch (name) {
@@ -614,6 +593,28 @@ class Intrinsifier {
           return translator.types.makeTypeRulesSubstitutions(b);
         case "_getTypeNames":
           return translator.types.makeTypeNames(b);
+      }
+    }
+
+    // dart:_object_helper static functions.
+    if (node.target.enclosingLibrary.name == 'dart._object_helper') {
+      switch (name) {
+        case "getHash":
+          Expression arg = node.arguments.positional[0];
+          w.ValueType objectType = translator.objectInfo.nonNullableType;
+          codeGen.wrap(arg, objectType);
+          b.struct_get(translator.objectInfo.struct, FieldIndex.identityHash);
+          b.i64_extend_i32_u();
+          return w.NumType.i64;
+        case "setHash":
+          Expression arg = node.arguments.positional[0];
+          Expression hash = node.arguments.positional[1];
+          w.ValueType objectType = translator.objectInfo.nonNullableType;
+          codeGen.wrap(arg, objectType);
+          codeGen.wrap(hash, w.NumType.i64);
+          b.i32_wrap_i64();
+          b.struct_set(translator.objectInfo.struct, FieldIndex.identityHash);
+          return codeGen.voidMarker;
       }
     }
 
