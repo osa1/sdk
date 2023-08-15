@@ -980,9 +980,14 @@ class Context {
 
   int get thisFieldIndex {
     assert(containsThis);
+    if (parent != null) {
+      return 1;
+    }
+
     return 0;
   }
 
+  bool inConstructor = false;
   Context(this.owner, this.parent);
 }
 
@@ -1045,18 +1050,20 @@ class Closures {
   void buildContexts() {
     // Make struct definitions
     for (Context context in contexts.values) {
-      if (!context.isEmpty) {
+      if (!context.isEmpty || context.inConstructor) {
         context.struct = m.types.defineStruct("<context>");
       }
     }
 
     // Build object layouts
     for (Context context in contexts.values) {
-      if (!context.isEmpty) {
+      if (!context.isEmpty || context.inConstructor) {
         w.StructType struct = context.struct;
         if (context.parent != null) {
-          assert(!context.containsThis);
-          assert(!context.parent!.isEmpty);
+          // assert(!context.containsThis); // this no longer holds
+          assert(!context.parent!.isEmpty ||
+              context
+                  .parent!.inConstructor); // parent is empty or is constructor
           struct.fields.add(w.FieldType(
               w.RefType.def(context.parent!.struct, nullable: true)));
         }
@@ -1094,6 +1101,8 @@ class CaptureFinder extends RecursiveVisitor {
   Translator get translator => closures.translator;
 
   w.ModuleBuilder get m => translator.m;
+
+  bool inConstructor = false;
 
   @override
   void visitFunctionNode(FunctionNode node) {
@@ -1190,8 +1199,17 @@ class CaptureFinder extends RecursiveVisitor {
   }
 
   @override
+  void defaultInitializer(Initializer node) {
+    inConstructor = true;
+    super.defaultInitializer(node);
+    inConstructor = false;
+  }
+
+  @override
   void visitTypeParameterType(TypeParameterType node) {
-    if (node.parameter.parent != null &&
+    if (inConstructor) {
+      _visitVariableUse(node.parameter);
+    } else if (node.parameter.parent != null &&
         node.parameter.parent == member.enclosingClass) {
       _visitThis();
     } else if (node.parameter.parent is FunctionNode) {
@@ -1259,23 +1277,80 @@ class ContextCollector extends RecursiveVisitor {
     bool outerMost = currentContext == null;
     Context? oldContext = currentContext;
     Context? parent = currentContext;
-    while (parent != null && parent.isEmpty) {
+
+    while (parent != null && parent.isEmpty && !parent.inConstructor) {
       parent = parent.parent;
     }
+
     currentContext = Context(node, parent);
+
+    if (parent != null) {
+      currentContext!.inConstructor = parent.inConstructor;
+    }
+
     if (closures.isThisCaptured && outerMost) {
       currentContext!.containsThis = true;
     }
+
     closures.contexts[node] = currentContext!;
     node.visitChildren(this);
     currentContext = oldContext;
   }
 
+  void _newContextWithoutVisitingChildren(TreeNode node) {
+    bool outerMost = currentContext == null;
+    Context? parent = currentContext;
+
+    while (parent != null && parent.isEmpty && !parent.inConstructor) {
+      parent = parent.parent;
+    }
+
+    currentContext = Context(node, parent);
+
+    if (parent != null) {
+      currentContext!.inConstructor = parent.inConstructor;
+    }
+
+    if (closures.isThisCaptured &&
+        (outerMost || parent?.owner is Constructor)) {
+      currentContext!.containsThis = true;
+    }
+
+    closures.contexts[node] = currentContext!;
+  }
+
   @override
   void visitConstructor(Constructor node) {
-    node.function.accept(this);
-    currentContext = closures.contexts[node.function]!;
+    Context? parent = currentContext;
+    currentContext = Context(node, parent);
+
+    currentContext!.inConstructor = true;
+    closures.contexts[node] = currentContext!;
+
+    visitList(node.enclosingClass.typeParameters, this);
+
+    // visit the constructor arguments now so that captures are added to the constructor
+    // context
+    FunctionNode functionNode = node.function;
+    visitList(functionNode.typeParameters, this);
+    visitList(functionNode.positionalParameters, this);
+    visitList(functionNode.namedParameters, this);
     visitList(node.initializers, this);
+
+    // create context for function node and visit function node body
+    _newContextWithoutVisitingChildren(functionNode);
+    functionNode.returnType.accept(this);
+    functionNode.futureValueType?.accept(this);
+    functionNode.redirectingFactoryTarget?.target?.acceptReference(this);
+
+    if (functionNode.redirectingFactoryTarget?.typeArguments != null) {
+      visitList(functionNode.redirectingFactoryTarget!.typeArguments!, this);
+    }
+    functionNode.body?.accept(this);
+
+    assert(currentContext!.typeParameters.isEmpty);
+
+    currentContext = parent;
   }
 
   @override

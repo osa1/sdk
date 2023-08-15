@@ -92,6 +92,7 @@ class Translator with KernelNodes {
   final Set<Member> membersContainingInnerFunctions = {};
   final Set<Member> membersBeingGenerated = {};
   final List<_FunctionGenerator> _pendingFunctions = [];
+  // final Map<Reference, Closures> constructorClosures = {};
   late final Procedure mainFunction;
   late final w.ModuleBuilder m;
   late final w.FunctionBuilder initFunction;
@@ -282,6 +283,9 @@ class Translator with KernelNodes {
     m.exports.export("\$getMain", generateGetMain(mainFunction));
 
     functions.initialize();
+
+    Map<Reference, Closures> constructorClosures = {};
+
     while (!functions.isWorkListEmpty()) {
       Reference reference = functions.popWorkList();
       Member member = reference.asMember;
@@ -338,20 +342,56 @@ class Translator with KernelNodes {
         m.exports.export(canonicalName, function);
       }
 
-      final CodeGenerator codeGen = CodeGenerator.forFunction(
-          this, member.function, function as w.FunctionBuilder, reference);
-      codeGen.generate();
+      if (member is Constructor &&
+          !reference.isInitializerReference &&
+          !reference.isConstructorBodyReference) {
+        // TODO: refactor to not use codegen
+        // TODO: refactor to have constructorAllocator reference explicitly
+        final CodeGenerator codeGen =
+            CodeGenerator(this, function as w.FunctionBuilder, reference);
+        codeGen.generateConstructor(member);
+      } else {
+        Closures closures;
 
-      if (options.printWasm) {
-        print(codeGen.function.type);
-        print(codeGen.function.body.trace);
-      }
+        if (reference.isInitializerReference) {
+          // change the function nodes here
+          final CodeGenerator codeGen =
+              CodeGenerator(this, function as w.FunctionBuilder, reference);
+          closures = codeGen.generateInitializerList(reference);
+          constructorClosures[member.reference] = closures;
+        } else if (reference.isConstructorBodyReference) {
+          final CodeGenerator codeGen =
+              CodeGenerator(this, function as w.FunctionBuilder, reference);
+          codeGen.generateConstructorBody(
+              reference, constructorClosures[member.reference]!);
+          closures = codeGen.closures;
 
-      for (Lambda lambda in codeGen.closures.lambdas.values) {
-        w.BaseFunction lambdaFunction = CodeGenerator.forFunction(
-                this, lambda.functionNode, lambda.function, reference)
-            .generateLambda(lambda, codeGen.closures);
-        _printFunction(lambdaFunction, "$canonicalName (closure)");
+          for (Lambda lambda in closures.lambdas.values) {
+            w.BaseFunction lambdaFunction = CodeGenerator.forFunction(
+                    this, lambda.functionNode, lambda.function, reference)
+                .generateLambda(lambda, closures);
+            _printFunction(lambdaFunction, "$canonicalName (closure)");
+          }
+        } else {
+          final CodeGenerator codeGen = CodeGenerator.forFunction(
+              this, member.function, function as w.FunctionBuilder, reference);
+
+          codeGen.generate();
+          closures = codeGen.closures;
+
+          // TODO: refactor this
+          if (options.printWasm) {
+            print(codeGen.function.type);
+            print(codeGen.function.body.trace);
+          }
+
+          for (Lambda lambda in closures.lambdas.values) {
+            w.BaseFunction lambdaFunction = CodeGenerator.forFunction(
+                    this, lambda.functionNode, lambda.function, reference)
+                .generateLambda(lambda, closures);
+            _printFunction(lambdaFunction, "$canonicalName (closure)");
+          }
+        }
       }
 
       // Use an indexed loop to handle pending closure trampolines, since new

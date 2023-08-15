@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:dart2wasm/class_info.dart';
 import 'package:dart2wasm/dispatch_table.dart';
 import 'package:dart2wasm/reference_extensions.dart';
 import 'package:dart2wasm/translator.dart';
@@ -60,7 +61,7 @@ class FunctionCollector {
           // `WebAssembly.Function`.
           m.types.splitRecursionGroup();
           w.FunctionType ftype = _makeFunctionType(
-              translator, member.reference, member.function.returnType, null,
+              translator, member.reference, [member.function.returnType], null,
               isImportOrExport: true);
           m.types.splitRecursionGroup();
           _functions[member.reference] =
@@ -79,7 +80,7 @@ class FunctionCollector {
         // from GC types.
         m.types.splitRecursionGroup();
         _makeFunctionType(
-            translator, member.reference, member.function.returnType, null,
+            translator, member.reference, [member.function.returnType], null,
             isImportOrExport: true);
         m.types.splitRecursionGroup();
       }
@@ -103,7 +104,7 @@ class FunctionCollector {
         assert(!node.isInstanceMember);
         assert(!node.isGetter);
         w.FunctionType ftype = _makeFunctionType(
-            translator, target, node.function.returnType, null,
+            translator, target, [node.function.returnType], null,
             isImportOrExport: true);
         w.BaseFunction function = m.functions.define(ftype, "$node");
         _functions[target] = function;
@@ -156,6 +157,20 @@ class FunctionCollector {
           "${target.asMember} tear-off");
     }
 
+    if (target.isInitializerReference) {
+      Constructor constructor = target.asConstructor;
+      final ftype =
+          constructor.accept1(_FunctionTypeGenerator(translator), target);
+      return action(ftype, '${constructor} initializer function');
+    }
+
+    if (target.isConstructorBodyReference) {
+      Constructor constructor = target.asConstructor;
+      final ftype =
+          constructor.accept1(_FunctionTypeGenerator(translator), target);
+      return action(ftype, '${constructor} constructor body function');
+    }
+
     final ftype =
         target.asMember.accept1(_FunctionTypeGenerator(translator), target);
     return action(ftype, "${target.asMember}");
@@ -204,7 +219,7 @@ class _FunctionTypeGenerator extends MemberVisitor1<w.FunctionType, Reference> {
     if (!node.isInstanceMember) {
       if (target == node.fieldReference) {
         // Static field initializer function
-        return _makeFunctionType(translator, target, node.type, null);
+        return _makeFunctionType(translator, target, [node.type], null);
       }
       String kind = target == node.setterReference ? "setter" : "getter";
       throw "No implicit $kind function for static field: $node";
@@ -217,19 +232,140 @@ class _FunctionTypeGenerator extends MemberVisitor1<w.FunctionType, Reference> {
     assert(!node.isAbstract);
     return node.isInstanceMember
         ? translator.dispatchTable.selectorForTarget(node.reference).signature
-        : _makeFunctionType(translator, target, node.function.returnType, null);
+        : _makeFunctionType(
+            translator, target, [node.function.returnType], null);
+  }
+
+  List<w.ValueType> _getFieldTypes(ClassInfo info) {
+    final List<w.ValueType> fieldTypes = [];
+
+    int startIndex = 2;
+
+    if (info.isWasmCoreType(translator)) {
+      startIndex = 1;
+    }
+
+    for (var i = startIndex; i < info.struct.fields.length; i++) {
+      w.FieldType fieldType = info.struct.fields[i];
+      fieldTypes.add(fieldType.type.unpacked);
+    }
+
+    return fieldTypes;
   }
 
   @override
   w.FunctionType visitConstructor(Constructor node, Reference target) {
-    return _makeFunctionType(translator, target, VoidType(),
-        translator.classInfo[node.enclosingClass]!.nonNullableType);
+    if (!target.isInitializerReference && !target.isConstructorBodyReference) {
+      final List<w.ValueType> inputs =
+          _getInputTypes(translator, target, null, false);
+      return translator.m.types.defineFunction(inputs, [
+        translator.classInfo[node.enclosingClass]!.nonNullableType.unpacked
+      ]);
+    }
+
+    final ClassInfo info = translator.classInfo[node.enclosingClass]!;
+
+    // Get this classes' constructor argument types
+    List<w.ValueType> constructorArgs =
+        _getInputTypes(translator, target, null, false);
+
+    if (target.isConstructorBodyReference) {
+      // Nullable context reference for when the constructor has an initialized context
+      w.ValueType contextRef = w.RefType.struct(nullable: true);
+
+      List<w.ValueType> inputs = [
+            translator.classInfo[node.enclosingClass]!.nonNullableType.unpacked,
+            contextRef
+          ] +
+          constructorArgs;
+
+      for (Initializer initializer in node.initializers) {
+        if (initializer is SuperInitializer) {
+          Supertype? supertype =
+              (initializer.parent as Constructor).enclosingClass.supertype;
+
+          if (supertype != null) {
+            w.FunctionType superConstructorBodyType = translator.functions
+                .getFunctionType(initializer.target.constructorBodyReference);
+            inputs += superConstructorBodyType.inputs
+                .sublist(1); // ignores receiver param
+          }
+        } else if (initializer is RedirectingInitializer) {
+          Supertype? supertype =
+              (initializer.parent as Constructor).enclosingClass.supertype;
+          if (supertype == null) {
+            break;
+          }
+
+          w.FunctionType redirectedConstructorBodyType = translator.functions
+              .getFunctionType(initializer.target.constructorBodyReference);
+
+          inputs += redirectedConstructorBodyType.inputs
+              .sublist(1); // ignores receiver param
+        }
+      }
+
+      return translator.m.types.defineFunction(inputs, []);
+    }
+
+    // target.isInitializerReference
+
+    final List<w.ValueType> inputs =
+        _getInputTypes(translator, target, null, false);
+
+    List<w.ValueType> superOrRedirectedInitializerArgs = [];
+
+    for (Initializer initializer in node.initializers) {
+      if (initializer is SuperInitializer) {
+        Supertype? supertype =
+            (initializer.parent as Constructor).enclosingClass.supertype;
+        if (supertype == null) {
+          break;
+        }
+
+        ClassInfo superInfo = info.superInfo!;
+        w.FunctionType superInitializer = translator.functions
+            .getFunctionType(initializer.target.initializerReference);
+        final int numSuperClsFields = superInfo.isWasmCoreType(translator)
+            ? superInfo.struct.fields.length - 1
+            : superInfo.struct.fields.length - 2;
+
+        superOrRedirectedInitializerArgs = superInitializer.outputs
+            .sublist(0, superInitializer.outputs.length - numSuperClsFields);
+      } else if (initializer is RedirectingInitializer) {
+        Supertype? supertype =
+            (initializer.parent as Constructor).enclosingClass.supertype;
+        if (supertype == null) {
+          break;
+        }
+
+        w.FunctionType redirectedInitializer = translator.functions
+            .getFunctionType(initializer.target.initializerReference);
+        final int numClsFields = info.isWasmCoreType(translator)
+            ? info.struct.fields.length - 1
+            : info.struct.fields.length - 2;
+        superOrRedirectedInitializerArgs = redirectedInitializer.outputs
+            .sublist(0, redirectedInitializer.outputs.length - numClsFields);
+      }
+    }
+
+    // Get this classes's field types
+    final List<w.ValueType> fieldTypes = _getFieldTypes(info);
+
+    // Add nullable context reference for when the constructor has an initialized context
+    w.ValueType contextRef = w.RefType.struct(nullable: true);
+
+    final List<w.ValueType> outputs = superOrRedirectedInitializerArgs +
+        constructorArgs.reversed.toList() +
+        [contextRef] +
+        fieldTypes;
+
+    return translator.m.types.defineFunction(inputs, outputs);
   }
 }
 
-w.FunctionType _makeFunctionType(Translator translator, Reference target,
-    DartType returnType, w.ValueType? receiverType,
-    {bool isImportOrExport = false}) {
+List<w.ValueType> _getInputTypes(Translator translator, Reference target,
+    w.ValueType? receiverType, isImportOrExport) {
   Member member = target.asMember;
   int typeParamCount = 0;
   Iterable<DartType> params;
@@ -271,13 +407,31 @@ w.FunctionType _makeFunctionType(Translator translator, Reference target,
   inputs.addAll(typeParameters);
   inputs.addAll(params.map(translateType));
 
-  final bool emptyOutputList = member is Constructor ||
-      member is Procedure && member.isSetter ||
-      isImportOrExport && returnType is VoidType ||
-      returnType is InterfaceType &&
-          returnType.classNode == translator.wasmVoidClass;
-  final List<w.ValueType> outputs =
-      emptyOutputList ? const [] : [translateType(returnType)];
+  return inputs;
+}
+
+w.FunctionType _makeFunctionType(Translator translator, Reference target,
+    List<DartType> returnType, w.ValueType? receiverType,
+    {bool isImportOrExport = false}) {
+  Member member = target.asMember;
+  w.ValueType translateType(DartType type) => isImportOrExport
+      ? translator.translateExternalType(type)
+      : translator.translateType(type);
+
+  final List<w.ValueType> inputs =
+      _getInputTypes(translator, target, receiverType, isImportOrExport);
+
+  final bool emptyOutputList = member is Procedure && member.isSetter;
+
+  // TODO(jessicalally): clean this up with the changes to do with Constructor functions
+  final List<w.ValueType> outputs = emptyOutputList
+      ? const []
+      : returnType
+          .where((t) => !(t is VoidType &&
+                  (isImportOrExport || member is Constructor) ||
+              (t is InterfaceType && t.classNode == translator.wasmVoidClass)))
+          .map((t) => translateType(t))
+          .toList();
 
   return translator.m.types.defineFunction(inputs, outputs);
 }
