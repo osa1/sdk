@@ -268,3 +268,8 @@ extension DoubleToWasmFloat on double {
   WasmF32 toWasmF32() => WasmF32.fromDouble(this);
   WasmF64 toWasmF64() => WasmF64.fromDouble(this);
 }
+
+extension TruncateInt on int {
+  @pragma("wasm:prefer-inline")
+  int truncateInt32() => WasmI32.fromInt(this).toIntUnsigned();
+}

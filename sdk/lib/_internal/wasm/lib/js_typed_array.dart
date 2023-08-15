@@ -475,6 +475,13 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
         stop.toDouble());
     return JSInt32ArrayImpl(source);
   }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o[i] = v', toExternRef, index.toDouble(),
+        value.truncateInt32().toDouble());
+  }
 }
 
 final class JSInt32x4ArrayImpl
