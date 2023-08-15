@@ -1855,12 +1855,11 @@ mixin _TypedIntListMixin<SpawnedType extends List<int>> on _IntListMixin
         }
       }
 
-      // TODO(#52971): Use unchecked list access functions below.
       if (destBuffer == fromBuffer) {
-        final fromAsList = from as List<int>;
+        final fromAsList = unsafeCast<List<int>>(from);
         final tempBuffer = _createList(count);
         for (var i = 0; i < count; i++) {
-          tempBuffer[i] = fromAsList[skipCount + i];
+          tempBuffer._setUnchecked(i, fromAsList._getUnchecked(skipCount + i));
         }
         for (var i = start; i < end; i++) {
           this[i] = tempBuffer[i - start];

@@ -120,7 +120,7 @@ wasm:
       uri: core/core.dart
       patches:
         - _internal/wasm/lib/core_patch.dart
-        - _internal/vm_shared/lib/array_patch.dart
+        - _internal/wasm/lib/list_patch.dart
         - _internal/vm_shared/lib/bigint_patch.dart
         - _internal/vm_shared/lib/bool_patch.dart
         - _internal/vm_shared/lib/date_patch.dart
@@ -143,7 +143,7 @@ wasm_stringref:
       uri: core/core.dart
       patches:
         - _internal/wasm/lib/core_patch.dart
-        - _internal/vm_shared/lib/array_patch.dart
+        - _internal/wasm/lib/list_patch.dart
         - _internal/vm_shared/lib/bigint_patch.dart
         - _internal/vm_shared/lib/bool_patch.dart
         - _internal/vm_shared/lib/date_patch.dart
@@ -165,7 +165,7 @@ wasm_js_compatibility:
     core:
       uri: core/core.dart
       patches:
-        - _internal/vm_shared/lib/array_patch.dart
+        - _internal/wasm/lib/list_patch.dart
         - _internal/vm_shared/lib/bigint_patch.dart
         - _internal/vm_shared/lib/bool_patch.dart
         - _internal/vm_shared/lib/date_patch.dart

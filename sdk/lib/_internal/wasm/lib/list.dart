@@ -23,6 +23,11 @@ abstract class _ListBase<E> extends ListBase<E> {
 
   E operator [](int index) {
     IndexError.check(index, _length, indexable: this, name: "[]");
+    return _getUnchecked(index);
+  }
+
+  @pragma("wasm:prefer-inline")
+  E _getUnchecked(int index) {
     return unsafeCast(_data.read(index));
   }
 
@@ -58,6 +63,11 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
 
   void operator []=(int index, E value) {
     IndexError.check(index, _length, indexable: this, name: "[]=");
+    _setUnchecked(index, value);
+  }
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, E value) {
     _data.write(index, value);
   }
 
@@ -178,7 +188,7 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
   }
 }
 
@@ -190,7 +200,11 @@ class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
   }
 
   Iterator<E> get iterator {
-    return new _FixedSizeListIterator<E>(this);
+    return _FixedSizeListIterator<E>(this);
+  }
+
+  void _setUnchecked(int index, E element) {
+    throw UnsupportedError("Cannot change the length of an unmodifiable list");
   }
 }
 
