@@ -276,7 +276,6 @@ class ClassInfoCollector {
         LibraryIndex(translator.component, ["dart:_js_types"]);
     final neverMasquerades = [
       "JSStringImpl",
-      if (!translator.options.jsCompatibility) ...jsCompatibilityTypes,
     ]
         .map((name) => jsTypesLibraryIndex.tryGetClass("dart:_js_types", name))
         .toSet();
