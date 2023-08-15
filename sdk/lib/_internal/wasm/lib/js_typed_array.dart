@@ -75,9 +75,6 @@ final class JSArrayBufferImpl implements ByteBuffer {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBufferImpl && js.areEqualInJS(_ref, that._ref);
-
-  @override
-  int get hashCode => 0;
 }
 
 final class JSArrayBufferViewImpl implements TypedData {
@@ -108,9 +105,6 @@ final class JSArrayBufferViewImpl implements TypedData {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBufferViewImpl && js.areEqualInJS(_ref, that._ref);
-
-  @override
-  int get hashCode => 0;
 }
 
 final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
