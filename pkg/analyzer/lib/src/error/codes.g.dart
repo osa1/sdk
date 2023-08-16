@@ -1654,10 +1654,10 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   ///  Parameters:
   ///  0: the implemented not extension type
   ///  1: the ultimate representation type
-  static const CompileTimeErrorCode
-      EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE = CompileTimeErrorCode(
-    'EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE_OF_ERASURE',
-    "'{0}' is not a supertype of '{1}', the ultimate representation type.",
+  static const CompileTimeErrorCode EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE',
+    "'{0}' is not a supertype of '{1}', the representation type.",
     correctionMessage:
         "Try specifying a different type, or remove the type from the list.",
   );
@@ -4034,7 +4034,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   static const CompileTimeErrorCode OBSOLETE_COLON_FOR_DEFAULT_VALUE =
       CompileTimeErrorCode(
     'OBSOLETE_COLON_FOR_DEFAULT_VALUE',
-    "Using a colon as a separator before a default value is no longer "
+    "Using a colon as the separator before a default value is no longer "
         "supported.",
     correctionMessage: "Try replacing the colon with an equal sign.",
     hasPublishedDocs: true,
@@ -6923,6 +6923,18 @@ class WarningCode extends AnalyzerErrorCode {
         "comma.",
     correctionMessage: "Try adding a trailing comma.",
     hasPublishedDocs: true,
+  );
+
+  ///  An error code indicating the use of a redeclare annotation on a member that does not redeclare.
+  ///
+  ///  Parameters:
+  ///  0: the kind of member
+  static const WarningCode REDECLARE_ON_NON_REDECLARING_MEMBER = WarningCode(
+    'REDECLARE_ON_NON_REDECLARING_MEMBER',
+    "The {0} doesn't redeclare a {0} declared in a superinterface.",
+    correctionMessage:
+        "Try updating this member to match a declaration in a superinterface, "
+        "or removing the redeclare annotation.",
   );
 
   ///  An error code indicating use of a removed lint rule.
