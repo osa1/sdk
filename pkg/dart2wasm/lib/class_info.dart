@@ -173,6 +173,13 @@ class ClassInfo {
     assert(expectedIndex == null || expectedIndex == struct.fields.length);
     struct.fields.add(fieldType);
   }
+
+  // TODO: change name
+  bool isWasmCoreType(Translator translator) {
+    return this.cls == translator.boxedIntClass ||
+        this.cls == translator.boxedDoubleClass ||
+        this.cls == translator.boxedBoolClass;
+  }
 }
 
 ClassInfo upperBound(Set<ClassInfo> classes) {
