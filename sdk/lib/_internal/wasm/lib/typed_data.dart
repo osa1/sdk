@@ -3010,13 +3010,6 @@ class _SlowListBase {
 
   _SlowListBase(this.buffer, this.offsetInBytes, this.length)
       : _data = buffer.asByteData();
-
-  void _indexRangeCheck(int index) {
-    if (index < 0 || index >= length) {
-      throw IndexError.withLength(index, length,
-          indexable: this, name: "index");
-    }
-  }
 }
 
 class _SlowI8List extends _SlowListBase
@@ -3041,16 +3034,12 @@ class _SlowI8List extends _SlowListBase
   int get elementSizeInBytes => Int8List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getInt8(offsetInBytes + (index * elementSizeInBytes));
-  }
+  int operator [](int index) =>
+      _data.getInt8(offsetInBytes + (index * elementSizeInBytes));
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setInt8(offsetInBytes + (index), value);
-  }
+  void operator []=(int index, int value) =>
+      _data.setInt8(offsetInBytes + (index), value);
 }
 
 class _SlowU8List extends _SlowListBase
@@ -3075,16 +3064,12 @@ class _SlowU8List extends _SlowListBase
   int get elementSizeInBytes => Uint8List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
-  }
+  int operator [](int index) =>
+      _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setUint8(offsetInBytes + (index * elementSizeInBytes), value);
-  }
+  void operator []=(int index, int value) =>
+      _data.setUint8(offsetInBytes + (index * elementSizeInBytes), value);
 }
 
 class _SlowU8ClampedList extends _SlowListBase
@@ -3109,17 +3094,12 @@ class _SlowU8ClampedList extends _SlowListBase
   int get elementSizeInBytes => Uint8ClampedList.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
-  }
+  int operator [](int index) =>
+      _data.getUint8(offsetInBytes + (index * elementSizeInBytes));
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setUint8(
-        offsetInBytes + (index * elementSizeInBytes), value.clamp(0, 255));
-  }
+  void operator []=(int index, int value) => _data.setUint8(
+      offsetInBytes + (index * elementSizeInBytes), value.clamp(0, 255));
 }
 
 class _SlowI16List extends _SlowListBase
@@ -3144,18 +3124,12 @@ class _SlowI16List extends _SlowListBase
   int get elementSizeInBytes => Int16List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getInt16(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getInt16(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setInt16(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setInt16(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowU16List extends _SlowListBase
@@ -3180,18 +3154,12 @@ class _SlowU16List extends _SlowListBase
   int get elementSizeInBytes => Uint16List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getUint16(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getUint16(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setUint16(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setUint16(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowI32List extends _SlowListBase
@@ -3216,18 +3184,12 @@ class _SlowI32List extends _SlowListBase
   int get elementSizeInBytes => Int32List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getInt32(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getInt32(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setInt32(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setInt32(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowU32List extends _SlowListBase
@@ -3252,18 +3214,12 @@ class _SlowU32List extends _SlowListBase
   int get elementSizeInBytes => Uint32List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getUint32(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getUint32(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setUint32(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setUint32(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowI64List extends _SlowListBase
@@ -3288,18 +3244,12 @@ class _SlowI64List extends _SlowListBase
   int get elementSizeInBytes => Int64List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getInt64(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getInt64(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setInt64(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setInt64(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowU64List extends _SlowListBase
@@ -3324,18 +3274,12 @@ class _SlowU64List extends _SlowListBase
   int get elementSizeInBytes => Uint64List.bytesPerElement;
 
   @override
-  int operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getUint64(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  int operator [](int index) => _data.getUint64(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, int value) {
-    _indexRangeCheck(index);
-    _data.setUint64(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, int value) => _data.setUint64(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowF32List extends _SlowListBase
@@ -3360,18 +3304,12 @@ class _SlowF32List extends _SlowListBase
   int get elementSizeInBytes => Float32List.bytesPerElement;
 
   @override
-  double operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getFloat32(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  double operator [](int index) => _data.getFloat32(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, double value) {
-    _indexRangeCheck(index);
-    _data.setFloat32(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, double value) => _data.setFloat32(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 class _SlowF64List extends _SlowListBase
@@ -3396,18 +3334,12 @@ class _SlowF64List extends _SlowListBase
   int get elementSizeInBytes => Float64List.bytesPerElement;
 
   @override
-  double operator [](int index) {
-    _indexRangeCheck(index);
-    return _data.getFloat64(
-        offsetInBytes + (index * elementSizeInBytes), Endian.little);
-  }
+  double operator [](int index) => _data.getFloat64(
+      offsetInBytes + (index * elementSizeInBytes), Endian.little);
 
   @override
-  void operator []=(int index, double value) {
-    _indexRangeCheck(index);
-    _data.setFloat64(
-        offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
-  }
+  void operator []=(int index, double value) => _data.setFloat64(
+      offsetInBytes + (index * elementSizeInBytes), value, Endian.little);
 }
 
 //
