@@ -37,6 +37,7 @@ class List<E> {
       growable ? _GrowableList<E>.of(elements) : _List<E>.of(elements);
 
   @patch
+  @pragma("vm:prefer-inline")
   factory List.generate(int length, E generator(int index),
           {bool growable = true}) =>
       growable
