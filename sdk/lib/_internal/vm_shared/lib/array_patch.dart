@@ -13,6 +13,7 @@ class List<E> {
   }
 
   @patch
+  @pragma("vm:prefer-inline")
   factory List.filled(int length, E fill, {bool growable = false}) => growable
       ? _GrowableList<E>.filled(length, fill)
       : _List<E>.filled(length, fill);
@@ -33,6 +34,7 @@ class List<E> {
   }
 
   @patch
+  @pragma("vm:prefer-inline")
   factory List.of(Iterable<E> elements, {bool growable = true}) =>
       growable ? _GrowableList<E>.of(elements) : _List<E>.of(elements);
 
