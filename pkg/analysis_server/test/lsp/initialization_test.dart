@@ -416,8 +416,7 @@ class InitializationTest extends AbstractLspAnalysisServerTest {
             .any((ds) => ds.pattern == '**/analysis_options.yaml'),
         isTrue);
 
-    expect(rename,
-        equals(ServerCapabilitiesComputer.fileOperationRegistrationOptions));
+    expect(rename, equals(fileOperationRegistrationOptions));
   }
 
   Future<void> test_dynamicRegistration_notSupportedByClient() async {
@@ -463,7 +462,7 @@ class InitializationTest extends AbstractLspAnalysisServerTest {
     expect(initResult.capabilities.renameProvider, isNotNull);
     expect(initResult.capabilities.foldingRangeProvider, isNotNull);
     expect(initResult.capabilities.workspace!.fileOperations!.willRename,
-        equals(ServerCapabilitiesComputer.fileOperationRegistrationOptions));
+        equals(fileOperationRegistrationOptions));
     expect(initResult.capabilities.selectionRangeProvider, isNotNull);
     expect(initResult.capabilities.semanticTokensProvider, isNotNull);
 
@@ -855,6 +854,11 @@ class InitializationTest extends AbstractLspAnalysisServerTest {
     expect(server.contextManager.includedPaths, equals([projectFolderPath]));
   }
 
+  Future<void> test_initialize_rootUri_encodedDriveLetterColon() async {
+    await initialize(rootUri: withEncodedDriveLetterColon(projectFolderUri));
+    expect(server.contextManager.includedPaths, equals([projectFolderPath]));
+  }
+
   Future<void> test_initialize_rootUri_trailingSlash() async {
     await initialize(rootUri: withTrailingSlashUri(projectFolderUri));
     expect(server.contextManager.includedPaths, equals([projectFolderPath]));
@@ -862,6 +866,13 @@ class InitializationTest extends AbstractLspAnalysisServerTest {
 
   Future<void> test_initialize_workspaceFolders() async {
     await initialize(workspaceFolders: [projectFolderUri]);
+    expect(server.contextManager.includedPaths, equals([projectFolderPath]));
+  }
+
+  Future<void>
+      test_initialize_workspaceFolders_encodedDriveLetterColon() async {
+    await initialize(
+        workspaceFolders: [withEncodedDriveLetterColon(projectFolderUri)]);
     expect(server.contextManager.includedPaths, equals([projectFolderPath]));
   }
 

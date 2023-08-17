@@ -199,6 +199,23 @@ class FormalParameterBuilder extends ModifierBuilderImpl
         type.clone(newTypes, contextLibrary, contextDeclaration), name);
   }
 
+  FormalParameterBuilder forPrimaryConstructor(
+      SourceLibraryBuilder sourceLibraryBuilder) {
+    return new FormalParameterBuilder(
+        metadata,
+        kind,
+        modifiers | initializingFormalMask,
+        sourceLibraryBuilder.addInferableType(),
+        name,
+        null,
+        charOffset,
+        fileUri: fileUri,
+        isExtensionThis: isExtensionThis,
+        hasImmediatelyDeclaredInitializer: hasImmediatelyDeclaredInitializer)
+      ..parent = parent
+      ..variable = variable;
+  }
+
   FormalParameterBuilder forFormalParameterInitializerScope() {
     if (isInitializingFormal) {
       return new FormalParameterBuilder(

@@ -141,16 +141,16 @@ class DeclarationBuilderFromElement {
 
   FieldDeclarationImpl _fieldElement(FieldElement element) {
     assert(!_fieldMap.containsKey(element));
-    final enclosingClass = element.enclosingElement2 as ClassElement;
+    final enclosingClass = element.enclosingElement as ClassElement;
     return FieldDeclarationImpl(
       id: macro.RemoteInstance.uniqueId,
       identifier: identifier(element),
       library: library(element),
       // TODO: Provide metadata annotations.
       metadata: const [],
-      isExternal: element.isExternal,
-      isFinal: element.isFinal,
-      isLate: element.isLate,
+      hasExternal: element.isExternal,
+      hasFinal: element.isFinal,
+      hasLate: element.isLate,
       type: _dartType(element.type),
       definingType: identifier(enclosingClass),
       isStatic: element.isStatic,
@@ -374,9 +374,9 @@ class FieldDeclarationImpl extends macro.FieldDeclarationImpl {
     required super.identifier,
     required super.library,
     required super.metadata,
-    required super.isExternal,
-    required super.isFinal,
-    required super.isLate,
+    required super.hasExternal,
+    required super.hasFinal,
+    required super.hasLate,
     required super.type,
     required super.definingType,
     required super.isStatic,

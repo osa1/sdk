@@ -89,7 +89,7 @@ class FormalParameterScope extends EnclosedScope {
 
 /// The scope defined by an interface element.
 class InterfaceScope extends EnclosedScope {
-  InterfaceScope(super.parent, InterfaceElement element) {
+  InterfaceScope(super.parent, InstanceElement element) {
     final augmented = element.augmented;
     if (augmented != null) {
       augmented.accessors.forEach(_addPropertyAccessor);
@@ -134,6 +134,7 @@ class LibraryOrAugmentationScope extends EnclosedScope {
     compilationUnit.accessors.forEach(_addPropertyAccessor);
     compilationUnit.enums.forEach(_addGetter);
     compilationUnit.extensions.forEach(_addExtension);
+    compilationUnit.extensionTypes.forEach(_addGetter);
     compilationUnit.functions.forEach(_addGetter);
     compilationUnit.typeAliases.forEach(_addGetter);
     compilationUnit.mixins.forEach(_addGetter);

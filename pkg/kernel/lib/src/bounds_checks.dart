@@ -87,13 +87,6 @@ class OccurrenceCollectorVisitor implements DartTypeVisitor<void> {
   }
 
   @override
-  void visitInlineType(InlineType node) {
-    for (DartType argument in node.typeArguments) {
-      argument.accept(this);
-    }
-  }
-
-  @override
   void visitFutureOrType(FutureOrType node) {
     node.typeArgument.accept(this);
   }
@@ -349,6 +342,11 @@ List<TypeArgumentIssue> findTypeArgumentIssues(DartType type,
   } else if (type is TypedefType) {
     variables = type.typedefNode.typeParameters;
     arguments = type.typeArguments;
+  } else if (type is ExtensionType) {
+    variables = type.extensionTypeDeclaration.typeParameters;
+    arguments = type.typeArguments;
+    // Extension types are never allowed to be super-bounded.
+    allowSuperBounded = false;
   } else if (type is FunctionType) {
     List<TypeArgumentIssue> result = <TypeArgumentIssue>[];
 
@@ -379,6 +377,12 @@ List<TypeArgumentIssue> findTypeArgumentIssues(DartType type,
     variables = typeEnvironment.coreTypes.futureClass.typeParameters;
     arguments = <DartType>[type.typeArgument];
   } else {
+    assert(type is DynamicType ||
+        type is VoidType ||
+        type is IntersectionType ||
+        type is TypeParameterType ||
+        type is NeverType ||
+        type is NullType);
     return const <TypeArgumentIssue>[];
   }
 
@@ -786,22 +790,7 @@ class VarianceCalculator
       result = Variance.meet(
           result,
           Variance.combine(
-              node.extension.typeParameters[i].variance,
-              computeVariance(typeParameter, node.typeArguments[i],
-                  computedVariances: computedVariances)));
-    }
-    return result;
-  }
-
-  @override
-  int visitInlineType(InlineType node,
-      Map<TypeParameter, Map<DartType, int>> computedVariances) {
-    int result = Variance.unrelated;
-    for (int i = 0; i < node.typeArguments.length; ++i) {
-      result = Variance.meet(
-          result,
-          Variance.combine(
-              node.inlineClass.typeParameters[i].variance,
+              node.extensionTypeDeclaration.typeParameters[i].variance,
               computeVariance(typeParameter, node.typeArguments[i],
                   computedVariances: computedVariances)));
     }

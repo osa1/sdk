@@ -1646,7 +1646,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     if (getter != null) {
       fieldNode.element = getter;
       if (getter is PropertyAccessorElement) {
-        return getter.returnType2;
+        return getter.returnType;
       } else {
         return getter.type;
       }
@@ -1710,7 +1710,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     return RelationalOperatorResolution(
       kind: kind,
       parameterType: parameterType,
-      returnType: element.returnType2,
+      returnType: element.returnType,
     );
   }
 
@@ -1723,13 +1723,13 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         atDynamicTarget ? DynamicTypeImpl.instance : InvalidTypeImpl.instance;
     if (node is IndexExpression) {
       if (element is MethodElement) {
-        readType = element.returnType2;
+        readType = element.returnType;
       }
     } else if (node is PrefixedIdentifier ||
         node is PropertyAccess ||
         node is SimpleIdentifier) {
       if (element is PropertyAccessorElement && element.isGetter) {
-        readType = element.returnType2;
+        readType = element.returnType;
       } else if (element is VariableElement) {
         readType = localVariableTypeProvider.getType(node as SimpleIdentifier,
             isRead: true);
@@ -2552,6 +2552,21 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
   }
 
   @override
+  void visitExtensionTypeDeclaration(
+    covariant ExtensionTypeDeclarationImpl node,
+  ) {
+    final outerType = enclosingClass;
+    try {
+      enclosingClass = node.declaredElement;
+      checkUnreachableNode(node);
+      node.visitChildren(this);
+      elementResolver.visitExtensionTypeDeclaration(node);
+    } finally {
+      enclosingClass = outerType;
+    }
+  }
+
+  @override
   void visitFieldDeclaration(FieldDeclaration node) {
     _thisAccessTracker.enterFieldDeclaration(node);
     try {
@@ -2846,7 +2861,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     if (identical(targetType, NeverTypeImpl.instance)) {
       type = NeverTypeImpl.instance;
     } else if (element is MethodElement) {
-      type = element.returnType2;
+      type = element.returnType;
     } else if (targetType is DynamicType) {
       type = DynamicTypeImpl.instance;
     } else {
@@ -2959,7 +2974,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     flowAnalysis.executableDeclaration_enter(node, node.parameters,
         isClosure: false);
 
-    DartType returnType = node.declaredElement!.returnType2;
+    DartType returnType = node.declaredElement!.returnType;
 
     var outerFunction = _enclosingFunction;
     try {
@@ -3146,8 +3161,9 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     covariant PatternVariableDeclarationImpl node,
   ) {
     final patternSchema = analyzePatternVariableDeclaration(
-        node, node.pattern, node.expression,
-        isFinal: node.keyword.keyword == Keyword.FINAL);
+            node, node.pattern, node.expression,
+            isFinal: node.keyword.keyword == Keyword.FINAL)
+        .patternSchema;
     node.patternTypeSchema = patternSchema;
     popRewrite(); // expression
   }
@@ -3325,6 +3341,16 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         .resolveInvocation(rawType: node.staticElement?.type);
     checkForArgumentTypesNotAssignableInList(
         node.argumentList, whyNotPromotedList);
+  }
+
+  @override
+  void visitRepresentationConstructorName(RepresentationConstructorName node) {}
+
+  @override
+  void visitRepresentationDeclaration(RepresentationDeclaration node) {
+    checkUnreachableNode(node);
+    node.visitChildren(this);
+    elementResolver.visitRepresentationDeclaration(node);
   }
 
   @override
@@ -4019,7 +4045,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         var staticElement = nameNode.staticElement;
         if (staticElement != null) {
           name =
-              '${staticElement.returnType2.getDisplayString(withNullability: true)}.new';
+              '${staticElement.returnType.getDisplayString(withNullability: true)}.new';
         }
       }
     } else if (nameNode is SuperConstructorInvocation) {
@@ -4028,7 +4054,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         var staticElement = nameNode.staticElement;
         if (staticElement != null) {
           name =
-              '${staticElement.returnType2.getDisplayString(withNullability: true)}.new';
+              '${staticElement.returnType.getDisplayString(withNullability: true)}.new';
         }
       }
     } else if (nameNode is MethodInvocation) {
@@ -4473,6 +4499,32 @@ class ScopeResolverVisitor extends UnifyingAstVisitor<void> {
   void visitExtensionMembersInScope(ExtensionDeclaration node) {
     node.documentationComment?.accept(this);
     node.members.accept(this);
+  }
+
+  @override
+  void visitExtensionTypeDeclaration(
+    covariant ExtensionTypeDeclarationImpl node,
+  ) {
+    Scope outerScope = nameScope;
+    try {
+      final element = node.declaredElement!;
+      node.metadata.accept(this);
+
+      nameScope = TypeParameterScope(
+        nameScope,
+        element.typeParameters,
+      );
+      _setNodeNameScope(node, nameScope);
+      node.typeParameters?.accept(this);
+      node.representation.accept(this);
+      node.implementsClause?.accept(this);
+
+      nameScope = InterfaceScope(nameScope, element);
+      node.documentationComment?.accept(this);
+      node.members.accept(this);
+    } finally {
+      nameScope = outerScope;
+    }
   }
 
   @override

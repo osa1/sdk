@@ -15,6 +15,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
 import 'package:analyzer/error/error.dart';
+import 'package:analyzer/src/dart/constant/has_invalid_type.dart';
 import 'package:analyzer/src/dart/constant/has_type_parameter_reference.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/extensions.dart';
@@ -227,6 +228,10 @@ class DartObjectImpl implements DartObject, Constant {
   /// Return `true` if this object represents an object whose type is 'int'.
   bool get isInt => state.isInt;
 
+  /// Return `true` if this object represents an object whose type is an invalid
+  /// type.
+  bool get isInvalid => state.isInvalid || hasInvalidType(type);
+
   @override
   bool get isNull => state is NullState;
 
@@ -299,6 +304,11 @@ class DartObjectImpl implements DartObject, Constant {
 
     // If we don't know the type, we cannot prove that the cast will fail.
     if (resultType == null) {
+      return this;
+    }
+
+    // If any type is unresolved, we cannot prove that the cast will fail.
+    if (isInvalid || castType.isInvalid) {
       return this;
     }
 
@@ -1466,7 +1476,7 @@ class GenericState extends InstanceState {
     final type = _type;
     if (type is InterfaceType) {
       bool isFromDartCoreObject(ExecutableElement? element) {
-        final enclosing = element?.enclosingElement2;
+        final enclosing = element?.enclosingElement;
         return enclosing is ClassElement && enclosing.isDartCoreObject;
       }
 
@@ -1531,6 +1541,10 @@ abstract class InstanceState {
 
   /// Return `true` if this object represents an object whose type is 'int'.
   bool get isInt => false;
+
+  /// Return `true` if this object represents an object whose type is an invalid
+  /// type.
+  bool get isInvalid => false;
 
   /// Return `true` if this object represents the value 'null'.
   bool get isNull => false;
@@ -2339,14 +2353,20 @@ class InvalidConstant implements Constant {
   /// The error code that is reported at the location of the [node].
   final ErrorCode errorCode;
 
+  /// The arguments required to complete the message.
+  final List<Object>? arguments;
+
   /// Additional context messages for the error, including stack trace
   /// information if the error occurs within a constructor.
   final List<DiagnosticMessage> contextMessages;
 
-  InvalidConstant(this.node, this.errorCode) : contextMessages = [];
+  /// Return `true` if the constant evaluation encounters an unresolved
+  /// expression.
+  final bool isUnresolved;
 
-  InvalidConstant.withContextMessages(
-      this.node, this.errorCode, this.contextMessages);
+  InvalidConstant(this.node, this.errorCode,
+      {this.arguments, this.isUnresolved = false})
+      : contextMessages = [];
 }
 
 /// The state of an object representing a list.
@@ -2509,6 +2529,13 @@ class MapState extends InstanceState {
 class NullState extends InstanceState {
   /// An instance representing the boolean value 'null'.
   static NullState NULL_STATE = NullState();
+
+  @override
+  final bool isInvalid;
+
+  NullState({
+    this.isInvalid = false,
+  });
 
   @override
   int get hashCode => 0;

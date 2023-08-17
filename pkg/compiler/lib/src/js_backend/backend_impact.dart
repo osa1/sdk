@@ -110,6 +110,12 @@ class BackendImpacts {
     ],
   );
 
+  late final BackendImpact awaitExpression = BackendImpact(
+    staticUses: [
+      _commonElements.futureValueConstructor!,
+    ],
+  );
+
   late final BackendImpact asyncBody = BackendImpact(
     staticUses: [
       _commonElements.asyncHelperAwait,
@@ -389,7 +395,9 @@ class BackendImpacts {
       _commonElements.jsJavaScriptObjectClass,
       _commonElements.jsLegacyJavaScriptObjectClass,
       _commonElements.jsPlainJavaScriptObjectClass,
-      _commonElements.jsJavaScriptFunctionClass
+      _commonElements.jsJavaScriptBigIntClass,
+      _commonElements.jsJavaScriptFunctionClass,
+      _commonElements.jsJavaScriptSymbolClass
     ],
     features: EnumSet<BackendFeature>.fromValues([
       BackendFeature.needToInitializeDispatchProperty,
@@ -454,7 +462,9 @@ class BackendImpacts {
       _commonElements.jsJavaScriptObjectClass,
       _commonElements.jsLegacyJavaScriptObjectClass,
       _commonElements.jsPlainJavaScriptObjectClass,
-      _commonElements.jsJavaScriptFunctionClass
+      _commonElements.jsJavaScriptBigIntClass,
+      _commonElements.jsJavaScriptFunctionClass,
+      _commonElements.jsJavaScriptSymbolClass
     ],
   );
 

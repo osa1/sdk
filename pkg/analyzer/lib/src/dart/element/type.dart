@@ -656,6 +656,27 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
   @override
   String get name => element.name;
 
+  /// The instantiated representation type, if [element] is an extension type.
+  DartType? get representationType {
+    if (element case ExtensionTypeElement element) {
+      final substitution = Substitution.fromInterfaceType(this);
+      final representationType = element.representation.type;
+      return substitution.substituteType(representationType);
+    }
+    return null;
+  }
+
+  /// The instantiated representation type erasure, if [element] is an
+  /// extension type.
+  DartType? get representationTypeErasure {
+    if (element case ExtensionTypeElement element) {
+      final substitution = Substitution.fromInterfaceType(this);
+      final typeErasure = element.typeErasure;
+      return substitution.substituteType(typeErasure);
+    }
+    return null;
+  }
+
   @override
   InterfaceType? get superclass {
     var supertype = element.supertype;

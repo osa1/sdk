@@ -15,6 +15,7 @@ import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/summary2/default_types_builder.dart';
+import 'package:analyzer/src/summary2/extension_type.dart';
 import 'package:analyzer/src/summary2/link.dart';
 import 'package:analyzer/src/summary2/type_builder.dart';
 import 'package:analyzer/src/utilities/extensions/collection.dart';
@@ -30,6 +31,9 @@ bool _isInterfaceTypeClass(InterfaceType type) {
 /// Return `true` if [type] can be used as an interface or a mixin.
 bool _isInterfaceTypeInterface(InterfaceType type) {
   if (type.element is EnumElement) {
+    return false;
+  }
+  if (type.element is ExtensionTypeElement) {
     return false;
   }
   if (type.isDartCoreFunction || type.isDartCoreNull) {
@@ -98,6 +102,7 @@ class TypesBuilder {
       _declaration(declaration);
     }
 
+    buildExtensionTypes(_linker, nodes.declarations);
     _MixinsInference(_toInferMixins).perform();
   }
 
@@ -186,6 +191,8 @@ class TypesBuilder {
       _enumDeclaration(node);
     } else if (node is ExtensionDeclaration) {
       _extensionDeclaration(node);
+    } else if (node is ExtensionTypeDeclarationImpl) {
+      _extensionTypeDeclaration(node);
     } else if (node is FieldFormalParameter) {
       _fieldFormalParameter(node);
     } else if (node is FunctionDeclaration) {
@@ -255,6 +262,8 @@ class TypesBuilder {
     var element = node.declaredElement as ExtensionElementImpl;
     element.extendedType = node.extendedType.typeOrThrow;
   }
+
+  void _extensionTypeDeclaration(ExtensionTypeDeclarationImpl node) {}
 
   void _fieldFormalParameter(FieldFormalParameter node) {
     var element = node.declaredElement as FieldFormalParameterElementImpl;

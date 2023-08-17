@@ -40,6 +40,9 @@ main(args, message) async {
   await testNativeCallableUseAfterFree();
   await testNativeCallableNestedCloseCall();
   await testNativeCallableThrowInsideCallback();
+  await testNativeCallableDontKeepAlive();
+  testNativeCallableKeepAliveGetter();
+  await testNativeCallableClosure();
 
   // Message passing tests.
   globalVar = 1000;
@@ -71,7 +74,7 @@ void simpleFunction(int a, int b) {
   simpleFunctionResult.complete(a + b);
 }
 
-testNativeCallableHelloWorld() async {
+Future<void> testNativeCallableHelloWorld() async {
   final lib = NativeLibrary();
   final callback = NativeCallable<CallbackNativeType>.listener(simpleFunction);
 
@@ -92,7 +95,7 @@ testNativeCallableDoubleCloseError() {
   });
 }
 
-testNativeCallableUseAfterFree() async {
+Future<void> testNativeCallableUseAfterFree() async {
   final lib = NativeLibrary();
 
   final callback = NativeCallable<CallbackNativeType>.listener(simpleFunction);
@@ -114,7 +117,7 @@ void simpleFunctionAndCloseSelf(int a, int b) {
   simpleFunctionResult.complete(a + b);
 }
 
-testNativeCallableNestedCloseCall() async {
+Future<void> testNativeCallableNestedCloseCall() async {
   final lib = NativeLibrary();
   simpleFunctionAndCloseSelf_callable =
       NativeCallable<CallbackNativeType>.listener(simpleFunctionAndCloseSelf);
@@ -133,7 +136,7 @@ void simpleFunctionThrows(int a, int b) {
   throw a + b;
 }
 
-testNativeCallableThrowInsideCallback() async {
+Future<void> testNativeCallableThrowInsideCallback() async {
   final lib = NativeLibrary();
   var caughtError;
   late final callback;
@@ -149,6 +152,54 @@ testNativeCallableThrowInsideCallback() async {
   await Future.delayed(Duration(milliseconds: 100));
 
   Expect.equals(1123, caughtError);
+
+  callback.close();
+}
+
+Future<void> testNativeCallableDontKeepAlive() async {
+  final exitPort = ReceivePort();
+  await Isolate.spawn((_) async {
+    final lib = NativeLibrary();
+    final callback =
+        NativeCallable<CallbackNativeType>.listener(simpleFunction);
+
+    simpleFunctionResult = Completer<int>();
+    lib.callFunctionOnSameThread(1000, callback.nativeFunction);
+
+    Expect.equals(1123, await simpleFunctionResult.future);
+    callback.keepIsolateAlive = false;
+  }, null, onExit: exitPort.sendPort);
+  await exitPort.first;
+  exitPort.close();
+}
+
+testNativeCallableKeepAliveGetter() {
+  final callback = NativeCallable<CallbackNativeType>.listener(simpleFunction);
+  Expect.isTrue(callback.keepIsolateAlive);
+  callback.keepIsolateAlive = false;
+  Expect.isFalse(callback.keepIsolateAlive);
+  callback.keepIsolateAlive = true;
+  Expect.isTrue(callback.keepIsolateAlive);
+  callback.close();
+}
+
+Future<void> testNativeCallableClosure() async {
+  final lib = NativeLibrary();
+  int c = 70000;
+  void foo(int a, int b) {
+    simpleFunctionResult.complete(a + b + c);
+  }
+
+  final callback = NativeCallable<CallbackNativeType>.listener(foo);
+
+  simpleFunctionResult = Completer<int>();
+  lib.callFunctionOnSameThread(1000, callback.nativeFunction);
+  Expect.equals(71123, await simpleFunctionResult.future);
+
+  c = 80000;
+  simpleFunctionResult = Completer<int>();
+  lib.callFunctionOnSameThread(4000, callback.nativeFunction);
+  Expect.equals(84123, await simpleFunctionResult.future);
 
   callback.close();
 }
@@ -565,7 +616,6 @@ class IsolateA {
     instance = this;
     fnPtrsA = FnPtrs.fromCallbacks(callbacksA);
     atm.toIsoA = atm.toThis;
-    print("IsolateA fn ptr: ${fnPtrsA.addGlobalVarPtr.toRadixString(16)}");
   }
 
   Future<void> messageLoop() async {
@@ -634,7 +684,6 @@ class IsolateB {
     instance = this;
     fnPtrsB = FnPtrs.fromCallbacks(callbacksB);
     atm.toIsoB = atm.toThis;
-    print("IsolateB fn ptr: ${fnPtrsB.addGlobalVarPtr.toRadixString(16)}");
     sendPort.send(['sendPort', recvPort.sendPort]);
     sendPort.send(['testPort', atm.toThis]);
     sendPort.send(['fnPtrs', fnPtrsB.toList()]);

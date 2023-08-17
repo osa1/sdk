@@ -363,7 +363,7 @@ class _TypeRecipeVisitor extends DartTypeVisitor<String> {
   }
 
   @override
-  String visitInlineType(InlineType node) =>
+  String visitExtensionType(ExtensionType node) =>
       node.instantiatedRepresentationType.accept(this);
 
   @override
@@ -419,9 +419,6 @@ class _TypeRecipeVisitor extends DartTypeVisitor<String> {
   @override
   String visitNullType(NullType node) =>
       interfaceTypeRecipe(_coreTypes.deprecatedNullClass);
-
-  @override
-  String visitExtensionType(ExtensionType node) => defaultDartType(node);
 
   @override
   String visitIntersectionType(IntersectionType node) =>

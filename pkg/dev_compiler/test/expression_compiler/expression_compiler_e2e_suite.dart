@@ -10,239 +10,20 @@ import 'dart:math';
 import 'package:async/async.dart';
 import 'package:browser_launcher/browser_launcher.dart' as browser;
 import 'package:dev_compiler/src/compiler/module_builder.dart';
-import 'package:dev_compiler/src/compiler/shared_command.dart'
-    show SharedCompilerOptions;
-import 'package:dev_compiler/src/kernel/command.dart';
-import 'package:dev_compiler/src/kernel/compiler.dart' show ProgramCompiler;
-import 'package:dev_compiler/src/kernel/expression_compiler.dart'
-    show ExpressionCompiler;
-import 'package:dev_compiler/src/kernel/module_metadata.dart';
-import 'package:dev_compiler/src/kernel/target.dart' show DevCompilerTarget;
-import 'package:front_end/src/api_unstable/ddc.dart' as fe;
-import 'package:front_end/src/compute_platform_binaries_location.dart' as fe;
-import 'package:front_end/src/fasta/incremental_serializer.dart' as fe;
-import 'package:kernel/ast.dart' show Component, Library;
-import 'package:kernel/target/targets.dart';
 import 'package:path/path.dart' as p;
-import 'package:source_maps/source_maps.dart' as source_maps;
 import 'package:test/test.dart';
 import 'package:webkit_inspection_protocol/webkit_inspection_protocol.dart'
     as wip;
 
-class DevelopmentIncrementalCompiler extends fe.IncrementalCompiler {
-  Uri entryPoint;
+import '../shared_test_options.dart';
+import 'test_compiler.dart';
 
-  DevelopmentIncrementalCompiler(fe.CompilerOptions options, this.entryPoint,
-      [Uri? initializeFrom,
-      bool? outlineOnly,
-      fe.IncrementalSerializer? incrementalSerializer])
-      : super(
-            fe.CompilerContext(
-                fe.ProcessedOptions(options: options, inputs: [entryPoint])),
-            initializeFrom,
-            outlineOnly,
-            incrementalSerializer);
-
-  DevelopmentIncrementalCompiler.fromComponent(fe.CompilerOptions options,
-      this.entryPoint, Component componentToInitializeFrom,
-      [bool? outlineOnly, fe.IncrementalSerializer? incrementalSerializer])
-      : super.fromComponent(
-            fe.CompilerContext(
-                fe.ProcessedOptions(options: options, inputs: [entryPoint])),
-            componentToInitializeFrom,
-            outlineOnly,
-            incrementalSerializer);
-}
-
-class SetupCompilerOptions {
-  static final sdkRoot = fe.computePlatformBinariesLocation();
-  static final buildRoot =
-      fe.computePlatformBinariesLocation(forceBuildDir: true);
-  // Unsound .dill files are not longer in the released SDK so this file must be
-  // read from the build output directory.
-  static final sdkUnsoundSummaryPath =
-      buildRoot.resolve('ddc_outline_unsound.dill').toFilePath();
-  // Use the outline copied to the released SDK.
-  static final sdkSoundSummaryPath =
-      sdkRoot.resolve('ddc_outline.dill').toFilePath();
-  static final librariesSpecificationUri =
-      p.join(p.dirname(p.dirname(getSdkPath())), 'libraries.json');
-
-  final bool legacyCode;
-  final List<String> errors = [];
-  final List<String> diagnosticMessages = [];
-  final ModuleFormat moduleFormat;
-  final fe.CompilerOptions options;
-  final bool soundNullSafety;
-
-  static fe.CompilerOptions _getOptions(
-      {required bool enableAsserts, required bool soundNullSafety}) {
-    var options = fe.CompilerOptions()
-      ..verbose = false // set to true for debugging
-      ..sdkRoot = sdkRoot
-      ..target =
-          DevCompilerTarget(TargetFlags(soundNullSafety: soundNullSafety))
-      ..librariesSpecificationUri = p.toUri('sdk/lib/libraries.json')
-      ..omitPlatform = true
-      ..sdkSummary =
-          p.toUri(soundNullSafety ? sdkSoundSummaryPath : sdkUnsoundSummaryPath)
-      ..environmentDefines = addGeneratedVariables({},
-          // Disable asserts due to failures to load source and
-          // locations on kernel loaded from dill files in DDC.
-          // https://github.com/dart-lang/sdk/issues/43986
-          enableAsserts: false)
-      ..nnbdMode = soundNullSafety ? fe.NnbdMode.Strong : fe.NnbdMode.Weak;
-    return options;
-  }
-
-  SetupCompilerOptions(
-      {bool enableAsserts = true,
-      this.soundNullSafety = true,
-      this.legacyCode = false,
-      this.moduleFormat = ModuleFormat.amd})
-      : options = _getOptions(
-            soundNullSafety: soundNullSafety, enableAsserts: enableAsserts) {
-    options.onDiagnostic = (fe.DiagnosticMessage m) {
-      diagnosticMessages.addAll(m.plainTextFormatted);
-      if (m.severity == fe.Severity.error) {
-        errors.addAll(m.plainTextFormatted);
-      }
-    };
-  }
-}
-
-class TestCompilationResult {
-  final String? result;
-  final bool isSuccess;
-
-  TestCompilationResult(this.result, this.isSuccess);
-}
-
-class TestCompiler {
-  final SetupCompilerOptions setup;
-  final Component component;
-  final ExpressionCompiler evaluator;
-  final ModuleMetadata? metadata;
-  final source_maps.SingleMapping sourceMap;
-
-  TestCompiler._(this.setup, this.component, this.evaluator, this.metadata,
-      this.sourceMap);
-
-  static Future<TestCompiler> init(SetupCompilerOptions setup,
-      {required Uri input,
-      required Uri output,
-      Uri? packages,
-      Map<String, bool> experiments = const {}}) async {
-    // Initialize the incremental compiler and module component.
-    // TODO: extend this for multi-module compilations by storing separate
-    // compilers/components/names per module.
-    setup.options.packagesFileUri = packages;
-    setup.options.explicitExperimentalFlags.addAll(fe.parseExperimentalFlags(
-        experiments,
-        onError: (message) => throw Exception(message)));
-    var compiler = DevelopmentIncrementalCompiler(setup.options, input);
-    var compilerResult = await compiler.computeDelta();
-    var component = compilerResult.component;
-    component.computeCanonicalNames();
-    // Initialize DDC.
-    var moduleName = p.basenameWithoutExtension(output.toFilePath());
-
-    var classHierarchy = compilerResult.classHierarchy!;
-    var compilerOptions = SharedCompilerOptions(
-      replCompile: true,
-      moduleName: moduleName,
-      experiments: experiments,
-      soundNullSafety: setup.soundNullSafety,
-      emitDebugMetadata: true,
-      canaryFeatures: false,
-    );
-    var coreTypes = compilerResult.coreTypes;
-
-    final importToSummary = Map<Library, Component>.identity();
-    final summaryToModule = Map<Component, String>.identity();
-    for (var lib in component.libraries) {
-      importToSummary[lib] = component;
-    }
-    summaryToModule[component] = moduleName;
-
-    var kernel2jsCompiler = ProgramCompiler(component, classHierarchy,
-        compilerOptions, importToSummary, summaryToModule,
-        coreTypes: coreTypes);
-    var module = kernel2jsCompiler.emitModule(component);
-
-    // Perform a full compile, writing the compiled JS + sourcemap.
-    var code = jsProgramToCode(
-      module,
-      setup.moduleFormat,
-      inlineSourceMap: compilerOptions.inlineSourceMap,
-      buildSourceMap: compilerOptions.sourceMap,
-      emitDebugMetadata: compilerOptions.emitDebugMetadata,
-      emitDebugSymbols: compilerOptions.emitDebugSymbols,
-      jsUrl: '$output',
-      mapUrl: '$output.map',
-      compiler: kernel2jsCompiler,
-      component: component,
-    );
-    var codeBytes = utf8.encode(code.code);
-    var sourceMapBytes = utf8.encode(json.encode(code.sourceMap));
-
-    File(output.toFilePath()).writeAsBytesSync(codeBytes);
-    File('${output.toFilePath()}.map').writeAsBytesSync(sourceMapBytes);
-
-    // Save the expression evaluator for future evaluations.
-    var evaluator = ExpressionCompiler(
-      setup.options,
-      setup.moduleFormat,
-      setup.errors,
-      compiler,
-      kernel2jsCompiler,
-      component,
-    );
-
-    if (setup.errors.isNotEmpty) {
-      throw Exception('Compilation failed with: ${setup.errors}');
-    }
-    setup.diagnosticMessages.clear();
-
-    var sourceMap = source_maps.SingleMapping.fromJson(
-        code.sourceMap!.cast<String, dynamic>());
-    return TestCompiler._(
-        setup, component, evaluator, code.metadata, sourceMap);
-  }
-
-  Future<TestCompilationResult> compileExpression(
-      {required Uri input,
-      required int line,
-      required int column,
-      required Map<String, String> scope,
-      required String expression}) async {
-    var libraryUri = metadataForLibraryUri(input);
-    var jsExpression = await evaluator.compileExpressionToJs(
-        libraryUri.importUri, line, column, scope, expression);
-    if (setup.errors.isNotEmpty) {
-      jsExpression = setup.errors.toString().replaceAll(
-          RegExp(
-              r'org-dartlang-debug:synthetic_debug_expression:[0-9]*:[0-9]*:'),
-          '');
-
-      return TestCompilationResult(jsExpression, false);
-    }
-
-    return TestCompilationResult(jsExpression, true);
-  }
-
-  LibraryMetadata metadataForLibraryUri(Uri libraryUri) =>
-      metadata!.libraries.entries
-          .firstWhere((entry) => entry.value.fileUri == '$libraryUri')
-          .value;
-}
-
-class TestDriver {
+class ExpressionEvaluationTestDriver {
   final browser.Chrome chrome;
   final Directory chromeDir;
   final wip.WipConnection connection;
   final wip.WipDebugger debugger;
-  late TestCompiler compiler;
+  late TestExpressionCompiler compiler;
   late Uri htmlBootstrapper;
   late Uri input;
   late Uri output;
@@ -251,11 +32,13 @@ class TestDriver {
   late SetupCompilerOptions setup;
   late String source;
   late Directory testDir;
+  late String dartSdkPath;
 
-  TestDriver._(this.chrome, this.chromeDir, this.connection, this.debugger);
+  ExpressionEvaluationTestDriver._(
+      this.chrome, this.chromeDir, this.connection, this.debugger);
 
   /// Initializes a Chrome browser instance, tab connection, and debugger.
-  static Future<TestDriver> init() async {
+  static Future<ExpressionEvaluationTestDriver> init() async {
     // Create a temporary directory for holding Chrome tests.
     var chromeDir = Directory.systemTemp.createTempSync('ddc_eval_test_anchor');
 
@@ -299,7 +82,8 @@ class TestDriver {
     var debugger = connection.debugger;
     await debugger.enable().timeout(Duration(seconds: 5),
         onTimeout: (() => throw Exception('Unable to enable WIP debugger')));
-    return TestDriver._(chrome, chromeDir, connection, debugger);
+    return ExpressionEvaluationTestDriver._(
+        chrome, chromeDir, connection, debugger);
   }
 
   /// Must be called when testing a new Dart program.
@@ -344,7 +128,7 @@ class TestDriver {
       ''');
 
     // Initialize DDC and the incremental compiler, then perform a full compile.
-    compiler = await TestCompiler.init(setup,
+    compiler = await TestExpressionCompiler.init(setup,
         input: input,
         output: output,
         packages: packagesFile,
@@ -359,12 +143,14 @@ class TestDriver {
 
     switch (setup.moduleFormat) {
       case ModuleFormat.ddc:
-        var dartSdkPath = escaped(SetupCompilerOptions.buildRoot
+        dartSdkPath = escaped(SetupCompilerOptions.buildRoot
             .resolve(p.join(
                 'gen',
                 'utils',
-                'dartdevc',
-                setup.soundNullSafety ? 'sound' : 'kernel',
+                'ddc',
+                '${setup.canaryFeatures ? 'canary' : 'stable'}'
+                    '${setup.soundNullSafety ? '' : '_unsound'}',
+                'sdk',
                 'legacy',
                 'dart_sdk.js'))
             .toFilePath());
@@ -399,12 +185,21 @@ class TestDriver {
 ''');
         break;
       case ModuleFormat.amd:
-        var dartSdkPath = escaped(SetupCompilerOptions.buildRoot
-            .resolve(p.join('gen', 'utils', 'dartdevc',
-                setup.soundNullSafety ? 'sound' : 'kernel', 'amd', 'dart_sdk'))
+        var dartSdkPathNoExtension = escaped(SetupCompilerOptions.buildRoot
+            .resolve(p.join(
+                'gen',
+                'utils',
+                'ddc',
+                '${setup.canaryFeatures ? 'canary' : 'stable'}'
+                    '${setup.soundNullSafety ? '' : '_unsound'}',
+                'sdk',
+                'amd',
+                'dart_sdk'))
             .toFilePath());
-        if (!File('$dartSdkPath.js').existsSync()) {
-          throw Exception('Unable to find Dart SDK at $dartSdkPath.js');
+        dartSdkPath = '$dartSdkPathNoExtension.js';
+
+        if (!File(dartSdkPath).existsSync()) {
+          throw Exception('Unable to find Dart SDK at $dartSdkPath');
         }
         var requirePath = escaped(SetupCompilerOptions.buildRoot
             .resolve(
@@ -416,7 +211,7 @@ class TestDriver {
 <script>
   require.config({
     paths: {
-        'dart_sdk': '$dartSdkPath',
+        'dart_sdk': '$dartSdkPathNoExtension',
         '$moduleName': '$outputPath'
     },
     waitSeconds: 15
@@ -599,55 +394,168 @@ class TestDriver {
     });
   }
 
+  /// Evaluates a dart [expression] on a breakpoint.
+  ///
+  /// [breakpointId] is the ID of the breakpoint from the source.
+  Future<String> evaluateDartExpression({
+    required String breakpointId,
+    required String expression,
+  }) async {
+    var dartLine = _findBreakpointLine(breakpointId);
+    return await _onBreakpoint(breakpointId, onPause: (event) async {
+      var result = await _evaluateDartExpression(
+        event,
+        expression,
+        dartLine,
+      );
+      return await stringifyRemoteObject(result);
+    });
+  }
+
+  /// Evaluates a js [expression] on a breakpoint.
+  ///
+  /// [breakpointId] is the ID of the breakpoint from the source.
+  Future<String> evaluateJsExpression({
+    required String breakpointId,
+    required String expression,
+  }) async {
+    return await _onBreakpoint(breakpointId, onPause: (event) async {
+      var result = await _evaluateJsExpression(
+        event,
+        expression,
+      );
+      return await stringifyRemoteObject(result);
+    });
+  }
+
+  /// Evaluates a JavaScript [expression] on a breakpoint and validates result.
+  ///
+  /// [breakpointId] is the ID of the breakpoint from the source.
+  /// [expression] is a dart runtime method call, i.e.
+  /// `dart.getLibraryMetadata(uri)`;
+  /// [expectedResult] is the JSON for the returned remote object.
+  ///
+  /// Nested objects are not included in the result (they appear as `{}`),
+  /// only primitive values, lists or maps, etc.
+  ///
+  /// TODO(annagrin): Add recursive check for nested objects.
+  Future<void> checkRuntime({
+    required String breakpointId,
+    required String expression,
+    required dynamic expectedResult,
+  }) async {
+    return await _onBreakpoint(breakpointId, onPause: (event) async {
+      var actual = await _evaluateJsExpression(event, expression);
+      expect(actual.json, expectedResult);
+    });
+  }
+
+  /// Evaluates a dart [expression] on a breakpoint and validates result.
+  ///
+  /// [breakpointId] is the ID of the breakpoint from the source.
+  /// [expression] is a dart expression.
+  /// [expectedResult] is the JSON for the returned remote object.
+  /// [expectedError] is the error string if the error is expected.
   Future<void> check(
       {required String breakpointId,
       required String expression,
-      String? expectedError,
-      String? expectedResult}) async {
+      dynamic expectedError,
+      dynamic expectedResult}) async {
     assert(expectedError == null || expectedResult == null,
         'Cannot expect both an error and result.');
 
     var dartLine = _findBreakpointLine(breakpointId);
     return await _onBreakpoint(breakpointId, onPause: (event) async {
-      // Retrieve the call frame and its scope variables.
-      var frame = event.getCallFrames().first;
-      var scope = await _collectScopeVariables(frame);
+      var evalResult = await _evaluateDartExpression(
+        event,
+        expression,
+        dartLine,
+      );
 
-      // Perform an incremental compile.
-      var result = await compiler.compileExpression(
-          input: input,
-          line: dartLine,
-          column: 1,
-          scope: scope,
-          expression: expression);
-
-      if (expectedError != null) {
+      var error = evalResult.json['error'];
+      if (error != null) {
         expect(
-            result,
-            const TypeMatcher<TestCompilationResult>().having(
-                (_) => result.result, 'result', _matches(expectedError)));
-        setup.diagnosticMessages.clear();
-        setup.errors.clear();
-        return;
+          expectedError,
+          isNotNull,
+          reason: 'Unexpected expression evaluation failure:\n$error',
+        );
+        expect(error, _matches(expectedError!));
+      } else {
+        expect(
+          expectedResult,
+          isNotNull,
+          reason:
+              'Unexpected expression evaluation success:\n${evalResult.json}',
+        );
+        var actual = await stringifyRemoteObject(evalResult);
+        expect(actual, _matches(expectedResult!));
       }
-
-      if (!result.isSuccess) {
-        throw Exception(
-            'Unexpected expression evaluation failure:\n${result.result}');
-      }
-
-      // Evaluate the compiled expression.
-      var evalResult = await debugger.evaluateOnCallFrame(
-          frame.callFrameId, result.result!,
-          returnByValue: false);
-
-      var value = await stringifyRemoteObject(evalResult);
-
-      expect(
-          result,
-          const TypeMatcher<TestCompilationResult>()
-              .having((_) => value, 'result', _matches(expectedResult!)));
     });
+  }
+
+  Future<wip.RemoteObject> _evaluateJsExpression(
+    wip.DebuggerPausedEvent event,
+    String expression, {
+    bool returnByValue = true,
+  }) async {
+    var frame = event.getCallFrames().first;
+
+    var jsExpression = '''
+        (function () {
+          try {
+            var sdk = ${setup.loadModule}('dart_sdk');
+            var dart = sdk.dart;
+            var interceptors = sdk._interceptors;
+            return $expression;
+          } catch (error) {
+            return "Runtime API call failed: " + error.name +
+              ": " + error.message + ": " + error.stack;
+          }
+        })()
+      ''';
+
+    return await debugger.evaluateOnCallFrame(
+      frame.callFrameId,
+      jsExpression,
+      returnByValue: returnByValue,
+    );
+  }
+
+  Future<TestCompilationResult> _compileDartExpression(
+      wip.WipCallFrame frame, String expression, int dartLine) async {
+    // Retrieve the call frame and its scope variables.
+    var scope = await _collectScopeVariables(frame);
+
+    // Perform an incremental compile.
+    return await compiler.compileExpression(
+        input: input,
+        line: dartLine,
+        column: 1,
+        scope: scope,
+        expression: expression);
+  }
+
+  Future<wip.RemoteObject> _evaluateDartExpression(
+    wip.DebuggerPausedEvent event,
+    String expression,
+    int dartLine, {
+    bool returnByValue = false,
+  }) async {
+    var frame = event.getCallFrames().first;
+    var result = await _compileDartExpression(frame, expression, dartLine);
+
+    if (!result.isSuccess) {
+      setup.diagnosticMessages.clear();
+      setup.errors.clear();
+      return wip.RemoteObject({'error': result.result});
+    }
+
+    // Evaluate the compiled expression.
+    return await debugger.evaluateOnCallFrame(
+      frame.callFrameId,
+      result.result!,
+      returnByValue: returnByValue,
+    );
   }
 
   /// Generate simple string representation of a RemoteObject that closely
@@ -710,8 +618,11 @@ class TestDriver {
   }
 
   /// Used for matching error text emitted during expression evaluation.
-  Matcher _matches(String text) {
-    var unindented = RegExp.escape(text).replaceAll(RegExp('[ ]+'), '[ ]*');
+  Matcher _matches(dynamic matcher) {
+    if (matcher is Matcher) return matcher;
+    if (matcher is! String) throw StateError('Unexpected matcher: $matcher');
+
+    var unindented = RegExp.escape(matcher).replaceAll(RegExp('[ ]+'), '[ ]*');
     return matches(RegExp(unindented, multiLine: true));
   }
 

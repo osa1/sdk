@@ -9,6 +9,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/analysis/experiments.dart';
+import 'package:analyzer/src/dart/analysis/info_declaration_store.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/member.dart';
@@ -36,6 +37,7 @@ import 'package:pub_semver/pub_semver.dart';
 class BundleReader {
   final SummaryDataReader _reader;
   final Map<Uri, Uint8List> _unitsInformativeBytes;
+  final InfoDeclarationStore _infoDeclarationStore;
 
   final Map<Uri, LibraryReader> libraryMap = {};
 
@@ -43,8 +45,10 @@ class BundleReader {
     required LinkedElementFactory elementFactory,
     required Uint8List resolutionBytes,
     Map<Uri, Uint8List> unitsInformativeBytes = const {},
+    required InfoDeclarationStore infoDeclarationStore,
   })  : _reader = SummaryDataReader(resolutionBytes),
-        _unitsInformativeBytes = unitsInformativeBytes {
+        _unitsInformativeBytes = unitsInformativeBytes,
+        _infoDeclarationStore = infoDeclarationStore {
     _reader.offset = _reader.bytes.length - 4 * 4;
     var baseResolutionOffset = _reader.readUInt32();
     var librariesOffset = _reader.readUInt32();
@@ -79,6 +83,7 @@ class BundleReader {
         reference: reference,
         offset: libraryHeader.offset,
         classMembersLengths: libraryHeader.classMembersLengths,
+        infoDeclarationStore: _infoDeclarationStore,
       );
     }
   }
@@ -226,7 +231,7 @@ abstract class ElementLinkedData<E extends ElementImpl> {
     ResolutionReader reader,
     ElementImpl element,
   ) {
-    var enclosing = element.enclosingElement2;
+    var enclosing = element.enclosingElement;
     if (enclosing is InstanceElement) {
       reader._addTypeParameters(enclosing.typeParameters);
     } else if (enclosing is CompilationUnitElement) {
@@ -298,7 +303,7 @@ class EnumElementLinkedData extends ElementLinkedData<EnumElementImpl> {
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement2,
+      unitElement: element.enclosingElement,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.supertype = reader._readOptionalInterfaceType();
@@ -322,10 +327,33 @@ class ExtensionElementLinkedData
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement2,
+      unitElement: element.enclosingElement,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.extendedType = reader.readRequiredType();
+    applyConstantOffsets?.perform();
+  }
+}
+
+class ExtensionTypeElementLinkedData
+    extends ElementLinkedData<ExtensionTypeElementImpl> {
+  ApplyConstantOffsets? applyConstantOffsets;
+
+  ExtensionTypeElementLinkedData({
+    required Reference reference,
+    required LibraryReader libraryReader,
+    required CompilationUnitElementImpl unitElement,
+    required int offset,
+  }) : super(reference, libraryReader, unitElement, offset);
+
+  @override
+  void _read(element, reader) {
+    element.metadata = reader._readAnnotationList(
+      unitElement: element.enclosingElement,
+    );
+    _readTypeParameters(reader, element.typeParameters);
+    element.typeErasure = reader.readRequiredType();
+    element.interfaces = reader._readInterfaceTypeList();
     applyConstantOffsets?.perform();
   }
 }
@@ -490,6 +518,7 @@ class LibraryReader {
   final _ReferenceReader _referenceReader;
   final Reference _reference;
   final int _offset;
+  final InfoDeclarationStore _deserializedDataStore;
 
   final Uint32List _classMembersLengths;
   int _classMembersLengthsIndex = 0;
@@ -503,6 +532,7 @@ class LibraryReader {
     required Reference reference,
     required int offset,
     required Uint32List classMembersLengths,
+    required InfoDeclarationStore infoDeclarationStore,
   })  : _elementFactory = elementFactory,
         _reader = reader,
         _unitsInformativeBytes = unitsInformativeBytes,
@@ -510,7 +540,8 @@ class LibraryReader {
         _referenceReader = referenceReader,
         _reference = reference,
         _offset = offset,
-        _classMembersLengths = classMembersLengths;
+        _classMembersLengths = classMembersLengths,
+        _deserializedDataStore = infoDeclarationStore;
 
   LibraryElementImpl readElement({required Source librarySource}) {
     var analysisContext = _elementFactory.analysisContext;
@@ -567,7 +598,8 @@ class LibraryReader {
 
     _declareDartCoreDynamicNever();
 
-    InformativeDataApplier(_elementFactory, _unitsInformativeBytes)
+    InformativeDataApplier(
+            _elementFactory, _unitsInformativeBytes, _deserializedDataStore)
         .applyTo(libraryElement);
 
     _readPropertyAccessorAugmentations(accessorAugmentationsOffset);
@@ -695,7 +727,7 @@ class LibraryReader {
 
   List<ConstructorElementImpl> _readConstructors(
     CompilationUnitElementImpl unitElement,
-    NamedInstanceElementImpl classElement,
+    InterfaceElementImpl classElement,
     Reference classReference,
   ) {
     var containerRef = classReference.getChild('@constructor');
@@ -927,6 +959,52 @@ class LibraryReader {
   ) {
     unitElement.extensions = _reader.readTypedList(() {
       return _readExtensionElement(unitElement, unitReference);
+    });
+  }
+
+  ExtensionTypeElementImpl _readExtensionTypeElement(
+    CompilationUnitElementImpl unitElement,
+    Reference unitReference,
+  ) {
+    final resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
+    final name = _reader.readStringReference();
+    final containerRef = unitReference.getChild('@extensionType');
+    final reference = containerRef.getChild(name);
+
+    final element = ExtensionTypeElementImpl(name, -1);
+    element.setLinkedData(
+      reference,
+      ExtensionTypeElementLinkedData(
+        reference: reference,
+        libraryReader: this,
+        unitElement: unitElement,
+        offset: resolutionOffset,
+      ),
+    );
+    ExtensionTypeElementFlags.read(_reader, element);
+
+    element.typeParameters = _readTypeParameters();
+
+    final fields = <FieldElementImpl>[];
+    final accessors = <PropertyAccessorElementImpl>[];
+    _readFields(unitElement, element, reference, accessors, fields);
+    _readPropertyAccessors(
+        unitElement, element, reference, accessors, fields, '@field');
+    element.fields = fields;
+    element.accessors = accessors;
+
+    element.constructors = _readConstructors(unitElement, element, reference);
+    element.methods = _readMethods(unitElement, element, reference);
+
+    return element;
+  }
+
+  void _readExtensionTypes(
+    CompilationUnitElementImpl unitElement,
+    Reference unitReference,
+  ) {
+    unitElement.extensionTypes = _reader.readTypedList(() {
+      return _readExtensionTypeElement(unitElement, unitReference);
     });
   }
 
@@ -1546,6 +1624,7 @@ class LibraryReader {
     _readClasses(unitElement, unitReference);
     _readEnums(unitElement, unitReference);
     _readExtensions(unitElement, unitReference);
+    _readExtensionTypes(unitElement, unitReference);
     _readFunctions(unitElement, unitReference);
     _readMixins(unitElement, unitReference);
     _readTypeAliases(unitElement, unitReference);
@@ -1615,7 +1694,7 @@ class MixinElementLinkedData extends ElementLinkedData<MixinElementImpl> {
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement2,
+      unitElement: element.enclosingElement,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.superclassConstraints = reader._readInterfaceTypeList();
@@ -1730,7 +1809,7 @@ class ResolutionReader {
 
     if (memberFlags == Tag.MemberLegacyWithTypeArguments ||
         memberFlags == Tag.MemberWithTypeArguments) {
-      var enclosing = element.enclosingElement2 as TypeParameterizedElement;
+      var enclosing = element.enclosingElement as TypeParameterizedElement;
       var typeParameters = enclosing.typeParameters;
       var typeArguments = _readTypeList();
       var substitution = Substitution.fromPairs(typeParameters, typeArguments);

@@ -637,7 +637,7 @@ typedef DeoptIntInstr<DeoptInstr::kMint,
 template <DeoptInstr::Kind K,
           CatchEntryMove::SourceKind slot_kind,
           typename Type,
-          typename RawObjectType>
+          typename PtrType>
 class DeoptFpuInstr : public DeoptInstr {
  public:
   explicit DeoptFpuInstr(intptr_t source_index) : source_(source_index) {}
@@ -651,9 +651,8 @@ class DeoptFpuInstr : public DeoptInstr {
 
   void Execute(DeoptContext* deopt_context, intptr_t* dest_addr) {
     *dest_addr = Smi::RawValue(0);
-    deopt_context->DeferMaterialization(
-        source_.Value<Type>(deopt_context),
-        reinterpret_cast<RawObjectType*>(dest_addr));
+    deopt_context->DeferMaterialization(source_.Value<Type>(deopt_context),
+                                        reinterpret_cast<PtrType*>(dest_addr));
   }
 
   CatchEntryMove ToCatchEntryMove(DeoptContext* deopt_context,
@@ -875,9 +874,6 @@ uword DeoptInstr::GetRetAddress(DeoptInstr* instr,
   ASSERT(instr->kind() == kRetAddress);
   DeoptRetAddressInstr* ret_address_instr =
       static_cast<DeoptRetAddressInstr*>(instr);
-  // The following assert may trigger when displaying a backtrace
-  // from the simulator.
-  ASSERT(DeoptId::IsDeoptAfter(ret_address_instr->deopt_id()));
   ASSERT(!object_table.IsNull());
   Thread* thread = Thread::Current();
   Zone* zone = thread->zone();

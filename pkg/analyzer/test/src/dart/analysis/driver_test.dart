@@ -11,6 +11,7 @@ import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/context/packages.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart';
+import 'package:analyzer/src/dart/analysis/info_declaration_store.dart';
 import 'package:analyzer/src/dart/analysis/performance_logger.dart';
 import 'package:analyzer/src/dart/analysis/status.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
@@ -310,6 +311,7 @@ part 'a.dart';
 @reflectiveTest
 class AnalysisDriverSchedulerTest with ResourceProviderMixin {
   final ByteStore byteStore = MemoryByteStore();
+  final InfoDeclarationStore infoDeclarationStore = InfoDeclarationStoreImpl();
 
   final StringBuffer logBuffer = StringBuffer();
   late final PerformanceLog logger;
@@ -327,6 +329,7 @@ class AnalysisDriverSchedulerTest with ResourceProviderMixin {
       logger: logger,
       resourceProvider: resourceProvider,
       byteStore: byteStore,
+      infoDeclarationStore: infoDeclarationStore,
       sourceFactory: SourceFactory(
         [DartUriResolver(sdk), ResourceUriResolver(resourceProvider)],
       ),
@@ -3723,7 +3726,7 @@ var v = 0
   void _assertClassMethodReturnType(CompilationUnit unit, String className,
       String fieldName, String expected) {
     var node = _getClassMethod(unit, className, fieldName);
-    var type = node.declaredElement!.returnType2;
+    var type = node.declaredElement!.returnType;
     assertType(type, expected);
   }
 

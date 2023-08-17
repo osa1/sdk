@@ -54,6 +54,8 @@ class AnnotationVerifier {
       _checkNonVirtual(node);
     } else if (element.isReopen) {
       _checkReopen(node);
+    } else if (element.isRedeclare) {
+      _checkRedeclare(node);
     } else if (element.isSealed) {
       _checkSealed(node);
     } else if (element.isUseResult) {
@@ -150,7 +152,7 @@ class AnnotationVerifier {
         }
       }
     } else if (parent is ConstructorDeclaration) {
-      var class_ = parent.declaredElement!.enclosingElement2;
+      var class_ = parent.declaredElement!.enclosingElement;
       if (class_.isPrivate || parentElementIsPrivate) {
         _errorReporter.reportErrorForNode(
             WarningCode.INVALID_INTERNAL_ANNOTATION, node, []);
@@ -171,7 +173,7 @@ class AnnotationVerifier {
         var invokedElement = element.element!;
         var name = invokedElement.name;
         if (invokedElement is ConstructorElement) {
-          var className = invokedElement.enclosingElement2.name;
+          var className = invokedElement.enclosingElement.name;
           if (name!.isEmpty) {
             name = className;
           } else {
@@ -251,6 +253,20 @@ class AnnotationVerifier {
     } else {
       _errorReporter.reportErrorForNode(
           WarningCode.INVALID_NON_VIRTUAL_ANNOTATION, node);
+    }
+  }
+
+  /// Reports a warning if [parent] is not a valid target for a
+  /// `@redeclare` annotation.
+  void _checkRedeclare(Annotation node) {
+    var parent = node.parent;
+    if (parent.parent is! ExtensionTypeDeclaration ||
+        parent is MethodDeclaration && parent.isStatic) {
+      _errorReporter.reportErrorForNode(
+        WarningCode.INVALID_ANNOTATION_TARGET,
+        node,
+        [node.name.name, 'instance members of extension types'],
+      );
     }
   }
 

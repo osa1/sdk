@@ -1,12 +1,9 @@
 @JS()
 library static_interop;
-
 import 'dart:js_interop';
-
 @JS()
 @staticInterop
 class A {}
-
 @JS()
 inline class B {
   external A field;
@@ -14,14 +11,13 @@ inline class B {
   external B(A a);
   external B.named(int i);
   external B get getter;
-  external T genericMethod<T>(T t);
+  external T genericMethod<T extends B>(T t);
   external static A staticField;
   external static A staticMethod();
   external static B get staticGetter;
-  external static T staticGenericMethod<T>(T t);
+  external static T staticGenericMethod<T extends B>(T t);
   external static void set staticSetter(B b);
   external void set setter(B b);
   final A a;
 }
-
 void method(A a) {}

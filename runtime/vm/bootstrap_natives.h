@@ -59,6 +59,7 @@ namespace dart {
   V(RawReceivePort_get_id, 1)                                                  \
   V(RawReceivePort_closeInternal, 1)                                           \
   V(RawReceivePort_setActive, 2)                                               \
+  V(RawReceivePort_getActive, 1)                                               \
   V(SendPort_get_id, 1)                                                        \
   V(SendPort_get_hashcode, 1)                                                  \
   V(SendPort_sendInternal_, 2)                                                 \
@@ -68,7 +69,8 @@ namespace dart {
   V(Mint_bitNegate, 1)                                                         \
   V(Mint_bitLength, 1)                                                         \
   V(Developer_debugger, 2)                                                     \
-  V(Developer_getIsolateIDFromSendPort, 1)                                     \
+  V(Developer_getIsolateIdFromSendPort, 1)                                     \
+  V(Developer_getObjectId, 1)                                                  \
   V(Developer_getServerInfo, 1)                                                \
   V(Developer_getServiceMajorVersion, 0)                                       \
   V(Developer_getServiceMinorVersion, 0)                                       \

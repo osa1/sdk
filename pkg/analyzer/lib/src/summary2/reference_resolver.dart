@@ -163,6 +163,28 @@ class ReferenceResolver extends ThrowingAstVisitor<void> {
   }
 
   @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    var outerScope = scope;
+
+    var element = node.declaredElement as ExtensionTypeElementImpl;
+
+    scope = TypeParameterScope(scope, element.typeParameters);
+
+    node.typeParameters?.accept(this);
+    node.representation.accept(this);
+    node.implementsClause?.accept(this);
+
+    scope = InterfaceScope(scope, element);
+    LinkingNodeContext(node, scope);
+    LinkingNodeContext(node.representation, scope);
+
+    node.members.accept(this);
+    nodesToBuildType.addDeclaration(node);
+
+    scope = outerScope;
+  }
+
+  @override
   void visitFieldDeclaration(FieldDeclaration node) {
     node.fields.accept(this);
   }
@@ -411,6 +433,11 @@ class ReferenceResolver extends ThrowingAstVisitor<void> {
     RecordTypeAnnotationPositionalField node,
   ) {
     node.type.accept(this);
+  }
+
+  @override
+  void visitRepresentationDeclaration(RepresentationDeclaration node) {
+    node.fieldType.accept(this);
   }
 
   @override

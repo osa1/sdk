@@ -2481,11 +2481,10 @@ class FlowModel<Type extends Object> {
     return newModel ?? this;
   }
 
-  /// Makes a copy of `this` that can be safely edited.  Optional argument
-  /// [reachable] may be used to specify a different reachability.
-  FlowModel<Type> _clone({Reachability? reachable}) {
-    return new FlowModel<Type>.withInfo(reachable ?? this.reachable,
-        new Map<int, VariableModel<Type>>.of(variableInfo));
+  /// Makes a copy of `this` that can be safely edited.
+  FlowModel<Type> _clone() {
+    return new FlowModel<Type>.withInfo(
+        reachable, new Map<int, VariableModel<Type>>.of(variableInfo));
   }
 
   /// Common algorithm for [tryMarkNonNullable], [tryPromoteForTypeCast],
@@ -2528,8 +2527,7 @@ class FlowModel<Type extends Object> {
                 assigned: info.assigned,
                 unassigned: info.unassigned,
                 ssaNode: info.ssaNode,
-                nonPromotionHistory: info.nonPromotionHistory),
-            reachable: reachable);
+                nonPromotionHistory: info.nonPromotionHistory));
   }
 
   /// Gets the info for [promotionKey] reference, creating it if it doesn't
@@ -2540,9 +2538,8 @@ class FlowModel<Type extends Object> {
   /// Returns a new [FlowModel] where the information for [reference] is
   /// replaced with [model].
   FlowModel<Type> _updateVariableInfo(
-      int promotionKey, VariableModel<Type> model,
-      {Reachability? reachable}) {
-    return _clone(reachable: reachable)..variableInfo[promotionKey] = model;
+      int promotionKey, VariableModel<Type> model) {
+    return _clone()..variableInfo[promotionKey] = model;
   }
 
   /// Forms a new state to reflect a control flow path that might have come from
@@ -2555,7 +2552,7 @@ class FlowModel<Type extends Object> {
   /// promoted to one type in one state and a subtype in the other state, the
   /// less specific type promotion is kept.
   static FlowModel<Type> join<Type extends Object>(
-    TypeOperations<Type> typeOperations,
+    FlowModelHelper<Type> helper,
     FlowModel<Type>? first,
     FlowModel<Type>? second,
   ) {
@@ -2575,7 +2572,7 @@ class FlowModel<Type extends Object> {
     Reachability newReachable =
         Reachability.join(first.reachable, second.reachable);
     Map<int, VariableModel<Type>> newVariableInfo = FlowModel.joinVariableInfo(
-        typeOperations, first.variableInfo, second.variableInfo);
+        helper, first.variableInfo, second.variableInfo);
 
     return FlowModel._identicalOrNew(
         first, second, newReachable, newVariableInfo);
@@ -2584,7 +2581,7 @@ class FlowModel<Type extends Object> {
   /// Joins two "variable info" maps.  See [join] for details.
   @visibleForTesting
   static Map<int, VariableModel<Type>> joinVariableInfo<Type extends Object>(
-    TypeOperations<Type> typeOperations,
+    FlowModelHelper<Type> helper,
     Map<int, VariableModel<Type>> first,
     Map<int, VariableModel<Type>> second,
   ) {
@@ -2594,7 +2591,8 @@ class FlowModel<Type extends Object> {
     }
 
     // TODO(jensj): How often is this empty?
-    Map<int, VariableModel<Type>> result = <int, VariableModel<Type>>{};
+    Map<int, VariableModel<Type>> newVariableInfo =
+        <int, VariableModel<Type>>{};
     bool alwaysFirst = true;
     bool alwaysSecond = true;
     for (MapEntry<int, VariableModel<Type>> entry in first.entries) {
@@ -2603,24 +2601,24 @@ class FlowModel<Type extends Object> {
       if (secondModel == null) {
         alwaysFirst = false;
       } else {
-        VariableModel<Type> joined =
-            VariableModel.join<Type>(typeOperations, entry.value, secondModel);
-        result[promotionKey] = joined;
+        VariableModel<Type> joined = VariableModel.join<Type>(
+            helper, entry.value, first, secondModel, second, newVariableInfo);
+        newVariableInfo[promotionKey] = joined;
         if (!identical(joined, entry.value)) alwaysFirst = false;
         if (!identical(joined, secondModel)) alwaysSecond = false;
       }
     }
 
     if (alwaysFirst) return first;
-    if (alwaysSecond && result.length == second.length) return second;
-    if (result.isEmpty) return const {};
-    return result;
+    if (alwaysSecond && newVariableInfo.length == second.length) return second;
+    if (newVariableInfo.isEmpty) return const {};
+    return newVariableInfo;
   }
 
   /// Models the result of joining the flow models [first] and [second] at the
   /// merge of two control flow paths.
   static FlowModel<Type> merge<Type extends Object>(
-    TypeOperations<Type> typeOperations,
+    FlowModelHelper<Type> helper,
     FlowModel<Type>? first,
     FlowModel<Type>? second,
   ) {
@@ -2640,7 +2638,7 @@ class FlowModel<Type extends Object> {
     Reachability newReachable =
         Reachability.join(first.reachable, second.reachable).unsplit();
     Map<int, VariableModel<Type>> newVariableInfo = FlowModel.joinVariableInfo(
-        typeOperations, first.variableInfo, second.variableInfo);
+        helper, first.variableInfo, second.variableInfo);
 
     return FlowModel._identicalOrNew(
         first, second, newReachable, newVariableInfo);
@@ -2983,16 +2981,26 @@ class SsaNode<Type extends Object> {
   @visibleForTesting
   final ExpressionInfo<Type>? expressionInfo;
 
-  /// Map containing the set of properties of the value tracked by this SSA node
-  /// for the purpose of type promotion. Keys are the names of the properties.
-  ///
-  /// Note that all property accesses are tracked, regardless of whether they
-  /// are promotable, so that if an error occurs due to the absence of type
-  /// promotion, it will be possible to generate a message explaining to the
-  /// user why type promotion failed.
-  final Map<String, _PropertySsaNode<Type>> _properties = {};
+  /// Map containing the set of promotable properties of the value tracked by
+  /// this SSA node. Keys are the names of the properties.
+  final Map<String, _PropertySsaNode<Type>> _promotableProperties;
 
-  SsaNode(this.expressionInfo);
+  /// Map containing the set of non-promotable properties of the value tracked
+  /// by this SSA node. These are tracked even though they're not promotable, so
+  /// that if an error occurs due to the absence of type promotion, it will be
+  /// possible to generate a message explaining to the user why type promotion
+  /// failed.
+  final Map<String, _PropertySsaNode<Type>> _nonPromotableProperties;
+
+  SsaNode(ExpressionInfo<Type>? expressionInfo)
+      : this.withProperties(expressionInfo,
+            promotableProperties: {}, nonPromotableProperties: {});
+
+  SsaNode.withProperties(this.expressionInfo,
+      {required Map<String, _PropertySsaNode<Type>> promotableProperties,
+      required Map<String, _PropertySsaNode<Type>> nonPromotableProperties})
+      : _promotableProperties = promotableProperties,
+        _nonPromotableProperties = nonPromotableProperties;
 
   /// Gets an SSA node representing the property named [propertyName] of the
   /// value represented by `this`, creating it if necessary.
@@ -3001,14 +3009,121 @@ class SsaNode<Type extends Object> {
   /// [promotionKeyStore], so that type promotions for it can be tracked
   /// separately from other type promotions.
   _PropertySsaNode<Type> getProperty(
-          String propertyName, PromotionKeyStore<Object> promotionKeyStore) =>
-      _properties[propertyName] ??=
+      String propertyName, PromotionKeyStore<Object> promotionKeyStore,
+      {required bool isPromotable}) {
+    if (isPromotable) {
+      // The property is promotable, meaning it is known to produce the same (or
+      // equivalent) value every time it is queried. So we only create an SSA
+      // node if the property hasn't been accessed before; otherwise we return
+      // the old SSA node unchanged.
+      return _promotableProperties[propertyName] ??=
           new _PropertySsaNode(promotionKeyStore.makeTemporaryKey());
+    } else {
+      // The property isn't promotable, meaning it is not known to produce the
+      // same (or equivalent) value every time it is queried. So we create a
+      // fresh SSA node for every access; but we record the previous SSA node in
+      // `_PropertySsaNode.previousSsaNode` so that the "why not promoted" logic
+      // can figure out what promotions *would* have occurred if the field had
+      // been promotable.
+      _PropertySsaNode<Type>? previousSsaNode =
+          _nonPromotableProperties[propertyName];
+      return _nonPromotableProperties[propertyName] = new _PropertySsaNode(
+          promotionKeyStore.makeTemporaryKey(),
+          previousSsaNode: previousSsaNode);
+    }
+  }
 
   @override
   String toString() {
     int id = _debugIds[this] ??= _nextDebugId++;
     return 'ssa$id';
+  }
+
+  /// Joins the promotion information for two SSA nodes, [first] and [second].
+  ///
+  /// Since SSA nodes store information about properties, and properties may
+  /// themselves be promoted, the caller must supply the variable info maps for
+  /// the two flow control paths being joined ([firstVariableInfo] and
+  /// [secondVariableInfo]), as well as the variable map being built for the
+  /// join point ([newVariableInfo]).
+  static SsaNode<Type> _join<Type extends Object>(
+      FlowModelHelper<Type> helper,
+      SsaNode<Type> first,
+      Map<int, VariableModel<Type>> firstVariableInfo,
+      SsaNode<Type> second,
+      Map<int, VariableModel<Type>> secondVariableInfo,
+      Map<int, VariableModel<Type>> newVariableInfo) {
+    if (first == second) return first;
+    return new SsaNode.withProperties(null,
+        promotableProperties: _joinProperties(
+            helper,
+            first._promotableProperties,
+            firstVariableInfo,
+            second._promotableProperties,
+            secondVariableInfo,
+            newVariableInfo),
+        nonPromotableProperties: {});
+  }
+
+  /// Joins the promotion information for the promotable properties of two SSA
+  /// nodes, [first] and [second].
+  ///
+  /// Since properties may themselves be promoted, the caller must supply the
+  /// variable info maps for the two flow control paths being joined
+  /// ([firstVariableInfo] and [secondVariableInfo]), as well as the variable
+  /// map being built for the join point ([newVariableInfo]).
+  static Map<String, _PropertySsaNode<Type>>
+      _joinProperties<Type extends Object>(
+          FlowModelHelper<Type> helper,
+          Map<String, _PropertySsaNode<Type>> first,
+          Map<int, VariableModel<Type>> firstVariableInfo,
+          Map<String, _PropertySsaNode<Type>> second,
+          Map<int, VariableModel<Type>> secondVariableInfo,
+          final Map<int, VariableModel<Type>> newVariableInfo) {
+    Map<String, _PropertySsaNode<Type>> newProperties = {};
+    // If a property has been accessed along one of the two control flow paths
+    // being joined, but not the other, then it shouldn't be promoted after the
+    // join point, nor should any of its nested properties. So it is only
+    // necessary to examine properties common to the `first` and `second` maps.
+    for (var MapEntry(
+          key: String propertyName,
+          value: _PropertySsaNode<Type> firstProperty
+        ) in first.entries) {
+      _PropertySsaNode<Type>? secondProperty = second[propertyName];
+      if (secondProperty == null) continue;
+      // Make a new promotion key to represent the joined property.
+      int newPromotionKey = helper.promotionKeyStore.makeTemporaryKey();
+      // If the property has a variable model along both control flow paths,
+      // it might be promoted, so join the two variable models to preserve the
+      // promotion.
+      VariableModel<Type>? firstVariableModel =
+          firstVariableInfo[firstProperty.promotionKey];
+      if (firstVariableModel != null) {
+        VariableModel<Type>? secondVariableModel =
+            secondVariableInfo[secondProperty.promotionKey];
+        if (secondVariableModel != null) {
+          newVariableInfo[newPromotionKey] = VariableModel.join(
+              helper,
+              firstVariableModel,
+              firstVariableInfo,
+              secondVariableModel,
+              secondVariableInfo,
+              newVariableInfo);
+        }
+      }
+      // Join any nested properties.
+      newProperties[propertyName] = new _PropertySsaNode.withProperties(
+          newPromotionKey,
+          promotableProperties: _joinProperties(
+              helper,
+              firstProperty._promotableProperties,
+              firstVariableInfo,
+              secondProperty._promotableProperties,
+              secondVariableInfo,
+              newVariableInfo),
+          nonPromotableProperties: {});
+    }
+    return newProperties;
   }
 }
 
@@ -3058,7 +3173,6 @@ class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
       {required super.type,
       required super.after,
       required super.promotionKey,
-      required super.isPromotable,
       required super.isThisOrSuper,
       required super.ssaNode})
       : super.trivial();
@@ -3088,7 +3202,6 @@ class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
           promotionKey: promotionKey,
           after: current,
           type: _type,
-          isPromotable: isPromotable,
           isThisOrSuper: isThisOrSuper,
           ifTrue: previousExpressionInfo.ifTrue
               .rebaseForward(typeOperations, current),
@@ -3104,8 +3217,7 @@ class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
 
   @override
   String toString() => 'TrivialVariableReference(type: $_type, after: $after, '
-      'promotionKey: $promotionKey, isPromotable: $isPromotable, '
-      'isThisOrSuper: $isThisOrSuper)';
+      'promotionKey: $promotionKey, isThisOrSuper: $isThisOrSuper)';
 }
 
 /// An instance of the [VariableModel] class represents the information gathered
@@ -3467,10 +3579,19 @@ class VariableModel<Type extends Object> {
   }
 
   /// Joins two variable models.  See [FlowModel.join] for details.
+  ///
+  /// Since properties of variables may be promoted, the caller must supply the
+  /// variable info maps for the two flow control paths being joined
+  /// ([firstVariableInfo] and [secondVariableInfo]), as well as the variable
+  /// map being built for the join point ([newVariableInfo]).
   static VariableModel<Type> join<Type extends Object>(
-      TypeOperations<Type> typeOperations,
+      FlowModelHelper<Type> helper,
       VariableModel<Type> first,
-      VariableModel<Type> second) {
+      Map<int, VariableModel<Type>> firstVariableInfo,
+      VariableModel<Type> second,
+      Map<int, VariableModel<Type>> secondVariableInfo,
+      Map<int, VariableModel<Type>> newVariableInfo) {
+    TypeOperations<Type> typeOperations = helper.typeOperations;
     List<Type>? newPromotedTypes = joinPromotedTypes(
         first.promotedTypes, second.promotedTypes, typeOperations);
     newPromotedTypes = typeOperations.refinePromotedTypes(
@@ -3483,9 +3604,8 @@ class VariableModel<Type extends Object> {
         : joinTested(first.tested, second.tested, typeOperations);
     SsaNode<Type>? newSsaNode = newWriteCaptured
         ? null
-        : first.ssaNode == second.ssaNode
-            ? first.ssaNode
-            : new SsaNode<Type>(null);
+        : SsaNode._join(helper, first.ssaNode!, firstVariableInfo,
+            second.ssaNode!, secondVariableInfo, newVariableInfo);
     return _identicalOrNew(first, second, newPromotedTypes, newTested,
         newAssigned, newUnassigned, newWriteCaptured ? null : newSsaNode);
   }
@@ -5021,10 +5141,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
       if (referenceWithType != null) {
         VariableModel<Type>? currentVariableInfo =
             _current.variableInfo[referenceWithType.promotionKey];
-        if (currentVariableInfo != null) {
-          return _getNonPromotionReasons(
-              referenceWithType, currentVariableInfo);
-        }
+        return _getNonPromotionReasons(referenceWithType, currentVariableInfo);
       }
     }
     return () => {};
@@ -5171,20 +5288,34 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   }
 
   Map<Type, NonPromotionReason> Function() _getNonPromotionReasons(
-      _Reference<Type> reference, VariableModel<Type> currentVariableInfo) {
+      _Reference<Type> reference, VariableModel<Type>? currentVariableInfo) {
     if (reference is _PropertyReference<Type>) {
-      List<Type>? promotedTypes = currentVariableInfo.promotedTypes;
-      if (promotedTypes != null) {
+      _PropertySsaNode<Type>? ssaNode =
+          (reference.ssaNode as _PropertySsaNode<Type>).previousSsaNode;
+      List<List<Type>>? allPreviouslyPromotedTypes;
+      while (ssaNode != null) {
+        VariableModel<Type> previousVariableInfo =
+            _current._getInfo(ssaNode.promotionKey);
+        List<Type>? promotedTypes = previousVariableInfo.promotedTypes;
+        if (promotedTypes != null) {
+          (allPreviouslyPromotedTypes ??= []).add(promotedTypes);
+        }
+        ssaNode = ssaNode.previousSsaNode;
+      }
+      if (allPreviouslyPromotedTypes != null) {
         return () {
           Map<Type, NonPromotionReason> result = <Type, NonPromotionReason>{};
-          for (Type type in promotedTypes) {
-            result[type] = new PropertyNotPromoted(reference.propertyName,
-                reference.propertyMember, reference._type);
+          for (List<Type> previouslyPromotedTypes
+              in allPreviouslyPromotedTypes!) {
+            for (Type type in previouslyPromotedTypes) {
+              result[type] = new PropertyNotPromoted(reference.propertyName,
+                  reference.propertyMember, reference._type);
+            }
           }
           return result;
         };
       }
-    } else {
+    } else if (currentVariableInfo != null) {
       Variable? variable =
           promotionKeyStore.variableForKey(reference.promotionKey);
       if (variable == null) {
@@ -5320,34 +5451,23 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
       case ExpressionPropertyTarget(:var expression):
         _Reference<Type>? targetReference = _getExpressionReference(expression);
         if (targetReference == null) return null;
-        // If `targetReference` refers to a non-promotable property or variable,
-        // then the result of the property access is also non-promotable (e.g.
-        // `x._nonFinalField._finalField` is not promotable, because
-        // `_nonFinalField` might change at any time). Note that even though the
-        // control flow paths for `SuperPropertyTarget` and `ThisPropertyTarget`
-        // skip this code, we still need to check `isThisOrSuper`, because
-        // `ThisPropertyTarget` is only used for property accesses via
-        // *implicit* `this`.
-        if (!targetReference.isPromotable && !targetReference.isThisOrSuper) {
-          isPromotable = false;
-        }
         targetSsaNode = targetReference.ssaNode;
     }
-    _PropertySsaNode<Type> propertySsaNode =
-        targetSsaNode.getProperty(propertyName, promotionKeyStore);
+    _PropertySsaNode<Type> propertySsaNode = targetSsaNode.getProperty(
+        propertyName, promotionKeyStore,
+        isPromotable: isPromotable);
     _PropertyReference<Type> propertyReference = new _PropertyReference<Type>(
         propertyName: propertyName,
         propertyMember: propertyMember,
         promotionKey: propertySsaNode.promotionKey,
         after: _current,
         type: staticType,
-        isPromotable: isPromotable,
         ssaNode: propertySsaNode);
     if (wholeExpression != null) {
       _storeExpressionInfo(wholeExpression, propertyReference);
       _storeExpressionReference(wholeExpression, propertyReference);
     }
-    if (!propertyReference.isPromotable) {
+    if (!isPromotable) {
       return null;
     }
     Type? promotedType =
@@ -5393,7 +5513,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   }
 
   FlowModel<Type> _join(FlowModel<Type>? first, FlowModel<Type>? second) =>
-      FlowModel.join(operations, first, second);
+      FlowModel.join(this, first, second);
 
   /// Creates a promotion key representing a temporary variable that doesn't
   /// correspond to any variable in the user's source code.  This is used by
@@ -5415,13 +5535,12 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         promotionKey: promotionKey,
         after: _current,
         type: type,
-        isPromotable: true,
         isThisOrSuper: false,
         ssaNode: ssaNode);
   }
 
   FlowModel<Type> _merge(FlowModel<Type> first, FlowModel<Type>? second) =>
-      FlowModel.merge(operations, first, second);
+      FlowModel.merge(this, first, second);
 
   /// Computes an updated flow model representing the result of a null check
   /// performed by a pattern.  The returned flow model represents what is known
@@ -5468,7 +5587,8 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
       _current = guardInfo.ifTrue;
       unmatched = _join(unmatched, guardInfo.ifFalse);
     }
-    return unmatched;
+    _current = _current.unsplit();
+    return unmatched.unsplit();
   }
 
   void _popScrutinee() {
@@ -5481,6 +5601,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   /// into a pattern or subpattern match.  [matchedValueInfo] should be the
   /// [EqualityInfo] representing the value being matched.
   void _pushPattern(_Reference<Type> matchedValueInfo) {
+    _current = _current.split();
     _stack.add(new _TopPatternContext<Type>(matchedValueInfo, _unmatched));
     _unmatched = _current.setUnreachable();
   }
@@ -5538,7 +5659,6 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
           promotionKey: promotionKeyStore.thisPromotionKey,
           after: _current,
           type: staticType,
-          isPromotable: false,
           isThisOrSuper: true,
           ssaNode: isSuper ? _superSsaNode : _thisSsaNode);
 
@@ -5549,7 +5669,6 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         promotionKey: variableKey,
         after: _current,
         type: info.promotedTypes?.last ?? unpromotedType,
-        isPromotable: true,
         isThisOrSuper: false,
         ssaNode: info.ssaNode ?? new SsaNode<Type>(null));
   }
@@ -6443,7 +6562,6 @@ class _PatternContext<Type extends Object> extends _FlowContext {
           promotionKey: _matchedValueInfo.promotionKey,
           after: current,
           type: matchedType,
-          isPromotable: true,
           isThisOrSuper: false,
           ssaNode: new SsaNode<Type>(null));
 }
@@ -6464,15 +6582,13 @@ class _PropertyReference<Type extends Object> extends _Reference<Type> {
       required this.propertyName,
       required this.propertyMember,
       required super.promotionKey,
-      required super.isPromotable,
       required super.ssaNode})
       : super.trivial(isThisOrSuper: false);
 
   @override
   String toString() => '_PropertyReference('
       'type: $_type, after: $after, propertyName: $propertyName, '
-      'propertyMember: $propertyMember, promotionKey: $promotionKey, '
-      'isPromotable: $isPromotable)';
+      'propertyMember: $propertyMember, promotionKey: $promotionKey)';
 }
 
 /// Data structure representing a unique value returned by the invocation of a
@@ -6482,7 +6598,20 @@ class _PropertySsaNode<Type extends Object> extends SsaNode<Type> {
   /// promotion.
   final int promotionKey;
 
-  _PropertySsaNode(this.promotionKey) : super(null);
+  /// If this property is not promotable, then a fresh SSA node is assigned at
+  /// the time of each access; when that occurs, this field points to the
+  /// previous SSA node associated with the same property; otherwise it is
+  /// `null`. This is used by the "why not promoted" logic to figure out what
+  /// promotions *would* have occurred if the property had been promotable.
+  final _PropertySsaNode<Type>? previousSsaNode;
+
+  _PropertySsaNode(this.promotionKey, {this.previousSsaNode}) : super(null);
+
+  _PropertySsaNode.withProperties(this.promotionKey,
+      {required super.promotableProperties,
+      required super.nonPromotableProperties})
+      : previousSsaNode = null,
+        super.withProperties(null);
 }
 
 /// Specialization of [ExpressionInfo] for the case where the expression is a
@@ -6491,9 +6620,6 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
   /// The integer key representing the thing referred to by this expression in
   /// [FlowModel.variableInfo].
   final int promotionKey;
-
-  /// Whether the thing referred to by this expression is promotable.
-  final bool isPromotable;
 
   /// Whether the thing referred to by this expression is `this` (or the
   /// pseudo-expression `super`).
@@ -6508,7 +6634,6 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
       required super.ifTrue,
       required super.ifFalse,
       required this.promotionKey,
-      required this.isPromotable,
       required this.isThisOrSuper,
       required this.ssaNode});
 
@@ -6516,7 +6641,6 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
       {required super.type,
       required super.after,
       required this.promotionKey,
-      required this.isPromotable,
       required this.isThisOrSuper,
       required this.ssaNode})
       : super.trivial();
@@ -6524,8 +6648,7 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
   @override
   String toString() => '_Reference(type: $_type, after: $after, '
       'ifTrue: $ifTrue, ifFalse: $ifFalse, promotionKey: $promotionKey, '
-      'isPromotable: $isPromotable, isThisOrSuper: $isThisOrSuper, '
-      'ssaNode: $ssaNode)';
+      'isThisOrSuper: $isThisOrSuper, ssaNode: $ssaNode)';
 }
 
 /// [_FlowContext] representing a construct that can contain one or more

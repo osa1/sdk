@@ -33,6 +33,10 @@ ScopeBuilder::ScopeBuilder(ParsedFunction* parsed_function)
           parsed_function->function().KernelLibraryOffset()),
       constant_reader_(&helper_, &active_class_),
       inferred_type_metadata_helper_(&helper_, &constant_reader_),
+      inferred_arg_type_metadata_helper_(
+          &helper_,
+          &constant_reader_,
+          InferredTypeMetadataHelper::Kind::ArgType),
       procedure_attributes_metadata_helper_(&helper_),
       type_translator_(&helper_,
                        &constant_reader_,
@@ -389,7 +393,7 @@ ScopeBuildingResult* ScopeBuilder::BuildScopes() {
     case UntaggedFunction::kFfiTrampoline: {
       needs_expr_temp_ = true;
       // Callbacks and calls with handles need try/catch variables.
-      if ((function.FfiCallbackTarget() != Function::null() ||
+      if ((function.GetFfiTrampolineKind() != FfiTrampolineKind::kCall ||
            function.FfiCSignatureContainsHandles())) {
         ++depth_.try_;
         AddTryVariables();
@@ -1403,8 +1407,8 @@ void ScopeBuilder::VisitDartType() {
     case kIntersectionType:
       VisitIntersectionType();
       return;
-    case kInlineType:
-      VisitInlineType();
+    case kExtensionType:
+      VisitExtensionType();
       return;
     case kFutureOrType:
       VisitFutureOrType();
@@ -1522,8 +1526,8 @@ void ScopeBuilder::VisitIntersectionType() {
   helper_.SkipDartType();  // read right.
 }
 
-void ScopeBuilder::VisitInlineType() {
-  // We skip the inline type and only use the representation type.
+void ScopeBuilder::VisitExtensionType() {
+  // We skip the extension type and only use the representation type.
   helper_.ReadNullability();
   helper_.SkipCanonicalNameReference();  // read index for canonical name.
   helper_.SkipListOfDartTypes();         // read type arguments
@@ -1635,7 +1639,8 @@ void ScopeBuilder::AddVariableDeclarationParameter(
       helper_.data_program_offset_ + helper_.ReaderOffset();
   // MetadataHelper expects relative offsets and adjusts them internally
   const InferredTypeMetadata parameter_type =
-      inferred_type_metadata_helper_.GetInferredType(helper_.ReaderOffset());
+      inferred_arg_type_metadata_helper_.GetInferredType(
+          helper_.ReaderOffset());
   VariableDeclarationHelper helper(&helper_);
   helper.ReadUntilExcluding(VariableDeclarationHelper::kAnnotations);
   const intptr_t annotations_offset = helper_.ReaderOffset();
@@ -1928,6 +1933,8 @@ void ScopeBuilder::HandleLoadReceiver() {
     // use-site also includes the [receiver].
     scope_->CaptureVariable(parsed_function_->receiver_var());
   }
+
+  parsed_function_->set_receiver_used();
 }
 
 void ScopeBuilder::HandleSpecialLoad(LocalVariable** variable,

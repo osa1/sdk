@@ -503,6 +503,22 @@ bool true
 ''');
   }
 
+  /// https://github.com/dart-lang/sdk/issues/53029
+  /// Dependencies of map patterns should be considered.
+  test_mapPattern_dependencies() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    await assertNoErrorsInCode('''
+import 'a.dart';
+
+void f(Object? x) {
+  if (x case {a: _}) {}
+}
+''');
+  }
+
   test_visitBinaryExpression_extensionMethod() async {
     await assertErrorsInCode('''
 extension on Object {
@@ -703,16 +719,12 @@ class A {
   const A(int _);
 }
 ''', [
-      error(CompileTimeErrorCode.CONST_CONSTRUCTOR_PARAM_TYPE_MISMATCH, 63, 14),
       error(CompileTimeErrorCode.INVALID_CONSTANT, 76, 1),
       error(CompileTimeErrorCode.CONST_INITIALIZED_WITH_NON_CONSTANT_VALUE, 76,
           1),
     ]);
     final result = _topLevelVar('x');
-    assertDartObjectText(result, r'''
-A
-  variable: self::@variable::x
-''');
+    _assertNull(result);
   }
 
   test_visitConditionalExpression_unknownCondition_undefinedIdentifier() async {
@@ -1722,6 +1734,29 @@ void Function(int)
     int
   variable: self::@variable::g
 ''');
+  }
+
+  test_visitPropertyAccess_length_invalidTarget() async {
+    await assertErrorsInCode('''
+void main() {
+  const RequiresNonEmptyList([1]);
+}
+
+class RequiresNonEmptyList {
+  const RequiresNonEmptyList(List<int> numbers) : assert(numbers.length > 0);
+}
+''', [
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        16,
+        31,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 138, 14,
+              text:
+                  "The exception is 'The property 'length' can't be accessed on the type 'List<int>' in a constant expression.' and occurs here."),
+        ],
+      ),
+    ]);
   }
 
   test_visitRecordLiteral_objectField_generic() async {
@@ -2822,8 +2857,8 @@ bool true
 ''');
   }
 
-  test_visitPropertyAccess_fromExtension() async {
-    await resolveTestCode('''
+  test_visitPropertyAccess_length_extension() async {
+    await assertErrorsInCode('''
 extension ExtObject on Object {
   int get length => 4;
 }
@@ -2834,10 +2869,17 @@ class B {
 }
 
 const b = B('');
-''');
-    _evaluateConstant('b', errorCodes: [
-      CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
-      CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION
+''', [
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        128,
+        5,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 105, 8,
+              text:
+                  "The exception is 'Extension methods can't be used in constant expressions.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3146,7 +3188,16 @@ class A {
 const a = const A(null);
 ''', [
       error(WarningCode.UNNECESSARY_TYPE_CHECK_FALSE, 31, 9),
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 56, 13),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        56,
+        13,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 24, 17,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
       error(CompileTimeErrorCode.EXTRA_POSITIONAL_ARGUMENTS, 64, 4),
     ]);
   }
@@ -3159,7 +3210,16 @@ class A<T> {
 
 const a = const A<int?>();
 ''', [
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 60, 15),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        60,
+        15,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 27, 18,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3177,6 +3237,42 @@ const a = const A(null);
     assertDartObjectText(result, '''
 A
   variable: self::@variable::a
+''');
+  }
+
+  test_assertInitializer_enum_false() async {
+    await assertErrorsInCode('''
+enum E { a, b }
+class A {
+  const A(E e) : assert(e != E.a);
+}
+const c = const A(E.a);
+''', [
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        73,
+        12,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 43, 16,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
+    ]);
+  }
+
+  test_assertInitializer_enum_true() async {
+    await assertNoErrorsInCode('''
+enum E { a, b }
+class A {
+  const A(E e) : assert(e != E.a);
+}
+const c = const A(E.b);
+''');
+    final result = _topLevelVar('c');
+    assertDartObjectText(result, '''
+A
+  variable: self::@variable::c
 ''');
   }
 
@@ -3340,13 +3436,19 @@ class A<T> {
 const a = const A<int>();
 ''', [
       error(CompileTimeErrorCode.INVALID_CONSTANT, 62, 1),
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 77, 14),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        77,
+        14,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 62, 1,
+              text:
+                  "The exception is 'Invalid constant value.' and occurs here."),
+        ],
+      ),
     ]);
     final result = _topLevelVar('a');
-    assertDartObjectText(result, '''
-A<int>
-  variable: self::@variable::a
-''');
+    _assertNull(result);
   }
 
   test_fieldInitializer_visitAsExpression_potentialConstType() async {
@@ -3362,6 +3464,22 @@ void main() {
   const C<int>().w;
 }
 ''');
+  }
+
+  test_issue49389() async {
+    await assertErrorsInCode('''
+class Foo {
+  const Foo({required this.bar});
+  final Map<String, String> bar;
+}
+
+void main() {
+  final data = <String, String>{};
+  const Foo(bar: data);
+}
+''', [
+      error(CompileTimeErrorCode.INVALID_CONSTANT, 148, 4),
+    ]);
   }
 
   test_redirectingConstructor_typeParameter() async {
@@ -3424,6 +3542,35 @@ B<int>
 
 @reflectiveTest
 mixin InstanceCreationEvaluatorTestCases on ConstantVisitorTestSupport {
+  test_assertInitializer_indirect() async {
+    await assertErrorsInCode(r'''
+class A {
+  const A(int i)
+  : assert(i == 1); // (2)
+}
+class B extends A {
+  const B(int i) : super(i);
+}
+main() {
+  print(const B(2)); // (1)
+}
+''', [
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        124,
+        10,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 84, 1,
+              text:
+                  "The evaluated constructor 'A' is called by 'B' and 'B' is defined here."),
+          ExpectedContextMessage(testFile.path, 31, 14,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
+    ]);
+  }
+
   test_assertInitializer_intInDoubleContext_false() async {
     await assertErrorsInCode('''
 class A {
@@ -3431,7 +3578,16 @@ class A {
 }
 const a = const A(1);
 ''', [
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 71, 10),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        71,
+        10,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 31, 26,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3442,7 +3598,16 @@ class A {
 }
 const a = const A();
 ''', [
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 56, 9),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        56,
+        9,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 23, 19,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3456,7 +3621,19 @@ class B extends A {
 }
 const b = const B();
 ''', [
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 101, 9),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        101,
+        9,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 74, 1,
+              text:
+                  "The evaluated constructor 'A' is called by 'B' and 'B' is defined here."),
+          ExpectedContextMessage(testFile.path, 23, 19,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3467,7 +3644,16 @@ class A {
 }
 const a = const A(0);
 ''', [
-      error(CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION, 55, 10),
+      error(
+        CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
+        55,
+        10,
+        contextMessages: [
+          ExpectedContextMessage(testFile.path, 28, 13,
+              text:
+                  "The exception is 'The assertion in this constant expression failed.' and occurs here."),
+        ],
+      ),
     ]);
   }
 
@@ -3512,6 +3698,51 @@ bool true
 ''');
   }
 
+  test_field_deferred_issue48991() async {
+    newFile('$testPackageLibPath/a.dart', '''
+class A {
+  const A();
+}
+
+const aa = A();
+''');
+
+    await assertErrorsInCode('''
+import 'a.dart' deferred as a;
+
+class B {
+  const B(Object a);
+}
+
+main() {
+  print(const B(a.aa));
+}
+''', [
+      error(
+          CompileTimeErrorCode.CONST_CONSTRUCTOR_CONSTANT_FROM_DEFERRED_LIBRARY,
+          93,
+          2),
+    ]);
+  }
+
+  test_field_imported_staticConst() async {
+    newFile('$testPackageLibPath/a.dart', '''
+class A {
+  static const A instance = const A();
+  const A();
+}
+''');
+
+    await assertNoErrorsInCode('''
+import 'a.dart';
+class B {
+  final A v;
+  const B(this.v);
+}
+B f1() => const B(A.instance);
+''');
+  }
+
   test_int_fromEnvironment() async {
     await assertNoErrorsInCode('''
 const a = int.fromEnvironment('a');
@@ -3538,6 +3769,37 @@ int 5
     assertDartObjectText(bResult, '''
 int 42
 ''');
+  }
+
+  test_issue47351() async {
+    await assertErrorsInCode('''
+class Foo {
+  final int bar;
+  const Foo(this.bar);
+}
+
+int bar = 2;
+const a = const Foo(bar);
+''', [
+      error(CompileTimeErrorCode.CONST_WITH_NON_CONSTANT_ARGUMENT, 88, 3),
+      error(CompileTimeErrorCode.CONST_INITIALIZED_WITH_NON_CONSTANT_VALUE, 88,
+          3),
+    ]);
+  }
+
+  test_issue47603() async {
+    await assertErrorsInCode('''
+class C {
+  final void Function() c;
+  const C(this.c);
+}
+
+void main() {
+  const C(() {});
+}
+''', [
+      error(CompileTimeErrorCode.CONST_WITH_NON_CONSTANT_ARGUMENT, 83, 5),
+    ]);
   }
 
   test_string_fromEnvironment() async {

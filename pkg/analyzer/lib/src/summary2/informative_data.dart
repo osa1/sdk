@@ -8,6 +8,7 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/src/dart/analysis/info_declaration_store.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/generated/source.dart';
@@ -57,10 +58,12 @@ class ApplyConstantOffsets {
 class InformativeDataApplier {
   final LinkedElementFactory _elementFactory;
   final Map<Uri, Uint8List> _unitsInformativeBytes2;
+  final InfoDeclarationStore _infoDeclarationStore;
 
   InformativeDataApplier(
     this._elementFactory,
     this._unitsInformativeBytes2,
+    this._infoDeclarationStore,
   );
 
   void applyTo(LibraryElementImpl libraryElement) {
@@ -77,9 +80,9 @@ class InformativeDataApplier {
       var unitInfoBytes = _unitsInformativeBytes2[unitUri];
       if (unitInfoBytes != null) {
         var unitReader = SummaryDataReader(unitInfoBytes);
-        var unitInfo = _InfoUnit(unitReader);
+        var unitInfo = _InfoUnit(_infoDeclarationStore, unitReader);
 
-        final enclosing = unitElement.enclosingElement2;
+        final enclosing = unitElement.enclosingElement;
         if (enclosing is LibraryElementImpl) {
           if (identical(enclosing.definingCompilationUnit, unitElement)) {
             _applyToLibrary(enclosing, unitInfo);
@@ -114,6 +117,9 @@ class InformativeDataApplier {
 
         forCorrespondingPairs(unitElement.extensions, unitInfo.extensions,
             _applyToExtensionDeclaration);
+
+        forCorrespondingPairs(unitElement.extensionTypes,
+            unitInfo.extensionTypes, _applyToExtensionTypeDeclaration);
 
         forCorrespondingPairs(unitElement.functions, unitInfo.functions,
             _applyToFunctionDeclaration);
@@ -366,6 +372,72 @@ class InformativeDataApplier {
     _applyToMethods(element.methods, info.methods);
 
     var linkedData = element.linkedData as ExtensionElementLinkedData;
+    linkedData.applyConstantOffsets = ApplyConstantOffsets(
+      info.constantOffsets,
+      (applier) {
+        applier.applyToMetadata(element);
+        applier.applyToTypeParameters(element.typeParameters);
+      },
+    );
+  }
+
+  void _applyToExtensionTypeDeclaration(
+    ExtensionTypeElement element,
+    _InfoExtensionTypeDeclaration info,
+  ) {
+    element as ExtensionTypeElementImpl;
+    element.setCodeRange(info.codeOffset, info.codeLength);
+    element.nameOffset = info.nameOffset;
+    element.documentationComment = info.documentationComment;
+    _applyToTypeParameters(
+      element.typeParameters_unresolved,
+      info.typeParameters,
+    );
+
+    final representationField = element.representation;
+    final infoRep = info.representation;
+    representationField.nameOffset = infoRep.fieldNameOffset;
+    representationField.setCodeRange(
+      infoRep.fieldCodeOffset,
+      infoRep.fieldCodeLength,
+    );
+
+    final fieldLinkedData =
+        representationField.linkedData as FieldElementLinkedData;
+    fieldLinkedData.applyConstantOffsets = ApplyConstantOffsets(
+      infoRep.fieldConstantOffsets,
+      (applier) {
+        applier.applyToMetadata(representationField);
+      },
+    );
+
+    final primaryConstructor = element.constructors.first;
+    primaryConstructor.setCodeRange(
+      infoRep.constructorCodeOffset,
+      infoRep.constructorCodeLength,
+    );
+    primaryConstructor.periodOffset = infoRep.constructorPeriodOffset;
+    primaryConstructor.nameOffset = infoRep.constructorNameOffset;
+    primaryConstructor.nameEnd = infoRep.constructorNameEnd;
+
+    final primaryConstructorParameter =
+        primaryConstructor.parameters_unresolved.first as ParameterElementImpl;
+    primaryConstructorParameter.nameOffset = infoRep.fieldNameOffset;
+    primaryConstructorParameter.setCodeRange(
+      infoRep.fieldCodeOffset,
+      infoRep.fieldCodeLength,
+    );
+
+    final restFields = element.fields.skip(1).toList();
+    _applyToFields(restFields, info.fields);
+
+    final restConstructors = element.constructors.skip(1).toList();
+    _applyToConstructors(restConstructors, info.constructors);
+
+    _applyToAccessors(element.accessors, info.accessors);
+    _applyToMethods(element.methods, info.methods);
+
+    final linkedData = element.linkedData as ExtensionTypeElementLinkedData;
     linkedData.applyConstantOffsets = ApplyConstantOffsets(
       info.constantOffsets,
       (applier) {
@@ -681,9 +753,19 @@ class _InfoClassDeclaration {
   final List<_InfoMethodDeclaration> methods;
   final Uint32List constantOffsets;
 
-  factory _InfoClassDeclaration(SummaryDataReader reader,
+  factory _InfoClassDeclaration(
+      InfoDeclarationStore cache, SummaryDataReader reader,
       {int nameOffsetDelta = 0}) {
-    return _InfoClassDeclaration._(
+    // TODO(jensj/scheglov): Possibly we could just save the bytes and the
+    // offset and then only read it when/if needed.
+    // See https://dart-review.googlesource.com/c/sdk/+/318940.
+    final initialOffset = reader.offset;
+    String cacheKey = cache.createKey(reader, initialOffset);
+    final cached =
+        cache.get<_InfoClassDeclaration>(reader, cacheKey, initialOffset);
+    if (cached != null) return cached;
+
+    final result = _InfoClassDeclaration._(
       codeOffset: reader.readUInt30(),
       codeLength: reader.readUInt30(),
       nameOffset: reader.readUInt30() - nameOffsetDelta,
@@ -705,6 +787,9 @@ class _InfoClassDeclaration {
       ),
       constantOffsets: reader.readUInt30List(),
     );
+
+    cache.put(reader, cacheKey, initialOffset, result);
+    return result;
   }
 
   _InfoClassDeclaration._({
@@ -822,6 +907,98 @@ class _InfoExport {
   _InfoExport._({
     required this.nameOffset,
     required this.combinators,
+  });
+}
+
+class _InfoExtensionTypeDeclaration {
+  final int codeOffset;
+  final int codeLength;
+  final int nameOffset;
+  final String? documentationComment;
+  final List<_InfoTypeParameter> typeParameters;
+  final _InfoExtensionTypeRepresentation representation;
+  final List<_InfoConstructorDeclaration> constructors;
+  final List<_InfoFieldDeclaration> fields;
+  final List<_InfoMethodDeclaration> accessors;
+  final List<_InfoMethodDeclaration> methods;
+  final Uint32List constantOffsets;
+
+  factory _InfoExtensionTypeDeclaration(SummaryDataReader reader) {
+    return _InfoExtensionTypeDeclaration._(
+      codeOffset: reader.readUInt30(),
+      codeLength: reader.readUInt30(),
+      nameOffset: reader.readUInt30(),
+      documentationComment: reader.readStringUtf8().nullIfEmpty,
+      typeParameters: reader.readTypedList(
+        () => _InfoTypeParameter(reader),
+      ),
+      representation: _InfoExtensionTypeRepresentation(reader),
+      constructors: reader.readTypedList(
+        () => _InfoConstructorDeclaration(reader),
+      ),
+      fields: reader.readTypedList(
+        () => _InfoFieldDeclaration(reader),
+      ),
+      accessors: reader.readTypedList(
+        () => _InfoMethodDeclaration(reader),
+      ),
+      methods: reader.readTypedList(
+        () => _InfoMethodDeclaration(reader),
+      ),
+      constantOffsets: reader.readUInt30List(),
+    );
+  }
+
+  _InfoExtensionTypeDeclaration._({
+    required this.codeOffset,
+    required this.codeLength,
+    required this.nameOffset,
+    required this.documentationComment,
+    required this.typeParameters,
+    required this.representation,
+    required this.constructors,
+    required this.fields,
+    required this.accessors,
+    required this.methods,
+    required this.constantOffsets,
+  });
+}
+
+class _InfoExtensionTypeRepresentation {
+  final int constructorCodeOffset;
+  final int constructorCodeLength;
+  final int? constructorPeriodOffset;
+  final int constructorNameOffset;
+  final int? constructorNameEnd;
+  final int fieldCodeOffset;
+  final int fieldCodeLength;
+  final int fieldNameOffset;
+  final Uint32List fieldConstantOffsets;
+
+  factory _InfoExtensionTypeRepresentation(SummaryDataReader reader) {
+    return _InfoExtensionTypeRepresentation._(
+      constructorCodeOffset: reader.readUInt30(),
+      constructorCodeLength: reader.readUInt30(),
+      constructorPeriodOffset: reader.readOptionalUInt30(),
+      constructorNameOffset: reader.readUInt30(),
+      constructorNameEnd: reader.readOptionalUInt30(),
+      fieldCodeOffset: reader.readUInt30(),
+      fieldCodeLength: reader.readUInt30(),
+      fieldNameOffset: reader.readUInt30(),
+      fieldConstantOffsets: reader.readUInt30List(),
+    );
+  }
+
+  _InfoExtensionTypeRepresentation._({
+    required this.constructorCodeOffset,
+    required this.constructorCodeLength,
+    required this.constructorPeriodOffset,
+    required this.constructorNameOffset,
+    required this.constructorNameEnd,
+    required this.fieldCodeOffset,
+    required this.fieldCodeLength,
+    required this.fieldNameOffset,
+    required this.fieldConstantOffsets,
   });
 }
 
@@ -1165,6 +1342,23 @@ class _InformativeDataWriter {
       sink.writeUInt30(1 + (node.name?.offset ?? -1));
       _writeDocumentationComment(node);
       _writeTypeParameters(node.typeParameters);
+      _writeConstructors(node.members);
+      _writeFields(node.members);
+      _writeGettersSetters(node.members);
+      _writeMethods(node.members);
+      _writeOffsets(
+        metadata: node.metadata,
+        typeParameters: node.typeParameters,
+      );
+    });
+
+    sink.writeList2<ExtensionTypeDeclaration>(unit.declarations, (node) {
+      sink.writeUInt30(node.offset);
+      sink.writeUInt30(node.length);
+      sink.writeUInt30(node.name.offset);
+      _writeDocumentationComment(node);
+      _writeTypeParameters(node.typeParameters);
+      _writeRepresentation(node, node.representation);
       _writeConstructors(node.members);
       _writeFields(node.members);
       _writeGettersSetters(node.members);
@@ -1537,6 +1731,35 @@ class _InformativeDataWriter {
     sink.writeUint30List(collector.offsets);
   }
 
+  void _writeRepresentation(
+      ExtensionTypeDeclaration declaration, RepresentationDeclaration node) {
+    // Constructor code range.
+    sink.writeUInt30(node.offset);
+    sink.writeUInt30(node.length);
+
+    final constructorName = node.constructorName;
+    if (constructorName != null) {
+      sink.writeOptionalUInt30(constructorName.period.offset);
+      sink.writeUInt30(constructorName.name.offset);
+      sink.writeOptionalUInt30(constructorName.name.end);
+    } else {
+      sink.writeOptionalUInt30(null);
+      sink.writeUInt30(declaration.name.offset);
+      sink.writeOptionalUInt30(null);
+    }
+
+    var fieldBeginToken = node.fieldMetadata.beginToken ?? node.fieldType;
+    final codeOffset = fieldBeginToken.offset;
+    final codeEnd = node.fieldName.end;
+    sink.writeUInt30(codeOffset);
+    sink.writeUInt30(codeEnd - codeOffset);
+    sink.writeUInt30(node.fieldName.offset);
+
+    _writeOffsets(
+      metadata: node.fieldMetadata,
+    );
+  }
+
   void _writeTopLevelVariable(VariableDeclaration node) {
     var codeOffset = _codeOffsetForVariable(node);
     sink.writeUInt30(codeOffset);
@@ -1623,6 +1846,7 @@ class _InfoUnit {
   final List<_InfoClassTypeAlias> classTypeAliases;
   final List<_InfoClassDeclaration> enums;
   final List<_InfoClassDeclaration> extensions;
+  final List<_InfoExtensionTypeDeclaration> extensionTypes;
   final List<_InfoMethodDeclaration> accessors;
   final List<_InfoFunctionDeclaration> functions;
   final List<_InfoFunctionTypeAlias> functionTypeAliases;
@@ -1630,7 +1854,7 @@ class _InfoUnit {
   final List<_InfoClassDeclaration> mixinDeclarations;
   final List<_InfoTopLevelVariable> topLevelVariable;
 
-  factory _InfoUnit(SummaryDataReader reader) {
+  factory _InfoUnit(InfoDeclarationStore cache, SummaryDataReader reader) {
     return _InfoUnit._(
       codeOffset: reader.readUInt30(),
       codeLength: reader.readUInt30(),
@@ -1648,16 +1872,19 @@ class _InfoUnit {
         () => _InfoPart(reader),
       ),
       classDeclarations: reader.readTypedList(
-        () => _InfoClassDeclaration(reader),
+        () => _InfoClassDeclaration(cache, reader),
       ),
       classTypeAliases: reader.readTypedList(
         () => _InfoClassTypeAlias(reader),
       ),
       enums: reader.readTypedList(
-        () => _InfoClassDeclaration(reader),
+        () => _InfoClassDeclaration(cache, reader),
       ),
       extensions: reader.readTypedList(
-        () => _InfoClassDeclaration(reader, nameOffsetDelta: 1),
+        () => _InfoClassDeclaration(cache, reader, nameOffsetDelta: 1),
+      ),
+      extensionTypes: reader.readTypedList(
+        () => _InfoExtensionTypeDeclaration(reader),
       ),
       accessors: reader.readTypedList(
         () => _InfoMethodDeclaration(reader),
@@ -1672,7 +1899,7 @@ class _InfoUnit {
         () => _InfoGenericTypeAlias(reader),
       ),
       mixinDeclarations: reader.readTypedList(
-        () => _InfoClassDeclaration(reader),
+        () => _InfoClassDeclaration(cache, reader),
       ),
       topLevelVariable: reader.readTypedList(
         () => _InfoTopLevelVariable(reader),
@@ -1694,6 +1921,7 @@ class _InfoUnit {
     required this.classTypeAliases,
     required this.enums,
     required this.extensions,
+    required this.extensionTypes,
     required this.accessors,
     required this.functions,
     required this.functionTypeAliases,

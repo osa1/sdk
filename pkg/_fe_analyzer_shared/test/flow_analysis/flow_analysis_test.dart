@@ -24,7 +24,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
       ]);
@@ -52,8 +52,8 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        assert_(x.expr.eq(nullLiteral),
-            checkPromoted(x, 'int').thenExpr(expr('String'))),
+        assert_(
+            x.eq(nullLiteral), second(checkPromoted(x, 'int'), expr('String'))),
       ]);
     });
 
@@ -65,12 +65,15 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
-        z.expr.as_('int'),
-        assert_(block([
-          x.write(expr('int?')),
-          z.write(expr('int?')),
-        ]).thenExpr(x.expr.notEq(nullLiteral).and(y.expr.notEq(nullLiteral)))),
+        x.as_('int'),
+        z.as_('int'),
+        assert_(second(
+                listLiteral(elementType: 'dynamic', [
+                  x.write(expr('int?')),
+                  z.write(expr('int?')),
+                ]),
+                expr('bool'))
+            .and(x.notEq(nullLiteral).and(y.notEq(nullLiteral)))),
         // x should be promoted because it was promoted before the assert, and
         // it is re-promoted within the assert (if it passes)
         checkPromoted(x, 'int'),
@@ -87,9 +90,9 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.notEq(nullLiteral).conditional(
-            checkPromoted(x, 'int').thenExpr(expr('int')),
-            checkNotPromoted(x).thenExpr(expr('int'))),
+        x.notEq(nullLiteral).conditional(
+            second(checkPromoted(x, 'int'), expr('int')),
+            second(checkNotPromoted(x), expr('int'))),
         checkNotPromoted(x),
       ]);
     });
@@ -98,9 +101,8 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.eq(nullLiteral).conditional(
-            checkNotPromoted(x).thenExpr(expr('Null')),
-            checkPromoted(x, 'int').thenExpr(expr('Null'))),
+        x.eq(nullLiteral).conditional(second(checkNotPromoted(x), expr('Null')),
+            second(checkPromoted(x, 'int'), expr('Null'))),
         checkNotPromoted(x),
       ]);
     });
@@ -115,14 +117,18 @@ main() {
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
         expr('bool').conditional(
-            block([
-              x.expr.as_('int'),
-              y.expr.as_('int'),
-            ]).thenExpr(expr('Null')),
-            block([
-              x.expr.as_('int'),
-              z.expr.as_('int'),
-            ]).thenExpr(expr('Null'))),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  x.as_('int'),
+                  y.as_('int'),
+                ]),
+                expr('Null')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  x.as_('int'),
+                  z.as_('int'),
+                ]),
+                expr('Null'))),
         checkPromoted(x, 'int'),
         checkNotPromoted(y),
         checkNotPromoted(z),
@@ -143,8 +149,8 @@ main() {
         declare(z, type: 'int?', initializer: expr('int?')),
         if_(
             expr('bool').conditional(
-                x.expr.notEq(nullLiteral).and(y.expr.notEq(nullLiteral)),
-                x.expr.notEq(nullLiteral).and(z.expr.notEq(nullLiteral))),
+                x.notEq(nullLiteral).and(y.notEq(nullLiteral)),
+                x.notEq(nullLiteral).and(z.notEq(nullLiteral))),
             [
               checkPromoted(x, 'int'),
               checkNotPromoted(y),
@@ -167,9 +173,8 @@ main() {
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
         if_(
-            expr('bool').conditional(
-                x.expr.eq(nullLiteral).or(y.expr.eq(nullLiteral)),
-                x.expr.eq(nullLiteral).or(z.expr.eq(nullLiteral))),
+            expr('bool').conditional(x.eq(nullLiteral).or(y.eq(nullLiteral)),
+                x.eq(nullLiteral).or(z.eq(nullLiteral))),
             [],
             [
               checkPromoted(x, 'int'),
@@ -195,7 +200,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        if_(x.expr.notEq(nullLiteral), [
+        if_(x.notEq(nullLiteral), [
           checkReachable(true),
           checkPromoted(x, 'int'),
           getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
@@ -211,7 +216,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int', initializer: expr('int')),
-        if_(x.expr.notEq(nullLiteral), [
+        if_(x.notEq(nullLiteral), [
           checkReachable(true),
           checkNotPromoted(x),
         ], [
@@ -245,7 +250,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.notEq(expr('Null')), [
+        if_(x.notEq(expr('Null')), [
           checkNotPromoted(x),
         ], [
           checkNotPromoted(x),
@@ -259,7 +264,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           checkReachable(true),
           checkNotPromoted(x),
           getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
@@ -275,7 +280,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int', initializer: expr('int')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           checkReachable(true),
           checkNotPromoted(x),
         ], [
@@ -291,7 +296,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        if_(nullLiteral.notEq(x.expr), [
+        if_(nullLiteral.notEq(x), [
           checkPromoted(x, 'int'),
           getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
         ], [
@@ -305,7 +310,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(expr('Null').notEq(x.expr), [
+        if_(expr('Null').notEq(x), [
           checkNotPromoted(x),
         ], [
           checkNotPromoted(x),
@@ -319,7 +324,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        if_(nullLiteral.eq(x.expr), [
+        if_(nullLiteral.eq(x), [
           checkNotPromoted(x),
           getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
         ], [
@@ -393,13 +398,13 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.notEq(nullLiteral), [
+        if_(x.notEq(nullLiteral), [
           checkPromoted(x, 'int'),
         ]),
         localFunction([
           x.write(expr('int?')),
         ]),
-        if_(x.expr.notEq(nullLiteral), [
+        if_(x.notEq(nullLiteral), [
           checkNotPromoted(x),
         ]),
       ]);
@@ -430,7 +435,7 @@ main() {
       late SsaNode<Type> ssaBeforeLoop;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeLoop = nodes[x]!),
         do_([
@@ -446,7 +451,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         do_([
-          x.expr.as_('int'),
+          x.as_('int'),
           // The promotion should have no effect, because the second time
           // through the loop, x has been write-captured.
           checkNotPromoted(x),
@@ -463,17 +468,19 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         do_(
             [
-              if_(x.expr.notEq(nullLiteral), [
+              if_(x.notEq(nullLiteral), [
                 continue_(),
               ]),
               return_(),
               checkReachable(false),
               checkNotPromoted(x),
             ],
-            block([
-              checkReachable(true),
-              checkPromoted(x, 'int'),
-            ]).thenExpr(expr('bool'))),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  checkPromoted(x, 'int'),
+                ]),
+                expr('bool'))),
       ]);
     });
 
@@ -481,7 +488,8 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        do_([], checkNotPromoted(x).thenExpr(x.expr.eq(nullLiteral))),
+        do_([],
+            second(checkNotPromoted(x), expr('bool')).or(x.eq(nullLiteral))),
         checkPromoted(x, 'int'),
       ]);
     });
@@ -496,7 +504,7 @@ main() {
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
         checkAssigned(x, true),
-        if_(x.expr.property('y').notEq(nullLiteral), [
+        if_(x.property('y').notEq(nullLiteral), [
           checkAssigned(x, true),
         ], [
           checkAssigned(x, true),
@@ -524,8 +532,8 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'C', initializer: expr('C')),
-          if_(x.expr.property('f').is_('Null'), [
-            if_(x.expr.property('f').eq(nullLiteral), [
+          if_(x.property('f').is_('Null'), [
+            if_(x.property('f').eq(nullLiteral), [
               checkReachable(true),
             ], [
               checkReachable(true),
@@ -592,15 +600,18 @@ main() {
       late SsaNode<Type> ssaBeforeLoop;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeLoop = nodes[x]!),
         for_(
             null,
-            block([
-              checkNotPromoted(x),
-              getSsaNodes((nodes) => expect(nodes[x], isNot(ssaBeforeLoop))),
-            ]).thenExpr(expr('bool')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  checkNotPromoted(x),
+                  getSsaNodes(
+                      (nodes) => expect(nodes[x], isNot(ssaBeforeLoop))),
+                ]),
+                expr('bool')),
             null,
             [
               x.write(expr('int?')),
@@ -612,42 +623,27 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         for_(
             null,
-            block([
-              x.expr.as_('int'),
-              checkNotPromoted(x),
-              localFunction([
-                x.write(expr('int?')),
-              ]),
-            ]).thenExpr(expr('bool')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  x.as_('int'),
+                  checkNotPromoted(x),
+                  localFunction([
+                    x.write(expr('int?')),
+                  ]),
+                ]),
+                expr('bool')),
             null,
             []),
       ]);
     });
 
-    test('for_conditionBegin() handles not-yet-seen variables', () {
-      var x = Var('x');
-      var y = Var('y');
-      h.run([
-        declare(y, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
-        for_(
-            null,
-            declare(x, type: 'int?', initializer: expr('int?'))
-                .thenExpr(expr('bool')),
-            null,
-            [
-              x.write(expr('Null')),
-            ]),
-      ]);
-    });
-
     test('for_bodyBegin() handles empty condition', () {
       h.run([
-        for_(null, null, checkReachable(true).thenExpr(expr('Null')), []),
+        for_(null, null, second(checkReachable(true), expr('Null')), []),
         checkReachable(false),
       ]);
     });
@@ -656,7 +652,7 @@ main() {
       var x = Var('x');
       h.run([
         for_(declare(x, type: 'int?', initializer: expr('int?')),
-            x.expr.notEq(nullLiteral), null, [
+            x.notEq(nullLiteral), null, [
           checkPromoted(x, 'int'),
         ]),
       ]);
@@ -668,7 +664,7 @@ main() {
       var x = Var('x');
       h.run([
         for_(declare(x, type: 'int?', initializer: expr('int?')),
-            x.expr.notEq(nullLiteral), null, [],
+            x.notEq(nullLiteral), null, [],
             forCollection: true),
       ]);
     });
@@ -688,19 +684,21 @@ main() {
         for_(
             null,
             expr('bool'),
-            block([
-              checkPromoted(x, 'int'),
-              checkNotPromoted(y),
-              checkNotPromoted(z),
-            ]).thenExpr(expr('Null')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  checkPromoted(x, 'int'),
+                  checkNotPromoted(y),
+                  checkNotPromoted(z),
+                ]),
+                expr('Null')),
             [
               if_(expr('bool'), [
-                x.expr.as_('int'),
-                y.expr.as_('int'),
+                x.as_('int'),
+                y.as_('int'),
                 continue_(),
               ]),
-              x.expr.as_('int'),
-              z.expr.as_('int'),
+              x.as_('int'),
+              z.as_('int'),
             ]),
       ]);
     });
@@ -717,10 +715,10 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
-        for_(null, x.expr.eq(nullLiteral).or(z.expr.eq(nullLiteral)), null, [
+        for_(null, x.eq(nullLiteral).or(z.eq(nullLiteral)), null, [
           if_(expr('bool'), [
-            x.expr.as_('int'),
-            y.expr.as_('int'),
+            x.as_('int'),
+            y.as_('int'),
             break_(),
           ]),
         ]),
@@ -769,7 +767,7 @@ main() {
         for_(null, expr('bool'), null, [
           x.write(expr('int?')),
           if_(expr('bool'), [break_()]),
-          if_(x.expr.is_('int'), []),
+          if_(x.is_('int'), []),
           getSsaNodes((nodes) {
             xSsaInsideLoop = nodes[x]!;
             ySsaInsideLoop = nodes[y]!;
@@ -790,7 +788,7 @@ main() {
       late SsaNode<Type> ssaBeforeLoop;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeLoop = nodes[x]!),
         forEachWithNonVariable(expr('List<int?>'), [
@@ -805,10 +803,10 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         forEachWithNonVariable(expr('List<int?>'), [
-          x.expr.as_('int'),
+          x.as_('int'),
           checkNotPromoted(x),
           localFunction([
             x.write(expr('int?')),
@@ -836,7 +834,7 @@ main() {
         checkAssigned(x, false),
         forEachWithVariableSet(x, expr('List<int?>'), [
           checkAssigned(x, true),
-          if_(x.expr.notEq(nullLiteral), [checkPromoted(x, 'int')]),
+          if_(x.notEq(nullLiteral), [checkPromoted(x, 'int')]),
         ]),
         checkAssigned(x, false),
       ]);
@@ -865,7 +863,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         forEachWithNonVariable(expr('List<int?>'), [
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
         ]),
         checkNotPromoted(x),
@@ -879,8 +877,8 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
-        y.expr.as_('int'),
+        x.as_('int'),
+        y.as_('int'),
         checkPromoted(x, 'int'),
         checkPromoted(y, 'int'),
         getSsaNodes((nodes) {
@@ -894,7 +892,7 @@ main() {
             expect(nodes[x], isNull);
             expect(nodes[y], isNotNull);
           }),
-          x.write(expr('int?')), x.expr.as_('int'),
+          x.write(expr('int?')), x.as_('int'),
         ]),
         // x is unpromoted after the local function too
         checkNotPromoted(x), checkPromoted(y, 'int'),
@@ -912,7 +910,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'), y.expr.as_('int'),
+        x.as_('int'), y.as_('int'),
         checkPromoted(x, 'int'), checkPromoted(y, 'int'),
         localFunction([
           // x is unpromoted within the local function, because the write
@@ -920,7 +918,7 @@ main() {
           checkNotPromoted(x), checkPromoted(y, 'int'),
           // And any effort to promote x fails, because there is no way of
           // knowing when the captured write might occur.
-          x.expr.as_('int'),
+          x.as_('int'),
           checkNotPromoted(x), checkPromoted(y, 'int'),
         ]),
         // x is still promoted after the local function, though, because the
@@ -944,7 +942,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'), y.expr.as_('int'),
+        x.as_('int'), y.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeFunction = nodes[x]!),
         checkPromoted(y, 'int'),
@@ -955,7 +953,7 @@ main() {
           getSsaNodes((nodes) => expect(nodes[x], isNot(ssaBeforeFunction))),
           checkPromoted(y, 'int'),
           // But it can be re-promoted because the write isn't captured.
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'), checkPromoted(y, 'int'),
         ]),
         // x is still promoted after the local function, though, because the
@@ -976,8 +974,8 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?'), isLate: true),
-        x.expr.as_('int'),
-        y.expr.as_('int'),
+        x.as_('int'),
+        y.as_('int'),
         checkPromoted(x, 'int'),
         checkPromoted(y, 'int'),
         localFunction([
@@ -1001,7 +999,7 @@ main() {
         // x is declared after the local function, so the local function
         // cannot possibly write to x.
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'), x.write(expr('Null')),
       ]);
     });
@@ -1013,11 +1011,11 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
+        y.as_('int'),
         getSsaNodes((nodes) => expect(nodes[x], isNotNull)),
         localFunction([
           getSsaNodes((nodes) => expect(nodes[x], isNot(nodes[y]))),
-          x.expr.as_('int'),
+          x.as_('int'),
           // Promotion should not occur, because x might be write-captured by
           // the time this code is reached.
           checkNotPromoted(x),
@@ -1100,7 +1098,7 @@ main() {
           ]),
           return_(),
           checkReachable(false),
-        ], checkReachable(true).thenExpr(booleanLiteral(true))),
+        ], second(checkReachable(true), expr('bool')).or(booleanLiteral(true))),
         checkReachable(false),
       ]);
     });
@@ -1116,7 +1114,7 @@ main() {
           ]),
           continue_(),
           checkReachable(false),
-        ], checkReachable(true).thenExpr(booleanLiteral(true))),
+        ], second(checkReachable(true), expr('bool')).or(booleanLiteral(true))),
         checkReachable(false),
       ]);
     });
@@ -1124,7 +1122,7 @@ main() {
     test('handleContinue handles null target', () {
       h.run([
         for_(null, booleanLiteral(true),
-            checkReachable(false).thenExpr(expr('Object?')), [
+            second(checkReachable(false), expr('Object?')), [
           checkReachable(true),
           continue_(Label.unbound()),
           checkReachable(false),
@@ -1137,12 +1135,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr
-            .ifNull(block([
-              checkReachable(true),
-              x.write(expr('int')),
-              checkPromoted(x, 'int'),
-            ]).thenExpr(expr('int?')))
+        x
+            .ifNull(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  x.write(expr('int')),
+                  checkPromoted(x, 'int'),
+                ]),
+                expr('int?')))
             .thenStmt(block([
               checkReachable(true),
               checkPromoted(x, 'int'),
@@ -1154,12 +1154,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr
-            .ifNull(block([
-              checkReachable(true),
-              x.expr.as_('int'),
-              checkPromoted(x, 'int'),
-            ]).thenExpr(expr('int?')))
+        x
+            .ifNull(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  x.as_('int'),
+                  checkPromoted(x, 'int'),
+                ]),
+                expr('int?')))
             .thenStmt(block([
               checkReachable(true),
               checkPromoted(x, 'int'),
@@ -1172,11 +1174,13 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         expr('int?')
-            .ifNull(block([
-              checkReachable(true),
-              x.expr.as_('int'),
-              checkPromoted(x, 'int'),
-            ]).thenExpr(expr('int?')))
+            .ifNull(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  x.as_('int'),
+                  checkPromoted(x, 'int'),
+                ]),
+                expr('int?')))
             .thenStmt(block([
               checkReachable(true),
               checkNotPromoted(x),
@@ -1187,7 +1191,7 @@ main() {
     test('ifNullExpression does not detect when RHS is unreachable', () {
       h.run([
         expr('int')
-            .ifNull(checkReachable(true).thenExpr(expr('int')))
+            .ifNull(second(checkReachable(true), expr('int')))
             .thenStmt(checkReachable(true)),
       ]);
     });
@@ -1196,7 +1200,7 @@ main() {
         () {
       h.run([
         expr('Null')
-            .ifNull(checkReachable(true).thenExpr(expr('Null')))
+            .ifNull(second(checkReachable(true), expr('Null')))
             .thenStmt(checkReachable(true)),
       ]);
     });
@@ -1206,7 +1210,7 @@ main() {
         () {
       h.run([
         expr('Null')
-            .ifNull(checkReachable(true).thenExpr(throw_(expr('Object'))))
+            .ifNull(second(checkReachable(true), throw_(expr('Object'))))
             .thenStmt(checkReachable(false)),
       ]);
     });
@@ -1216,7 +1220,7 @@ main() {
         'type', () {
       h.run([
         expr('Object')
-            .ifNull(checkReachable(true).thenExpr(throw_(expr('Object'))))
+            .ifNull(second(checkReachable(true), throw_(expr('Object'))))
             .thenStmt(checkReachable(true)),
       ]);
     });
@@ -1227,7 +1231,7 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         return_(),
         checkReachable(false),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkReachable(false),
@@ -1239,7 +1243,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
@@ -1259,15 +1263,15 @@ main() {
         declare(x, type: 'bool', initializer: expr('bool')),
         declare(y, type: 'bool', initializer: expr('bool')),
         declare(z, type: 'bool', initializer: expr('bool')),
-        x.write(w.expr.is_('int')),
+        x.write(w.is_('int')),
         getSsaNodes((nodes) {
           xSsaNodeBeforeIf = nodes[x]!;
           expect(xSsaNodeBeforeIf.expressionInfo, isNotNull);
         }),
         if_(expr('bool'), [
-          y.write(w.expr.is_('String')),
+          y.write(w.is_('String')),
         ], [
-          z.write(w.expr.is_('bool')),
+          z.write(w.is_('bool')),
         ]),
         getSsaNodes((nodes) {
           expect(nodes[x], same(xSsaNodeBeforeIf));
@@ -1407,7 +1411,7 @@ main() {
       var y = Var('y');
       h.run([
         declare(y, type: 'int?', initializer: expr('int?')),
-        declare(x, type: 'Object', initializer: y.expr.eq(nullLiteral)),
+        declare(x, type: 'Object', initializer: y.eq(nullLiteral)),
         getSsaNodes((nodes) {
           var info = nodes[x]!.expressionInfo!;
           var key = h.promotionKeyStore.keyForVariable(y);
@@ -1425,7 +1429,7 @@ main() {
       h.run([
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(x,
-            isLate: true, type: 'Object', initializer: y.expr.eq(nullLiteral)),
+            isLate: true, type: 'Object', initializer: y.eq(nullLiteral)),
         getSsaNodes((nodes) {
           expect(nodes[x]!.expressionInfo, isNull);
         }),
@@ -1440,8 +1444,7 @@ main() {
       var y = Var('y');
       h.run([
         declare(y, type: 'int?', initializer: expr('int?')),
-        declare(x,
-            initializer: y.expr.eq(nullLiteral), expectInferredType: 'bool'),
+        declare(x, initializer: y.eq(nullLiteral), expectInferredType: 'bool'),
         getSsaNodes((nodes) {
           expect(nodes[x]!.expressionInfo, isNull);
         }),
@@ -1456,8 +1459,7 @@ main() {
       var y = Var('y');
       h.run([
         declare(y, type: 'int?', initializer: expr('int?')),
-        declare(x,
-            initializer: y.expr.eq(nullLiteral), expectInferredType: 'bool'),
+        declare(x, initializer: y.eq(nullLiteral), expectInferredType: 'bool'),
         getSsaNodes((nodes) {
           expect(nodes[x]!.expressionInfo, isNotNull);
         }),
@@ -1472,7 +1474,7 @@ main() {
       var y = Var('y');
       h.run([
         declare(y, type: 'int?', initializer: expr('int?')),
-        declare(x, type: 'Object', initializer: y.expr.eq(nullLiteral)),
+        declare(x, type: 'Object', initializer: y.eq(nullLiteral)),
         getSsaNodes((nodes) {
           expect(nodes[x]!.expressionInfo, isNotNull);
         }),
@@ -1492,7 +1494,7 @@ main() {
             type: 'Object',
             // `y == null` is a trivial expression because y has been write
             // captured.
-            initializer: y.expr
+            initializer: y
                 .eq(nullLiteral)
                 .getExpressionInfo((info) => expect(info, isNotNull))),
         getSsaNodes((nodes) {
@@ -1509,7 +1511,7 @@ main() {
       h.run([
         declare(x, type: declaredType, initializer: expr(declaredType)),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        if_(x.expr.is_(tryPromoteType, isInverted: inverted), [
+        if_(x.is_(tryPromoteType, isInverted: inverted), [
           checkReachable(true),
           checkPromoted(x, expectedPromotedTypeThen),
           getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
@@ -1571,13 +1573,13 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.is_('int'), [
+        if_(x.is_('int'), [
           checkPromoted(x, 'int'),
         ]),
         localFunction([
           x.write(expr('int?')),
         ]),
-        if_(x.expr.is_('int'), [
+        if_(x.is_('int'), [
           checkNotPromoted(x),
         ]),
       ]);
@@ -1600,7 +1602,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'C', initializer: expr('C')),
-          if_(x.expr.property('f').is_('Never'), [
+          if_(x.property('f').is_('Never'), [
             checkReachable(false),
           ], [
             checkReachable(true),
@@ -1659,7 +1661,7 @@ main() {
       var l = Label('l');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.isNot('int'), [
+        if_(x.isNot('int'), [
           l.thenStmt(return_()),
         ]),
         checkPromoted(x, 'int'),
@@ -1671,7 +1673,7 @@ main() {
       var l = Label('l');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.isNot('int'), [
+        if_(x.isNot('int'), [
           l.thenStmt(block([
             if_(expr('bool'), [
               break_(l),
@@ -1687,9 +1689,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr
-            .notEq(nullLiteral)
-            .and(checkPromoted(x, 'int').thenExpr(expr('bool'))),
+        x.notEq(nullLiteral).and(second(checkPromoted(x, 'int'), expr('bool'))),
       ]);
     });
 
@@ -1697,7 +1697,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(expr('bool').and(x.expr.notEq(nullLiteral)), [
+        if_(expr('bool').and(x.notEq(nullLiteral)), [
           checkPromoted(x, 'int'),
         ]),
       ]);
@@ -1708,7 +1708,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(expr('bool').or(x.expr.eq(nullLiteral)), [], [
+        if_(expr('bool').or(x.eq(nullLiteral)), [], [
           checkPromoted(x, 'int'),
         ]),
       ]);
@@ -1718,9 +1718,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr
-            .eq(nullLiteral)
-            .or(checkPromoted(x, 'int').thenExpr(expr('bool'))),
+        x.eq(nullLiteral).or(second(checkPromoted(x, 'int'), expr('bool'))),
       ]);
     });
 
@@ -1734,7 +1732,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.notEq(nullLiteral).and(y.expr.notEq(nullLiteral)), [
+        if_(x.notEq(nullLiteral).and(y.notEq(nullLiteral)), [
           checkPromoted(x, 'int'),
           checkPromoted(y, 'int'),
         ]),
@@ -1751,7 +1749,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral).or(y.expr.eq(nullLiteral)), [], [
+        if_(x.eq(nullLiteral).or(y.eq(nullLiteral)), [], [
           checkPromoted(x, 'int'),
           checkPromoted(y, 'int'),
         ]),
@@ -1762,7 +1760,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral).not, [
+        if_(x.eq(nullLiteral).not, [
           checkPromoted(x, 'int'),
         ], [
           checkNotPromoted(x),
@@ -1784,7 +1782,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        x.expr.nonNullAssert,
+        x.nonNullAssert,
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
       ]);
@@ -1806,11 +1804,14 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforePromotion = nodes[x]!),
-        x.expr.nullAwareAccess(block([
-          checkReachable(true),
-          checkPromoted(x, 'int'),
-          getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
-        ]).thenExpr(expr('Null'))),
+        x.nullAwareAccess(second(
+            listLiteral(elementType: 'dynamic', [
+              checkReachable(true),
+              checkPromoted(x, 'int'),
+              getSsaNodes(
+                  (nodes) => expect(nodes[x], same(ssaBeforePromotion))),
+            ]),
+            expr('Null'))),
         checkNotPromoted(x),
         getSsaNodes((nodes) => expect(nodes[x], same(ssaBeforePromotion))),
       ]);
@@ -1820,11 +1821,13 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.nullAwareAccess(
-            block([
-              checkReachable(true),
-              checkNotPromoted(x),
-            ]).thenExpr(expr('Null')),
+        x.nullAwareAccess(
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  checkNotPromoted(x),
+                ]),
+                expr('Null')),
             isCascaded: true),
       ]);
     });
@@ -1833,11 +1836,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
-        expr('int').nullAwareAccess(block([
-          checkReachable(true),
-          checkPromoted(x, 'int'),
-        ]).thenExpr(x.write(expr('int?'))).thenStmt(checkNotPromoted(x))),
+        x.as_('int'),
+        expr('int').nullAwareAccess(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  checkPromoted(x, 'int'),
+                ]),
+                x.write(expr('int?')))
+            .thenStmt(checkNotPromoted(x))),
         checkNotPromoted(x),
       ]);
     });
@@ -1845,9 +1851,7 @@ main() {
     test('nullAwareAccess sets reachability correctly for `Null` type', () {
       h.run([
         expr('Null')
-            .nullAwareAccess(block([
-              checkReachable(false),
-            ]).thenExpr(expr('Object?')))
+            .nullAwareAccess(second(checkReachable(false), expr('Object?')))
             .thenStmt(checkReachable(true)),
       ]);
     });
@@ -1856,11 +1860,13 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        expr('int').nullAwareAccess(block([
-          checkReachable(true),
-          x.expr.as_('int'),
-          checkPromoted(x, 'int'),
-        ]).thenExpr(expr('Null'))),
+        expr('int').nullAwareAccess(second(
+            listLiteral(elementType: 'dynamic', [
+              checkReachable(true),
+              x.as_('int'),
+              checkPromoted(x, 'int'),
+            ]),
+            expr('Null'))),
         // Since the null-shorting path was reachable, promotion of `x` should
         // be cancelled.
         checkNotPromoted(x),
@@ -1871,11 +1877,9 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(
-            x.expr.parenthesized.notEq(nullLiteral.parenthesized).parenthesized,
-            [
-              checkPromoted(x, 'int'),
-            ]),
+        if_(x.parenthesized.notEq(nullLiteral.parenthesized).parenthesized, [
+          checkPromoted(x, 'int'),
+        ]),
       ]);
     });
 
@@ -1911,7 +1915,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         ifCase(
-          x.expr.notEq(nullLiteral),
+          x.notEq(nullLiteral),
           intLiteral(0).pattern,
           [
             checkNotPromoted(x),
@@ -1925,10 +1929,10 @@ main() {
       h.run([
         declare(x, type: 'num?', initializer: expr('num?')),
         checkNotPromoted(x),
-        x.expr.as_('num'),
+        x.as_('num'),
         checkPromoted(x, 'num'),
         // Check that it's a type of interest by promoting and de-promoting.
-        if_(x.expr.is_('int'), [
+        if_(x.is_('int'), [
           checkPromoted(x, 'int'),
           x.write(expr('num')),
           checkPromoted(x, 'num'),
@@ -1941,7 +1945,7 @@ main() {
       h.run([
         declare(x, type: 'num?', initializer: expr('num?')),
         checkNotPromoted(x),
-        x.expr.as_('String'),
+        x.as_('String'),
         checkNotPromoted(x),
       ]);
     });
@@ -1954,7 +1958,7 @@ main() {
         localFunction([
           x.write(expr('num')),
         ]),
-        x.expr.as_('num'),
+        x.as_('num'),
         checkNotPromoted(x),
       ]);
     });
@@ -1974,8 +1978,8 @@ main() {
         switchExpr(throw_(expr('C')), [
           intLiteral(0)
               .pattern
-              .thenExpr(checkReachable(false).thenExpr(intLiteral(1))),
-          default_.thenExpr(checkReachable(false).thenExpr(intLiteral(2))),
+              .thenExpr(second(checkReachable(false), intLiteral(1))),
+          default_.thenExpr(second(checkReachable(false), intLiteral(2))),
         ]),
         checkReachable(false),
       ]);
@@ -1985,7 +1989,7 @@ main() {
       h.run([
         switchExpr(expr('int'), [
           intLiteral(0).pattern.thenExpr(throw_(expr('C'))),
-          default_.thenExpr(checkReachable(true).thenExpr(intLiteral(2))),
+          default_.thenExpr(second(checkReachable(true), intLiteral(2))),
         ]),
         checkReachable(true),
       ]);
@@ -2007,7 +2011,7 @@ main() {
         switchExpr(expr('int'), [
           x
               .pattern(type: 'int?')
-              .thenExpr(checkPromoted(x, 'int').thenExpr(nullLiteral)),
+              .thenExpr(second(checkPromoted(x, 'int'), nullLiteral)),
         ]),
       ]);
     });
@@ -2041,7 +2045,7 @@ main() {
       var x = Var('x');
       h.run([
         switch_(expr('num'), [
-          x.pattern().when(x.expr.is_('int')).then([
+          x.pattern().when(x.is_('int')).then([
             checkPromoted(x, 'int'),
           ]),
         ]),
@@ -2054,8 +2058,8 @@ main() {
         switchExpr(expr('num'), [
           x
               .pattern()
-              .when(x.expr.is_('int'))
-              .thenExpr(checkPromoted(x, 'int').thenExpr(expr('String'))),
+              .when(x.is_('int'))
+              .thenExpr(second(checkPromoted(x, 'int'), expr('String'))),
         ]),
       ]);
     });
@@ -2064,7 +2068,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         switch_(expr('int'), [
           intLiteral(0).pattern.then([
             checkPromoted(x, 'int'),
@@ -2084,7 +2088,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         switch_(expr('int'), [
           intLiteral(0).pattern.then([
             checkPromoted(x, 'int'),
@@ -2100,7 +2104,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         switch_(
           expr('int'),
           [
@@ -2121,7 +2125,7 @@ main() {
       late SsaNode<Type> ssaBeforeSwitch;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         switch_(
           expr('int').thenStmt(block([
             checkPromoted(x, 'int'),
@@ -2129,7 +2133,7 @@ main() {
           ])),
           [
             switchStatementMember([
-              intLiteral(0).pattern.switchCase,
+              intLiteral(0).pattern,
             ], [
               checkNotPromoted(x),
               getSsaNodes((nodes) => expect(nodes[x], isNot(ssaBeforeSwitch))),
@@ -2145,14 +2149,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         switch_(
           expr('int'),
           [
             switchStatementMember([
-              intLiteral(0).pattern.switchCase,
+              intLiteral(0).pattern,
             ], [
-              x.expr.as_('int'),
+              x.as_('int'),
               checkNotPromoted(x),
               localFunction([
                 x.write(expr('int?')),
@@ -2172,11 +2176,11 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
-        z.expr.as_('int'),
+        y.as_('int'),
+        z.as_('int'),
         switch_(expr('int'), [
           intLiteral(0).pattern.then([
-            x.expr.as_('int'),
+            x.as_('int'),
             y.write(expr('int?')),
             break_(),
           ]),
@@ -2197,19 +2201,19 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
-        y.expr.as_('int'),
-        z.expr.as_('int'),
+        x.as_('int'),
+        y.as_('int'),
+        z.as_('int'),
         switch_(expr('int'), [
           intLiteral(0).pattern.then([
-            w.expr.as_('int'),
-            y.expr.as_('int'),
+            w.as_('int'),
+            y.as_('int'),
             x.write(expr('int?')),
             break_(),
           ]),
           default_.then([
-            w.expr.as_('int'),
-            x.expr.as_('int'),
+            w.as_('int'),
+            x.as_('int'),
             y.write(expr('int?')),
             break_(),
           ]),
@@ -2227,7 +2231,7 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         switch_(expr('int'), [
           intLiteral(0).pattern.then([
-            x.expr.as_('int'),
+            x.as_('int'),
             break_(),
           ]),
           default_.then([]),
@@ -2249,14 +2253,8 @@ main() {
           expr('num'),
           [
             switchStatementMember([
-              x1
-                  .pattern()
-                  .when(x1.expr.is_('int').and(y.expr.is_('int')))
-                  .switchCase,
-              x2
-                  .pattern()
-                  .when(y.expr.is_('int').and(z.expr.is_('int')))
-                  .switchCase,
+              x1.pattern().when(x1.is_('int').and(y.is_('int'))),
+              x2.pattern().when(y.is_('int').and(z.is_('int'))),
             ], [
               checkNotPromoted(x2),
               checkPromoted(y, 'int'),
@@ -2273,9 +2271,9 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
+        y.as_('int'),
         try_([
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
           checkPromoted(y, 'int'),
         ]).catch_(body: [
@@ -2291,11 +2289,11 @@ main() {
       late SsaNode<Type> ssaAfterTry;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         try_([
           x.write(expr('int?')),
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
           getSsaNodes((nodes) => ssaAfterTry = nodes[x]!),
         ]).catch_(body: [
@@ -2313,7 +2311,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         try_([
           localFunction([
@@ -2321,7 +2319,7 @@ main() {
           ]),
           return_(),
         ]).catch_(body: [
-          x.expr.as_('int'),
+          x.as_('int'),
           checkNotPromoted(x),
         ]),
       ]);
@@ -2333,7 +2331,7 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         try_([]).catch_(body: [
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
         ]).catch_(body: [
           checkNotPromoted(x),
@@ -2362,11 +2360,11 @@ main() {
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
         try_([
-          x.expr.as_('int'),
-          y.expr.as_('int'),
+          x.as_('int'),
+          y.as_('int'),
         ]).catch_(body: [
-          x.expr.as_('int'),
-          z.expr.as_('int'),
+          x.as_('int'),
+          z.as_('int'),
         ]),
         // Only x should be promoted, because it's the only variable
         // promoted in both the try body and the catch handler.
@@ -2385,11 +2383,11 @@ main() {
         try_([
           return_(),
         ]).catch_(body: [
-          x.expr.as_('int'),
-          y.expr.as_('int'),
+          x.as_('int'),
+          y.as_('int'),
         ]).catch_(body: [
-          x.expr.as_('int'),
-          z.expr.as_('int'),
+          x.as_('int'),
+          z.as_('int'),
         ]),
         // Only x should be promoted, because it's the only variable promoted
         // in both catch handlers.
@@ -2403,9 +2401,9 @@ main() {
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
+        y.as_('int'),
         try_([
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
           checkPromoted(y, 'int'),
         ]).finally_([
@@ -2423,12 +2421,12 @@ main() {
       late SsaNode<Type> ssaAfterTry;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         try_([
           getSsaNodes((nodes) => ssaAtStartOfTry = nodes[x]!),
           x.write(expr('int?')),
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
           getSsaNodes((nodes) => ssaAfterTry = nodes[x]!),
         ]).finally_([
@@ -2459,7 +2457,7 @@ main() {
           ]),
           return_(),
         ]).finally_([
-          x.expr.as_('int'),
+          x.as_('int'),
           checkNotPromoted(x),
         ]),
       ]);
@@ -2472,11 +2470,11 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         try_([
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
         ]).finally_([
           checkNotPromoted(x),
-          y.expr.as_('int'),
+          y.as_('int'),
           checkPromoted(y, 'int'),
         ]),
         // Both x and y should now be promoted.
@@ -2495,13 +2493,13 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         try_([
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
         ]).finally_([
           checkNotPromoted(x),
           x.write(expr('int?')),
           y.write(expr('int?')),
-          y.expr.as_('int'),
+          y.as_('int'),
           checkPromoted(y, 'int'),
           getSsaNodes((nodes) {
             xSsaAtEndOfFinally = nodes[x]!;
@@ -2631,7 +2629,7 @@ main() {
               x.write(expr('int?')),
             ]),
           ]).finally_([]),
-          if_(x.expr.notEq(nullLiteral), [
+          if_(x.notEq(nullLiteral), [
             checkNotPromoted(x),
           ]),
         ]);
@@ -2648,7 +2646,7 @@ main() {
               x.write(expr('int?')),
             ]),
           ]),
-          if_(x.expr.notEq(nullLiteral), [
+          if_(x.notEq(nullLiteral), [
             checkNotPromoted(x),
           ]),
         ]);
@@ -2661,7 +2659,7 @@ main() {
         h.run([
           declare(x, type: 'int?', initializer: expr('int?')),
           try_([
-            if_(x.expr.eq(nullLiteral), [
+            if_(x.eq(nullLiteral), [
               return_(),
             ]),
             checkPromoted(x, 'int'),
@@ -2673,7 +2671,7 @@ main() {
           // The capture in the `finally` cancels old promotions and prevents
           // future promotions.
           checkNotPromoted(x),
-          if_(x.expr.notEq(nullLiteral), [
+          if_(x.notEq(nullLiteral), [
             checkNotPromoted(x),
           ]),
         ]);
@@ -2686,12 +2684,12 @@ main() {
         h.run([
           declare(x, type: 'Object', initializer: expr('Object')),
           try_([
-            if_(x.expr.is_('num', isInverted: true), [
+            if_(x.is_('num', isInverted: true), [
               return_(),
             ]),
             checkPromoted(x, 'num'),
           ]).finally_([
-            if_(x.expr.is_('int', isInverted: true), [
+            if_(x.is_('int', isInverted: true), [
               return_(),
             ]),
           ]),
@@ -2709,13 +2707,13 @@ main() {
         h.run([
           declare(x, type: 'Object', initializer: expr('Object')),
           try_([
-            if_(x.expr.is_('String', isInverted: true), [
+            if_(x.is_('String', isInverted: true), [
               return_(),
             ]),
             checkPromoted(x, 'String'),
           ]).finally_([
             x.write(expr('Object')),
-            if_(x.expr.is_('int', isInverted: true), [
+            if_(x.is_('int', isInverted: true), [
               return_(),
             ]),
           ]),
@@ -2730,10 +2728,10 @@ main() {
         h.run([
           declare(x, type: 'Object', initializer: expr('Object')),
           try_([
-            if_(x.expr.is_('String', isInverted: true), []),
+            if_(x.is_('String', isInverted: true), []),
             checkNotPromoted(x),
           ]).finally_([
-            if_(x.expr.is_('int', isInverted: true), []),
+            if_(x.is_('int', isInverted: true), []),
             checkNotPromoted(x),
           ]),
           checkNotPromoted(x),
@@ -2874,19 +2872,19 @@ main() {
         declare(z, type: 'bool', initializer: expr('bool')),
         // Create a variable that promotes x if its value is true, and y if its
         // value is false.
-        z.write(x.expr.notEq(nullLiteral).conditional(
+        z.write(x.notEq(nullLiteral).conditional(
             booleanLiteral(true),
-            y.expr
+            y
                 .notEq(nullLiteral)
                 .conditional(booleanLiteral(false), throw_(expr('Object'))))),
         checkNotPromoted(x),
         checkNotPromoted(y),
         // Simply reading the variable shouldn't promote anything.
-        z.expr,
+        z,
         checkNotPromoted(x),
         checkNotPromoted(y),
         // But reading it in an "if" condition should promote.
-        if_(z.expr, [
+        if_(z, [
           checkPromoted(x, 'int'),
           checkNotPromoted(y),
         ], [
@@ -2906,18 +2904,18 @@ main() {
         // Create a variable that promotes x if its value is true, and y if its
         // value is false.
         declare(z,
-            initializer: x.expr.notEq(nullLiteral).conditional(
+            initializer: x.notEq(nullLiteral).conditional(
                 booleanLiteral(true),
-                y.expr.notEq(nullLiteral).conditional(
+                y.notEq(nullLiteral).conditional(
                     booleanLiteral(false), throw_(expr('Object'))))),
         checkNotPromoted(x),
         checkNotPromoted(y),
         // Simply reading the variable shouldn't promote anything.
-        z.expr,
+        z,
         checkNotPromoted(x),
         checkNotPromoted(y),
         // But reading it in an "if" condition should promote.
-        if_(z.expr, [
+        if_(z, [
           checkPromoted(x, 'int'),
           checkNotPromoted(y),
         ], [
@@ -2939,19 +2937,19 @@ main() {
         declare(z, type: 'bool', initializer: expr('bool')),
         // Create a variable that promotes x if its value is true, and y if its
         // value is false.
-        z.write(x.expr.notEq(nullLiteral).conditional(
+        z.write(x.notEq(nullLiteral).conditional(
             booleanLiteral(true),
-            y.expr
+            y
                 .notEq(nullLiteral)
                 .conditional(booleanLiteral(false), throw_(expr('Object'))))),
         checkNotPromoted(w),
         checkNotPromoted(x),
         checkNotPromoted(y),
-        w.expr.nonNullAssert,
+        w.nonNullAssert,
         checkPromoted(w, 'int'),
         // Reading the value of z in an "if" condition should promote x or y,
         // and keep the promotion of w.
-        if_(z.expr, [
+        if_(z, [
           checkPromoted(w, 'int'),
           checkPromoted(x, 'int'),
           checkNotPromoted(y),
@@ -2977,7 +2975,7 @@ main() {
         y.write(nullLiteral),
         checkNotPromoted(x),
         checkNotPromoted(y),
-        if_(x.expr.eq(y.expr), [
+        if_(x.eq(y), [
           checkNotPromoted(x),
           checkNotPromoted(y),
         ], [
@@ -2994,14 +2992,17 @@ main() {
       late SsaNode<Type> ssaBeforeLoop;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeLoop = nodes[x]!),
         while_(
-            block([
-              checkNotPromoted(x),
-              getSsaNodes((nodes) => expect(nodes[x], isNot(ssaBeforeLoop))),
-            ]).thenExpr(expr('bool')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  checkNotPromoted(x),
+                  getSsaNodes(
+                      (nodes) => expect(nodes[x], isNot(ssaBeforeLoop))),
+                ]),
+                expr('bool')),
             [
               x.write(expr('Null')),
             ]),
@@ -3013,32 +3014,19 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         while_(
-            block([
-              x.expr.as_('int'),
-              checkNotPromoted(x),
-              localFunction([
-                x.write(expr('int?')),
-              ]),
-            ]).thenExpr(expr('bool')),
+            second(
+                listLiteral(elementType: 'dynamic', [
+                  x.as_('int'),
+                  checkNotPromoted(x),
+                  localFunction([
+                    x.write(expr('int?')),
+                  ]),
+                ]),
+                expr('bool')),
             []),
-      ]);
-    });
-
-    test('whileStatement_conditionBegin() handles not-yet-seen variables', () {
-      var x = Var('x');
-      var y = Var('y');
-      h.run([
-        declare(y, type: 'int?', initializer: expr('int?')),
-        y.expr.as_('int'),
-        while_(
-            declare(x, type: 'int?', initializer: expr('int?'))
-                .thenExpr(expr('bool')),
-            [
-              x.write(expr('Null')),
-            ]),
       ]);
     });
 
@@ -3046,7 +3034,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        while_(x.expr.notEq(nullLiteral), [
+        while_(x.notEq(nullLiteral), [
           checkPromoted(x, 'int'),
         ]),
       ]);
@@ -3064,10 +3052,10 @@ main() {
         declare(x, type: 'int?', initializer: expr('int?')),
         declare(y, type: 'int?', initializer: expr('int?')),
         declare(z, type: 'int?', initializer: expr('int?')),
-        while_(x.expr.eq(nullLiteral).or(z.expr.eq(nullLiteral)), [
+        while_(x.eq(nullLiteral).or(z.eq(nullLiteral)), [
           if_(expr('bool'), [
-            x.expr.as_('int'),
-            y.expr.as_('int'),
+            x.as_('int'),
+            y.as_('int'),
             break_(),
           ]),
         ]),
@@ -3116,7 +3104,7 @@ main() {
         while_(expr('bool'), [
           x.write(expr('int?')),
           if_(expr('bool'), [break_()]),
-          if_(x.expr.is_('int'), []),
+          if_(x.is_('int'), []),
           getSsaNodes((nodes) {
             xSsaInsideLoop = nodes[x]!;
             ySsaInsideLoop = nodes[y]!;
@@ -3140,10 +3128,10 @@ main() {
       h.run([
         declare(x, type: 'Object', initializer: expr('Object')),
         declare(y, type: 'int?', initializer: expr('int?')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         getSsaNodes((nodes) => ssaBeforeWrite = nodes[x]!),
-        x.write(y.expr.eq(nullLiteral).getExpressionInfo((info) {
+        x.write(y.eq(nullLiteral).getExpressionInfo((info) {
           expect(info, isNotNull);
           writtenValueInfo = info!;
         })),
@@ -3164,7 +3152,7 @@ main() {
         declare(x, type: 'Object', initializer: expr('Object')),
         declare(y, type: 'int?', initializer: expr('int?')),
         getSsaNodes((nodes) => ssaBeforeWrite = nodes[x]!),
-        x.write(y.expr.eq(nullLiteral).getExpressionInfo((info) {
+        x.write(y.eq(nullLiteral).getExpressionInfo((info) {
           expect(info, isNotNull);
           writtenValueInfo = info!;
         })),
@@ -3199,7 +3187,7 @@ main() {
           xSsaBeforeWrite = nodes[x]!;
           ySsa = nodes[y]!;
         }),
-        x.write(y.expr),
+        x.write(y),
         getSsaNodes((nodes) {
           expect(nodes[x], isNot(xSsaBeforeWrite));
           expect(nodes[x], isNot(ySsa));
@@ -3220,7 +3208,7 @@ main() {
         getSsaNodes((nodes) => ssaBeforeWrite = nodes[x]!),
         // `y == null` is a trivial expression because y has been write
         // captured.
-        x.write(y.expr
+        x.write(y
             .eq(nullLiteral)
             .getExpressionInfo((info) => expect(info, isNotNull))),
         getSsaNodes((nodes) {
@@ -3259,7 +3247,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'Object', initializer: expr('Object')),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkPromoted(x, 'int'),
         if_(booleanLiteral(false), [
           checkPromoted(x, 'int'),
@@ -3275,7 +3263,7 @@ main() {
           x.write(expr('Object')),
         ]),
         getSsaNodes((nodes) => expect(nodes[x], isNull)),
-        x.expr.as_('int'),
+        x.as_('int'),
         checkNotPromoted(x),
         getSsaNodes((nodes) => expect(nodes[x], isNull)),
       ]);
@@ -3292,12 +3280,12 @@ main() {
         ], [
           // Promotion should work here because the write capture is in the
           // other branch.
-          x.expr.as_('int'), checkPromoted(x, 'int'),
+          x.as_('int'), checkPromoted(x, 'int'),
         ]),
         // But the promotion should be cancelled now, after the join.
         checkNotPromoted(x),
         // And further attempts to promote should fail due to the write capture.
-        x.expr.as_('int'), checkNotPromoted(x),
+        x.as_('int'), checkNotPromoted(x),
       ]);
     });
 
@@ -3308,7 +3296,7 @@ main() {
         localFunction([
           declare(b, type: 'bool', initializer: expr('bool').or(expr('bool'))),
           declare(i, isFinal: true, type: 'int'),
-          if_(b.expr, [
+          if_(b, [
             checkUnassigned(i, true),
             i.write(expr('int')),
           ], [
@@ -4632,7 +4620,7 @@ main() {
           x: model(null),
           y: model([intType])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), {
+        expect(FlowModel.joinVariableInfo(h, p1, p2), {
           x: _matchVariableModel(chain: null, ofInterest: ['int']),
           y: _matchVariableModel(chain: null, ofInterest: ['int'])
         });
@@ -4644,7 +4632,7 @@ main() {
           x: model([intType]),
           y: model([stringType])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p, p), same(p));
+        expect(FlowModel.joinVariableInfo(h, p, p), same(p));
       });
 
       test('one input empty', () {
@@ -4654,10 +4642,8 @@ main() {
         };
         var p2 = <int, VariableModel<Type>>{};
         const expected = const <int, VariableModel<Never>>{};
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2),
-            same(expected));
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1),
-            same(expected));
+        expect(FlowModel.joinVariableInfo(h, p1, p2), same(expected));
+        expect(FlowModel.joinVariableInfo(h, p2, p1), same(expected));
       });
 
       test('promoted with unpromoted', () {
@@ -4668,8 +4654,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: null, ofInterest: ['int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
+        expect(FlowModel.joinVariableInfo(h, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h, p2, p1), expected);
       });
 
       test('related type chains', () {
@@ -4682,8 +4668,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
+        expect(FlowModel.joinVariableInfo(h, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h, p2, p1), expected);
       });
 
       test('unrelated type chains', () {
@@ -4696,8 +4682,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: null, ofInterest: ['String', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
+        expect(FlowModel.joinVariableInfo(h, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h, p2, p1), expected);
       });
 
       test('sub-map', () {
@@ -4707,8 +4693,8 @@ main() {
           y: model([stringType])
         };
         var p2 = {x: xModel};
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), same(p2));
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), same(p2));
+        expect(FlowModel.joinVariableInfo(h, p1, p2), same(p2));
+        expect(FlowModel.joinVariableInfo(h, p2, p1), same(p2));
       });
 
       test('sub-map with matched subtype', () {
@@ -4722,8 +4708,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
+        expect(FlowModel.joinVariableInfo(h, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h, p2, p1), expected);
       });
 
       test('sub-map with mismatched subtype', () {
@@ -4737,8 +4723,8 @@ main() {
         var expected = {
           x: _matchVariableModel(chain: ['int?'], ofInterest: ['int?', 'int'])
         };
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p1, p2), expected);
-        expect(FlowModel.joinVariableInfo(h.typeOperations, p2, p1), expected);
+        expect(FlowModel.joinVariableInfo(h, p1, p2), expected);
+        expect(FlowModel.joinVariableInfo(h, p2, p1), expected);
       });
 
       test('assigned', () {
@@ -4746,7 +4732,7 @@ main() {
         var assigned = model(null, assigned: true);
         var p1 = {x: assigned, y: assigned, z: unassigned, w: unassigned};
         var p2 = {x: assigned, y: unassigned, z: assigned, w: unassigned};
-        var joined = FlowModel.joinVariableInfo(h.typeOperations, p1, p2);
+        var joined = FlowModel.joinVariableInfo(h, p1, p2);
         expect(joined, {
           x: same(assigned),
           y: _matchVariableModel(
@@ -4772,7 +4758,7 @@ main() {
           z: writeCapturedModel,
           w: intQModel
         };
-        var joined = FlowModel.joinVariableInfo(h.typeOperations, p1, p2);
+        var joined = FlowModel.joinVariableInfo(h, p1, p2);
         expect(joined, {
           x: same(writeCapturedModel),
           y: same(writeCapturedModel),
@@ -4804,7 +4790,7 @@ main() {
 
     test('first is null', () {
       var s1 = FlowModel.withInfo(Reachability.initial.split(), emptyMap);
-      var result = FlowModel.merge(h.typeOperations, null, s1);
+      var result = FlowModel.merge(h, null, s1);
       expect(result.reachable, same(Reachability.initial));
     });
 
@@ -4812,7 +4798,7 @@ main() {
       var splitPoint = Reachability.initial.split();
       var afterSplit = splitPoint.split();
       var s1 = FlowModel.withInfo(afterSplit, emptyMap);
-      var result = FlowModel.merge(h.typeOperations, s1, null);
+      var result = FlowModel.merge(h, s1, null);
       expect(result.reachable, same(splitPoint));
     });
 
@@ -4825,7 +4811,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit, {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2);
+      var result = FlowModel.merge(h, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo[x]!.promotedTypes, isNull);
     });
@@ -4839,7 +4825,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit, {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2);
+      var result = FlowModel.merge(h, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo, same(s2.variableInfo));
     });
@@ -4853,7 +4839,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2);
+      var result = FlowModel.merge(h, s1, s2);
       expect(result.reachable, same(splitPoint));
       expect(result.variableInfo, same(s1.variableInfo));
     });
@@ -4867,7 +4853,7 @@ main() {
       var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
         x: varModel([stringType])
       });
-      var result = FlowModel.merge(h.typeOperations, s1, s2);
+      var result = FlowModel.merge(h, s1, s2);
       expect(result.reachable.locallyReachable, false);
       expect(result.reachable.parent, same(splitPoint.parent));
       expect(result.variableInfo[x]!.promotedTypes, isNull);
@@ -4930,7 +4916,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'int'),
             ]),
           ]);
@@ -4941,7 +4927,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [], [
+            if_(x.is_('int'), [], [
               checkNotPromoted(x),
             ]),
           ]);
@@ -4952,7 +4938,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkNotPromoted(x),
               x.write(expr('int')),
             ]),
@@ -4969,7 +4955,7 @@ main() {
                     .write(expr('int'))
                     .parenthesized
                     .eq(expr('int'))
-                    .and(x.expr.is_('int')),
+                    .and(x.is_('int')),
                 [
                   checkPromoted(x, 'int'),
                 ]),
@@ -4981,7 +4967,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'int'),
             ], [
               x.write(expr('int')),
@@ -4994,7 +4980,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkNotPromoted(x),
             ]),
             localFunction([
@@ -5010,10 +4996,10 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkNotPromoted(x),
               localFunction([
-                x.expr,
+                x,
               ]),
             ]),
             x.write(expr('int')),
@@ -5027,11 +5013,11 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkNotPromoted(x),
               localFunction([
                 localFunction([
-                  x.expr,
+                  x,
                 ]),
               ]),
             ]),
@@ -5047,9 +5033,12 @@ main() {
           h.run([
             declare(x, type: 'Object'),
             if_(
-                localFunction([
-                  x.expr,
-                ]).thenExpr(expr('bool')).and(x.expr.is_('int')),
+                second(
+                        localFunction([
+                          x,
+                        ]),
+                        expr('bool'))
+                    .and(x.is_('int')),
                 [
                   checkPromoted(x, 'int'),
                 ]),
@@ -5064,11 +5053,11 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'int'),
             ], [
               localFunction([
-                x.expr,
+                x,
               ]),
             ]),
             x.write(expr('int')),
@@ -5082,10 +5071,10 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'int'),
               localFunction([
-                x.expr,
+                x,
               ]),
             ]),
           ]);
@@ -5104,7 +5093,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'bool'),
-          if_(x.expr, []),
+          if_(x, []),
         ]);
       });
 
@@ -5115,7 +5104,7 @@ main() {
         h.run([
           declare(x, type: 'Object'),
           declare(y, type: 'Object'),
-          if_(x.expr.is_('int').and(y.expr.is_('String')), [
+          if_(x.is_('int').and(y.is_('String')), [
             checkPromoted(x, 'int'),
             checkPromoted(y, 'String'),
           ]),
@@ -5130,8 +5119,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                checkPromoted(x, 'int').thenExpr(expr('Object')),
+            x.is_('int').conditional(
+                second(checkPromoted(x, 'int'), expr('Object')),
                 expr('Object')),
           ]);
         });
@@ -5141,8 +5130,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                expr('Object'), checkNotPromoted(x).thenExpr(expr('Object'))),
+            x.is_('int').conditional(
+                expr('Object'), second(checkNotPromoted(x), expr('Object'))),
           ]);
         });
 
@@ -5151,11 +5140,13 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                block([
-                  checkNotPromoted(x),
-                  x.write(expr('int')),
-                ]).thenExpr(expr('Object')),
+            x.is_('int').conditional(
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkNotPromoted(x),
+                      x.write(expr('int')),
+                    ]),
+                    expr('Object')),
                 expr('Object')),
           ]);
         });
@@ -5169,8 +5160,8 @@ main() {
                 .write(expr('int'))
                 .parenthesized
                 .eq(expr('int'))
-                .and(x.expr.is_('int'))
-                .conditional(checkPromoted(x, 'int').thenExpr(expr('Object')),
+                .and(x.is_('int'))
+                .conditional(second(checkPromoted(x, 'int'), expr('Object')),
                     expr('Object')),
           ]);
         });
@@ -5180,8 +5171,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                checkPromoted(x, 'int').thenExpr(expr('int')),
+            x.is_('int').conditional(
+                second(checkPromoted(x, 'int'), expr('int')),
                 x.write(expr('int'))),
           ]);
         });
@@ -5191,8 +5182,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                checkNotPromoted(x).thenExpr(expr('Object')), expr('Object')),
+            x.is_('int').conditional(
+                second(checkNotPromoted(x), expr('Object')), expr('Object')),
             localFunction([
               x.write(expr('int')),
             ]),
@@ -5206,13 +5197,15 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                block([
-                  checkNotPromoted(x),
-                  localFunction([
-                    x.expr,
-                  ]),
-                ]).thenExpr(expr('Object')),
+            x.is_('int').conditional(
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkNotPromoted(x),
+                      localFunction([
+                        x,
+                      ]),
+                    ]),
+                    expr('Object')),
                 expr('Object')),
             x.write(expr('int')),
           ]);
@@ -5225,11 +5218,14 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            localFunction([
-              x.expr,
-            ]).thenExpr(expr('Object')).and(x.expr.is_('int')).conditional(
-                checkPromoted(x, 'int').thenExpr(expr('Object')),
-                expr('Object')),
+            second(
+                    localFunction([
+                      x,
+                    ]),
+                    expr('Object'))
+                .and(x.is_('int'))
+                .conditional(second(checkPromoted(x, 'int'), expr('Object')),
+                    expr('Object')),
             x.write(expr('int')),
           ]);
         });
@@ -5241,11 +5237,13 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                checkPromoted(x, 'int').thenExpr(expr('Object')),
-                localFunction([
-                  x.expr,
-                ]).thenExpr(expr('Object'))),
+            x.is_('int').conditional(
+                second(checkPromoted(x, 'int'), expr('Object')),
+                second(
+                    localFunction([
+                      x,
+                    ]),
+                    expr('Object'))),
             x.write(expr('int')),
           ]);
         });
@@ -5257,13 +5255,15 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            x.expr.is_('int').conditional(
-                block([
-                  checkPromoted(x, 'int'),
-                  localFunction([
-                    x.expr,
-                  ]),
-                ]).thenExpr(expr('Object')),
+            x.is_('int').conditional(
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkPromoted(x, 'int'),
+                      localFunction([
+                        x,
+                      ]),
+                    ]),
+                    expr('Object')),
                 expr('Object')),
           ]);
         });
@@ -5281,7 +5281,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'bool'),
-          x.expr.conditional(expr('Object'), expr('Object')),
+          x.conditional(expr('Object'), expr('Object')),
         ]);
       });
 
@@ -5292,11 +5292,13 @@ main() {
         h.run([
           declare(x, type: 'Object'),
           declare(y, type: 'Object'),
-          x.expr.is_('int').and(y.expr.is_('String')).conditional(
-              block([
-                checkPromoted(x, 'int'),
-                checkPromoted(y, 'String'),
-              ]).thenExpr(expr('Object')),
+          x.is_('int').and(y.is_('String')).conditional(
+              second(
+                  listLiteral(elementType: 'dynamic', [
+                    checkPromoted(x, 'int'),
+                    checkPromoted(y, 'String'),
+                  ]),
+                  expr('Object')),
               expr('Object'))
         ]);
       });
@@ -5310,7 +5312,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              if_(x.expr.is_('int').and(expr('bool')), [
+              if_(x.is_('int').and(expr('bool')), [
                 checkPromoted(x, 'int'),
               ]),
             ]);
@@ -5321,7 +5323,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              if_(expr('bool').and(x.expr.is_('int')), [
+              if_(expr('bool').and(x.is_('int')), [
                 checkPromoted(x, 'int'),
               ]),
             ]);
@@ -5332,7 +5334,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              if_(x.expr.is_('int').and(x.write(expr('bool'))), [
+              if_(x.is_('int').and(x.write(expr('bool'))), [
                 checkNotPromoted(x),
               ]),
             ]);
@@ -5345,10 +5347,8 @@ main() {
             h.run([
               declare(x, type: 'Object'),
               if_(
-                  expr('bool').and(x
-                      .write(expr('Object'))
-                      .and(x.expr.is_('int'))
-                      .parenthesized),
+                  expr('bool').and(
+                      x.write(expr('Object')).and(x.is_('int')).parenthesized),
                   [
                     checkNotPromoted(x),
                   ]),
@@ -5360,7 +5360,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              if_(x.expr.is_('int').and(expr('bool')), [
+              if_(x.is_('int').and(expr('bool')), [
                 checkNotPromoted(x),
               ]),
               localFunction([
@@ -5376,9 +5376,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              x.expr
-                  .is_('int')
-                  .and(checkPromoted(x, 'int').thenExpr(expr('bool'))),
+              x.is_('int').and(second(checkPromoted(x, 'int'), expr('bool'))),
             ]);
           });
 
@@ -5391,9 +5389,9 @@ main() {
                   .write(expr('int'))
                   .parenthesized
                   .eq(expr('int'))
-                  .and(x.expr.is_('int'))
+                  .and(x.is_('int'))
                   .parenthesized
-                  .and(checkNotPromoted(x).thenExpr(expr('bool'))),
+                  .and(second(checkNotPromoted(x), expr('bool'))),
             ]);
           });
 
@@ -5402,9 +5400,9 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              x.expr
+              x
                   .is_('int')
-                  .and(checkNotPromoted(x).thenExpr(x.write(expr('bool')))),
+                  .and(second(checkNotPromoted(x), x.write(expr('bool')))),
             ]);
           });
 
@@ -5413,7 +5411,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              x.expr.is_('int').and(checkNotPromoted(x).thenExpr(expr('bool'))),
+              x.is_('int').and(second(checkNotPromoted(x), expr('bool'))),
               localFunction([
                 x.write(expr('int')),
               ]),
@@ -5427,12 +5425,14 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              x.expr.is_('int').and(block([
+              x.is_('int').and(second(
+                  listLiteral(elementType: 'dynamic', [
                     checkNotPromoted(x),
                     localFunction([
-                      x.expr,
+                      x,
                     ]),
-                  ]).thenExpr(expr('bool'))),
+                  ]),
+                  expr('bool'))),
               x.write(expr('int')),
             ]);
           });
@@ -5444,13 +5444,14 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              localFunction([
-                x.expr,
-              ])
-                  .thenExpr(expr('Object'))
-                  .and(x.expr.is_('int'))
+              second(
+                      localFunction([
+                        x,
+                      ]),
+                      expr('Object'))
+                  .and(x.is_('int'))
                   .parenthesized
-                  .and(checkPromoted(x, 'int').thenExpr(expr('bool'))),
+                  .and(second(checkPromoted(x, 'int'), expr('bool'))),
               x.write(expr('int')),
             ]);
           });
@@ -5462,12 +5463,14 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'Object'),
-              x.expr.is_('int').and(block([
+              x.is_('int').and(second(
+                  listLiteral(elementType: 'dynamic', [
                     checkPromoted(x, 'int'),
                     localFunction([
-                      x.expr,
+                      x,
                     ]),
-                  ]).thenExpr(expr('bool'))),
+                  ]),
+                  expr('bool'))),
             ]);
           });
         });
@@ -5484,9 +5487,9 @@ main() {
                 x
                     .write(expr('Object'))
                     .parenthesized
-                    .and(x.expr.is_('int'))
+                    .and(x.is_('int'))
                     .parenthesized
-                    .and(x.expr.is_('num')),
+                    .and(x.is_('num')),
                 [
                   checkPromoted(x, 'int'),
                 ]),
@@ -5498,7 +5501,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('num').and(x.expr.is_('int')), [
+            if_(x.is_('num').and(x.is_('int')), [
               checkPromoted(x, 'int'),
             ]),
           ]);
@@ -5511,14 +5514,12 @@ main() {
           h.run([
             declare(x, type: 'Object'),
             declare(y, type: 'Object'),
-            x.expr
-                .is_('int')
-                .and(y.expr.is_('String'))
-                .parenthesized
-                .and(block([
+            x.is_('int').and(y.is_('String')).parenthesized.and(second(
+                listLiteral(elementType: 'dynamic', [
                   checkPromoted(x, 'int'),
                   checkPromoted(y, 'String'),
-                ]).thenExpr(expr('bool'))),
+                ]),
+                expr('bool'))),
           ]);
         });
 
@@ -5529,7 +5530,7 @@ main() {
           h.run([
             declare(x, type: 'bool'),
             declare(y, type: 'bool'),
-            if_(x.expr.and(y.expr), []),
+            if_(x.and(y), []),
           ]);
         });
 
@@ -5546,7 +5547,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'Object'),
-          if_(x.expr.is_('int').or(x.expr.is_('int')), [
+          if_(x.is_('int').or(x.is_('int')), [
             checkNotPromoted(x),
           ], [
             checkNotPromoted(x),
@@ -5562,7 +5563,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'int'),
             ], [
               checkNotPromoted(x),
@@ -5575,7 +5576,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('int', isInverted: true), [
+            if_(x.is_('int', isInverted: true), [
               checkNotPromoted(x),
             ], [
               checkNotPromoted(x),
@@ -5589,7 +5590,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'String'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkNotPromoted(x),
             ], [
               checkNotPromoted(x),
@@ -5602,8 +5603,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('num'), [
-              if_(x.expr.is_('int'), [
+            if_(x.is_('num'), [
+              if_(x.is_('int'), [
                 checkPromoted(x, 'int'),
               ], [
                 checkPromoted(x, 'num'),
@@ -5619,8 +5620,8 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'Object'),
-            if_(x.expr.is_('String'), [
-              if_(x.expr.is_('int'), [
+            if_(x.is_('String'), [
+              if_(x.is_('int'), [
                 checkPromoted(x, 'String'),
               ], [
                 checkPromoted(x, 'String'),
@@ -5635,7 +5636,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'T'),
-            if_(x.expr.is_('int'), [
+            if_(x.is_('int'), [
               checkPromoted(x, 'T&int'),
             ]),
           ]);
@@ -5656,7 +5657,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'Object'),
-        if_(x.expr.is_('int').eq(expr('Object')).thenStmt(block([])), [
+        if_(x.is_('int').eq(expr('Object')).thenStmt(block([])), [
           checkNotPromoted(x),
         ]),
       ]);
@@ -5669,7 +5670,7 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'Object'),
-        if_(x.expr.is_('int').eq(expr('Object')).parenthesized, [
+        if_(x.is_('int').eq(expr('Object')).parenthesized, [
           checkNotPromoted(x),
         ]),
       ]);
@@ -5697,13 +5698,13 @@ main() {
       late Expression writeExpression;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
         (writeExpression = x.write(expr('int?'))),
         checkNotPromoted(x),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           expect(reasons.keys, unorderedEquals([Type('int')]));
           var nonPromotionReason =
               reasons.values.single as DemoteViaExplicitWrite<Var>;
@@ -5717,16 +5718,16 @@ main() {
       late Expression writeExpression;
       h.run([
         declare(x, type: 'Object?', initializer: expr('Object?')),
-        if_(x.expr.isNot('int?'), [
+        if_(x.isNot('int?'), [
           return_(),
         ]),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
         (writeExpression = x.write(expr('Object?'))),
         checkNotPromoted(x),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           expect(reasons.keys, unorderedEquals([Type('int'), Type('int?')]));
           expect((reasons[Type('int')] as DemoteViaExplicitWrite<Var>).node,
               same(writeExpression));
@@ -5741,13 +5742,13 @@ main() {
       late Pattern writePattern;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
         (writePattern = x.pattern()).assign(expr('int?')),
         checkNotPromoted(x),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           expect(reasons.keys, unorderedEquals([Type('int')]));
           var nonPromotionReason =
               reasons.values.single as DemoteViaExplicitWrite<Var>;
@@ -5761,7 +5762,7 @@ main() {
       late Expression writeExpression;
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
@@ -5770,7 +5771,7 @@ main() {
         if_(expr('bool'), [
           return_(),
         ]),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           expect(reasons.keys, unorderedEquals([Type('int')]));
           var nonPromotionReason =
               reasons.values.single as DemoteViaExplicitWrite<Var>;
@@ -5784,17 +5785,17 @@ main() {
       late Expression writeExpression;
       h.run([
         declare(x, type: 'Object', initializer: expr('Object')),
-        if_(x.expr.is_('int', isInverted: true), [
+        if_(x.is_('int', isInverted: true), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
         (writeExpression = x.write(expr('Object'))),
         checkNotPromoted(x),
-        if_(x.expr.is_('num', isInverted: true), [
+        if_(x.is_('num', isInverted: true), [
           return_(),
         ]),
         checkPromoted(x, 'num'),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           var nonPromotionReason =
               reasons[Type('int')] as DemoteViaExplicitWrite<Var>;
           expect(nonPromotionReason.node, same(writeExpression));
@@ -5806,17 +5807,17 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'int?', initializer: expr('int?')),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
         x.write(expr('int?')),
         checkNotPromoted(x),
-        if_(x.expr.eq(nullLiteral), [
+        if_(x.eq(nullLiteral), [
           return_(),
         ]),
         checkPromoted(x, 'int'),
-        x.expr.whyNotPromoted((reasons) {
+        x.whyNotPromoted((reasons) {
           expect(reasons, isEmpty);
         }),
       ]);
@@ -5858,10 +5859,10 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'C', initializer: expr('C')),
-          if_(x.expr.property('field').eq(nullLiteral), [
+          if_(x.property('field').eq(nullLiteral), [
             return_(),
           ]),
-          x.expr.property('field').whyNotPromoted((reasons) {
+          x.property('field').whyNotPromoted((reasons) {
             expect(reasons.keys, unorderedEquals([Type('Object')]));
             var nonPromotionReason = reasons.values.single;
             expect(nonPromotionReason, TypeMatcher<PropertyNotPromoted>());
@@ -5911,11 +5912,11 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').eq(nullLiteral), [
+        if_(x.property('_field').eq(nullLiteral), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'Object'),
-        x.expr.property('_field').checkType('Object'),
+        checkPromoted(x.property('_field'), 'Object'),
+        x.property('_field').checkType('Object'),
       ]);
     });
 
@@ -5936,11 +5937,11 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').eq(nullLiteral), [
+        if_(x.property('_field').eq(nullLiteral), [
           return_(),
         ]),
-        checkNotPromoted(x.expr.property('_field')),
-        x.expr.property('_field').checkType('Object?'),
+        checkNotPromoted(x.property('_field')),
+        x.property('_field').checkType('Object?'),
       ]);
     });
 
@@ -5961,14 +5962,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').eq(nullLiteral), [
+        if_(x.property('_field').eq(nullLiteral), [
           return_(),
         ]),
-        if_(x.expr.property('_field').isNot('int'), [
+        if_(x.property('_field').isNot('int'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'int'),
-        x.expr.property('_field').checkType('int'),
+        checkPromoted(x.property('_field'), 'int'),
+        x.property('_field').checkType('int'),
       ]);
     });
 
@@ -5995,16 +5996,16 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'B', initializer: expr('B')),
-        if_(x.expr.property('_field').eq(nullLiteral), [
+        if_(x.property('_field').eq(nullLiteral), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'Object'),
-        x.expr.property('_field').checkType('Object'),
-        if_(x.expr.isNot('C'), [
+        checkPromoted(x.property('_field'), 'Object'),
+        x.property('_field').checkType('Object'),
+        if_(x.isNot('C'), [
           return_(),
         ]),
-        checkNotPromoted(x.expr.property('_field')),
-        x.expr.property('_field').checkType('num?'),
+        checkNotPromoted(x.property('_field')),
+        x.property('_field').checkType('num?'),
       ]);
     });
 
@@ -6016,16 +6017,16 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'B', initializer: expr('B')),
-        if_(x.expr.property('_field').isNot('int'), [
+        if_(x.property('_field').isNot('int'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'int'),
-        x.expr.property('_field').checkType('int'),
-        if_(x.expr.isNot('C'), [
+        checkPromoted(x.property('_field'), 'int'),
+        x.property('_field').checkType('int'),
+        if_(x.isNot('C'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'int'),
-        x.expr.property('_field').checkType('int'),
+        checkPromoted(x.property('_field'), 'int'),
+        x.property('_field').checkType('int'),
       ]);
     });
 
@@ -6037,15 +6038,15 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'B', initializer: expr('B')),
-        if_(x.expr.is_('C'), [
-          if_(x.expr.property('_field').notEq(nullLiteral), [
-            checkPromoted(x.expr.property('_field'), 'Object'),
-            x.expr.property('_field').checkType('Object'),
+        if_(x.is_('C'), [
+          if_(x.property('_field').notEq(nullLiteral), [
+            checkPromoted(x.property('_field'), 'Object'),
+            x.property('_field').checkType('Object'),
           ]),
         ]),
-        if_(x.expr.property('_field').notEq(nullLiteral), [
-          checkNotPromoted(x.expr.property('_field')),
-          x.expr.property('_field').checkType('Object?'),
+        if_(x.property('_field').notEq(nullLiteral), [
+          checkNotPromoted(x.property('_field')),
+          x.property('_field').checkType('Object?'),
         ]),
       ]);
     });
@@ -6058,14 +6059,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'B', initializer: expr('B')),
-        if_(x.expr.property('_field').notEq(nullLiteral), [
-          checkNotPromoted(x.expr.property('_field')),
-          x.expr.property('_field').checkType('Object?'),
+        if_(x.property('_field').notEq(nullLiteral), [
+          checkNotPromoted(x.property('_field')),
+          x.property('_field').checkType('Object?'),
         ]),
-        if_(x.expr.is_('C'), [
-          if_(x.expr.property('_field').notEq(nullLiteral), [
-            checkPromoted(x.expr.property('_field'), 'Object'),
-            x.expr.property('_field').checkType('Object'),
+        if_(x.is_('C'), [
+          if_(x.property('_field').notEq(nullLiteral), [
+            checkPromoted(x.property('_field'), 'Object'),
+            x.property('_field').checkType('Object'),
           ]),
         ]),
       ]);
@@ -6086,10 +6087,10 @@ main() {
         if_(this_.property('_field2').isNot('String?'), [
           return_(),
         ]),
-        if_(x.expr.property('_field1').isNot('int'), [
+        if_(x.property('_field1').isNot('int'), [
           return_(),
         ]),
-        if_(y.expr.property('_field1').isNot('double'), [
+        if_(y.property('_field1').isNot('double'), [
           return_(),
         ]),
         checkPromoted(thisProperty('_field1'), 'String'),
@@ -6100,14 +6101,14 @@ main() {
         thisProperty('_field2').checkType('String?'),
         checkPromoted(this_.property('_field2'), 'String?'),
         this_.property('_field2').checkType('String?'),
-        checkPromoted(x.expr.property('_field1'), 'int'),
-        x.expr.property('_field1').checkType('int'),
-        checkNotPromoted(x.expr.property('_field2')),
-        x.expr.property('_field2').checkType('Object?'),
-        checkPromoted(y.expr.property('_field1'), 'double'),
-        y.expr.property('_field1').checkType('double'),
-        checkNotPromoted(y.expr.property('_field2')),
-        y.expr.property('_field2').checkType('Object?'),
+        checkPromoted(x.property('_field1'), 'int'),
+        x.property('_field1').checkType('int'),
+        checkNotPromoted(x.property('_field2')),
+        x.property('_field2').checkType('Object?'),
+        checkPromoted(y.property('_field1'), 'double'),
+        y.property('_field1').checkType('double'),
+        checkNotPromoted(y.property('_field2')),
+        y.property('_field2').checkType('Object?'),
       ]);
     });
 
@@ -6117,14 +6118,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').isNot('String'), [
+        if_(x.property('_field').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'String'),
-        x.expr.property('_field').checkType('String'),
+        checkPromoted(x.property('_field'), 'String'),
+        x.property('_field').checkType('String'),
         x.write(expr('C')),
-        checkNotPromoted(x.expr.property('_field')),
-        x.expr.property('_field').checkType('Object?'),
+        checkNotPromoted(x.property('_field')),
+        x.property('_field').checkType('Object?'),
       ]);
     });
 
@@ -6135,14 +6136,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field1').property('_field2').isNot('String'), [
+        if_(x.property('_field1').property('_field2').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field1').property('_field2'), 'String'),
-        x.expr.property('_field1').property('_field2').checkType('String'),
+        checkPromoted(x.property('_field1').property('_field2'), 'String'),
+        x.property('_field1').property('_field2').checkType('String'),
         x.write(expr('C')),
-        checkNotPromoted(x.expr.property('_field1').property('_field2')),
-        x.expr.property('_field1').property('_field2').checkType('Object?'),
+        checkNotPromoted(x.property('_field1').property('_field2')),
+        x.property('_field1').property('_field2').checkType('Object?'),
       ]);
     });
 
@@ -6152,14 +6153,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').isNot('String'), [
+        if_(x.property('_field').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'String'),
-        x.expr.property('_field').checkType('String'),
+        checkPromoted(x.property('_field'), 'String'),
+        x.property('_field').checkType('String'),
         while_(expr('bool'), [
-          checkNotPromoted(x.expr.property('_field')),
-          x.expr.property('_field').checkType('Object?'),
+          checkNotPromoted(x.property('_field')),
+          x.property('_field').checkType('Object?'),
           x.write(expr('C')),
         ]),
       ]);
@@ -6172,14 +6173,14 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field1').property('_field2').isNot('String'), [
+        if_(x.property('_field1').property('_field2').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field1').property('_field2'), 'String'),
-        x.expr.property('_field1').property('_field2').checkType('String'),
+        checkPromoted(x.property('_field1').property('_field2'), 'String'),
+        x.property('_field1').property('_field2').checkType('String'),
         while_(expr('bool'), [
-          checkNotPromoted(x.expr.property('_field1').property('_field2')),
-          x.expr.property('_field1').property('_field2').checkType('Object?'),
+          checkNotPromoted(x.property('_field1').property('_field2')),
+          x.property('_field1').property('_field2').checkType('Object?'),
           x.write(expr('C')),
         ]),
       ]);
@@ -6191,16 +6192,16 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field').isNot('String'), [
+        if_(x.property('_field').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field'), 'String'),
-        x.expr.property('_field').checkType('String'),
+        checkPromoted(x.property('_field'), 'String'),
+        x.property('_field').checkType('String'),
         localFunction([
           x.write(expr('C')),
         ]),
-        checkNotPromoted(x.expr.property('_field')),
-        x.expr.property('_field').checkType('Object?'),
+        checkNotPromoted(x.property('_field')),
+        x.property('_field').checkType('Object?'),
       ]);
     });
 
@@ -6211,16 +6212,16 @@ main() {
       var x = Var('x');
       h.run([
         declare(x, type: 'C', initializer: expr('C')),
-        if_(x.expr.property('_field1').property('_field2').isNot('String'), [
+        if_(x.property('_field1').property('_field2').isNot('String'), [
           return_(),
         ]),
-        checkPromoted(x.expr.property('_field1').property('_field2'), 'String'),
-        x.expr.property('_field1').property('_field2').checkType('String'),
+        checkPromoted(x.property('_field1').property('_field2'), 'String'),
+        x.property('_field1').property('_field2').checkType('String'),
         localFunction([
           x.write(expr('C')),
         ]),
-        checkNotPromoted(x.expr.property('_field1').property('_field2')),
-        x.expr.property('_field1').property('_field2').checkType('Object?'),
+        checkNotPromoted(x.property('_field1').property('_field2')),
+        x.property('_field1').property('_field2').checkType('Object?'),
       ]);
     });
 
@@ -6233,11 +6234,11 @@ main() {
         localFunction([
           x.write(expr('C')),
         ]),
-        if_(x.expr.property('_field').isNot('String'), [
+        if_(x.property('_field').isNot('String'), [
           return_(),
         ]),
-        checkNotPromoted(x.expr.property('_field')),
-        x.expr.property('_field').checkType('Object?'),
+        checkNotPromoted(x.property('_field')),
+        x.property('_field').checkType('Object?'),
       ]);
     });
 
@@ -6251,11 +6252,11 @@ main() {
         localFunction([
           x.write(expr('C')),
         ]),
-        if_(x.expr.property('_field1').property('_field2').isNot('String'), [
+        if_(x.property('_field1').property('_field2').isNot('String'), [
           return_(),
         ]),
-        checkNotPromoted(x.expr.property('_field1').property('_field2')),
-        x.expr.property('_field1').property('_field2').checkType('Object?'),
+        checkNotPromoted(x.property('_field1').property('_field2')),
+        x.property('_field1').property('_field2').checkType('Object?'),
       ]);
     });
 
@@ -6300,9 +6301,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('C')),
-            x.expr.property('_field').as_('int'),
-            checkPromoted(x.expr.property('_field'), 'int'),
-            x.expr.cascade([
+            x.property('_field').as_('int'),
+            checkPromoted(x.property('_field'), 'int'),
+            x.cascade([
               (v) => v.property('_field').checkType('int'),
               (v) => v.property('_field').checkType('int'),
             ]),
@@ -6314,9 +6315,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('C')),
-            x.expr.property('_field').as_('int'),
-            checkPromoted(x.expr.property('_field'), 'int'),
-            x.expr
+            x.property('_field').as_('int'),
+            checkPromoted(x.property('_field'), 'int'),
+            x
                 .cascade([(v) => v.property('_field').checkType('int')])
                 .property('_field')
                 .checkType('int'),
@@ -6327,8 +6328,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            x.expr
-                .cascade([(v) => v.invokeMethod('toString', [])]).nonNullAssert,
+            x.cascade([(v) => v.invokeMethod('toString', [])]).nonNullAssert,
             checkNotPromoted(x),
           ]);
         });
@@ -6354,7 +6354,7 @@ main() {
             localFunction([
               x.write(expr('C')),
             ]),
-            x.expr
+            x
                 .cascade([
                   (v) => v.property('_field').checkType('int?').nonNullAssert,
                   (v) => v.property('_field').checkType('int'),
@@ -6371,9 +6371,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('C')),
-            x.expr.property('_field').as_('int'),
-            checkPromoted(x.expr.property('_field'), 'int'),
-            x.expr.cascade(isNullAware: true, [
+            x.property('_field').as_('int'),
+            checkPromoted(x.property('_field'), 'int'),
+            x.cascade(isNullAware: true, [
               (v) => v.property('_field').checkType('int'),
               (v) => v.property('_field').checkType('int'),
             ]),
@@ -6385,9 +6385,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('C')),
-            x.expr.property('_field').as_('int'),
-            checkPromoted(x.expr.property('_field'), 'int'),
-            x.expr
+            x.property('_field').as_('int'),
+            checkPromoted(x.property('_field'), 'int'),
+            x
                 .cascade(
                     isNullAware: true,
                     [(v) => v.property('_field').checkType('int')])
@@ -6400,7 +6400,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            x.expr.cascade(
+            x.cascade(
                 isNullAware: true,
                 [(v) => v.invokeMethod('toString', [])]).nonNullAssert,
             checkNotPromoted(x),
@@ -6436,7 +6436,7 @@ main() {
             localFunction([
               x.write(expr('C')),
             ]),
-            x.expr
+            x
                 .cascade(isNullAware: true, [
                   (v) => v.property('_field').checkType('int?').nonNullAssert,
                   (v) => v.property('_field').checkType('int'),
@@ -6452,6 +6452,170 @@ main() {
           ]);
         });
       });
+
+      test('unstable target', () {
+        h.addMember('C', 'd', 'D', promotable: false);
+        h.addMember('D', '_i', 'int?', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          // The value of `c.d` is cached in a temporary variable, call it `t0`.
+          c.property('d').cascade([
+            // `t0._i` could be null at this point.
+            (t0) => t0.property('_i').checkType('int?'),
+            // But now we promote it to non-null
+            (t0) => t0.property('_i').nonNullAssert,
+            // And the promotion sticks for the duration of the cascade.
+            (t0) => t0.property('_i').checkType('int'),
+          ]),
+          // Now, a new value of `c.d` is computed, and cached in a new
+          // temporary variable, call it `t1`.
+          c.property('d').cascade([
+            // even though `t0._i` was promoted above, `t1._i` could still be
+            // null at this point.
+            (t1) => t1.property('_i').checkType('int?'),
+            // But now we promote it to non-null
+            (t1) => t1.property('_i').nonNullAssert,
+            // And the promotion sticks for the duration of the cascade.
+            (t1) => t1.property('_i').checkType('int'),
+          ]),
+        ]);
+      });
+    });
+
+    test('field becomes promotable after type test', () {
+      // In this test, `C._property` is not promotable, but `D` extends `C`, and
+      // `D._property` is promotable. (This could happen if, for example,
+      // `C._property` is an abstract getter, and `D._property` is a final
+      // field). If `_property` is type-tested while the type of the target is
+      // `C`, but then `_property` is accessed while the type of the target is
+      // `D`, no promotion occurs, because the thing that is type tested is
+      // non-promotable.
+      h.addMember('C', '_property', 'int?', promotable: false);
+      h.addMember('D', '_property', 'int?', promotable: true);
+      h.addSuperInterfaces('D', (_) => [Type('C'), Type('Object')]);
+      var x = Var('x');
+      h.run([
+        declare(x, initializer: expr('C')),
+        x.property('_property').nonNullAssert,
+        x.as_('D'),
+        checkNotPromoted(x.property('_property')),
+        x.property('_property').nonNullAssert,
+        checkPromoted(x.property('_property'), 'int'),
+      ]);
+    });
+
+    group('Preserved by join:', () {
+      test('Property', () {
+        h.addMember('C', '_field', 'int?', promotable: true);
+        var x = Var('x');
+        // Even though the two branches of the "if" assign different values to
+        // `x` (and hence the SSA nodes associated with `x._field` in the two
+        // branches are different), the promotion is still preserved by the
+        // join.
+        h.run([
+          declare(x, type: 'C'),
+          if_(expr('bool'), [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ], [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ]),
+          checkPromoted(x.property('_field'), 'int'),
+        ]);
+      });
+
+      test('Property of property', () {
+        h.addMember('C', '_i', 'int?', promotable: true);
+        h.addMember('D', '_c', 'C', promotable: true);
+        var x = Var('x');
+        // Even though the two branches of the "if" assign different values to
+        // `x` (and hence the SSA nodes associated with `x._c._i` in the two
+        // branches are different), the promotion is still preserved by the
+        // join.
+        h.run([
+          declare(x, type: 'D'),
+          if_(expr('bool'), [
+            x.write(expr('D')),
+            x.property('_c').property('_i').nonNullAssert,
+          ], [
+            x.write(expr('D')),
+            x.property('_c').property('_i').nonNullAssert,
+          ]),
+          checkPromoted(x.property('_c').property('_i'), 'int'),
+        ]);
+      });
+
+      test('Property promoted only in first joined control flow path', () {
+        h.addMember('C', '_field', 'int?', promotable: true);
+        var x = Var('x');
+        // No promotion because the property is only promoted in one control
+        // flow path.
+        h.run([
+          declare(x, type: 'C'),
+          if_(expr('bool'), [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ], [
+            x.write(expr('C')),
+            x.property('_field'),
+          ]),
+          checkNotPromoted(x.property('_field')),
+        ]);
+      });
+
+      test('Property promoted only in second joined control flow path', () {
+        h.addMember('C', '_field', 'int?', promotable: true);
+        var x = Var('x');
+        // No promotion because the property is only promoted in one control
+        // flow path.
+        h.run([
+          declare(x, type: 'C'),
+          if_(expr('bool'), [
+            x.write(expr('C')),
+            x.property('_field'),
+          ], [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ]),
+          checkNotPromoted(x.property('_field')),
+        ]);
+      });
+
+      test('Property accessed only in first joined control flow path', () {
+        h.addMember('C', '_field', 'int?', promotable: true);
+        var x = Var('x');
+        // No promotion because the property is only promoted in one control
+        // flow path.
+        h.run([
+          declare(x, type: 'C'),
+          if_(expr('bool'), [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ], [
+            x.write(expr('C')),
+          ]),
+          checkNotPromoted(x.property('_field')),
+        ]);
+      });
+
+      test('Property accessed only in second joined control flow path', () {
+        h.addMember('C', '_field', 'int?', promotable: true);
+        var x = Var('x');
+        // No promotion because the property is only promoted in one control
+        // flow path.
+        h.run([
+          declare(x, type: 'C'),
+          if_(expr('bool'), [
+            x.write(expr('C')),
+          ], [
+            x.write(expr('C')),
+            x.property('_field').nonNullAssert,
+          ]),
+          checkNotPromoted(x.property('_field')),
+        ]);
+      });
     });
   });
 
@@ -6462,7 +6626,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'int?'),
-            x.expr.nonNullAssert,
+            x.nonNullAssert,
             checkPromoted(x, 'int'),
             x.pattern().assign(expr('int?')),
             checkNotPromoted(x),
@@ -6473,7 +6637,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'num?'),
-            x.expr.nonNullAssert,
+            x.nonNullAssert,
             checkPromoted(x, 'num'),
             x.pattern().assign(expr('int')),
             checkPromoted(x, 'num'),
@@ -6494,7 +6658,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'int?'),
-            x.expr.nonNullAssert,
+            x.nonNullAssert,
             checkPromoted(x, 'int'),
             x.pattern().assign(expr('int').checkContext('int')),
           ]);
@@ -6506,7 +6670,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'num'),
-            if_(x.expr.is_('int'), []),
+            if_(x.is_('int'), []),
             checkNotPromoted(x),
             x.pattern().assign(expr('int')),
             checkPromoted(x, 'int'),
@@ -6555,7 +6719,7 @@ main() {
           h.run([
             declare(x, type: 'int'),
             declare(y, initializer: expr('dynamic')),
-            x.pattern().and(wildcard()..errorId = 'WILDCARD').assign(y.expr),
+            x.pattern().and(wildcard()..errorId = 'WILDCARD').assign(y),
             checkNotPromoted(y),
           ], expectedErrors: {
             'unnecessaryWildcardPattern(pattern: WILDCARD, '
@@ -6581,8 +6745,8 @@ main() {
           h.run([
             declare(x, type: 'int?'),
             declare(b, type: 'bool'),
-            b.pattern().assign(x.expr.notEq(nullLiteral)),
-            if_(b.expr, [
+            b.pattern().assign(x.notEq(nullLiteral)),
+            if_(b, [
               // `x` is promoted because `b` is known to equal `x != null`.
               checkPromoted(x, 'int'),
             ]),
@@ -6595,8 +6759,8 @@ main() {
           h.run([
             declare(x, type: 'int?'),
             declare(b, type: 'bool'),
-            b.pattern().parenthesized.assign(x.expr.notEq(nullLiteral)),
-            if_(b.expr, [
+            b.pattern().parenthesized.assign(x.notEq(nullLiteral)),
+            if_(b, [
               // `x` is promoted because `b` is known to equal `x != null`.
               checkPromoted(x, 'int'),
             ]),
@@ -6613,8 +6777,8 @@ main() {
             objectPattern(
                     requiredType: 'bool',
                     fields: [b.pattern().recordField('foo')])
-                .assign(x.expr.notEq(nullLiteral)),
-            if_(b.expr, [
+                .assign(x.notEq(nullLiteral)),
+            if_(b, [
               // Even though the RHS of the pattern is `x != null`, `x` is not
               // promoted because the pattern for `b` is in a subpattern
               // position.
@@ -6634,7 +6798,7 @@ main() {
             recordPattern([y.pattern().recordField()])
                 .and(wildcard(expectInferredType: '(int,)')
                   ..errorId = 'WILDCARD')
-                .assign(x.expr),
+                .assign(x),
             checkNotPromoted(x),
           ], expectedErrors: {
             'unnecessaryWildcardPattern(pattern: WILDCARD, '
@@ -6651,7 +6815,7 @@ main() {
             recordPattern([y.pattern().recordField()])
                 .and(wildcard(expectInferredType: '(int,)')
                   ..errorId = 'WILDCARD')
-                .assign(x.expr),
+                .assign(x),
             checkNotPromoted(x),
           ], expectedErrors: {
             'unnecessaryWildcardPattern(pattern: WILDCARD, '
@@ -6666,7 +6830,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'Object?'),
-          ifCase(x.expr, wildcard(expectInferredType: 'String').as_('String'), [
+          ifCase(x, wildcard(expectInferredType: 'String').as_('String'), [
             checkPromoted(x, 'String'),
           ]),
         ]);
@@ -6677,7 +6841,7 @@ main() {
         h.run([
           declare(x, type: 'num'),
           ifCase(
-              x.expr,
+              x,
               wildcard(expectInferredType: 'Object').as_('Object')
                 ..errorId = 'PATTERN',
               [
@@ -6693,7 +6857,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'num'),
-          ifCase(x.expr, wildcard(expectInferredType: 'String').as_('String'), [
+          ifCase(x, wildcard(expectInferredType: 'String').as_('String'), [
             checkNotPromoted(x),
           ]),
         ]);
@@ -6704,7 +6868,7 @@ main() {
         h.run([
           declare(x, type: 'Object?'),
           ifCase(
-              x.expr,
+              x,
               objectPattern(requiredType: 'int', fields: []).as_('num').and(
                   wildcard(expectInferredType: 'num')..errorId = 'WILDCARD'),
               [
@@ -6734,7 +6898,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int')
                   .and(wildcard().as_('num')..errorId = 'AS_NUM')
@@ -6753,8 +6917,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(
-                x.expr, recordPattern([wildcard().as_('int').recordField()]), [
+            ifCase(x, recordPattern([wildcard().as_('int').recordField()]), [
               checkPromoted(x, '(int,)'),
             ]),
           ]);
@@ -6765,7 +6928,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   (wildcard().as_('Object')..errorId = 'CAST').recordField()
                 ]),
@@ -6782,8 +6945,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(x.expr,
-                recordPattern([wildcard().as_('String').recordField()]), [
+            ifCase(x, recordPattern([wildcard().as_('String').recordField()]), [
               checkNotPromoted(x),
             ]),
           ]);
@@ -6842,7 +7004,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('int?')),
-          ifCase(x.expr, nullLiteral.pattern, [
+          ifCase(x, nullLiteral.pattern, [
             checkReachable(true),
             checkNotPromoted(x),
           ], [
@@ -6859,7 +7021,7 @@ main() {
         h.run([
           declare(x, initializer: expr('int?')),
           switch_(
-              x.expr,
+              x,
               [
                 nullLiteral.pattern.then([
                   checkReachable(true),
@@ -6880,8 +7042,8 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('int?')),
-          switch_(x.expr, [
-            wildcard().when(x.write(expr('int?')).thenExpr(expr('bool'))).then([
+          switch_(x, [
+            wildcard().when(second(x.write(expr('int?')), expr('bool'))).then([
               break_(),
             ]),
             nullLiteral.pattern.then([
@@ -6924,7 +7086,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('(Object,)')),
-          ifCase(x.expr, recordPattern([intLiteral(1).pattern.recordField()]), [
+          ifCase(x, recordPattern([intLiteral(1).pattern.recordField()]), [
             checkNotPromoted(x),
           ]),
         ]);
@@ -6938,7 +7100,7 @@ main() {
           declare(x, initializer: expr('List<dynamic>')),
           patternForIn(
             wildcard(type: 'int'),
-            x.expr,
+            x,
             [],
           ),
           checkNotPromoted(x),
@@ -6951,11 +7113,13 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('List<dynamic>')),
-          patternForInElement(
-            wildcard(type: 'int'),
-            x.expr,
-            expr('Object').asCollectionElement,
-          ).inContextElementType('Object'),
+          listLiteral(elementType: 'Object', [
+            patternForInElement(
+              wildcard(type: 'int'),
+              x,
+              expr('Object'),
+            ),
+          ]),
           checkNotPromoted(x),
         ]);
       });
@@ -6966,18 +7130,23 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'int?'),
-          ifCaseElement(
-                  expr('Object'),
-                  wildcard().when(x.expr.notEq(nullLiteral)),
-                  block([
-                    checkReachable(true),
-                    checkPromoted(x, 'int'),
-                  ]).thenExpr(expr('String')).asCollectionElement,
-                  block([
-                    checkReachable(true),
-                    checkNotPromoted(x),
-                  ]).thenExpr(expr('String')).asCollectionElement)
-              .inContextElementType('String'),
+          listLiteral(elementType: 'String', [
+            ifCaseElement(
+                expr('Object'),
+                wildcard().when(x.notEq(nullLiteral)),
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkReachable(true),
+                      checkPromoted(x, 'int'),
+                    ]),
+                    expr('String')),
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkReachable(true),
+                      checkNotPromoted(x),
+                    ]),
+                    expr('String'))),
+          ]),
         ]);
       });
 
@@ -6986,18 +7155,23 @@ main() {
         var y = Var('y');
         h.run([
           declare(x, type: 'num'),
-          ifCaseElement(
-                  x.expr,
-                  y.pattern(type: 'int'),
-                  block([
-                    checkReachable(true),
-                    checkPromoted(x, 'int'),
-                  ]).thenExpr(expr('String')).asCollectionElement,
-                  block([
-                    checkReachable(true),
-                    checkNotPromoted(x),
-                  ]).thenExpr(expr('String')).asCollectionElement)
-              .inContextElementType('String'),
+          listLiteral(elementType: 'String', [
+            ifCaseElement(
+                x,
+                y.pattern(type: 'int'),
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkReachable(true),
+                      checkPromoted(x, 'int'),
+                    ]),
+                    expr('String')),
+                second(
+                    listLiteral(elementType: 'dynamic', [
+                      checkReachable(true),
+                      checkNotPromoted(x),
+                    ]),
+                    expr('String'))),
+          ]),
         ]);
       });
     });
@@ -7007,7 +7181,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, type: 'int?'),
-          ifCase(expr('Object'), wildcard().when(x.expr.notEq(nullLiteral)), [
+          ifCase(expr('Object'), wildcard().when(x.notEq(nullLiteral)), [
             checkReachable(true),
             checkPromoted(x, 'int'),
           ], [
@@ -7022,7 +7196,7 @@ main() {
         var y = Var('y');
         h.run([
           declare(x, type: 'num'),
-          ifCase(x.expr, y.pattern(type: 'int'), [
+          ifCase(x, y.pattern(type: 'int'), [
             checkReachable(true),
             checkPromoted(x, 'int'),
           ], [
@@ -7038,8 +7212,7 @@ main() {
         h.run([
           declare(x, type: 'int?'),
           declare(y, type: 'String?'),
-          ifCase(
-              x.expr, wildcard(type: 'int').when(y.expr.notEq(nullLiteral)), [
+          ifCase(x, wildcard(type: 'int').when(y.notEq(nullLiteral)), [
             checkReachable(true),
             checkPromoted(x, 'int'),
             checkPromoted(y, 'String'),
@@ -7059,7 +7232,7 @@ main() {
           h.run([
             declare(x, type: 'num'),
             ifCase(
-                x.expr,
+                x,
                 wildcard(type: 'int').and(
                     wildcard(expectInferredType: 'int')..errorId = 'WILDCARD'),
                 [
@@ -7090,7 +7263,7 @@ main() {
         h.run([
           declare(x, type: 'Object'),
           ifCase(
-              x.expr,
+              x,
               wildcard(type: 'num').and(wildcard(type: 'int').and(
                   wildcard(expectInferredType: 'int')..errorId = 'WILDCARD')),
               [
@@ -7108,7 +7281,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int')
                       .and(wildcard(type: 'num')..errorId = 'NUM')
@@ -7128,7 +7301,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'num').and(wildcard(type: 'int')).recordField()
                 ]),
@@ -7143,7 +7316,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int')
                       .and(wildcard(type: 'num')..errorId = 'NUM')
@@ -7163,7 +7336,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   (wildcard(type: 'num')..errorId = 'NUM')
                       .and(wildcard(type: 'int'))
@@ -7183,7 +7356,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int')
                       .and(wildcard(type: 'Object')..errorId = 'OBJECT')
@@ -7203,7 +7376,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   (wildcard(type: 'Object')..errorId = 'OBJECT')
                       .and(wildcard(type: 'int'))
@@ -7223,7 +7396,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(int,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   (wildcard(type: 'num')..errorId = 'NUM')
                       .and(wildcard(type: 'Object')..errorId = 'OBJECT')
@@ -7245,7 +7418,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(int,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   (wildcard(type: 'Object')..errorId = 'OBJECT')
                       .and(wildcard(type: 'num')..errorId = 'NUM')
@@ -7272,7 +7445,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object')),
             ifCase(
-                x.expr,
+                x,
                 objectPattern(requiredType: 'num', fields: [])
                     .and(objectPattern(requiredType: 'int', fields: []))
                     .or(objectPattern(requiredType: 'num', fields: [])),
@@ -7288,7 +7461,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object')),
             ifCase(
-                x.expr,
+                x,
                 objectPattern(requiredType: 'num', fields: []).or(
                     objectPattern(requiredType: 'num', fields: [])
                         .and(objectPattern(requiredType: 'int', fields: []))),
@@ -7430,7 +7603,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int').or(wildcard(type: 'num')).recordField()
                 ]),
@@ -7449,7 +7622,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'num').or(wildcard(type: 'int')).recordField()
                 ]),
@@ -7468,7 +7641,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'num').or(wildcard(type: 'num')).recordField()
                 ]),
@@ -7483,7 +7656,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int')
                       .or(wildcard(type: 'Object'))
@@ -7500,7 +7673,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'Object')
                       .or(wildcard(type: 'int'))
@@ -7517,7 +7690,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(int,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'num')
                       .or(wildcard(type: 'Object'))
@@ -7534,7 +7707,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(int,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'Object')
                       .or(wildcard(type: 'num'))
@@ -7554,7 +7727,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Object?,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int')
                       .or(wildcard(type: 'double'))
@@ -7595,8 +7768,7 @@ main() {
         test('Rest pattern with subpattern that may fail to match', () {
           h.run([
             switch_(expr('List<Object>'), [
-              listPattern([listPatternRestElement(listPattern([]))])
-                  .then([break_()]),
+              listPattern([restPattern(listPattern([]))]).then([break_()]),
               default_.then([
                 checkReachable(true),
               ])
@@ -7609,7 +7781,7 @@ main() {
         test('Rest pattern with no subpattern', () {
           h.run([
             switch_(expr('List<Object>'), [
-              listPattern([listPatternRestElement()]).then([break_()]),
+              listPattern([restPattern()]).then([break_()]),
               default_.then([
                 checkReachable(false),
               ])
@@ -7620,8 +7792,7 @@ main() {
         test('Rest pattern with subpattern that always matches', () {
           h.run([
             switch_(expr('List<Object>'), [
-              listPattern([listPatternRestElement(wildcard())])
-                  .then([break_()]),
+              listPattern([restPattern(wildcard())]).then([break_()]),
               default_.then([
                 checkReachable(false),
               ])
@@ -7634,7 +7805,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('Object?')),
-          ifCase(x.expr, listPattern([wildcard()], elementType: 'int'), [
+          ifCase(x, listPattern([wildcard()], elementType: 'int'), [
             checkPromoted(x, 'List<int>'),
           ]),
         ]);
@@ -7646,7 +7817,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('List<int>')
                   .and(listPattern([], elementType: 'num'))
@@ -7661,7 +7832,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('List<int>')),
-          ifCase(x.expr, listPattern([], elementType: 'int'), [
+          ifCase(x, listPattern([], elementType: 'int'), [
             checkReachable(true),
           ], [
             checkReachable(true),
@@ -7675,7 +7846,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Iterable<Object>,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   listPattern([wildcard(type: 'int')], elementType: 'num')
                       .recordField()
@@ -7691,7 +7862,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(List<num>,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   listPattern([wildcard(type: 'int')], elementType: 'Object')
                       .recordField()
@@ -7707,7 +7878,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(List<int?>,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   listPattern([wildcard(type: 'int')], elementType: 'num')
                       .recordField()
@@ -7726,7 +7897,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               mapPattern([mapPatternEntry(intLiteral(0), wildcard())],
                   keyType: 'int', valueType: 'String'),
               [
@@ -7757,7 +7928,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('Map<int, int>')
                   .and(mapPattern([
@@ -7775,7 +7946,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Map<int, int>')),
           ifCase(
-              x.expr,
+              x,
               mapPattern([
                 mapPatternEntry(expr('Object'), wildcard()),
               ], keyType: 'int', valueType: 'int'),
@@ -7794,7 +7965,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Map<num?, Object>?,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   mapPattern([
                     mapPatternEntry(intLiteral(0), wildcard(type: 'int'))
@@ -7812,7 +7983,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Map<int, num>,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   mapPattern([
                     mapPatternEntry(intLiteral(0), wildcard(type: 'int'))
@@ -7830,7 +8001,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(Map<int, int?>,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   mapPattern([
                     mapPatternEntry(intLiteral(0), wildcard(type: 'int'))
@@ -7859,9 +8030,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('Object?')),
-            switch_(x.expr, [
+            switch_(x, [
               wildcard()
-                  .when(x.write(expr('Object?')).thenExpr(expr('bool')))
+                  .when(second(x.write(expr('Object?')), expr('bool')))
                   .then([
                 break_(),
               ]),
@@ -7876,7 +8047,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('Object?')),
-            ifCase(x.expr, wildcard().nullAssert, [
+            ifCase(x, wildcard().nullAssert, [
               checkPromoted(x, 'Object'),
             ], [
               checkNotPromoted(x),
@@ -7901,7 +8072,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object?')),
             ifCase(
-                x.expr,
+                x,
                 objectPattern(
                     requiredType: 'T',
                     fields: [wildcard().nullAssert.recordField('foo')]),
@@ -7947,7 +8118,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int?')
                   .and(wildcard().nullAssert)
@@ -7962,7 +8133,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('(int?,)')),
-          ifCase(x.expr, recordPattern([wildcard().nullAssert.recordField()]), [
+          ifCase(x, recordPattern([wildcard().nullAssert.recordField()]), [
             checkPromoted(x, '(int,)'),
           ]),
         ]);
@@ -7983,9 +8154,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('Object?')),
-            switch_(x.expr, [
+            switch_(x, [
               wildcard()
-                  .when(x.write(expr('Object?')).thenExpr(expr('bool')))
+                  .when(second(x.write(expr('Object?')), expr('bool')))
                   .then([
                 break_(),
               ]),
@@ -8000,7 +8171,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('Object?')),
-            ifCase(x.expr, wildcard().nullCheck, [
+            ifCase(x, wildcard().nullCheck, [
               checkPromoted(x, 'Object'),
             ], [
               checkNotPromoted(x),
@@ -8025,7 +8196,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object?')),
             ifCase(
-                x.expr,
+                x,
                 objectPattern(
                     requiredType: 'T',
                     fields: [wildcard().nullCheck.recordField('foo')]),
@@ -8071,7 +8242,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int?')
                   .and(wildcard().nullCheck)
@@ -8086,7 +8257,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('(int?,)')),
-          ifCase(x.expr, recordPattern([wildcard().nullCheck.recordField()]), [
+          ifCase(x, recordPattern([wildcard().nullCheck.recordField()]), [
             checkPromoted(x, '(int,)'),
           ]),
         ]);
@@ -8098,7 +8269,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('Object?')),
-          ifCase(x.expr, objectPattern(requiredType: 'int', fields: []), [
+          ifCase(x, objectPattern(requiredType: 'int', fields: []), [
             checkPromoted(x, 'int'),
           ]),
         ]);
@@ -8110,7 +8281,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int')
                   .and(objectPattern(requiredType: 'num', fields: []))
@@ -8127,7 +8298,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   objectPattern(requiredType: 'int', fields: []).recordField()
                 ]),
@@ -8142,7 +8313,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   objectPattern(requiredType: 'Object', fields: [])
                       .recordField()
@@ -8158,7 +8329,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(num,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   objectPattern(requiredType: 'String', fields: [])
                       .recordField()
@@ -8192,7 +8363,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('num')),
-          wildcard().as_('int').assign(x.expr),
+          wildcard().as_('int').assign(x),
           checkNotPromoted(x),
         ]);
       });
@@ -8203,7 +8374,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('num')),
-          match(wildcard().as_('int'), x.expr),
+          match(wildcard().as_('int'), x),
           checkNotPromoted(x),
         ]);
       });
@@ -8214,7 +8385,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('Object?')),
-          ifCase(x.expr, recordPattern([wildcard().recordField()]), [
+          ifCase(x, recordPattern([wildcard().recordField()]), [
             checkPromoted(x, '(Object?,)'),
           ]),
         ]);
@@ -8226,7 +8397,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object?')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int').recordField(),
                   wildcard(type: 'String').recordField()
@@ -8242,7 +8413,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Object?')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   wildcard(type: 'int').recordField('i'),
                   wildcard(type: 'String').recordField('s')
@@ -8261,7 +8432,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('Object')),
-          ifCase(x.expr, recordPattern([wildcard(type: 'int').recordField()]), [
+          ifCase(x, recordPattern([wildcard(type: 'int').recordField()]), [
             checkPromoted(x, '(int,)'),
             x.write(expr('(num,)')),
             checkPromoted(x, '(Object?,)'),
@@ -8273,7 +8444,7 @@ main() {
         var x = Var('x');
         h.run([
           declare(x, initializer: expr('(Object?,)')),
-          ifCase(x.expr, recordPattern([wildcard().as_('int').recordField()]), [
+          ifCase(x, recordPattern([wildcard().as_('int').recordField()]), [
             checkPromoted(x, '(int,)'),
           ], [
             checkReachable(
@@ -8299,7 +8470,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('(int,)')
                   .and(recordPattern([wildcard().recordField()]))
@@ -8316,7 +8487,7 @@ main() {
           h.run([
             declare(x, initializer: expr('((num,),)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   recordPattern([wildcard(type: 'int').recordField()])
                       .recordField()
@@ -8332,7 +8503,7 @@ main() {
           h.run([
             declare(x, initializer: expr('Never')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   recordPattern([wildcard(type: 'num').recordField()])
                       .recordField()
@@ -8348,7 +8519,7 @@ main() {
           h.run([
             declare(x, initializer: expr('String')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern([
                   recordPattern([wildcard(type: 'num').recordField()])
                       .recordField()
@@ -8365,7 +8536,7 @@ main() {
         h.run([
           declare(x, initializer: expr('(Null, Object?)')),
           ifCase(
-              x.expr,
+              x,
               recordPattern([
                 relationalPattern('!=', nullLiteral).recordField(),
                 wildcard(type: 'error').recordField()
@@ -8421,7 +8592,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            ifCase(x.expr, relationalPattern('==', nullLiteral), [
+            ifCase(x, relationalPattern('==', nullLiteral), [
               checkReachable(true),
               checkNotPromoted(x),
             ], [
@@ -8435,9 +8606,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            switch_(x.expr, [
+            switch_(x, [
               wildcard()
-                  .when(x.write(expr('int?')).thenExpr(expr('bool')))
+                  .when(second(x.write(expr('int?')), expr('bool')))
                   .then([
                 break_(),
               ]),
@@ -8485,7 +8656,7 @@ main() {
             h.run([
               declare(x, initializer: expr('(Object?,)')),
               ifCase(
-                  x.expr,
+                  x,
                   recordPattern(
                       [relationalPattern('==', expr('Object')).recordField()]),
                   [
@@ -8502,7 +8673,7 @@ main() {
             h.run([
               declare(x, initializer: expr('(Object?,)')),
               ifCase(
-                  x.expr,
+                  x,
                   recordPattern(
                       [relationalPattern('==', nullLiteral).recordField()]),
                   [
@@ -8538,7 +8709,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            ifCase(x.expr, relationalPattern('!=', nullLiteral), [
+            ifCase(x, relationalPattern('!=', nullLiteral), [
               checkReachable(true),
               checkPromoted(x, 'int'),
             ], [
@@ -8552,9 +8723,9 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('int?')),
-            switch_(x.expr, [
+            switch_(x, [
               wildcard()
-                  .when(x.write(expr('int?')).thenExpr(expr('bool')))
+                  .when(second(x.write(expr('int?')), expr('bool')))
                   .then([
                 break_(),
               ]),
@@ -8607,7 +8778,7 @@ main() {
             h.run([
               declare(x, initializer: expr('(Object?,)')),
               ifCase(
-                  x.expr,
+                  x,
                   recordPattern(
                       [relationalPattern('!=', expr('Object')).recordField()]),
                   [
@@ -8623,7 +8794,7 @@ main() {
             h.run([
               declare(x, initializer: expr('(Object?,)')),
               ifCase(
-                  x.expr,
+                  x,
                   recordPattern(
                       [relationalPattern('!=', nullLiteral).recordField()]),
                   [
@@ -8656,7 +8827,7 @@ main() {
           h.run([
             declare(x, initializer: expr('(int,)')),
             ifCase(
-                x.expr,
+                x,
                 recordPattern(
                     [relationalPattern('>', intLiteral(0)).recordField()]),
                 [
@@ -8673,14 +8844,18 @@ main() {
         h.run([
           declare(x, type: 'int?'),
           switchExpr(expr('Object'), [
-            wildcard().when(x.expr.notEq(nullLiteral)).thenExpr(block([
+            wildcard().when(x.notEq(nullLiteral)).thenExpr(second(
+                listLiteral(elementType: 'dynamic', [
                   checkReachable(true),
                   checkPromoted(x, 'int'),
-                ]).thenExpr(expr('String'))),
-            wildcard().thenExpr(block([
-              checkReachable(true),
-              checkNotPromoted(x),
-            ]).thenExpr(expr('String'))),
+                ]),
+                expr('String'))),
+            wildcard().thenExpr(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  checkNotPromoted(x),
+                ]),
+                expr('String'))),
           ]),
         ]);
       });
@@ -8693,10 +8868,9 @@ main() {
           h.run([
             declare(x, type: 'int?'),
             switchExpr(expr('Object?'), [
-              wildcard().when(x.expr.eq(nullLiteral)).thenExpr(intLiteral(0)),
-              wildcard().thenExpr(block([
-                checkPromoted(x, 'int'),
-              ]).thenExpr(intLiteral(1))),
+              wildcard().when(x.eq(nullLiteral)).thenExpr(intLiteral(0)),
+              wildcard()
+                  .thenExpr(second(checkPromoted(x, 'int'), intLiteral(1))),
             ]),
           ]);
         });
@@ -8710,11 +8884,13 @@ main() {
             declare(x, type: 'int?'),
             switchExpr(expr('Object?'), [
               wildcard(type: 'String')
-                  .when(x.expr.eq(nullLiteral))
+                  .when(x.eq(nullLiteral))
                   .thenExpr(intLiteral(0)),
-              wildcard().thenExpr(block([
-                checkNotPromoted(x),
-              ]).thenExpr(intLiteral(1))),
+              wildcard().thenExpr(second(
+                  listLiteral(elementType: 'dynamic', [
+                    checkNotPromoted(x),
+                  ]),
+                  intLiteral(1))),
             ]),
           ]);
         });
@@ -8725,15 +8901,19 @@ main() {
         var y = Var('y');
         h.run([
           declare(x, type: 'num'),
-          switchExpr(x.expr, [
-            y.pattern(type: 'int').thenExpr(block([
+          switchExpr(x, [
+            y.pattern(type: 'int').thenExpr(second(
+                listLiteral(elementType: 'dynamic', [
                   checkReachable(true),
                   checkPromoted(x, 'int'),
-                ]).thenExpr(expr('String'))),
-            wildcard().thenExpr(block([
-              checkReachable(true),
-              checkNotPromoted(x),
-            ]).thenExpr(expr('String'))),
+                ]),
+                expr('String'))),
+            wildcard().thenExpr(second(
+                listLiteral(elementType: 'dynamic', [
+                  checkReachable(true),
+                  checkNotPromoted(x),
+                ]),
+                expr('String'))),
           ]),
         ]);
       });
@@ -8745,20 +8925,16 @@ main() {
         // scrutinee in the RHS of the `&&`.
         h.run([
           declare(x, initializer: expr('Object')),
-          switchExpr(x.expr, [
+          switchExpr(x, [
             wildcard(type: 'int')
                 .and(wildcard(expectInferredType: 'int')..errorId = 'WILDCARD1')
-                .thenExpr(block([
-                  checkPromoted(x, 'int'),
-                ]).thenExpr(intLiteral(0))),
+                .thenExpr(second(checkPromoted(x, 'int'), intLiteral(0))),
             wildcard()
-                .when(x.write(expr('Object')).thenExpr(expr('bool')))
+                .when(second(x.write(expr('Object')), expr('bool')))
                 .thenExpr(intLiteral(1)),
             wildcard(type: 'int')
                 .and(wildcard(expectInferredType: 'int')..errorId = 'WILDCARD2')
-                .thenExpr(block([
-                  checkNotPromoted(x),
-                ]).thenExpr(intLiteral(2))),
+                .thenExpr(second(checkNotPromoted(x), intLiteral(2))),
             wildcard().thenExpr(intLiteral(3)),
           ]),
         ], expectedErrors: {
@@ -8779,15 +8955,15 @@ main() {
         // is still used for type inference in the later `case var y`.
         h.run([
           declare(x, initializer: expr('Object')),
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
-          switchExpr(x.expr, [
+          switchExpr(x, [
             wildcard()
-                .when(x.write(expr('Object')).thenExpr(expr('bool')))
+                .when(second(x.write(expr('Object')), expr('bool')))
                 .thenExpr(intLiteral(0)),
-            y.pattern(expectInferredType: 'int').thenExpr(block([
-                  checkNotPromoted(x),
-                ]).thenExpr(intLiteral(1))),
+            y
+                .pattern(expectInferredType: 'int')
+                .thenExpr(second(checkNotPromoted(x), intLiteral(1))),
           ]),
         ]);
       });
@@ -8804,12 +8980,9 @@ main() {
         // following cases still will be useful once the error is fixed.
         h.run([
           switchExpr(expr('num'), [
-            wildcard(type: 'error').thenExpr(block([
-              checkReachable(true),
-            ]).thenExpr(intLiteral(0))),
-            wildcard().thenExpr(block([
-              checkReachable(true),
-            ]).thenExpr(intLiteral(1))),
+            wildcard(type: 'error')
+                .thenExpr(second(checkReachable(true), intLiteral(0))),
+            wildcard().thenExpr(second(checkReachable(true), intLiteral(1))),
           ]),
         ]);
       });
@@ -8822,7 +8995,7 @@ main() {
           declare(x, type: 'int?'),
           switch_(expr('Object'), [
             switchStatementMember([
-              wildcard().when(x.expr.notEq(nullLiteral)).switchCase
+              wildcard().when(x.notEq(nullLiteral))
             ], [
               checkReachable(true),
               checkPromoted(x, 'int'),
@@ -8845,7 +9018,7 @@ main() {
           h.run([
             declare(x, type: 'int?'),
             switch_(expr('Object?'), [
-              wildcard().when(x.expr.eq(nullLiteral)).then([break_()]),
+              wildcard().when(x.eq(nullLiteral)).then([break_()]),
               wildcard().then([
                 checkPromoted(x, 'int'),
               ]),
@@ -8861,9 +9034,7 @@ main() {
           h.run([
             declare(x, type: 'int?'),
             switch_(expr('Object?'), [
-              wildcard(type: 'String')
-                  .when(x.expr.eq(nullLiteral))
-                  .then([break_()]),
+              wildcard(type: 'String').when(x.eq(nullLiteral)).then([break_()]),
               wildcard().then([
                 checkNotPromoted(x),
               ]),
@@ -8877,9 +9048,9 @@ main() {
         var y = Var('y');
         h.run([
           declare(x, type: 'num'),
-          switch_(x.expr, [
+          switch_(x, [
             switchStatementMember([
-              y.pattern(type: 'int').switchCase
+              y.pattern(type: 'int')
             ], [
               checkReachable(true),
               checkPromoted(x, 'int'),
@@ -8900,9 +9071,9 @@ main() {
           declare(x, type: 'Object'),
           switch_(expr('Object'), [
             switchStatementMember([
-              wildcard(type: 'int').switchCase
+              wildcard(type: 'int')
             ], [
-              x.expr.as_('int'),
+              x.as_('int'),
             ]),
             switchStatementMember([default_], [return_()])
           ]),
@@ -8917,7 +9088,7 @@ main() {
           h.run([
             switch_(expr('E'), [
               switchStatementMember([
-                expr('E').pattern.switchCase,
+                expr('E').pattern,
               ], [
                 return_(),
               ])
@@ -8930,7 +9101,7 @@ main() {
           h.run([
             switch_(expr('int'), [
               switchStatementMember([
-                intLiteral(0).pattern.switchCase,
+                intLiteral(0).pattern,
               ], [
                 return_(),
               ])
@@ -8948,7 +9119,7 @@ main() {
                 expr('E'),
                 [
                   switchStatementMember([
-                    expr('E').pattern.switchCase,
+                    expr('E').pattern,
                   ], [
                     return_(),
                   ])
@@ -8965,7 +9136,7 @@ main() {
                 expr('E'),
                 [
                   switchStatementMember([
-                    expr('E').pattern.switchCase,
+                    expr('E').pattern,
                   ], [
                     return_(),
                   ])
@@ -9018,11 +9189,11 @@ main() {
           h.run([
             declare(x, initializer: expr('Object')),
             declare(y, initializer: expr('Object')),
-            switch_(x.expr, [
+            switch_(x, [
               wildcard(type: 'num').then([
                 checkPromoted(x, 'num'),
                 checkNotPromoted(y),
-                switch_(y.expr, [
+                switch_(y, [
                   wildcard(type: 'int').then([
                     checkPromoted(x, 'num'),
                     checkPromoted(y, 'int'),
@@ -9050,14 +9221,14 @@ main() {
         // scrutinee in the RHS of the `&&`.
         h.run([
           declare(x, initializer: expr('Object')),
-          switch_(x.expr, [
+          switch_(x, [
             wildcard(type: 'int')
                 .and(wildcard(expectInferredType: 'int')..errorId = 'WILDCARD1')
                 .then([
               checkPromoted(x, 'int'),
             ]),
             wildcard()
-                .when(x.write(expr('Object')).thenExpr(expr('bool')))
+                .when(second(x.write(expr('Object')), expr('bool')))
                 .then([
               break_(),
             ]),
@@ -9085,11 +9256,11 @@ main() {
         // is still used for type inference in the later `case var y`.
         h.run([
           declare(x, initializer: expr('Object')),
-          x.expr.as_('int'),
+          x.as_('int'),
           checkPromoted(x, 'int'),
-          switch_(x.expr, [
+          switch_(x, [
             wildcard()
-                .when(x.write(expr('Object')).thenExpr(expr('bool')))
+                .when(second(x.write(expr('Object')), expr('bool')))
                 .then([break_()]),
             y.pattern(expectInferredType: 'int').then([
               checkNotPromoted(x),
@@ -9141,12 +9312,11 @@ main() {
           // ` case num() && int(): case num():` retains promotion to `num`
           h.run([
             declare(x, initializer: expr('Object')),
-            switch_(x.expr, [
+            switch_(x, [
               switchStatementMember([
                 objectPattern(requiredType: 'num', fields: [])
-                    .and(objectPattern(requiredType: 'int', fields: []))
-                    .switchCase,
-                objectPattern(requiredType: 'num', fields: []).switchCase
+                    .and(objectPattern(requiredType: 'int', fields: [])),
+                objectPattern(requiredType: 'num', fields: [])
               ], [
                 checkPromoted(x, 'num'),
               ])
@@ -9159,12 +9329,11 @@ main() {
           // `case num(): case num() && int():` retains promotion to `num`
           h.run([
             declare(x, initializer: expr('Object')),
-            switch_(x.expr, [
+            switch_(x, [
               switchStatementMember([
-                objectPattern(requiredType: 'num', fields: []).switchCase,
+                objectPattern(requiredType: 'num', fields: []),
                 objectPattern(requiredType: 'num', fields: [])
                     .and(objectPattern(requiredType: 'int', fields: []))
-                    .switchCase
               ], [
                 checkPromoted(x, 'num'),
               ])
@@ -9184,11 +9353,11 @@ main() {
                 recordPattern([
                   intLiteral(0).pattern.recordField(),
                   x1.pattern(type: 'int?').nullCheck.recordField()
-                ]).switchCase,
+                ]),
                 recordPattern([
                   intLiteral(1).pattern.recordField(),
                   x2.pattern(type: 'int?').recordField()
-                ]).switchCase
+                ])
               ], [
                 checkNotPromoted(x),
               ])
@@ -9206,11 +9375,11 @@ main() {
                 recordPattern([
                   intLiteral(0).pattern.recordField(),
                   x1.pattern(type: 'int?').recordField()
-                ]).switchCase,
+                ]),
                 recordPattern([
                   intLiteral(1).pattern.recordField(),
                   x2.pattern(type: 'int?').nullCheck.recordField()
-                ]).switchCase
+                ])
               ], [
                 checkNotPromoted(x),
               ])
@@ -9225,8 +9394,8 @@ main() {
           h.run([
             switch_(expr('int?'), [
               switchStatementMember([
-                x1.pattern(type: 'int?').nullCheck.switchCase,
-                x2.pattern(type: 'int?').nullCheck.switchCase
+                x1.pattern(type: 'int?').nullCheck,
+                x2.pattern(type: 'int?').nullCheck
               ], [
                 checkPromoted(x, 'int'),
               ])
@@ -9250,11 +9419,11 @@ main() {
                 recordPattern([
                   intLiteral(0).pattern.recordField(),
                   x1.pattern(type: 'int?').nullCheck.recordField()
-                ]).switchCase,
+                ]),
                 recordPattern([
                   intLiteral(1).pattern.recordField(),
                   x2.pattern(type: 'int?').recordField()
-                ]).when(x2.expr.notEq(nullLiteral)).switchCase,
+                ]).when(x2.notEq(nullLiteral)),
               ], [
                 checkPromoted(x, 'int'),
               ])
@@ -9273,20 +9442,12 @@ main() {
           h.run([
             switch_(expr('Object?'), [
               switchStatementMember([
-                a1
-                    .pattern(type: 'String?')
-                    .nullCheck
-                    .when(a1.expr.is_('Never'))
-                    .switchCase,
-                a2
-                    .pattern(type: 'String?')
-                    .when(a2.expr.notEq(nullLiteral))
-                    .switchCase,
+                a1.pattern(type: 'String?').nullCheck.when(a1.is_('Never')),
+                a2.pattern(type: 'String?').when(a2.notEq(nullLiteral)),
                 a3
                     .pattern(type: 'String?')
                     .nullAssert
-                    .when(a3.expr.eq(intLiteral(1)))
-                    .switchCase,
+                    .when(a3.eq(intLiteral(1))),
               ], [
                 checkPromoted(a, 'String'),
               ]),
@@ -9307,8 +9468,8 @@ main() {
           h.run([
             switch_(expr('int?'), [
               switchStatementMember([
-                x1.pattern().nullCheck.switchCase,
-                wildcard().switchCase
+                x1.pattern().nullCheck,
+                wildcard()
               ], [
                 checkAssigned(x, true),
               ])
@@ -9325,8 +9486,8 @@ main() {
           h.run([
             switch_(expr('int?'), [
               switchStatementMember([
-                wildcard().nullCheck.switchCase,
-                x1.pattern().switchCase
+                wildcard().nullCheck,
+                x1.pattern()
               ], [
                 checkAssigned(x, true),
               ])
@@ -9347,7 +9508,7 @@ main() {
         test('exhaustive', () {
           h.run([
             switch_(expr('Object'), [
-              wildcard().switchCase.then([
+              wildcard().then([
                 return_(),
               ]),
             ]),
@@ -9361,10 +9522,10 @@ main() {
           // switch cases completes normally.
           h.run([
             switch_(expr('Object'), [
-              wildcard(type: 'int').switchCase.then([
+              wildcard(type: 'int').then([
                 checkReachable(true),
               ]),
-              wildcard().switchCase.then([
+              wildcard().then([
                 return_(),
               ]),
             ]),
@@ -9377,10 +9538,10 @@ main() {
           // case is unreachable, so the code after the switch is unreachable.
           h.run([
             switch_(expr('Object'), [
-              wildcard().switchCase.then([
+              wildcard().then([
                 return_(),
               ]),
-              wildcard(type: 'int').switchCase.then([
+              wildcard(type: 'int').then([
                 checkReachable(false),
               ]),
             ]),
@@ -9394,11 +9555,11 @@ main() {
           // switch cases ends in a break.
           h.run([
             switch_(expr('Object'), [
-              wildcard(type: 'int').switchCase.then([
+              wildcard(type: 'int').then([
                 checkReachable(true),
                 break_(),
               ]),
-              wildcard().switchCase.then([
+              wildcard().then([
                 return_(),
               ]),
             ]),
@@ -9411,10 +9572,10 @@ main() {
           // unreachable, so the code after the switch is unreachable.
           h.run([
             switch_(expr('Object'), [
-              wildcard().switchCase.then([
+              wildcard().then([
                 return_(),
               ]),
-              wildcard(type: 'int').switchCase.then([
+              wildcard(type: 'int').then([
                 checkReachable(false),
                 break_(),
               ]),
@@ -9426,7 +9587,7 @@ main() {
         test('not exhaustive', () {
           h.run([
             switch_(expr('Object'), [
-              wildcard(type: 'int').switchCase.then([
+              wildcard(type: 'int').then([
                 return_(),
               ]),
             ]),
@@ -9458,7 +9619,7 @@ main() {
           var y = Var('y');
           h.run([
             declare(x, type: 'int'),
-            ifCase(x.expr, y.pattern(type: 'num'), [
+            ifCase(x, y.pattern(type: 'num'), [
               checkReachable(true),
               checkNotPromoted(x),
             ], [
@@ -9490,7 +9651,7 @@ main() {
             var y = Var('y');
             h.run([
               declare(x, type: 'num'),
-              ifCase(x.expr, y.pattern(type: 'int'), [
+              ifCase(x, y.pattern(type: 'int'), [
                 checkReachable(true),
                 checkPromoted(x, 'int'),
               ], [
@@ -9505,7 +9666,7 @@ main() {
             var y = Var('y');
             h.run([
               declare(x, type: 'int?'),
-              ifCase(x.expr, y.pattern(type: 'Null'), [
+              ifCase(x, y.pattern(type: 'Null'), [
                 checkReachable(true),
                 checkPromoted(x, 'Null'),
               ], [
@@ -9523,7 +9684,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object')),
           ifCase(
-              x.expr,
+              x,
               objectPattern(
                   requiredType: 'num',
                   fields: [y.pattern(type: 'int').recordField('sign')]),
@@ -9541,7 +9702,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int')
                   .and(y.pattern(type: 'num'))
@@ -9583,8 +9744,7 @@ main() {
           var y = Var('y');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(
-                x.expr, recordPattern([y.pattern(type: 'int').recordField()]), [
+            ifCase(x, recordPattern([y.pattern(type: 'int').recordField()]), [
               checkPromoted(x, '(int,)'),
             ]),
           ]);
@@ -9595,8 +9755,8 @@ main() {
           var y = Var('y');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(x.expr,
-                recordPattern([y.pattern(type: 'Object').recordField()]), [
+            ifCase(
+                x, recordPattern([y.pattern(type: 'Object').recordField()]), [
               checkNotPromoted(x),
             ]),
           ]);
@@ -9607,8 +9767,8 @@ main() {
           var y = Var('y');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(x.expr,
-                recordPattern([y.pattern(type: 'String').recordField()]), [
+            ifCase(
+                x, recordPattern([y.pattern(type: 'String').recordField()]), [
               checkNotPromoted(x),
             ]),
           ]);
@@ -9636,7 +9796,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, type: 'int'),
-            ifCase(x.expr, wildcard(type: 'num'), [
+            ifCase(x, wildcard(type: 'num'), [
               checkReachable(true),
               checkNotPromoted(x),
             ], [
@@ -9666,7 +9826,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'num'),
-              ifCase(x.expr, wildcard(type: 'int'), [
+              ifCase(x, wildcard(type: 'int'), [
                 checkReachable(true),
                 checkPromoted(x, 'int'),
               ], [
@@ -9680,7 +9840,7 @@ main() {
             var x = Var('x');
             h.run([
               declare(x, type: 'int?'),
-              ifCase(x.expr, wildcard(type: 'Null'), [
+              ifCase(x, wildcard(type: 'Null'), [
                 checkReachable(true),
                 checkPromoted(x, 'Null'),
               ], [
@@ -9697,7 +9857,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object')),
           ifCase(
-              x.expr,
+              x,
               objectPattern(
                   requiredType: 'num',
                   fields: [wildcard(type: 'int').recordField('sign')]),
@@ -9714,7 +9874,7 @@ main() {
         h.run([
           declare(x, initializer: expr('Object?')),
           ifCase(
-              x.expr,
+              x,
               wildcard()
                   .as_('int')
                   .and(wildcard(type: 'num')..errorId = 'WILDCARD')
@@ -9733,8 +9893,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(
-                x.expr, recordPattern([wildcard(type: 'int').recordField()]), [
+            ifCase(x, recordPattern([wildcard(type: 'int').recordField()]), [
               checkPromoted(x, '(int,)'),
             ]),
           ]);
@@ -9744,8 +9903,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(x.expr,
-                recordPattern([wildcard(type: 'Object').recordField()]), [
+            ifCase(x, recordPattern([wildcard(type: 'Object').recordField()]), [
               checkNotPromoted(x),
             ]),
           ]);
@@ -9755,8 +9913,7 @@ main() {
           var x = Var('x');
           h.run([
             declare(x, initializer: expr('(num,)')),
-            ifCase(x.expr,
-                recordPattern([wildcard(type: 'String').recordField()]), [
+            ifCase(x, recordPattern([wildcard(type: 'String').recordField()]), [
               checkNotPromoted(x),
             ]),
           ]);
@@ -9789,16 +9946,18 @@ main() {
         declare(x, initializer: expr('FutureOr<int>')),
         declare(y, initializer: expr('FutureOr<String>')),
         ifCase(
-            x.expr,
-            wildcard(type: 'int').when(localFunction([
-              ifCase(y.expr, wildcard(type: 'String'), [
-                checkPromoted(x, 'int'),
-                checkPromoted(y, 'String'),
-              ], [
-                checkPromoted(x, 'int'),
-                checkPromoted(y, 'Future<String>'),
-              ]),
-            ]).thenExpr(throw_(expr('Object')))),
+            x,
+            wildcard(type: 'int').when(second(
+                localFunction([
+                  ifCase(y, wildcard(type: 'String'), [
+                    checkPromoted(x, 'int'),
+                    checkPromoted(y, 'String'),
+                  ], [
+                    checkPromoted(x, 'int'),
+                    checkPromoted(y, 'Future<String>'),
+                  ]),
+                ]),
+                throw_(expr('Object')))),
             [
               checkReachable(false),
             ],
@@ -9814,6 +9973,97 @@ main() {
         ifCase(expr('num'), wildcard(type: 'int').and(wildcard(type: 'error')),
             []),
       ]);
+    });
+
+    group('Split points:', () {
+      test('Guarded', () {
+        // This test verifies that for a guarded pattern, the join of the two
+        // "unmatched" control flow paths corresponds to a split point at the
+        // beginning of the pattern.
+        var i = Var('i');
+        h.run([
+          declare(i, initializer: expr('int?')),
+          ifCase(
+              second(throw_(expr('Object')), expr('int')).checkType('int'),
+              objectPattern(requiredType: 'int', fields: [])
+                  .when(i.eq(nullLiteral)),
+              [],
+              [
+                // There is a join point here, joining the flow control paths
+                // where (a) the pattern `int()` failed to match and (b) the
+                // guard `i == null` was not satisfied. Since the scrutinee has
+                // type `int`, and the pattern is `int()`, the pattern is
+                // guaranteed to match, so path (a) is unreachable. Path (b) is
+                // also unreachable due to the fact that the scrutinee throws,
+                // but since the split point is the beginning of the pattern,
+                // path (b) is reachable from the split point. So the promotion
+                // implied by (b) is preserved after the join.
+                checkPromoted(i, 'int'),
+                // Note that due to the `throw` in the scrutinee, this code is
+                // unreachable.
+                checkReachable(false),
+              ]),
+        ]);
+      });
+
+      test('Logical-or', () {
+        // This test verifies that for a logical-or pattern, the join of the two
+        // "matched" control flow paths corresponds to a split point at the
+        // beginning of the top level pattern.
+        var x = Var('x');
+        h.run([
+          ifCase(
+              expr('(Null, Null, int?)'),
+              recordPattern([
+                relationalPattern('!=', nullLiteral).recordField(),
+                wildcard().recordField(),
+                wildcard().recordField()
+              ])
+                  // At this point, control flow is unreachable due to the fact
+                  // that the `!= null` pattern in the first field of the
+                  // record pattern above can never match the type `Null`.
+                  .and(recordPattern([
+                    wildcard().recordField(),
+                    relationalPattern('!=', nullLiteral).recordField(),
+                    wildcard().recordField()
+                  ])
+                          // At this point, control flow is unreachable for a
+                          // second reason: because the `!= null` pattern in the
+                          // second field of the record pattern above can never
+                          // match the type `Null`.
+                          .or(recordPattern([
+                    wildcard().recordField(),
+                    wildcard().recordField(),
+                    wildcard().nullCheck.recordField()
+                  ])
+                              // At this point, the third field of the scrutinee
+                              // is promoted from `int?` to `int`, due to the
+                              // null check pattern.
+                              )
+                      // At this point, there is a control flow join between the
+                      // two branches of the logical-or pattern. Since the split
+                      // point corresponding to the control flow join is at the
+                      // beginning of the top level pattern, both branches are
+                      // considered unreachable, so neither is favored in the
+                      // join, and therefore, the promotion from the second
+                      // branch is lost.
+                      )
+                  .and(
+                      // The record pattern below matches `x` to the unpromoted
+                      // type of the third field of the scrutinee, so we just
+                      // have to verify that it has the expected type of `int?`.
+                      recordPattern([
+                    wildcard().recordField(),
+                    wildcard().recordField(),
+                    x.pattern(expectInferredType: 'int?').recordField()
+                  ])),
+              [
+                // As a sanity check, confirm that the overall pattern
+                // can't ever match.
+                checkReachable(false),
+              ]),
+        ]);
+      });
     });
   });
 }
@@ -9935,7 +10185,6 @@ extension on FlowModel<Type> {
                   ?.promotedTypes
                   ?.last ??
               variable.type,
-          isPromotable: true,
           isThisOrSuper: false,
           ssaNode: SsaNode(null));
 

@@ -17,6 +17,9 @@ class TestTypePhaseIntrospector implements TypePhaseIntrospector {
     if (library == Uri.parse('dart:core') && name == 'String') {
       return Fixtures.stringType.identifier;
     }
+    if (library == Uri.parse('dart:core') && name == 'List') {
+      return Fixtures.listIdentifier;
+    }
     throw UnimplementedError('Cannot resolve the identifier $library:$name');
   }
 }
@@ -149,7 +152,7 @@ class TestIdentifier extends IdentifierImpl {
     required super.id,
     required super.name,
     required IdentifierKind kind,
-    required Uri uri,
+    required Uri? uri,
     required String? staticScope,
   }) : resolved = ResolvedIdentifier(
             kind: kind, name: name, staticScope: staticScope, uri: uri);
@@ -176,6 +179,18 @@ extension DebugCodeString on Code {
     }
     return buffer;
   }
+}
+
+extension IterableToDebugCodeString on Iterable<Code> {
+  Iterable<String> mapToDebugCodeString() =>
+      map((a) => a.debugString().toString())
+          // Avoid doing this repeatedly when used in unorderedEquals etc.
+          .toList();
+}
+
+extension MapValuesToDebugCodeString<K> on Map<K, Iterable<Code>> {
+  Map<K, Iterable<String>> mapValuesToDebugCodeString() =>
+      map((key, values) => MapEntry(key, values.mapToDebugCodeString()));
 }
 
 /// Checks if two [Code] objects are of the same type and all their fields are
@@ -293,6 +308,8 @@ class Fixtures {
       languageVersion: LanguageVersionImpl(3, 0),
       metadata: [],
       uri: Uri.parse('package:foo/bar.dart'));
+  static final listIdentifier =
+      IdentifierImpl(id: RemoteInstance.uniqueId, name: 'List');
   static final nullableBoolType = NamedTypeAnnotationImpl(
       id: RemoteInstance.uniqueId,
       identifier: IdentifierImpl(id: RemoteInstance.uniqueId, name: 'bool'),
@@ -348,8 +365,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myFunction'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: false,
@@ -363,9 +381,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: '_myVariable'),
       library: Fixtures.library,
       metadata: [],
-      isExternal: false,
-      isFinal: true,
-      isLate: false,
+      hasExternal: false,
+      hasFinal: true,
+      hasLate: false,
       type: inferredStringType);
   static final myVariableGetter = FunctionDeclarationImpl(
       id: RemoteInstance.uniqueId,
@@ -373,8 +391,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myVariable'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: true,
       isOperator: false,
       isSetter: false,
@@ -388,8 +407,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myVariable'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: true,
@@ -413,9 +433,9 @@ class Fixtures {
       identifier: IdentifierImpl(id: RemoteInstance.uniqueId, name: 'library'),
       library: Fixtures.library,
       metadata: [],
-      isExternal: false,
-      isFinal: true,
-      isLate: false,
+      hasExternal: false,
+      hasFinal: true,
+      hasLate: false,
       type: NamedTypeAnnotationImpl(
           id: RemoteInstance.uniqueId,
           isNullable: false,
@@ -468,8 +488,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myConstructor'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: false,
@@ -494,9 +515,9 @@ class Fixtures {
       identifier: IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myField'),
       library: Fixtures.library,
       metadata: [],
-      isExternal: false,
-      isFinal: false,
-      isLate: false,
+      hasExternal: false,
+      hasFinal: false,
+      hasLate: false,
       type: stringType,
       definingType: myClassType.identifier,
       isStatic: false);
@@ -521,8 +542,9 @@ class Fixtures {
       identifier: IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myMethod'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: false,
@@ -580,8 +602,9 @@ class Fixtures {
           id: RemoteInstance.uniqueId, name: 'myEnumConstructor'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: false,
@@ -618,8 +641,9 @@ class Fixtures {
           IdentifierImpl(id: RemoteInstance.uniqueId, name: 'myMixinMethod'),
       library: Fixtures.library,
       metadata: [],
-      isAbstract: false,
-      isExternal: false,
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
       isGetter: false,
       isOperator: false,
       isSetter: false,
@@ -628,6 +652,40 @@ class Fixtures {
       returnType: recordType,
       typeParameters: [],
       definingType: myMixinType.identifier,
+      isStatic: false);
+
+  static final myExtension = IntrospectableExtensionDeclarationImpl(
+      id: RemoteInstance.uniqueId,
+      identifier:
+          IdentifierImpl(id: RemoteInstance.uniqueId, name: 'MyExtension'),
+      library: Fixtures.library,
+      metadata: [],
+      typeParameters: [],
+      onType: myClassType);
+
+  static final myGeneratedExtensionMethod = MethodDeclarationImpl(
+      id: RemoteInstance.uniqueId,
+      identifier:
+          IdentifierImpl(id: RemoteInstance.uniqueId, name: 'onTypeFieldNames'),
+      library: library,
+      metadata: [],
+      hasAbstract: false,
+      hasBody: true,
+      hasExternal: false,
+      isGetter: true,
+      isOperator: false,
+      isSetter: true,
+      namedParameters: [],
+      positionalParameters: [],
+      returnType: NamedTypeAnnotationImpl(
+          id: RemoteInstance.uniqueId,
+          isNullable: false,
+          identifier: listIdentifier,
+          typeArguments: [stringType]),
+      typeParameters: [],
+      definingType: myExtension.identifier,
+      // TODO: This is a bit weird, the method is actually static, but doesn't
+      // have the keyword because it is implicit.
       isStatic: false);
 
   static final testDeclarationPhaseIntrospector =
@@ -645,10 +703,12 @@ class Fixtures {
     myClass: [myMethod],
     myMixin: [myMixinMethod],
     myEnum: [],
+    myExtension: [myGeneratedExtensionMethod],
   }, libraryTypes: {
     Fixtures.library: [
       myClass,
       myEnum,
+      myExtension,
       myMixin,
     ],
   }, staticTypes: {
@@ -658,6 +718,7 @@ class Fixtures {
   }, identifierDeclarations: {
     myClass.identifier: myClass,
     myEnum.identifier: myEnum,
+    myExtension.identifier: myExtension,
     mySuperclass.identifier: mySuperclass,
     myInterface.identifier: myInterface,
     myMixin.identifier: myMixin,

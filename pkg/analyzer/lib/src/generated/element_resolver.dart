@@ -205,6 +205,10 @@ class ElementResolver {
     _resolveAnnotations(node.metadata);
   }
 
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    _resolveAnnotations(node.metadata);
+  }
+
   void visitFieldDeclaration(FieldDeclaration node) {
     _resolveAnnotations(node.metadata);
   }
@@ -340,6 +344,10 @@ class ElementResolver {
     }
   }
 
+  void visitRepresentationDeclaration(RepresentationDeclaration node) {
+    _resolveAnnotations(node.fieldMetadata);
+  }
+
   void visitSimpleFormalParameter(SimpleFormalParameter node) {
     _resolveMetadataForParameter(node);
   }
@@ -376,7 +384,7 @@ class ElementResolver {
     } else {
       if (element.isFactory &&
           // Check if we've reported [NO_GENERATIVE_CONSTRUCTORS_IN_SUPERCLASS].
-          !element.enclosingElement2.constructors
+          !element.enclosingElement.constructors
               .every((constructor) => constructor.isFactory)) {
         _errorReporter.reportErrorForNode(
             CompileTimeErrorCode.NON_GENERATIVE_CONSTRUCTOR, node, [element]);

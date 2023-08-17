@@ -494,7 +494,7 @@ class FieldHelper {
     kNonNullableByDefault = 1 << 7,
     kInternalImplementation = 1 << 8,
     kEnumElement = 1 << 9,
-    kInlineClassMember = 1 << 10,
+    kExtensionTypeMember = 1 << 10,
   };
 
   explicit FieldHelper(KernelReaderHelper* helper)
@@ -520,8 +520,8 @@ class FieldHelper {
   }
   bool IsLate() const { return (flags_ & kIsLate) != 0; }
   bool IsExtensionMember() const { return (flags_ & kExtensionMember) != 0; }
-  bool IsInlineClassMember() const {
-    return (flags_ & kInlineClassMember) != 0;
+  bool IsExtensionTypeMember() const {
+    return (flags_ & kExtensionTypeMember) != 0;
   }
 
   NameIndex canonical_name_field_;
@@ -595,7 +595,7 @@ class ProcedureHelper {
     kSyntheticProcedure = 1 << 6,
     kInternalImplementation = 1 << 7,
     kIsAbstractFieldAccessor = 1 << 8,
-    kInlineClassMember = 1 << 9,
+    kExtensionTypeMember = 1 << 9,
     kHasWeakTearoffReferencePragma = 1 << 10,
   };
 
@@ -627,8 +627,8 @@ class ProcedureHelper {
     return stub_kind_ == kNoSuchMethodForwarderStubKind;
   }
   bool IsExtensionMember() const { return (flags_ & kExtensionMember) != 0; }
-  bool IsInlineClassMember() const {
-    return (flags_ & kInlineClassMember) != 0;
+  bool IsExtensionTypeMember() const {
+    return (flags_ & kExtensionTypeMember) != 0;
   }
   bool IsMemberSignature() const {
     return stub_kind_ == kMemberSignatureStubKind;
@@ -835,7 +835,7 @@ class LibraryHelper {
     // * kTypedefs
     // * kClasses
     // * kExtensions
-    // * kInlineClasses
+    // * kExtensionTypeDeclarations
     // * kToplevelField
     // * kToplevelProcedures
     // * kSourceReferences
@@ -1048,10 +1048,25 @@ struct InferredTypeMetadata {
 // Helper class which provides access to inferred type metadata.
 class InferredTypeMetadataHelper : public MetadataHelper {
  public:
-  static const char* tag() { return "vm.inferred-type.metadata"; }
+  enum class Kind {
+    Type,     // Inferred type of a call, field or variable.
+    ArgType,  // Inferred incoming argument type.
+  };
+
+  static const char* tag(Kind kind) {
+    switch (kind) {
+      case Kind::Type:
+        return "vm.inferred-type.metadata";
+      case Kind::ArgType:
+        return "vm.inferred-arg-type.metadata";
+    }
+    UNREACHABLE();
+    return nullptr;
+  }
 
   explicit InferredTypeMetadataHelper(KernelReaderHelper* helper,
-                                      ConstantReader* constant_reader);
+                                      ConstantReader* constant_reader,
+                                      Kind kind = Kind::Type);
 
   InferredTypeMetadata GetInferredType(intptr_t node_offset,
                                        bool read_constant = true);
@@ -1558,7 +1573,7 @@ class TypeTranslator {
   void BuildRecordType();
   void BuildTypeParameterType();
   void BuildIntersectionType();
-  void BuildInlineType();
+  void BuildExtensionType();
   void BuildFutureOrType();
 
   ScriptPtr Script() {

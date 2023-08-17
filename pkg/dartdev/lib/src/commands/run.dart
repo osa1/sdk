@@ -301,15 +301,18 @@ class RunCommand extends DartdevCommand {
     }
 
     String? nativeAssets;
-    if (nativeAssetsExperimentEnabled) {
-      try {
-        nativeAssets = (await compileNativeAssetsJitYamlFile())?.toFilePath();
-      } on Exception catch (e, stacktrace) {
-        log.stderr('Error: Compiling native assets failed.');
-        log.stderr(e.toString());
-        log.stderr(stacktrace.toString());
+    if (!nativeAssetsExperimentEnabled) {
+      if (await warnOnNativeAssets()) {
         return errorExitCode;
       }
+    } else {
+      final (success, assets) =
+          await compileNativeAssetsJitYamlFile(verbose: verbose);
+      if (!success) {
+        log.stderr('Error: Compiling native assets failed.');
+        return errorExitCode;
+      }
+      nativeAssets = assets?.toFilePath();
     }
 
     final hasServerInfoOption = args.wasParsed(serverInfoOption);

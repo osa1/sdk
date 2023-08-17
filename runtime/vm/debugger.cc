@@ -1055,28 +1055,27 @@ ObjectPtr ActivationFrame::EvaluateCompiledExpression(
     const Array& type_definitions,
     const Array& arguments,
     const TypeArguments& type_arguments) {
-  if (function().IsClosureFunction()) {
-    return Library::Handle(Library()).EvaluateCompiledExpression(
-        kernel_buffer, type_definitions, arguments, type_arguments);
-  } else if (function().is_static()) {
-    const Class& cls = Class::Handle(function().Owner());
-    return cls.EvaluateCompiledExpression(kernel_buffer, type_definitions,
-                                          arguments, type_arguments);
-  } else {
-    const Object& receiver = Object::Handle(GetReceiver());
-    if (receiver.ptr() == Object::optimized_out().ptr()) {
-      // Cannot execute an instance method without a receiver.
-      return Object::optimized_out().ptr();
-    }
-    const Class& method_cls = Class::Handle(function().Owner());
-    ASSERT(receiver.IsInstance() || receiver.IsNull());
-    if (!(receiver.IsInstance() || receiver.IsNull())) {
-      return Object::null();
-    }
-    const Instance& inst = Instance::Cast(receiver);
-    return inst.EvaluateCompiledExpression(
-        method_cls, kernel_buffer, type_definitions, arguments, type_arguments);
+  auto thread = Thread::Current();
+  auto zone = thread->zone();
+
+  // The expression evaluation function will get all it's captured state passed
+  // as parameters (with `this` being the exception). As a result, we treat the
+  // expression evaluation function as either a top-level, static or instance
+  // method.
+  const auto& outermost =
+      Function::Handle(zone, function().GetOutermostFunction());
+  const auto& klass = Class::Handle(zone, outermost.Owner());
+  const auto& library = Library::Handle(zone, klass.library());
+
+  auto& receiver = Object::Handle(zone);
+  if (!klass.IsTopLevel() && !outermost.is_static()) {
+    receiver = GetReceiver();
+    RELEASE_ASSERT(receiver.IsInstance() ||
+                   receiver.ptr() == Object::optimized_out().ptr());
   }
+  return Instance::EvaluateCompiledExpression(thread, receiver, library, klass,
+                                              kernel_buffer, type_definitions,
+                                              arguments, type_arguments);
 }
 
 TypeArgumentsPtr ActivationFrame::BuildParameters(
@@ -2528,6 +2527,15 @@ BreakpointLocation* Debugger::SetBreakpoint(
       return nullptr;  // Missing source positions?
     }
   }
+
+  TokenPosition exact_token_pos = token_pos;
+#if !defined(DART_PRECOMPILED_RUNTIME)
+  if (token_pos != last_token_pos && requested_column >= 0) {
+    exact_token_pos =
+        FindExactTokenPosition(script, token_pos, requested_column);
+  }
+#endif  // !defined(DART_PRECOMPILED_RUNTIME)
+
   if (!func.IsNull()) {
     // There may be more than one function object for a given function
     // in source code. There may be implicit closure functions, and
@@ -2544,13 +2552,6 @@ BreakpointLocation* Debugger::SetBreakpoint(
       // have already been compiled. We can resolve the breakpoint now.
       // If requested_column is larger than zero, [token_pos, last_token_pos]
       // governs one single line of code.
-      TokenPosition exact_token_pos = TokenPosition::kNoSource;
-      if (token_pos != last_token_pos && requested_column >= 0) {
-#if !defined(DART_PRECOMPILED_RUNTIME)
-        exact_token_pos =
-            FindExactTokenPosition(script, token_pos, requested_column);
-#endif  // !defined(DART_PRECOMPILED_RUNTIME)
-      }
       DeoptimizeWorld();
       BreakpointLocation* loc =
           SetCodeBreakpoints(scripts, token_pos, last_token_pos, requested_line,
@@ -2566,7 +2567,7 @@ BreakpointLocation* Debugger::SetBreakpoint(
   if (FLAG_verbose_debug) {
     intptr_t line_number = -1;
     intptr_t column_number = -1;
-    script.GetTokenLocation(token_pos, &line_number, &column_number);
+    script.GetTokenLocation(exact_token_pos, &line_number, &column_number);
     if (func.IsNull()) {
       OS::PrintErr(
           "Registering pending breakpoint for "
@@ -2580,11 +2581,12 @@ BreakpointLocation* Debugger::SetBreakpoint(
     }
   }
   const String& script_url = String::Handle(script.url());
-  BreakpointLocation* loc =
-      GetBreakpointLocation(script_url, token_pos, -1, requested_column);
+  BreakpointLocation* loc = GetBreakpointLocation(
+      script_url, exact_token_pos, requested_line, requested_column);
   if (loc == nullptr) {
-    loc = new BreakpointLocation(this, scripts, token_pos, last_token_pos,
-                                 requested_line, requested_column);
+    loc =
+        new BreakpointLocation(this, scripts, exact_token_pos, exact_token_pos,
+                               requested_line, requested_column);
     RegisterBreakpointLocation(loc);
   }
   return loc;

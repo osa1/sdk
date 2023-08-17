@@ -97,7 +97,7 @@ class TypeArgumentsVerifier {
       return;
     }
 
-    var enumElement = constructorElement.enclosingElement2;
+    var enumElement = constructorElement.enclosingElement;
     var typeParameters = enumElement.typeParameters;
 
     var typeArgumentList = node.arguments?.typeArguments;
@@ -116,13 +116,8 @@ class TypeArgumentsVerifier {
       return;
     }
 
-    var returnType = constructorElement.returnType2;
-    if (returnType is! InterfaceType) {
-      return;
-    }
-
     // Check that type arguments are regular-bounded.
-    var typeArguments = returnType.typeArguments;
+    var typeArguments = constructorElement.returnType.typeArguments;
     var substitution = Substitution.fromPairs(typeParameters, typeArguments);
     for (var i = 0; i < typeArguments.length; i++) {
       var typeParameter = typeParameters[i];
@@ -626,14 +621,21 @@ class TypeArgumentsVerifier {
   /// Determines if the given [namedType] occurs in a context where
   /// super-bounded types are allowed.
   bool _shouldAllowSuperBoundedTypes(NamedType namedType) {
-    var parent = namedType.parent;
-    if (parent is ExtendsClause) return false;
-    if (parent is OnClause) return false;
-    if (parent is ClassTypeAlias) return false;
-    if (parent is WithClause) return false;
-    if (parent is ConstructorName) return false;
-    if (parent is ImplementsClause) return false;
-    if (parent is GenericTypeAlias) return false;
+    switch (namedType.parent) {
+      case ClassTypeAlias _:
+      case ConstructorName _:
+      case ExtendsClause _:
+      case GenericTypeAlias _:
+      case ImplementsClause _:
+      case OnClause _:
+      case WithClause _:
+        return false;
+    }
+
+    if (namedType.type?.element is ExtensionTypeElement) {
+      return false;
+    }
+
     return true;
   }
 

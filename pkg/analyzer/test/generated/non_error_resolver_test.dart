@@ -1493,7 +1493,7 @@ test(C c) => c.method<bool>(arg: true);
 ''');
     var x = findNode.namedExpression('arg: true');
     var y = x.staticParameterElement!;
-    expect(y.enclosingElement2, isNotNull);
+    expect(y.enclosingElement, isNotNull);
     expect(y.declaration, findElement.parameter('arg'));
   }
 
@@ -1506,7 +1506,7 @@ bool test(C c) => c.method<bool>(arg: true);
 ''');
     var x = findNode.namedExpression('arg: true');
     var y = x.staticParameterElement!;
-    expect(y.enclosingElement2, isNotNull);
+    expect(y.enclosingElement, isNotNull);
     expect(y.declaration, findElement.parameter('arg'));
   }
 
@@ -2830,8 +2830,8 @@ class B {
   const B.named7({this.bounded: bounded3}) : unbounded = null;
   const B.named8({this.bounded: bounded4}) : unbounded = null;
 
-  final Unbounded unbounded;
-  final Bounded bounded;
+  final Unbounded? unbounded;
+  final Bounded? bounded;
 }
 ''');
     await assertNoErrorsInCode(r'''

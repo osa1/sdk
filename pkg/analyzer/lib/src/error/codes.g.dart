@@ -232,6 +232,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "Try marking the function body with either 'async' or 'async*'.",
   );
 
+  static const CompileTimeErrorCode AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE =
+      CompileTimeErrorCode(
+    'AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE',
+    "The 'await' expression can't be used for an expression with an extension "
+        "type that is not a subtype of 'Future'.",
+    correctionMessage: "Try updating the extension type to implement 'Future'.",
+  );
+
   ///  Parameters:
   ///  0: the name of the base class being implemented
   static const CompileTimeErrorCode BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY =
@@ -513,13 +521,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  Parameters:
-  ///  0: the name of the class implementing the conflicting interface
-  ///  1: the first conflicting type
-  ///  2: the second conflicting type
+  ///  0: the name of the kind of the element implementing the conflicting interface
+  ///  1: the name of the element implementing the conflicting interface
+  ///  2: the first conflicting type
+  ///  3: the second conflicting type
   static const CompileTimeErrorCode CONFLICTING_GENERIC_INTERFACES =
       CompileTimeErrorCode(
     'CONFLICTING_GENERIC_INTERFACES',
-    "The class '{0}' can't implement both '{1}' and '{2}' because the type "
+    "The {0} '{1}' can't implement both '{2}' and '{3}' because the type "
         "arguments are different.",
     hasPublishedDocs: true,
   );
@@ -665,6 +674,19 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      CONST_CONSTRUCTOR_CONSTANT_FROM_DEFERRED_LIBRARY = CompileTimeErrorCode(
+    'COLLECTION_ELEMENT_FROM_DEFERRED_LIBRARY',
+    "Constant values from a deferred library can't be used as values in a "
+        "'const' constructor.",
+    correctionMessage:
+        "Try removing the keyword 'const' from the constructor or removing the "
+        "keyword 'deferred' from the import.",
+    hasPublishedDocs: true,
+    uniqueName: 'CONST_CONSTRUCTOR_CONSTANT_FROM_DEFERRED_LIBRARY',
+  );
+
   ///  16.12.2 Const: It is a compile-time error if evaluation of a constant
   ///  object results in an uncaught exception being thrown.
   ///
@@ -795,6 +817,12 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  static const CompileTimeErrorCode CONST_EVAL_ASSERTION_FAILURE =
+      CompileTimeErrorCode(
+    'CONST_EVAL_ASSERTION_FAILURE',
+    "The assertion in this constant expression failed.",
+  );
+
   static const CompileTimeErrorCode CONST_EVAL_EXTENSION_METHOD =
       CompileTimeErrorCode(
     'CONST_EVAL_EXTENSION_METHOD',
@@ -813,6 +841,16 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
       CompileTimeErrorCode(
     'CONST_EVAL_METHOD_INVOCATION',
     "Methods can't be invoked in constant expressions.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the property being accessed
+  ///  1: the type with the property being accessed
+  static const CompileTimeErrorCode CONST_EVAL_PROPERTY_ACCESS =
+      CompileTimeErrorCode(
+    'CONST_EVAL_PROPERTY_ACCESS',
+    "The property '{0}' can't be accessed on the type '{1}' in a constant "
+        "expression.",
   );
 
   ///  16.12.2 Const: It is a compile-time error if evaluation of a constant
@@ -1088,17 +1126,6 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
-  static const CompileTimeErrorCode DEFAULT_LIST_CONSTRUCTOR =
-      CompileTimeErrorCode(
-    'DEFAULT_LIST_CONSTRUCTOR',
-    "The default 'List' constructor isn't available when null safety is "
-        "enabled.",
-    correctionMessage:
-        "Try using a list literal, 'List.filled' or 'List.generate'.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
   static const CompileTimeErrorCode
       DEFAULT_VALUE_IN_REDIRECTING_FACTORY_CONSTRUCTOR = CompileTimeErrorCode(
     'DEFAULT_VALUE_IN_REDIRECTING_FACTORY_CONSTRUCTOR',
@@ -1281,6 +1308,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EMPTY_MAP_PATTERN',
     "A map pattern must have at least one entry.",
     correctionMessage: "Try replacing it with an object pattern 'Map()'.",
+    hasPublishedDocs: true,
   );
 
   static const CompileTimeErrorCode ENUM_CONSTANT_SAME_NAME_AS_ENCLOSING =
@@ -1568,6 +1596,105 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "of a cascade expression.",
     correctionMessage: "Try using '.' instead of '..'.",
     hasPublishedDocs: true,
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER',
+    "Extension type constructors can't declare super formal parameters.",
+    correctionMessage: "Try removing the super formal parameter declaration.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION = CompileTimeErrorCode(
+    'EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION',
+    "Extension type constructors can't include superinitializers.",
+    correctionMessage: "Try removing the superconstructor invocation.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode EXTENSION_TYPE_DECLARES_INSTANCE_FIELD =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_DECLARES_INSTANCE_FIELD',
+    "Extension types can't declare instance fields.",
+    correctionMessage: "Try replacing the field with a getter.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode EXTENSION_TYPE_DECLARES_MEMBER_OF_OBJECT =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_DECLARES_MEMBER_OF_OBJECT',
+    "Extension types can't declare members with the same name as a member "
+        "declared by 'Object'.",
+    correctionMessage: "Try specifying a different name for the member.",
+  );
+
+  ///  Parameters:
+  ///  0: the display string of the disallowed type
+  static const CompileTimeErrorCode EXTENSION_TYPE_IMPLEMENTS_DISALLOWED_TYPE =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_DISALLOWED_TYPE',
+    "Extension types can't implement '{0}'.",
+    correctionMessage:
+        "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode EXTENSION_TYPE_IMPLEMENTS_ITSELF =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_ITSELF',
+    "The extension type can't implement itself.",
+    correctionMessage:
+        "Try removing the superinterface that references this extension type.",
+  );
+
+  ///  Parameters:
+  ///  0: the implemented not extension type
+  ///  1: the ultimate representation type
+  static const CompileTimeErrorCode EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE',
+    "'{0}' is not a supertype of '{1}', the representation type.",
+    correctionMessage:
+        "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  Parameters:
+  ///  0: the representation type of the implemented extension type
+  ///  1: the name of the implemented extension type
+  ///  2: the representation type of the this extension type
+  ///  3: the name of the this extension type
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE',
+    "'{0}', the representation type of '{1}', is not a supertype of '{2}', the "
+        "representation type of '{3}'.",
+    correctionMessage:
+        "Try specifying a different type, or remove the type from the list.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the extension type
+  ///  1: the name of the conflicting member
+  static const CompileTimeErrorCode EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT',
+    "The extension type '{0}' has more than one distinct member named '{1}' "
+        "from implemented types.",
+    correctionMessage:
+        "Try redeclaring the corresponding member in this extension type.",
+  );
+
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF = CompileTimeErrorCode(
+    'EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF',
+    "The extension type representation can't depend on itself.",
+    correctionMessage: "Try specifying a different type.",
   );
 
   static const CompileTimeErrorCode EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER =
@@ -2959,6 +3086,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try specifying the getter name explicitly, or using a variable "
         "pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -3524,6 +3652,18 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "an expression statement.",
   );
 
+  ///  No parameters.
+  static const CompileTimeErrorCode
+      NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE =
+      CompileTimeErrorCode(
+    'NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE',
+    "An extension type parameter can't be used in a non-covariant position of "
+        "its representation type.",
+    correctionMessage:
+        "Try removing the type parameters from function parameter types and "
+        "type parameter bounds.",
+  );
+
   ///  Parameters:
   ///  0: the type of the switch scrutinee
   ///  1: the witness pattern for the unmatched value
@@ -3894,7 +4034,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   static const CompileTimeErrorCode OBSOLETE_COLON_FOR_DEFAULT_VALUE =
       CompileTimeErrorCode(
     'OBSOLETE_COLON_FOR_DEFAULT_VALUE',
-    "Using a colon as a separator before a default value is no longer "
+    "Using a colon as the separator before a default value is no longer "
         "supported.",
     correctionMessage: "Try replacing the colon with an equal sign.",
     hasPublishedDocs: true,
@@ -4407,6 +4547,7 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'REST_ELEMENT_IN_MAP_PATTERN',
     "A map pattern can't contain a rest pattern.",
     correctionMessage: "Try removing the rest pattern.",
+    hasPublishedDocs: true,
   );
 
   ///  No parameters.
@@ -6501,6 +6642,7 @@ class WarningCode extends AnalyzerErrorCode {
     "The annotation 'visibleOutsideTemplate' can only be applied to a member "
         "of a class, enum, or mixin that is annotated with "
         "'visibleForTemplate'.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -6783,6 +6925,18 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  An error code indicating the use of a redeclare annotation on a member that does not redeclare.
+  ///
+  ///  Parameters:
+  ///  0: the kind of member
+  static const WarningCode REDECLARE_ON_NON_REDECLARING_MEMBER = WarningCode(
+    'REDECLARE_ON_NON_REDECLARING_MEMBER',
+    "The {0} doesn't redeclare a {0} declared in a superinterface.",
+    correctionMessage:
+        "Try updating this member to match a declaration in a superinterface, "
+        "or removing the redeclare annotation.",
+  );
+
   ///  An error code indicating use of a removed lint rule.
   ///
   ///  Parameters:
@@ -6840,40 +6994,6 @@ class WarningCode extends AnalyzerErrorCode {
     uniqueName: 'RETURN_TYPE_INVALID_FOR_CATCH_ERROR',
   );
 
-  ///  Parameters:
-  ///  0: the name of the class
-  static const WarningCode SDK_VERSION_ASYNC_EXPORTED_FROM_CORE = WarningCode(
-    'SDK_VERSION_ASYNC_EXPORTED_FROM_CORE',
-    "The class '{0}' wasn't exported from 'dart:core' until version 2.1, but "
-        "this code is required to be able to run on earlier versions.",
-    correctionMessage:
-        "Try either importing 'dart:async' or updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_AS_EXPRESSION_IN_CONST_CONTEXT =
-      WarningCode(
-    'SDK_VERSION_AS_EXPRESSION_IN_CONST_CONTEXT',
-    "The use of an as expression in a constant expression wasn't supported "
-        "until version 2.3.2, but this code is required to be able to run on "
-        "earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  Parameters:
-  ///  0: the name of the operator
-  static const WarningCode SDK_VERSION_BOOL_OPERATOR_IN_CONST_CONTEXT =
-      WarningCode(
-    'SDK_VERSION_BOOL_OPERATOR_IN_CONST_CONTEXT',
-    "The use of the operator '{0}' for 'bool' operands in a constant context "
-        "wasn't supported until version 2.3.2, but this code is required to be "
-        "able to run on earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
   ///  No parameters.
   ///
   ///  There is also a [ParserError.EXPERIMENT_NOT_ENABLED] code which catches
@@ -6891,41 +7011,10 @@ class WarningCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
-  static const WarningCode SDK_VERSION_EQ_EQ_OPERATOR_IN_CONST_CONTEXT =
-      WarningCode(
-    'SDK_VERSION_EQ_EQ_OPERATOR_IN_CONST_CONTEXT',
-    "Using the operator '==' for non-primitive types wasn't supported until "
-        "version 2.3.2, but this code is required to be able to run on earlier "
-        "versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_EXTENSION_METHODS = WarningCode(
-    'SDK_VERSION_EXTENSION_METHODS',
-    "Extension methods weren't supported until version 2.6.0, but this code is "
-        "required to be able to run on earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
   static const WarningCode SDK_VERSION_GT_GT_GT_OPERATOR = WarningCode(
     'SDK_VERSION_GT_GT_GT_OPERATOR',
     "The operator '>>>' wasn't supported until version 2.14.0, but this code "
         "is required to be able to run on earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_IS_EXPRESSION_IN_CONST_CONTEXT =
-      WarningCode(
-    'SDK_VERSION_IS_EXPRESSION_IN_CONST_CONTEXT',
-    "The use of an is expression in a constant context wasn't supported until "
-        "version 2.3.2, but this code is required to be able to run on earlier "
-        "versions.",
     correctionMessage: "Try updating the SDK constraints.",
     hasPublishedDocs: true,
   );
@@ -6939,15 +7028,6 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_SET_LITERAL = WarningCode(
-    'SDK_VERSION_SET_LITERAL',
-    "Set literals weren't supported until version 2.2, but this code is "
-        "required to be able to run on earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
   ///  Parameters:
   ///  0: the version specified in the `@Since()` annotation
   ///  1: the SDK version constraints
@@ -6956,26 +7036,6 @@ class WarningCode extends AnalyzerErrorCode {
     "This API is available since SDK {0}, but constraints '{1}' don't "
         "guarantee it.",
     correctionMessage: "Try updating the SDK constraints.",
-  );
-
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_UI_AS_CODE = WarningCode(
-    'SDK_VERSION_UI_AS_CODE',
-    "The for, if, and spread elements weren't supported until version 2.3.0, "
-        "but this code is required to be able to run on earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
-  );
-
-  ///  No parameters.
-  static const WarningCode SDK_VERSION_UI_AS_CODE_IN_CONST_CONTEXT =
-      WarningCode(
-    'SDK_VERSION_UI_AS_CODE_IN_CONST_CONTEXT',
-    "The if and spread elements weren't supported in constant expressions "
-        "until version 2.5.0, but this code is required to be able to run on "
-        "earlier versions.",
-    correctionMessage: "Try updating the SDK constraints.",
-    hasPublishedDocs: true,
   );
 
   ///  When "strict-raw-types" is enabled, "raw types" must have type arguments.

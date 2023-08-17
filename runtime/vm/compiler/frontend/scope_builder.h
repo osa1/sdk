@@ -51,7 +51,7 @@ class ScopeBuilder {
   void VisitRecordType();
   void VisitTypeParameterType();
   void VisitIntersectionType();
-  void VisitInlineType();
+  void VisitExtensionType();
   void VisitFutureOrType();
   void HandleLocalFunction(intptr_t parent_kernel_offset);
 
@@ -176,6 +176,7 @@ class ScopeBuilder {
   KernelReaderHelper helper_;
   ConstantReader constant_reader_;
   InferredTypeMetadataHelper inferred_type_metadata_helper_;
+  InferredTypeMetadataHelper inferred_arg_type_metadata_helper_;
   ProcedureAttributesMetadataHelper procedure_attributes_metadata_helper_;
   TypeTranslator type_translator_;
 

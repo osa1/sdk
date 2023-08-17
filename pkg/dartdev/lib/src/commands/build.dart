@@ -103,9 +103,9 @@ class BuildCommand extends DartdevCommand {
     stdout.writeln('Building native assets.');
     final workingDirectory = Directory.current.uri;
     final target = Target.current;
-    final nativeAssets = await NativeAssetsBuildRunner(
+    final buildResult = await NativeAssetsBuildRunner(
       dartExecutable: Uri.file(sdk.dart),
-      logger: logger,
+      logger: logger(verbose),
     ).build(
       workingDirectory: workingDirectory,
       target: target,
@@ -113,6 +113,11 @@ class BuildCommand extends DartdevCommand {
       buildMode: BuildMode.release,
       includeParentEnvironment: true,
     );
+    final nativeAssets = buildResult.assets;
+    if (!buildResult.success) {
+      stderr.write('Native assets build failed.');
+      return 255;
+    }
     final staticAssets = nativeAssets.whereLinkMode(LinkMode.static);
     if (staticAssets.isNotEmpty) {
       stderr.write(

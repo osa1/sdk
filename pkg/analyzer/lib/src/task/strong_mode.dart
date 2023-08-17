@@ -37,6 +37,7 @@ class InstanceMemberInferrer {
     isNonNullableByDefault = typeSystem.isNonNullableByDefault;
     _inferClasses(unit.classes);
     _inferClasses(unit.enums);
+    _inferExtensionTypes(unit.extensionTypes);
     _inferClasses(unit.mixins);
   }
 
@@ -140,7 +141,7 @@ class InstanceMemberInferrer {
         name: getterName,
       );
       if (combinedGetter != null) {
-        var returnType = combinedGetter.returnType2;
+        var returnType = combinedGetter.returnType;
         return typeSystem.nonNullifyLegacy(returnType);
       }
       return DynamicTypeImpl.instance;
@@ -395,7 +396,7 @@ class InstanceMemberInferrer {
       }
     }
 
-    final classElement = constructor.enclosingElement2;
+    final classElement = constructor.enclosingElement;
     if (classElement is ClassElementImpl && classElement.isMixinApplication) {
       _inferMixinApplicationConstructor(classElement, constructor);
     }
@@ -443,7 +444,7 @@ class InstanceMemberInferrer {
           var conflict = conflicts.single;
           if (conflict is CandidatesConflict) {
             conflictExplanation = conflict.candidates.map((candidate) {
-              var className = candidate.enclosingElement2.name;
+              var className = candidate.enclosingElement.name;
               var typeStr = candidate.type.getDisplayString(
                 withNullability: typeSystem.isNonNullableByDefault,
               );
@@ -488,6 +489,14 @@ class InstanceMemberInferrer {
     }
 
     _resetOperatorEqualParameterTypeToDynamic(element, overriddenElements);
+  }
+
+  void _inferExtensionTypes(List<ExtensionTypeElementImpl> extensionTypes) {
+    for (final extensionType in extensionTypes) {
+      for (final constructor in extensionType.constructors) {
+        _inferConstructor(constructor);
+      }
+    }
   }
 
   void _inferMixinApplicationConstructor(
@@ -597,7 +606,7 @@ class InstanceMemberInferrer {
       overridden = overridden.declaration;
 
       // Skip Object itself.
-      var enclosingElement = overridden.enclosingElement2;
+      var enclosingElement = overridden.enclosingElement;
       if (enclosingElement is ClassElement &&
           enclosingElement.isDartCoreObject) {
         continue;

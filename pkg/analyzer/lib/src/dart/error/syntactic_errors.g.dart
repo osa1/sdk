@@ -615,6 +615,20 @@ class ParserErrorCode extends ErrorCode {
     uniqueName: 'EXPECTED_NAMED_TYPE_WITH',
   );
 
+  static const ParserErrorCode EXPECTED_REPRESENTATION_FIELD = ParserErrorCode(
+    'EXPECTED_REPRESENTATION_FIELD',
+    "Expected a representation field.",
+    correctionMessage:
+        "Try providing the representation field for this extension type.",
+  );
+
+  static const ParserErrorCode EXPECTED_REPRESENTATION_TYPE = ParserErrorCode(
+    'EXPECTED_REPRESENTATION_TYPE',
+    "Expected a representation type.",
+    correctionMessage:
+        "Try providing the representation type for this extension type.",
+  );
+
   static const ParserErrorCode EXPECTED_STRING_LITERAL = ParserErrorCode(
     'EXPECTED_STRING_LITERAL',
     "Expected a string literal.",
@@ -1486,6 +1500,13 @@ class ParserErrorCode extends ErrorCode {
     correctionMessage: "Try combining all of the groups into a single group.",
   );
 
+  static const ParserErrorCode MULTIPLE_REPRESENTATION_FIELDS = ParserErrorCode(
+    'MULTIPLE_REPRESENTATION_FIELDS',
+    "Each extension type should have exactly one representation field.",
+    correctionMessage:
+        "Try combining fields into a record, or removing extra fields.",
+  );
+
   ///  Parameters:
   ///  0: the number of variables being declared
   static const ParserErrorCode MULTIPLE_VARIABLES_IN_FOR_EACH = ParserErrorCode(
@@ -1687,6 +1708,12 @@ class ParserErrorCode extends ErrorCode {
     "Only factory constructor can specify '=' redirection.",
     correctionMessage:
         "Try making this a factory constructor, or remove the redirection.",
+  );
+
+  static const ParserErrorCode REPRESENTATION_FIELD_MODIFIER = ParserErrorCode(
+    'REPRESENTATION_FIELD_MODIFIER',
+    "Representation fields can't have modifiers.",
+    correctionMessage: "Try removing the modifier.",
   );
 
   static const ParserErrorCode SEALED_ENUM = ParserErrorCode(

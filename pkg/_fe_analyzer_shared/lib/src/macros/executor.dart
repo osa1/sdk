@@ -3,12 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/macros/executor/serialization_extensions.dart';
-import 'package:dart_internal/extract_type_arguments.dart';
 import 'package:meta/meta.dart';
 
 import 'api.dart';
 // ignore: unused_import
 import 'bootstrap.dart'; // For doc comments only.
+import 'executor/cast.dart';
 import 'executor/introspection_impls.dart';
 import 'executor/serialization.dart';
 
@@ -159,9 +159,17 @@ abstract class MacroExecutionResult implements Serializable {
   /// result of executing a macro, indexed by the identifier of the enum.
   Map<Identifier, Iterable<DeclarationCode>> get enumValueAugmentations;
 
+  /// Any interfaces that should be added to types as a result of executing a
+  /// macro, indexed by the identifier of the augmented type declaration.
+  Map<Identifier, Iterable<TypeAnnotationCode>> get interfaceAugmentations;
+
   /// Any augmentations that should be applied to the library as a result of
   /// executing a macro.
   Iterable<DeclarationCode> get libraryAugmentations;
+
+  /// Any mixins that should be added to types as a result of executing a macro,
+  /// indexed by the identifier of the augmented type declaration.
+  Map<Identifier, Iterable<TypeAnnotationCode>> get mixinAugmentations;
 
   /// The names of any new types declared in [augmentations].
   Iterable<String> get newTypeNames;

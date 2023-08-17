@@ -6,10 +6,11 @@ import 'package:dev_compiler/src/compiler/module_builder.dart'
     show ModuleFormat;
 import 'package:test/test.dart';
 
+import '../shared_test_options.dart';
 import 'expression_compiler_e2e_suite.dart';
 
-void main() async {
-  var driver = await TestDriver.init();
+void main(List<String> args) async {
+  var driver = await ExpressionEvaluationTestDriver.init();
 
   group('Dart 3.0 language features', () {
     tearDownAll(() async {
@@ -19,17 +20,21 @@ void main() async {
     group('(Unsound null safety)', () {
       group('(AMD module system)', () {
         var setup = SetupCompilerOptions(
-            soundNullSafety: false,
-            legacyCode: false,
-            moduleFormat: ModuleFormat.amd);
+          soundNullSafety: false,
+          legacyCode: false,
+          moduleFormat: ModuleFormat.amd,
+          args: args,
+        );
         runSharedTests(setup, driver);
       });
 
       group('(DDC module system)', () {
         var setup = SetupCompilerOptions(
-            soundNullSafety: false,
-            legacyCode: false,
-            moduleFormat: ModuleFormat.ddc);
+          soundNullSafety: false,
+          legacyCode: false,
+          moduleFormat: ModuleFormat.ddc,
+          args: args,
+        );
         runSharedTests(setup, driver);
       });
     });
@@ -37,17 +42,21 @@ void main() async {
     group('(Sound null safety)', () {
       group('(AMD module system)', () {
         var setup = SetupCompilerOptions(
-            soundNullSafety: true,
-            legacyCode: false,
-            moduleFormat: ModuleFormat.amd);
+          soundNullSafety: true,
+          legacyCode: false,
+          moduleFormat: ModuleFormat.amd,
+          args: args,
+        );
         runSharedTests(setup, driver);
       });
 
       group('(DDC module system)', () {
         var setup = SetupCompilerOptions(
-            soundNullSafety: true,
-            legacyCode: false,
-            moduleFormat: ModuleFormat.ddc);
+          soundNullSafety: true,
+          legacyCode: false,
+          moduleFormat: ModuleFormat.ddc,
+          args: args,
+        );
         runSharedTests(setup, driver);
       });
     });
@@ -55,7 +64,8 @@ void main() async {
 }
 
 /// Shared tests for language features introduced in version 3.0.0.
-void runSharedTests(SetupCompilerOptions setup, TestDriver driver) {
+void runSharedTests(
+    SetupCompilerOptions setup, ExpressionEvaluationTestDriver driver) {
   group('Records', () {
     const recordsSource = '''
     void main() {

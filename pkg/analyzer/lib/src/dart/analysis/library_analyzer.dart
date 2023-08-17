@@ -32,6 +32,7 @@ import 'package:analyzer/src/error/imports_verifier.dart';
 import 'package:analyzer/src/error/inheritance_override.dart';
 import 'package:analyzer/src/error/language_version_override_verifier.dart';
 import 'package:analyzer/src/error/override_verifier.dart';
+import 'package:analyzer/src/error/redeclare_verifier.dart';
 import 'package:analyzer/src/error/todo_finder.dart';
 import 'package:analyzer/src/error/unicode_text_verifier.dart';
 import 'package:analyzer/src/error/unused_local_elements_verifier.dart';
@@ -48,6 +49,7 @@ import 'package:analyzer/src/lint/linter_visitor.dart';
 import 'package:analyzer/src/services/lint.dart';
 import 'package:analyzer/src/task/strong/checker.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
+import 'package:analyzer/src/utilities/extensions/version.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 
@@ -76,6 +78,8 @@ class LibraryAnalyzer {
   final Map<FileState, IgnoreInfo> _fileToIgnoreInfo = {};
   final Map<FileState, RecordingErrorListener> _errorListeners = {};
   final Map<FileState, ErrorReporter> _errorReporters = {};
+  final LibraryVerificationContext _libraryVerificationContext =
+      LibraryVerificationContext();
   final TestingData? _testingData;
 
   LibraryAnalyzer(this._analysisOptions, this._declaredVariables,
@@ -258,7 +262,7 @@ class LibraryAnalyzer {
       _computeVerifyErrors(file, unit);
     });
 
-    if (_analysisOptions.hint) {
+    if (_analysisOptions.warning) {
       var usedImportedElements = <UsedImportedElements>[];
       var usedLocalElements = <UsedLocalElements>[];
       for (var unit in units.values) {
@@ -392,8 +396,8 @@ class LibraryAnalyzer {
     //
     // Use the ErrorVerifier to compute errors.
     //
-    ErrorVerifier errorVerifier = ErrorVerifier(
-        errorReporter, _libraryElement, _typeProvider, _inheritance);
+    ErrorVerifier errorVerifier = ErrorVerifier(errorReporter, _libraryElement,
+        _typeProvider, _inheritance, _libraryVerificationContext);
     unit.accept(errorVerifier);
 
     // Verify constraints on FFI uses. The CFE enforces these constraints as
@@ -445,6 +449,12 @@ class LibraryAnalyzer {
       errorReporter,
     ));
 
+    unit.accept(RedeclareVerifier(
+      _inheritance,
+      _libraryElement,
+      errorReporter,
+    ));
+
     TodoFinder(errorReporter).findIn(unit);
     LanguageVersionOverrideVerifier(errorReporter).verify(unit);
 
@@ -476,7 +486,11 @@ class LibraryAnalyzer {
     var sdkVersionConstraint = _analysisOptions.sdkVersionConstraint;
     if (sdkVersionConstraint != null) {
       SdkConstraintVerifier verifier = SdkConstraintVerifier(
-          errorReporter, _libraryElement, _typeProvider, sdkVersionConstraint);
+        errorReporter,
+        _libraryElement,
+        _typeProvider,
+        sdkVersionConstraint.withoutPreRelease,
+      );
       unit.accept(verifier);
     }
   }

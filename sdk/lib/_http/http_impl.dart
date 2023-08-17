@@ -706,7 +706,7 @@ class _HttpClientResponse extends _HttpInboundMessageListInt
     if (_profileData != null) {
       // If _timeline is not set up, don't add unnecessary map() to the stream.
       stream = stream.map((data) {
-        _profileData?.appendResponseData(data);
+        _profileData.appendResponseData(data);
         return data;
       });
     }
@@ -1154,7 +1154,7 @@ abstract class _HttpOutboundMessage<T> extends _IOSinkImpl {
       return super.addStream(s);
     }
     return super.addStream(s.map((data) {
-      _profileData?.appendRequestData(Uint8List.fromList(data));
+      _profileData.appendRequestData(Uint8List.fromList(data));
       return data;
     }));
   }

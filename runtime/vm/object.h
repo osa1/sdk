@@ -760,7 +760,7 @@ class Object {
   // Start of field mutator guards.
   //
   // All writes to heap objects should ultimately pass through one of the
-  // methods below or their counterparts in RawObject, to ensure that the
+  // methods below or their counterparts in UntaggedObject, to ensure that the
   // write barrier is correctly applied.
 
   template <typename type, std::memory_order order = std::memory_order_relaxed>
@@ -2949,9 +2949,10 @@ struct NameFormattingParams {
   }
 };
 
-enum class FfiCallbackKind : uint8_t {
-  kSync,
-  kAsync,
+enum class FfiTrampolineKind : uint8_t {
+  kCall,
+  kSyncCallback,
+  kAsyncCallback,
 };
 
 class Function : public Object {
@@ -3012,10 +3013,10 @@ class Function : public Object {
   void SetFfiCallbackExceptionalReturn(const Instance& value) const;
 
   // Can only be called on FFI trampolines.
-  FfiCallbackKind GetFfiCallbackKind() const;
+  FfiTrampolineKind GetFfiTrampolineKind() const;
 
   // Can only be called on FFI trampolines.
-  void SetFfiCallbackKind(FfiCallbackKind value) const;
+  void SetFfiTrampolineKind(FfiTrampolineKind value) const;
 
   // Return the signature of this function.
   PRECOMPILER_WSR_FIELD_DECLARATION(FunctionType, signature);
@@ -3567,6 +3568,13 @@ class Function : public Object {
   // dependencies. It will be compiled into optimized code immediately when it's
   // run.
   bool ForceOptimize() const;
+
+  // Whether this function is idempotent (i.e. calling it twice has the same
+  // effect as calling it once - no visible side effects).
+  //
+  // If a function is idempotent VM may decide to abort halfway through one call
+  // and retry it again.
+  bool IsIdempotent() const;
 
   // Whether this function's |recognized_kind| requires optimization.
   bool RecognizedKindForceOptimize() const;
@@ -4347,10 +4355,10 @@ class FfiTrampolineData : public Object {
   }
   void set_callback_exceptional_return(const Instance& value) const;
 
-  FfiCallbackKind callback_kind() const {
-    return static_cast<FfiCallbackKind>(untag()->callback_kind_);
+  FfiTrampolineKind trampoline_kind() const {
+    return static_cast<FfiTrampolineKind>(untag()->trampoline_kind_);
   }
-  void set_callback_kind(FfiCallbackKind kind) const;
+  void set_trampoline_kind(FfiTrampolineKind kind) const;
 
   int32_t callback_id() const { return untag()->callback_id_; }
   void set_callback_id(int32_t value) const;
@@ -8200,17 +8208,31 @@ class Instance : public Object {
                          bool respect_reflectable = true,
                          bool check_is_entrypoint = false) const;
 
+  ObjectPtr EvaluateCompiledExpression(
+      const Class& klass,
+      const ExternalTypedData& kernel_buffer,
+      const Array& type_definitions,
+      const Array& arguments,
+      const TypeArguments& type_arguments) const;
+
   // Evaluate the given expression as if it appeared in an instance method of
-  // this instance and return the resulting value, or an error object if
+  // [receiver] and return the resulting value, or an error object if
   // evaluating the expression fails. The method has the formal (type)
   // parameters given in (type_)param_names, and is invoked with the (type)
   // argument values given in (type_)param_values.
-  ObjectPtr EvaluateCompiledExpression(
-      const Class& method_cls,
+  //
+  // We allow [receiver] to be null/<optimized out> if
+  //   * the evaluation function doesn't access `this`
+  //   * the evaluation function is static
+  static ObjectPtr EvaluateCompiledExpression(
+      Thread* thread,
+      const Object& receiver,
+      const Library& library,
+      const Class& klass,
       const ExternalTypedData& kernel_buffer,
       const Array& type_definitions,
       const Array& param_values,
-      const TypeArguments& type_param_values) const;
+      const TypeArguments& type_param_values);
 
   // Equivalent to invoking hashCode on this instance.
   virtual ObjectPtr HashCode() const;
@@ -8293,6 +8315,9 @@ class Instance : public Object {
   }
   void RawSetFieldAtOffset(intptr_t offset, const Object& value) const {
     StoreCompressedPointer(RawFieldAddrAtOffset(offset), value.ptr());
+  }
+  void RawSetFieldAtOffset(intptr_t offset, ObjectPtr value) const {
+    StoreCompressedPointer(RawFieldAddrAtOffset(offset), value);
   }
 
   template <typename T>
@@ -12493,6 +12518,23 @@ class ReceivePort : public Instance {
     return OFFSET_OF(UntaggedReceivePort, handler_);
   }
 
+  bool is_open() const {
+    return IsOpen::decode(Smi::Value(untag()->bitfield()));
+  }
+  void set_is_open(bool value) const {
+    const auto updated = IsOpen::update(value, Smi::Value(untag()->bitfield()));
+    untag()->set_bitfield(Smi::New(updated));
+  }
+
+  bool keep_isolate_alive() const {
+    return IsKeepIsolateAlive::decode(Smi::Value(untag()->bitfield()));
+  }
+  void set_keep_isolate_alive(bool value) const {
+    const auto updated =
+        IsKeepIsolateAlive::update(value, Smi::Value(untag()->bitfield()));
+    untag()->set_bitfield(Smi::New(updated));
+  }
+
 #if !defined(PRODUCT)
   StackTracePtr allocation_location() const {
     return untag()->allocation_location();
@@ -12506,10 +12548,13 @@ class ReceivePort : public Instance {
   }
   static ReceivePortPtr New(Dart_Port id,
                             const String& debug_name,
-                            bool is_control_port,
                             Heap::Space space = Heap::kNew);
 
  private:
+  class IsOpen : public BitField<intptr_t, bool, 0, 1> {};
+  class IsKeepIsolateAlive
+      : public BitField<intptr_t, bool, IsOpen::kNextBit, 1> {};
+
   FINAL_HEAP_OBJECT_IMPLEMENTATION(ReceivePort, Instance);
   friend class Class;
 };

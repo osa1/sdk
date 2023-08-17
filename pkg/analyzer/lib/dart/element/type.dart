@@ -25,7 +25,6 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type_visitor.dart';
 import 'package:analyzer/src/dart/element/type.dart' show RecordTypeImpl;
-import 'package:meta/meta.dart';
 
 /// The type associated with elements in the element model.
 ///
@@ -266,15 +265,6 @@ abstract class FunctionType implements DartType {
   FunctionType instantiate(List<DartType> argumentTypes);
 }
 
-/// The type introduced by an inline class.
-///
-/// Clients may not extend, implement or mix-in this class.
-@experimental
-abstract class InlineClassType implements NamedInstanceType {
-  @override
-  InlineClassElement get element;
-}
-
 /// Information about an instantiated [TypeAliasElement] and the type
 /// arguments with which it is instantiated.
 abstract class InstantiatedTypeAliasElement {
@@ -290,7 +280,7 @@ abstract class InstantiatedTypeAliasElement {
 /// such a type.
 ///
 /// Clients may not extend, implement or mix-in this class.
-abstract class InterfaceType implements NamedInstanceType {
+abstract class InterfaceType implements ParameterizedType {
   /// Return a list containing all of the accessors (getters and setters)
   /// declared in this type.
   List<PropertyAccessorElement> get accessors;
@@ -425,14 +415,6 @@ abstract class InterfaceType implements NamedInstanceType {
 /// Can usually be treated as [DynamicType], but should occasionally be handled
 /// differently, e.g. it does not cause follow-on implicit cast errors.
 abstract class InvalidType implements DartType {}
-
-/// The type introduced by a [NamedInstanceElement].
-///
-/// Clients may not extend, implement or mix-in this class.
-abstract class NamedInstanceType implements ParameterizedType {
-  @override
-  NamedInstanceElement get element;
-}
 
 /// The type `Never` represents the uninhabited bottom type.
 abstract class NeverType implements DartType {}

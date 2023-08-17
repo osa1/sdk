@@ -1936,7 +1936,7 @@ int getLength(var array) {
   return JS('int', r'#.length', array);
 }
 
-invokeClosure(Function closure, int numberOfArguments, var arg1, var arg2,
+_invokeClosure(Function closure, int numberOfArguments, var arg1, var arg2,
     var arg3, var arg4) {
   switch (numberOfArguments) {
     case 0:
@@ -1955,12 +1955,52 @@ invokeClosure(Function closure, int numberOfArguments, var arg1, var arg2,
 
 /// Called by generated code to convert a Dart closure to a JS
 /// closure when the Dart closure is passed to the DOM.
-convertDartClosureToJS(closure, int arity) {
+convertDartClosureToJS(Object? closure, int arity) {
   if (closure == null) return null;
   var function = JS('var', r'#.$identity', closure);
   if (JS('bool', r'!!#', function)) return function;
+  function = convertDartClosureToJSUncached(closure, arity);
+  JS('void', r'#.$identity = #', closure, function);
+  return function;
+}
 
-  function = JS(
+convertDartClosureToJSUncached(Object closure, int arity) {
+  // dart2js closures are objects with a separate JavaScript method 'entry
+  // point' per arity, `call$1`, `call$2` etc. The entry points have no optional
+  // parameters so additional arguments at the call site will be ignored. This
+  // lets us simply use `Function.prototype.bind` to pass the closed values that
+  // are stored in the closure class object.
+
+  Object? entry;
+  switch (arity) {
+    case 0:
+      entry = JS('', '#[#]', closure, JS_GET_NAME(JsGetName.CALL_PREFIX0));
+    case 1:
+      entry = JS('', '#[#]', closure, JS_GET_NAME(JsGetName.CALL_PREFIX1));
+    case 2:
+      entry = JS('', '#[#]', closure, JS_GET_NAME(JsGetName.CALL_PREFIX2));
+    case 3:
+      entry = JS('', '#[#]', closure, JS_GET_NAME(JsGetName.CALL_PREFIX3));
+    case 4:
+      entry = JS('', '#[#]', closure, JS_GET_NAME(JsGetName.CALL_PREFIX4));
+  }
+  if (entry != null) {
+    return JS('', '#.bind(#)', entry, closure);
+  }
+
+  // The above is an optimization for the following technique.
+  //
+  // If the entry is missing (or the above fast path is removed) the wrapped
+  // closure is a JavaScript function that uses `_invokeClosure` to call the
+  // Dart closure. In addition to providing a default wrapping implementation,
+  // the following code causes both `closure` and `_invokeClosure` to
+  // escape. Escaping both ensures the compiler should connect the escaping
+  // `closure` with the call sites in `_invokeClosure`, preventing the entry
+  // points of `closure` from being tree-shaken. (dart2js's current analysis is
+  // the code enqueuer which is less precise, using only the presence of the
+  // call sites in `_invokeClosure` to retain the entry points).
+
+  return JS(
       'var',
       r'''
         (function(closure, arity, invoke) {
@@ -1970,10 +2010,7 @@ convertDartClosureToJS(closure, int arity) {
         })(#,#,#)''',
       closure,
       arity,
-      DART_CLOSURE_TO_JS(invokeClosure));
-
-  JS('void', r'#.$identity = #', closure, function);
-  return function;
+      DART_CLOSURE_TO_JS(_invokeClosure));
 }
 
 /// Superclass for Dart closures.
@@ -3315,3 +3352,20 @@ void Function(T)? wrapZoneUnaryCallback<T>(void Function(T)? callback) {
 // TODO(48585): Move this class back to the dart:_rti library when old DDC
 // runtime type system has been removed.
 abstract class TrustedGetRuntimeType {}
+
+/// The global context that "static interop" members use for namespaces.
+///
+/// For example, an interop library with no library-level `@JS` annotation and a
+/// top-level external member named or renamed to 'foo' will lower a call to
+/// that member as `<staticInteropGlobalContext>.foo`. The same applies for any
+/// external constructors or class/extension type static members.
+///
+/// If the library does have a `@JS` annotation with a value, the call then gets
+/// lowered to `<staticInteropGlobalContext>.<libraryJSAnnotationValue>.foo`.
+///
+/// To see which members get lowered with this, see the transformation in
+/// `pkg/_js_interop_checks/lib/src/js_util_optimizer.dart`.
+///
+/// This should match the global context that non-static interop members use.
+Object get staticInteropGlobalContext =>
+    JS('creates:;returns:Object;depends:none;effects:none;gvn:true', 'self');

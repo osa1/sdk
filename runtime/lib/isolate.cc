@@ -34,7 +34,11 @@ namespace dart {
 DEFINE_NATIVE_ENTRY(Capability_factory, 0, 1) {
   ASSERT(
       TypeArguments::CheckedHandle(zone, arguments->NativeArgAt(0)).IsNull());
-  uint64_t id = isolate->random()->NextUInt64();
+  // Keep capability IDs less than 2^53 so web clients of the service
+  // protocol can process it properly.
+  //
+  // See https://github.com/dart-lang/sdk/issues/53081.
+  uint64_t id = isolate->random()->NextJSInt();
   return Capability::New(id);
 }
 
@@ -57,8 +61,7 @@ DEFINE_NATIVE_ENTRY(RawReceivePort_factory, 0, 2) {
   ASSERT(
       TypeArguments::CheckedHandle(zone, arguments->NativeArgAt(0)).IsNull());
   GET_NON_NULL_NATIVE_ARGUMENT(String, debug_name, arguments->NativeArgAt(1));
-  Dart_Port port_id = PortMap::CreatePort(isolate->message_handler());
-  return ReceivePort::New(port_id, debug_name, false /* not control port */);
+  return isolate->CreateReceivePort(debug_name);
 }
 
 DEFINE_NATIVE_ENTRY(RawReceivePort_get_id, 0, 1) {
@@ -69,17 +72,20 @@ DEFINE_NATIVE_ENTRY(RawReceivePort_get_id, 0, 1) {
 DEFINE_NATIVE_ENTRY(RawReceivePort_closeInternal, 0, 1) {
   GET_NON_NULL_NATIVE_ARGUMENT(ReceivePort, port, arguments->NativeArgAt(0));
   Dart_Port id = port.Id();
-  PortMap::ClosePort(id);
+  isolate->CloseReceivePort(port);
   return Integer::New(id);
 }
 
 DEFINE_NATIVE_ENTRY(RawReceivePort_setActive, 0, 2) {
   GET_NON_NULL_NATIVE_ARGUMENT(ReceivePort, port, arguments->NativeArgAt(0));
   GET_NON_NULL_NATIVE_ARGUMENT(Bool, active, arguments->NativeArgAt(1));
-  Dart_Port id = port.Id();
-  PortMap::SetPortState(
-      id, active.value() ? PortMap::kLivePort : PortMap::kInactivePort);
+  isolate->SetReceivePortKeepAliveState(port, active.value());
   return Object::null();
+}
+
+DEFINE_NATIVE_ENTRY(RawReceivePort_getActive, 0, 1) {
+  GET_NON_NULL_NATIVE_ARGUMENT(ReceivePort, port, arguments->NativeArgAt(0));
+  return Bool::Get(port.keep_isolate_alive()).ptr();
 }
 
 DEFINE_NATIVE_ENTRY(SendPort_get_id, 0, 1) {
@@ -126,7 +132,7 @@ DEFINE_NATIVE_ENTRY(SendPort_sendInternal_, 0, 2) {
 class UntaggedObjectPtrSetTraits {
  public:
   static bool ReportStats() { return false; }
-  static const char* Name() { return "RawObjectPtrSetTraits"; }
+  static const char* Name() { return "UntaggedObjectPtrSetTraits"; }
 
   static bool IsMatch(const ObjectPtr a, const ObjectPtr b) { return a == b; }
 

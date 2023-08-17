@@ -23,15 +23,8 @@ class HoverTest extends LspOverLegacyTest {
     newFile(testFilePath, code.code);
     await waitForTasksFinished();
 
-    final request = createRequest(
-      Method.textDocument_hover,
-      HoverParams(
-        position: code.position.position,
-        textDocument: testFileIdentifier,
-      ),
-    );
-    final result = await sendRequest(request, Hover.fromJson);
-    final markup = _getMarkupContents(result);
+    final result = await getHover(testFileUri, code.position.position);
+    final markup = _getMarkupContents(result!);
     expect(markup.kind, MarkupKind.Markdown);
     expect(markup.value.trimRight(), expected.trimRight());
     expect(result.range, code.range.range);
@@ -52,6 +45,21 @@ class Aaa
 ---
 This is my class.
 ''',
+    );
+  }
+
+  Future<void> test_loggedMethodName() async {
+    newFile(testFilePath, 'String s;');
+    await waitForTasksFinished();
+    await getHover(testFileUri, Position(character: 1, line: 0));
+
+    expect(
+      numberOfRecordedResponses(Method.textDocument_hover.toString()),
+      isPositive,
+    );
+    expect(
+      numberOfRecordedResponses('lsp.handle'),
+      isZero,
     );
   }
 

@@ -246,7 +246,7 @@ final class TimelineTask {
         map[key] = arguments[key];
       }
     }
-    if (_parent != null) map['parentId'] = _parent!._taskId.toRadixString(16);
+    if (_parent != null) map['parentId'] = _parent._taskId.toRadixString(16);
     if (_filterKey != null) map[_kFilterKey] = _filterKey;
     block._start(map);
   }

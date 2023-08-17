@@ -41,6 +41,8 @@ import 'async_keyword_used_as_identifier_test.dart'
 import 'await_in_late_local_variable_initializer_test.dart'
     as await_in_late_local_variable_initializer;
 import 'await_in_wrong_context_test.dart' as await_in_wrong_context;
+import 'await_of_extension_type_not_future_test.dart'
+    as await_of_extension_type_not_future;
 import 'base_class_implemented_outside_of_library_test.dart'
     as base_class_implemented_outside_of_library;
 import 'base_mixin_implemented_outside_of_library_test.dart'
@@ -236,6 +238,26 @@ import 'extension_override_with_cascade_test.dart'
     as extension_override_with_cascade;
 import 'extension_override_without_access_test.dart'
     as extension_override_without_access;
+import 'extension_type_constructor_with_super_formal_parameter_test.dart'
+    as extension_type_constructor_with_super_formal_parameter;
+import 'extension_type_constructor_with_super_invocation_test.dart'
+    as extension_type_constructor_with_super_invocation;
+import 'extension_type_declares_instance_field_test.dart'
+    as extension_type_declares_instance_field;
+import 'extension_type_declares_member_of_object_test.dart'
+    as extension_type_declares_member_of_object;
+import 'extension_type_implements_disallowed_type_test.dart'
+    as extension_type_implements_disallowed_type;
+import 'extension_type_implements_itself_test.dart'
+    as extension_type_implements_itself;
+import 'extension_type_implements_not_supertype_of_erasure_test.dart'
+    as extension_type_implements_not_supertype_of_erasure;
+import 'extension_type_implements_representation_not_supertype_test.dart'
+    as extension_type_implements_representation_not_supertype;
+import 'extension_type_inherited_member_conflict_test.dart'
+    as extension_type_inherited_member_conflict;
+import 'extension_type_representation_depends_on_itself_test.dart'
+    as extension_type_representation_depends_on_itself;
 import 'external_field_constructor_initializer_test.dart'
     as external_field_constructor_initializer;
 import 'external_field_initializer_test.dart' as external_field_initializer;
@@ -583,6 +605,8 @@ import 'non_constant_relational_pattern_expression_test.dart'
     as non_constant_relational_pattern_expression;
 import 'non_constant_set_element_test.dart' as non_constant_set_element;
 import 'non_constant_type_argument_test.dart' as non_constant_type_argument;
+import 'non_covariant_type_parameter_position_in_representation_type_test.dart'
+    as non_covariant_type_parameter_position_in_representation_type;
 import 'non_exhaustive_switch_test.dart' as non_exhaustive_switch;
 import 'non_final_field_in_enum_test.dart' as non_final_field_in_enum;
 import 'non_generative_constructor_test.dart' as non_generative_constructor;
@@ -682,6 +706,8 @@ import 'recursive_interface_inheritance_test.dart'
     as recursive_interface_inheritance;
 import 'recursive_interface_inheritance_with_test.dart'
     as recursive_interface_inheritance_with;
+import 'redeclare_on_non_redeclaring_member_test.dart'
+    as redeclare_on_non_redeclaring_member;
 import 'redirect_generative_to_missing_constructor_test.dart'
     as redirect_generative_to_missing_constructor;
 import 'redirect_generative_to_non_generative_constructor_test.dart'
@@ -720,25 +746,10 @@ import 'return_of_invalid_type_test.dart' as return_of_invalid_type;
 import 'return_type_invalid_for_catch_error_test.dart'
     as return_type_invalid_for_catch_error;
 import 'return_without_value_test.dart' as return_without_value;
-import 'sdk_version_as_expression_in_const_context_test.dart'
-    as sdk_version_as_expression_in_const_context;
-import 'sdk_version_async_exported_from_core_test.dart'
-    as sdk_version_async_exported_from_core;
-import 'sdk_version_bool_operator_in_const_context_test.dart'
-    as sdk_version_bool_operator_in_const_context;
-import 'sdk_version_eq_eq_operator_test.dart' as sdk_version_eq_eq_operator;
-import 'sdk_version_extension_methods_test.dart'
-    as sdk_version_extension_methods;
 import 'sdk_version_gt_gt_gt_operator_test.dart'
     as sdk_version_gt_gt_gt_operator;
-import 'sdk_version_is_expression_in_const_context_test.dart'
-    as sdk_version_is_expression_in_const_context;
 import 'sdk_version_never_test.dart' as sdk_version_never;
-import 'sdk_version_set_literal_test.dart' as sdk_version_set_literal;
 import 'sdk_version_since_test.dart' as sdk_version_since;
-import 'sdk_version_ui_as_code_in_const_context_test.dart'
-    as sdk_version_ui_as_code_in_const_context;
-import 'sdk_version_ui_as_code_test.dart' as sdk_version_ui_as_code;
 import 'sealed_class_subtype_outside_of_library_test.dart'
     as sealed_class_subtype_outside_of_library;
 import 'set_element_from_deferred_library_test.dart'
@@ -916,6 +927,7 @@ main() {
     async_keyword_used_as_identifier.main();
     await_in_late_local_variable_initializer.main();
     await_in_wrong_context.main();
+    await_of_extension_type_not_future.main();
     base_class_implemented_outside_of_library.main();
     base_mixin_implemented_outside_of_library.main();
     binary_operator_written_out.main();
@@ -1046,6 +1058,16 @@ main() {
     extension_override_argument_not_assignable.main();
     extension_override_with_cascade.main();
     extension_override_without_access.main();
+    extension_type_constructor_with_super_formal_parameter.main();
+    extension_type_constructor_with_super_invocation.main();
+    extension_type_declares_instance_field.main();
+    extension_type_declares_member_of_object.main();
+    extension_type_implements_disallowed_type.main();
+    extension_type_implements_itself.main();
+    extension_type_implements_not_supertype_of_erasure.main();
+    extension_type_implements_representation_not_supertype.main();
+    extension_type_inherited_member_conflict.main();
+    extension_type_representation_depends_on_itself.main();
     external_field_constructor_initializer.main();
     external_field_initializer.main();
     external_variable_initializer.main();
@@ -1266,6 +1288,7 @@ main() {
     non_constant_map_value_from_deferred_library.main();
     non_constant_set_element.main();
     non_constant_type_argument.main();
+    non_covariant_type_parameter_position_in_representation_type.main();
     non_exhaustive_switch.main();
     non_final_field_in_enum.main();
     non_generative_constructor.main();
@@ -1331,6 +1354,7 @@ main() {
     recursive_interface_inheritance_implements.main();
     recursive_interface_inheritance.main();
     recursive_interface_inheritance_with.main();
+    redeclare_on_non_redeclaring_member.main();
     redirect_generative_to_missing_constructor.main();
     redirect_generative_to_non_generative_constructor.main();
     redirect_to_abstract_class_constructor.main();
@@ -1355,18 +1379,9 @@ main() {
     return_type_invalid_for_catch_error.main();
     return_without_value.main();
     set_element_from_deferred_library.main();
-    sdk_version_as_expression_in_const_context.main();
-    sdk_version_async_exported_from_core.main();
-    sdk_version_bool_operator_in_const_context.main();
-    sdk_version_eq_eq_operator.main();
-    sdk_version_extension_methods.main();
     sdk_version_gt_gt_gt_operator.main();
-    sdk_version_is_expression_in_const_context.main();
     sdk_version_never.main();
-    sdk_version_set_literal.main();
     sdk_version_since.main();
-    sdk_version_ui_as_code.main();
-    sdk_version_ui_as_code_in_const_context.main();
     sealed_class_subtype_outside_of_library.main();
     set_element_type_not_assignable.main();
     shared_deferred_prefix.main();

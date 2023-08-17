@@ -393,7 +393,11 @@ IsolateGroup::IsolateGroup(std::shared_ptr<IsolateGroupSource> source,
   }
   {
     WriteRwLocker wl(ThreadState::Current(), isolate_groups_rwlock_);
-    id_ = isolate_group_random_->NextUInt64();
+    // Keep isolate IDs less than 2^53 so web clients of the service
+    // protocol can process it properly.
+    //
+    // See https://github.com/dart-lang/sdk/issues/53081.
+    id_ = isolate_group_random_->NextJSInt();
   }
   heap_walk_class_table_ = class_table_ =
       new ClassTable(&class_table_allocator_);
@@ -837,7 +841,7 @@ void IsolateGroup::ExitTemporaryIsolate() {
   Dart::ShutdownIsolate(thread);
 }
 
-void IsolateGroup::RehashConstants() {
+void IsolateGroup::RehashConstants(Become* become) {
   // Even though no individual constant contains a cycle, there can be "cycles"
   // between the canonical tables if some const instances of A have fields that
   // are const instance of B and vice versa. So set all the old tables to the
@@ -872,9 +876,7 @@ void IsolateGroup::RehashConstants() {
     }
 
     cls = class_table()->At(cid);
-
     if (cls.constants() == Array::null()) continue;
-
     old_constant_tables[cid] = &Array::Handle(zone, cls.constants());
     cls.set_constants(Object::null_array());
   }
@@ -883,6 +885,12 @@ void IsolateGroup::RehashConstants() {
   heap()->ResetCanonicalHashTable();
 
   Instance& constant = Instance::Handle(zone);
+  Field& field = Field::Handle(zone);
+  String& name = String::Handle(zone);
+  Array& new_values = Array::Handle(zone);
+  Instance& old_value = Instance::Handle(zone);
+  Instance& new_value = Instance::Handle(zone);
+  Instance& deleted = Instance::Handle(zone);
   for (intptr_t cid = kInstanceCid; cid < num_cids; cid++) {
     Array* old_constants = old_constant_tables[cid];
     if (old_constants == nullptr) continue;
@@ -890,14 +898,62 @@ void IsolateGroup::RehashConstants() {
     cls = class_table()->At(cid);
     CanonicalInstancesSet set(zone, old_constants->ptr());
     CanonicalInstancesSet::Iterator it(&set);
-    while (it.MoveNext()) {
-      constant ^= set.GetKey(it.Current());
-      ASSERT(!constant.IsNull());
-      // Shape changes lose the canonical bit because they may result/ in
-      // merging constants. E.g., [x1, y1], [x1, y2] -> [x1].
-      DEBUG_ASSERT(constant.IsCanonical() ||
-                   IsolateGroup::Current()->HasAttemptedReload());
-      cls.InsertCanonicalConstant(zone, constant);
+
+    if (cls.is_enum_class() && (become != nullptr)) {
+      field = cls.LookupStaticField(Symbols::_DeletedEnumSentinel());
+      deleted ^= field.StaticConstFieldValue();
+      if (deleted.IsNull()) {
+        deleted = Instance::New(cls, Heap::kOld);
+        field = object_store()->enum_name_field();
+        name = cls.ScrubbedName();
+        name = Symbols::FromConcat(thread, Symbols::_DeletedEnumPrefix(), name);
+        deleted.SetField(field, name);
+        field = object_store()->enum_index_field();
+        new_value = Smi::New(-1);
+        deleted.SetField(field, new_value);
+        field = cls.LookupStaticField(Symbols::_DeletedEnumSentinel());
+        // The static const field contains `Object::null()` instead of
+        // `Object::sentinel()` - so it's not considered an initializing store.
+        field.SetStaticConstFieldValue(deleted,
+                                       /*assert_initializing_store*/ false);
+      }
+
+      field = cls.LookupField(Symbols::Values());
+      new_values ^= field.StaticConstFieldValue();
+
+      field = object_store()->enum_name_field();
+      while (it.MoveNext()) {
+        old_value ^= set.GetKey(it.Current());
+        ASSERT(old_value.GetClassId() == cid);
+        bool found = false;
+        for (intptr_t j = 0; j < new_values.Length(); j++) {
+          new_value ^= new_values.At(j);
+          ASSERT(new_value.GetClassId() == cid);
+          if (old_value.GetField(field) == new_value.GetField(field)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          new_value = deleted.ptr();
+        }
+
+        if (old_value.ptr() != new_value.ptr()) {
+          become->Add(old_value, new_value);
+        }
+        if (new_value.IsCanonical()) {
+          cls.InsertCanonicalConstant(zone, new_value);
+        }
+      }
+    } else {
+      while (it.MoveNext()) {
+        constant ^= set.GetKey(it.Current());
+        ASSERT(!constant.IsNull());
+        // Shape changes lose the canonical bit because they may result/ in
+        // merging constants. E.g., [x1, y1], [x1, y2] -> [x1].
+        DEBUG_ASSERT(constant.IsCanonical() || HasAttemptedReload());
+        cls.InsertCanonicalConstant(zone, constant);
+      }
     }
     set.Release();
   }
@@ -964,11 +1020,18 @@ class IsolateMessageHandler : public MessageHandler {
 
 #if defined(DEBUG)
   // Check that it is safe to access this handler.
-  void CheckAccess();
+  void CheckAccess() const;
 #endif
   bool IsCurrentIsolate() const;
   virtual Isolate* isolate() const { return isolate_; }
   virtual IsolateGroup* isolate_group() const { return isolate_->group(); }
+
+  virtual bool KeepAliveLocked() {
+    // If the message handler was asked to shutdown we shut down.
+    if (!MessageHandler::KeepAliveLocked()) return false;
+    // Otherwise we only stay alive as long as there's active receive ports.
+    return isolate_->HasLivePorts();
+  }
 
  private:
   // A result of false indicates that the isolate should terminate the
@@ -1374,7 +1437,7 @@ void IsolateMessageHandler::NotifyPauseOnExit() {
 #endif  // !PRODUCT
 
 #if defined(DEBUG)
-void IsolateMessageHandler::CheckAccess() {
+void IsolateMessageHandler::CheckAccess() const {
   ASSERT(IsCurrentIsolate());
 }
 #endif
@@ -1726,9 +1789,7 @@ Isolate* Isolate::InitIsolate(const char* name_prefix,
   Thread::EnterIsolate(result);
 
   // Setup the isolate message handler.
-  MessageHandler* handler = new IsolateMessageHandler(result);
-  ASSERT(handler != nullptr);
-  result->set_message_handler(handler);
+  result->message_handler_ = new IsolateMessageHandler(result);
 
   result->set_main_port(PortMap::CreatePort(result->message_handler()));
 #if defined(DEBUG)
@@ -1737,8 +1798,13 @@ Isolate* Isolate::InitIsolate(const char* name_prefix,
   Isolate::VisitIsolates(&id_verifier);
 #endif
   result->set_origin_id(result->main_port());
-  result->set_pause_capability(result->random()->NextUInt64());
-  result->set_terminate_capability(result->random()->NextUInt64());
+
+  // Keep capability IDs less than 2^53 so web clients of the service
+  // protocol can process it properly.
+  //
+  // See https://github.com/dart-lang/sdk/issues/53081.
+  result->set_pause_capability(result->random()->NextJSInt());
+  result->set_terminate_capability(result->random()->NextJSInt());
 
 #if !defined(PRODUCT)
   result->debugger_ = new Debugger(result);
@@ -2265,6 +2331,10 @@ void Isolate::Run() {
                          reinterpret_cast<uword>(this));
 }
 
+MessageHandler* Isolate::message_handler() const {
+  return message_handler_;
+}
+
 void Isolate::RunAndCleanupFinalizersOnShutdown() {
   if (finalizers_ == GrowableObjectArray::null()) return;
 
@@ -2336,8 +2406,8 @@ void Isolate::LowLevelShutdown() {
   PortMap::ClosePorts(message_handler());
 
   // Fail fast if anybody tries to post any more messages to this isolate.
-  delete message_handler();
-  set_message_handler(nullptr);
+  delete message_handler_;
+  message_handler_ = nullptr;
 
   // Clean up any synchronous FFI callbacks registered with this isolate. Skip
   // if this isolate never registered any.
@@ -2958,7 +3028,7 @@ void Isolate::PrintJSON(JSONStream* stream, bool ref) {
   }
 
   jsobj.AddProperty("runnable", is_runnable());
-  jsobj.AddProperty("livePorts", message_handler()->live_ports());
+  jsobj.AddProperty("livePorts", open_ports_keepalive_);
   jsobj.AddProperty("pauseOnExit", message_handler()->should_pause_on_exit());
 #if !defined(DART_PRECOMPILED_RUNTIME)
   jsobj.AddProperty("_isReloading", group()->IsReloading());
@@ -3556,10 +3626,59 @@ FfiCallbackMetadata::Trampoline Isolate::CreateSyncFfiCallback(
 
 FfiCallbackMetadata::Trampoline Isolate::CreateAsyncFfiCallback(
     Zone* zone,
-    const Function& function,
+    const Function& send_function,
     Dart_Port send_port) {
   return FfiCallbackMetadata::Instance()->CreateAsyncFfiCallback(
-      this, zone, function, send_port, &ffi_callback_list_head_);
+      this, zone, send_function, send_port, &ffi_callback_list_head_);
+}
+
+bool Isolate::HasLivePorts() {
+  ASSERT(0 <= open_ports_ && 0 <= open_ports_keepalive_ &&
+         open_ports_keepalive_ <= open_ports_);
+  return open_ports_keepalive_ > 0;
+}
+
+ReceivePortPtr Isolate::CreateReceivePort(const String& debug_name) {
+  Dart_Port port_id = PortMap::CreatePort(message_handler());
+  ++open_ports_;
+  ++open_ports_keepalive_;
+  return ReceivePort::New(port_id, debug_name);
+}
+
+void Isolate::SetReceivePortKeepAliveState(const ReceivePort& receive_port,
+                                           bool keep_isolate_alive) {
+  // Changing keep-isolate-alive state of a closed port is a NOP.
+  if (!receive_port.is_open()) return;
+
+  ASSERT(0 < open_ports_);
+
+  // If the state doesn't change it's a NOP.
+  if (receive_port.keep_isolate_alive() == keep_isolate_alive) return;
+
+  if (keep_isolate_alive) {
+    ASSERT(open_ports_keepalive_ < open_ports_);
+    ++open_ports_keepalive_;
+  } else {
+    ASSERT(0 < open_ports_keepalive_);
+    --open_ports_keepalive_;
+  }
+  receive_port.set_keep_isolate_alive(keep_isolate_alive);
+}
+
+void Isolate::CloseReceivePort(const ReceivePort& receive_port) {
+  // Closing an already closed port is a NOP.
+  if (!receive_port.is_open()) return;
+
+  ASSERT(open_ports_ > 0);
+  const bool ok = PortMap::ClosePort(receive_port.Id());
+  RELEASE_ASSERT(ok);
+
+  if (receive_port.keep_isolate_alive()) {
+    --open_ports_keepalive_;
+    receive_port.set_keep_isolate_alive(false);
+  }
+  --open_ports_;
+  receive_port.set_is_open(false);
 }
 
 void Isolate::DeleteFfiCallback(FfiCallbackMetadata::Trampoline callback) {

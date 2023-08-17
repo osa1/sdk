@@ -4800,32 +4800,164 @@ ObjectPtr Class::Invoke(const String& function_name,
   return DartEntry::InvokeFunction(function, args, args_descriptor_array);
 }
 
+#if !defined(DART_PRECOMPILED_RUNTIME)
+
+static ObjectPtr LoadExpressionEvaluationFunction(
+    Zone* zone,
+    const ExternalTypedData& kernel_buffer,
+    const String& library_url,
+    const String& klass) {
+  std::unique_ptr<kernel::Program> kernel_pgm =
+      kernel::Program::ReadFromTypedData(kernel_buffer);
+
+  if (kernel_pgm == nullptr) {
+    return ApiError::New(String::Handle(
+        zone, String::New("Kernel isolate returned ill-formed kernel.")));
+  }
+
+  auto& result = Object::Handle(zone);
+  {
+    kernel::KernelLoader loader(kernel_pgm.get(),
+                                /*uri_to_source_table=*/nullptr);
+    result = loader.LoadExpressionEvaluationFunction(library_url, klass);
+    kernel_pgm.reset();
+  }
+  if (result.IsError()) return result.ptr();
+  return Function::Cast(result).ptr();
+}
+
+static bool EvaluationFunctionNeedsReceiver(Thread* thread,
+                                            Zone* zone,
+                                            const Function& eval_function) {
+  auto parsed_function = new ParsedFunction(
+      thread, Function::ZoneHandle(zone, eval_function.ptr()));
+  parsed_function->EnsureKernelScopes();
+  return parsed_function->is_receiver_used();
+}
+
 static ObjectPtr EvaluateCompiledExpressionHelper(
+    Zone* zone,
+    const Function& eval_function,
+    const Array& type_definitions,
+    const Array& arguments,
+    const TypeArguments& type_arguments) {
+  // type_arguments is null if all type arguments are dynamic.
+  if (type_definitions.Length() == 0 || type_arguments.IsNull()) {
+    return DartEntry::InvokeFunction(eval_function, arguments);
+  }
+
+  intptr_t num_type_args = type_arguments.Length();
+  const auto& real_arguments =
+      Array::Handle(zone, Array::New(arguments.Length() + 1));
+  real_arguments.SetAt(0, type_arguments);
+  Object& arg = Object::Handle(zone);
+  for (intptr_t i = 0; i < arguments.Length(); ++i) {
+    arg = arguments.At(i);
+    real_arguments.SetAt(i + 1, arg);
+  }
+
+  const Array& args_desc =
+      Array::Handle(zone, ArgumentsDescriptor::NewBoxed(
+                              num_type_args, arguments.Length(), Heap::kNew));
+  return DartEntry::InvokeFunction(eval_function, real_arguments, args_desc);
+}
+
+#endif  // !defined(DART_PRECOMPILED_RUNTIME)
+
+ObjectPtr Library::EvaluateCompiledExpression(
     const ExternalTypedData& kernel_buffer,
     const Array& type_definitions,
-    const String& library_url,
-    const String& klass,
     const Array& arguments,
-    const TypeArguments& type_arguments);
+    const TypeArguments& type_arguments) const {
+  const auto& klass = Class::Handle(toplevel_class());
+  return klass.EvaluateCompiledExpression(kernel_buffer, type_definitions,
+                                          arguments, type_arguments);
+}
 
 ObjectPtr Class::EvaluateCompiledExpression(
     const ExternalTypedData& kernel_buffer,
     const Array& type_definitions,
     const Array& arguments,
     const TypeArguments& type_arguments) const {
-  ASSERT(Thread::Current()->IsDartMutatorThread());
-  if (IsInternalOnlyClassId(id()) || (id() == kTypeArgumentsCid)) {
-    const Instance& exception = Instance::Handle(String::New(
-        "Expressions can be evaluated only with regular Dart instances"));
-    const Instance& stacktrace = Instance::Handle();
-    return UnhandledException::New(exception, stacktrace);
+  auto thread = Thread::Current();
+  const auto& library = Library::Handle(thread->zone(), this->library());
+  return Instance::EvaluateCompiledExpression(
+      thread, Instance::null_object(), library, *this, kernel_buffer,
+      type_definitions, arguments, type_arguments);
+}
+
+ObjectPtr Instance::EvaluateCompiledExpression(
+    const Class& klass,
+    const ExternalTypedData& kernel_buffer,
+    const Array& type_definitions,
+    const Array& arguments,
+    const TypeArguments& type_arguments) const {
+  auto thread = Thread::Current();
+  auto zone = thread->zone();
+  const auto& library = Library::Handle(zone, klass.library());
+  return Instance::EvaluateCompiledExpression(thread, *this, library, klass,
+                                              kernel_buffer, type_definitions,
+                                              arguments, type_arguments);
+}
+
+ObjectPtr Instance::EvaluateCompiledExpression(
+    Thread* thread,
+    const Object& receiver,
+    const Library& library,
+    const Class& klass,
+    const ExternalTypedData& kernel_buffer,
+    const Array& type_definitions,
+    const Array& arguments,
+    const TypeArguments& type_arguments) {
+  auto zone = Thread::Current()->zone();
+#if defined(DART_PRECOMPILED_RUNTIME)
+  const auto& error_str = String::Handle(
+      zone,
+      String::New("Expression evaluation not available in precompiled mode."));
+  return ApiError::New(error_str);
+#else
+  if (IsInternalOnlyClassId(klass.id()) || (klass.id() == kTypeArgumentsCid)) {
+    const auto& exception = Instance::Handle(
+        zone, String::New("Expressions can be evaluated only with regular Dart "
+                          "instances/classes."));
+    return UnhandledException::New(exception, StackTrace::null_instance());
   }
 
-  return EvaluateCompiledExpressionHelper(
-      kernel_buffer, type_definitions,
-      String::Handle(Library::Handle(library()).url()),
-      IsTopLevel() ? String::Handle() : String::Handle(UserVisibleName()),
-      arguments, type_arguments);
+  const auto& url = String::Handle(zone, library.url());
+  const auto& klass_name = klass.IsTopLevel()
+                               ? String::null_string()
+                               : String::Handle(zone, klass.UserVisibleName());
+
+  const auto& result = Object::Handle(
+      zone,
+      LoadExpressionEvaluationFunction(zone, kernel_buffer, url, klass_name));
+  if (result.IsError()) return result.ptr();
+
+  const auto& eval_function = Function::Cast(result);
+
+  auto& all_arguments = Array::Handle(zone, arguments.ptr());
+  if (!eval_function.is_static()) {
+    // `this` may be optimized out (e.g. not accessible from breakpoint due to
+    // not being captured by closure). We allow this as long as the evaluation
+    // function doesn't actually need `this`.
+    if (receiver.IsNull() || receiver.ptr() == Object::optimized_out().ptr()) {
+      if (EvaluationFunctionNeedsReceiver(thread, zone, eval_function)) {
+        return Object::optimized_out().ptr();
+      }
+    }
+
+    all_arguments = Array::New(1 + arguments.Length());
+    auto& param = PassiveObject::Handle();
+    all_arguments.SetAt(0, receiver);
+    for (intptr_t i = 0; i < arguments.Length(); i++) {
+      param = arguments.At(i);
+      all_arguments.SetAt(i + 1, param);
+    }
+  }
+
+  return EvaluateCompiledExpressionHelper(zone, eval_function, type_definitions,
+                                          all_arguments, type_arguments);
+#endif  // !defined(DART_PRECOMPILED_RUNTIME)
 }
 
 void Class::EnsureDeclarationLoaded() const {
@@ -8297,7 +8429,7 @@ bool Function::FfiCSignatureReturnsStruct() const {
 
 int32_t Function::FfiCallbackId() const {
   ASSERT(IsFfiTrampoline());
-  ASSERT(FfiCallbackTarget() != Object::null());
+  ASSERT(GetFfiTrampolineKind() != FfiTrampolineKind::kCall);
 
   const auto& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
@@ -8310,7 +8442,7 @@ int32_t Function::FfiCallbackId() const {
 
 void Function::AssignFfiCallbackId(int32_t callback_id) const {
   ASSERT(IsFfiTrampoline());
-  ASSERT(FfiCallbackTarget() != Object::null());
+  ASSERT(GetFfiTrampolineKind() != FfiTrampolineKind::kCall);
 
   const auto& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
@@ -8362,18 +8494,18 @@ void Function::SetFfiCallbackExceptionalReturn(const Instance& value) const {
   FfiTrampolineData::Cast(obj).set_callback_exceptional_return(value);
 }
 
-FfiCallbackKind Function::GetFfiCallbackKind() const {
+FfiTrampolineKind Function::GetFfiTrampolineKind() const {
   ASSERT(IsFfiTrampoline());
   const Object& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
-  return FfiTrampolineData::Cast(obj).callback_kind();
+  return FfiTrampolineData::Cast(obj).trampoline_kind();
 }
 
-void Function::SetFfiCallbackKind(FfiCallbackKind value) const {
+void Function::SetFfiTrampolineKind(FfiTrampolineKind value) const {
   ASSERT(IsFfiTrampoline());
   const Object& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
-  FfiTrampolineData::Cast(obj).set_callback_kind(value);
+  FfiTrampolineData::Cast(obj).set_trampoline_kind(value);
 }
 
 const char* Function::KindToCString(UntaggedFunction::Kind kind) {
@@ -8889,8 +9021,34 @@ void Function::SetIsOptimizable(bool value) const {
 }
 
 bool Function::ForceOptimize() const {
-  return RecognizedKindForceOptimize() || IsFfiTrampoline() ||
-         IsTypedDataViewFactory() || IsUnmodifiableTypedDataViewFactory();
+  if (RecognizedKindForceOptimize() || IsFfiTrampoline() ||
+      IsTypedDataViewFactory() || IsUnmodifiableTypedDataViewFactory()) {
+    return true;
+  }
+
+#if defined(TESTING)
+  // For run_vm_tests we allow marking arbitrary functions as force-optimize
+  // via `@pragma('vm:force-optimize')`.
+  if (has_pragma()) {
+    return Library::FindPragma(Thread::Current(), false, *this,
+                               Symbols::vm_force_optimize());
+  }
+#endif  // defined(TESTING)
+
+  return false;
+}
+
+bool Function::IsIdempotent() const {
+  if (!has_pragma()) return false;
+
+#if defined(TESTING)
+  const bool kAllowOnlyForCoreLibFunctions = false;
+#else
+  const bool kAllowOnlyForCoreLibFunctions = true;
+#endif  // defined(TESTING)
+
+  return Library::FindPragma(Thread::Current(), kAllowOnlyForCoreLibFunctions,
+                             *this, Symbols::vm_idempotent());
 }
 
 bool Function::RecognizedKindForceOptimize() const {
@@ -8960,12 +9118,6 @@ bool Function::RecognizedKindForceOptimize() const {
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
 bool Function::CanBeInlined() const {
-  // Our force-optimized functions cannot deoptimize to an unoptimized frame.
-  // If the instructions of the force-optimized function body get moved via
-  // code motion, we might attempt do deoptimize a frame where the force-
-  // optimized function has only partially finished. Since force-optimized
-  // functions cannot deoptimize to unoptimized frames we prevent them from
-  // being inlined (for now).
   if (ForceOptimize()) {
     if (IsFfiTrampoline()) {
       // We currently don't support inlining FFI trampolines. Some of them
@@ -8975,7 +9127,14 @@ bool Function::CanBeInlined() const {
       // http://dartbug.com/45055.
       return false;
     }
-    return CompilerState::Current().is_aot();
+    if (CompilerState::Current().is_aot()) {
+      return true;
+    }
+    // Inlining of force-optimized functions requires target function to be
+    // idempotent becase if deoptimization is needed in inlined body, the
+    // execution of the force-optimized will be restarted at the beginning of
+    // the function.
+    return IsIdempotent();
   }
 
   if (HasBreakpoint()) {
@@ -11473,8 +11632,8 @@ void FfiTrampolineData::set_callback_exceptional_return(
   untag()->set_callback_exceptional_return(value.ptr());
 }
 
-void FfiTrampolineData::set_callback_kind(FfiCallbackKind kind) const {
-  StoreNonPointer(&untag()->callback_kind_, static_cast<uint8_t>(kind));
+void FfiTrampolineData::set_trampoline_kind(FfiTrampolineKind kind) const {
+  StoreNonPointer(&untag()->trampoline_kind_, static_cast<uint8_t>(kind));
 }
 
 FfiTrampolineDataPtr FfiTrampolineData::New() {
@@ -12210,6 +12369,7 @@ ObjectPtr Field::StaticConstFieldValue() const {
 
 void Field::SetStaticConstFieldValue(const Instance& value,
                                      bool assert_initializing_store) const {
+  ASSERT(is_static());
   auto thread = Thread::Current();
   auto initial_field_table = thread->isolate_group()->initial_field_table();
 
@@ -14572,16 +14732,6 @@ ObjectPtr Library::Invoke(const String& function_name,
   return DartEntry::InvokeFunction(function, args, args_descriptor_array);
 }
 
-ObjectPtr Library::EvaluateCompiledExpression(
-    const ExternalTypedData& kernel_buffer,
-    const Array& type_definitions,
-    const Array& arguments,
-    const TypeArguments& type_arguments) const {
-  return EvaluateCompiledExpressionHelper(
-      kernel_buffer, type_definitions, String::Handle(url()), String::Handle(),
-      arguments, type_arguments);
-}
-
 void Library::InitNativeWrappersLibrary(IsolateGroup* isolate_group,
                                         bool is_kernel) {
   const int kNumNativeWrappersClasses = 4;
@@ -14636,65 +14786,6 @@ class LibraryLookupTraits {
   static ObjectPtr NewKey(const String& str) { return str.ptr(); }
 };
 typedef UnorderedHashMap<LibraryLookupTraits> LibraryLookupMap;
-
-static ObjectPtr EvaluateCompiledExpressionHelper(
-    const ExternalTypedData& kernel_buffer,
-    const Array& type_definitions,
-    const String& library_url,
-    const String& klass,
-    const Array& arguments,
-    const TypeArguments& type_arguments) {
-  Thread* thread = Thread::Current();
-  Zone* zone = thread->zone();
-#if defined(DART_PRECOMPILED_RUNTIME)
-  const String& error_str = String::Handle(
-      zone,
-      String::New("Expression evaluation not available in precompiled mode."));
-  return ApiError::New(error_str);
-#else
-  std::unique_ptr<kernel::Program> kernel_pgm =
-      kernel::Program::ReadFromTypedData(kernel_buffer);
-
-  if (kernel_pgm == nullptr) {
-    return ApiError::New(String::Handle(
-        zone, String::New("Kernel isolate returned ill-formed kernel.")));
-  }
-
-  auto& result = Object::Handle(zone);
-  {
-    kernel::KernelLoader loader(kernel_pgm.get(),
-                                /*uri_to_source_table=*/nullptr);
-    result = loader.LoadExpressionEvaluationFunction(library_url, klass);
-    kernel_pgm.reset();
-  }
-
-  if (result.IsError()) return result.ptr();
-
-  const auto& callee = Function::CheckedHandle(zone, result.ptr());
-
-  // type_arguments is null if all type arguments are dynamic.
-  if (type_definitions.Length() == 0 || type_arguments.IsNull()) {
-    result = DartEntry::InvokeFunction(callee, arguments);
-  } else {
-    intptr_t num_type_args = type_arguments.Length();
-    Array& real_arguments =
-        Array::Handle(zone, Array::New(arguments.Length() + 1));
-    real_arguments.SetAt(0, type_arguments);
-    Object& arg = Object::Handle(zone);
-    for (intptr_t i = 0; i < arguments.Length(); ++i) {
-      arg = arguments.At(i);
-      real_arguments.SetAt(i + 1, arg);
-    }
-
-    const Array& args_desc =
-        Array::Handle(zone, ArgumentsDescriptor::NewBoxed(
-                                num_type_args, arguments.Length(), Heap::kNew));
-    result = DartEntry::InvokeFunction(callee, real_arguments, args_desc);
-  }
-
-  return result.ptr();
-#endif
-}
 
 // Returns library with given url in current isolate, or nullptr.
 LibraryPtr Library::LookupLibrary(Thread* thread, const String& url) {
@@ -15195,12 +15286,12 @@ intptr_t KernelProgramInfo::KernelLibraryStartOffset(
     intptr_t library_index) const {
   const auto& blob = TypedDataBase::Handle(kernel_component());
   const intptr_t library_count =
-      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
-          blob.DataAddr(blob.LengthInBytes() - 2 * 4)));
+      Utils::BigEndianToHost32(LoadUnaligned(reinterpret_cast<uint32_t*>(
+          blob.DataAddr(blob.LengthInBytes() - 2 * 4))));
   const intptr_t library_start =
-      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
+      Utils::BigEndianToHost32(LoadUnaligned(reinterpret_cast<uint32_t*>(
           blob.DataAddr(blob.LengthInBytes() -
-                        (2 + 1 + (library_count - library_index)) * 4)));
+                        (2 + 1 + (library_count - library_index)) * 4))));
   return library_start;
 }
 
@@ -15216,11 +15307,11 @@ intptr_t KernelProgramInfo::KernelLibraryEndOffset(
     intptr_t library_index) const {
   const auto& blob = TypedDataBase::Handle(kernel_component());
   const intptr_t library_count =
-      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(
-          blob.DataAddr(blob.LengthInBytes() - 2 * 4)));
-  const intptr_t library_end =
-      Utils::BigEndianToHost32(*reinterpret_cast<uint32_t*>(blob.DataAddr(
-          blob.LengthInBytes() - (2 + (library_count - library_index)) * 4)));
+      Utils::BigEndianToHost32(LoadUnaligned(reinterpret_cast<uint32_t*>(
+          blob.DataAddr(blob.LengthInBytes() - 2 * 4))));
+  const intptr_t library_end = Utils::BigEndianToHost32(
+      LoadUnaligned(reinterpret_cast<uint32_t*>(blob.DataAddr(
+          blob.LengthInBytes() - (2 + (library_count - library_index)) * 4))));
   return library_end;
 }
 
@@ -20341,28 +20432,6 @@ ObjectPtr Instance::Invoke(const String& function_name,
   return InvokeInstanceFunction(thread, *this, function, function_name, args,
                                 args_descriptor, respect_reflectable,
                                 inst_type_args);
-}
-
-ObjectPtr Instance::EvaluateCompiledExpression(
-    const Class& method_cls,
-    const ExternalTypedData& kernel_buffer,
-    const Array& type_definitions,
-    const Array& arguments,
-    const TypeArguments& type_arguments) const {
-  const Array& arguments_with_receiver =
-      Array::Handle(Array::New(1 + arguments.Length()));
-  PassiveObject& param = PassiveObject::Handle();
-  arguments_with_receiver.SetAt(0, *this);
-  for (intptr_t i = 0; i < arguments.Length(); i++) {
-    param = arguments.At(i);
-    arguments_with_receiver.SetAt(i + 1, param);
-  }
-
-  return EvaluateCompiledExpressionHelper(
-      kernel_buffer, type_definitions,
-      String::Handle(Library::Handle(method_cls.library()).url()),
-      String::Handle(method_cls.UserVisibleName()), arguments_with_receiver,
-      type_arguments);
 }
 
 ObjectPtr Instance::HashCode() const {
@@ -26124,7 +26193,7 @@ TypedDataViewPtr TypedDataBase::ViewFromTo(intptr_t start,
 }
 
 const char* TypedDataBase::ToCString() const {
-  // There are no instances of RawTypedDataBase.
+  // There are no instances of UntaggedTypedDataBase.
   UNREACHABLE();
   return nullptr;
 }
@@ -26198,7 +26267,6 @@ const char* Capability::ToCString() const {
 
 ReceivePortPtr ReceivePort::New(Dart_Port id,
                                 const String& debug_name,
-                                bool is_control_port,
                                 Heap::Space space) {
   ASSERT(id != ILLEGAL_PORT);
   Thread* thread = Thread::Current();
@@ -26213,12 +26281,12 @@ ReceivePortPtr ReceivePort::New(Dart_Port id,
   const auto& result =
       ReceivePort::Handle(zone, Object::Allocate<ReceivePort>(space));
   result.untag()->set_send_port(send_port.ptr());
+  result.untag()->set_bitfield(
+      Smi::New(IsOpen::encode(true) | IsKeepIsolateAlive::encode(true)));
 #if !defined(PRODUCT)
   result.untag()->set_debug_name(debug_name.ptr());
   result.untag()->set_allocation_location(allocation_location_.ptr());
 #endif  // !defined(PRODUCT)
-  PortMap::SetPortState(
-      id, is_control_port ? PortMap::kControlPort : PortMap::kLivePort);
   return result.ptr();
 }
 

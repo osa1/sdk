@@ -279,7 +279,7 @@ class AssignmentExpressionResolver {
           leftType,
           operator,
           rightType,
-          operatorElement.returnType2,
+          operatorElement.returnType,
           operatorElement,
         );
       } else {
@@ -296,7 +296,7 @@ class AssignmentExpressionResolver {
         leftType = _typeSystem.promoteToNonNull(leftType);
       }
 
-      nodeType = _typeSystem.getLeastUpperBound(leftType, assignedType);
+      nodeType = _typeSystem.leastUpperBound(leftType, assignedType);
     } else {
       nodeType = assignedType;
     }

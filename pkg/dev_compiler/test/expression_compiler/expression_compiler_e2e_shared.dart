@@ -4,6 +4,7 @@
 
 import 'package:test/test.dart';
 
+import '../shared_test_options.dart';
 import 'expression_compiler_e2e_suite.dart';
 
 const simpleClassSource = '''
@@ -63,7 +64,148 @@ main() {
 /// Shared tests that require a language version >=2.12.0 <2.17.0.
 // TODO(nshahan) Merge with [runAgnosticSharedTests] after we no longer need to
 // test support for evaluation in legacy (pre-null safety) code.
-void runNullSafeSharedTests(SetupCompilerOptions setup, TestDriver driver) {
+void runNullSafeSharedTests(
+    SetupCompilerOptions setup, ExpressionEvaluationTestDriver driver) {
+  group('JS interop with static interop', () {
+    const interopSource = r'''
+      @JS()
+      library debug_static_interop;
+
+      import 'dart:html';
+
+      import 'dart:_js_annotations' show staticInterop;
+      import 'dart:js_util';
+      import 'dart:js_interop';
+
+      @JSExport()
+      class Counter {
+        int value = 0;
+        @JSExport('increment')
+        void renamedIncrement() {
+          value++;
+        }
+      }
+
+      @JS()
+      @staticInterop
+      class JSCounter {}
+
+      extension on JSCounter {
+        external int get value;
+        external void increment();
+      }
+
+      void main() {
+        var dartCounter = Counter();
+        var jsCounter =
+            createDartExport<Counter>(dartCounter) as JSCounter;
+
+        dartCounter.renamedIncrement();
+        jsCounter.increment();
+
+        // Breakpoint: bp
+        print('jsCounter: ${jsCounter.value}');
+      }
+    ''';
+
+    setUpAll(() async {
+      await driver.initSource(setup, interopSource,
+          experiments: {'inline-class': true});
+    });
+
+    tearDownAll(() async {
+      await driver.cleanupTest();
+    });
+
+    test('call extension methods of existing JS object', () async {
+      await driver.check(
+          breakpointId: 'bp',
+          expression: 'dartCounter.value',
+          expectedResult: '2');
+
+      await driver.check(
+          breakpointId: 'bp',
+          expression: 'jsCounter.value',
+          expectedResult: '2');
+    });
+
+    test('call extension methods of a new JS object', () async {
+      await driver.check(
+          breakpointId: 'bp',
+          expression:
+              '(createDartExport<Counter>(dartCounter) as JSCounter).value',
+          expectedResult: '2');
+    });
+  });
+
+  group('JS interop with extension types', () {
+    const interopSource = r'''
+      // @dart=3.2
+
+      @JS()
+      library debug_static_interop;
+
+      import 'dart:_js_annotations' show staticInterop;
+      import 'dart:js_util';
+      import 'dart:js_interop';
+
+      @JSExport()
+      class Counter {
+        int value = 0;
+        @JSExport('increment')
+        void renamedIncrement() {
+          value++;
+        }
+      }
+
+      extension type JSCounter(JSObject _) {
+        external int get value;
+        external void increment();
+      }
+
+      void main() {
+        var dartCounter = Counter();
+        var jsCounter = createDartExport<Counter>(dartCounter) as JSCounter;
+
+        jsCounter.increment();
+        dartCounter.renamedIncrement();
+
+        // Breakpoint: bp
+        print('JS: ${jsCounter.value}'); // prints '2'
+      }
+    ''';
+
+    setUpAll(() async {
+      await driver.initSource(setup, interopSource,
+          experiments: {'inline-class': true});
+    });
+
+    tearDownAll(() async {
+      await driver.cleanupTest();
+    });
+
+    test('call extension getters on existing JS object', () async {
+      await driver.check(
+          breakpointId: 'bp',
+          expression: 'dartCounter.value',
+          expectedResult: '2');
+
+      await driver.check(
+          breakpointId: 'bp',
+          expression: 'jsCounter.value',
+          expectedResult: '2');
+    });
+
+    test('call extension getters on a new JS object', () async {
+      await driver.check(
+          breakpointId: 'bp',
+          expression:
+              'JSCounter(createDartExport<Counter>(dartCounter) as JSObject)'
+              '.value',
+          expectedResult: '2');
+    });
+  });
+
   group('Exceptions', () {
     const exceptionSource = r'''
     void main() {
@@ -205,6 +347,17 @@ void runNullSafeSharedTests(SetupCompilerOptions setup, TestDriver driver) {
           expression: '(C.factory)()',
           expectedResult: 'test.C.new { Symbol(_unusedField): 4, '
               'Symbol(C.field): 42, Symbol(_field): 0}');
+    });
+
+    test('map access', () async {
+      await driver.check(
+          breakpointId: 'methodBP',
+          expression: '''
+            (Map<String, String> params) {
+              return params["a"];
+            }({"a":"b"})
+          ''',
+          expectedResult: 'b');
     });
   });
 
@@ -469,7 +622,7 @@ void runNullSafeSharedTests(SetupCompilerOptions setup, TestDriver driver) {
 /// This group of tests has been sharded manually. The others are in
 /// [runAgnosticSharedTestsShard2].
 void runAgnosticSharedTestsShard1(
-    SetupCompilerOptions setup, TestDriver driver) {
+    SetupCompilerOptions setup, ExpressionEvaluationTestDriver driver) {
   group('Correct null safety mode used', () {
     var source = '''
         const soundNullSafety = !(<Null>[] is List<int>);
@@ -955,7 +1108,7 @@ void runAgnosticSharedTestsShard1(
 /// This group of tests has been sharded manually. The others are in
 /// [runAgnosticSharedTestsShard1].
 void runAgnosticSharedTestsShard2(
-    SetupCompilerOptions setup, TestDriver driver) {
+    SetupCompilerOptions setup, ExpressionEvaluationTestDriver driver) {
   group('Expression compiler tests in constructor:', () {
     var source = simpleClassSource;
 

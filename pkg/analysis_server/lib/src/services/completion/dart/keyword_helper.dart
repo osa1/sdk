@@ -31,8 +31,10 @@ class KeywordHelper {
   /// declaration between the name of the class and the body. The [node] is the
   /// class declaration containing the selection point.
   void addClassDeclarationKeywords(ClassDeclaration node) {
-    // Very simplistic suggestion because analyzer will warn if the extends,
-    // with, and implements keywords are out of order.
+    // We intentionally add all keywords, even when they would be out of order,
+    // in order to help users discover what keywords are available. If the
+    // keywords are in the wrong order a diagnostic (and fix) will help them get
+    // the keywords in the correct location.
     if (node.extendsClause == null) {
       addKeyword(Keyword.EXTENDS);
     }
@@ -67,18 +69,6 @@ class KeywordHelper {
   /// declaration before the `class` keyword. The [node] is the class
   /// declaration containing the selection point.
   void addClassModifiers(ClassDeclaration node) {
-    // TODO(brianwilkerson) These next 10 lines duplicate
-    //  `addClassDeclarationKeywords`, and should probably be removed.
-    // Very simplistic suggestion because analyzer will warn if
-    // the extends / with / implements keywords are out of order
-    if (node.extendsClause == null) {
-      addKeyword(Keyword.EXTENDS);
-    } else if (node.withClause == null) {
-      addKeyword(Keyword.WITH);
-    }
-    if (node.implementsClause == null) {
-      addKeyword(Keyword.IMPLEMENTS);
-    }
     if (featureSet.isEnabled(Feature.class_modifiers) &&
         featureSet.isEnabled(Feature.sealed_class)) {
       if (node.baseKeyword == null &&
@@ -96,7 +86,7 @@ class KeywordHelper {
           addKeyword(Keyword.MIXIN);
         }
       }
-      if (node.baseKeyword != null) {
+      if (node.baseKeyword != null && node.mixinKeyword == null) {
         // base ^ class A {}
         // abstract base ^ class A {}
         addKeyword(Keyword.MIXIN);
@@ -174,12 +164,40 @@ class KeywordHelper {
     }
   }
 
+  /// Add the keywords that are appropriate when the selection is in the
+  /// initializer list of the given [node].
+  void addConstructorInitializerKeywords(ConstructorDeclaration node) {
+    addKeyword(Keyword.ASSERT);
+    var suggestSuper = node.parent is! ExtensionTypeDeclaration;
+    var initializers = node.initializers;
+    if (initializers.isNotEmpty) {
+      var last = initializers.lastNonSynthetic;
+      if (offset >= last.end &&
+          last is! SuperConstructorInvocation &&
+          last is! RedirectingConstructorInvocation) {
+        if (suggestSuper) {
+          addKeyword(Keyword.SUPER);
+        }
+        addKeyword(Keyword.THIS);
+      }
+    } else {
+      // if (separator.end <= offset && offset <= separator.next!.offset) {
+      if (suggestSuper) {
+        addKeyword(Keyword.SUPER);
+      }
+      addKeyword(Keyword.THIS);
+      // }
+    }
+  }
+
   /// Add the keywords that are appropriate when the selection is in an enum
   /// declaration between the name of the enum and the body. The [node] is the
   /// enum declaration containing the selection point.
   void addEnumDeclarationKeywords(EnumDeclaration node) {
-    // Very simplistic suggestion because analyzer will warn if the with and
-    // implements keywords are out of order.
+    // We intentionally add all keywords, even when they would be out of order,
+    // in order to help users discover what keywords are available. If the
+    // keywords are in the wrong order a diagnostic (and fix) will help them get
+    // the keywords in the correct location.
     if (node.withClause == null) {
       addKeyword(Keyword.WITH);
     }
@@ -207,11 +225,31 @@ class KeywordHelper {
   /// beginning of an expression. The [node] provides context to determine which
   /// keywords to include.
   void addExpressionKeywords(AstNode? node) {
+    /// Return `true` if `const` should be suggested for the given [node].
+    bool constIsValid(AstNode? node) {
+      if (node is CollectionElement && node is! Expression) {
+        node = node.parent;
+      }
+      if (node is Expression) {
+        return !node.inConstantContext;
+      } else if (node is PatternVariableDeclaration) {
+        return true;
+      } else if (node is RecordPattern) {
+        // This might be a parenthesized pattern.
+        return node.fields.isEmpty;
+      } else if (node is VariableDeclaration) {
+        return !node.isConst;
+      } else if (node is WhenClause) {
+        return true;
+      }
+      return false;
+    }
+
     addKeyword(Keyword.FALSE);
     addKeyword(Keyword.NULL);
     addKeyword(Keyword.TRUE);
     if (node != null) {
-      if (node is Expression && !node.inConstantContext) {
+      if (constIsValid(node)) {
         addKeyword(Keyword.CONST);
       }
       if (node.inClassMemberBody) {
@@ -314,8 +352,10 @@ class KeywordHelper {
   /// declaration between the name of the mixin and the body. The [node] is the
   /// mixin declaration containing the selection point.
   void addMixinDeclarationKeywords(MixinDeclaration node) {
-    // Very simplistic suggestion because analyzer will warn if the on and
-    //implements clauses are out of order.
+    // We intentionally add all keywords, even when they would be out of order,
+    // in order to help users discover what keywords are available. If the
+    // keywords are in the wrong order a diagnostic (and fix) will help them get
+    // the keywords in the correct location.
     if (node.onClause == null) {
       addKeyword(Keyword.ON);
     }
@@ -424,5 +464,15 @@ extension on CollectionElement? {
       }
     }
     return finalElement is IfElement && finalElement.elseKeyword == null;
+  }
+}
+
+extension on NodeList<ConstructorInitializer> {
+  ConstructorInitializer get lastNonSynthetic {
+    final last = this.last;
+    if (last.beginToken.isSynthetic && length > 1) {
+      return this[length - 2];
+    }
+    return last;
   }
 }

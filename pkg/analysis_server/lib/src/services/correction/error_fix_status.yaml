@@ -44,9 +44,9 @@
 #   issue created for it.
 #
 # Stats:
-# -   0 "needsEvaluation"
-# - 381 "needsFix"
-# - 352 "hasFix"
+# -  19 "needsEvaluation"
+# - 372 "needsFix"
+# - 359 "hasFix"
 # - 490 "noFix"
 
 AnalysisOptionsErrorCode.INCLUDED_FILE_PARSE_ERROR:
@@ -212,6 +212,8 @@ CompileTimeErrorCode.AWAIT_IN_LATE_LOCAL_VARIABLE_INITIALIZER:
     The fix is to remove the `late` modifier.
 CompileTimeErrorCode.AWAIT_IN_WRONG_CONTEXT:
   status: hasFix
+CompileTimeErrorCode.AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE:
+  status: noFix
 CompileTimeErrorCode.BASE_CLASS_IMPLEMENTED_OUTSIDE_OF_LIBRARY:
   status: noFix
   notes: |-
@@ -360,6 +362,10 @@ CompileTimeErrorCode.CONFLICTING_TYPE_VARIABLE_AND_MIXIN:
   status: noFix
   notes: |-
     The fix is to rename one of the two, but we can't know what name to use.
+CompileTimeErrorCode.CONST_CONSTRUCTOR_CONSTANT_FROM_DEFERRED_LIBRARY:
+  status: needsFix
+  notes: |-
+    Remove the `deferred` keyword from the import.
 CompileTimeErrorCode.CONST_CONSTRUCTOR_FIELD_TYPE_MISMATCH:
   status: noFix
 CompileTimeErrorCode.CONST_CONSTRUCTOR_PARAM_TYPE_MISMATCH:
@@ -380,11 +386,15 @@ CompileTimeErrorCode.CONST_DEFERRED_CLASS:
   status: needsFix
   notes: |-
     Remove the `deferred` keyword from the import.
+CompileTimeErrorCode.CONST_EVAL_ASSERTION_FAILURE:
+  status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_EXTENSION_METHOD:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_FOR_ELEMENT:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_METHOD_INVOCATION:
+  status: needsEvaluation
+CompileTimeErrorCode.CONST_EVAL_PROPERTY_ACCESS:
   status: needsEvaluation
 CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION:
   status: noFix
@@ -449,10 +459,6 @@ CompileTimeErrorCode.CONTINUE_LABEL_INVALID:
   status: noFix
 CompileTimeErrorCode.COULD_NOT_INFER:
   status: noFix
-CompileTimeErrorCode.DEFAULT_LIST_CONSTRUCTOR:
-  status: noFix
-  notes: |-
-    Removed in Dart 3.0.
 CompileTimeErrorCode.DEFAULT_VALUE_IN_REDIRECTING_FACTORY_CONSTRUCTOR:
   status: needsFix
   notes: |-
@@ -627,6 +633,32 @@ CompileTimeErrorCode.EXTENSION_OVERRIDE_WITH_CASCADE:
   notes: |-
     Replace the `..` with `.`.
 CompileTimeErrorCode.EXTENSION_OVERRIDE_WITHOUT_ACCESS:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER:
+  status: needsFix
+  notes: |-
+    Remove it.
+CompileTimeErrorCode.EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION:
+  status: needsFix
+  notes: |-
+    Remove it.
+CompileTimeErrorCode.EXTENSION_TYPE_DECLARES_INSTANCE_FIELD:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_DECLARES_MEMBER_OF_OBJECT:
+  status: needsFix
+  notes: |-
+    Offer to delete the invalid member.
+CompileTimeErrorCode.EXTENSION_TYPE_IMPLEMENTS_DISALLOWED_TYPE:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_IMPLEMENTS_ITSELF:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT:
+  status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF:
   status: noFix
 CompileTimeErrorCode.EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER:
   status: needsFix
@@ -1179,6 +1211,8 @@ CompileTimeErrorCode.NON_CONSTANT_RELATIONAL_PATTERN_EXPRESSION:
   notes: |-
     Make the pattern expression a constant.
 CompileTimeErrorCode.NON_CONSTANT_SET_ELEMENT:
+  status: noFix
+CompileTimeErrorCode.NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE:
   status: noFix
 CompileTimeErrorCode.NON_EXHAUSTIVE_SWITCH_EXPRESSION:
   status: hasFix
@@ -1737,12 +1771,6 @@ FfiCode.PACKED_ANNOTATION:
 FfiCode.PACKED_ANNOTATION_ALIGNMENT:
   status: noFix
 FfiCode.SIZE_ANNOTATION_DIMENSIONS:
-  status: noFix
-FfiCode.SUBTYPE_OF_FFI_CLASS_IN_EXTENDS:
-  status: noFix
-FfiCode.SUBTYPE_OF_FFI_CLASS_IN_IMPLEMENTS:
-  status: noFix
-FfiCode.SUBTYPE_OF_FFI_CLASS_IN_WITH:
   status: noFix
 FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_EXTENDS:
   status: hasFix
@@ -2400,10 +2428,7 @@ LintCode.unnecessary_this:
 LintCode.unnecessary_to_list_in_spreads:
   status: hasFix
 LintCode.unreachable_from_main:
-  status: noFix
-  notes: |-
-    Theoretically we could remove the unreachable declaration, but that seems
-    like a dangerous option to provide.
+  status: hasFix
 LintCode.unrelated_type_equality_checks_expression:
   status: needsEvaluation
 LintCode.unrelated_type_equality_checks_pattern:
@@ -2695,6 +2720,10 @@ ParserErrorCode.EXPECTED_NAMED_TYPE_IMPLEMENTS:
 ParserErrorCode.EXPECTED_NAMED_TYPE_ON:
   status: noFix
 ParserErrorCode.EXPECTED_NAMED_TYPE_WITH:
+  status: noFix
+ParserErrorCode.EXPECTED_REPRESENTATION_FIELD:
+  status: noFix
+ParserErrorCode.EXPECTED_REPRESENTATION_TYPE:
   status: noFix
 ParserErrorCode.EXPECTED_STRING_LITERAL:
   status: noFix
@@ -3087,6 +3116,11 @@ ParserErrorCode.MULTIPLE_POSITIONAL_PARAMETER_GROUPS:
   status: needsFix
   notes: |-
     Merge the groups.
+ParserErrorCode.MULTIPLE_REPRESENTATION_FIELDS:
+  status: needsFix
+  notes: |-
+    Remove extra fields.
+    Maybe wrap into a record.
 ParserErrorCode.MULTIPLE_VARIABLES_IN_FOR_EACH:
   status: noFix
 ParserErrorCode.MULTIPLE_VARIANCE_MODIFIERS:
@@ -3172,6 +3206,9 @@ ParserErrorCode.REDIRECTION_IN_NON_FACTORY_CONSTRUCTOR:
   status: needsFix
   notes: |-
     Remove the redirection.
+ParserErrorCode.REPRESENTATION_FIELD_MODIFIER:
+  status: needsFix
+  notes: Remove it.
 ParserErrorCode.SEALED_ENUM:
   status: needsEvaluation
 ParserErrorCode.SEALED_MIXIN:
@@ -3312,6 +3349,8 @@ PubspecWarningCode.FLUTTER_FIELD_NOT_MAP:
   since: ~2.15
 PubspecWarningCode.INVALID_DEPENDENCY:
   status: noFix
+PubspecWarningCode.INVALID_PLATFORMS_FIELD:
+  status: needsEvaluation
 PubspecWarningCode.MISSING_NAME:
   status: noFix
   since: ~2.15
@@ -3327,6 +3366,10 @@ PubspecWarningCode.PATH_NOT_POSIX:
     If the path is a windows path, then we should be able to convert it.
 PubspecWarningCode.PATH_PUBSPEC_DOES_NOT_EXIST:
   status: noFix
+PubspecWarningCode.PLATFORM_VALUE_DISALLOWED:
+  status: needsEvaluation
+PubspecWarningCode.UNKNOWN_PLATFORM:
+  status: needsEvaluation
 PubspecWarningCode.UNNECESSARY_DEV_DEPENDENCY:
   status: needsFix
   since: ~2.15
@@ -3607,6 +3650,10 @@ WarningCode.RECEIVER_OF_TYPE_NEVER:
     We _could_ remove the thing being received (method invocation, etc.)
 WarningCode.RECORD_LITERAL_ONE_POSITIONAL_NO_TRAILING_COMMA:
   status: hasFix
+WarningCode.REDECLARE_ON_NON_REDECLARING_MEMBER:
+  status: needsFix
+  notes: |-
+    The fix is to remove the annotation.
 WarningCode.REMOVED_LINT_USE:
   status: needsFix
 WarningCode.REPLACED_LINT_USE:
@@ -3619,39 +3666,20 @@ WarningCode.RETURN_OF_INVALID_TYPE_FROM_CATCH_ERROR:
   status: noFix
 WarningCode.RETURN_TYPE_INVALID_FOR_CATCH_ERROR:
   status: noFix
-WarningCode.SDK_VERSION_ASYNC_EXPORTED_FROM_CORE:
-  status: hasFix
-WarningCode.SDK_VERSION_AS_EXPRESSION_IN_CONST_CONTEXT:
-  status: hasFix
-WarningCode.SDK_VERSION_BOOL_OPERATOR_IN_CONST_CONTEXT:
-  status: hasFix
 WarningCode.SDK_VERSION_CONSTRUCTOR_TEAROFFS:
   status: needsFix
   since: 2.15
-WarningCode.SDK_VERSION_EQ_EQ_OPERATOR_IN_CONST_CONTEXT:
-  status: hasFix
-WarningCode.SDK_VERSION_EXTENSION_METHODS:
-  status: hasFix
 WarningCode.SDK_VERSION_GT_GT_GT_OPERATOR:
-  status: hasFix
-WarningCode.SDK_VERSION_IS_EXPRESSION_IN_CONST_CONTEXT:
   status: hasFix
 WarningCode.SDK_VERSION_NEVER:
   status: noFix
   notes: Deprecated
-WarningCode.SDK_VERSION_SET_LITERAL:
-  status: hasFix
 WarningCode.SDK_VERSION_SINCE:
   status: needsFix
   notes: |-
     The fix would be to update the SDK constraints. The user would still need to
     run `dart pub` before the diagnostic would go away, and there's a question
     whether a fix that doesn't actually fix the problem is something we want.
-WarningCode.SDK_VERSION_UI_AS_CODE:
-  status: hasFix
-WarningCode.SDK_VERSION_UI_AS_CODE_IN_CONST_CONTEXT:
-  status: noFix
-  notes: Deprecated
 WarningCode.STRICT_RAW_TYPE:
   status: needsFix
   notes: |-

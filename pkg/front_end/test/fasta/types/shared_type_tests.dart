@@ -23,8 +23,9 @@ abstract class SubtypeTest<T, E> {
     E environment = extend(typeParameters);
     T subtype = toType(subtypeString, environment);
     T supertype = toType(supertypeString, environment);
+    IsSubtypeOf result = isSubtypeImpl(subtype, supertype);
     Expect.isFalse(
-        isSubtypeImpl(subtype, supertype).isSubtypeWhenIgnoringNullabilities(),
+        result.isSubtypeWhenIgnoringNullabilities(),
         "$subtypeString shouldn't be a subtype of $supertypeString, "
         "regardless of whether the nullability modifiers are ignored or not.");
   }
@@ -1045,33 +1046,6 @@ abstract class SubtypeTest<T, E> {
     isSubtype("T & int?", "T & int?", typeParameters: "T extends Object?");
     isSubtype("T? & int?", "T? & int?", typeParameters: "T extends Object");
 
-    // Tests for extension types.
-    isSubtype("Never", "Extension");
-    isSubtype("Never", "GenericExtension<Never>");
-    isSubtype("Extension", "dynamic");
-    isSubtype("Extension", "void");
-    isSubtype("Extension", "Object?");
-    isSubtype("Extension", "FutureOr<dynamic>");
-    isSubtype("GenericExtension<dynamic>", "dynamic");
-    isSubtype("GenericExtension<dynamic>", "void");
-    isSubtype("GenericExtension<dynamic>", "Object?");
-    isSubtype("GenericExtension<dynamic>", "FutureOr<dynamic>");
-    isSubtype("dynamic", "TopExtension");
-    isSubtype("void", "TopExtension");
-    isSubtype("Object?", "TopExtension");
-    isSubtype("FutureOr<dynamic>", "TopExtension");
-    isSubtype("num", "TopExtension");
-    isSubtype("dynamic", "GenericTopExtension<String>");
-    isSubtype("void", "GenericTopExtension<String>");
-    isSubtype("Object?", "GenericTopExtension<String>");
-    isSubtype("FutureOr<dynamic>", "GenericTopExtension<String>");
-    isSubtype("num", "GenericTopExtension<String>");
-    isNotSubtype("Extension", "ExtendedClass");
-    isNotSubtype("GenericExtension<num>", "ExtendedGenericClass<num>");
-    isSubtype("ExtendedClass", "Extension");
-    isSubtype("ExtendedGenericClass<num>", "GenericExtension<num>");
-    isSubtype("ExtendedSubclass", "Extension");
-
     // Records.
     isSubtype("Never", "(int, String)");
     isSubtype("(int, String)", "Object");
@@ -1128,7 +1102,146 @@ abstract class SubtypeTest<T, E> {
     isObliviousSubtype("Null", "(int, String)");
     isObliviousSubtype("(int, String)?", "Record");
 
-    // TODO(johnniwinther): Add support for inline types in the type parser and
-    // add subtype tests here.
+    // Tests for extension types.
+    isSubtype("Never", "NullableExtensionType");
+    isSubtype("Never", "NonNullableExtensionType");
+    isSubtype("Never", "GenericExtensionType<Object>");
+    isSubtype("Never", "GenericExtensionSubType<Object>");
+    isSubtype("Never", "NonNullableGenericExtensionType<Object>");
+    isSubtype("Never", "GenericExtensionTypeImplements<Object>");
+    isSubtype("Never", "GenericSubExtensionTypeImplements<Object>");
+    isSubtype("Never", "NestedGenericExtensionType<Object>");
+
+    isSubtype("NullableExtensionType", "dynamic");
+    isSubtype("NullableExtensionType", "void");
+    isSubtype("NullableExtensionType", "Object?");
+    isSubtype("NullableExtensionType", "FutureOr<dynamic>");
+    isObliviousSubtype("NullableExtensionType", "Object");
+    isObliviousSubtype("NullableExtensionType?", "Object");
+
+    isSubtype("NonNullableExtensionType", "dynamic");
+    isSubtype("NonNullableExtensionType", "void");
+    isSubtype("NonNullableExtensionType", "Object?");
+    isSubtype("NonNullableExtensionType", "FutureOr<dynamic>");
+    isSubtype("NonNullableExtensionType", "Object");
+    isObliviousSubtype("NonNullableExtensionType?", "Object");
+
+    isSubtype("GenericExtensionType<Object>", "dynamic");
+    isSubtype("GenericExtensionType<Object>", "void");
+    isSubtype("GenericExtensionType<Object>", "Object?");
+    isSubtype("GenericExtensionType<Object>", "FutureOr<dynamic>");
+    isSubtype("GenericExtensionType<Object>", "Object");
+    isObliviousSubtype("GenericExtensionType<Object>?", "Object");
+
+    isObliviousSubtype("GenericExtensionType<T>", "Object",
+        typeParameters: "T");
+    isObliviousSubtype("GenericExtensionType<T>?", "Object",
+        typeParameters: "T");
+    isSubtype("GenericExtensionType<T>", "Object",
+        typeParameters: "T extends Object");
+    isObliviousSubtype("GenericExtensionType<T>?", "Object",
+        typeParameters: "T extends Object");
+
+    isSubtype("GenericExtensionSubType<Object>", "dynamic");
+    isSubtype("GenericExtensionSubType<Object>", "void");
+    isSubtype("GenericExtensionSubType<Object>", "Object?");
+    isSubtype("GenericExtensionSubType<Object>", "FutureOr<dynamic>");
+    isSubtype("GenericExtensionSubType<Object>", "Object");
+    isObliviousSubtype("GenericExtensionSubType<Object>?", "Object");
+
+    isSubtype("NonNullableGenericExtensionType<Object>", "dynamic");
+    isSubtype("NonNullableGenericExtensionType<Object>", "void");
+    isSubtype("NonNullableGenericExtensionType<Object>", "Object?");
+    isSubtype("NonNullableGenericExtensionType<Object>", "FutureOr<dynamic>");
+    isSubtype("NonNullableGenericExtensionType<Object>", "Object");
+    isObliviousSubtype("NonNullableGenericExtensionType<Object>?", "Object");
+
+    isSubtype("GenericExtensionTypeImplements<Object>", "dynamic");
+    isSubtype("GenericExtensionTypeImplements<Object>", "void");
+    isSubtype("GenericExtensionTypeImplements<Object>", "Object?");
+    isSubtype("GenericExtensionTypeImplements<Object>", "FutureOr<dynamic>");
+    isSubtype("GenericExtensionTypeImplements<Object>", "Object");
+    isObliviousSubtype("GenericExtensionTypeImplements<Object>?", "Object");
+
+    isSubtype("GenericSubExtensionTypeImplements<Object>", "dynamic");
+    isSubtype("GenericSubExtensionTypeImplements<Object>", "void");
+    isSubtype("GenericSubExtensionTypeImplements<Object>", "Object?");
+    isSubtype("GenericSubExtensionTypeImplements<Object>", "FutureOr<dynamic>");
+    isSubtype("GenericSubExtensionTypeImplements<Object>", "Object");
+    isObliviousSubtype("GenericSubExtensionTypeImplements<Object>?", "Object");
+
+    isSubtype("NestedGenericExtensionType<Object>", "dynamic");
+    isSubtype("NestedGenericExtensionType<Object>", "void");
+    isSubtype("NestedGenericExtensionType<Object>", "Object?");
+    isSubtype("NestedGenericExtensionType<Object>", "FutureOr<dynamic>");
+    isSubtype("NestedGenericExtensionType<Object>", "Object");
+    isObliviousSubtype("NestedGenericExtensionType<Object>?", "Object");
+
+    isObliviousSubtype("NestedGenericExtensionType<T>", "Object",
+        typeParameters: "T");
+    isObliviousSubtype("NestedGenericExtensionType<T>?", "Object",
+        typeParameters: "T");
+    isSubtype("NestedGenericExtensionType<T>", "Object",
+        typeParameters: "T extends Object");
+    isObliviousSubtype("NestedGenericExtensionType<T>?", "Object",
+        typeParameters: "T extends Object");
+
+    isNotSubtype("dynamic", "NullableExtensionType");
+    isNotSubtype("void", "NullableExtensionType");
+    isNotSubtype("Object?", "NullableExtensionType");
+    isNotSubtype("FutureOr<dynamic>", "NullableExtensionType");
+    isNotSubtype("Object", "NullableExtensionType");
+
+    isNotSubtype("dynamic", "NonNullableExtensionType");
+    isNotSubtype("void", "NonNullableExtensionType");
+    isNotSubtype("Object?", "NonNullableExtensionType");
+    isNotSubtype("FutureOr<dynamic>", "NonNullableExtensionType");
+    isNotSubtype("Object", "NonNullableExtensionType");
+
+    isSubtype("NullableExtensionType?", "Object?");
+    isSubtype("NonNullableExtensionType", "Object?");
+    isSubtype("NonNullableExtensionType?", "Object?");
+
+    isObliviousSubtype("NonNullableExtensionType?", "Object");
+    isObliviousSubtype("NonNullableGenericExtensionType<Object>?", "Object");
+    isObliviousSubtype("GenericExtensionTypeImplements<Object>?", "Object");
+    isObliviousSubtype("GenericSubExtensionTypeImplements<Object>?", "Object");
+
+    isSubtype("GenericExtensionType<Object>", "GenericExtensionType<Object>");
+    isSubtype("GenericExtensionType<num>", "GenericExtensionType<Object>");
+    isNotSubtype("GenericExtensionType<Object>", "GenericExtensionType<num>");
+
+    isSubtype(
+        "GenericExtensionSubType<Object>", "GenericExtensionType<Object>");
+    isSubtype("GenericExtensionSubType<num>", "GenericExtensionType<Object>");
+    isNotSubtype(
+        "GenericExtensionSubType<Object>", "GenericExtensionType<num>");
+
+    isSubtype("GenericExtensionTypeImplements<Object>", "GenericClass<Object>");
+    isSubtype("GenericExtensionTypeImplements<num>", "GenericClass<Object>");
+    isNotSubtype("GenericExtensionTypeImplements<Object>", "GenericClass<num>");
+
+    isSubtype(
+        "GenericSubExtensionTypeImplements<Object>", "GenericClass<Object>");
+    isSubtype("GenericSubExtensionTypeImplements<num>", "GenericClass<Object>");
+    isNotSubtype(
+        "GenericSubExtensionTypeImplements<Object>", "GenericClass<num>");
+
+    isSubtype("GenericSubExtensionTypeImplements<Object>",
+        "GenericExtensionTypeImplements<Object>");
+    isSubtype("GenericSubExtensionTypeImplements<num>",
+        "GenericExtensionTypeImplements<Object>");
+    isNotSubtype("GenericSubExtensionTypeImplements<Object>",
+        "GenericExtensionTypeImplements<num>");
+
+    isSubtype(
+        "GenericSubExtensionTypeImplements<Object>", "SubGenericClass<Object>");
+    isSubtype(
+        "GenericSubExtensionTypeImplements<num>", "SubGenericClass<Object>");
+    isNotSubtype(
+        "GenericSubExtensionTypeImplements<Object>", "SubGenericClass<num>");
+
+    isNotSubtype(
+        "NestedGenericExtensionType<Object>", "GenericExtensionType<Object>");
   }
 }

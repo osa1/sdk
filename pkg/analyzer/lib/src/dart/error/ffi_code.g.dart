@@ -323,6 +323,7 @@ class FfiCode extends AnalyzerErrorCode {
     "The return type of the function passed to 'NativeCallable.listener' must "
         "be 'void' rather than '{0}'.",
     correctionMessage: "Try changing the return type to 'void'.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -392,39 +393,6 @@ class FfiCode extends AnalyzerErrorCode {
     "'Array's must have an 'Array' annotation that matches the dimensions.",
     correctionMessage: "Try adjusting the arguments in the 'Array' annotation.",
     hasPublishedDocs: true,
-  );
-
-  ///  Parameters:
-  ///  0: the name of the subclass
-  ///  1: the name of the class being extended, implemented, or mixed in
-  static const FfiCode SUBTYPE_OF_FFI_CLASS_IN_EXTENDS = FfiCode(
-    'SUBTYPE_OF_FFI_CLASS',
-    "The class '{0}' can't extend '{1}'.",
-    correctionMessage: "Try extending 'Struct' or 'Union'.",
-    hasPublishedDocs: true,
-    uniqueName: 'SUBTYPE_OF_FFI_CLASS_IN_EXTENDS',
-  );
-
-  ///  Parameters:
-  ///  0: the name of the subclass
-  ///  1: the name of the class being extended, implemented, or mixed in
-  static const FfiCode SUBTYPE_OF_FFI_CLASS_IN_IMPLEMENTS = FfiCode(
-    'SUBTYPE_OF_FFI_CLASS',
-    "The class '{0}' can't implement '{1}'.",
-    correctionMessage: "Try implementing 'Allocator' or 'Finalizable'.",
-    hasPublishedDocs: true,
-    uniqueName: 'SUBTYPE_OF_FFI_CLASS_IN_IMPLEMENTS',
-  );
-
-  ///  Parameters:
-  ///  0: the name of the subclass
-  ///  1: the name of the class being extended, implemented, or mixed in
-  static const FfiCode SUBTYPE_OF_FFI_CLASS_IN_WITH = FfiCode(
-    'SUBTYPE_OF_FFI_CLASS',
-    "The class '{0}' can't mix in '{1}'.",
-    correctionMessage: "Try extending 'Struct' or 'Union'.",
-    hasPublishedDocs: true,
-    uniqueName: 'SUBTYPE_OF_FFI_CLASS_IN_WITH',
   );
 
   ///  Parameters:

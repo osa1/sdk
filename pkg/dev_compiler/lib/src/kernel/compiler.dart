@@ -8,7 +8,7 @@ import 'dart:io' as io;
 import 'dart:math' show max, min;
 
 import 'package:_js_interop_checks/src/transformations/js_util_optimizer.dart'
-    show InlineExtensionIndex;
+    show ExtensionIndex;
 import 'package:_js_interop_checks/src/transformations/static_interop_class_eraser.dart'
     show eraseStaticInteropTypesForJSCompilers;
 import 'package:collection/collection.dart'
@@ -275,11 +275,11 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// Maps uri strings in asserts and elsewhere to hoisted identifiers.
   var _uriContainer = ModuleItemContainer<String>.asArray('I');
 
-  /// Index of inline and extension members in order to filter static interop
-  /// members.
+  /// Index of extension and extension type members in order to filter static
+  /// interop members.
   // TODO(srujzs): Is there some way to share this from the js_util_optimizer to
   // avoid having to recompute?
-  final InlineExtensionIndex _inlineExtensionIndex;
+  final ExtensionIndex _extensionIndex;
 
   final Class _jsArrayClass;
   final Class _privateSymbolClass;
@@ -368,8 +368,8 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
             'dart:_runtime', 'assertInterop') as Procedure,
         _futureOrNormalizer = FutureOrNormalizer(_coreTypes),
         _typeRecipeGenerator = TypeRecipeGenerator(_coreTypes, _hierarchy),
-        _inlineExtensionIndex = InlineExtensionIndex(
-            _coreTypes, _staticTypeContext.typeEnvironment);
+        _extensionIndex =
+            ExtensionIndex(_coreTypes, _staticTypeContext.typeEnvironment);
 
   @override
   Library? get currentLibrary => _currentLibrary;
@@ -665,6 +665,9 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// True when [library] is the sdk internal library 'dart:_internal'.
   bool _isDartForeignHelper(Library library) =>
       isDartLibrary(library, '_foreign_helper');
+
+  /// True when [library] is the sdk library 'dart:js_util'.
+  bool _isDartJsUtil(Library library) => isDartLibrary(library, 'js_util');
 
   @override
   bool isDartLibrary(Library library, String name) {
@@ -966,10 +969,16 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     body = [classDef];
     _emitStaticFieldsAndAccessors(c, body);
     if (finishGenericTypeTest != null) body.add(finishGenericTypeTest);
-    for (var peer in jsPeerNames) {
-      _registerExtensionType(c, peer, body);
+    if (c == _coreTypes.objectClass) {
+      // Avoid polluting the native JavaScript Object prototype with the members
+      // of the Dart Core Object class.
+      // Instead, just assign the identity equals method.
+      body.add(runtimeStatement('_installIdentityEquals()'));
+    } else {
+      for (var peer in jsPeerNames) {
+        _registerExtensionType(c, peer, body);
+      }
     }
-
     _classProperties = savedClassProperties;
     return js_ast.Statement.from(body);
   }
@@ -1810,9 +1819,18 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   js_ast.Expression _emitClassFieldSignature(Field field, Class fromClass) {
     var type = _typeFromClass(field.type, field.enclosingClass!, fromClass);
-    var args = [_emitType(type)];
-    return runtimeCall(
-        field.isFinal ? 'finalFieldType(#)' : 'fieldType(#)', [args]);
+    var fieldType = field.type;
+    var uri = fieldType is InterfaceType
+        ? _cacheUri(jsLibraryDebuggerName(fieldType.classNode.enclosingLibrary))
+        : null;
+    var isConst = js.boolean(field.isConst);
+    var isFinal = js.boolean(field.isFinal);
+
+    return uri == null
+        ? js('{type: #, isConst: #, isFinal: #}',
+            [_emitType(type), isConst, isFinal])
+        : js('{type: #, isConst: #, isFinal: #, libraryUri: #}',
+            [_emitType(type), isConst, isFinal, uri]);
   }
 
   DartType _memberRuntimeType(Member member, Class fromClass) {
@@ -3074,13 +3092,14 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// Users are disallowed from using these tear-offs, so we should avoid
   /// emitting them.
   bool _isStaticInteropTearOff(Procedure p) {
-    final extensionMember =
-        _inlineExtensionIndex.getExtensionMemberForTearOff(p);
+    final extensionMember = _extensionIndex.getExtensionMemberForTearOff(p);
     if (extensionMember != null && extensionMember.asProcedure.isExternal) {
       return true;
     }
-    final inlineMember = _inlineExtensionIndex.getInlineMemberForTearOff(p);
-    if (inlineMember != null && inlineMember.asProcedure.isExternal) {
+    final extensionTypeMember =
+        _extensionIndex.getExtensionTypeMemberForTearOff(p);
+    if (extensionTypeMember != null &&
+        extensionTypeMember.asProcedure.isExternal) {
       return true;
     }
     final enclosingClass = p.enclosingClass;
@@ -3365,10 +3384,6 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   @override
   js_ast.Expression visitExtensionType(ExtensionType type) =>
-      type.onType.accept(this);
-
-  @override
-  js_ast.Expression visitInlineType(InlineType type) =>
       type.instantiatedRepresentationType.accept(this);
 
   @override
@@ -4110,11 +4125,15 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       FunctionNode fn, List<js_ast.Statement> Function() action) {
     var savedFunction = _currentFunction;
     _currentFunction = fn;
+    if (isDartLibrary(_currentLibrary!, '_rti') ||
+        isSdkInternalRuntime(_currentLibrary!)) {
+      _nullableInference.treatDeclaredTypesAsSound = true;
+    }
     _nullableInference.enterFunction(fn);
-
     var result = _withLetScope(action);
-
     _nullableInference.exitFunction(fn);
+    _nullableInference.treatDeclaredTypesAsSound = false;
+
     _currentFunction = savedFunction;
     return result;
   }
@@ -4156,7 +4175,9 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       // non-nullable as legacy.
       _currentLibrary!.nonNullable == Nullability.nonNullable &&
       _mustBeNonNullable(type) &&
-      !_annotatedNotNull(annotations);
+      !_annotatedNotNull(annotations) &&
+      // Trust the nullability of types in the dart:_rti library.
+      !isDartLibrary(_currentLibrary!, '_rti');
 
   /// Returns a null check for [value] that if fails produces an error message
   /// containing the [location] and [name] of the original value being checked.
@@ -4535,12 +4556,27 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       jsCondition = runtimeCall('test(#)', [jsCondition]);
     }
 
-    var encodedSource =
-        node.enclosingComponent!.uriToSource[node.location!.file]!.source;
-    var source = utf8.decode(encodedSource, allowMalformed: true);
-    var conditionSource =
-        source.substring(node.conditionStartOffset, node.conditionEndOffset);
-    var location = _toSourceLocation(node.conditionStartOffset)!;
+    SourceLocation? location;
+    late String conditionSource;
+    if (node.location != null) {
+      var encodedSource =
+          node.enclosingComponent!.uriToSource[node.location!.file]!.source;
+      var source = utf8.decode(encodedSource, allowMalformed: true);
+
+      conditionSource =
+          source.substring(node.conditionStartOffset, node.conditionEndOffset);
+      location = _toSourceLocation(node.conditionStartOffset)!;
+    } else {
+      // Location is null in expression compilation when modules
+      // are loaded from kernel using expression compiler worker.
+      // Show the error only in that case, with the condition AST
+      // instead of the source.
+      //
+      // TODO(annagrin): Can we add some information to the kernel,
+      // or add better printing for the condition?
+      // Issue: https://github.com/dart-lang/sdk/issues/43986
+      conditionSource = node.condition.toString();
+    }
     return js.statement(' if (!#) #;', [
       jsCondition,
       runtimeCall('assertFailed(#, #, #, #, #)', [
@@ -4548,10 +4584,13 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
           js_ast.LiteralNull()
         else
           _visitExpression(node.message!),
-        _cacheUri(location.sourceUrl.toString()),
+        if (location == null)
+          _cacheUri('<unknown source>')
+        else
+          _cacheUri(location.sourceUrl.toString()),
         // Lines and columns are typically printed with 1 based indexing.
-        js.number(location.line + 1),
-        js.number(location.column + 1),
+        js.number(location == null ? -1 : location.line + 1),
+        js.number(location == null ? -1 : location.column + 1),
         js.escapedString(conditionSource),
       ])
     ]);
@@ -5240,6 +5279,54 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         node.receiver, node.interfaceTarget, node.value, node.name.text);
   }
 
+  /// True when the result of evaluating [e] is not known to have the Object
+  /// members installed so a helper method should be called instead of a direct
+  /// instance invocation.
+  ///
+  /// This is a best effort approach determined by the static type information
+  /// and may return `true` when the evaluation result does in fact have the
+  /// members at runtime.
+  bool _shouldCallObjectMemberHelper(Expression e) {
+    if (isNullable(e)) return true;
+    var type = e.getStaticType(_staticTypeContext);
+    if (type is RecordType || type is FunctionType) return false;
+    if (type is InterfaceType) {
+      // TODO(nshahan): This could be expanded to any classes where we know all
+      // implementations at compile time and none of them are JS interop.
+      var cls = type.classNode;
+      // NOTE: This is not guaranteed to always be true. Currently in the SDK
+      // none of the final classes or their subtypes use JavaScript interop.
+      // If that was to ever change, this check will need to be updated.
+      // For now, this is a shortcut since all subclasses of a class are not
+      // immediately accessible.
+      if (cls.isFinal && cls.enclosingLibrary.importUri.isScheme('dart')) {
+        return false;
+      }
+    }
+    // Constants have a static type known at compile time that will not be a
+    // subtype at runtime.
+    return !_triviallyConstNoInterop(e);
+  }
+
+  /// True when [e] is known to evaluate to a constant that has an interface
+  /// type that is not a JavaScript interop type.
+  ///
+  /// This is a simple approach and not an exhaustive search.
+  bool _triviallyConstNoInterop(Expression? e) {
+    if (e is ConstantExpression) {
+      var type = e.constant.getType(_staticTypeContext);
+      if (type is InterfaceType) return !usesJSInterop(type.classNode);
+    } else if (e is StaticGet && e.target.isConst) {
+      var target = e.target;
+      if (target is Field) {
+        return _triviallyConstNoInterop(target.initializer);
+      }
+    } else if (e is VariableGet && e.variable.isConst) {
+      return _triviallyConstNoInterop(e.variable.initializer);
+    }
+    return false;
+  }
+
   js_ast.Expression _emitPropertyGet(
       Expression receiver, Member? member, String memberName) {
     // TODO(jmesserly): should tearoff of `.call` on a function type be
@@ -5257,13 +5344,18 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // they can be hovered. Unfortunately this is not possible as Kernel does
     // not store this data.
     if (_isObjectMember(memberName)) {
-      if (isNullable(receiver)) {
-        // If the receiver is nullable, use a helper so calls like
-        // `null.hashCode` and `null.runtimeType` will work.
-        // Also method tearoffs like `null.toString`.
+      if (_shouldCallObjectMemberHelper(receiver)) {
         if (_isObjectMethodTearoff(memberName)) {
-          return runtimeCall('bind(#, #)', [jsReceiver, jsName]);
+          if (memberName == 'toString') {
+            return runtimeCall('toStringTearoff(#)', [jsReceiver]);
+          }
+          if (memberName == 'noSuchMethod') {
+            return runtimeCall('noSuchMethodTearoff(#)', [jsReceiver]);
+          }
+          assert(false, 'Unexpected Object method tearoff: $memberName');
         }
+        // The names of the static helper methods in the runtime must match the
+        // names of the Object instance members.
         return runtimeCall('#(#)', [memberName, jsReceiver]);
       }
       // Otherwise generate this as a normal typed property get.
@@ -5364,8 +5456,16 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   @override
-  js_ast.Expression visitStaticGet(StaticGet node) =>
-      _emitStaticGet(node.target);
+  js_ast.Expression visitStaticGet(StaticGet node) {
+    final target = node.target;
+    if (_isDartJsHelper(target.enclosingLibrary)) {
+      final name = target.name.text;
+      if (name == 'staticInteropGlobalContext') {
+        return runtimeCall('global');
+      }
+    }
+    return _emitStaticGet(target);
+  }
 
   @override
   js_ast.Expression visitStaticTearOff(StaticTearOff node) =>
@@ -5512,11 +5612,12 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     var jsName = _emitMemberName(name, member: target);
 
-    // Handle Object methods that are supported by `null`.
+    // Handle Object methods that are supported by `null` and potentially
+    // JavaScript interop values.
     if (_isObjectMethodCall(name, arguments)) {
-      if (isNullable(receiver)) {
-        // If the receiver is nullable, use a helper so calls like
-        // `null.toString()` will work.
+      if (_shouldCallObjectMemberHelper(receiver)) {
+        // The names of the static helper methods in the runtime must match the
+        // names of the Object instance members.
         return runtimeCall('#(#, #)', [name, jsReceiver, args]);
       }
       // Otherwise generate this as a normal typed method call.
@@ -5916,18 +6017,15 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       return _emitCoreIdenticalCall([left, right], negated: negated);
     }
 
-    // If the left side is nullable, we need to use a runtime helper to check
-    // for null. We could inline the null check, but it did not seem to have
-    // a measurable performance effect (possibly the helper is simple enough to
-    // be inlined).
-    if (isNullable(left)) {
+    if (_shouldCallObjectMemberHelper(left)) {
+      // The LHS isn't guaranteed to have an equals method we need to use a
+      // runtime helper.
       return js.call(negated ? '!#' : '#', [
         runtimeCall(
             'equals(#, #)', [_visitExpression(left), _visitExpression(right)])
       ]);
     }
-
-    // Otherwise we emit a call to the == method.
+    // Otherwise it is safe to call the equals method on the LHS directly.
     return js.call(negated ? '!#[#](#)' : '#[#](#)', [
       _visitExpression(left),
       _emitMemberName('==', memberClass: targetClass),
@@ -6292,11 +6390,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       }
     }
     if (target.isExternal &&
-        target.isInlineClassMember &&
+        target.isExtensionTypeMember &&
         target.function.namedParameters.isNotEmpty) {
-      // JS interop checks assert that only external inline class factories have
-      // named parameters. We could do a more robust check by visiting all
-      // inline classes and recording descriptors, but that's expensive.
+      // JS interop checks assert that only external extension type constructors
+      // and factories have named parameters.
       assert(target.function.positionalParameters.isEmpty);
       return _emitObjectLiteral(
           Arguments(node.arguments.positional,
@@ -6309,7 +6406,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     if (_isDebuggerCall(target)) {
       return _emitDebuggerCall(node) as js_ast.Expression;
     }
-    if (target.enclosingLibrary.importUri.toString() == 'dart:js_util') {
+    if (_isDartJsUtil(enclosingLibrary)) {
       // We try and do further inlining here for the unchecked/trusted-type
       // variants of js_util methods. Note that we only lower the methods that
       // are used in transformations and are private. Also note that this
@@ -6629,7 +6726,15 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   ///
   /// If [localIsNullable] is not supplied, this will use the known list of
   /// [_notNullLocals].
-  bool isNullable(Expression expr) => _nullableInference.isNullable(expr);
+  bool isNullable(Expression expr) {
+    if (isDartLibrary(_currentLibrary!, '_rti') ||
+        isSdkInternalRuntime(_currentLibrary!)) {
+      _nullableInference.treatDeclaredTypesAsSound = true;
+    }
+    final result = _nullableInference.isNullable(expr);
+    _nullableInference.treatDeclaredTypesAsSound = false;
+    return result;
+  }
 
   js_ast.Expression _emitJSDoubleEq(List<js_ast.Expression> args,
       {bool negated = false}) {
@@ -6846,11 +6951,17 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         continue;
       }
       var type = e.getStaticType(_staticTypeContext);
-      parts.add(DartTypeEquivalence(_coreTypes, ignoreTopLevelNullability: true)
-                  .areEqual(type, _coreTypes.stringNonNullableRawType) &&
-              !isNullable(e)
-          ? jsExpr
-          : runtimeCall('str(#)', [jsExpr]));
+      if (DartTypeEquivalence(_coreTypes, ignoreTopLevelNullability: true)
+              .areEqual(type, _coreTypes.stringNonNullableRawType) &&
+          !isNullable(e)) {
+        parts.add(jsExpr);
+      } else if (_shouldCallObjectMemberHelper(e)) {
+        parts.add(runtimeCall('str(#)', [jsExpr]));
+      } else {
+        // It is safe to call a version of `str()` that does not probe for the
+        // toString method before calling it.
+        parts.add(runtimeCall('strSafe(#)', [jsExpr]));
+      }
     }
     if (parts.isEmpty) return js.string('');
     return js_ast.Expression.binary(parts, '+');

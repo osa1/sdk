@@ -209,8 +209,6 @@ class ServerTest extends AbstractLspAnalysisServerTest {
     await initialize();
     await expectLater(
       getHover(missingDriveLetterFileUri, startOfDocPos),
-      // The pathContext.toUri() above translates to a non-file:// URI of just
-      // 'a/b.dart' so will get the not-file-scheme error message.
       throwsA(isResponseError(ServerErrorCodes.InvalidFilePath,
           message: 'URI was not an absolute file path (missing drive letter)')),
     );
@@ -236,6 +234,14 @@ class ServerTest extends AbstractLspAnalysisServerTest {
       throwsA(isResponseError(ServerErrorCodes.InvalidFilePath,
           message: 'URI was not a valid file:// URI')),
     );
+  }
+
+  /// The LSP server relies on pathContext.fromUri() handling encoded colons
+  /// in paths, so verify that works as expected.
+  Future<void> test_pathContext_fromUri_windows() async {
+    expect(path.windows.fromUri('file:///C:/foo'), r'C:\foo');
+    expect(path.windows.fromUri('file:///C%3a/foo'), r'C:\foo');
+    expect(path.windows.fromUri('file:///C%3A/foo'), r'C:\foo');
   }
 
   Future<void> test_shutdown_initialized() async {

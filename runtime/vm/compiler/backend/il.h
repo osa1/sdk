@@ -1031,7 +1031,7 @@ class Instruction : public ZoneAllocated {
 
   virtual bool ComputeCanDeoptimizeAfterCall() const {
     // TODO(dartbug.com/45213): Incrementally migrate IR instructions from using
-    // [ComputeCanDeoptimize] to either [ComputeCanDeoptimizeAfterCall] if they
+    // [ComputeCanDeoptimize] to [ComputeCanDeoptimizeAfterCall] if they
     // can only lazy deoptimize.
     return false;
   }
@@ -1296,7 +1296,7 @@ class Instruction : public ZoneAllocated {
     return false;
   }
 
-  virtual void InheritDeoptTarget(Zone* zone, Instruction* other);
+  void InheritDeoptTarget(Zone* zone, Instruction* other);
 
   bool NeedsEnvironment() const {
     return ComputeCanDeoptimize() || ComputeCanDeoptimizeAfterCall() ||
@@ -1360,7 +1360,7 @@ class Instruction : public ZoneAllocated {
   // Fetch deopt id without checking if this computation can deoptimize.
   intptr_t GetDeoptId() const { return deopt_id_; }
 
-  void CopyDeoptIdFrom(const Instruction& instr) {
+  virtual void CopyDeoptIdFrom(const Instruction& instr) {
     deopt_id_ = instr.deopt_id_;
   }
 
@@ -3365,7 +3365,8 @@ class ThrowInstr : public TemplateInstruction<1, Throws> {
   virtual TokenPosition token_pos() const { return token_pos_; }
   Value* exception() const { return inputs_[0]; }
 
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -3405,7 +3406,8 @@ class ReThrowInstr : public TemplateInstruction<2, Throws> {
   Value* exception() const { return inputs_[0]; }
   Value* stacktrace() const { return inputs_[1]; }
 
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -3774,7 +3776,10 @@ class BranchInstr : public Instruction {
   }
   TargetEntryInstr* constant_target() const { return constant_target_; }
 
-  virtual void InheritDeoptTarget(Zone* zone, Instruction* other);
+  virtual void CopyDeoptIdFrom(const Instruction& instr) {
+    Instruction::CopyDeoptIdFrom(instr);
+    comparison()->CopyDeoptIdFrom(instr);
+  }
 
   virtual bool MayThrow() const { return comparison()->MayThrow(); }
 
@@ -5207,6 +5212,11 @@ class IfThenElseInstr : public Definition {
 
   virtual bool MayThrow() const { return comparison()->MayThrow(); }
 
+  virtual void CopyDeoptIdFrom(const Instruction& instr) {
+    Definition::CopyDeoptIdFrom(instr);
+    comparison()->CopyDeoptIdFrom(instr);
+  }
+
   PRINT_OPERANDS_TO_SUPPORT
 
 #define FIELD_LIST(F)                                                          \
@@ -5326,7 +5336,8 @@ class StaticCallInstr : public TemplateDartCall<0> {
     return ic_data() == nullptr ? call_count_ : ic_data()->AggregateCount();
   }
 
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -5724,7 +5735,8 @@ class FfiCallInstr : public VariadicDefinition {
   }
 
   // FfiCallInstr calls C code, which can call back into Dart.
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -6773,7 +6785,8 @@ class InstanceOfInstr : public TemplateDefinition<3, Throws> {
   const AbstractType& type() const { return type_; }
   virtual TokenPosition token_pos() const { return token_pos_; }
 
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -9235,7 +9248,8 @@ class CheckStackOverflowInstr : public TemplateInstruction<0, NoThrow> {
 
   DECLARE_INSTRUCTION(CheckStackOverflow)
 
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -9908,7 +9922,8 @@ class CheckNullInstr : public TemplateDefinition<1, Throws, Pure> {
 
   // CheckNull can implicitly call Dart code (NoSuchMethodError constructor),
   // so it needs a deopt ID in optimized and unoptimized code.
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
   virtual bool CanBecomeDeoptimizationTarget() const { return true; }
@@ -10085,7 +10100,8 @@ class GenericCheckBoundInstr : public CheckBoundBase {
 
   // GenericCheckBound can implicitly call Dart code (RangeError or
   // ArgumentError constructor), so it can lazily deopt.
-  virtual bool ComputeCanDeoptimize() const {
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
     return !CompilerState::Current().is_aot();
   }
 
@@ -10161,6 +10177,11 @@ class CheckConditionInstr : public Instruction {
   virtual Value* InputAt(intptr_t i) const { return comparison()->InputAt(i); }
 
   virtual bool MayThrow() const { return false; }
+
+  virtual void CopyDeoptIdFrom(const Instruction& instr) {
+    Instruction::CopyDeoptIdFrom(instr);
+    comparison()->CopyDeoptIdFrom(instr);
+  }
 
   PRINT_OPERANDS_TO_SUPPORT
 
@@ -10604,7 +10625,8 @@ class Call1ArgStubInstr : public TemplateDefinition<1, Throws> {
   virtual TokenPosition token_pos() const { return token_pos_; }
 
   virtual bool CanCallDart() const { return true; }
-  virtual bool ComputeCanDeoptimize() const { return true; }
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const { return true; }
   virtual bool HasUnknownSideEffects() const { return true; }
   virtual intptr_t NumberOfInputsConsumedBeforeCall() const {
     return InputCount();
@@ -10669,7 +10691,8 @@ class SuspendInstr : public TemplateDefinition<2, Throws> {
   virtual TokenPosition token_pos() const { return token_pos_; }
 
   virtual bool CanCallDart() const { return true; }
-  virtual bool ComputeCanDeoptimize() const { return true; }
+  virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const { return true; }
   virtual bool HasUnknownSideEffects() const { return true; }
   virtual intptr_t NumberOfInputsConsumedBeforeCall() const {
     return InputCount();
@@ -10829,6 +10852,9 @@ class Environment : public ZoneAllocated {
 
   void MarkAsLazyDeoptToBeforeDeoptId() {
     bitfield_ = LazyDeoptToBeforeDeoptId::update(true, bitfield_);
+    // As eager and lazy deopts will target the before environment, we do not
+    // want to prune inputs on lazy deopts.
+    bitfield_ = LazyDeoptPruningBits::update(0, bitfield_);
   }
 
   // This environment belongs to an optimistically hoisted instruction.
@@ -10837,6 +10863,9 @@ class Environment : public ZoneAllocated {
   void MarkAsHoisted() { bitfield_ = Hoisted::update(true, bitfield_); }
 
   Environment* GetLazyDeoptEnv(Zone* zone) {
+    if (LazyDeoptToBeforeDeoptId()) {
+      ASSERT(LazyDeoptPruneCount() == 0);
+    }
     const intptr_t num_args_to_prune = LazyDeoptPruneCount();
     if (num_args_to_prune == 0) return this;
     return DeepCopy(zone, Length() - num_args_to_prune);

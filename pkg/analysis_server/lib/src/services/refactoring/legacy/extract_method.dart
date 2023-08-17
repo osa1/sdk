@@ -25,6 +25,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_system.dart';
 import 'package:analyzer/src/dart/analysis/session_helper.dart';
+import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/ast/utilities.dart';
 import 'package:analyzer/src/dart/resolver/exit_detector.dart';
@@ -38,7 +39,7 @@ bool isLocalElement(Element? element) {
   return element is LocalVariableElement ||
       element is ParameterElement ||
       element is FunctionElement &&
-          element.enclosingElement2 is! CompilationUnitElement;
+          element.enclosingElement is! CompilationUnitElement;
 }
 
 Element? _getLocalElement(SimpleIdentifier node) {
@@ -326,7 +327,8 @@ class ExtractMethodRefactoringImpl extends RefactoringImpl
         final selectionFunctionExpression = _selectionFunctionExpression;
         if (selectionFunctionExpression != null) {
           var returnTypeCode = _getExpectedClosureReturnTypeCode();
-          declarationSource = '$returnTypeCode$name$returnExpressionSource';
+          declarationSource =
+              '$annotations$returnTypeCode$name$returnExpressionSource';
           if (selectionFunctionExpression.body is ExpressionFunctionBody) {
             declarationSource += ';';
           }
@@ -1227,6 +1229,16 @@ class _InitializeOccurrencesVisitor extends GeneralizingAstVisitor<void> {
       _tryToFindOccurrence(nodeRange);
     }
     super.visitExpression(node);
+  }
+
+  @override
+  void visitFieldDeclaration(FieldDeclaration node) {
+    forceStatic = node.isStatic;
+    try {
+      super.visitFieldDeclaration(node);
+    } finally {
+      forceStatic = false;
+    }
   }
 
   @override

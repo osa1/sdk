@@ -8,7 +8,7 @@ import 'package:front_end/src/fasta/util/helpers.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/src/legacy_erasure.dart';
-import 'package:kernel/src/unaliasing.dart';
+import 'package:kernel/src/unaliasing.dart' as unaliasing;
 
 import '../fasta_codes.dart'
     show
@@ -31,7 +31,6 @@ import '../fasta_codes.dart'
         templateTypeNotFound;
 import '../identifiers.dart' show Identifier, QualifiedName, flattenName;
 import '../kernel/implicit_field_type.dart';
-import '../kernel/type_algorithms.dart';
 import '../problems.dart' show unhandled;
 import '../scope.dart';
 import '../source/source_library_builder.dart';
@@ -287,23 +286,20 @@ abstract class NamedTypeBuilder extends TypeBuilder {
             message.withLocation(fileUri!, typeNameOffset, typeNameLength));
       }
     }
-    if (_declaration!.isExtension &&
-        library is SourceLibraryBuilder &&
-        !library.libraryFeatures.extensionTypes.isEnabled) {
+    if (_declaration!.isExtension && library is SourceLibraryBuilder) {
       int typeNameLength = nameLength;
       int typeNameOffset = nameOffset;
-      Message message = library.reportFeatureNotEnabled(
-          library.libraryFeatures.extensionTypes,
-          fileUri!,
-          typeNameOffset,
-          typeNameLength);
+      // TODO(johnniwinther): Create a custom message.
+      Message message = templateNotAType.withArguments(nameText);
+      library.addProblem(message, typeNameOffset, typeNameLength, fileUri);
       _declaration = buildInvalidTypeDeclarationBuilder(
           message.withLocation(fileUri!, typeNameOffset, typeNameLength));
     } else if (_declaration!.isTypeVariable) {
       TypeVariableBuilder typeParameterBuilder =
           _declaration as TypeVariableBuilder;
       if (typeParameterBuilder.kind == TypeVariableKind.classMixinOrEnum ||
-          typeParameterBuilder.kind == TypeVariableKind.extension ||
+          typeParameterBuilder.kind ==
+              TypeVariableKind.extensionOrExtensionType ||
           typeParameterBuilder.kind == TypeVariableKind.extensionSynthesized) {
         switch (_instanceTypeVariableAccess) {
           case InstanceTypeVariableAccessState.Disallowed:
@@ -406,9 +402,24 @@ abstract class NamedTypeBuilder extends TypeBuilder {
       library.reportFeatureNotEnabled(library.libraryFeatures.records,
           fileUri ?? library.fileUri, charOffset!, nameText.length);
     }
-    return unalias(aliasedType,
+    return unaliasing.unalias(aliasedType,
         legacyEraseAliases:
             !_performTypeCanonicalization && !library.isNonNullableByDefault);
+  }
+
+  @override
+  TypeBuilder? unalias(
+      {Set<TypeAliasBuilder>? usedTypeAliasBuilders,
+      List<TypeBuilder>? unboundTypes,
+      List<TypeVariableBuilder>? unboundTypeVariables}) {
+    assert(declaration != null, "Declaration has not been resolved on $this.");
+    if (declaration is TypeAliasBuilder) {
+      return (declaration as TypeAliasBuilder).unalias(arguments,
+          usedTypeAliasBuilders: usedTypeAliasBuilders,
+          unboundTypes: unboundTypes,
+          unboundTypeVariables: unboundTypeVariables);
+    }
+    return this;
   }
 
   @override
@@ -546,16 +557,6 @@ abstract class NamedTypeBuilder extends TypeBuilder {
       return null;
     }
     return _handleInvalidSupertype(library);
-  }
-
-  @override
-  TypeBuilder subst(Map<TypeVariableBuilder, TypeBuilder> substitution) {
-    List<TypeBuilder> unboundTypes = [];
-    List<TypeVariableBuilder> unboundTypeVariables = [];
-    TypeBuilder result = substitute(this, substitution,
-        unboundTypes: unboundTypes, unboundTypeVariables: unboundTypeVariables);
-    assert(unboundTypes.isEmpty && unboundTypeVariables.isEmpty);
-    return result;
   }
 
   @override

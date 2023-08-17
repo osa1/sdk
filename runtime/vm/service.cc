@@ -3370,43 +3370,38 @@ static void EvaluateCompiledExpression(Thread* thread, JSONStream* js) {
       }
       return;
     }
+    const auto& type_params_names_fixed =
+        Array::Handle(zone, Array::MakeFixedLength(type_params_names));
+    const auto& param_values_fixed =
+        Array::Handle(zone, Array::MakeFixedLength(param_values));
+
     TypeArguments& type_arguments = TypeArguments::Handle(zone);
     if (obj.IsLibrary()) {
-      const Library& lib = Library::Cast(obj);
-      const Object& result = Object::Handle(
+      const auto& lib = Library::Cast(obj);
+      const auto& result = Object::Handle(
           zone,
-          lib.EvaluateCompiledExpression(
-              kernel_data,
-              Array::Handle(zone, Array::MakeFixedLength(type_params_names)),
-              Array::Handle(zone, Array::MakeFixedLength(param_values)),
-              type_arguments));
+          lib.EvaluateCompiledExpression(kernel_data, type_params_names_fixed,
+                                         param_values_fixed, type_arguments));
       result.PrintJSON(js, true);
       return;
     }
     if (obj.IsClass()) {
-      const Class& cls = Class::Cast(obj);
-      const Object& result = Object::Handle(
+      const auto& cls = Class::Cast(obj);
+      const auto& result = Object::Handle(
           zone,
-          cls.EvaluateCompiledExpression(
-              kernel_data,
-              Array::Handle(zone, Array::MakeFixedLength(type_params_names)),
-              Array::Handle(zone, Array::MakeFixedLength(param_values)),
-              type_arguments));
+          cls.EvaluateCompiledExpression(kernel_data, type_params_names_fixed,
+                                         param_values_fixed, type_arguments));
       result.PrintJSON(js, true);
       return;
     }
     if ((obj.IsInstance() || obj.IsNull()) && !ContainsNonInstance(obj)) {
-      // We don't use Instance::Cast here because it doesn't allow null.
-      Instance& instance = Instance::Handle(zone);
-      instance ^= obj.ptr();
-      const Class& receiver_cls = Class::Handle(zone, instance.clazz());
-      const Object& result = Object::Handle(
-          zone,
-          instance.EvaluateCompiledExpression(
-              receiver_cls, kernel_data,
-              Array::Handle(zone, Array::MakeFixedLength(type_params_names)),
-              Array::Handle(zone, Array::MakeFixedLength(param_values)),
-              type_arguments));
+      const auto& instance =
+          Instance::Handle(zone, Instance::RawCast(obj.ptr()));
+      const auto& receiver_cls = Class::Handle(zone, instance.clazz());
+      const auto& result = Object::Handle(
+          zone, instance.EvaluateCompiledExpression(
+                    receiver_cls, kernel_data, type_params_names_fixed,
+                    param_values_fixed, type_arguments));
       result.PrintJSON(js, true);
       return;
     }
@@ -3658,8 +3653,8 @@ static void GetPorts(Thread* thread, JSONStream* js) {
     JSONArray arr(&jsobj, "ports");
     for (int i = 0; i < ports.Length(); ++i) {
       port ^= ports.At(i);
-      // Don't report inactive ports.
-      if (PortMap::IsLivePort(port.Id())) {
+      ASSERT(port.is_open());
+      if (port.keep_isolate_alive()) {
         arr.AddValue(port);
       }
     }
@@ -4567,14 +4562,44 @@ static void AddVMMappings(JSONArray* rss_children) {
   }
 
   MallocGrowableArray<VMMapping> mappings(10);
-  char line[256];
+  char* line = nullptr;
+  size_t line_buffer_size = 0;
   char path[256];
   char property[32];
   size_t start, end, size;
-  while (fgets(line, sizeof(line), fp) != nullptr) {
+  while (getline(&line, &line_buffer_size, fp) > 0) {
     if (sscanf(line, "%zx-%zx", &start, &end) == 2) {
-      // Mapping line.
-      strncpy(path, strrchr(line, ' ') + 1, sizeof(path) - 1);
+      // Each line has the following format:
+      //
+      //   start-end flags offset dev inode path
+      //
+      // We want to skip 4 fields and get to the last one (path).
+      // Note that we can't scan backwards because path might contain white
+      // space.
+      const intptr_t kPathFieldIndex = 5;
+
+      char* path_start = line;
+      intptr_t current_field = 0;
+      while (*path_start != '\0') {
+        // Field separator.
+        if (*path_start == ' ') {
+          // Skip to the first non-space.
+          while (*path_start == ' ') {
+            path_start++;
+          }
+          current_field++;
+          if (current_field == kPathFieldIndex) {
+            break;
+          }
+          continue;
+        }
+        path_start++;
+      }
+      if (current_field != kPathFieldIndex) {
+        continue;  // Malformed input.
+      }
+
+      strncpy(path, path_start, sizeof(path) - 1);
       int len = strlen(path);
       if ((len > 0) && path[len - 1] == '\n') {
         path[len - 1] = 0;
@@ -4611,6 +4636,7 @@ static void AddVMMappings(JSONArray* rss_children) {
     }
   }
   fclose(fp);
+  free(line);  // Free buffer allocated by getline.
 
   for (intptr_t i = 0; i < mappings.length(); i++) {
     JSONObject mapping(rss_children);

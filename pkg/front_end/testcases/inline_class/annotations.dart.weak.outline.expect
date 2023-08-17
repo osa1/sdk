@@ -3,21 +3,21 @@ import self as self;
 import "dart:core" as core;
 
 @core::Deprecated::•("")
-inline class A /* declaredRepresentationType = core::int */ {
+extension type A(core::int i) {
   method m = self::A|m;
   tearoff m = self::A|get#m;
   constructor • = self::A|;
   tearoff • = self::A|_#new#tearOff;
 }
 @core::Deprecated::•("")
-static inline-class-member method A|(core::int i) → self::A
+static inline-class-member method A|(core::int i) → self::A /* = core::int */
   ;
-static inline-class-member method A|_#new#tearOff(core::int i) → self::A
+static inline-class-member method A|_#new#tearOff(core::int i) → self::A /* = core::int */
   return self::A|(i);
 @core::Deprecated::•("")
-static inline-class-member method A|m(lowered final self::A #this) → void
+static inline-class-member method A|m(lowered final self::A /* = core::int */ #this) → void
   ;
-static inline-class-member method A|get#m(lowered final self::A #this) → () → void
+static inline-class-member method A|get#m(lowered final self::A /* = core::int */ #this) → () → void
   return () → void => self::A|m(#this);
 
 

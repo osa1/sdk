@@ -5,9 +5,26 @@
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
+import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta_meta.dart';
+
+extension DartTypeExtension on DartType {
+  bool get isExtensionType {
+    return element is ExtensionTypeElement;
+  }
+
+  /// If `this` is an [InterfaceType] that is an instantiation of an extension
+  /// type, returns its representation type erasure. Otherwise, returns self.
+  DartType get representationTypeErasureOrSelf {
+    final self = this;
+    if (self is InterfaceTypeImpl) {
+      return self.representationTypeErasure ?? self;
+    }
+    return self;
+  }
+}
 
 extension ElementAnnotationExtensions on ElementAnnotation {
   static final Map<String, TargetKind> _targetKindsByName = {
@@ -17,21 +34,21 @@ extension ElementAnnotationExtensions on ElementAnnotation {
   /// Return the target kinds defined for this [ElementAnnotation].
   Set<TargetKind> get targetKinds {
     final element = this.element;
-    NamedInstanceElement? instanceElement;
+    InterfaceElement? interfaceElement;
     if (element is PropertyAccessorElement) {
       if (element.isGetter) {
-        var type = element.returnType2;
+        var type = element.returnType;
         if (type is InterfaceType) {
-          instanceElement = type.element;
+          interfaceElement = type.element;
         }
       }
     } else if (element is ConstructorElement) {
-      instanceElement = element.enclosingElement2.augmented?.declaration;
+      interfaceElement = element.enclosingElement.augmented?.declaration;
     }
-    if (instanceElement == null) {
+    if (interfaceElement == null) {
       return const <TargetKind>{};
     }
-    for (var annotation in instanceElement.metadata) {
+    for (var annotation in interfaceElement.metadata) {
       if (annotation.isTarget) {
         var value = annotation.computeConstantValue();
         if (value == null) {
@@ -63,21 +80,21 @@ extension ElementExtension on Element {
       return true;
     }
 
-    var ancestor = enclosingElement2;
+    var ancestor = enclosingElement;
     if (ancestor is InterfaceElement) {
       if (ancestor.hasDoNotStore) {
         return true;
       }
-      ancestor = ancestor.enclosingElement2;
+      ancestor = ancestor.enclosingElement;
     } else if (ancestor is ExtensionElement) {
       if (ancestor.hasDoNotStore) {
         return true;
       }
-      ancestor = ancestor.enclosingElement2;
+      ancestor = ancestor.enclosingElement;
     }
 
     return ancestor is CompilationUnitElement &&
-        ancestor.enclosingElement2.hasDoNotStore;
+        ancestor.enclosingElement.hasDoNotStore;
   }
 
   /// Return `true` if this element is an instance member of a class or mixin.
@@ -91,7 +108,7 @@ extension ElementExtension on Element {
     assert(this is! PropertyInducingElement,
         'Check the PropertyAccessorElement instead');
     var this_ = this;
-    var enclosing = this_.enclosingElement2;
+    var enclosing = this_.enclosingElement;
     if (enclosing is InterfaceElement) {
       return this_ is MethodElement && !this_.isStatic ||
           this_ is PropertyAccessorElement && !this_.isStatic;
@@ -102,7 +119,13 @@ extension ElementExtension on Element {
 
 extension ExecutableElementExtension on ExecutableElement {
   bool get isEnumConstructor {
-    return this is ConstructorElement && enclosingElement2 is EnumElementImpl;
+    return this is ConstructorElement && enclosingElement is EnumElementImpl;
+  }
+
+  /// Whether the enclosing element is the class `Object`.
+  bool get isObjectMember {
+    final enclosing = enclosingElement;
+    return enclosing is ClassElement && enclosing.isDartCoreObject;
   }
 }
 

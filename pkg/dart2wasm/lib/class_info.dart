@@ -221,7 +221,7 @@ class ClassInfoCollector {
       translator.index.getClass("dart:core", "_ListBase"):
           translator.coreTypes.listClass
     };
-    for (String name in const <String>[
+    for (final name in const <String>[
       "Int8List",
       "Uint8List",
       "Uint8ClampedList",
@@ -247,30 +247,36 @@ class ClassInfoCollector {
 
   late final Set<Class> _neverMasquerades = _computeNeverMasquerades();
 
+  /// These types switch from properly reified non-masquerading types in regular
+  /// Dart2Wasm mode to masquerading types in js compatibility mode.
+  final Set<String> jsCompatibilityTypes = {
+    "JSArrayBufferImpl",
+    "JSArrayBufferViewImpl",
+    "JSDataViewImpl",
+    "JSInt8ArrayImpl",
+    "JSUint8ArrayImpl",
+    "JSUint8ClampedArrayImpl",
+    "JSInt16ArrayImpl",
+    "JSUint16ArrayImpl",
+    "JSInt32ArrayImpl",
+    "JSInt32x4ArrayImpl",
+    "JSUint32ArrayImpl",
+    "JSBigUint64ArrayImpl",
+    "JSBigInt64ArrayImpl",
+    "JSFloat32ArrayImpl",
+    "JSFloat32x4ArrayImpl",
+    "JSFloat64ArrayImpl",
+    "JSFloat64x2ArrayImpl",
+  };
+
   Set<Class> _computeNeverMasquerades() {
-    // The JS types do not masquerade, but they aren't always used so we have to
-    // construct this set programmatically.
+    // The JS types do not masquerade in regular Dart2Wasm, but they aren't
+    // always used so we have to construct this set programmatically.
     final jsTypesLibraryIndex =
         LibraryIndex(translator.component, ["dart:_js_types"]);
     final neverMasquerades = [
-      "JSArrayBufferImpl",
-      "JSArrayBufferViewImpl",
-      "JSDataViewImpl",
       "JSStringImpl",
-      "JSInt8ArrayImpl",
-      "JSUint8ArrayImpl",
-      "JSUint8ClampedArrayImpl",
-      "JSInt16ArrayImpl",
-      "JSUint16ArrayImpl",
-      "JSInt32ArrayImpl",
-      "JSInt32x4ArrayImpl",
-      "JSUint32ArrayImpl",
-      "JSBigUint64ArrayImpl",
-      "JSBigInt64ArrayImpl",
-      "JSFloat32ArrayImpl",
-      "JSFloat32x4ArrayImpl",
-      "JSFloat64ArrayImpl",
-      "JSFloat64x2ArrayImpl",
+      if (!translator.options.jsCompatibility) ...jsCompatibilityTypes,
     ]
         .map((name) => jsTypesLibraryIndex.tryGetClass("dart:_js_types", name))
         .toSet();
@@ -289,12 +295,12 @@ class ClassInfoCollector {
 
   ClassInfoCollector(this.translator);
 
-  w.Module get m => translator.m;
+  w.ModuleBuilder get m => translator.m;
 
   TranslatorOptions get options => translator.options;
 
   void _initializeTop() {
-    final w.StructType struct = m.addStructType("#Top");
+    final w.StructType struct = m.types.defineStruct("#Top");
     topInfo = ClassInfo(null, _nextClassId++, 0, struct, null);
     translator.classes.add(topInfo);
     translator.classForHeapType[struct] = topInfo;
@@ -308,7 +314,7 @@ class ClassInfoCollector {
     if (superclass == null) {
       ClassInfo superInfo = topInfo;
       final w.StructType struct =
-          m.addStructType(cls.name, superType: superInfo.struct);
+          m.types.defineStruct(cls.name, superType: superInfo.struct);
       info = ClassInfo(
           cls, _nextClassId++, superInfo.depth + 1, struct, superInfo);
       // Mark Top type as implementing Object to force the representation
@@ -362,7 +368,7 @@ class ClassInfoCollector {
               cls.fields.where((f) => f.isInstanceMember).isEmpty;
       w.StructType struct = canReuseSuperStruct
           ? superInfo.struct
-          : m.addStructType(cls.name, superType: superInfo.struct);
+          : m.types.defineStruct(cls.name, superType: superInfo.struct);
       info = ClassInfo(
           cls, _nextClassId++, superInfo.depth + 1, struct, superInfo,
           typeParameterMatch: typeParameterMatch);
@@ -410,7 +416,7 @@ class ClassInfoCollector {
 
     final struct = _recordStructs.putIfAbsent(
         numFields,
-        () => m.addStructType(
+        () => m.types.defineStruct(
               'Record$numFields',
               superType: translator.recordInfo.struct,
             ));
@@ -500,6 +506,11 @@ class ClassInfoCollector {
   void collect() {
     _initializeTop();
 
+    // Initialize the record base class early to give enough space for special
+    // values in the type category table before the first masquerade class
+    // (which is `Type`).
+    _initialize(translator.coreTypes.recordClass);
+
     // Subclasses of the `_Closure` class are generated on the fly as fields
     // with function types are encountered. Therefore, `_Closure` class must
     // be early in the initialization order.
@@ -518,11 +529,6 @@ class ClassInfoCollector {
     // Initialize masquerade classes to make sure they have low class IDs.
     for (Class cls in _masquerades.values) {
       _initialize(cls);
-    }
-
-    // Initialize the record base class if we have record classes.
-    if (translator.recordClasses.isNotEmpty) {
-      _initialize(translator.coreTypes.recordClass);
     }
 
     for (Library library in translator.component.libraries) {

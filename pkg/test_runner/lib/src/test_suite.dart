@@ -957,7 +957,9 @@ class StandardTestSuite extends TestSuite {
             _createUrlPathFromFile(Path('$outputDir/$nameNoExt.mjs'));
         content =
             dart2wasmHtml(testFile.path.toNativePath(), wasmPath, mjsPath);
-      } else {
+      } else if (configuration.compiler == Compiler.ddc) {
+        var ddcConfig =
+            configuration.compilerConfiguration as DevCompilerConfiguration;
         var nameFromModuleRoot = testFile.path.relativeTo(Repository.dir);
         var nameFromModuleRootNoExt =
             "${nameFromModuleRoot.directoryPath}/$nameNoExt";
@@ -973,8 +975,12 @@ class StandardTestSuite extends TestSuite {
             jsDir,
             configuration.compiler,
             configuration.nnbdMode,
+            ddcConfig.genDir,
             nullAssertions,
             weakNullSafetyErrors);
+      } else {
+        throw UnsupportedError(
+            'Unexpected compiler in browser test: ${configuration.compiler}');
       }
     }
 

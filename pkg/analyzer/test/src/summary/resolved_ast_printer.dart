@@ -253,6 +253,14 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
     _sink.writeln('Comment');
     _sink.withIndent(() {
       _writeNamedChildEntities(node);
+      if (node.fencedCodeBlocks.isNotEmpty) {
+        _sink.writelnWithIndent('fencedCodeBlocks');
+        _sink.withIndent(() {
+          for (var fencedCodeBlock in node.fencedCodeBlocks) {
+            _writeMdFencedCodeBlock(fencedCodeBlock);
+          }
+        });
+      }
     });
   }
 
@@ -516,6 +524,15 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
       _writeType('extendedType', node.extendedType);
       _writeType('staticType', node.staticType);
       _writeTypeList('typeArgumentTypes', node.typeArgumentTypes);
+    });
+  }
+
+  @override
+  void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
+    _sink.writeln('ExtensionTypeDeclaration');
+    _sink.withIndent(() {
+      _writeNamedChildEntities(node);
+      _writeDeclaredElement(node.declaredElement);
     });
   }
 
@@ -1258,6 +1275,24 @@ class ResolvedAstPrinter extends ThrowingAstVisitor<void> {
   }
 
   @override
+  void visitRepresentationConstructorName(RepresentationConstructorName node) {
+    _sink.writeln('RepresentationConstructorName');
+    _sink.withIndent(() {
+      _writeNamedChildEntities(node);
+    });
+  }
+
+  @override
+  void visitRepresentationDeclaration(RepresentationDeclaration node) {
+    _sink.writeln('RepresentationDeclaration');
+    _sink.withIndent(() {
+      _writeNamedChildEntities(node);
+      _writeElement('fieldElement', node.fieldElement);
+      _writeElement('constructorElement', node.constructorElement);
+    });
+  }
+
+  @override
   void visitRestPatternElement(RestPatternElement node) {
     _sink.writeln('RestPatternElement');
     _sink.withIndent(() {
@@ -1669,10 +1704,29 @@ Expected parent: (${parent.runtimeType}) $parent
       _sink.withIndent(() {
         _sink.writeln('GenericFunctionTypeElement');
         _writeParameterElements(element.parameters);
-        _writeType('returnType', element.returnType2);
+        _writeType('returnType', element.returnType);
         _writeType('type', element.type);
       });
     }
+  }
+
+  void _writeMdFencedCodeBlock(MdFencedCodeBlock fencedCodeBlock) {
+    _sink.writelnWithIndent('MdFencedCodeBlock');
+    _sink.withIndent(() {
+      var infoString = fencedCodeBlock.infoString;
+      _sink.writelnWithIndent('infoString: ${infoString ?? '<empty>'}');
+      assert(fencedCodeBlock.lines.isNotEmpty);
+      _sink.writelnWithIndent('lines');
+      _sink.withIndent(() {
+        for (var line in fencedCodeBlock.lines) {
+          _sink.writelnWithIndent('MdFencedCodeBlockLine');
+          _sink.withIndent(() {
+            _sink.writelnWithIndent('offset: ${line.offset}');
+            _sink.writelnWithIndent('length: ${line.length}');
+          });
+        }
+      });
+    });
   }
 
   void _writeNamedChildEntities(AstNode node) {
