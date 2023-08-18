@@ -2293,7 +2293,7 @@ void KernelReaderHelper::SkipDartType() {
       ReadNullability();
       SkipCanonicalNameReference();  // read index for canonical name.
       SkipListOfDartTypes();         // read type arguments
-      SkipDartType();                // read instantiated representation type.
+      SkipDartType();                // read type erasure.
       break;
     }
     case kTypedefType:
@@ -2843,14 +2843,6 @@ void KernelReaderHelper::SkipStatement() {
       SkipStatement();          // read body.
       return;
     }
-    case kForInStatement:
-    case kAsyncForInStatement:
-      ReadPosition();             // read position.
-      ReadPosition();             // read body position.
-      SkipVariableDeclaration();  // read variable.
-      SkipExpression();           // read iterable.
-      SkipStatement();            // read body.
-      return;
     case kSwitchStatement: {
       ReadPosition();                     // read position.
       ReadBool();                         // read exhaustive flag.
@@ -2923,6 +2915,8 @@ void KernelReaderHelper::SkipStatement() {
       SkipVariableDeclaration();  // read variable.
       SkipFunctionNode();         // read function node.
       return;
+    case kForInStatement:
+    case kAsyncForInStatement:
     case kIfCaseStatement:
     case kPatternSwitchStatement:
     case kPatternVariableDeclaration:
@@ -3586,11 +3580,11 @@ void TypeTranslator::BuildIntersectionType() {
 }
 
 void TypeTranslator::BuildExtensionType() {
-  // We skip the extension type and only use the representation type.
+  // We skip the extension type and only use the type erasure.
   helper_->ReadNullability();
   helper_->SkipCanonicalNameReference();  // read index for canonical name.
   helper_->SkipListOfDartTypes();         // read type arguments
-  BuildTypeInternal();  // read instantiated representation type.
+  BuildTypeInternal();                    // read type erasure.
 }
 
 const TypeArguments& TypeTranslator::BuildTypeArguments(intptr_t length) {

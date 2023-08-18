@@ -916,6 +916,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     "In constant expressions, operands of this operator must be of type 'num'.",
   );
 
+  ///  No parameters.
+  static const CompileTimeErrorCode CONST_EVAL_TYPE_STRING =
+      CompileTimeErrorCode(
+    'CONST_EVAL_TYPE_STRING',
+    "In constant expressions, operands of this operator must be of type "
+        "'String'.",
+  );
+
   static const CompileTimeErrorCode CONST_EVAL_TYPE_TYPE = CompileTimeErrorCode(
     'CONST_EVAL_TYPE_TYPE',
     "In constant expressions, operands of this operator must be of type "
@@ -5747,126 +5755,6 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
           name: name,
           problemMessage: problemMessage,
           uniqueName: 'CompileTimeErrorCode.${uniqueName ?? name}',
-        );
-
-  @override
-  ErrorSeverity get errorSeverity => ErrorType.COMPILE_TIME_ERROR.severity;
-
-  @override
-  ErrorType get type => ErrorType.COMPILE_TIME_ERROR;
-}
-
-class LanguageCode extends ErrorCode {
-  ///  Parameters:
-  ///  0: the name of the field
-  static const LanguageCode IMPLICIT_DYNAMIC_FIELD = LanguageCode(
-    'IMPLICIT_DYNAMIC_FIELD',
-    "Missing field type for '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the function
-  ///  1: the names of the type arguments
-  static const LanguageCode IMPLICIT_DYNAMIC_FUNCTION = LanguageCode(
-    'IMPLICIT_DYNAMIC_FUNCTION',
-    "Missing type arguments for generic function '{0}<{1}>'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of type
-  static const LanguageCode IMPLICIT_DYNAMIC_INVOKE = LanguageCode(
-    'IMPLICIT_DYNAMIC_INVOKE',
-    "Missing type arguments for calling generic function type '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  static const LanguageCode IMPLICIT_DYNAMIC_LIST_LITERAL = LanguageCode(
-    'IMPLICIT_DYNAMIC_LIST_LITERAL',
-    "Missing type argument for list literal.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  static const LanguageCode IMPLICIT_DYNAMIC_MAP_LITERAL = LanguageCode(
-    'IMPLICIT_DYNAMIC_MAP_LITERAL',
-    "Missing type arguments for map literal.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the function
-  ///  1: the names of the type arguments
-  static const LanguageCode IMPLICIT_DYNAMIC_METHOD = LanguageCode(
-    'IMPLICIT_DYNAMIC_METHOD',
-    "Missing type arguments for generic method '{0}<{1}>'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the parameter
-  static const LanguageCode IMPLICIT_DYNAMIC_PARAMETER = LanguageCode(
-    'IMPLICIT_DYNAMIC_PARAMETER',
-    "Missing parameter type for '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the function or method
-  static const LanguageCode IMPLICIT_DYNAMIC_RETURN = LanguageCode(
-    'IMPLICIT_DYNAMIC_RETURN',
-    "Missing return type for '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the type
-  static const LanguageCode IMPLICIT_DYNAMIC_TYPE = LanguageCode(
-    'IMPLICIT_DYNAMIC_TYPE',
-    "Missing type arguments for generic type '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  ///  Parameters:
-  ///  0: the name of the variable
-  static const LanguageCode IMPLICIT_DYNAMIC_VARIABLE = LanguageCode(
-    'IMPLICIT_DYNAMIC_VARIABLE',
-    "Missing variable type for '{0}'.",
-    correctionMessage:
-        "Try adding an explicit type, or remove implicit-dynamic from your "
-        "analysis options file.",
-  );
-
-  /// Initialize a newly created error code to have the given [name].
-  const LanguageCode(
-    String name,
-    String problemMessage, {
-    super.correctionMessage,
-    super.hasPublishedDocs = false,
-    super.isUnresolvedIdentifier = false,
-    String? uniqueName,
-  }) : super(
-          name: name,
-          problemMessage: problemMessage,
-          uniqueName: 'LanguageCode.${uniqueName ?? name}',
         );
 
   @override

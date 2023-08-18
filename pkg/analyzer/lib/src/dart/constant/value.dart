@@ -575,7 +575,6 @@ class DartObjectImpl implements DartObject, Constant {
   DartObjectImpl isIdentical(
       TypeProvider typeProvider, DartObjectImpl rightOperand) {
     var typeSystem = TypeSystemImpl(
-      implicitCasts: false,
       isNonNullableByDefault: false,
       strictCasts: false,
       strictInference: false,
@@ -1595,7 +1594,7 @@ abstract class InstanceState {
   /// Throw an exception if the given [state] does not represent a String value.
   void assertString(InstanceState state) {
     if (state is! StringState) {
-      throw EvaluationException(CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL);
+      throw EvaluationException(CompileTimeErrorCode.CONST_EVAL_TYPE_STRING);
     }
   }
 
