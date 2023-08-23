@@ -2698,6 +2698,38 @@
     },
     {
       "builders": [
+        "dart2wasm-linux-jscm-chrome",
+        "dart2wasm-linux-jscm-d8"
+      ],
+      "meta": {
+        "description": "dart2wasm JS compatibility tests"
+      },
+      "steps": [
+        {
+          "name": "build dart",
+          "script": "tools/build.py",
+          "arguments": [
+            "runtime",
+            "dart2wasm"
+          ]
+        },
+        {
+          "name": "dart2wasm tests",
+          "arguments": [
+            "-ndart2wasm-linux-jscm-${runtime}",
+            "co19",
+            "corelib",
+            "language",
+            "lib",
+            "web"
+          ],
+          "shards": 8,
+          "fileset": "dart2wasm_hostasserts"
+        }
+      ]
+    },
+    {
+      "builders": [
         "analyzer-linux-release",
         "analyzer-mac-release"
       ],
