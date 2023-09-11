@@ -11,6 +11,11 @@ class JSArrayImpl implements List<JSAny?> {
 
   JSArrayImpl(this._ref);
 
+  factory JSArrayImpl.empty() => JSArrayImpl(js.newArrayRaw());
+
+  factory JSArrayImpl.fromLength(int length) =>
+      JSArrayImpl(js.newArrayFromLengthRaw(length));
+
   static JSArrayImpl? box(WasmExternRef? ref) =>
       js.isDartNull(ref) ? null : JSArrayImpl(ref);
 

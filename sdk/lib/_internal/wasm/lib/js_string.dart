@@ -56,13 +56,26 @@ final class JSStringImpl implements String {
   @override
   String operator +(String other) {
     if (other is JSStringImpl) {
-      return JSStringImpl(js.JS<WasmExternRef?>(
-          '(a, b) => a + b', toExternRef, other.toExternRef));
+      return JSStringImpl(js.stringConcat(toExternRef, other.toExternRef));
     }
 
     // TODO(joshualitt): Refactor `string_patch.dart` so we can directly
     // allocate a string of the right size.
     return js.jsStringToDartString(toExternRef) + other;
+  }
+
+  @pragma("wasm:entry-point")
+  static String interpolate(List<Object?> values) {
+    final array = JSArrayImpl.fromLength(values.length);
+    for (int i = 0; i < values.length; i++) {
+      final o = values[i];
+      final s = o.toString();
+      final jsString =
+          s is JSStringImpl ? js.JSValue.boxT<JSAny?>(s.toExternRef) : s.toJS;
+      array[i] = jsString;
+    }
+    return JSStringImpl(
+        js.JS<WasmExternRef?>("a => a.join('')", array.toExternRef));
   }
 
   @override
@@ -635,4 +648,29 @@ final class JSStringImpl implements String {
 
   @override
   String toString() => js.stringify(toExternRef);
+
+  // TODO(joshualitt): Rewrite int.parse in JSCM
+  // TODO
+
+  // Methods to support VM patch files.
+  int firstNonWhitespace() {
+    final len = length;
+    int first = 0;
+    for (; first < len; first++) {
+      if (!_isWhitespace(codeUnitAt(first))) {
+        break;
+      }
+    }
+    return first;
+  }
+
+  int lastNonWhitespace() {
+    int last = length - 1;
+    for (; last >= 0; last--) {
+      if (!_isWhitespace(codeUnitAt(last))) {
+        break;
+      }
+    }
+    return last;
+  }
 }

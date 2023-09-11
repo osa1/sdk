@@ -216,6 +216,9 @@ bool isJSRegExp(WasmExternRef? o) => JS<bool>("o => o instanceof RegExp", o);
 bool areEqualInJS(WasmExternRef? l, WasmExternRef? r) =>
     JS<bool>("(l, r) => l === r", l, r);
 
+WasmExternRef? stringConcat(WasmExternRef? l, WasmExternRef? r) =>
+    JS<WasmExternRef?>('(l, r) => l + r', l, r);
+
 // The JS runtime will run helpful conversion routines between refs and bool /
 // double. In the longer term hopefully we can find a way to avoid the round
 // trip.
@@ -289,6 +292,9 @@ String jsStringToDartString(WasmExternRef? s) =>
 WasmExternRef? newObjectRaw() => JS<WasmExternRef?>('() => ({})');
 
 WasmExternRef? newArrayRaw() => JS<WasmExternRef?>('() => []');
+
+WasmExternRef? newArrayFromLengthRaw(int length) =>
+    JS<WasmExternRef?>('l => new Array(l)', length.toDouble());
 
 WasmExternRef? globalThisRaw() => JS<WasmExternRef?>('() => globalThis');
 
@@ -541,6 +547,14 @@ List<Object?> toDartList(WasmExternRef? ref) => List<Object?>.generate(
     objectLength(ref).round(),
     (int n) => dartifyRaw(objectReadIndex(ref, n.toDouble())));
 
+// Helpers for retrieving internalized strings.
+@pragma("wasm:import", "\$getInternalizedString")
+external WasmExternRef? _getInternalizedStringRaw(double i);
+
+@pragma("wasm:entry-point")
+String getInternalizedString(int i) =>
+    js_types.JSStringImpl(_getInternalizedStringRaw(i.toDouble()));
+
 // These two trivial helpers are needed to work around an issue with tearing off
 // functions that take / return [WasmExternRef].
 bool _isDartFunctionWrapped<F extends Function>(F f) =>
@@ -603,3 +617,13 @@ WasmExternRef? _listRead(List<Object?> list, double index) =>
 @pragma("wasm:export", "\$byteDataGetUint8")
 double _byteDataGetUint8(ByteData byteData, double index) =>
     byteData.getUint8(index.toInt()).toDouble();
+
+// TODO(joshualitt): It probably makes sense to cleanup patch files to move
+// these calls to the Dart side when we have JSCM.
+@pragma('wasm:export', '\$jsStringToJSStringImpl')
+js_types.JSStringImpl _jsStringToJSStringImpl(WasmExternRef? string) =>
+    js_types.JSStringImpl(string);
+
+@pragma('wasm:export', '\$jsStringFromJSStringImpl')
+WasmExternRef? _jsStringFromJSStringImpl(js_types.JSStringImpl string) =>
+    string.toExternRef;

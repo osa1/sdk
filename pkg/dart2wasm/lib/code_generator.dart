@@ -2581,7 +2581,9 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         node.expressions,
         InterfaceType(
             translator.coreTypes.stringClass, Nullability.nonNullable));
-    return call(translator.stringInterpolate.reference);
+    return call(translator.options.jsCompatibility
+        ? translator.jsStringInterpolate.reference
+        : translator.stringInterpolate.reference);
   }
 
   @override
@@ -3300,10 +3302,13 @@ class SwitchInfo {
       compare = () => codeGen.b.i64_eq();
     } else if (check<StringLiteral, StringConstant>()) {
       // String switch
-      nonNullableType =
-          translator.classInfo[translator.stringBaseClass]!.nonNullableType;
+      nonNullableType = translator.options.jsCompatibility
+          ? translator.classInfo[translator.jsStringClass]!.nonNullableType
+          : translator.classInfo[translator.stringBaseClass]!.nonNullableType;
       nullableType = nonNullableType.withNullability(true);
-      compare = () => codeGen.call(translator.stringEquals.reference);
+      compare = () => codeGen.call(translator.options.jsCompatibility
+          ? translator.jsStringEquals.reference
+          : translator.stringEquals.reference);
     } else {
       // Object switch
       nonNullableType = translator.topInfo.nonNullableType;

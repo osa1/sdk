@@ -12,6 +12,8 @@ mixin KernelNodes {
 
   late final LibraryIndex index = LibraryIndex(component, [
     "dart:_internal",
+    "dart:_js_helper",
+    "dart:_js_types",
     "dart:async",
     "dart:collection",
     "dart:core",
@@ -23,6 +25,10 @@ mixin KernelNodes {
 
   // dart:_internal classes
   late final Class symbolClass = index.getClass("dart:_internal", "Symbol");
+
+  // dart:_js_types classes
+  late final Class jsStringClass =
+      index.getClass("dart:_js_types", "JSStringImpl");
 
   // dart:collection classes
   late final Class hashFieldBaseClass =
@@ -143,6 +149,16 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:_internal", "loadLibrary");
   late final Procedure checkLibraryIsLoaded =
       index.getTopLevelProcedure("dart:_internal", "checkLibraryIsLoaded");
+
+  // dart:_js_helper procedures
+  late final Procedure getInternalizedString =
+      index.getTopLevelProcedure("dart:_js_helper", "getInternalizedString");
+
+  // dart:_js_types procedures
+  late final Procedure jsStringEquals =
+      index.getProcedure("dart:_js_types", "JSStringImpl", "==");
+  late final Procedure jsStringInterpolate =
+      index.getProcedure("dart:_js_types", "JSStringImpl", "interpolate");
 
   // dart:collection procedures
   late final Procedure mapFactory =

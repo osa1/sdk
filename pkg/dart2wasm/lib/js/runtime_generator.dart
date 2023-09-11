@@ -8,6 +8,7 @@ import 'package:_js_interop_checks/src/transformations/static_interop_class_eras
 import 'package:dart2wasm/js/interop_transformer.dart';
 import 'package:dart2wasm/js/method_collector.dart';
 import 'package:dart2wasm/js/runtime_blob.dart';
+import 'package:dart2wasm/target.dart' as wasm_target;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
@@ -46,7 +47,12 @@ class RuntimeFinalizer {
 
   RuntimeFinalizer(this.allJSMethods);
 
-  String generate(Iterable<Procedure> translatedProcedures) {
+  String generate(Iterable<Procedure> translatedProcedures,
+      List<String> constantStrings, wasm_target.Mode mode) {
+    String escapeAll(String s) => s.replaceAllMapped(
+        RegExp(r'(`|\\x|\\|\\u)'), (match) => '\\${match[1]!}');
+    String escape(String s) => '`${escapeAll(s)}`';
+
     Set<Procedure> usedProcedures = {};
     List<String> usedJSMethods = [];
     for (Procedure p in translatedProcedures) {
@@ -54,10 +60,22 @@ class RuntimeFinalizer {
         usedJSMethods.add(allJSMethods[p]!);
       }
     }
+
+    String internalizedStrings = '';
+    if (constantStrings.isNotEmpty) {
+      internalizedStrings = '''
+strings: [
+  ${constantStrings.map(escape).join(',\n')}
+],''';
+    }
     return '''
   $jsRuntimeBlobPart1
+  ${mode == wasm_target.Mode.jsCompatibility ? jsRuntimeBlobPart2JSCM : jsRuntimeBlobPart2Regular}
+  $jsRuntimeBlobPart3
   ${usedJSMethods.join(',\n')}
-  $jsRuntimeBlobPart2
+  $jsRuntimeBlobPart4
+  $internalizedStrings
+  $jsRuntimeBlobPart5
 ''';
   }
 }

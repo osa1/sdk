@@ -16,6 +16,7 @@ class StackTrace {
     // Note:  We remove the last three lines of the stack trace to prevent
     // including `Error`, `getCurrentStackTrace`, and `StackTrace.current` in
     // the stack trace.
+    // TODO what to do about `stringTo` and `stringFrom`.
     return _StringStackTrace(JS<String>(r"""() => {
           let stackString = new Error().stack.toString();
           let userStackString = stackString.split('\n').slice(3).join('\n');

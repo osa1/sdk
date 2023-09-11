@@ -184,6 +184,12 @@
       }
     ],
     "libraries": {
+      "convert": {
+        "uri": "convert/convert.dart",
+        "patches": [
+          "_internal/wasm_js_compatibility/lib/convert_patch.dart"
+        ]
+      },
       "core": {
         "uri": "core/core.dart",
         "patches": [
@@ -193,6 +199,8 @@
           "_internal/vm_shared/lib/date_patch.dart",
           "_internal/vm_shared/lib/map_patch.dart",
           "_internal/vm_shared/lib/null_patch.dart",
+          "_internal/wasm/lib/boxed_double.dart",
+          "_internal/wasm/lib/boxed_int.dart",
           "_internal/wasm/lib/core_patch.dart",
           "_internal/wasm/lib/date_patch_patch.dart",
           "_internal/wasm/lib/int_patch.dart",
@@ -200,8 +208,8 @@
           "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
-          "_internal/wasm/lib/boxed_double.dart",
-          "_internal/wasm/lib/boxed_int.dart"
+          "_internal/wasm_js_compatibility/lib/string_buffer_patch.dart",
+          "_internal/wasm_js_compatibility/lib/string_patch.dart"
         ]
       },
       "typed_data": {
@@ -222,6 +230,13 @@
       }
     ],
     "libraries": {
+      "convert": {
+        "uri": "convert/convert.dart",
+        "patches": [
+          "_internal/vm_shared/lib/convert_patch.dart",
+          "_internal/wasm/lib/convert_patch.dart"
+        ]
+      },
       "typed_data": {
         "uri": "typed_data/typed_data.dart",
         "patches": [
@@ -284,13 +299,6 @@
           "_internal/vm_shared/lib/collection_patch.dart",
           "_internal/vm_shared/lib/compact_hash.dart",
           "_internal/wasm/lib/hash_factories.dart"
-        ]
-      },
-      "convert": {
-        "uri": "convert/convert.dart",
-        "patches": [
-          "_internal/vm_shared/lib/convert_patch.dart",
-          "_internal/wasm/lib/convert_patch.dart"
         ]
       },
       "developer": {

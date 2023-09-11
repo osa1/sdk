@@ -623,6 +623,9 @@ class Intrinsifier {
           // Ignore argument
           return translator.voidMarker;
         case "allocateOneByteString":
+          if (translator.options.jsCompatibility) {
+            throw "allocateOneByteString in JS compatibility mode";
+          }
           ClassInfo info = translator.classInfo[translator.oneByteStringClass]!;
           translator.functions.allocateClass(info.classId);
           w.ArrayType arrayType =
@@ -636,6 +639,9 @@ class Intrinsifier {
           b.struct_new(info.struct);
           return info.nonNullableType;
         case "writeIntoOneByteString":
+          if (translator.options.jsCompatibility) {
+            throw "writeIntoOneByteString in JS compatibility mode";
+          }
           ClassInfo info = translator.classInfo[translator.oneByteStringClass]!;
           w.ArrayType arrayType =
               translator.wasmArrayType(w.PackedType.i8, "WasmI8");
@@ -654,6 +660,9 @@ class Intrinsifier {
           b.array_set(arrayType);
           return codeGen.voidMarker;
         case "allocateTwoByteString":
+          if (translator.options.jsCompatibility) {
+            throw "allocateTwoByteString in JS compatibility mode";
+          }
           ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
           translator.functions.allocateClass(info.classId);
           w.ArrayType arrayType =
@@ -667,6 +676,9 @@ class Intrinsifier {
           b.struct_new(info.struct);
           return info.nonNullableType;
         case "writeIntoTwoByteString":
+          if (translator.options.jsCompatibility) {
+            throw "writeIntoTwoByteString in JS compatibility mode";
+          }
           ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
           w.ArrayType arrayType =
               translator.wasmArrayType(w.PackedType.i16, "WasmI16");

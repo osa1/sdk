@@ -53,6 +53,7 @@ class WasmTarget extends Target {
   Class? _wasmImmutableSet;
   Class? _oneByteString;
   Class? _twoByteString;
+  Class? _jsString;
   Map<String, Class>? _nativeClasses;
 
   @override
@@ -409,6 +410,11 @@ class WasmTarget extends Target {
 
   @override
   Class concreteStringLiteralClass(CoreTypes coreTypes, String value) {
+    // In JSCM all strings are JS strings.
+    if (mode == Mode.jsCompatibility) {
+      return _jsString ??=
+          coreTypes.index.getClass("dart:_js_types", "JSStringImpl");
+    }
     const int maxLatin1 = 0xff;
     for (int i = 0; i < value.length; ++i) {
       if (value.codeUnitAt(i) > maxLatin1) {
