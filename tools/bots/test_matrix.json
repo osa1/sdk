@@ -549,6 +549,7 @@
         "dart2wasm-options": [
           "--js-compatibility"
         ],
+        "host-checked": true,
         "timeout": 240
       }
     },
