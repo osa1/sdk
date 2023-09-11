@@ -540,6 +540,7 @@
     },
     "dart2wasm-(linux|mac|win)-(d8|chrome)": {
       "options": {
+        "host-checked": true,
         "timeout": 240
       }
     },
