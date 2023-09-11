@@ -2698,8 +2698,7 @@
     },
     {
       "builders": [
-        "dart2wasm-linux-jscm-chrome",
-        "dart2wasm-linux-jscm-d8"
+        "dart2wasm-linux-jscm-chrome"
       ],
       "meta": {
         "description": "dart2wasm JS compatibility tests"
