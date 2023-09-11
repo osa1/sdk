@@ -101,9 +101,9 @@ class Serializer {
     }
   }
 
-  void writeData(Serializer chunk, [List<int>? watchPoints]) {
+  void writeData(Serializer chunk, [List<int> watchPoints = const []]) {
     if (traceEnabled) debugTrace(chunk);
-    if (watchPoints != null) {
+    if (watchPoints.isNotEmpty) {
       for (int watchPoint in watchPoints) {
         if (_index <= watchPoint && watchPoint < _index + chunk.data.length) {
           int byteValue = chunk.data[watchPoint - _index];
