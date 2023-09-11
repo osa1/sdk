@@ -49,58 +49,25 @@ class Constants {
   final Map<Constant, ConstantInfo> constantInfo = {};
   w.DataSegmentBuilder? oneByteStringSegment;
   w.DataSegmentBuilder? twoByteStringSegment;
-  late final w.Global emptyTypeList;
   late final ClassInfo typeInfo = translator.classInfo[translator.typeClass]!;
 
   bool currentlyCreating = false;
 
-  Constants(this.translator) {
-    _initEmptyTypeList();
-  }
+  Constants(this.translator) {}
 
   w.ModuleBuilder get m => translator.m;
-
-  void _initEmptyTypeList() {
-    ClassInfo info = translator.classInfo[translator.immutableListClass]!;
-    translator.functions.allocateClass(info.classId);
-
-    // Create the empty type list with its type parameter uninitialized for now.
-    w.RefType emptyListType = info.nonNullableType;
-    final emptyTypeListBuilder =
-        m.globals.define(w.GlobalType(emptyListType, mutable: false));
-    w.InstructionsBuilder ib = emptyTypeListBuilder.initializer;
-    ib.i32_const(info.classId);
-    ib.i32_const(initialIdentityHash);
-    ib.ref_null(w.HeapType.none); // Initialized later
-    ib.i64_const(0);
-    ib.array_new_fixed(translator.listArrayType, 0);
-    ib.struct_new(info.struct);
-    ib.end(); // end of global initializer expression
-    emptyTypeList = emptyTypeListBuilder;
-
-    Constant emptyTypeListConstant = ListConstant(
-        InterfaceType(translator.typeClass, Nullability.nonNullable), const []);
-    constantInfo[emptyTypeListConstant] =
-        ConstantInfo(emptyTypeListConstant, emptyTypeList, null);
-
-    // Initialize the type parameter of the empty type list to the type object
-    // for _Type, which itself refers to the empty type list.
-    final b = translator.initFunction.body;
-    b.global_get(emptyTypeList);
-    instantiateConstant(
-        translator.initFunction,
-        b,
-        TypeLiteralConstant(
-            InterfaceType(translator.typeClass, Nullability.nonNullable)),
-        typeInfo.nullableType);
-    b.struct_set(info.struct,
-        translator.typeParameterIndex[info.cls!.typeParameters.single]!);
-  }
 
   /// Makes a type list [ListConstant].
   ListConstant makeTypeList(Iterable<DartType> types) => ListConstant(
       InterfaceType(translator.typeClass, Nullability.nonNullable),
       types.map((t) => TypeLiteralConstant(t)).toList());
+
+  InstanceConstant makeTypeArray(Iterable<DartType> types) =>
+      InstanceConstant(translator.wasmObjectArrayClass.reference, [
+        InterfaceType(translator.typeClass, Nullability.nonNullable)
+      ], {
+        translator.wasmObjectArrayValueField.fieldReference: makeTypeList(types)
+      });
 
   /// Makes a `_NamedParameter` [InstanceConstant].
   InstanceConstant makeNamedParameterConstant(NamedType n) {
@@ -265,6 +232,15 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
   w.ModuleBuilder get m => constants.m;
 
   ConstantInfo? ensureConstant(Constant constant) {
+    // To properly canonicalize type literal constants, we normalize the
+    // type before canonicalization.
+    if (constant is TypeLiteralConstant) {
+      DartType type = types.normalize(constant.type);
+      if (!identical(type, constant.type)) {
+        constant = TypeLiteralConstant(type);
+      }
+    }
+
     ConstantInfo? info = constants.constantInfo[constant];
     if (info == null) {
       info = constant.accept(this);
@@ -390,6 +366,10 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
   @override
   ConstantInfo? visitInstanceConstant(InstanceConstant constant) {
     Class cls = constant.classNode;
+    if (cls == translator.wasmObjectArrayClass) {
+      return _makeWasmArrayLiteral(constant);
+    }
+
     ClassInfo info = translator.classInfo[cls]!;
     translator.functions.allocateClass(info.classId);
     w.RefType type = info.nonNullableType;
@@ -434,6 +414,27 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
             function, b, subConstant, info.struct.fields[i].type.unpacked);
       }
       b.struct_new(info.struct);
+    });
+  }
+
+  ConstantInfo? _makeWasmArrayLiteral(InstanceConstant constant) {
+    w.ArrayType arrayType =
+        translator.arrayTypeForDartType(constant.typeArguments.single);
+    w.ValueType elementType = arrayType.elementType.type.unpacked;
+
+    List<Constant> elements =
+        (constant.fieldValues.values.single as ListConstant).entries;
+    bool lazy = false;
+    for (Constant element in elements) {
+      lazy |= ensureConstant(element)?.isLazy ?? false;
+    }
+
+    return createConstant(constant, w.RefType.def(arrayType, nullable: false),
+        lazy: lazy, (function, b) {
+      for (Constant element in elements) {
+        constants.instantiateConstant(function, b, element, elementType);
+      }
+      b.array_new_fixed(arrayType, elements.length);
     });
   }
 
@@ -722,11 +723,11 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
 
   ConstantInfo? _makeInterfaceType(
       TypeLiteralConstant constant, InterfaceType type, ClassInfo info) {
-    ListConstant typeArgs = constants.makeTypeList(type.typeArguments);
+    InstanceConstant typeArgs = constants.makeTypeArray(type.typeArguments);
     ensureConstant(typeArgs);
     return createConstant(constant, info.nonNullableType, (function, b) {
       ClassInfo typeInfo = translator.classInfo[type.classNode]!;
-      w.ValueType typeListExpectedType = info
+      w.ValueType typeArrayExpectedType = info
           .struct.fields[FieldIndex.interfaceTypeTypeArguments].type.unpacked;
 
       b.i32_const(info.classId);
@@ -734,7 +735,7 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
       b.i32_const(types.encodedNullability(type));
       b.i64_const(typeInfo.classId);
       constants.instantiateConstant(
-          function, b, typeArgs, typeListExpectedType);
+          function, b, typeArgs, typeArrayExpectedType);
       b.struct_new(info.struct);
     });
   }
@@ -797,9 +798,8 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
 
   @override
   ConstantInfo? visitTypeLiteralConstant(TypeLiteralConstant constant) {
-    DartType type = types.normalize(constant.type);
-
-    ClassInfo info = translator.classInfo[types.classForType(type)]!;
+    final DartType type = constant.type;
+    final ClassInfo info = translator.classInfo[types.classForType(type)]!;
     translator.functions.allocateClass(info.classId);
     if (type is InterfaceType && !types.isSpecializedClass(type.classNode)) {
       return _makeInterfaceType(constant, type, info);
@@ -856,11 +856,20 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?> {
             function, b, fieldTypes, typeListExpectedType);
         b.struct_new(info.struct);
       });
+    } else if (type is VoidType ||
+        type is DynamicType ||
+        type is InterfaceType &&
+            type.classNode == translator.coreTypes.objectClass) {
+      return createConstant(constant, info.nonNullableType, (function, b) {
+        b.i32_const(info.classId);
+        b.i32_const(initialIdentityHash);
+        b.i32_const(types.encodedNullability(type));
+        b.i64_const(types.topTypeKind(type));
+        b.struct_new(info.struct);
+      });
     } else {
-      assert(type is VoidType ||
-          type is NeverType ||
+      assert(type is NeverType ||
           type is NullType ||
-          type is DynamicType ||
           type is InterfaceType && types.isSpecializedClass(type.classNode));
       return createConstant(constant, info.nonNullableType, (function, b) {
         b.i32_const(info.classId);

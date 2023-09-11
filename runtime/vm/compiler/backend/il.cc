@@ -3499,7 +3499,7 @@ Instruction* BranchInstr::Canonicalize(FlowGraph* flow_graph) {
 
       comp->RemoveFromGraph();
       SetComparison(comp);
-      if (FLAG_trace_optimization) {
+      if (FLAG_trace_optimization && flow_graph->should_print()) {
         THR_Print("Merging comparison v%" Pd "\n", comp->ssa_temp_index());
       }
       // Clear the comparison's temp index and ssa temp index since the
@@ -3520,7 +3520,7 @@ Instruction* BranchInstr::Canonicalize(FlowGraph* flow_graph) {
       bit_and = comparison()->right()->definition()->AsBinarySmiOp();
     }
     if (bit_and != nullptr) {
-      if (FLAG_trace_optimization) {
+      if (FLAG_trace_optimization && flow_graph->should_print()) {
         THR_Print("Merging test smi v%" Pd "\n", bit_and->ssa_temp_index());
       }
       TestSmiInstr* test = new TestSmiInstr(
@@ -3588,14 +3588,12 @@ Instruction* CheckClassInstr::Canonicalize(FlowGraph* flow_graph) {
 }
 
 Definition* LoadClassIdInstr::Canonicalize(FlowGraph* flow_graph) {
-  // TODO(dartbug.com/40188): Allow this to canonicalize into an untagged
-  // constant and make a subsequent DispatchTableCallInstr canonicalize into a
-  // StaticCall.
-  if (representation() == kUntagged) return this;
+  if (!HasUses()) return nullptr;
+
   const intptr_t cid = object()->Type()->ToCid();
   if (cid != kDynamicCid) {
     const auto& smi = Smi::ZoneHandle(flow_graph->zone(), Smi::New(cid));
-    return flow_graph->GetConstant(smi);
+    return flow_graph->GetConstant(smi, representation());
   }
   return this;
 }
@@ -3633,7 +3631,7 @@ TestCidsInstr::TestCidsInstr(const InstructionSource& source,
 }
 
 Definition* TestCidsInstr::Canonicalize(FlowGraph* flow_graph) {
-  CompileType* in_type = left()->Type();
+  CompileType* in_type = value()->Type();
   intptr_t cid = in_type->ToCid();
   if (cid == kDynamicCid) return this;
 
@@ -3656,6 +3654,33 @@ Definition* TestCidsInstr::Canonicalize(FlowGraph* flow_graph) {
 
   // TODO(sra): Handle nullable input, possibly canonicalizing to a compare
   // against `null`.
+  return this;
+}
+
+TestRangeInstr::TestRangeInstr(const InstructionSource& source,
+                               Value* value,
+                               uword lower,
+                               uword upper,
+                               Representation value_representation)
+    : TemplateComparison(source, Token::kIS, DeoptId::kNone),
+      lower_(lower),
+      upper_(upper),
+      value_representation_(value_representation) {
+  ASSERT(lower < upper);
+  ASSERT(value_representation == kTagged ||
+         value_representation == kUnboxedUword);
+  SetInputAt(0, value);
+  set_operation_cid(kObjectCid);
+}
+
+Definition* TestRangeInstr::Canonicalize(FlowGraph* flow_graph) {
+  if (value()->BindsToSmiConstant()) {
+    uword val = Smi::Cast(value()->BoundConstant()).Value();
+    bool in_range = lower_ <= val && val <= upper_;
+    ASSERT((kind() == Token::kIS) || (kind() == Token::kISNOT));
+    return flow_graph->GetConstant(
+        Bool::Get(in_range == (kind() == Token::kIS)));
+  }
   return this;
 }
 
@@ -4875,6 +4900,48 @@ void LoadClassIdInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   }
 }
 
+LocationSummary* TestRangeInstr::MakeLocationSummary(Zone* zone,
+                                                     bool opt) const {
+#if defined(TARGET_ARCH_IA32) || defined(TARGET_ARCH_X64) ||                   \
+    defined(TARGET_ARCH_ARM)
+  const bool needs_temp = true;
+#else
+  const bool needs_temp = false;
+#endif
+  const intptr_t kNumInputs = 1;
+  const intptr_t kNumTemps = needs_temp ? 1 : 0;
+  LocationSummary* locs = new (zone)
+      LocationSummary(zone, kNumInputs, kNumTemps, LocationSummary::kNoCall);
+  locs->set_in(0, Location::RequiresRegister());
+  if (needs_temp) {
+    locs->set_temp(0, Location::RequiresRegister());
+  }
+  locs->set_out(0, Location::RequiresRegister());
+  return locs;
+}
+
+Condition TestRangeInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
+                                             BranchLabels labels) {
+  intptr_t lower = lower_;
+  intptr_t upper = upper_;
+  if (value_representation_ == kTagged) {
+    lower = Smi::RawValue(lower);
+    upper = Smi::RawValue(upper);
+  }
+
+  Register in = locs()->in(0).reg();
+#if defined(TARGET_ARCH_IA32) || defined(TARGET_ARCH_X64) ||                   \
+    defined(TARGET_ARCH_ARM)
+  Register temp = locs()->temp(0).reg();
+#else
+  Register temp = TMP;
+#endif
+  __ AddImmediate(temp, in, -lower);
+  __ CompareImmediate(temp, upper - lower);
+  ASSERT((kind() == Token::kIS) || (kind() == Token::kISNOT));
+  return kind() == Token::kIS ? UNSIGNED_LESS_EQUAL : UNSIGNED_GREATER;
+}
+
 LocationSummary* InstanceCallInstr::MakeLocationSummary(Zone* zone,
                                                         bool optimizing) const {
   return MakeCallSummary(zone, this);
@@ -5098,7 +5165,7 @@ const BinaryFeedback& InstanceCallInstr::BinaryFeedback() {
 Representation DispatchTableCallInstr::RequiredInputRepresentation(
     intptr_t idx) const {
   if (idx == (InputCount() - 1)) {
-    return kUntagged;
+    return kUnboxedUword;  // Receiver's CID.
   }
 
   // The first input is the array of types
@@ -6212,6 +6279,12 @@ ComparisonInstr* TestCidsInstr::CopyWithNewOperands(Value* new_left,
                            deopt_id());
 }
 
+ComparisonInstr* TestRangeInstr::CopyWithNewOperands(Value* new_left,
+                                                     Value* new_right) {
+  return new TestRangeInstr(source(), new_left, lower_, upper_,
+                            value_representation_);
+}
+
 bool TestCidsInstr::AttributesEqual(const Instruction& other) const {
   auto const other_instr = other.AsTestCids();
   if (!ComparisonInstr::AttributesEqual(other)) {
@@ -6226,6 +6299,15 @@ bool TestCidsInstr::AttributesEqual(const Instruction& other) const {
     }
   }
   return true;
+}
+
+bool TestRangeInstr::AttributesEqual(const Instruction& other) const {
+  auto const other_instr = other.AsTestRange();
+  if (!ComparisonInstr::AttributesEqual(other)) {
+    return false;
+  }
+  return lower_ == other_instr->lower_ && upper_ == other_instr->upper_ &&
+         value_representation_ == other_instr->value_representation_;
 }
 
 bool IfThenElseInstr::Supports(ComparisonInstr* comparison,
@@ -6590,8 +6672,23 @@ Representation StoreIndexedInstr::RequiredInputRepresentation(
   return RepresentationOfArrayElement(class_id());
 }
 
+#if defined(TARGET_ARCH_ARM64)
+// We can emit a 16 byte move in a single instruction using LDP/STP.
+static const intptr_t kMaxElementSizeForEfficientCopy = 16;
+#else
+static const intptr_t kMaxElementSizeForEfficientCopy =
+    compiler::target::kWordSize;
+#endif
+
 Instruction* MemoryCopyInstr::Canonicalize(FlowGraph* flow_graph) {
-  if (!length()->BindsToSmiConstant() || !src_start()->BindsToSmiConstant() ||
+  if (!length()->BindsToSmiConstant()) {
+    return this;
+  } else if (length()->BoundSmiConstant() == 0) {
+    // Nothing to copy.
+    return nullptr;
+  }
+
+  if (!src_start()->BindsToSmiConstant() ||
       !dest_start()->BindsToSmiConstant()) {
     // TODO(https://dartbug.com/51031): Consider adding support for src/dest
     // starts to be in bytes rather than element size.
@@ -6603,7 +6700,7 @@ Instruction* MemoryCopyInstr::Canonicalize(FlowGraph* flow_graph) {
   intptr_t new_dest_start = dest_start()->BoundSmiConstant();
   intptr_t new_element_size = element_size_;
   while (((new_length | new_src_start | new_dest_start) & 1) == 0 &&
-         new_element_size < compiler::target::kWordSize) {
+         new_element_size < kMaxElementSizeForEfficientCopy) {
     new_length >>= 1;
     new_src_start >>= 1;
     new_dest_start >>= 1;
@@ -6614,9 +6711,11 @@ Instruction* MemoryCopyInstr::Canonicalize(FlowGraph* flow_graph) {
   }
 
   Zone* const zone = flow_graph->zone();
+  // The new element size is larger than the original one, so it must be > 1.
+  // That means unboxed integers will always require a shift, but Smis
+  // may not if element_size == 2, so always use Smis.
   auto* const length_instr = flow_graph->GetConstant(
-      Integer::ZoneHandle(zone, Integer::New(new_length, Heap::kOld)),
-      unboxed_length_ ? kUnboxedIntPtr : kTagged);
+      Integer::ZoneHandle(zone, Integer::New(new_length, Heap::kOld)));
   auto* const src_start_instr = flow_graph->GetConstant(
       Integer::ZoneHandle(zone, Integer::New(new_src_start, Heap::kOld)));
   auto* const dest_start_instr = flow_graph->GetConstant(
@@ -6625,8 +6724,155 @@ Instruction* MemoryCopyInstr::Canonicalize(FlowGraph* flow_graph) {
   src_start()->BindTo(src_start_instr);
   dest_start()->BindTo(dest_start_instr);
   element_size_ = new_element_size;
+  unboxed_inputs_ = false;
   return this;
 }
+
+void MemoryCopyInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+  const Register src_reg = locs()->in(kSrcPos).reg();
+  const Register dest_reg = locs()->in(kDestPos).reg();
+  const Location& src_start_loc = locs()->in(kSrcStartPos);
+  const Location& dest_start_loc = locs()->in(kDestStartPos);
+  const Location& length_loc = locs()->in(kLengthPos);
+  // Note that for all architectures, constant_length is only true if
+  // length() binds to a _small_ constant, so we can end up generating a loop
+  // if the constant length() was bound to is too large.
+  const bool constant_length = length_loc.IsConstant();
+  const Register length_reg = constant_length ? kNoRegister : length_loc.reg();
+  const intptr_t num_elements =
+      constant_length ? Integer::Cast(length_loc.constant()).AsInt64Value()
+                      : -1;
+
+  // The zero constant case should be handled via canonicalization.
+  ASSERT(!constant_length || num_elements > 0);
+
+  EmitComputeStartPointer(compiler, src_cid_, src_reg, src_start_loc);
+  EmitComputeStartPointer(compiler, dest_cid_, dest_reg, dest_start_loc);
+
+  compiler::Label copy_forwards, done;
+  if (!constant_length) {
+#if defined(TARGET_ARCH_IA32)
+    // Save ESI (THR), as we have to use it on the loop path.
+    __ PushRegister(ESI);
+#endif
+    PrepareLengthRegForLoop(compiler, length_reg, &done);
+  }
+  // Omit the reversed loop for possible overlap if copying a single element.
+  if (can_overlap() && num_elements != 1) {
+    __ CompareRegisters(dest_reg, src_reg);
+    // Both regions are the same size, so if there is an overlap, then either:
+    //
+    // * The destination region comes before the source, so copying from
+    //   front to back ensures that the data in the overlap is read and
+    //   copied before it is written.
+    // * The source region comes before the destination, which requires
+    //   copying from back to front to ensure that the data in the overlap is
+    //   read and copied before it is written.
+    //
+    // To make the generated code smaller for the unrolled case, we do not
+    // additionally verify here that there is an actual overlap. Instead, only
+    // do that when we need to calculate the end address of the regions in
+    // the loop case.
+    __ BranchIf(UNSIGNED_LESS_EQUAL, &copy_forwards,
+                compiler::Assembler::kNearJump);
+    __ Comment("Copying backwards");
+    if (constant_length) {
+      EmitUnrolledCopy(compiler, dest_reg, src_reg, num_elements,
+                       /*reversed=*/true);
+    } else {
+      EmitLoopCopy(compiler, dest_reg, src_reg, length_reg, &done,
+                   &copy_forwards);
+    }
+    __ Jump(&done, compiler::Assembler::kNearJump);
+    __ Comment("Copying forwards");
+  }
+  __ Bind(&copy_forwards);
+  if (constant_length) {
+    EmitUnrolledCopy(compiler, dest_reg, src_reg, num_elements,
+                     /*reversed=*/false);
+  } else {
+    EmitLoopCopy(compiler, dest_reg, src_reg, length_reg, &done);
+  }
+  __ Bind(&done);
+#if defined(TARGET_ARCH_IA32)
+  if (!constant_length) {
+    // Restore ESI (THR).
+    __ PopRegister(ESI);
+  }
+#endif
+}
+
+// EmitUnrolledCopy on ARM is different enough that it is defined separately.
+#if !defined(TARGET_ARCH_ARM)
+void MemoryCopyInstr::EmitUnrolledCopy(FlowGraphCompiler* compiler,
+                                       Register dest_reg,
+                                       Register src_reg,
+                                       intptr_t num_elements,
+                                       bool reversed) {
+  ASSERT(element_size_ <= 16);
+  const intptr_t num_bytes = num_elements * element_size_;
+#if defined(TARGET_ARCH_ARM64)
+  // We use LDP/STP with TMP/TMP2 to handle 16-byte moves.
+  const intptr_t mov_size = element_size_;
+#else
+  const intptr_t mov_size =
+      Utils::Minimum<intptr_t>(element_size_, compiler::target::kWordSize);
+#endif
+  const intptr_t mov_repeat = num_bytes / mov_size;
+  ASSERT(num_bytes % mov_size == 0);
+
+#if defined(TARGET_ARCH_IA32)
+  // No TMP on IA32, so we have to allocate one instead.
+  const Register temp_reg = locs()->temp(0).reg();
+#else
+  const Register temp_reg = TMP;
+#endif
+  for (intptr_t i = 0; i < mov_repeat; i++) {
+    const intptr_t offset = (reversed ? (mov_repeat - (i + 1)) : i) * mov_size;
+    switch (mov_size) {
+      case 1:
+        __ LoadFromOffset(temp_reg, src_reg, offset, compiler::kUnsignedByte);
+        __ StoreToOffset(temp_reg, dest_reg, offset, compiler::kUnsignedByte);
+        break;
+      case 2:
+        __ LoadFromOffset(temp_reg, src_reg, offset,
+                          compiler::kUnsignedTwoBytes);
+        __ StoreToOffset(temp_reg, dest_reg, offset,
+                         compiler::kUnsignedTwoBytes);
+        break;
+      case 4:
+        __ LoadFromOffset(temp_reg, src_reg, offset,
+                          compiler::kUnsignedFourBytes);
+        __ StoreToOffset(temp_reg, dest_reg, offset,
+                         compiler::kUnsignedFourBytes);
+        break;
+      case 8:
+#if defined(TARGET_ARCH_IS_64_BIT)
+        __ LoadFromOffset(temp_reg, src_reg, offset, compiler::kEightBytes);
+        __ StoreToOffset(temp_reg, dest_reg, offset, compiler::kEightBytes);
+#else
+        UNREACHABLE();
+#endif
+        break;
+      case 16: {
+#if defined(TARGET_ARCH_ARM64)
+        __ ldp(
+            TMP, TMP2,
+            compiler::Address(src_reg, offset, compiler::Address::PairOffset));
+        __ stp(
+            TMP, TMP2,
+            compiler::Address(dest_reg, offset, compiler::Address::PairOffset));
+#else
+        UNREACHABLE();
+#endif
+        break;
+      }
+      default:
+        UNREACHABLE();
+    }
+  }
+}
+#endif
 
 bool Utf8ScanInstr::IsScanFlagsUnboxed() const {
   return scan_flags_field_.is_unboxed();

@@ -35,14 +35,15 @@ namespace compiler {
 //
 // WARNING: This might clobber all registers except for [R0], [THR] and [FP].
 // The caller should simply call LeaveStubFrame() and return.
-void StubCodeCompiler::EnsureIsNewOrRemembered(bool preserve_registers) {
+void StubCodeCompiler::EnsureIsNewOrRemembered() {
   // If the object is not remembered we call a leaf-runtime to add it to the
   // remembered set.
   Label done;
   __ tbnz(&done, R0, target::ObjectAlignment::kNewObjectBitPosition);
 
   {
-    LeafRuntimeScope rt(assembler, /*frame_size=*/0, preserve_registers);
+    LeafRuntimeScope rt(assembler, /*frame_size=*/0,
+                        /*preserve_registers=*/false);
     // R0 already loaded.
     __ mov(R1, THR);
     rt.Call(kEnsureRememberedAndMarkingDeferredRuntimeEntry,
@@ -612,12 +613,12 @@ void StubCodeCompiler::GenerateFfiCallbackTrampolineStub() {
 #if defined(DART_TARGET_OS_FUCHSIA)
     // TODO(https://dartbug.com/52579): Remove.
     if (FLAG_precompiled_mode) {
-      GenerateLoadBSSEntry(BSS::Relocation::DRT_GetFfiCallbackMetadata, R4, R9);
+      GenerateLoadBSSEntry(BSS::Relocation::DRT_ExitTemporaryIsolate, R4, R9);
     } else {
       Label call;
       __ ldr(R4, compiler::Address::PC(2 * Instr::kInstrSize));
       __ b(&call);
-      __ Emit64(reinterpret_cast<int64_t>(&DLRT_GetFfiCallbackMetadata));
+      __ Emit64(reinterpret_cast<int64_t>(&DLRT_ExitTemporaryIsolate));
       __ Bind(&call);
     }
 #else
@@ -1529,7 +1530,7 @@ void StubCodeCompiler::GenerateAllocateArrayStub() {
   // array length). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
   __ ldr(AllocateArrayABI::kResultReg, Address(SP, 2 * target::kWordSize));
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   // Pop arguments; result is popped in IP.
   __ Pop(AllocateArrayABI::kTypeArgumentsReg);
@@ -1854,7 +1855,7 @@ void StubCodeCompiler::GenerateAllocateContextStub() {
   // Write-barrier elimination might be enabled for this context (depending on
   // the size). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   // R0: new object
   // Restore the frame pointer.
@@ -1930,7 +1931,7 @@ void StubCodeCompiler::GenerateCloneContextStub() {
   // Write-barrier elimination might be enabled for this context (depending on
   // the size). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   // R0: new object
   // Restore the frame pointer.
@@ -1979,20 +1980,21 @@ static void GenerateWriteBarrierStubHelper(Assembler* assembler,
   __ b(&skip_marking, ZERO);
 
   {
-    // Atomically clear kNotMarkedBit.
+    // Atomically clear kOldAndNotMarkedBit.
     Label retry, done;
     __ PushRegisters(spill_set);
     __ AddImmediate(R3, R0, target::Object::tags_offset() - kHeapObjectTag);
     // R3: Untagged address of header word (atomics do not support offsets).
     if (TargetCPUFeatures::atomic_memory_supported()) {
-      __ LoadImmediate(TMP, 1 << target::UntaggedObject::kNotMarkedBit);
+      __ LoadImmediate(TMP, 1 << target::UntaggedObject::kOldAndNotMarkedBit);
       __ ldclr(TMP, TMP, R3);
-      __ tbz(&done, TMP, target::UntaggedObject::kNotMarkedBit);
+      __ tbz(&done, TMP, target::UntaggedObject::kOldAndNotMarkedBit);
     } else {
       __ Bind(&retry);
       __ ldxr(R2, R3, kEightBytes);
-      __ tbz(&done, R2, target::UntaggedObject::kNotMarkedBit);
-      __ AndImmediate(R2, R2, ~(1 << target::UntaggedObject::kNotMarkedBit));
+      __ tbz(&done, R2, target::UntaggedObject::kOldAndNotMarkedBit);
+      __ AndImmediate(R2, R2,
+                      ~(1 << target::UntaggedObject::kOldAndNotMarkedBit));
       __ stxr(R4, R2, R3, kEightBytes);
       __ cbnz(&retry, R4);
     }
@@ -2279,7 +2281,7 @@ void StubCodeCompiler::GenerateAllocateObjectSlowStub() {
 
   // Write-barrier elimination is enabled for [cls] and we therefore need to
   // ensure that the object is in new-space or has remembered bit set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   __ LeaveStubFrame();
 

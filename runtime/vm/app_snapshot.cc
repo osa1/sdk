@@ -875,8 +875,8 @@ void Deserializer::InitializeHeader(ObjectPtr raw,
   tags = UntaggedObject::ClassIdTag::update(class_id, tags);
   tags = UntaggedObject::SizeTag::update(size, tags);
   tags = UntaggedObject::CanonicalBit::update(is_canonical, tags);
-  tags = UntaggedObject::AlwaysSetBit::update(true, tags);
-  tags = UntaggedObject::NotMarkedBit::update(true, tags);
+  tags = UntaggedObject::OldBit::update(true, tags);
+  tags = UntaggedObject::OldAndNotMarkedBit::update(true, tags);
   tags = UntaggedObject::OldAndNotRememberedBit::update(true, tags);
   tags = UntaggedObject::NewBit::update(false, tags);
   raw->untag()->tags_ = tags;
@@ -2094,7 +2094,7 @@ class FfiTrampolineDataSerializationCluster : public SerializationCluster {
       AutoTraceObject(data);
       WriteFromTo(data);
       s->Write<int32_t>(data->untag()->callback_id_);
-      s->Write<uint8_t>(data->untag()->trampoline_kind_);
+      s->Write<uint8_t>(data->untag()->ffi_function_kind_);
     }
   }
 
@@ -2123,7 +2123,7 @@ class FfiTrampolineDataDeserializationCluster : public DeserializationCluster {
                                      FfiTrampolineData::InstanceSize());
       d.ReadFromTo(data);
       data->untag()->callback_id_ = d.Read<int32_t>();
-      data->untag()->trampoline_kind_ = d.Read<uint8_t>();
+      data->untag()->ffi_function_kind_ = d.Read<uint8_t>();
     }
   }
 };

@@ -1029,8 +1029,9 @@ class IsolateMessageHandler : public MessageHandler {
   virtual bool KeepAliveLocked() {
     // If the message handler was asked to shutdown we shut down.
     if (!MessageHandler::KeepAliveLocked()) return false;
-    // Otherwise we only stay alive as long as there's active receive ports.
-    return isolate_->HasLivePorts();
+    // Otherwise we only stay alive as long as there's active receive ports, or
+    // there are FFI callbacks keeping the isolate alive.
+    return isolate_->HasLivePorts() || isolate_->HasOpenNativeCallables();
   }
 
  private:
@@ -2695,10 +2696,6 @@ void IsolateGroup::ReleaseStoreBuffers() {
   thread_registry()->ReleaseStoreBuffers();
 }
 
-void IsolateGroup::FlushMarkingStacks() {
-  thread_registry()->FlushMarkingStacks();
-}
-
 void Isolate::RememberLiveTemporaries() {
   if (mutator_thread_ != nullptr) {
     mutator_thread_->RememberLiveTemporaries();
@@ -3166,7 +3163,7 @@ ErrorPtr Isolate::InvokePendingServiceExtensionCalls() {
   const Library& developer_lib = Library::Handle(Library::DeveloperLibrary());
   ASSERT(!developer_lib.IsNull());
   const Function& run_extension = Function::Handle(
-      developer_lib.LookupLocalFunction(Symbols::_runExtension()));
+      developer_lib.LookupFunctionAllowPrivate(Symbols::_runExtension()));
   ASSERT(!run_extension.IsNull());
 
   const Array& arguments =
@@ -3621,19 +3618,24 @@ void Isolate::WaitForOutstandingSpawns() {
   }
 }
 
-FfiCallbackMetadata::Trampoline Isolate::CreateSyncFfiCallback(
-    Zone* zone,
-    const Function& function) {
-  return FfiCallbackMetadata::Instance()->CreateSyncFfiCallback(
-      this, zone, function, &ffi_callback_list_head_);
-}
-
 FfiCallbackMetadata::Trampoline Isolate::CreateAsyncFfiCallback(
     Zone* zone,
     const Function& send_function,
     Dart_Port send_port) {
   return FfiCallbackMetadata::Instance()->CreateAsyncFfiCallback(
       this, zone, send_function, send_port, &ffi_callback_list_head_);
+}
+
+FfiCallbackMetadata::Trampoline Isolate::CreateIsolateLocalFfiCallback(
+    Zone* zone,
+    const Function& trampoline,
+    const Closure& target,
+    bool keep_isolate_alive) {
+  if (keep_isolate_alive) {
+    UpdateNativeCallableKeepIsolateAliveCounter(1);
+  }
+  return FfiCallbackMetadata::Instance()->CreateIsolateLocalFfiCallback(
+      this, zone, trampoline, target, &ffi_callback_list_head_);
 }
 
 bool Isolate::HasLivePorts() {
@@ -3688,6 +3690,16 @@ void Isolate::CloseReceivePort(const ReceivePort& receive_port) {
 void Isolate::DeleteFfiCallback(FfiCallbackMetadata::Trampoline callback) {
   FfiCallbackMetadata::Instance()->DeleteCallback(callback,
                                                   &ffi_callback_list_head_);
+}
+
+void Isolate::UpdateNativeCallableKeepIsolateAliveCounter(intptr_t delta) {
+  ffi_callback_keep_alive_counter_ += delta;
+  ASSERT(ffi_callback_keep_alive_counter_ >= 0);
+}
+
+bool Isolate::HasOpenNativeCallables() {
+  ASSERT(ffi_callback_keep_alive_counter_ >= 0);
+  return ffi_callback_keep_alive_counter_ > 0;
 }
 
 #if !defined(PRODUCT)

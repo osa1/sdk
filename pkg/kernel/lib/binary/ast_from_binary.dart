@@ -1940,10 +1940,12 @@ class BinaryBuilder {
   }
 
   Initializer _readFieldInitializer(bool isSynthetic) {
+    int offset = readOffset();
     Reference reference = readNonNullMemberReference();
     Expression value = readExpression();
     return new FieldInitializer.byReference(reference, value)
-      ..isSynthetic = isSynthetic;
+      ..isSynthetic = isSynthetic
+      ..fileOffset = offset;
   }
 
   Initializer _readSuperInitializer(bool isSynthetic) {
@@ -3870,12 +3872,9 @@ class BinaryBuilder {
     int nullabilityIndex = readByte();
     Reference reference = readNonNullExtensionTypeDeclarationReference();
     List<DartType> typeArguments = readDartTypeList();
-    DartType representationType = readDartType();
+    readDartType(); // Read type erasure.
     return new ExtensionType.byReference(
-        reference,
-        Nullability.values[nullabilityIndex],
-        typeArguments,
-        representationType);
+        reference, Nullability.values[nullabilityIndex], typeArguments);
   }
 
   DartType _readFunctionType() {
@@ -3939,7 +3938,7 @@ class BinaryBuilder {
   }
 
   List<TypeParameter> readAndPushTypeParameterList(
-      [List<TypeParameter>? list, TreeNode? parent]) {
+      [List<TypeParameter>? list, GenericDeclaration? declaration]) {
     int length = readUInt30();
     if (length == 0) {
       if (list != null) return list;
@@ -3950,12 +3949,12 @@ class BinaryBuilder {
       }
     }
     if (list == null) {
-      list = new List<TypeParameter>.generate(
-          length, (_) => new TypeParameter(null, null)..parent = parent,
+      list = new List<TypeParameter>.generate(length,
+          (_) => new TypeParameter(null, null)..declaration = declaration,
           growable: useGrowableLists);
     } else if (list.length != length) {
       for (int i = 0; i < length; ++i) {
-        list.add(new TypeParameter(null, null)..parent = parent);
+        list.add(new TypeParameter(null, null)..declaration = declaration);
       }
     }
     typeParameterStack.addAll(list);

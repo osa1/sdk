@@ -7,8 +7,8 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/visitor.dart';
-import 'package:analyzer/src/dart/analysis/file_state.dart' hide DirectiveUri;
 import 'package:analyzer/src/dart/analysis/file_state.dart' as file_state;
+import 'package:analyzer/src/dart/analysis/file_state.dart' hide DirectiveUri;
 import 'package:analyzer/src/dart/analysis/unlinked_data.dart';
 import 'package:analyzer/src/dart/ast/ast.dart' as ast;
 import 'package:analyzer/src/dart/ast/mixin_super_invoked_names.dart';
@@ -1100,7 +1100,9 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement> {
       }
 
       var isPotentiallyPromotable = addField(classInfo, field.name,
-          isFinal: field.isFinal, isAbstract: field.isAbstract);
+          isFinal: field.isFinal,
+          isAbstract: field.isAbstract,
+          isExternal: field.isExternal);
       if (isPotentiallyPromotable) {
         _potentiallyPromotableFields.add(field);
       }

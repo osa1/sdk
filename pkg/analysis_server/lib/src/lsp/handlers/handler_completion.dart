@@ -63,8 +63,9 @@ class CompletionHandler
 
   CompletionHandler(super.server)
       : suggestFromUnimportedLibraries =
-            server.initializationOptions.suggestFromUnimportedLibraries {
-    final budgetMs = server.initializationOptions.completionBudgetMilliseconds;
+            server.initializationOptions?.suggestFromUnimportedLibraries ??
+                true {
+    final budgetMs = server.initializationOptions?.completionBudgetMilliseconds;
     completionBudgetDuration = budgetMs != null
         ? Duration(milliseconds: budgetMs)
         : CompletionBudget.defaultDuration;
@@ -809,6 +810,8 @@ class CompletionRegistrations extends FeatureRegistration
           allCommitCharacters:
               previewCommitCharacters ? dartCompletionCommitCharacters : null,
           resolveProvider: true,
+          completionItem:
+              CompletionOptionsCompletionItem(labelDetailsSupport: true),
         ),
       ),
       (
@@ -846,6 +849,8 @@ class CompletionRegistrations extends FeatureRegistration
         allCommitCharacters:
             previewCommitCharacters ? dartCompletionCommitCharacters : null,
         resolveProvider: true,
+        completionItem:
+            CompletionOptionsCompletionItem(labelDetailsSupport: true),
       );
 
   @override

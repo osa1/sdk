@@ -19,6 +19,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_provider.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
+import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/constant/evaluation.dart';
 import 'package:analyzer/src/dart/constant/has_type_parameter_reference.dart';
@@ -164,6 +165,18 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
   void visitConstructorDeclaration(ConstructorDeclaration node) {
     var constKeyword = node.constKeyword;
     if (constKeyword != null) {
+      // Check and report cycles.
+      // Factory cycles are reported in elsewhere in
+      // [ErrorVerifier._checkForRecursiveFactoryRedirect].
+      final element = node.declaredElement;
+      if (element is ConstructorElementImpl &&
+          !element.isCycleFree &&
+          !element.isFactory) {
+        _errorReporter.reportErrorForNode(
+            CompileTimeErrorCode.RECURSIVE_CONSTANT_CONSTRUCTOR,
+            node.returnType, []);
+      }
+
       _validateConstructorInitializers(node);
       if (node.factoryKeyword == null) {
         _validateFieldInitializers(
@@ -263,7 +276,6 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         }
       }
     } else {
-      node.argumentList.accept(this);
       super.visitInstanceCreationExpression(node);
     }
   }
@@ -523,6 +535,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
       // Should not be a type parameter.
       if (type.element is TypeParameterElement) {
         _errorReporter.reportErrorForNode(errorCode, type);
+        return;
       }
       // Check type arguments.
       var typeArguments = type.typeArguments;
@@ -591,6 +604,11 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
               CompileTimeErrorCode.CONST_CONSTRUCTOR_FIELD_TYPE_MISMATCH) ||
           identical(dataErrorCode,
               CompileTimeErrorCode.CONST_CONSTRUCTOR_PARAM_TYPE_MISMATCH) ||
+          identical(dataErrorCode, CompileTimeErrorCode.CONST_TYPE_PARAMETER) ||
+          identical(
+              dataErrorCode,
+              CompileTimeErrorCode
+                  .CONST_WITH_TYPE_PARAMETERS_FUNCTION_TEAROFF) ||
           identical(
               dataErrorCode, CompileTimeErrorCode.VARIABLE_TYPE_MISMATCH) ||
           identical(dataErrorCode, CompileTimeErrorCode.NON_BOOL_CONDITION) ||

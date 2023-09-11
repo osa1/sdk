@@ -236,6 +236,7 @@ Fragment StreamingFlowGraphBuilder::BuildInitializers(
         has_field_initializers = true;
         ReadTag();
         ReadBool();
+        ReadPosition();
         const NameIndex field_name = ReadCanonicalNameReference();
         const Field& field =
             Field::Handle(Z, H.LookupFieldByKernelField(field_name));
@@ -342,6 +343,7 @@ Fragment StreamingFlowGraphBuilder::BuildInitializers(
           UNIMPLEMENTED();
           return Fragment();
         case kFieldInitializer: {
+          ReadPosition();  // read position.
           ReadCanonicalNameReference();
           instructions += BuildFieldInitializer(
               Field::ZoneHandle(Z, initializer_fields[i]->ptr()),
@@ -2185,7 +2187,7 @@ Fragment StreamingFlowGraphBuilder::BuildInstanceGet(TokenPosition* p) {
   const InferredTypeMetadata result_type =
       inferred_type_metadata_helper_.GetInferredType(offset);
 
-  Fragment instructions = BuildExpression();  // read receiver.
+  Fragment instructions = BuildExpression();           // read receiver.
   const String& getter_name = ReadNameAsGetterName();  // read name.
   SkipDartType();                                      // read result_type.
   const NameIndex itarget_name =
@@ -2228,7 +2230,7 @@ Fragment StreamingFlowGraphBuilder::BuildDynamicGet(TokenPosition* p) {
   const InferredTypeMetadata result_type =
       inferred_type_metadata_helper_.GetInferredType(offset);
 
-  Fragment instructions = BuildExpression();  // read receiver.
+  Fragment instructions = BuildExpression();           // read receiver.
   const String& getter_name = ReadNameAsGetterName();  // read name.
   const auto& mangled_name = String::ZoneHandle(
       Z, Function::CreateDynamicInvocationForwarderName(getter_name));
@@ -2271,7 +2273,7 @@ Fragment StreamingFlowGraphBuilder::BuildInstanceTearOff(TokenPosition* p) {
   const InferredTypeMetadata result_type =
       inferred_type_metadata_helper_.GetInferredType(offset);
 
-  Fragment instructions = BuildExpression();  // read receiver.
+  Fragment instructions = BuildExpression();           // read receiver.
   const String& getter_name = ReadNameAsGetterName();  // read name.
   SkipDartType();                                      // read result_type.
   const NameIndex itarget_name =
@@ -3372,9 +3374,13 @@ Fragment StreamingFlowGraphBuilder::BuildStaticInvocation(TokenPosition* p) {
     case MethodRecognizer::kFfiAsFunctionInternal:
       return BuildFfiAsFunctionInternal();
     case MethodRecognizer::kFfiNativeCallbackFunction:
-      return BuildFfiNativeCallbackFunction(FfiTrampolineKind::kSyncCallback);
+      return BuildFfiNativeCallbackFunction(
+          FfiFunctionKind::kIsolateLocalStaticCallback);
+    case MethodRecognizer::kFfiNativeIsolateLocalCallbackFunction:
+      return BuildFfiNativeCallbackFunction(
+          FfiFunctionKind::kIsolateLocalClosureCallback);
     case MethodRecognizer::kFfiNativeAsyncCallbackFunction:
-      return BuildFfiNativeCallbackFunction(FfiTrampolineKind::kAsyncCallback);
+      return BuildFfiNativeCallbackFunction(FfiFunctionKind::kAsyncCallback);
     case MethodRecognizer::kFfiLoadAbiSpecificInt:
       return BuildLoadAbiSpecificInt(/*at_index=*/false);
     case MethodRecognizer::kFfiLoadAbiSpecificIntAtIndex:
@@ -6239,20 +6245,25 @@ Fragment StreamingFlowGraphBuilder::BuildFfiAsFunctionInternal() {
 }
 
 Fragment StreamingFlowGraphBuilder::BuildFfiNativeCallbackFunction(
-    FfiTrampolineKind kind) {
+    FfiFunctionKind kind) {
   // The call-site must look like this (guaranteed by the FE which inserts it):
   //
-  // FfiTrampolineKind::kSyncCallback:
+  // FfiFunctionKind::kIsolateLocalStaticCallback:
   //   _nativeCallbackFunction<NativeSignatureType>(target, exceptionalReturn)
   //
-  // FfiTrampolineKind::kAsyncCallback:
+  // FfiFunctionKind::kAsyncCallback:
   //   _nativeAsyncCallbackFunction<NativeSignatureType>()
   //
-  // The FE also guarantees that both arguments are constants.
+  // FfiFunctionKind::kIsolateLocalClosureCallback:
+  //   _nativeIsolateLocalCallbackFunction<NativeSignatureType>(
+  //       exceptionalReturn)
+  //
+  // The FE also guarantees that the arguments are constants.
 
-  // Target, and for kSync callbacks, the exceptional return.
+  const bool has_target = kind == FfiFunctionKind::kIsolateLocalStaticCallback;
+  const bool has_exceptional_return = kind != FfiFunctionKind::kAsyncCallback;
   const intptr_t expected_argc =
-      kind == FfiTrampolineKind::kSyncCallback ? 2 : 0;
+      static_cast<int>(has_target) + static_cast<int>(has_exceptional_return);
 
   const intptr_t argc = ReadUInt();  // Read argument count.
   ASSERT(argc == expected_argc);
@@ -6273,8 +6284,9 @@ Fragment StreamingFlowGraphBuilder::BuildFfiNativeCallbackFunction(
   // Read target expression and extract the target function.
   Function& target = Function::Handle(Z, Function::null());
   Instance& exceptional_return = Instance::ZoneHandle(Z, Instance::null());
-  if (kind == FfiTrampolineKind::kSyncCallback) {
-    // Build first positional argument (target).
+
+  if (has_target) {
+    // Build target argument.
     code += BuildExpression();
     Definition* target_def = B->Peek();
     ASSERT(target_def->IsConstant());
@@ -6285,8 +6297,10 @@ Fragment StreamingFlowGraphBuilder::BuildFfiNativeCallbackFunction(
     ASSERT(!target.IsNull() && target.IsImplicitClosureFunction());
     target = target.parent_function();
     code += Drop();
+  }
 
-    // Build second positional argument (exceptionalReturn).
+  if (has_exceptional_return) {
+    // Build exceptionalReturn argument.
     code += BuildExpression();
     Definition* exceptional_return_def = B->Peek();
     ASSERT(exceptional_return_def->IsConstant());

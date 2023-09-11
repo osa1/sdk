@@ -3034,6 +3034,10 @@ CompileTimeErrorCode:
       const Map<String, int> map1 = {};
       const Map<String, int> map2 = {...map1};
       ```
+  CONST_TYPE_PARAMETER:
+    problemMessage: "Type parameters can't be used in a constant expression."
+    correctionMessage: Try replacing the type parameter with a different type.
+    comment: No parameters.
   CONST_WITH_NON_CONST:
     problemMessage: "The constructor being called isn't a const constructor."
     correctionMessage: "Try removing 'const' from the constructor invocation."
@@ -5154,6 +5158,13 @@ CompileTimeErrorCode:
     problemMessage: "The extension type representation can't depend on itself."
     correctionMessage: Try specifying a different type.
     comment: No parameters.
+  EXTENSION_TYPE_WITH_ABSTRACT_MEMBER:
+    problemMessage: "'{0}' must have a method body because '{1}' is an extension type."
+    correctionMessage: "Try adding a body to '{0}'."
+    comment: |-
+      Parameters:
+      0: the name of the abstract method
+      1: the name of the enclosing extension type
   EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER:
     sharedName: EXTERNAL_WITH_INITIALIZER
     problemMessage: External fields can't have initializers.
@@ -13314,6 +13325,9 @@ CompileTimeErrorCode:
       const secondsPerHour = minutesPerHour * 60;
       const minutesPerHour = 60;
       ```
+  RECURSIVE_CONSTANT_CONSTRUCTOR:
+    problemMessage: "The constant constructor depends on itself."
+    comment: No parameters.
   RECURSIVE_CONSTRUCTOR_REDIRECT:
     problemMessage: "Constructors can't redirect to themselves either directly or indirectly."
     correctionMessage: Try changing one of the constructors in the loop to not redirect.
@@ -18135,7 +18149,8 @@ FfiCode:
       argument whose value isn't a constant expression.
 
       The analyzer also produces this diagnostic when the value of the
-      `exceptionalReturn` argument of `Pointer.fromFunction`.
+      `exceptionalReturn` argument of `Pointer.fromFunction` or
+      `NativeCallable.isolateLocal`.
 
       For more information about FFI, see [C interop using dart:ffi][ffi].
 
@@ -18591,15 +18606,18 @@ FfiCode:
       }
       ```
   INVALID_EXCEPTION_VALUE:
-    problemMessage: "The method 'Pointer.fromFunction' can't have an exceptional return value (the second argument) when the return type of the function is either 'void', 'Handle' or 'Pointer'."
+    problemMessage: "The method {0} can't have an exceptional return value (the second argument) when the return type of the function is either 'void', 'Handle' or 'Pointer'."
     correctionMessage: Try removing the exceptional return value.
-    comment: No parameters.
+    comment: |-
+      Parameters:
+      0: the name of the method
     hasPublishedDocs: true
     documentation: |-
       #### Description
 
       The analyzer produces this diagnostic when an invocation of the method
-      `Pointer.fromFunction` has a second argument (the exceptional return
+      `Pointer.fromFunction` or `NativeCallable.isolateLocal`
+      has a second argument (the exceptional return
       value) and the type to be returned from the invocation is either `void`,
       `Handle` or `Pointer`.
 
@@ -18888,15 +18906,18 @@ FfiCode:
       }
       ```
   MISSING_EXCEPTION_VALUE:
-    problemMessage: "The method 'Pointer.fromFunction' must have an exceptional return value (the second argument) when the return type of the function is neither 'void', 'Handle', nor 'Pointer'."
+    problemMessage: "The method {0} must have an exceptional return value (the second argument) when the return type of the function is neither 'void', 'Handle', nor 'Pointer'."
     correctionMessage: Try adding an exceptional return value.
-    comment: No parameters.
+    comment: |-
+      Parameters:
+      0: the name of the method
     hasPublishedDocs: true
     documentation: |-
       #### Description
 
       The analyzer produces this diagnostic when an invocation of the method
-      `Pointer.fromFunction` doesn't have a second argument (the exceptional
+      `Pointer.fromFunction` or `NativeCallable.isolateLocal`
+      doesn't have a second argument (the exceptional
       return value) when the type to be returned from the invocation is neither
       `void`, `Handle`, nor `Pointer`.
 
@@ -19028,7 +19049,8 @@ FfiCode:
       #### Description
 
       The analyzer produces this diagnostic when an invocation of either
-      `Pointer.fromFunction` or `DynamicLibrary.lookupFunction` has a type
+      `Pointer.fromFunction`, `DynamicLibrary.lookupFunction`,
+      or a `NativeCallable` constructor, has a type
       argument(whether explicit or inferred) that isn't a native function type.
 
       For more information about FFI, see [C interop using dart:ffi][ffi].
@@ -19079,7 +19101,8 @@ FfiCode:
       #### Description
 
       The analyzer produces this diagnostic in two cases:
-      - In an invocation of `Pointer.fromFunction` where the type argument
+      - In an invocation of `Pointer.fromFunction`, or a
+        `NativeCallable` constructor where the type argument
         (whether explicit or inferred) isn't a supertype of the type of the
         function passed as the first argument to the method.
       - In an invocation of `DynamicLibrary.lookupFunction` where the first type
@@ -19684,64 +19707,6 @@ HintCode:
       ```dart
       void f({int i = 0}) {}
       ```
-  DEPRECATED_EXPORT_USE:
-    problemMessage: "The ability to import '{0}' indirectly is deprecated."
-    correctionMessage: "Try importing '{0}' directly."
-    hasPublishedDocs: true
-    comment: |-
-      Parameters:
-      0: the name of the element
-    documentation: |-
-      #### Description
-
-      The analyzer produces this diagnostic when one library imports a name from
-      a second library, and the second library exports the name from a third
-      library but has indicated that it won't export the third library in the
-      future.
-
-      #### Example
-
-      Given a library `a.dart` defining the class `A`:
-
-      ```dart
-      %uri="lib/a.dart"
-      class A {}
-      ```
-
-      And a second library `b.dart` that exports `a.dart` but has marked the
-      export as being deprecated:
-
-      ```dart
-      %uri="lib/b.dart"
-      import 'a.dart';
-
-      @deprecated
-      export 'a.dart';
-      ```
-
-      The following code produces this diagnostic because the class `A` won't be
-      exported from `b.dart` in some future version:
-
-      ```dart
-      import 'b.dart';
-
-      [!A!]? a;
-      ```
-
-      #### Common fixes
-
-      If the name is available from a different library that you can import,
-      then replace the existing import with an import for that library (or add
-      an import for the defining library if you still need the old import):
-
-      ```dart
-      import 'a.dart';
-
-      A? a;
-      ```
-
-      If the name isn't available, then look for instructions from the library
-      author or contact them directly to find out how to update your code.
   DEPRECATED_MEMBER_USE:
     problemMessage: "'{0}' is deprecated and shouldn't be used."
     correctionMessage: Try replacing the use of the deprecated member with the replacement.
@@ -22002,6 +21967,64 @@ WarningCode:
         }
       }
       ```
+  DEPRECATED_EXPORT_USE:
+    problemMessage: "The ability to import '{0}' indirectly is deprecated."
+    correctionMessage: "Try importing '{0}' directly."
+    hasPublishedDocs: true
+    comment: |-
+      Parameters:
+      0: the name of the element
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when one library imports a name from
+      a second library, and the second library exports the name from a third
+      library but has indicated that it won't export the third library in the
+      future.
+
+      #### Example
+
+      Given a library `a.dart` defining the class `A`:
+
+      ```dart
+      %uri="lib/a.dart"
+      class A {}
+      ```
+
+      And a second library `b.dart` that exports `a.dart` but has marked the
+      export as being deprecated:
+
+      ```dart
+      %uri="lib/b.dart"
+      import 'a.dart';
+
+      @deprecated
+      export 'a.dart';
+      ```
+
+      The following code produces this diagnostic because the class `A` won't be
+      exported from `b.dart` in some future version:
+
+      ```dart
+      import 'b.dart';
+
+      [!A!]? a;
+      ```
+
+      #### Common fixes
+
+      If the name is available from a different library that you can import,
+      then replace the existing import with an import for that library (or add
+      an import for the defining library if you still need the old import):
+
+      ```dart
+      import 'a.dart';
+
+      A? a;
+      ```
+
+      If the name isn't available, then look for instructions from the library
+      author or contact them directly to find out how to update your code.
   DEPRECATED_EXTENDS_FUNCTION:
     sharedName: DEPRECATED_SUBTYPE_OF_FUNCTION
     problemMessage: "Extending 'Function' is deprecated."
@@ -22099,6 +22122,29 @@ WarningCode:
         C.c();
       }
       ```
+  DOC_IMPORT_CANNOT_BE_DEFERRED:
+    problemMessage: "Doc imports can't be deferred."
+    correctionMessage: Try removing the 'deferred' keyword.
+    hasPublishedDocs: false
+  DOC_IMPORT_CANNOT_HAVE_CONFIGURATIONS:
+    problemMessage: "Doc imports can't have configurations."
+    correctionMessage: Try removing the configurations.
+    hasPublishedDocs: false
+  DOC_DIRECTIVE_MISSING_CLOSING_BRACE:
+    problemMessage: "Doc directive is missing a closing curly brace ('}')."
+    correctionMessage: "Try closing the directive with a curly brace."
+    hasPublishedDocs: false
+  DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT:
+    problemMessage: YouTube directive is missing a height argument.
+    correctionMessage: Try adding a height argument after the width.
+  DOC_YOUTUBE_DIRECTIVE_MISSING_URL:
+    problemMessage: YouTube directive is missing a URL argument.
+    correctionMessage: Try adding a URL after the width and height.
+    hasPublishedDocs: false
+  DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH:
+    problemMessage: YouTube directive is missing a width argument.
+    correctionMessage: "Try adding a width argument after '@youtube'."
+    hasPublishedDocs: false
   DUPLICATE_EXPORT:
     problemMessage: Duplicate export.
     correctionMessage: Try removing all but one export of the library.

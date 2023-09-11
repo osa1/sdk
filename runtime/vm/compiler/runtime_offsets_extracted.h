@@ -37,7 +37,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -199,8 +199,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -287,6 +285,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -671,7 +670,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -749,7 +748,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -914,8 +913,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -1003,6 +1000,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -1392,7 +1390,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -1469,7 +1467,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -1631,8 +1629,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -1719,6 +1715,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -2102,7 +2099,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -2180,7 +2177,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -2345,8 +2342,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -2434,6 +2429,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -2825,7 +2821,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -2903,7 +2899,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -3065,8 +3061,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -3154,6 +3148,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -3542,7 +3537,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x38;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x20;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x70;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x68;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x18;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x20;
@@ -3620,7 +3615,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -3782,8 +3777,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -3871,6 +3864,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -4261,7 +4255,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x38;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x20;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x70;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x68;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x18;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x20;
@@ -4338,7 +4332,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -4500,8 +4494,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -4588,6 +4580,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -4973,7 +4966,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -5051,7 +5044,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -5216,8 +5209,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -5305,6 +5296,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -5695,7 +5687,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -5769,7 +5761,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -5929,8 +5921,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -6014,6 +6004,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -6398,7 +6389,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -6473,7 +6464,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -6636,8 +6627,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -6722,6 +6711,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -7111,7 +7101,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -7185,7 +7175,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -7345,8 +7335,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -7430,6 +7418,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -7813,7 +7802,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -7888,7 +7877,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -8051,8 +8040,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -8137,6 +8124,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -8528,7 +8516,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -8603,7 +8591,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -8763,8 +8751,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -8849,6 +8835,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -9237,7 +9224,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x38;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x20;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x70;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x68;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x18;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x20;
@@ -9312,7 +9299,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -9472,8 +9459,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -9558,6 +9543,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -9948,7 +9934,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x38;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x20;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x70;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x68;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x18;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x20;
@@ -10022,7 +10008,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0xc;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x24;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x28;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -10182,8 +10168,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x1c;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x20;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -10267,6 +10251,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0xc;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x8;
@@ -10652,7 +10637,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x4;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x30;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x1c;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0x58;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x50;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x14;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x1c;
@@ -10727,7 +10712,7 @@ static constexpr dart::compiler::target::word Context_elements_start_offset =
 static constexpr dart::compiler::target::word Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     ContextScope_elements_start_offset = 0x10;
-static constexpr dart::compiler::target::word ContextScope_element_size = 0x48;
+static constexpr dart::compiler::target::word ContextScope_element_size = 0x50;
 static constexpr dart::compiler::target::word
     ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word ExceptionHandlers_element_size =
@@ -10890,8 +10875,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word Page_original_top_offset = 0x38;
-static constexpr dart::compiler::target::word Page_original_end_offset = 0x40;
 static constexpr dart::compiler::target::word
     CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word ICData_NumArgsTestedMask = 0x3;
@@ -10976,6 +10959,7 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word OneByteString_data_offset = 0x10;
+static constexpr dart::compiler::target::word PersistentHandle_ptr_offset = 0x0;
 static constexpr dart::compiler::target::word PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word Pointer_type_arguments_offset =
     0x10;
@@ -11366,7 +11350,7 @@ static constexpr dart::compiler::target::word Integer_InstanceSize = 0x8;
 static constexpr dart::compiler::target::word KernelProgramInfo_InstanceSize =
     0x60;
 static constexpr dart::compiler::target::word LanguageError_InstanceSize = 0x30;
-static constexpr dart::compiler::target::word Library_InstanceSize = 0xa8;
+static constexpr dart::compiler::target::word Library_InstanceSize = 0x98;
 static constexpr dart::compiler::target::word LibraryPrefix_InstanceSize = 0x28;
 static constexpr dart::compiler::target::word LinkedHashBase_InstanceSize =
     0x38;
@@ -11440,7 +11424,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -11620,10 +11604,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x1c;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x20;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -11721,6 +11701,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0xc;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x8;
@@ -12143,7 +12125,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x30;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x1c;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x50;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x48;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x14;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -12233,7 +12215,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -12413,10 +12395,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -12514,6 +12492,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -12936,7 +12916,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -13033,7 +13013,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -13213,10 +13193,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -13314,6 +13290,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -13738,7 +13716,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -13829,7 +13807,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -14009,10 +13987,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -14110,6 +14084,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -14534,7 +14510,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x38;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x20;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x60;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x58;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x18;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -14625,7 +14601,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -14805,10 +14781,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -14906,6 +14878,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -15332,7 +15306,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x38;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x20;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x60;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x58;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x18;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -15423,7 +15397,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -15603,10 +15577,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x1c;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x20;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -15704,6 +15674,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0xc;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x8;
@@ -16127,7 +16099,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x30;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x1c;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x50;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x48;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x14;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -16217,7 +16189,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -16397,10 +16369,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -16498,6 +16466,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -16921,7 +16891,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -17009,7 +16979,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -17187,10 +17157,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x1c;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x20;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -17284,6 +17250,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0xc;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x8;
@@ -17706,7 +17674,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x30;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x1c;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x50;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x48;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x14;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -17793,7 +17761,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -17971,10 +17939,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -18068,6 +18032,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -18490,7 +18456,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -18584,7 +18550,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -18762,10 +18728,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -18859,6 +18821,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -19283,7 +19247,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -19371,7 +19335,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -19549,10 +19513,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -19646,6 +19606,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -20070,7 +20032,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x38;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x20;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x60;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x58;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x18;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -20158,7 +20120,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word
@@ -20336,10 +20298,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -20433,6 +20391,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -20859,7 +20819,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x38;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x20;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x60;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x58;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x18;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -20947,7 +20907,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x4;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x24;
+    0x28;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0xc;
 static constexpr dart::compiler::target::word
@@ -21125,10 +21085,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x4;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x10;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x1c;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x20;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -21222,6 +21178,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x238;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0xc;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x4;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x8;
@@ -21645,7 +21603,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x30;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x1c;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x50;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x48;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x14;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =
@@ -21732,7 +21690,7 @@ static constexpr dart::compiler::target::word AOT_Context_element_size = 0x8;
 static constexpr dart::compiler::target::word
     AOT_ContextScope_elements_start_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ContextScope_element_size =
-    0x48;
+    0x50;
 static constexpr dart::compiler::target::word
     AOT_ExceptionHandlers_elements_start_offset = 0x18;
 static constexpr dart::compiler::target::word
@@ -21910,10 +21868,6 @@ static constexpr dart::compiler::target::word
 static constexpr dart::compiler::target::word
     AOT_GrowableObjectArray_type_arguments_offset = 0x8;
 static constexpr dart::compiler::target::word AOT_Page_card_table_offset = 0x20;
-static constexpr dart::compiler::target::word AOT_Page_original_top_offset =
-    0x38;
-static constexpr dart::compiler::target::word AOT_Page_original_end_offset =
-    0x40;
 static constexpr dart::compiler::target::word
     AOT_CallSiteData_arguments_descriptor_offset = 0x10;
 static constexpr dart::compiler::target::word AOT_ICData_NumArgsTestedMask =
@@ -22007,6 +21961,8 @@ static constexpr dart::compiler::target::word
     AOT_ObjectStore_suspend_state_yield_async_star_offset = 0x470;
 static constexpr dart::compiler::target::word AOT_OneByteString_data_offset =
     0x10;
+static constexpr dart::compiler::target::word AOT_PersistentHandle_ptr_offset =
+    0x0;
 static constexpr dart::compiler::target::word AOT_PointerBase_data_offset = 0x8;
 static constexpr dart::compiler::target::word
     AOT_Pointer_type_arguments_offset = 0x10;
@@ -22430,7 +22386,7 @@ static constexpr dart::compiler::target::word
     AOT_KernelProgramInfo_InstanceSize = 0x60;
 static constexpr dart::compiler::target::word AOT_LanguageError_InstanceSize =
     0x30;
-static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x98;
+static constexpr dart::compiler::target::word AOT_Library_InstanceSize = 0x88;
 static constexpr dart::compiler::target::word AOT_LibraryPrefix_InstanceSize =
     0x28;
 static constexpr dart::compiler::target::word AOT_LinkedHashBase_InstanceSize =

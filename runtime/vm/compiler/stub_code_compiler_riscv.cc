@@ -35,7 +35,7 @@ namespace compiler {
 //
 // WARNING: This might clobber all registers except for [A0], [THR] and [FP].
 // The caller should simply call LeaveStubFrame() and return.
-void StubCodeCompiler::EnsureIsNewOrRemembered(bool preserve_registers) {
+void StubCodeCompiler::EnsureIsNewOrRemembered() {
   // If the object is not remembered we call a leaf-runtime to add it to the
   // remembered set.
   Label done;
@@ -43,7 +43,8 @@ void StubCodeCompiler::EnsureIsNewOrRemembered(bool preserve_registers) {
   __ bnez(TMP2, &done);
 
   {
-    LeafRuntimeScope rt(assembler, /*frame_size=*/0, preserve_registers);
+    LeafRuntimeScope rt(assembler, /*frame_size=*/0,
+                        /*preserve_registers=*/false);
     // A0 already loaded.
     __ mv(A1, THR);
     rt.Call(kEnsureRememberedAndMarkingDeferredRuntimeEntry,
@@ -1367,7 +1368,7 @@ void StubCodeCompiler::GenerateAllocateArrayStub() {
   // space and if so call a leaf runtime to add it to the remembered set.
   ASSERT(AllocateArrayABI::kResultReg == A0);
   __ lx(AllocateArrayABI::kResultReg, Address(SP, 2 * target::kWordSize));
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   __ lx(AllocateArrayABI::kTypeArgumentsReg,
         Address(SP, 0 * target::kWordSize));
@@ -1674,7 +1675,7 @@ void StubCodeCompiler::GenerateAllocateContextStub() {
   // Write-barrier elimination might be enabled for this context (depending on
   // the size). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   // A0: new object
   // Restore the frame pointer.
@@ -1746,7 +1747,7 @@ void StubCodeCompiler::GenerateCloneContextStub() {
   // Write-barrier elimination might be enabled for this context (depending on
   // the size). To be sure we will check if the allocated object is in old
   // space and if so call a leaf runtime to add it to the remembered set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   // A0: new object
   __ LeaveStubFrame();
@@ -1797,18 +1798,18 @@ static void GenerateWriteBarrierStubHelper(Assembler* assembler,
   __ beqz(TMP, &skip_marking);
 
   {
-    // Atomically clear kNotMarkedBit.
+    // Atomically clear kOldAndNotMarkedBit.
     Label done;
     __ PushRegisters(spill_set);
     __ addi(T3, A1, target::Object::tags_offset() - kHeapObjectTag);
     // T3: Untagged address of header word (amo's do not support offsets).
-    __ li(TMP2, ~(1 << target::UntaggedObject::kNotMarkedBit));
+    __ li(TMP2, ~(1 << target::UntaggedObject::kOldAndNotMarkedBit));
 #if XLEN == 32
     __ amoandw(TMP2, TMP2, Address(T3, 0));
 #else
     __ amoandd(TMP2, TMP2, Address(T3, 0));
 #endif
-    __ andi(TMP2, TMP2, 1 << target::UntaggedObject::kNotMarkedBit);
+    __ andi(TMP2, TMP2, 1 << target::UntaggedObject::kOldAndNotMarkedBit);
     __ beqz(TMP2, &done);  // Was already clear -> lost race.
 
     __ lx(T4, Address(THR, target::Thread::marking_stack_block_offset()));
@@ -2071,7 +2072,7 @@ void StubCodeCompiler::GenerateAllocateObjectSlowStub() {
 
   // Write-barrier elimination is enabled for [cls] and we therefore need to
   // ensure that the object is in new-space or has remembered bit set.
-  EnsureIsNewOrRemembered(/*preserve_registers=*/false);
+  EnsureIsNewOrRemembered();
 
   __ LeaveStubFrame();
 

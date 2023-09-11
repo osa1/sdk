@@ -114,6 +114,11 @@ namespace dart {
   V(Float32x4List, ., TypedData_Float32x4Array_factory, 0x0a6eefa8)            \
   V(Int32x4List, ., TypedData_Int32x4Array_factory, 0x5a09288e)                \
   V(Float64x2List, ., TypedData_Float64x2Array_factory, 0xecbc738a)            \
+  V(_TypedListBase, _memMove1, TypedData_memMove1, 0xd2767fb0)                 \
+  V(_TypedListBase, _memMove2, TypedData_memMove2, 0xed382bb6)                 \
+  V(_TypedListBase, _memMove4, TypedData_memMove4, 0xcfe37726)                 \
+  V(_TypedListBase, _memMove8, TypedData_memMove8, 0xd1d8e325)                 \
+  V(_TypedListBase, _memMove16, TypedData_memMove16, 0x07861cd5)               \
   V(::, _toClampedUint8, ConvertIntToClampedUint8, 0xd0e522d0)                 \
   V(::, copyRangeFromUint8ListToOneByteString,                                 \
     CopyRangeFromUint8ListToOneByteString, 0xcc42cce1)                         \
@@ -265,12 +270,13 @@ namespace dart {
   V(_WeakProperty, set:value, WeakProperty_setValue, 0x8b1d23cb)               \
   V(_WeakReference, get:target, WeakReference_getTarget, 0xc98185aa)           \
   V(_WeakReference, set:_target, WeakReference_setTarget, 0xc71add9a)          \
-  V(::, _classRangeCheck, ClassRangeCheck, 0xef2bb89a)                         \
   V(::, _abi, FfiAbi, 0x7c3c2b95)                                              \
   V(::, _asFunctionInternal, FfiAsFunctionInternal, 0x630c8491)                \
   V(::, _nativeCallbackFunction, FfiNativeCallbackFunction, 0x3fe722bc)        \
   V(::, _nativeAsyncCallbackFunction, FfiNativeAsyncCallbackFunction,          \
     0xbec4b7b9)                                                                \
+  V(::, _nativeIsolateLocalCallbackFunction,                                   \
+    FfiNativeIsolateLocalCallbackFunction, 0x03e1a51f)                         \
   V(::, _nativeEffect, NativeEffect, 0x536f42b1)                               \
   V(::, _loadAbiSpecificInt, FfiLoadAbiSpecificInt, 0x77f96053)                \
   V(::, _loadAbiSpecificIntAtIndex, FfiLoadAbiSpecificIntAtIndex, 0x6a964295)  \
@@ -318,7 +324,7 @@ namespace dart {
   V(::, reachabilityFence, ReachabilityFence, 0x73009f9f)                      \
   V(_Utf8Decoder, _scan, Utf8DecoderScan, 0xb98ea6c2)                          \
   V(_FutureListener, handleValue, FutureListenerHandleValue, 0xec1745d2)       \
-  V(::, has63BitSmis, Has63BitSmis, 0xf60ccb11)                                \
+  V(::, get:has63BitSmis, Has63BitSmis, 0xf60ccb11)                            \
   V(::, get:extensionStreamHasListener, ExtensionStreamHasListener, 0xfaa5db24)\
   V(_Smi, get:hashCode, Smi_hashCode, 0x75d240f2)                              \
   V(_Mint, get:hashCode, Mint_hashCode, 0x75d240f2)                            \

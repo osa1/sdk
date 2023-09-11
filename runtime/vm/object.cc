@@ -93,8 +93,6 @@ DEFINE_FLAG(
     "Show names of internal classes (e.g. \"OneByteString\") in error messages "
     "instead of showing the corresponding interface names (e.g. \"String\"). "
     "Also show legacy nullability in type names.");
-DEFINE_FLAG(bool, use_lib_cache, false, "Use library name cache");
-DEFINE_FLAG(bool, use_exp_cache, false, "Use library exported name cache");
 
 DEFINE_FLAG(bool,
             remove_script_timestamps_for_test,
@@ -1637,8 +1635,8 @@ void Object::MakeUnusedSpaceTraversable(const Object& obj,
           UntaggedObject::ClassIdTag::update(kTypedDataInt8ArrayCid, 0);
       new_tags = UntaggedObject::SizeTag::update(leftover_size, new_tags);
       const bool is_old = obj.ptr()->IsOldObject();
-      new_tags = UntaggedObject::AlwaysSetBit::update(true, new_tags);
-      new_tags = UntaggedObject::NotMarkedBit::update(true, new_tags);
+      new_tags = UntaggedObject::OldBit::update(is_old, new_tags);
+      new_tags = UntaggedObject::OldAndNotMarkedBit::update(is_old, new_tags);
       new_tags =
           UntaggedObject::OldAndNotRememberedBit::update(is_old, new_tags);
       new_tags = UntaggedObject::NewBit::update(!is_old, new_tags);
@@ -1660,8 +1658,8 @@ void Object::MakeUnusedSpaceTraversable(const Object& obj,
       uword new_tags = UntaggedObject::ClassIdTag::update(kInstanceCid, 0);
       new_tags = UntaggedObject::SizeTag::update(leftover_size, new_tags);
       const bool is_old = obj.ptr()->IsOldObject();
-      new_tags = UntaggedObject::AlwaysSetBit::update(true, new_tags);
-      new_tags = UntaggedObject::NotMarkedBit::update(true, new_tags);
+      new_tags = UntaggedObject::OldBit::update(is_old, new_tags);
+      new_tags = UntaggedObject::OldAndNotMarkedBit::update(is_old, new_tags);
       new_tags =
           UntaggedObject::OldAndNotRememberedBit::update(is_old, new_tags);
       new_tags = UntaggedObject::NewBit::update(!is_old, new_tags);
@@ -2799,8 +2797,8 @@ void Object::InitializeObject(uword address,
   tags = UntaggedObject::SizeTag::update(size, tags);
   const bool is_old =
       (address & kNewObjectAlignmentOffset) == kOldObjectAlignmentOffset;
-  tags = UntaggedObject::AlwaysSetBit::update(true, tags);
-  tags = UntaggedObject::NotMarkedBit::update(true, tags);
+  tags = UntaggedObject::OldBit::update(is_old, tags);
+  tags = UntaggedObject::OldAndNotMarkedBit::update(is_old, tags);
   tags = UntaggedObject::OldAndNotRememberedBit::update(is_old, tags);
   tags = UntaggedObject::NewBit::update(!is_old, tags);
   tags = UntaggedObject::ImmutableBit::update(
@@ -8429,7 +8427,7 @@ bool Function::FfiCSignatureReturnsStruct() const {
 
 int32_t Function::FfiCallbackId() const {
   ASSERT(IsFfiTrampoline());
-  ASSERT(GetFfiTrampolineKind() != FfiTrampolineKind::kCall);
+  ASSERT(GetFfiFunctionKind() != FfiFunctionKind::kCall);
 
   const auto& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
@@ -8442,7 +8440,7 @@ int32_t Function::FfiCallbackId() const {
 
 void Function::AssignFfiCallbackId(int32_t callback_id) const {
   ASSERT(IsFfiTrampoline());
-  ASSERT(GetFfiTrampolineKind() != FfiTrampolineKind::kCall);
+  ASSERT(GetFfiFunctionKind() != FfiFunctionKind::kCall);
 
   const auto& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
@@ -8494,18 +8492,18 @@ void Function::SetFfiCallbackExceptionalReturn(const Instance& value) const {
   FfiTrampolineData::Cast(obj).set_callback_exceptional_return(value);
 }
 
-FfiTrampolineKind Function::GetFfiTrampolineKind() const {
+FfiFunctionKind Function::GetFfiFunctionKind() const {
   ASSERT(IsFfiTrampoline());
   const Object& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
-  return FfiTrampolineData::Cast(obj).trampoline_kind();
+  return FfiTrampolineData::Cast(obj).ffi_function_kind();
 }
 
-void Function::SetFfiTrampolineKind(FfiTrampolineKind value) const {
+void Function::SetFfiFunctionKind(FfiFunctionKind value) const {
   ASSERT(IsFfiTrampoline());
   const Object& obj = Object::Handle(data());
   ASSERT(!obj.IsNull());
-  FfiTrampolineData::Cast(obj).set_trampoline_kind(value);
+  FfiTrampolineData::Cast(obj).set_ffi_function_kind(value);
 }
 
 const char* Function::KindToCString(UntaggedFunction::Kind kind) {
@@ -9102,6 +9100,11 @@ bool Function::RecognizedKindForceOptimize() const {
     case MethodRecognizer::kRecord_numFields:
     case MethodRecognizer::kUtf8DecoderScan:
     case MethodRecognizer::kDouble_hashCode:
+    case MethodRecognizer::kTypedData_memMove1:
+    case MethodRecognizer::kTypedData_memMove2:
+    case MethodRecognizer::kTypedData_memMove4:
+    case MethodRecognizer::kTypedData_memMove8:
+    case MethodRecognizer::kTypedData_memMove16:
     // Prevent the GC from running so that the operation is atomic from
     // a GC point of view. Always double check implementation in
     // kernel_to_il.cc that no GC can happen in between the relevant IL
@@ -10971,11 +10974,19 @@ static void FunctionPrintNameHelper(const Function& fun,
     }
     if (params.disambiguate_names &&
         fun.name() == Symbols::AnonymousClosure().ptr()) {
-      printer->Printf("<anonymous closure @%" Pd ">", fun.token_pos().Pos());
+      if (fun.token_pos().IsReal()) {
+        printer->Printf("<anonymous closure @%" Pd ">", fun.token_pos().Pos());
+      } else {
+        printer->Printf("<anonymous closure @no position>");
+      }
     } else {
       printer->AddString(fun.NameCString(params.name_visibility));
       if (params.disambiguate_names) {
-        printer->Printf("@<%" Pd ">", fun.token_pos().Pos());
+        if (fun.token_pos().IsReal()) {
+          printer->Printf("@<%" Pd ">", fun.token_pos().Pos());
+        } else {
+          printer->Printf("@<no position>");
+        }
       }
     }
     return;
@@ -11632,8 +11643,8 @@ void FfiTrampolineData::set_callback_exceptional_return(
   untag()->set_callback_exceptional_return(value.ptr());
 }
 
-void FfiTrampolineData::set_trampoline_kind(FfiTrampolineKind kind) const {
-  StoreNonPointer(&untag()->trampoline_kind_, static_cast<uint8_t>(kind));
+void FfiTrampolineData::set_ffi_function_kind(FfiFunctionKind kind) const {
+  StoreNonPointer(&untag()->ffi_function_kind_, static_cast<uint8_t>(kind));
 }
 
 FfiTrampolineDataPtr FfiTrampolineData::New() {
@@ -13638,160 +13649,6 @@ static bool ShouldBePrivate(const String& name) {
            name.CharAt(3) == ':'));
 }
 
-ObjectPtr Library::ResolveName(const String& name) const {
-  Object& obj = Object::Handle();
-  if (FLAG_use_lib_cache && LookupResolvedNamesCache(name, &obj)) {
-    return obj.ptr();
-  }
-  EnsureTopLevelClassIsFinalized();
-  obj = LookupLocalObject(name);
-  if (!obj.IsNull()) {
-    // Names that are in this library's dictionary and are unmangled
-    // are not cached. This reduces the size of the cache.
-    return obj.ptr();
-  }
-  String& accessor_name = String::Handle(Field::LookupGetterSymbol(name));
-  if (!accessor_name.IsNull()) {
-    obj = LookupLocalObject(accessor_name);
-  }
-  if (obj.IsNull()) {
-    accessor_name = Field::LookupSetterSymbol(name);
-    if (!accessor_name.IsNull()) {
-      obj = LookupLocalObject(accessor_name);
-    }
-    if (obj.IsNull() && !ShouldBePrivate(name)) {
-      obj = LookupImportedObject(name);
-    }
-  }
-  AddToResolvedNamesCache(name, obj);
-  return obj.ptr();
-}
-
-class StringEqualsTraits {
- public:
-  static const char* Name() { return "StringEqualsTraits"; }
-  static bool ReportStats() { return false; }
-
-  static bool IsMatch(const Object& a, const Object& b) {
-    return String::Cast(a).Equals(String::Cast(b));
-  }
-  static uword Hash(const Object& obj) { return String::Cast(obj).Hash(); }
-};
-typedef UnorderedHashMap<StringEqualsTraits> ResolvedNamesMap;
-
-// Returns true if the name is found in the cache, false no cache hit.
-// obj is set to the cached entry. It may be null, indicating that the
-// name does not resolve to anything in this library.
-bool Library::LookupResolvedNamesCache(const String& name, Object* obj) const {
-  if (resolved_names() == Array::null()) {
-    return false;
-  }
-  ResolvedNamesMap cache(resolved_names());
-  bool present = false;
-  *obj = cache.GetOrNull(name, &present);
-// Mutator compiler thread may add entries and therefore
-// change 'resolved_names()' while running a background compilation;
-// ASSERT that 'resolved_names()' has not changed only in mutator.
-#if defined(DEBUG)
-  if (Thread::Current()->IsDartMutatorThread()) {
-    ASSERT(cache.Release().ptr() == resolved_names());
-  } else {
-    // Release must be called in debug mode.
-    cache.Release();
-  }
-#endif
-  return present;
-}
-
-// Add a name to the resolved name cache. This name resolves to the
-// given object in this library scope. obj may be null, which means
-// the name does not resolve to anything in this library scope.
-void Library::AddToResolvedNamesCache(const String& name,
-                                      const Object& obj) const {
-  if (!FLAG_use_lib_cache || Compiler::IsBackgroundCompilation()) {
-    return;
-  }
-  if (resolved_names() == Array::null()) {
-    InitResolvedNamesCache();
-  }
-  ResolvedNamesMap cache(resolved_names());
-  cache.UpdateOrInsert(name, obj);
-  untag()->set_resolved_names(cache.Release().ptr());
-}
-
-bool Library::LookupExportedNamesCache(const String& name, Object* obj) const {
-  ASSERT(FLAG_use_exp_cache);
-  if (exported_names() == Array::null()) {
-    return false;
-  }
-  ResolvedNamesMap cache(exported_names());
-  bool present = false;
-  *obj = cache.GetOrNull(name, &present);
-// Mutator compiler thread may add entries and therefore
-// change 'exported_names()' while running a background compilation;
-// do not ASSERT that 'exported_names()' has not changed.
-#if defined(DEBUG)
-  if (Thread::Current()->IsDartMutatorThread()) {
-    ASSERT(cache.Release().ptr() == exported_names());
-  } else {
-    // Release must be called in debug mode.
-    cache.Release();
-  }
-#endif
-  return present;
-}
-
-void Library::AddToExportedNamesCache(const String& name,
-                                      const Object& obj) const {
-  if (!FLAG_use_exp_cache || Compiler::IsBackgroundCompilation()) {
-    return;
-  }
-  if (exported_names() == Array::null()) {
-    InitExportedNamesCache();
-  }
-  ResolvedNamesMap cache(exported_names());
-  cache.UpdateOrInsert(name, obj);
-  untag()->set_exported_names(cache.Release().ptr());
-}
-
-void Library::InvalidateResolvedName(const String& name) const {
-  Thread* thread = Thread::Current();
-  Zone* zone = thread->zone();
-  Object& entry = Object::Handle(zone);
-  if (FLAG_use_lib_cache && LookupResolvedNamesCache(name, &entry)) {
-    // TODO(koda): Support deleted sentinel in snapshots and remove only 'name'.
-    ClearResolvedNamesCache();
-  }
-  if (!FLAG_use_exp_cache) {
-    return;
-  }
-  // When a new name is added to a library, we need to invalidate all
-  // caches that contain an entry for this name. If the name was previously
-  // looked up but could not be resolved, the cache contains a null entry.
-  GrowableObjectArray& libs = GrowableObjectArray::Handle(
-      zone, thread->isolate_group()->object_store()->libraries());
-  Library& lib = Library::Handle(zone);
-  intptr_t num_libs = libs.Length();
-  for (intptr_t i = 0; i < num_libs; i++) {
-    lib ^= libs.At(i);
-    if (lib.LookupExportedNamesCache(name, &entry)) {
-      lib.ClearExportedNamesCache();
-    }
-  }
-}
-
-// Invalidate all exported names caches in the isolate.
-void Library::InvalidateExportedNamesCaches() {
-  GrowableObjectArray& libs = GrowableObjectArray::Handle(
-      IsolateGroup::Current()->object_store()->libraries());
-  Library& lib = Library::Handle();
-  intptr_t num_libs = libs.Length();
-  for (intptr_t i = 0; i < num_libs; i++) {
-    lib ^= libs.At(i);
-    lib.ClearExportedNamesCache();
-  }
-}
-
 void Library::RehashDictionary(const Array& old_dict,
                                intptr_t new_dict_size) const {
   intptr_t old_dict_size = old_dict.Length() - 1;
@@ -13877,9 +13734,6 @@ ObjectPtr Library::LookupReExport(const String& name,
     trail = new ZoneGrowableArray<intptr_t>();
   }
   Object& obj = Object::Handle();
-  if (FLAG_use_exp_cache && LookupExportedNamesCache(name, &obj)) {
-    return obj.ptr();
-  }
 
   const intptr_t lib_id = this->index();
   ASSERT(lib_id >= 0);  // We use -1 to indicate that a cycle was found.
@@ -13899,10 +13753,7 @@ ObjectPtr Library::LookupReExport(const String& name,
       }
     }
   }
-  bool in_cycle = (trail->RemoveLast() < 0);
-  if (FLAG_use_exp_cache && !in_cycle && !Compiler::IsBackgroundCompilation()) {
-    AddToExportedNamesCache(name, obj);
-  }
+  trail->RemoveLast();
   return obj.ptr();
 }
 
@@ -13938,7 +13789,6 @@ void Library::AddClass(const Class& cls) const {
   AddObject(cls, class_name);
   // Link class to this library.
   cls.set_library(*this);
-  InvalidateResolvedName(class_name);
 }
 
 static void AddScriptIfUnique(const GrowableObjectArray& scripts,
@@ -14096,15 +13946,6 @@ ObjectPtr Library::LookupLocalOrReExportObject(const String& name) const {
 
 FieldPtr Library::LookupFieldAllowPrivate(const String& name) const {
   EnsureTopLevelClassIsFinalized();
-  Object& obj = Object::Handle(LookupObjectAllowPrivate(name));
-  if (obj.IsField()) {
-    return Field::Cast(obj).ptr();
-  }
-  return Field::null();
-}
-
-FieldPtr Library::LookupLocalField(const String& name) const {
-  EnsureTopLevelClassIsFinalized();
   Object& obj = Object::Handle(LookupLocalObjectAllowPrivate(name));
   if (obj.IsField()) {
     return Field::Cast(obj).ptr();
@@ -14113,15 +13954,6 @@ FieldPtr Library::LookupLocalField(const String& name) const {
 }
 
 FunctionPtr Library::LookupFunctionAllowPrivate(const String& name) const {
-  EnsureTopLevelClassIsFinalized();
-  Object& obj = Object::Handle(LookupObjectAllowPrivate(name));
-  if (obj.IsFunction()) {
-    return Function::Cast(obj).ptr();
-  }
-  return Function::null();
-}
-
-FunctionPtr Library::LookupLocalFunction(const String& name) const {
   EnsureTopLevelClassIsFinalized();
   Object& obj = Object::Handle(LookupLocalObjectAllowPrivate(name));
   if (obj.IsFunction()) {
@@ -14142,95 +13974,7 @@ ObjectPtr Library::LookupLocalObjectAllowPrivate(const String& name) const {
   return obj.ptr();
 }
 
-ObjectPtr Library::LookupObjectAllowPrivate(const String& name) const {
-  // First check if name is found in the local scope of the library.
-  Object& obj = Object::Handle(LookupLocalObjectAllowPrivate(name));
-  if (!obj.IsNull()) {
-    return obj.ptr();
-  }
-
-  // Do not look up private names in imported libraries.
-  if (ShouldBePrivate(name)) {
-    return Object::null();
-  }
-
-  // Now check if name is found in any imported libs.
-  return LookupImportedObject(name);
-}
-
-ObjectPtr Library::LookupImportedObject(const String& name) const {
-  Object& obj = Object::Handle();
-  Namespace& import = Namespace::Handle();
-  Library& import_lib = Library::Handle();
-  String& import_lib_url = String::Handle();
-  String& first_import_lib_url = String::Handle();
-  Object& found_obj = Object::Handle();
-  String& found_obj_name = String::Handle();
-  ASSERT(!ShouldBePrivate(name));
-  for (intptr_t i = 0; i < num_imports(); i++) {
-    import = ImportAt(i);
-    obj = import.Lookup(name);
-    if (!obj.IsNull()) {
-      import_lib = import.target();
-      import_lib_url = import_lib.url();
-      if (found_obj.ptr() != obj.ptr()) {
-        if (first_import_lib_url.IsNull() ||
-            first_import_lib_url.StartsWith(Symbols::DartScheme())) {
-          // This is the first object we found, or the
-          // previously found object is exported from a Dart
-          // system library. The newly found object hides the one
-          // from the Dart library.
-          first_import_lib_url = import_lib.url();
-          found_obj = obj.ptr();
-          found_obj_name = obj.DictionaryName();
-        } else if (import_lib_url.StartsWith(Symbols::DartScheme())) {
-          // The newly found object is exported from a Dart system
-          // library. It is hidden by the previously found object.
-          // We continue to search.
-        } else if (Field::IsSetterName(found_obj_name) &&
-                   !Field::IsSetterName(name)) {
-          // We are looking for an unmangled name or a getter, but
-          // the first object we found is a setter. Replace the first
-          // object with the one we just found.
-          first_import_lib_url = import_lib.url();
-          found_obj = obj.ptr();
-          found_obj_name = found_obj.DictionaryName();
-        } else {
-          // We found two different objects with the same name.
-          // Note that we need to compare the names again because
-          // looking up an unmangled name can return a getter or a
-          // setter. A getter name is the same as the unmangled name,
-          // but a setter name is different from an unmangled name or a
-          // getter name.
-          if (Field::IsGetterName(found_obj_name)) {
-            found_obj_name = Field::NameFromGetter(found_obj_name);
-          }
-          String& second_obj_name = String::Handle(obj.DictionaryName());
-          if (Field::IsGetterName(second_obj_name)) {
-            second_obj_name = Field::NameFromGetter(second_obj_name);
-          }
-          if (found_obj_name.Equals(second_obj_name)) {
-            return Object::null();
-          }
-        }
-      }
-    }
-  }
-  return found_obj.ptr();
-}
-
 ClassPtr Library::LookupClass(const String& name) const {
-  Object& obj = Object::Handle(LookupLocalObject(name));
-  if (obj.IsNull() && !ShouldBePrivate(name)) {
-    obj = LookupImportedObject(name);
-  }
-  if (obj.IsClass()) {
-    return Class::Cast(obj).ptr();
-  }
-  return Class::null();
-}
-
-ClassPtr Library::LookupLocalClass(const String& name) const {
   Object& obj = Object::Handle(LookupLocalObject(name));
   if (obj.IsClass()) {
     return Class::Cast(obj).ptr();
@@ -14239,41 +13983,9 @@ ClassPtr Library::LookupLocalClass(const String& name) const {
 }
 
 ClassPtr Library::LookupClassAllowPrivate(const String& name) const {
-  // See if the class is available in this library or in the top level
-  // scope of any imported library.
-  Zone* zone = Thread::Current()->zone();
-  const Class& cls = Class::Handle(zone, LookupClass(name));
-  if (!cls.IsNull()) {
-    return cls.ptr();
-  }
-
-  // Now try to lookup the class using its private name, but only in
-  // this library (not in imported libraries).
-  if (ShouldBePrivate(name)) {
-    String& private_name = String::Handle(zone, PrivateName(name));
-    const Object& obj = Object::Handle(LookupLocalObject(private_name));
-    if (obj.IsClass()) {
-      return Class::Cast(obj).ptr();
-    }
-  }
-  return Class::null();
-}
-
-// Mixin applications can have multiple private keys from different libraries.
-ClassPtr Library::SlowLookupClassAllowMultiPartPrivate(
-    const String& name) const {
-  Array& dict = Array::Handle(dictionary());
-  Object& entry = Object::Handle();
-  String& cls_name = String::Handle();
-  for (intptr_t i = 0; i < dict.Length(); i++) {
-    entry = dict.At(i);
-    if (entry.IsClass()) {
-      cls_name = Class::Cast(entry).Name();
-      // Warning: comparison is not symmetric.
-      if (String::EqualsIgnoringPrivateKey(cls_name, name)) {
-        return Class::Cast(entry).ptr();
-      }
-    }
+  Object& obj = Object::Handle(LookupLocalObjectAllowPrivate(name));
+  if (obj.IsClass()) {
+    return Class::Cast(obj).ptr();
   }
   return Class::null();
 }
@@ -14323,8 +14035,6 @@ void Library::DropDependenciesAndCaches() const {
   untag()->set_imports(Object::empty_array().ptr());
   untag()->set_exports(Object::empty_array().ptr());
   StoreNonPointer(&untag()->num_imports_, 0);
-  untag()->set_resolved_names(Array::null());
-  untag()->set_exported_names(Array::null());
   untag()->set_loaded_scripts(Array::null());
   untag()->set_dependencies(Array::null());
 #if defined(PRODUCT)
@@ -14370,33 +14080,6 @@ static ArrayPtr NewDictionary(intptr_t initial_size) {
   return dict.ptr();
 }
 
-void Library::InitResolvedNamesCache() const {
-  Thread* thread = Thread::Current();
-  ASSERT(thread->IsDartMutatorThread());
-  REUSABLE_FUNCTION_HANDLESCOPE(thread);
-  Array& cache = thread->ArrayHandle();
-  cache = HashTables::New<ResolvedNamesMap>(64);
-  untag()->set_resolved_names(cache.ptr());
-}
-
-void Library::ClearResolvedNamesCache() const {
-  ASSERT(Thread::Current()->IsDartMutatorThread());
-  untag()->set_resolved_names(Array::null());
-}
-
-void Library::InitExportedNamesCache() const {
-  Thread* thread = Thread::Current();
-  ASSERT(thread->IsDartMutatorThread());
-  REUSABLE_FUNCTION_HANDLESCOPE(thread);
-  Array& cache = thread->ArrayHandle();
-  cache = HashTables::New<ResolvedNamesMap>(16);
-  untag()->set_exported_names(cache.ptr());
-}
-
-void Library::ClearExportedNamesCache() const {
-  untag()->set_exported_names(Array::null());
-}
-
 void Library::InitClassDictionary() const {
   Thread* thread = Thread::Current();
   ASSERT(thread->IsDartMutatorThread());
@@ -14430,8 +14113,6 @@ LibraryPtr Library::NewLibraryHelper(const String& url, bool import_core_lib) {
   const Library& result = Library::Handle(zone, Library::New());
   result.untag()->set_name(Symbols::Empty().ptr());
   result.untag()->set_url(url.ptr());
-  result.untag()->set_resolved_names(Array::null());
-  result.untag()->set_exported_names(Array::null());
   result.untag()->set_dictionary(Object::empty_array().ptr());
   Array& array = Array::Handle(zone);
   array = HashTables::New<MetadataMap>(4, Heap::kOld);
@@ -15506,19 +15187,18 @@ FunctionPtr Library::GetFunction(const GrowableArray<Library*>& libs,
   for (intptr_t l = 0; l < libs.length(); l++) {
     const Library& lib = *libs[l];
     if (strcmp(class_name, "::") == 0) {
-      func_str = Symbols::New(thread, function_name);
-      func = lib.LookupFunctionAllowPrivate(func_str);
+      cls = lib.toplevel_class();
     } else {
       class_str = String::New(class_name);
       cls = lib.LookupClassAllowPrivate(class_str);
-      if (!cls.IsNull()) {
-        if (cls.EnsureIsFinalized(thread) == Error::null()) {
-          func_str = String::New(function_name);
-          if (function_name[0] == '.') {
-            func_str = String::Concat(class_str, func_str);
-          }
-          func = cls.LookupFunctionAllowPrivate(func_str);
+    }
+    if (!cls.IsNull()) {
+      if (cls.EnsureIsFinalized(thread) == Error::null()) {
+        func_str = String::New(function_name);
+        if (function_name[0] == '.') {
+          func_str = String::Concat(class_str, func_str);
         }
+        func = cls.LookupFunctionAllowPrivate(func_str);
       }
     }
     if (!func.IsNull()) {
@@ -18892,6 +18572,14 @@ AbstractTypePtr ContextScope::TypeAt(intptr_t scope_index) const {
 void ContextScope::SetTypeAt(intptr_t scope_index,
                              const AbstractType& type) const {
   untag()->set_type_at(scope_index, type.ptr());
+}
+
+intptr_t ContextScope::CidAt(intptr_t scope_index) const {
+  return Smi::Value(untag()->cid_at(scope_index));
+}
+
+void ContextScope::SetCidAt(intptr_t scope_index, intptr_t cid) const {
+  untag()->set_cid_at(scope_index, Smi::New(cid));
 }
 
 intptr_t ContextScope::ContextIndexAt(intptr_t scope_index) const {
@@ -26948,10 +26636,12 @@ SuspendStatePtr SuspendState::Clone(Thread* thread,
     dst.set_pc(src.pc());
     // Trigger write barrier if needed.
     if (dst.ptr()->IsOldObject()) {
-      dst.untag()->EnsureInRememberedSet(thread);
-    }
-    if (thread->is_marking()) {
-      thread->DeferredMarkingStackAddObject(dst.ptr());
+      if (!dst.untag()->IsRemembered()) {
+        dst.untag()->EnsureInRememberedSet(thread);
+      }
+      if (thread->is_marking()) {
+        thread->DeferredMarkingStackAddObject(dst.ptr());
+      }
     }
   }
   return dst.ptr();

@@ -224,15 +224,7 @@ class DataSourceReader {
   /// Registers a [CodegenReader] with this data source to support
   /// deserialization of codegen only data.
   void registerCodegenReader(CodegenReader reader) {
-    assert(_codegenReader == null);
     _codegenReader = reader;
-  }
-
-  /// Unregisters the [CodegenReader] from this data source to remove support
-  /// for deserialization of codegen only data.
-  void deregisterCodegenReader(CodegenReader reader) {
-    assert(_codegenReader == reader);
-    _codegenReader = null;
   }
 
   /// Evaluates [f] with [DataSource] for the provided [source] as the
@@ -448,9 +440,9 @@ class DataSourceReader {
   ///
   /// This is a convenience method to be used together with
   /// [DataSinkWriter.writeStringMap].
-  Map<String, V>? readStringMap<V>(V f(), {bool emptyAsNull = false}) {
+  Map<String, V> readStringMap<V>(V f()) {
     int count = readInt();
-    if (count == 0 && emptyAsNull) return null;
+    if (count == 0) return {};
     Map<String, V> map = {};
     for (int i = 0; i < count; i++) {
       String key = readString();

@@ -1028,6 +1028,14 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
+  static const CompileTimeErrorCode CONST_TYPE_PARAMETER = CompileTimeErrorCode(
+    'CONST_TYPE_PARAMETER',
+    "Type parameters can't be used in a constant expression.",
+    correctionMessage:
+        "Try replacing the type parameter with a different type.",
+  );
+
+  ///  No parameters.
   static const CompileTimeErrorCode CONST_WITH_NON_CONST = CompileTimeErrorCode(
     'CONST_WITH_NON_CONST',
     "The constructor being called isn't a const constructor.",
@@ -1703,6 +1711,16 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
     'EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF',
     "The extension type representation can't depend on itself.",
     correctionMessage: "Try specifying a different type.",
+  );
+
+  ///  Parameters:
+  ///  0: the name of the abstract method
+  ///  1: the name of the enclosing extension type
+  static const CompileTimeErrorCode EXTENSION_TYPE_WITH_ABSTRACT_MEMBER =
+      CompileTimeErrorCode(
+    'EXTENSION_TYPE_WITH_ABSTRACT_MEMBER',
+    "'{0}' must have a method body because '{1}' is an extension type.",
+    correctionMessage: "Try adding a body to '{0}'.",
   );
 
   static const CompileTimeErrorCode EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER =
@@ -4297,6 +4315,13 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
   );
 
   ///  No parameters.
+  static const CompileTimeErrorCode RECURSIVE_CONSTANT_CONSTRUCTOR =
+      CompileTimeErrorCode(
+    'RECURSIVE_CONSTANT_CONSTRUCTOR',
+    "The constant constructor depends on itself.",
+  );
+
+  ///  No parameters.
   ///
   ///  TODO(scheglov) review this later, there are no explicit "it is a
   ///  compile-time error" in specification. But it was added to the co19 and
@@ -5986,6 +6011,15 @@ class WarningCode extends AnalyzerErrorCode {
     hasPublishedDocs: true,
   );
 
+  ///  Parameters:
+  ///  0: the name of the element
+  static const WarningCode DEPRECATED_EXPORT_USE = WarningCode(
+    'DEPRECATED_EXPORT_USE',
+    "The ability to import '{0}' indirectly is deprecated.",
+    correctionMessage: "Try importing '{0}' directly.",
+    hasPublishedDocs: true,
+  );
+
   ///  No parameters.
   static const WarningCode DEPRECATED_EXTENDS_FUNCTION = WarningCode(
     'DEPRECATED_SUBTYPE_OF_FUNCTION',
@@ -6019,6 +6053,42 @@ class WarningCode extends AnalyzerErrorCode {
     "Using the 'new' keyword in a comment reference is deprecated.",
     correctionMessage: "Try referring to a constructor by its name.",
     hasPublishedDocs: true,
+  );
+
+  static const WarningCode DOC_DIRECTIVE_MISSING_CLOSING_BRACE = WarningCode(
+    'DOC_DIRECTIVE_MISSING_CLOSING_BRACE',
+    "Doc directive is missing a closing curly brace ('}').",
+    correctionMessage: "Try closing the directive with a curly brace.",
+  );
+
+  static const WarningCode DOC_IMPORT_CANNOT_BE_DEFERRED = WarningCode(
+    'DOC_IMPORT_CANNOT_BE_DEFERRED',
+    "Doc imports can't be deferred.",
+    correctionMessage: "Try removing the 'deferred' keyword.",
+  );
+
+  static const WarningCode DOC_IMPORT_CANNOT_HAVE_CONFIGURATIONS = WarningCode(
+    'DOC_IMPORT_CANNOT_HAVE_CONFIGURATIONS',
+    "Doc imports can't have configurations.",
+    correctionMessage: "Try removing the configurations.",
+  );
+
+  static const WarningCode DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT = WarningCode(
+    'DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT',
+    "YouTube directive is missing a height argument.",
+    correctionMessage: "Try adding a height argument after the width.",
+  );
+
+  static const WarningCode DOC_YOUTUBE_DIRECTIVE_MISSING_URL = WarningCode(
+    'DOC_YOUTUBE_DIRECTIVE_MISSING_URL',
+    "YouTube directive is missing a URL argument.",
+    correctionMessage: "Try adding a URL after the width and height.",
+  );
+
+  static const WarningCode DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH = WarningCode(
+    'DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH',
+    "YouTube directive is missing a width argument.",
+    correctionMessage: "Try adding a width argument after '@youtube'.",
   );
 
   ///  Duplicate exports.

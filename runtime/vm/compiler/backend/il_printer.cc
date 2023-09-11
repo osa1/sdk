@@ -6,6 +6,7 @@
 
 #include <tuple>
 
+#include "vm/class_id.h"
 #include "vm/compiler/api/print_filter.h"
 #include "vm/compiler/backend/il.h"
 #include "vm/compiler/backend/linearscan.h"
@@ -802,6 +803,12 @@ void TestCidsInstr::PrintOperandsTo(BaseTextBuffer* f) const {
   }
 }
 
+void TestRangeInstr::PrintOperandsTo(BaseTextBuffer* f) const {
+  left()->PrintTo(f);
+  f->Printf(" %s [%" Pd "-%" Pd "]", kind() == Token::kIS ? "in" : "not in",
+            lower_, upper_);
+}
+
 void EqualityCompareInstr::PrintOperandsTo(BaseTextBuffer* f) const {
   left()->PrintTo(f);
   f->Printf(" %s ", Token::Str(kind()));
@@ -1367,6 +1374,40 @@ void StoreIndexedInstr::PrintOperandsTo(BaseTextBuffer* f) const {
   Instruction::PrintOperandsTo(f);
   if (!ShouldEmitStoreBarrier()) {
     f->AddString(", NoStoreBarrier");
+  }
+}
+
+void MemoryCopyInstr::PrintOperandsTo(BaseTextBuffer* f) const {
+  Instruction::PrintOperandsTo(f);
+  // kTypedDataUint8ArrayCid is used as the default cid for cases where
+  // the destination object is a subclass of PointerBase and the arguments
+  // are given in terms of bytes, so only print if the cid differs.
+  if (dest_cid_ != kTypedDataUint8ArrayCid) {
+    const Class& cls =
+        Class::Handle(IsolateGroup::Current()->class_table()->At(dest_cid_));
+    if (!cls.IsNull()) {
+      f->Printf(", dest_cid=%s (%d)", cls.ScrubbedNameCString(), dest_cid_);
+    } else {
+      f->Printf(", dest_cid=%d", dest_cid_);
+    }
+  }
+  if (src_cid_ != dest_cid_) {
+    const Class& cls =
+        Class::Handle(IsolateGroup::Current()->class_table()->At(src_cid_));
+    if (!cls.IsNull()) {
+      f->Printf(", src_cid=%s (%d)", cls.ScrubbedNameCString(), src_cid_);
+    } else {
+      f->Printf(", src_cid=%d", src_cid_);
+    }
+  }
+  if (element_size() != 1) {
+    f->Printf(", element_size=%" Pd "", element_size());
+  }
+  if (unboxed_inputs()) {
+    f->AddString(", unboxed_inputs");
+  }
+  if (can_overlap()) {
+    f->AddString(", can_overlap");
   }
 }
 

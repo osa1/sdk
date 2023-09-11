@@ -38,6 +38,7 @@ import 'package:_fe_analyzer_shared/src/parser/parser.dart'
         Assert,
         BlockKind,
         ConstructorReferenceContext,
+        DeclarationHeaderKind,
         DeclarationKind,
         FormalParameterKind,
         IdentifierContext,
@@ -5095,46 +5096,52 @@ class AstBuilder extends StackListener {
   }
 
   @override
-  void handleRecoverClassHeader() {
+  void handleRecoverDeclarationHeader(DeclarationHeaderKind kind) {
     debugEvent("RecoverClassHeader");
 
     var implementsClause =
         pop(NullValues.IdentifierList) as ImplementsClauseImpl?;
     var withClause = pop(NullValues.WithClause) as WithClauseImpl?;
     var extendsClause = pop(NullValues.ExtendsClause) as ExtendsClauseImpl?;
-    var declaration = _classLikeBuilder as _ClassDeclarationBuilder;
-    if (extendsClause != null) {
-      if (declaration.extendsClause?.superclass == null) {
-        declaration.extendsClause = extendsClause;
-      }
-    }
-    if (withClause != null) {
-      final existingClause = declaration.withClause;
-      if (existingClause == null) {
-        declaration.withClause = withClause;
-      } else {
-        declaration.withClause = WithClauseImpl(
-          withKeyword: existingClause.withKeyword,
-          mixinTypes: [
-            ...existingClause.mixinTypes,
-            ...withClause.mixinTypes,
-          ],
-        );
-      }
-    }
-    if (implementsClause != null) {
-      final existingClause = declaration.implementsClause;
-      if (existingClause == null) {
-        declaration.implementsClause = implementsClause;
-      } else {
-        declaration.implementsClause = ImplementsClauseImpl(
-          implementsKeyword: existingClause.implementsKeyword,
-          interfaces: [
-            ...existingClause.interfaces,
-            ...implementsClause.interfaces,
-          ],
-        );
-      }
+    switch (kind) {
+      case DeclarationHeaderKind.Class:
+        var declaration = _classLikeBuilder as _ClassDeclarationBuilder;
+        if (extendsClause != null) {
+          if (declaration.extendsClause?.superclass == null) {
+            declaration.extendsClause = extendsClause;
+          }
+        }
+        if (withClause != null) {
+          final existingClause = declaration.withClause;
+          if (existingClause == null) {
+            declaration.withClause = withClause;
+          } else {
+            declaration.withClause = WithClauseImpl(
+              withKeyword: existingClause.withKeyword,
+              mixinTypes: [
+                ...existingClause.mixinTypes,
+                ...withClause.mixinTypes,
+              ],
+            );
+          }
+        }
+        if (implementsClause != null) {
+          final existingClause = declaration.implementsClause;
+          if (existingClause == null) {
+            declaration.implementsClause = implementsClause;
+          } else {
+            declaration.implementsClause = ImplementsClauseImpl(
+              implementsKeyword: existingClause.implementsKeyword,
+              interfaces: [
+                ...existingClause.interfaces,
+                ...implementsClause.interfaces,
+              ],
+            );
+          }
+        }
+      case DeclarationHeaderKind.ExtensionType:
+      // TODO(scheglov): Support header recovery on extension type
+      //  declaration.
     }
   }
 
@@ -5502,7 +5509,14 @@ class AstBuilder extends StackListener {
   @visibleForTesting
   CommentImpl parseDocComment(Token dartdoc) {
     // Build and return the comment.
-    return DocCommentBuilder(parser, dartdoc).build();
+    return DocCommentBuilder(
+      parser,
+      errorReporter.errorReporter,
+      uri,
+      _featureSet,
+      _lineInfo,
+      dartdoc,
+    ).build();
   }
 
   List<CollectionElementImpl> popCollectionElements(int count) {

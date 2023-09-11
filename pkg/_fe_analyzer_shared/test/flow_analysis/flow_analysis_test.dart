@@ -4168,23 +4168,14 @@ main() {
       test('reachability', () {
         var reachable = FlowModel<Type>(Reachability.initial);
         var unreachable = reachable.setUnreachable();
-        expect(reachable.rebaseForward(h.typeOperations, reachable),
-            same(reachable));
-        expect(reachable.rebaseForward(h.typeOperations, unreachable),
-            same(unreachable));
+        expect(reachable.rebaseForward(h, reachable), same(reachable));
+        expect(reachable.rebaseForward(h, unreachable), same(unreachable));
         expect(
-            unreachable
-                .rebaseForward(h.typeOperations, reachable)
-                .reachable
-                .overallReachable,
+            unreachable.rebaseForward(h, reachable).reachable.overallReachable,
             false);
-        expect(
-            unreachable
-                .rebaseForward(h.typeOperations, reachable)
-                .promotionInfo,
+        expect(unreachable.rebaseForward(h, reachable).promotionInfo,
             same(unreachable.promotionInfo));
-        expect(unreachable.rebaseForward(h.typeOperations, unreachable),
-            same(unreachable));
+        expect(unreachable.rebaseForward(h, unreachable), same(unreachable));
       });
 
       test('assignments', () {
@@ -4203,7 +4194,7 @@ main() {
         var s2 = s0
             ._write(h, null, a, Type('int'), new SsaNode<Type>(null))
             ._write(h, null, c, Type('int'), new SsaNode<Type>(null));
-        var result = s1.rebaseForward(h.typeOperations, s2);
+        var result = s1.rebaseForward(h, s2);
         expect(result._infoFor(h, a).assigned, true);
         expect(result._infoFor(h, b).assigned, true);
         expect(result._infoFor(h, c).assigned, true);
@@ -4223,7 +4214,7 @@ main() {
         // In s1, a and b are write captured.  In s2, a and c are.
         var s1 = s0._conservativeJoin(h, [a, b], [a, b]);
         var s2 = s1._conservativeJoin(h, [a, c], [a, c]);
-        var result = s1.rebaseForward(h.typeOperations, s2);
+        var result = s1.rebaseForward(h, s2);
         expect(
           result._infoFor(h, a),
           _matchVariableModel(writeCaptured: true, unassigned: false),
@@ -4249,11 +4240,11 @@ main() {
         var s1 = s0._conservativeJoin(h, [a], [a]);
         var s2 = s0._tryPromoteForTypeCheck(h, a, 'int').ifTrue;
         expect(
-          s1.rebaseForward(h.typeOperations, s2)._infoFor(h, a),
+          s1.rebaseForward(h, s2)._infoFor(h, a),
           _matchVariableModel(writeCaptured: true, chain: isNull),
         );
         expect(
-          s2.rebaseForward(h.typeOperations, s1)._infoFor(h, a),
+          s2.rebaseForward(h, s1)._infoFor(h, a),
           _matchVariableModel(writeCaptured: true, chain: isNull),
         );
       });
@@ -4274,7 +4265,7 @@ main() {
           var s2 = otherType == null
               ? s0
               : s0._tryPromoteForTypeCheck(h, x, otherType).ifTrue;
-          var result = s2.rebaseForward(h.typeOperations, s1);
+          var result = s2.rebaseForward(h, s1);
           if (expectedChain == null) {
             expect(result.promotionInfo,
                 contains(h.promotionKeyStore.keyForVariable(x)));
@@ -4343,7 +4334,7 @@ main() {
           var expectedFinallyChain = before.toList()..addAll(inFinally);
           _checkChain(
               finallyModel._infoFor(h, x).promotedTypes, expectedFinallyChain);
-          var result = tryModel.rebaseForward(h.typeOperations, finallyModel);
+          var result = tryModel.rebaseForward(h, finallyModel);
           _checkChain(result._infoFor(h, x).promotedTypes, expectedResult);
           // And verify that the inputs are unchanged.
           _checkChain(initialModel._infoFor(h, x).promotedTypes, before);
@@ -4385,11 +4376,11 @@ main() {
         var s1 = s0._tryPromoteForTypeCheck(h, a, 'int').ifFalse;
         var s2 = s0._tryPromoteForTypeCheck(h, a, 'String').ifFalse;
         expect(
-          s1.rebaseForward(h.typeOperations, s2)._infoFor(h, a),
+          s1.rebaseForward(h, s2)._infoFor(h, a),
           _matchVariableModel(ofInterest: ['int', 'String']),
         );
         expect(
-          s2.rebaseForward(h.typeOperations, s1)._infoFor(h, a),
+          s2.rebaseForward(h, s1)._infoFor(h, a),
           _matchVariableModel(ofInterest: ['int', 'String']),
         );
       });
@@ -4398,8 +4389,8 @@ main() {
         var x = Var('x')..type = Type('Object?');
         var s0 = FlowModel<Type>(Reachability.initial);
         var s1 = s0._declare(h, x, true);
-        expect(s1.rebaseForward(h.typeOperations, s0), same(s0));
-        expect(s0.rebaseForward(h.typeOperations, s1), same(s1));
+        expect(s1.rebaseForward(h, s0), same(s1));
+        expect(s0.rebaseForward(h, s1), same(s1));
       });
     });
   });
@@ -4749,97 +4740,6 @@ main() {
           w: same(intQModel)
         });
       });
-    });
-  });
-
-  group('merge', () {
-    late int x;
-    var intType = Type('int');
-    var stringType = Type('String');
-    const emptyMap = const <int, PromotionModel<Type>>{};
-
-    setUp(() {
-      x = h.promotionKeyStore.keyForVariable(Var('x')..type = Type('Object?'));
-    });
-
-    PromotionModel<Type> varModel(List<Type>? promotionChain,
-            {bool assigned = false}) =>
-        PromotionModel<Type>(
-            promotedTypes: promotionChain,
-            tested: promotionChain ?? [],
-            assigned: assigned,
-            unassigned: !assigned,
-            ssaNode: new SsaNode<Type>(null));
-
-    test('first is null', () {
-      var s1 = FlowModel.withInfo(Reachability.initial.split(), emptyMap);
-      var result = FlowModel.merge(h, null, s1);
-      expect(result.reachable, same(Reachability.initial));
-    });
-
-    test('second is null', () {
-      var splitPoint = Reachability.initial.split();
-      var afterSplit = splitPoint.split();
-      var s1 = FlowModel.withInfo(afterSplit, emptyMap);
-      var result = FlowModel.merge(h, s1, null);
-      expect(result.reachable, same(splitPoint));
-    });
-
-    test('both are reachable', () {
-      var splitPoint = Reachability.initial.split();
-      var afterSplit = splitPoint.split();
-      var s1 = FlowModel.withInfo(afterSplit, {
-        x: varModel([intType])
-      });
-      var s2 = FlowModel.withInfo(afterSplit, {
-        x: varModel([stringType])
-      });
-      var result = FlowModel.merge(h, s1, s2);
-      expect(result.reachable, same(splitPoint));
-      expect(result.promotionInfo[x]!.promotedTypes, isNull);
-    });
-
-    test('first is unreachable', () {
-      var splitPoint = Reachability.initial.split();
-      var afterSplit = splitPoint.split();
-      var s1 = FlowModel.withInfo(afterSplit.setUnreachable(), {
-        x: varModel([intType])
-      });
-      var s2 = FlowModel.withInfo(afterSplit, {
-        x: varModel([stringType])
-      });
-      var result = FlowModel.merge(h, s1, s2);
-      expect(result.reachable, same(splitPoint));
-      expect(result.promotionInfo, same(s2.promotionInfo));
-    });
-
-    test('second is unreachable', () {
-      var splitPoint = Reachability.initial.split();
-      var afterSplit = splitPoint.split();
-      var s1 = FlowModel.withInfo(afterSplit, {
-        x: varModel([intType])
-      });
-      var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
-        x: varModel([stringType])
-      });
-      var result = FlowModel.merge(h, s1, s2);
-      expect(result.reachable, same(splitPoint));
-      expect(result.promotionInfo, same(s1.promotionInfo));
-    });
-
-    test('both are unreachable', () {
-      var splitPoint = Reachability.initial.split();
-      var afterSplit = splitPoint.split();
-      var s1 = FlowModel.withInfo(afterSplit.setUnreachable(), {
-        x: varModel([intType])
-      });
-      var s2 = FlowModel.withInfo(afterSplit.setUnreachable(), {
-        x: varModel([stringType])
-      });
-      var result = FlowModel.merge(h, s1, s2);
-      expect(result.reachable.locallyReachable, false);
-      expect(result.reachable.parent, same(splitPoint.parent));
-      expect(result.promotionInfo[x]!.promotedTypes, isNull);
     });
   });
 
@@ -6885,6 +6785,232 @@ main() {
         ]);
       });
     });
+
+    group('Via local condition variable:', () {
+      group('without intervening promotion:', () {
+        // These tests exercise the code path in `FlowModel.rebaseForward` where
+        // `this` model (which represents the state captured at the time the
+        // condition variable is written) contains a promotion key for the
+        // field, but the `base` model (which represents state just prior to
+        // reading from the condition variable) doesn't contain any promotion
+        // key for the field. Furthermore, since no other promotions occur
+        // between writing and reading the condition variable, `rebaseForward`
+        // will not create a fresh `FlowModel`; it will simply return `this`
+        // model.
+        test('using null check', () {
+          h.addMember('C', '_field', 'int?', promotable: true);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').notEq(nullLiteral)),
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+
+        test('using `is` test', () {
+          h.addMember('C', '_field', 'Object', promotable: true);
+          h.addSuperInterfaces('C', (_) => [Type('Object')]);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').is_('int')),
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+      });
+
+      group('with intervening related promotion:', () {
+        // These tests exercise the code path in `FlowModel.rebaseForward` where
+        // `this` model (which represents the state captured at the time the
+        // condition variable is written) and the `base` model (which represents
+        // state just prior to reading from the condition variable) both contain
+        // a promotion key for the field.
+        test('using null check', () {
+          h.addMember('C', '_field', 'int?', promotable: true);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').notEq(nullLiteral)),
+            if_(c.property('_field').notEq(nullLiteral), [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+
+        test('using `is` test', () {
+          h.addMember('C', '_field', 'Object', promotable: true);
+          h.addSuperInterfaces('C', (_) => [Type('Object')]);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').is_('int')),
+            if_(c.property('_field').is_('int'), [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+      });
+
+      group('with intervening unrelated promotion:', () {
+        // These tests exercise the code path in `FlowModel.rebaseForward` where
+        // `this` model (which represents the state captured at the time the
+        // condition variable is written) contains a promotion key for the
+        // field, but the `base` model (which represents state just prior to
+        // reading from the condition variable) doesn't contain any promotion
+        // key for the field. Since a different variable is promoted in between
+        // writing and reading the condition variable, `rebaseForward` will be
+        // forced to create a fresh `FlowModel`; it will not be able to simply
+        // return `this` model.
+        test('using null check', () {
+          h.addMember('C', '_field', 'int?', promotable: true);
+          var c = Var('c');
+          var unrelated = Var('unrelated');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(unrelated, initializer: expr('int?')),
+            declare(b, initializer: c.property('_field').notEq(nullLiteral)),
+            unrelated.nonNullAssert,
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+
+        test('using `is` test', () {
+          h.addMember('C', '_field', 'Object', promotable: true);
+          h.addSuperInterfaces('C', (_) => [Type('Object')]);
+          var c = Var('c');
+          var unrelated = Var('unrelated');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(unrelated, initializer: expr('int?')),
+            declare(b, initializer: c.property('_field').is_('int')),
+            unrelated.nonNullAssert,
+            if_(b, [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+          ]);
+        });
+      });
+
+      group('disabled by intervening assignment:', () {
+        test('using null check', () {
+          h.addMember('C', '_field', 'int?', promotable: true);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').notEq(nullLiteral)),
+            if_(c.property('_field').notEq(nullLiteral), [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+            c.write(expr('C')),
+            if_(b, [
+              checkNotPromoted(c.property('_field')),
+            ]),
+          ]);
+        });
+
+        test('using `is` test', () {
+          h.addMember('C', '_field', 'Object', promotable: true);
+          h.addSuperInterfaces('C', (_) => [Type('Object')]);
+          var c = Var('c');
+          var b = Var('b');
+          h.run([
+            declare(c, initializer: expr('C')),
+            declare(b, initializer: c.property('_field').is_('int')),
+            if_(c.property('_field').is_('int'), [
+              checkPromoted(c.property('_field'), 'int'),
+            ]),
+            c.write(expr('C')),
+            if_(b, [
+              checkNotPromoted(c.property('_field')),
+            ]),
+          ]);
+        });
+      });
+    });
+
+    group('And object pattern:', () {
+      test('Promotion via object promotion', () {
+        h.addMember('C', '_property', 'int?', promotable: true);
+        h.addDownwardInfer(name: 'C', context: 'C', result: 'C');
+        var x = Var('x');
+        h.run([
+          declare(x, initializer: expr('C')),
+          ifCase(
+              x,
+              objectPattern(
+                  requiredType: 'C',
+                  fields: [wildcard().nullCheck.recordField('_property')]),
+              [
+                checkPromoted(x.property('_property'), 'int'),
+              ],
+              [
+                checkNotPromoted(x.property('_property')),
+              ])
+        ]);
+      });
+
+      test('Scrutinee restored after object pattern', () {
+        h.addMember('C', '_property', 'int?', promotable: true);
+        h.addDownwardInfer(name: 'C', context: 'C?', result: 'C');
+        h.addSuperInterfaces('C', (_) => [Type('Object')]);
+        var x = Var('x');
+        h.run([
+          declare(x, initializer: expr('C?')),
+          ifCase(
+              x,
+              objectPattern(requiredType: 'C', fields: [
+                wildcard().nullCheck.recordField('_property')
+              ]).or(
+                  // After visiting the object pattern, the scrutinee should now
+                  // be restored to point to the `x`, so this null check should
+                  // promote `x` to `C`.
+                  wildcard().nullCheck),
+              [
+                checkPromoted(x, 'C'),
+              ],
+              [
+                checkNotPromoted(x),
+              ])
+        ]);
+      });
+
+      test('Subpattern matched value type accounts for previous promotion', () {
+        h.addMember('C', '_property', 'int?', promotable: true);
+        h.addDownwardInfer(name: 'C', context: 'C', result: 'C');
+        var x = Var('x');
+        var y = Var('y');
+        h.run([
+          declare(x, initializer: expr('C')),
+          x.property('_property').nonNullAssert,
+          checkPromoted(x.property('_property'), 'int'),
+          ifCase(
+              x,
+              objectPattern(requiredType: 'C', fields: [
+                y.pattern(expectInferredType: 'int').recordField('_property')
+              ]),
+              [])
+        ]);
+      });
+    });
   });
 
   group('Patterns:', () {
@@ -7223,6 +7349,45 @@ main() {
       test('Error type does not trigger unnecessary cast warning', () {
         h.run([
           ifCase(expr('int'), wildcard().as_('error'), []),
+        ]);
+      });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'int?', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), wildcard().as_('int'), [
+            checkPromoted(c.property('_property'), 'int'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            wildcard().as_('num').when(expr('bool')).then([
+              checkPromoted(c.property('_property'), 'num'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            wildcard().as_('int').then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'int?', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), wildcard().as_('int'), [
+            checkNotPromoted(c.property('_property')),
+          ]),
         ]);
       });
     });
@@ -7821,6 +7986,22 @@ main() {
                 ]),
           ]);
         });
+
+        test('Join variable is promotable', () {
+          var x1 = Var('x', identity: 'x1');
+          var x2 = Var('x', identity: 'x2');
+          var x = PatternVariableJoin('x', expectedComponents: [x1, x2]);
+          h.run([
+            ifCase(
+                expr('int?'),
+                x1.pattern(type: 'int?').nullCheck.or(x2.pattern(type: 'int?')),
+                [
+                  checkNotPromoted(x),
+                  x.nonNullAssert,
+                  checkPromoted(x, 'int'),
+                ]),
+          ]);
+        });
       });
 
       group(
@@ -7833,9 +8014,13 @@ main() {
           // it's not actually assigned on both sides of the or-pattern) because
           // this avoids redundant errors.
           h.run([
-            ifCase(expr('int?'),
+            ifCase(expr('num?'),
                 (x1.pattern().nullCheck.or(wildcard()))..errorId = 'OR', [
               checkAssigned(x, true),
+              // Also verify that the join variable is promotable
+              checkNotPromoted(x),
+              x.as_('int'),
+              checkPromoted(x, 'int'),
             ]),
           ], expectedErrors: {
             'logicalOrPatternBranchMissingVariable(node: OR, hasInLeft: true, '
@@ -7853,6 +8038,10 @@ main() {
             ifCase(expr('int?'),
                 (wildcard().nullCheck.or(x1.pattern()))..errorId = 'OR', [
               checkAssigned(x, true),
+              // Also verify that the join variable is promotable
+              checkNotPromoted(x),
+              x.nonNullAssert,
+              checkPromoted(x, 'int'),
             ]),
           ], expectedErrors: {
             'logicalOrPatternBranchMissingVariable(node: OR, hasInLeft: false, '
@@ -8157,6 +8346,45 @@ main() {
           ]);
         });
       });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), listPattern([]), [
+            checkPromoted(c.property('_property'), 'List<Object?>'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            listPattern([]).when(expr('bool')).then([
+              checkPromoted(c.property('_property'), 'List<Object?>'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            listPattern([]).then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), listPattern([]), [
+            checkNotPromoted(c.property('_property')),
+          ]),
+        ]);
+      });
     });
 
     group('Map pattern:', () {
@@ -8282,6 +8510,49 @@ main() {
           ]);
         });
       });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'),
+              mapPattern([mapPatternEntry(intLiteral(0), wildcard())]), [
+            checkPromoted(c.property('_property'), 'Map<Object?, Object?>'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            mapPattern([mapPatternEntry(intLiteral(0), wildcard())])
+                .when(expr('bool'))
+                .then([
+              checkPromoted(c.property('_property'), 'Map<Object?, Object?>'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            mapPattern([mapPatternEntry(intLiteral(0), wildcard())]).then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'),
+              mapPattern([mapPatternEntry(intLiteral(0), wildcard())]), [
+            checkNotPromoted(c.property('_property')),
+          ]),
+        ]);
+      });
     });
 
     group('Null-assert:', () {
@@ -8347,6 +8618,50 @@ main() {
                 [
                   checkPromoted(x, 'int?'),
                 ]),
+          ]);
+        });
+
+        test('If promotable property', () {
+          h.addMember('C', '_property', 'int?', promotable: true);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            ifCase(c.property('_property'), wildcard().nullAssert, [
+              checkPromoted(c.property('_property'), 'int'),
+            ]),
+          ]);
+        });
+
+        test('If promotable property, target changed', () {
+          h.addMember('C', '_property', 'int?', promotable: true);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            switch_(c.property('_property'), [
+              wildcard().nullAssert.when(expr('bool')).then([
+                checkPromoted(c.property('_property'), 'int'),
+              ]),
+              wildcard()
+                  .when(second(c.write(expr('C')), expr('bool')))
+                  .then([]),
+              (wildcard().nullAssert..errorId = 'SECOND_NULL_ASSERT').then([
+                checkNotPromoted(c.property('_property')),
+              ]),
+            ]),
+          ], expectedErrors: {
+            'matchedTypeIsStrictlyNonNullable('
+                'pattern: SECOND_NULL_ASSERT, matchedType: int)',
+          });
+        });
+
+        test('If non-promotable property', () {
+          h.addMember('C', '_property', 'int?', promotable: false);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            ifCase(c.property('_property'), wildcard().nullAssert, [
+              checkNotPromoted(c.property('_property')),
+            ]),
           ]);
         });
       });
@@ -8471,6 +8786,47 @@ main() {
                 [
                   checkPromoted(x, 'int?'),
                 ]),
+          ]);
+        });
+
+        test('If promotable property', () {
+          h.addMember('C', '_property', 'int?', promotable: true);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            ifCase(c.property('_property'), wildcard().nullCheck, [
+              checkPromoted(c.property('_property'), 'int'),
+            ]),
+          ]);
+        });
+
+        test('If promotable property, target changed', () {
+          h.addMember('C', '_property', 'int?', promotable: true);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            switch_(c.property('_property'), [
+              wildcard().nullCheck.when(expr('bool')).then([
+                checkPromoted(c.property('_property'), 'int'),
+              ]),
+              wildcard()
+                  .when(second(c.write(expr('C')), expr('bool')))
+                  .then([]),
+              wildcard().nullCheck.then([
+                checkNotPromoted(c.property('_property')),
+              ]),
+            ]),
+          ]);
+        });
+
+        test('If non-promotable property', () {
+          h.addMember('C', '_property', 'int?', promotable: false);
+          var c = Var('c');
+          h.run([
+            declare(c, initializer: expr('C')),
+            ifCase(c.property('_property'), wildcard().nullCheck, [
+              checkNotPromoted(c.property('_property')),
+            ]),
           ]);
         });
       });
@@ -8622,6 +8978,49 @@ main() {
               checkReachable(false),
             ],
           ),
+        ]);
+      });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'),
+              objectPattern(requiredType: 'int', fields: []), [
+            checkPromoted(c.property('_property'), 'int'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            objectPattern(requiredType: 'int', fields: [])
+                .when(expr('bool'))
+                .then([
+              checkPromoted(c.property('_property'), 'int'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            objectPattern(requiredType: 'int', fields: []).then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'),
+              objectPattern(requiredType: 'int', fields: []), [
+            checkNotPromoted(c.property('_property')),
+          ]),
         ]);
       });
     });
@@ -8815,6 +9214,45 @@ main() {
               [
                 checkReachable(true),
               ]),
+        ]);
+      });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), recordPattern([]), [
+            checkPromoted(c.property('_property'), '()'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            recordPattern([]).when(expr('bool')).then([
+              checkPromoted(c.property('_property'), '()'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            recordPattern([]).then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), recordPattern([]), [
+            checkNotPromoted(c.property('_property')),
+          ]),
         ]);
       });
     });
@@ -9722,6 +10160,24 @@ main() {
             ]),
           ]);
         });
+
+        test('Join variable is promotable', () {
+          var x1 = Var('x', identity: 'x1');
+          var x2 = Var('x', identity: 'x2');
+          var x = PatternVariableJoin('x', expectedComponents: [x1, x2]);
+          h.run([
+            switch_(expr('int?'), [
+              switchStatementMember([
+                x1.pattern(type: 'int?').nullCheck,
+                x2.pattern(type: 'int?')
+              ], [
+                checkNotPromoted(x),
+                x.nonNullAssert,
+                checkPromoted(x, 'int'),
+              ]),
+            ])
+          ]);
+        });
       });
 
       group(
@@ -9734,12 +10190,16 @@ main() {
           // not actually assigned by both patterns) because this avoids
           // redundant errors.
           h.run([
-            switch_(expr('int?'), [
+            switch_(expr('num?'), [
               switchStatementMember([
                 x1.pattern().nullCheck,
                 wildcard()
               ], [
                 checkAssigned(x, true),
+                // Also verify that the join variable is promotable
+                checkNotPromoted(x),
+                x.as_('int'),
+                checkPromoted(x, 'int'),
               ])
             ]),
           ]);
@@ -9758,6 +10218,10 @@ main() {
                 x1.pattern()
               ], [
                 checkAssigned(x, true),
+                // Also verify that the join variable is promotable
+                checkNotPromoted(x),
+                x.nonNullAssert,
+                checkPromoted(x, 'int'),
               ])
             ]),
           ]);
@@ -10042,6 +10506,49 @@ main() {
           ]);
         });
       });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        var x = Var('x');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), x.pattern(type: 'int'), [
+            checkPromoted(c.property('_property'), 'int'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        var x = Var('x');
+        var y = Var('y');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            x.pattern(type: 'int').when(expr('bool')).then([
+              checkPromoted(c.property('_property'), 'int'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            y.pattern(type: 'int').then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        var x = Var('x');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), x.pattern(type: 'int'), [
+            checkNotPromoted(c.property('_property')),
+          ]),
+        ]);
+      });
     });
 
     group('Wildcard pattern:', () {
@@ -10186,6 +10693,45 @@ main() {
             ]),
           ]);
         });
+      });
+
+      test('Promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), wildcard(type: 'int'), [
+            checkPromoted(c.property('_property'), 'int'),
+          ]),
+        ]);
+      });
+
+      test('Promotable property, target changed', () {
+        h.addMember('C', '_property', 'Object', promotable: true);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          switch_(c.property('_property'), [
+            wildcard(type: 'int').when(expr('bool')).then([
+              checkPromoted(c.property('_property'), 'int'),
+            ]),
+            wildcard().when(second(c.write(expr('C')), expr('bool'))).then([]),
+            wildcard(type: 'int').then([
+              checkNotPromoted(c.property('_property')),
+            ]),
+          ]),
+        ]);
+      });
+
+      test('Non-promotable property', () {
+        h.addMember('C', '_property', 'Object', promotable: false);
+        var c = Var('c');
+        h.run([
+          declare(c, initializer: expr('C')),
+          ifCase(c.property('_property'), wildcard(type: 'int'), [
+            checkNotPromoted(c.property('_property')),
+          ]),
+        ]);
       });
     });
 
@@ -10431,7 +10977,8 @@ extension on FlowModel<Type> {
       this.declare(h.promotionKeyStore.keyForVariable(variable), initialized);
 
   PromotionModel<Type> _infoFor(FlowAnalysisTestHarness h, Var variable) =>
-      infoFor(h.promotionKeyStore.keyForVariable(variable));
+      infoFor(h.promotionKeyStore.keyForVariable(variable),
+          ssaNode: new SsaNode(null));
 
   ExpressionInfo<Type> _tryMarkNonNullable(
           FlowAnalysisTestHarness h, Var variable) =>

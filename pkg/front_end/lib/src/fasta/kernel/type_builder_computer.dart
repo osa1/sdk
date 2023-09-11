@@ -16,7 +16,6 @@ import '../builder/fixed_type_builder.dart';
 import '../builder/formal_parameter_builder.dart';
 import '../builder/function_type_builder.dart';
 import '../builder/future_or_type_declaration_builder.dart';
-import '../builder/library_builder.dart';
 import '../builder/named_type_builder.dart';
 import '../builder/never_type_declaration_builder.dart';
 import '../builder/null_type_declaration_builder.dart';
@@ -56,6 +55,8 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
 
   TypeBuilderComputer(this.loader);
 
+  final Map<TypeParameter, TypeVariableBuilder> functionTypeParameters = {};
+
   @override
   TypeBuilder defaultDartType(DartType node) {
     throw "Unsupported";
@@ -63,33 +64,33 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
 
   @override
   TypeBuilder visitInvalidType(InvalidType node) {
-    return new FixedTypeBuilder(
+    return new FixedTypeBuilderImpl(
         node, /* fileUri = */ null, /* charOffset = */ null);
   }
 
   @override
   TypeBuilder visitDynamicType(DynamicType node) {
     // 'dynamic' is always nullable.
-    return new NamedTypeBuilder.forDartType(
+    return new NamedTypeBuilderImpl.forDartType(
         node, dynamicDeclaration, const NullabilityBuilder.inherent());
   }
 
   @override
   TypeBuilder visitVoidType(VoidType node) {
     // 'void' is always nullable.
-    return new NamedTypeBuilder.forDartType(
+    return new NamedTypeBuilderImpl.forDartType(
         node, voidDeclaration, const NullabilityBuilder.inherent());
   }
 
   @override
   TypeBuilder visitNeverType(NeverType node) {
-    return new NamedTypeBuilder.forDartType(node, neverDeclaration,
+    return new NamedTypeBuilderImpl.forDartType(node, neverDeclaration,
         new NullabilityBuilder.fromNullability(node.nullability));
   }
 
   @override
   TypeBuilder visitNullType(NullType node) {
-    return new NamedTypeBuilder.forDartType(
+    return new NamedTypeBuilderImpl.forDartType(
         node, nullDeclaration, const NullabilityBuilder.inherent());
   }
 
@@ -104,7 +105,7 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
           kernelArguments.length, (int i) => kernelArguments[i].accept(this),
           growable: false);
     }
-    return new NamedTypeBuilder.forDartType(
+    return new NamedTypeBuilderImpl.forDartType(
         node, cls, new NullabilityBuilder.fromNullability(node.nullability),
         arguments: arguments);
   }
@@ -121,7 +122,7 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
           kernelArguments.length, (int i) => kernelArguments[i].accept(this),
           growable: false);
     }
-    return new NamedTypeBuilder.forDartType(node, extensionTypeDeclaration,
+    return new NamedTypeBuilderImpl.forDartType(node, extensionTypeDeclaration,
         new NullabilityBuilder.fromNullability(node.nullability),
         arguments: arguments);
   }
@@ -129,7 +130,7 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
   @override
   TypeBuilder visitFutureOrType(FutureOrType node) {
     TypeBuilder argument = node.typeArgument.accept(this);
-    return new NamedTypeBuilder.forDartType(node, futureOrDeclaration,
+    return new NamedTypeBuilderImpl.forDartType(node, futureOrDeclaration,
         new NullabilityBuilder.fromNullability(node.nullability),
         arguments: [argument]);
   }
@@ -164,7 +165,7 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
           new FunctionTypeParameterBuilder(
               /* metadata = */ null, kind, type, parameter.name);
     }
-    return new FunctionTypeBuilder(
+    return new FunctionTypeBuilderImpl(
         returnType,
         typeVariables,
         formals,
@@ -176,17 +177,8 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
   @override
   TypeBuilder visitTypeParameterType(TypeParameterType node) {
     TypeParameter parameter = node.parameter;
-    TreeNode? kernelClassOrTypeDef = parameter.parent;
-    Library? kernelLibrary;
-    if (kernelClassOrTypeDef is Class) {
-      kernelLibrary = kernelClassOrTypeDef.enclosingLibrary;
-    } else if (kernelClassOrTypeDef is Typedef) {
-      kernelLibrary = kernelClassOrTypeDef.enclosingLibrary;
-    }
-    LibraryBuilder library =
-        loader.lookupLibraryBuilder(kernelLibrary!.importUri)!;
-    return new NamedTypeBuilder.fromTypeDeclarationBuilder(
-        new TypeVariableBuilder.fromKernel(parameter, library),
+    return new NamedTypeBuilderImpl.fromTypeDeclarationBuilder(
+        new TypeVariableBuilder.fromKernel(parameter),
         new NullabilityBuilder.fromNullability(node.nullability),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Allowed,
         type: node);
@@ -224,7 +216,7 @@ class TypeBuilderComputer implements DartTypeVisitor<TypeBuilder> {
           growable: false);
     }
 
-    return new RecordTypeBuilder(
+    return new RecordTypeBuilderImpl(
         positionalBuilders,
         namedBuilders,
         new NullabilityBuilder.fromNullability(node.nullability),
