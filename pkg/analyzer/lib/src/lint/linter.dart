@@ -46,7 +46,7 @@ import 'package:glob/glob.dart';
 import 'package:path/path.dart' as p;
 
 export 'package:analyzer/src/lint/linter_visitor.dart' show NodeLintRegistry;
-export 'package:analyzer/src/lint/state.dart' show dart3, State;
+export 'package:analyzer/src/lint/state.dart' show dart2_12, dart3, State;
 
 typedef Printer = void Function(String msg);
 
@@ -974,16 +974,19 @@ class _ConstantAnalysisErrorListener extends AnalysisErrorListener {
               .CONST_CONSTRUCTOR_WITH_FIELD_INITIALIZED_BY_NON_CONST:
         case CompileTimeErrorCode.CONST_EVAL_EXTENSION_METHOD:
         case CompileTimeErrorCode.CONST_EVAL_METHOD_INVOCATION:
+        case CompileTimeErrorCode.CONST_EVAL_PROPERTY_ACCESS:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL_INT:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_BOOL_NUM_STRING:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_INT:
         case CompileTimeErrorCode.CONST_EVAL_TYPE_NUM:
+        case CompileTimeErrorCode.CONST_EVAL_TYPE_STRING:
         case CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION:
         case CompileTimeErrorCode.CONST_EVAL_THROWS_IDBZE:
         case CompileTimeErrorCode.CONST_EVAL_FOR_ELEMENT:
         case CompileTimeErrorCode.CONST_MAP_KEY_NOT_PRIMITIVE_EQUALITY:
         case CompileTimeErrorCode.CONST_SET_ELEMENT_NOT_PRIMITIVE_EQUALITY:
+        case CompileTimeErrorCode.CONST_TYPE_PARAMETER:
         case CompileTimeErrorCode.CONST_WITH_NON_CONST:
         case CompileTimeErrorCode.CONST_WITH_NON_CONSTANT_ARGUMENT:
         case CompileTimeErrorCode.CONST_WITH_TYPE_PARAMETERS:
@@ -991,6 +994,7 @@ class _ConstantAnalysisErrorListener extends AnalysisErrorListener {
         case CompileTimeErrorCode.MISSING_CONST_IN_LIST_LITERAL:
         case CompileTimeErrorCode.MISSING_CONST_IN_MAP_LITERAL:
         case CompileTimeErrorCode.MISSING_CONST_IN_SET_LITERAL:
+        case CompileTimeErrorCode.NON_BOOL_CONDITION:
         case CompileTimeErrorCode.NON_CONSTANT_LIST_ELEMENT:
         case CompileTimeErrorCode.NON_CONSTANT_MAP_ELEMENT:
         case CompileTimeErrorCode.NON_CONSTANT_MAP_KEY:

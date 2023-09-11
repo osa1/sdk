@@ -8,7 +8,8 @@
 #
 # to regenerate messages after having edited this file.
 #
-# If entries with 'analyzerCode' and 'index' have been changed, run
+# If entries with 'analyzerCode', 'sharedName', or 'index' have been changed,
+# run
 #
 #     dart run pkg/analyzer/tool/messages/generate.dart
 #
@@ -61,6 +62,9 @@
 # (e.g. ParserErrorCode.EQUALITY_CANNOT_BE_EQUALITY_OPERAND)
 # which will be used when generating code in Analyzer for translating
 # fasta error codes to Analyzer error codes.
+# If `sharedName` is defined, the generated analyzer code will use this as the
+# user-facing analyzer code instead of `analyzerCode`. Multiple messages can share
+# the `sharedName`.
 #
 # Errors with an `index` can also optionally contain user-facing documentation
 # for the problem (documentation), which will be extracted to
@@ -792,11 +796,95 @@ ExtendsVoid:
 ImplementsVoid:
   problemMessage: "The type 'void' can't be used in an 'implements' clause."
 
-ExpectedClassOrMixinBody:
+ExpectedClassBody:
   index: 8
-  problemMessage: "A #string must have a body, even if it is empty."
+  problemMessage: "A class declaration must have a body, even if it is empty."
   correctionMessage: "Try adding an empty body."
-  analyzerCode: ParserErrorCode.EXPECTED_BODY
+  analyzerCode: ParserErrorCode.EXPECTED_CLASS_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    class Class
+
+ExpectedMixinBody:
+  index: 166
+  problemMessage: "A mixin declaration must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_MIXIN_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    mixin Mixin
+
+ExpectedExtensionBody:
+  index: 173
+  problemMessage: "An extension declaration must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_EXTENSION_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    extension Extension on int
+
+ExpectedExtensionTypeBody:
+  index: 167
+  problemMessage: "An extension type declaration must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_EXTENSION_TYPE_BODY
+  sharedName: EXPECTED_BODY
+  experiments: inline-class
+  script: |
+    extension type ExtensionType(int i)
+
+ExpectedTryStatementBody:
+  index: 168
+  problemMessage: "A try statement must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_TRY_STATEMENT_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    method() {
+      try finally {}
+    }
+
+ExpectedCatchClauseBody:
+  index: 169
+  problemMessage: "A catch clause must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_CATCH_CLAUSE_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    method() {
+      try {} catch (_);
+    }
+
+ExpectedFinallyClauseBody:
+  index: 170
+  problemMessage: "A finally clause must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_FINALLY_CLAUSE_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    method() {
+      try {} finally;
+    }
+
+ExpectedSwitchExpressionBody:
+  index: 171
+  problemMessage: "A switch expression must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_SWITCH_EXPRESSION_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    method(Never n) => switch (n);
+
+ExpectedSwitchStatementBody:
+  index: 172
+  problemMessage: "A switch statement must have a body, even if it is empty."
+  correctionMessage: "Try adding an empty body."
+  analyzerCode: ParserErrorCode.EXPECTED_SWITCH_STATEMENT_BODY
+  sharedName: EXPECTED_BODY
+  script: |
+    method(Never n) {
+      switch (n);
+    }
 
 ExpectedDeclaration:
   problemMessage: "Expected a declaration, but got '#lexeme'."
@@ -5581,6 +5669,10 @@ JsInteropStaticInteropExternalMemberWithInvalidTypeParameters:
   problemMessage: "External static interop members can only use type parameters that extend either a static interop type or one of the 'dart:js_interop' types."
   correctionMessage: "Try adding a valid bound to the type parameters used in this member."
 
+JsInteropStaticInteropExternalTypeViolation:
+  problemMessage: "Type '#type' is not a valid type for external `dart:js_interop` APIs. The only valid types are: @staticInterop types, JS types from `dart:js_interop`, void, bool, num, double, int, String, and any extension type that erases to one of these types."
+  correctionMessage: "Use one of the valid types instead."
+
 JsInteropStaticInteropGenerativeConstructor:
   problemMessage: "`@staticInterop` classes should not contain any generative constructors."
   correctionMessage: "Use factory constructors instead."
@@ -5637,10 +5729,6 @@ JsInteropStaticInteropWithInvalidJsTypesSupertype:
 JsInteropStaticInteropWithNonStaticSupertype:
   problemMessage: "JS interop class '#name' has an `@staticInterop` annotation, but has supertype '#name2', which does not."
   correctionMessage: "Try marking the supertype as a static interop class using `@staticInterop`."
-
-JsInteropStrictModeViolation:
-  problemMessage: "JS interop requires JS types when strict mode is enabled, but Type '#type' is not a type or subtype of a type from `dart:js_interop`."
-  correctionMessage: "Use a JS type instead."
 
 JsInteropStrictModeForbiddenLibrary:
   problemMessage: "Library '#name' is forbidden when strict mode is enabled."
@@ -7083,3 +7171,56 @@ CyclicRepresentationDependency:
 ExtensionTypeDeclarationCause:
   problemMessage: "The issue arises via this extension type declaration."
   severity: CONTEXT
+
+InvalidExtensionTypeSuperInterface:
+  problemMessage: "The implemented interface '#type' must be a supertype of the representation type '#type2' of extension type '#name'."
+  correctionMessage: "Try changing the interface type to a supertype of '#type2' or the representation type to a subtype of '#type'."
+  experiments: inline-class
+  script: |
+    extension type E(num n) implements int {}
+
+InvalidExtensionTypeSuperExtensionType:
+  problemMessage: "The representation type '#type' of extension type '#name' must be a subtype of the representation type '#type2' of the implemented extension type '#type3'."
+  correctionMessage: "Try changing the representation type to a subtype of '#type2'."
+  experiments: inline-class
+  script: |
+    extension type E1(int i) {}
+    extension type E2(num n) implements E1 {}
+
+MissingPrimaryConstructor:
+  problemMessage: "An extension type declaration must have a primary constructor declaration."
+  correctionMessage: "Try adding a primary constructor to the extension type declaration."
+  index: 162
+  analyzerCode: ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR
+  experiments: inline-class
+  script: |
+    extension type E {}
+
+MissingPrimaryConstructorParameters:
+  problemMessage: "A primary constructor declaration must have formal parameters."
+  correctionMessage: "Try adding formal parameters after the primary constructor name."
+  index: 163
+  analyzerCode: ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR_PARAMETERS
+  experiments: inline-class
+  script: |
+    extension type E.name {}
+
+ExtensionTypeExtends:
+  problemMessage: "An extension type declaration can't have an 'extends' clause."
+  correctionMessage: "Try removing the 'extends' clause or replacing the 'extends' with 'implements'."
+  index: 164
+  analyzerCode: ParserErrorCode.EXTENSION_TYPE_EXTENDS
+  experiments: inline-class
+  script: |
+    extension type F(int i) {}
+    extension type E(int i) extends F {}
+
+ExtensionTypeWith:
+  problemMessage: "An extension type declaration can't have a 'with' clause."
+  correctionMessage: "Try removing the 'with' clause or replacing the 'with' with 'implements'."
+  index: 165
+  analyzerCode: ParserErrorCode.EXTENSION_TYPE_WITH
+  experiments: inline-class
+  script: |
+    extension type F(int i) {}
+    extension type E(int i) with F {}

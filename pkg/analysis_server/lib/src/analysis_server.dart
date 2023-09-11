@@ -18,9 +18,9 @@ import 'package:analysis_server/src/lsp/client_configuration.dart';
 import 'package:analysis_server/src/plugin/notification_manager.dart';
 import 'package:analysis_server/src/plugin/plugin_manager.dart';
 import 'package:analysis_server/src/plugin/plugin_watcher.dart';
-import 'package:analysis_server/src/protocol_server.dart' as server;
 import 'package:analysis_server/src/protocol_server.dart' as legacy
     show MessageType;
+import 'package:analysis_server/src/protocol_server.dart' as server;
 import 'package:analysis_server/src/server/crash_reporting_attachments.dart';
 import 'package:analysis_server/src/server/diagnostic_server.dart';
 import 'package:analysis_server/src/server/performance.dart';
@@ -33,6 +33,7 @@ import 'package:analysis_server/src/services/search/element_visitors.dart';
 import 'package:analysis_server/src/services/search/search_engine.dart';
 import 'package:analysis_server/src/services/search/search_engine_internal.dart';
 import 'package:analysis_server/src/services/user_prompts/dart_fix_prompt_manager.dart';
+import 'package:analysis_server/src/services/user_prompts/survey_manager.dart';
 import 'package:analysis_server/src/services/user_prompts/user_prompts.dart';
 import 'package:analysis_server/src/utilities/file_string_sink.dart';
 import 'package:analysis_server/src/utilities/null_string_sink.dart';
@@ -73,8 +74,17 @@ import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart';
 import 'package:watcher/watcher.dart';
 
+/// Temporary flag to control whether surveys are enabled.
+///
+/// _surveyManager can be made 'late final' when this is removed.
+const _enableSurveys = false;
+
 /// The function for sending `openUri` request to the client.
-typedef OpenUriNotificationSender = FutureOr<void> Function(Uri uri);
+typedef OpenUriNotificationSender = Future<void> Function(Uri uri);
+
+/// The function for sending prompts to the user and collecting button presses.
+typedef UserPromptSender = Future<String?> Function(
+    MessageType type, String message, List<String> actionLabels);
 
 /// Implementations of [AnalysisServer] implement a server that listens
 /// on a [CommunicationChannel] for analysis messages and process them.
@@ -87,6 +97,10 @@ abstract class AnalysisServer {
 
   /// The object through which analytics are to be sent.
   final AnalyticsManager analyticsManager;
+
+  /// The object for managing showing surveys to users and recording their
+  /// responses.
+  SurveyManager? _surveyManager;
 
   /// The builder for attachments that should be included into crash reports.
   final CrashReportingAttachmentsBuilder crashReportingAttachmentsBuilder;
@@ -291,6 +305,11 @@ abstract class AnalysisServer {
           UserPromptPreferences(resourceProvider, instrumentationService);
       _dartFixPrompt = DartFixPromptManager(this, promptPreferences);
     }
+
+    if (_enableSurveys) {
+      _surveyManager = SurveyManager(
+          this, instrumentationService, analyticsManager.analytics);
+    }
   }
 
   /// A [Future] that completes when any in-progress analysis context rebuild
@@ -336,6 +355,9 @@ abstract class AnalysisServer {
 
   /// Whether or not the client supports showMessageRequest to show the user
   /// a message and allow them to respond by clicking buttons.
+  ///
+  /// Callers should use [userPromptSender] instead of checking this directly.
+  @protected
   bool get supportsShowMessageRequest;
 
   /// Return the total time the server's been alive.
@@ -344,6 +366,13 @@ abstract class AnalysisServer {
         DateTime.fromMillisecondsSinceEpoch(performanceDuringStartup.startTime);
     return DateTime.now().difference(start);
   }
+
+  /// Returns the function for sending prompts to the user and collecting button
+  /// presses.
+  ///
+  /// Returns `null` is the client does not support it.
+  UserPromptSender? get userPromptSender =>
+      supportsShowMessageRequest ? showUserPrompt : null;
 
   void addContextsToDeclarationsTracker() {
     declarationsTracker?.discardContexts();
@@ -734,6 +763,13 @@ abstract class AnalysisServer {
     bool fatal = false,
   });
 
+  /// Shows the user a prompt with some actions to select from using
+  /// 'window/showMessageRequest'.
+  ///
+  /// Callers should use [userPromptSender] instead of calling this method
+  /// directly because it returns null if the client does not support user
+  /// prompts.
+  @visibleForOverriding
   Future<String?> showUserPrompt(
     MessageType type,
     String message,
@@ -753,6 +789,7 @@ abstract class AnalysisServer {
     analyticsManager.createdAnalysisContexts(contextManager.analysisContexts);
 
     pubPackageService.shutdown();
+    _surveyManager?.shutdown();
     await analyticsManager.shutdown();
   }
 

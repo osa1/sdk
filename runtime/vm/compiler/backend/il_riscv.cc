@@ -186,131 +186,199 @@ LocationSummary* MemoryCopyInstr::MakeLocationSummary(Zone* zone,
   return locs;
 }
 
-void MemoryCopyInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
-  const Register src_reg = locs()->in(kSrcPos).reg();
-  const Register dest_reg = locs()->in(kDestPos).reg();
-  const Location src_start_loc = locs()->in(kSrcStartPos);
-  const Location dest_start_loc = locs()->in(kDestStartPos);
-  const Location length_loc = locs()->in(kLengthPos);
-  const bool constant_length = length_loc.IsConstant();
-  const Register length_reg = constant_length ? kNoRegister : length_loc.reg();
+void MemoryCopyInstr::PrepareLengthRegForLoop(FlowGraphCompiler* compiler,
+                                              Register length_reg,
+                                              compiler::Label* done) {
+  __ BranchIfZero(length_reg, done);
+}
 
-  EmitComputeStartPointer(compiler, src_cid_, src_reg, src_start_loc);
-  EmitComputeStartPointer(compiler, dest_cid_, dest_reg, dest_start_loc);
+static compiler::OperandSize OperandSizeFor(intptr_t bytes) {
+  ASSERT(Utils::IsPowerOfTwo(bytes));
+  switch (bytes) {
+    case 1:
+      return compiler::kByte;
+    case 2:
+      return compiler::kTwoBytes;
+    case 4:
+      return compiler::kFourBytes;
+    case 8:
+      return compiler::kEightBytes;
+    default:
+      UNREACHABLE();
+      return compiler::kEightBytes;
+  }
+}
 
-  if (constant_length) {
-    const intptr_t num_bytes =
-        Integer::Cast(length_loc.constant()).AsInt64Value() * element_size_;
-    const intptr_t mov_size =
-        Utils::Minimum(element_size_, static_cast<intptr_t>(XLEN / 8));
-    const intptr_t mov_repeat = num_bytes / mov_size;
-    ASSERT(num_bytes % mov_size == 0);
-    for (intptr_t i = 0; i < mov_repeat; i++) {
-      switch (mov_size) {
-        case 1:
-          __ lb(TMP, compiler::Address(src_reg, mov_size * i));
-          __ sb(TMP, compiler::Address(dest_reg, mov_size * i));
-          break;
-        case 2:
-          __ lh(TMP, compiler::Address(src_reg, mov_size * i));
-          __ sh(TMP, compiler::Address(dest_reg, mov_size * i));
-          break;
-        case 4:
-          __ lw(TMP, compiler::Address(src_reg, mov_size * i));
-          __ sw(TMP, compiler::Address(dest_reg, mov_size * i));
-          break;
-        case 8:
-#if XLEN == 64
-          __ ld(TMP, compiler::Address(src_reg, mov_size * i));
-          __ sd(TMP, compiler::Address(dest_reg, mov_size * i));
-#else
-          UNREACHABLE();
-#endif
-          break;
-        case 16:
-#if XLEN == 128
-          __ lq(TMP, compiler::Address(src_reg, mov_size * i));
-          __ sq(TMP, compiler::Address(dest_reg, mov_size * i));
-#else
-          UNREACHABLE();
-#endif
-          break;
-      }
-    }
+// Copies [count] bytes from the memory region pointed to by [dest_reg] to the
+// memory region pointed to by [src_reg]. If [reversed] is true, then [dest_reg]
+// and [src_reg] are assumed to point at the end of the respective region.
+static void CopyBytes(FlowGraphCompiler* compiler,
+                      Register dest_reg,
+                      Register src_reg,
+                      intptr_t count,
+                      bool reversed) {
+  COMPILE_ASSERT(XLEN <= 128);
+  ASSERT(Utils::IsPowerOfTwo(count));
+
+#if XLEN >= 128
+  // Handled specially because there is no kSixteenBytes OperandSize.
+  if (count == 16) {
+    const intptr_t offset = (reversed ? -1 : 1) * count;
+    const intptr_t initial = reversed ? offset : 0;
+    __ lq(TMP, compiler::Address(src_reg, initial));
+    __ addi(src_reg, src_reg, offset);
+    __ sq(TMP, compiler::Address(dest_reg, initial));
+    __ addi(dest_reg, dest_reg, offset);
     return;
   }
+#endif
 
-  compiler::Label loop, done;
+#if XLEN <= 32
+  if (count == 4 * (XLEN / 8)) {
+    auto const sz = OperandSizeFor(XLEN / 8);
+    const intptr_t offset = (reversed ? -1 : 1) * (XLEN / 8);
+    const intptr_t initial = reversed ? offset : 0;
+    __ LoadFromOffset(TMP, compiler::Address(src_reg, initial), sz);
+    __ LoadFromOffset(TMP2, compiler::Address(src_reg, initial + offset), sz);
+    __ StoreToOffset(TMP, compiler::Address(dest_reg, initial), sz);
+    __ StoreToOffset(TMP2, compiler::Address(dest_reg, initial + offset), sz);
+    __ LoadFromOffset(TMP, compiler::Address(src_reg, initial + 2 * offset),
+                      sz);
+    __ LoadFromOffset(TMP2, compiler::Address(src_reg, initial + 3 * offset),
+                      sz);
+    __ addi(src_reg, src_reg, 4 * offset);
+    __ StoreToOffset(TMP, compiler::Address(dest_reg, initial + 2 * offset),
+                     sz);
+    __ StoreToOffset(TMP2, compiler::Address(dest_reg, initial + 3 * offset),
+                     sz);
+    __ addi(dest_reg, dest_reg, 4 * offset);
+    return;
+  }
+#endif
 
-  const intptr_t loop_subtract = unboxed_length_ ? 1 : Smi::RawValue(1);
-  __ beqz(length_reg, &done);
+#if XLEN <= 64
+  if (count == 2 * (XLEN / 8)) {
+    auto const sz = OperandSizeFor(XLEN / 8);
+    const intptr_t offset = (reversed ? -1 : 1) * (XLEN / 8);
+    const intptr_t initial = reversed ? offset : 0;
+    __ LoadFromOffset(TMP, compiler::Address(src_reg, initial), sz);
+    __ LoadFromOffset(TMP2, compiler::Address(src_reg, initial + offset), sz);
+    __ addi(src_reg, src_reg, 2 * offset);
+    __ StoreToOffset(TMP, compiler::Address(dest_reg, initial), sz);
+    __ StoreToOffset(TMP2, compiler::Address(dest_reg, initial + offset), sz);
+    __ addi(dest_reg, dest_reg, 2 * offset);
+    return;
+  }
+#endif
 
+  ASSERT(count <= (XLEN / 8));
+  auto const sz = OperandSizeFor(count);
+  const intptr_t offset = (reversed ? -1 : 1) * count;
+  const intptr_t initial = reversed ? offset : 0;
+  __ LoadFromOffset(TMP, compiler::Address(src_reg, initial), sz);
+  __ addi(src_reg, src_reg, offset);
+  __ StoreToOffset(TMP, compiler::Address(dest_reg, initial), sz);
+  __ addi(dest_reg, dest_reg, offset);
+}
+
+static void CopyUpToWordMultiple(FlowGraphCompiler* compiler,
+                                 Register dest_reg,
+                                 Register src_reg,
+                                 Register length_reg,
+                                 intptr_t element_size,
+                                 bool unboxed_inputs,
+                                 bool reversed,
+                                 compiler::Label* done) {
+  ASSERT(Utils::IsPowerOfTwo(element_size));
+  if (element_size >= compiler::target::kWordSize) return;
+
+  const intptr_t base_shift = (unboxed_inputs ? 0 : kSmiTagShift) -
+                              Utils::ShiftForPowerOfTwo(element_size);
+  intptr_t tested_bits = 0;
+
+  __ Comment("Copying until region is a multiple of word size");
+
+  COMPILE_ASSERT(XLEN <= 128);
+
+  for (intptr_t bit = compiler::target::kWordSizeLog2 - 1; bit >= 0; bit--) {
+    const intptr_t bytes = 1 << bit;
+    if (element_size > bytes) continue;
+    const intptr_t tested_bit = bit + base_shift;
+    tested_bits |= 1 << tested_bit;
+    compiler::Label skip_copy;
+    __ andi(TMP, length_reg, 1 << tested_bit);
+    __ beqz(TMP, &skip_copy);
+    CopyBytes(compiler, dest_reg, src_reg, bytes, reversed);
+    __ Bind(&skip_copy);
+  }
+
+  ASSERT(tested_bits != 0);
+  __ andi(length_reg, length_reg, ~tested_bits);
+  __ beqz(length_reg, done);
+}
+
+void MemoryCopyInstr::EmitLoopCopy(FlowGraphCompiler* compiler,
+                                   Register dest_reg,
+                                   Register src_reg,
+                                   Register length_reg,
+                                   compiler::Label* done,
+                                   compiler::Label* copy_forwards) {
+  const bool reversed = copy_forwards != nullptr;
+  if (reversed) {
+    // Verify that the overlap actually exists by checking to see if the start
+    // of the destination region is after the end of the source region.
+    const intptr_t shift = Utils::ShiftForPowerOfTwo(element_size_) -
+                           (unboxed_inputs() ? 0 : kSmiTagShift);
+    if (shift == 0) {
+      __ add(TMP, src_reg, length_reg);
+    } else if (shift < 0) {
+      __ srai(TMP, length_reg, -shift);
+      __ add(TMP, src_reg, TMP);
+    } else {
+      __ slli(TMP, length_reg, shift);
+      __ add(TMP, src_reg, TMP);
+    }
+    __ CompareRegisters(dest_reg, TMP);
+    __ BranchIf(UNSIGNED_GREATER_EQUAL, copy_forwards);
+    // Adjust dest_reg and src_reg to point at the end (i.e. one past the
+    // last element) of their respective region.
+    __ add(dest_reg, dest_reg, TMP);
+    __ sub(dest_reg, dest_reg, src_reg);
+    __ MoveRegister(src_reg, TMP);
+  }
+  CopyUpToWordMultiple(compiler, dest_reg, src_reg, length_reg, element_size_,
+                       unboxed_inputs_, reversed, done);
+  // The size of the uncopied region is a multiple of the word size, so now we
+  // copy the rest by word.
+  const intptr_t loop_subtract =
+      Utils::Maximum<intptr_t>(1, (XLEN / 8) / element_size_)
+      << (unboxed_inputs_ ? 0 : kSmiTagShift);
+  __ Comment("Copying by multiples of word size");
+  compiler::Label loop;
   __ Bind(&loop);
   switch (element_size_) {
     case 1:
-      __ lb(TMP, compiler::Address(src_reg));
-      __ addi(src_reg, src_reg, 1);
-      __ sb(TMP, compiler::Address(dest_reg));
-      __ addi(dest_reg, dest_reg, 1);
-      break;
     case 2:
-      __ lh(TMP, compiler::Address(src_reg));
-      __ addi(src_reg, src_reg, 2);
-      __ sh(TMP, compiler::Address(dest_reg));
-      __ addi(dest_reg, dest_reg, 2);
-      break;
     case 4:
-      __ lw(TMP, compiler::Address(src_reg));
-      __ addi(src_reg, src_reg, 4);
-      __ sw(TMP, compiler::Address(dest_reg));
-      __ addi(dest_reg, dest_reg, 4);
+#if XLEN <= 32
+      CopyBytes(compiler, dest_reg, src_reg, 4, reversed);
       break;
+#endif
     case 8:
-#if XLEN == 32
-      __ lw(TMP, compiler::Address(src_reg, 0));
-      __ lw(TMP2, compiler::Address(src_reg, 4));
-      __ addi(src_reg, src_reg, 8);
-      __ sw(TMP, compiler::Address(dest_reg, 0));
-      __ sw(TMP2, compiler::Address(dest_reg, 4));
-      __ addi(dest_reg, dest_reg, 8);
-#else
-      __ ld(TMP, compiler::Address(src_reg));
-      __ addi(src_reg, src_reg, 8);
-      __ sd(TMP, compiler::Address(dest_reg));
-      __ addi(dest_reg, dest_reg, 8);
-#endif
+#if XLEN <= 64
+      CopyBytes(compiler, dest_reg, src_reg, 8, reversed);
       break;
-    case 16:
-#if XLEN == 32
-      __ lw(TMP, compiler::Address(src_reg, 0));
-      __ lw(TMP2, compiler::Address(src_reg, 4));
-      __ sw(TMP, compiler::Address(dest_reg, 0));
-      __ sw(TMP2, compiler::Address(dest_reg, 4));
-      __ lw(TMP, compiler::Address(src_reg, 8));
-      __ lw(TMP2, compiler::Address(src_reg, 12));
-      __ addi(src_reg, src_reg, 16);
-      __ sw(TMP, compiler::Address(dest_reg, 8));
-      __ sw(TMP2, compiler::Address(dest_reg, 12));
-      __ addi(dest_reg, dest_reg, 16);
-#elif XLEN == 64
-      __ ld(TMP, compiler::Address(src_reg, 0));
-      __ ld(TMP2, compiler::Address(src_reg, 8));
-      __ addi(src_reg, src_reg, 16);
-      __ sd(TMP, compiler::Address(dest_reg, 0));
-      __ sd(TMP2, compiler::Address(dest_reg, 8));
-      __ addi(dest_reg, dest_reg, 16);
-#elif XLEN == 128
-      __ lq(TMP, compiler::Address(src_reg));
-      __ addi(src_reg, src_reg, 16);
-      __ sq(TMP, compiler::Address(dest_reg));
-      __ addi(dest_reg, dest_reg, 16);
 #endif
+    case 16:
+      COMPILE_ASSERT(XLEN <= 128);
+      CopyBytes(compiler, dest_reg, src_reg, 16, reversed);
+      break;
+    default:
+      UNREACHABLE();
       break;
   }
-
   __ subi(length_reg, length_reg, loop_subtract);
   __ bnez(length_reg, &loop);
-  __ Bind(&done);
 }
 
 void MemoryCopyInstr::EmitComputeStartPointer(FlowGraphCompiler* compiler,
@@ -364,7 +432,8 @@ void MemoryCopyInstr::EmitComputeStartPointer(FlowGraphCompiler* compiler,
   }
   __ AddImmediate(array_reg, offset);
   const Register start_reg = start_loc.reg();
-  intptr_t shift = Utils::ShiftForPowerOfTwo(element_size_) - 1;
+  intptr_t shift = Utils::ShiftForPowerOfTwo(element_size_) -
+                   (unboxed_inputs() ? 0 : kSmiTagShift);
   __ AddShifted(array_reg, array_reg, start_reg, shift);
 }
 
@@ -964,6 +1033,32 @@ static Condition EmitSmiComparisonOp(FlowGraphCompiler* compiler,
   return true_condition;
 }
 
+static Condition EmitWordComparisonOp(FlowGraphCompiler* compiler,
+                                      LocationSummary* locs,
+                                      Token::Kind kind,
+                                      BranchLabels labels) {
+  Location left = locs->in(0);
+  Location right = locs->in(1);
+  ASSERT(!left.IsConstant() || !right.IsConstant());
+
+  Condition true_condition = TokenKindToIntCondition(kind);
+  if (left.IsConstant() || right.IsConstant()) {
+    // Ensure constant is on the right.
+    if (left.IsConstant()) {
+      Location tmp = right;
+      right = left;
+      left = tmp;
+      true_condition = FlipCondition(true_condition);
+    }
+    __ CompareImmediate(
+        left.reg(),
+        static_cast<uword>(Integer::Cast(right.constant()).AsInt64Value()));
+  } else {
+    __ CompareRegisters(left.reg(), right.reg());
+  }
+  return true_condition;
+}
+
 #if XLEN == 32
 static Condition EmitUnboxedMintEqualityOp(FlowGraphCompiler* compiler,
                                            LocationSummary* locs,
@@ -1149,7 +1244,8 @@ LocationSummary* EqualityCompareInstr::MakeLocationSummary(Zone* zone,
     locs->set_out(0, Location::RequiresRegister());
     return locs;
   }
-  if (operation_cid() == kSmiCid || operation_cid() == kMintCid) {
+  if (operation_cid() == kSmiCid || operation_cid() == kMintCid ||
+      operation_cid() == kIntegerCid) {
     LocationSummary* locs = new (zone)
         LocationSummary(zone, kNumInputs, kNumTemps, LocationSummary::kNoCall);
     if (is_null_aware()) {
@@ -1178,7 +1274,6 @@ static Condition EmitDoubleComparisonOp(FlowGraphCompiler* compiler,
   const FRegister left = locs->in(0).fpu_reg();
   const FRegister right = locs->in(1).fpu_reg();
 
-  // TODO(riscv): Check if this does want we want for comparisons involving NaN.
   switch (kind) {
     case Token::kEQ:
       __ feqd(TMP, left, right);
@@ -1217,6 +1312,8 @@ Condition EqualityCompareInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
   }
   if (operation_cid() == kSmiCid) {
     return EmitSmiComparisonOp(compiler, locs(), kind(), labels);
+  } else if (operation_cid() == kIntegerCid) {
+    return EmitWordComparisonOp(compiler, locs(), kind(), labels);
   } else if (operation_cid() == kMintCid) {
 #if XLEN == 32
     return EmitUnboxedMintEqualityOp(compiler, locs(), kind());
@@ -2493,7 +2590,6 @@ static void LoadValueCid(FlowGraphCompiler* compiler,
 }
 
 DEFINE_UNIMPLEMENTED_INSTRUCTION(GuardFieldTypeInstr)
-DEFINE_UNIMPLEMENTED_INSTRUCTION(CheckConditionInstr)
 
 LocationSummary* GuardFieldClassInstr::MakeLocationSummary(Zone* zone,
                                                            bool opt) const {

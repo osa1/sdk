@@ -103,7 +103,7 @@ class DartTypeConverter extends ir.DartTypeVisitor<DartType> {
     if (typeParameter != null) {
       return _convertNullability(typeParameter, node);
     }
-    if (node.parameter.parent is ir.Typedef) {
+    if (node.parameter.declaration is ir.Typedef) {
       // Typedefs are only used in type literals so we never need their type
       // variables.
       return _dartTypes.dynamicType();
@@ -216,6 +216,11 @@ class DartTypeConverter extends ir.DartTypeVisitor<DartType> {
 
   @override
   DartType defaultDartType(ir.DartType node) {
+    throw UnsupportedError('Unsupported type $node (${node.runtimeType})');
+  }
+
+  @override
+  DartType visitTypedefType(ir.TypedefType node) {
     throw UnsupportedError('Unsupported type $node (${node.runtimeType})');
   }
 }

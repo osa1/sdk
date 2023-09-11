@@ -57,6 +57,8 @@ class FindNode {
 
   ExtendsClause get singleExtendsClause => _single();
 
+  ExtensionDeclaration get singleExtensionDeclaration => _single();
+
   ExtensionTypeDeclaration get singleExtensionTypeDeclaration => _single();
 
   FieldDeclaration get singleFieldDeclaration => _single();
@@ -137,6 +139,11 @@ class FindNode {
 
   RedirectingConstructorInvocation get singleRedirectingConstructorInvocation =>
       _single();
+
+  RepresentationConstructorName get singleRepresentationConstructorName =>
+      _single();
+
+  RepresentationDeclaration get singleRepresentationDeclaration => _single();
 
   RethrowExpression get singleRethrowExpression => _single();
 

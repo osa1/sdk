@@ -747,7 +747,7 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
   void visitFunctionType(FunctionType node) {
     if (node.typeParameters.isNotEmpty) {
       for (TypeParameter typeParameter in node.typeParameters) {
-        if (typeParameter.parent != null) {
+        if (typeParameter.declaration != null) {
           problem(
               localContext,
               "Type parameters of function types shouldn't have parents: "
@@ -1188,20 +1188,18 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
   @override
   void visitTypeParameterType(TypeParameterType node) {
     TypeParameter parameter = node.parameter;
+    GenericDeclaration? declaration = parameter.declaration;
     if (!typeParametersInScope.contains(parameter)) {
-      TreeNode? owner = parameter.parent is FunctionNode
-          ? parameter.parent!.parent
-          : parameter.parent;
       problem(
           currentParent,
           "Type parameter '$parameter' referenced out of"
-          " scope, owner is: '${owner}'.");
+          " scope, declaration is: '${declaration}'.");
     }
-    if (parameter.parent is Class && !classTypeParametersAreInScope) {
+    if (declaration is Class && !classTypeParametersAreInScope) {
       problem(
           currentParent,
           "Type parameter '$parameter' referenced from"
-          " static context, parent is: '${parameter.parent}'.");
+          " static context, declaration is: '${parameter.declaration}'.");
     }
   }
 
@@ -1351,7 +1349,7 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
     assert(treeNodeStack.isNotEmpty);
     for (int i = treeNodeStack.length - 1; i >= 0; --i) {
       TreeNode node = treeNodeStack[i];
-      if (withLocation && !_hasLocation(node)) continue;
+      if (withLocation && !_hasLocation(_getLocation(node), node)) continue;
       return node;
     }
     return null;
@@ -1363,8 +1361,8 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
 
     for (int i = treeNodeStack.length - 1; i >= 0; --i) {
       TreeNode node = treeNodeStack[i];
-      if (withLocation && !_hasLocation(node)) continue;
       Location? location = _getLocation(node);
+      if (withLocation && !_hasLocation(location, node)) continue;
       if (location != null && location.file == currentLibrary!.fileUri) {
         return node;
       }
@@ -1390,8 +1388,7 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
     return null;
   }
 
-  bool _hasLocation(TreeNode node) {
-    Location? location = _getLocation(node);
+  bool _hasLocation(Location? location, TreeNode node) {
     return location != null && node.fileOffset != TreeNode.noOffset;
   }
 
@@ -1512,10 +1509,9 @@ class VerifyingVisitor extends RecursiveResultVisitor<void> {
 
   @override
   void defaultDartType(DartType node) {
-    final TreeNode? localContext = this.localContext;
-    final TreeNode? remoteContext = this.remoteContext;
-
     if (!KnownTypes.isKnown(node)) {
+      final TreeNode? localContext = this.localContext;
+      final TreeNode? remoteContext = this.remoteContext;
       problem(localContext, "Unexpected appearance of the unknown type.",
           origin: remoteContext);
     }

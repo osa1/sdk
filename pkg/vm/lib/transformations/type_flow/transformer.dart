@@ -684,6 +684,15 @@ class AnnotateKernel extends RecursiveVisitor {
   }
 
   @override
+  visitVariableDeclaration(VariableDeclaration node) {
+    final inferredType = _typeFlowAnalysis.capturedVariableType(node);
+    if (inferredType != null) {
+      _setInferredType(node, inferredType);
+    }
+    super.visitVariableDeclaration(node);
+  }
+
+  @override
   visitComponent(Component node) {
     super.visitComponent(node);
     _tableSelectorMetadata.mapping[node] = _tableSelectorAssigner.metadata;
@@ -1024,9 +1033,9 @@ class _TreeShakerTypeVisitor extends RecursiveVisitor {
 
   @override
   visitTypeParameterType(TypeParameterType node) {
-    final parent = node.parameter.parent;
-    if (parent is Class) {
-      shaker.addClassUsedInType(parent);
+    final declaration = node.parameter.declaration;
+    if (declaration is Class) {
+      shaker.addClassUsedInType(declaration);
     }
     node.visitChildren(this);
   }

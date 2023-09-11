@@ -26,6 +26,14 @@ class TypeCategory {
   static const maxMasqueradeClassId = 63; // Leaves 2 unused bits for future use
 }
 
+/// Values for the `_kind` field in `_TopType`. Must match the definitions in
+/// `_TopType`.
+class TopTypeKind {
+  static const int objectKind = 0;
+  static const int dynamicKind = 1;
+  static const int voidKind = 2;
+}
+
 class InterfaceTypeEnvironment {
   final Map<TypeParameter, int> _typeOffsets = {};
 
@@ -49,8 +57,16 @@ class Types {
       translator.classInfo[translator.typeClass]!;
 
   /// Wasm value type of `List<_Type>`
-  late final w.ValueType typeListExpectedType = classAndFieldToType(
-      translator.interfaceTypeClass, FieldIndex.interfaceTypeTypeArguments);
+  late final w.ValueType typeListExpectedType =
+      translator.classInfo[translator.listBaseClass]!.nonNullableType;
+
+  /// Wasm array type of `WasmObjectArray<_Type>`
+  late final w.ArrayType typeArrayArrayType =
+      translator.arrayTypeForDartType(typeType);
+
+  /// Wasm value type of `WasmObjectArray<_Type>`
+  late final w.ValueType typeArrayExpectedType =
+      w.RefType.def(typeArrayArrayType, nullable: false);
 
   /// Wasm value type of `List<_NamedParameter>`
   late final w.ValueType namedParametersExpectedType = classAndFieldToType(
@@ -318,7 +334,7 @@ class Types {
   }
 
   bool isFunctionTypeParameter(TypeParameterType type) =>
-      type.parameter.parent == null;
+      type.parameter.declaration == null;
 
   bool _isTypeConstant(DartType type) {
     return type is DynamicType ||
@@ -341,24 +357,18 @@ class Types {
 
   Class classForType(DartType type) {
     if (type is DynamicType) {
-      return translator.dynamicTypeClass;
+      return translator.topTypeClass;
     } else if (type is VoidType) {
-      return translator.voidTypeClass;
+      return translator.topTypeClass;
     } else if (type is NeverType) {
-      // For runtime types with sound null safety, `Never?` is the same as
-      // `Null`.
-      if (type.nullability == Nullability.nullable) {
-        return translator.nullTypeClass;
-      } else {
-        return translator.neverTypeClass;
-      }
+      return translator.bottomTypeClass;
     } else if (type is NullType) {
-      return translator.nullTypeClass;
+      return translator.bottomTypeClass;
     } else if (type is FutureOrType) {
       return translator.futureOrTypeClass;
     } else if (type is InterfaceType) {
       if (type.classNode == coreTypes.objectClass) {
-        return translator.objectTypeClass;
+        return translator.topTypeClass;
       }
       if (type.classNode == coreTypes.functionClass) {
         return translator.abstractFunctionTypeClass;
@@ -389,6 +399,14 @@ class Types {
         cls == coreTypes.recordClass;
   }
 
+  int topTypeKind(DartType type) {
+    return type is VoidType
+        ? TopTypeKind.voidKind
+        : type is DynamicType
+            ? TopTypeKind.dynamicKind
+            : TopTypeKind.objectKind;
+  }
+
   /// Allocates a `List<_Type>` from [types] and pushes it to the stack.
   void _makeTypeList(CodeGenerator codeGen, Iterable<DartType> types) {
     if (types.every(_isTypeConstant)) {
@@ -401,12 +419,26 @@ class Types {
     }
   }
 
+  /// Allocates a `WasmObjectArray<_Type>` from [types] and pushes it to the
+  /// stack.
+  void _makeTypeArray(CodeGenerator codeGen, Iterable<DartType> types) {
+    if (types.every(_isTypeConstant)) {
+      translator.constants.instantiateConstant(codeGen.function, codeGen.b,
+          translator.constants.makeTypeArray(types), typeArrayExpectedType);
+    } else {
+      for (DartType type in types) {
+        makeType(codeGen, type);
+      }
+      codeGen.b.array_new_fixed(typeArrayArrayType, types.length);
+    }
+  }
+
   void _makeInterfaceType(CodeGenerator codeGen, InterfaceType type) {
     final b = codeGen.b;
     ClassInfo typeInfo = translator.classInfo[type.classNode]!;
     b.i32_const(encodedNullability(type));
     b.i64_const(typeInfo.classId);
-    _makeTypeList(codeGen, type.typeArguments);
+    _makeTypeArray(codeGen, type.typeArguments);
   }
 
   void _makeRecordType(CodeGenerator codeGen, RecordType type) {
@@ -425,8 +457,12 @@ class Types {
   }
 
   /// Normalizes a Dart type. Many rules are already applied for us, but we
-  /// still have to manually normalize [FutureOr].
+  /// still have to manually turn `Never?` into `Null` and normalize `FutureOr`.
   DartType normalize(DartType type) {
+    if (type is NeverType && type.declaredNullability == Nullability.nullable) {
+      return const NullType();
+    }
+
     if (type is! FutureOrType) return type;
 
     final s = normalize(type.typeArgument);

@@ -445,6 +445,8 @@ CompileTimeErrorCode.CONST_SPREAD_EXPECTED_LIST_OR_SET:
   status: noFix
 CompileTimeErrorCode.CONST_SPREAD_EXPECTED_MAP:
   status: noFix
+CompileTimeErrorCode.CONST_TYPE_PARAMETER:
+  status: needsEvaluation
 CompileTimeErrorCode.CONST_WITH_NON_CONST:
   status: hasFix
 CompileTimeErrorCode.CONST_WITH_NON_CONSTANT_ARGUMENT:
@@ -673,6 +675,10 @@ CompileTimeErrorCode.EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT:
   status: noFix
 CompileTimeErrorCode.EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF:
   status: noFix
+CompileTimeErrorCode.EXTENSION_TYPE_WITH_ABSTRACT_MEMBER:
+  status: needsFix
+  notes: |-
+    Convert to block body.
 CompileTimeErrorCode.EXTERNAL_FIELD_CONSTRUCTOR_INITIALIZER:
   status: needsFix
   notes: |-
@@ -1359,6 +1365,8 @@ CompileTimeErrorCode.PRIVATE_SETTER:
   status: noFix
 CompileTimeErrorCode.READ_POTENTIALLY_UNASSIGNED_FINAL:
   status: noFix
+CompileTimeErrorCode.RECURSIVE_CONSTANT_CONSTRUCTOR:
+  status: noFix
 CompileTimeErrorCode.RECURSIVE_COMPILE_TIME_CONSTANT:
   status: noFix
 CompileTimeErrorCode.RECURSIVE_CONSTRUCTOR_REDIRECT:
@@ -1795,14 +1803,6 @@ HintCode.CAN_BE_NULL_AFTER_NULL_AWARE:
   status: hasFix
 HintCode.DEPRECATED_COLON_FOR_DEFAULT_VALUE:
   status: hasFix
-HintCode.DEPRECATED_EXPORT_USE:
-  status: needsFix
-  notes: |-
-    Low priority, because this is likely not encountered often.
-
-    The fix is to look for a non-deprecated way to import the name and to add a
-    new import for it. It might be possible to remove the old import if all of
-    the names being imported through it are available through the new import.
 HintCode.DEPRECATED_MEMBER_USE:
   status: hasFix
 HintCode.DEPRECATED_MEMBER_USE_FROM_SAME_PACKAGE:
@@ -2656,18 +2656,34 @@ ParserErrorCode.ENUM_IN_CLASS:
     Move the nested enum to the top level.
 ParserErrorCode.EQUALITY_CANNOT_BE_EQUALITY_OPERAND:
   status: noFix
-ParserErrorCode.EXPECTED_BODY:
+ParserErrorCode.EXPECTED_CASE_OR_DEFAULT:
+  status: noFix
+ParserErrorCode.EXPECTED_CATCH_CLAUSE_BODY:
   status: needsFix
   notes: |-
     Add an empty body.
-ParserErrorCode.EXPECTED_CASE_OR_DEFAULT:
-  status: noFix
+ParserErrorCode.EXPECTED_CLASS_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
 ParserErrorCode.EXPECTED_CLASS_MEMBER:
   status: noFix
 ParserErrorCode.EXPECTED_ELSE_OR_COMMA:
   status: noFix
 ParserErrorCode.EXPECTED_EXECUTABLE:
   status: noFix
+ParserErrorCode.EXPECTED_EXTENSION_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
+ParserErrorCode.EXPECTED_EXTENSION_TYPE_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
+ParserErrorCode.EXPECTED_FINALLY_CLAUSE_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
 ParserErrorCode.EXPECTED_IDENTIFIER_BUT_GOT_KEYWORD:
   status: noFix
 ParserErrorCode.EXPECTED_INSTEAD:
@@ -2676,6 +2692,10 @@ ParserErrorCode.EXPECTED_LIST_OR_MAP_LITERAL:
   status: needsFix
   notes: |-
     Add the braces or brackets for the literal.
+ParserErrorCode.EXPECTED_MIXIN_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
 ParserErrorCode.EXPECTED_NAMED_TYPE_EXTENDS:
   status: noFix
 ParserErrorCode.EXPECTED_NAMED_TYPE_IMPLEMENTS:
@@ -2690,8 +2710,20 @@ ParserErrorCode.EXPECTED_REPRESENTATION_TYPE:
   status: noFix
 ParserErrorCode.EXPECTED_STRING_LITERAL:
   status: noFix
+ParserErrorCode.EXPECTED_SWITCH_EXPRESSION_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
+ParserErrorCode.EXPECTED_SWITCH_STATEMENT_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
 ParserErrorCode.EXPECTED_TOKEN:
   status: hasFix
+ParserErrorCode.EXPECTED_TRY_STATEMENT_BODY:
+  status: needsFix
+  notes: |-
+    Add an empty body.
 ParserErrorCode.EXPECTED_TYPE_NAME:
   status: noFix
 ParserErrorCode.EXPERIMENT_NOT_ENABLED:
@@ -2716,6 +2748,10 @@ ParserErrorCode.EXTENSION_DECLARES_INSTANCE_FIELD:
   status: needsFix
   notes: |-
     Remove the field, or add `static`.
+ParserErrorCode.EXTENSION_TYPE_EXTENDS:
+  status: needsEvaluation
+ParserErrorCode.EXTENSION_TYPE_WITH:
+  status: needsEvaluation
 ParserErrorCode.EXTERNAL_CLASS:
   status: needsFix
   notes: |-
@@ -3025,6 +3061,10 @@ ParserErrorCode.MISSING_NAME_IN_PART_OF_DIRECTIVE:
   status: noFix
 ParserErrorCode.MISSING_PREFIX_IN_DEFERRED_IMPORT:
   status: noFix
+ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR:
+  status: needsEvaluation
+ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR_PARAMETERS:
+  status: needsEvaluation
 ParserErrorCode.MISSING_STAR_AFTER_SYNC:
   status: needsFix
   notes: |-
@@ -3398,6 +3438,14 @@ WarningCode.DEAD_CODE_CATCH_FOLLOWING_CATCH:
   status: hasFix
 WarningCode.DEAD_CODE_ON_CATCH_SUBTYPE:
   status: hasFix
+WarningCode.DEPRECATED_EXPORT_USE:
+  status: needsFix
+  notes: |-
+    Low priority, because this is likely not encountered often.
+
+    The fix is to look for a non-deprecated way to import the name and to add a
+    new import for it. It might be possible to remove the old import if all of
+    the names being imported through it are available through the new import.
 WarningCode.DEPRECATED_EXTENDS_FUNCTION:
   status: needsFix
   notes: |-
@@ -3410,6 +3458,18 @@ WarningCode.DEPRECATED_MIXIN_FUNCTION:
     The fix is to remove `Function` from where it's referenced.
 WarningCode.DEPRECATED_NEW_IN_COMMENT_REFERENCE:
   status: hasFix
+WarningCode.DOC_DIRECTIVE_MISSING_CLOSING_BRACE:
+  status: needsEvaluation
+WarningCode.DOC_IMPORT_CANNOT_BE_DEFERRED:
+  status: needsFix
+WarningCode.DOC_IMPORT_CANNOT_HAVE_CONFIGURATIONS:
+  status: needsFix
+WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT:
+  status: needsEvaluation
+WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_URL:
+  status: needsEvaluation
+WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH:
+  status: needsEvaluation
 WarningCode.DUPLICATE_EXPORT:
   status: needsFix
   notes: |-

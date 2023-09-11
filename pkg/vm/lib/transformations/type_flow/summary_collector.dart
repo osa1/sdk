@@ -2505,6 +2505,7 @@ class SummaryCollector extends RecursiveResultVisitor<TypeExpr?> {
 }
 
 class RuntimeTypeTranslatorImpl extends DartTypeVisitor<TypeExpr>
+    with DartTypeVisitorDefaultMixin<TypeExpr>
     implements RuntimeTypeTranslator {
   final CoreTypes coreTypes;
   final Summary? summary;
@@ -2657,8 +2658,8 @@ class RuntimeTypeTranslatorImpl extends DartTypeVisitor<TypeExpr>
         return result;
       }
     }
-    if (type.parameter.parent is! Class) return unknownType;
-    final interfaceClass = type.parameter.parent as Class;
+    final interfaceClass = type.parameter.declaration;
+    if (interfaceClass is! Class) return unknownType;
     // Undetermined nullability is equivalent to nonNullable when
     // instantiating type parameter, so convert it right away.
     Nullability nullability = type.nullability;

@@ -15993,6 +15993,63 @@ library
 ''');
   }
 
+  test_const_invokeConstructor_generic_noTypeArguments_inferred() async {
+    var library = await buildLibrary(r'''
+class A<T> {
+  final T t;
+  const A(this.t);
+}
+const Object a = const A(0);
+''');
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class A @6
+        typeParameters
+          covariant T @8
+            defaultType: dynamic
+        fields
+          final t @23
+            type: T
+        constructors
+          const @34
+            parameters
+              requiredPositional final this.t @41
+                type: T
+                field: self::@class::A::@field::t
+        accessors
+          synthetic get t @-1
+            returnType: T
+    topLevelVariables
+      static const a @60
+        type: Object
+        shouldUseTypeForInitializerInference: true
+        constantInitializer
+          InstanceCreationExpression
+            keyword: const @64
+            constructorName: ConstructorName
+              type: NamedType
+                name: A @70
+                element: self::@class::A
+                type: A<int>
+              staticElement: ConstructorMember
+                base: self::@class::A::@constructor::new
+                substitution: {T: int}
+            argumentList: ArgumentList
+              leftParenthesis: ( @71
+              arguments
+                IntegerLiteral
+                  literal: 0 @72
+                  staticType: int
+              rightParenthesis: ) @73
+            staticType: A<int>
+    accessors
+      synthetic static get a @-1
+        returnType: Object
+''');
+  }
+
   test_const_invokeConstructor_generic_unnamed() async {
     var library = await buildLibrary(r'''
 class C<K, V> {
@@ -46985,6 +47042,38 @@ library
                 type: int
                 codeOffset: 17
                 codeLength: 6
+                field: self::@extensionType::A::@field::it
+        accessors
+          synthetic get it @-1
+            returnType: int
+''');
+  }
+
+  test_documentation() async {
+    var library = await buildLibrary(r'''
+/// Docs
+extension type A(int it) {
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    extensionTypes
+      A @24
+        documentationComment: /// Docs
+        representation: self::@extensionType::A::@field::it
+        typeErasure: int
+        interfaces
+          Object
+        fields
+          final it @30
+            type: int
+        constructors
+          @24
+            parameters
+              requiredPositional final this.it @30
+                type: int
                 field: self::@extensionType::A::@field::it
         accessors
           synthetic get it @-1

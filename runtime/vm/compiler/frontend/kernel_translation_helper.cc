@@ -651,23 +651,32 @@ FunctionPtr TranslationHelper::LookupStaticMethodByKernelProcedure(
   // The parent is either a library or a class (in which case the procedure is a
   // static method).
   NameIndex enclosing = EnclosingName(procedure);
-  Function& function = Function::Handle(Z);
+  Class& klass = Class::Handle(Z);
   if (IsLibrary(enclosing)) {
     Library& library = Library::Handle(
         Z, LookupLibraryByKernelLibrary(enclosing, /*required=*/false));
-    if (!library.IsNull()) {
-      function = library.LookupFunctionAllowPrivate(procedure_name);
+    if (library.IsNull()) {
+      if (required) {
+        LookupFailed(procedure);
+      }
+      return Function::null();
     }
+    klass = library.toplevel_class();
   } else {
     ASSERT(IsClass(enclosing));
-    Class& klass = Class::Handle(
-        Z, LookupClassByKernelClass(enclosing, /*required=*/false));
-    if (!klass.IsNull()) {
-      const auto& error = klass.EnsureIsFinalized(thread_);
-      ASSERT(error == Error::null());
-      function = klass.LookupFunctionAllowPrivate(procedure_name);
+    klass = LookupClassByKernelClass(enclosing, /*required=*/false);
+    if (klass.IsNull()) {
+      if (required) {
+        LookupFailed(procedure);
+      }
+      return Function::null();
     }
   }
+
+  const auto& error = klass.EnsureIsFinalized(thread_);
+  ASSERT(error == Error::null());
+  Function& function =
+      Function::Handle(Z, klass.LookupFunctionAllowPrivate(procedure_name));
   if (function.IsNull() && required) {
     LookupFailed(procedure);
   }
@@ -2302,8 +2311,8 @@ void KernelReaderHelper::SkipDartType() {
       SkipListOfDartTypes();  // read list of types.
       return;
     case kTypeParameterType:
-      ReadNullability();       // read nullability.
-      ReadUInt();              // read index for parameter.
+      ReadNullability();  // read nullability.
+      ReadUInt();         // read index for parameter.
       return;
     case kIntersectionType:
       SkipDartType();  // read left.
@@ -2427,6 +2436,7 @@ void KernelReaderHelper::SkipInitializer() {
     case kInvalidInitializer:
       return;
     case kFieldInitializer:
+      ReadPosition();                // read position.
       SkipCanonicalNameReference();  // read field_reference.
       SkipExpression();              // read value.
       return;
@@ -2943,8 +2953,8 @@ void KernelReaderHelper::SkipName() {
 void KernelReaderHelper::SkipArguments() {
   ReadUInt();  // read argument count.
 
-  SkipListOfDartTypes();    // read list of types.
-  SkipListOfExpressions();  // read positional.
+  SkipListOfDartTypes();         // read list of types.
+  SkipListOfExpressions();       // read positional.
   SkipListOfNamedExpressions();  // read named.
 }
 

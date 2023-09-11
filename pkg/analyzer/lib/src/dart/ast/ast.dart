@@ -9,6 +9,7 @@ import 'package:_fe_analyzer_shared/src/scanner/string_canonicalizer.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_operations.dart'
     as shared;
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/ast/doc_comment.dart';
 import 'package:analyzer/dart/ast/precedence.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -3002,10 +3003,6 @@ final class ClassTypeAliasImpl extends TypeAliasImpl implements ClassTypeAlias {
   /// macro class.
   final Token? macroKeyword;
 
-  /// The token for the 'inline' keyword, or `null` if this is not defining an
-  /// inline class.
-  final Token? inlineKeyword;
-
   /// The token for the 'sealed' keyword, or `null` if this is not defining a
   /// sealed class.
   @override
@@ -3063,7 +3060,6 @@ final class ClassTypeAliasImpl extends TypeAliasImpl implements ClassTypeAlias {
     required this.equals,
     required this.abstractKeyword,
     required this.macroKeyword,
-    required this.inlineKeyword,
     required this.sealedKeyword,
     required this.baseKeyword,
     required this.interfaceKeyword,
@@ -3088,7 +3084,6 @@ final class ClassTypeAliasImpl extends TypeAliasImpl implements ClassTypeAlias {
   Token get firstTokenAfterCommentAndMetadata {
     return abstractKeyword ??
         macroKeyword ??
-        inlineKeyword ??
         sealedKeyword ??
         baseKeyword ??
         interfaceKeyword ??
@@ -3133,7 +3128,6 @@ final class ClassTypeAliasImpl extends TypeAliasImpl implements ClassTypeAlias {
     ..addNode('typeParameters', typeParameters)
     ..addToken('equals', equals)
     ..addToken('abstractKeyword', abstractKeyword)
-    ..addToken('inlineKeyword', inlineKeyword)
     ..addToken('macroKeyword', macroKeyword)
     ..addToken('sealedKeyword', sealedKeyword)
     ..addToken('baseKeyword', baseKeyword)
@@ -3230,6 +3224,17 @@ abstract final class Comment implements AstNode {
   @experimental
   List<MdCodeBlock> get codeBlocks;
 
+  @experimental
+  List<DocDirective> get docDirectives;
+
+  @experimental
+  List<DocImport> get docImports;
+
+  /// Whether this comment has a line beginning with '@nodoc', indicating its
+  /// contents are not intended for publishing.
+  @experimental
+  bool get hasNodoc;
+
   /// Return `true` if this is a block comment.
   bool get isBlock;
 
@@ -3278,6 +3283,15 @@ final class CommentImpl extends AstNodeImpl implements Comment {
   @override
   final List<MdCodeBlock> codeBlocks;
 
+  @override
+  final List<DocImport> docImports;
+
+  @override
+  final List<DocDirective> docDirectives;
+
+  @override
+  final bool hasNodoc;
+
   /// Initialize a newly created comment. The list of [tokens] must contain at
   /// least one token. The [_type] is the type of the comment. The list of
   /// [references] can be empty if the comment does not contain any embedded
@@ -3287,6 +3301,9 @@ final class CommentImpl extends AstNodeImpl implements Comment {
     required CommentType type,
     required List<CommentReferenceImpl> references,
     required this.codeBlocks,
+    required this.docImports,
+    required this.docDirectives,
+    required this.hasNodoc,
   }) : _type = type {
     _references._initialize(this, references);
   }
@@ -11951,47 +11968,6 @@ final class MapPatternImpl extends DartPatternImpl implements MapPattern {
   }
 }
 
-/// A Markdown fenced code block found in a documentation comment.
-@experimental
-final class MdCodeBlock {
-  /// The 'info string'.
-  ///
-  /// This includes any text (trimming whitespace) following the opening
-  /// backticks (for a fenced code block). For example, in a fenced code block
-  /// starting with "```dart", the info string is "dart".
-  ///
-  /// If the code block is an indented code block, or a fenced code block with
-  /// no text following the opening backticks, the info string is `null`.
-  ///
-  /// See CommonMark specification at
-  /// <https://spec.commonmark.org/0.30/#fenced-code-blocks>.
-  final String? infoString;
-
-  /// Information about the comment lines that make up this code block.
-  ///
-  /// For a fenced code block, these lines include the opening and closing
-  /// fence delimiter lines.
-  final List<MdCodeBlockLine> lines;
-
-  MdCodeBlock({
-    required this.infoString,
-    required List<MdCodeBlockLine> lines,
-  }) : lines = List.of(lines, growable: false);
-}
-
-/// A Markdown code block line found in a documentation comment.
-@experimental
-final class MdCodeBlockLine {
-  /// The offset of the start of the code block, from the beginning of the
-  /// compilation unit.
-  final int offset;
-
-  /// The length of the fenced code block.
-  final int length;
-
-  MdCodeBlockLine({required this.offset, required this.length});
-}
-
 /// A method declaration.
 ///
 ///    methodDeclaration ::=
@@ -14902,6 +14878,8 @@ final class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
   @override
   final Token rightParenthesis;
 
+  bool hasDuplicateNamedField = false;
+
   RecordPatternImpl({
     required this.leftParenthesis,
     required List<PatternFieldImpl> fields,
@@ -14946,7 +14924,7 @@ final class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
     ResolverVisitor resolverVisitor,
     SharedMatchContext context,
   ) {
-    resolverVisitor.analyzeRecordPattern(
+    final result = resolverVisitor.analyzeRecordPattern(
       context,
       this,
       fields: resolverVisitor.buildSharedPatternFields(
@@ -14954,6 +14932,14 @@ final class RecordPatternImpl extends DartPatternImpl implements RecordPattern {
         mustBeNamed: false,
       ),
     );
+
+    if (!hasDuplicateNamedField) {
+      resolverVisitor.checkPatternNeverMatchesValueType(
+        context: context,
+        pattern: this,
+        requiredType: result.requiredType,
+      );
+    }
   }
 
   @override

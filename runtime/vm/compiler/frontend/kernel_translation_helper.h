@@ -597,6 +597,7 @@ class ProcedureHelper {
     kIsAbstractFieldAccessor = 1 << 8,
     kExtensionTypeMember = 1 << 9,
     kHasWeakTearoffReferencePragma = 1 << 10,
+    kIsLoweredLateField = 1 << 11,
   };
 
   explicit ProcedureHelper(KernelReaderHelper* helper)
@@ -1032,15 +1033,16 @@ struct InferredTypeMetadata {
   bool IsConstant() const { return (flags & kFlagConstant) != 0; }
   bool ReceiverNotInt() const { return (flags & kFlagReceiverNotInt) != 0; }
 
-  CompileType ToCompileType(Zone* zone) const {
+  CompileType ToCompileType(Zone* zone,
+                            const AbstractType* static_type = nullptr,
+                            bool can_be_sentinel = false) const {
     if (IsInt() && cid == kDynamicCid) {
       return CompileType::FromAbstractType(
           Type::ZoneHandle(
               zone, (IsNullable() ? Type::NullableIntType() : Type::IntType())),
-          IsNullable(), CompileType::kCannotBeSentinel);
+          IsNullable(), can_be_sentinel);
     } else {
-      return CompileType(IsNullable(), CompileType::kCannotBeSentinel, cid,
-                         nullptr);
+      return CompileType(IsNullable(), can_be_sentinel, cid, static_type);
     }
   }
 };

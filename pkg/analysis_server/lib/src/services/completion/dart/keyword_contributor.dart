@@ -145,6 +145,10 @@ class _KeywordVisitor extends SimpleAstVisitor<void> {
         return;
       }
     }
+    if (previousMember is ExtensionTypeDeclaration) {
+      // Already handled by the in-scope completion pass.
+      return;
+    }
     if (previousMember == null || previousMember is Directive) {
       if (previousMember == null &&
           !node.directives.any((d) => d is LibraryDirective)) {
@@ -391,12 +395,6 @@ class _KeywordVisitor extends SimpleAstVisitor<void> {
     } else {
       _addExpressionKeywords(node);
     }
-  }
-
-  @override
-  void visitRecordPattern(RecordPattern node) {
-    _addExpressionKeywords(node);
-    _addSuggestions([Keyword.DYNAMIC]);
   }
 
   @override

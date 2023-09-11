@@ -2,6 +2,52 @@
 
 ### Language
 
+Dart 3.2 adds the following features. To use them, set your package's [SDK
+constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
+
+[language version]: https://dart.dev/guides/language/evolution
+
+- **Private field promotion**: In most circumstances, the types of private final
+  fields can now be promoted by null checks and `is` tests. For example:
+
+  ```dart
+  class Example {
+    final int? _privateField;
+    Example1(this._privateField);
+
+    f() {
+      if (_privateField != null) {
+        // _privateField has now been promoted; you can use it without
+        // null checking it.
+        int i = _privateField; // OK
+      }
+    }
+  }
+
+  // Private field promotions also work from outside of the class:
+  f(Example1 x) {
+    if (x._privateField != null) {
+      int i = x._privateField; // OK
+    }
+  }
+  ```
+
+  To ensure soundness, a field is not eligible for field promotion in the
+  following circumstances:
+  - If it's not final (because a non-final field could be changed in between the
+    test and the usage, invalidating the promotion).
+  - If it's overridden elsewhere in the library by a concrete getter or a
+    non-final field (because an access to an overridden field might resolve at
+    runtime to the overriding getter or field).
+  - If it's not private (because a non-private field might be overridden
+    elsewhere in the program).
+  - If it has the same name as a concrete getter or a non-final field in some
+    other unrelated class in the library (because a class elsewhere in the
+    program might extend one of the classes and implement the other, creating an
+    override relationship between them).
+  - If it is implicitly overridden by an instance of `noSuchMethod` elsewhere in
+    the library.
+
 - **Breaking Change** [#53167][]: Use a more precise split point for refutable
   patterns. Previously, in an if-case statement, if flow analysis could prove
   that the scrutinee expression was guaranteed to throw an exception, it would
@@ -44,9 +90,13 @@
 
 [#53005]: https://dartbug.com/53005
 
+#### `dart:isolate`
+
+- Added `Isolate.packageConfigSync` and `Isolate.resolvePackageUriSync` APIs.
+
 #### `dart:js_interop`
 
-- **JSNumber.toDart and Object.toJS**:
+- **Breaking Change on JSNumber.toDart and Object.toJS**:
   `JSNumber.toDart` is removed in favor of `toDartDouble` and `toDartInt` to
   make the type explicit. `Object.toJS` is also removed in favor of
   `Object.toJSBox`. Previously, this function would allow Dart objects to flow
@@ -78,6 +128,11 @@
   number of cases, like when using older browser versions. `dart:js_interop`'s
   `globalJSObject` is also renamed to `globalContext` and returns the global
   context used in the lowerings.
+- **Breaking Change on Types of `dart:js_interop` External APIs**:
+  External JS interop APIs when using `dart:js_interop` are restricted to a set
+  of allowed types. Namely, this include the primitive types like `String`, JS
+  types from `dart:js_interop`, and other static interop types (either through
+  `@staticInterop` or extension types).
 
 ### Tools
 
@@ -106,6 +161,14 @@
   with these types.
 
 [#53106]: https://github.com/dart-lang/sdk/issues/53106
+
+#### Pub
+
+- New option `dart pub upgrade --tighten` which will update dependencies' lower
+  bounds in pubspec.yaml to match the current version.
+- The commands `dart pub get`/`add`/`upgrade` will now show if a dependency
+  changed between direct, dev and transitive dependency.
+- The command `dart pub upgrade` no longer shows unchanged dependencies.
 
 ## 3.1.0
 
@@ -144,10 +207,6 @@
 [#51486]: https://github.com/dart-lang/sdk/issues/51486
 [#52027]: https://github.com/dart-lang/sdk/issues/52027
 
-#### `dart:isolate`
-
-- Added `Isolate.packageConfigSync` and `Isolate.resolvePackageUriSync` APIs.
-
 #### `dart:js_interop`
 
 - **Object literal constructors**:
@@ -173,6 +232,17 @@
   parameters work, where omitted parameters are actually omitted. For example,
   calling `external void foo([int a, int b])` as `foo(0)` will now result in
   `foo(0)`, and not `foo(0, null)`.
+
+### Tools
+
+#### Linter
+
+- Added new static analysis lints you can [enable][enable-lints] in
+  your package's `analysis_options.yaml` file:
+  - [`no_self_assignments`](https://dart.dev/lints/no_self_assignments)
+  - [`no_wildcard_variable_uses`](https://dart.dev/lints/no_wildcard_variable_uses)
+
+[enable-lints]: https://dart.dev/tools/analysis#enabling-linter-rules
 
 ## 3.0.7 - 2023-07-26
 

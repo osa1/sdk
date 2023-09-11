@@ -1506,8 +1506,8 @@ class UntaggedFfiTrampolineData : public UntaggedObject {
   // Whether this is a leaf call - i.e. one that doesn't call back into Dart.
   bool is_leaf_;
 
-  // The kind of trampoline this is. See FfiTrampolineKind.
-  uint8_t trampoline_kind_;
+  // The kind of trampoline this is. See FfiFunctionKind.
+  uint8_t ffi_function_kind_;
 };
 
 class UntaggedField : public UntaggedObject {
@@ -1705,10 +1705,6 @@ class UntaggedLibrary : public UntaggedObject {
     UNREACHABLE();
     return nullptr;
   }
-  // Cache of resolved names in library scope.
-  COMPRESSED_POINTER_FIELD(ArrayPtr, resolved_names);
-  // Cache of exported names by library.
-  COMPRESSED_POINTER_FIELD(ArrayPtr, exported_names);
   // Array of scripts loaded in this library.
   COMPRESSED_POINTER_FIELD(ArrayPtr, loaded_scripts);
   VISIT_TO(loaded_scripts);
@@ -2416,6 +2412,7 @@ class UntaggedContext : public UntaggedObject {
 #define CONTEXT_SCOPE_VARIABLE_DESC_FLAG_LIST(V)                               \
   V(Final)                                                                     \
   V(Late)                                                                      \
+  V(Nullable)                                                                  \
   V(Invisible)                                                                 \
   V(AwaiterLink)
 
@@ -2436,6 +2433,7 @@ class UntaggedContextScope : public UntaggedObject {
     };
     CompressedSmiPtr late_init_offset;
     CompressedAbstractTypePtr type;
+    CompressedSmiPtr cid;
     CompressedSmiPtr context_index;
     CompressedSmiPtr context_level;
     CompressedSmiPtr kernel_offset;
@@ -2474,6 +2472,7 @@ class UntaggedContextScope : public UntaggedObject {
   DEFINE_ACCESSOR(SmiPtr, flags)
   DEFINE_ACCESSOR(SmiPtr, late_init_offset)
   DEFINE_ACCESSOR(AbstractTypePtr, type)
+  DEFINE_ACCESSOR(SmiPtr, cid)
   DEFINE_ACCESSOR(SmiPtr, context_index)
   DEFINE_ACCESSOR(SmiPtr, context_level)
   DEFINE_ACCESSOR(SmiPtr, kernel_offset)

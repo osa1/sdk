@@ -718,6 +718,8 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         node: node,
         element: element,
       );
+      _checkForExtensionTypeWithAbstractMember(node);
+      _checkForWrongTypeParameterVarianceInSuperinterfaces();
 
       super.visitExtensionTypeDeclaration(node);
     } finally {
@@ -2321,38 +2323,32 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       return false;
     }
 
-    // try to find and check super constructor invocation
-    for (ConstructorInitializer initializer in constructor.initializers) {
-      if (initializer is SuperConstructorInvocation) {
-        var element = initializer.staticElement;
-        if (element == null || element.isConst) {
-          return false;
-        }
-        errorReporter.reportErrorForNode(
-            CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_NON_CONST_SUPER,
-            initializer,
-            [element.enclosingElement.displayName]);
-        return true;
-      }
-    }
-    // no explicit super constructor invocation, check default constructor
-    var supertype = enclosingClass.supertype;
-    if (supertype == null) {
-      return false;
-    }
-    if (supertype.isDartCoreObject) {
-      return false;
-    }
-    var unnamedConstructor = supertype.element.unnamedConstructor;
-    if (unnamedConstructor == null || unnamedConstructor.isConst) {
+    final element = constructor.declaredElement;
+    if (element == null) {
       return false;
     }
 
-    // default constructor is not 'const', report problem
+    // Redirecting constructors are checked to be const elsewhere.
+    if (element.redirectedConstructor != null) {
+      return false;
+    }
+
+    final invokedSuper = element.superConstructor;
+    if (invokedSuper == null || invokedSuper.isConst) {
+      return false;
+    }
+
+    // Often there is an explicit `super()` invocation, report on it.
+    final superInvocation = constructor.initializers
+        .whereType<SuperConstructorInvocation>()
+        .firstOrNull;
+    final errorNode = superInvocation ?? constructor.returnType;
+
     errorReporter.reportErrorForNode(
-        CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_NON_CONST_SUPER,
-        constructor.returnType,
-        [supertype]);
+      CompileTimeErrorCode.CONST_CONSTRUCTOR_WITH_NON_CONST_SUPER,
+      errorNode,
+      [element.enclosingElement.displayName],
+    );
     return true;
   }
 
@@ -2870,7 +2866,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       return;
     }
 
-    if (node.isStatic) {
+    if (node.isStatic || node.externalKeyword != null) {
       return;
     }
 
@@ -2958,6 +2954,22 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         CompileTimeErrorCode.EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF,
         node.name,
       );
+    }
+  }
+
+  void _checkForExtensionTypeWithAbstractMember(
+    ExtensionTypeDeclarationImpl node,
+  ) {
+    for (final member in node.members) {
+      if (member is MethodDeclarationImpl && !member.isStatic) {
+        if (member.isAbstract) {
+          errorReporter.reportErrorForNode(
+            CompileTimeErrorCode.EXTENSION_TYPE_WITH_ABSTRACT_MEMBER,
+            member,
+            [member.name.lexeme, node.name.lexeme],
+          );
+        }
+      }
     }
   }
 

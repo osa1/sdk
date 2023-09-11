@@ -526,6 +526,7 @@ struct InstrAttrs {
   M(MaterializeObject, _)                                                      \
   M(TestSmi, kNoGC)                                                            \
   M(TestCids, kNoGC)                                                           \
+  M(TestRange, kNoGC)                                                          \
   M(ExtractNthOutput, kNoGC)                                                   \
   M(MakePair, kNoGC)                                                           \
   M(BinaryUint32Op, kNoGC)                                                     \
@@ -3064,11 +3065,13 @@ class MemoryCopyInstr : public TemplateInstruction<5, NoThrow> {
                   Value* length,
                   classid_t src_cid,
                   classid_t dest_cid,
-                  bool unboxed_length)
+                  bool unboxed_inputs,
+                  bool can_overlap = true)
       : src_cid_(src_cid),
         dest_cid_(dest_cid),
         element_size_(Instance::ElementSizeFor(src_cid)),
-        unboxed_length_(unboxed_length) {
+        unboxed_inputs_(unboxed_inputs),
+        can_overlap_(can_overlap) {
     ASSERT(IsArrayTypeSupported(src_cid));
     ASSERT(IsArrayTypeSupported(dest_cid));
     ASSERT(Instance::ElementSizeFor(src_cid) ==
@@ -3091,11 +3094,11 @@ class MemoryCopyInstr : public TemplateInstruction<5, NoThrow> {
   DECLARE_INSTRUCTION(MemoryCopy)
 
   virtual Representation RequiredInputRepresentation(intptr_t index) const {
-    if (index == kLengthPos && unboxed_length_) {
-      return kUnboxedIntPtr;
+    if (index == kSrcPos || index == kDestPos) {
+      // The object inputs are always tagged.
+      return kTagged;
     }
-    // All inputs are tagged (for now).
-    return kTagged;
+    return unboxed_inputs() ? kUnboxedIntPtr : kTagged;
   }
 
   virtual bool ComputeCanDeoptimize() const { return false; }
@@ -3110,16 +3113,20 @@ class MemoryCopyInstr : public TemplateInstruction<5, NoThrow> {
   Value* length() const { return inputs_[kLengthPos]; }
 
   intptr_t element_size() const { return element_size_; }
-  bool unboxed_length() const { return unboxed_length_; }
+  bool unboxed_inputs() const { return unboxed_inputs_; }
+  bool can_overlap() const { return can_overlap_; }
 
   // Optimizes MemoryCopyInstr with constant parameters to use larger moves.
   virtual Instruction* Canonicalize(FlowGraph* flow_graph);
+
+  PRINT_OPERANDS_TO_SUPPORT
 
 #define FIELD_LIST(F)                                                          \
   F(classid_t, src_cid_)                                                       \
   F(classid_t, dest_cid_)                                                      \
   F(intptr_t, element_size_)                                                   \
-  F(bool, unboxed_length_)
+  F(bool, unboxed_inputs_)                                                     \
+  F(bool, can_overlap_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(MemoryCopyInstr,
                                           TemplateInstruction,
@@ -3133,6 +3140,38 @@ class MemoryCopyInstr : public TemplateInstruction<5, NoThrow> {
                                classid_t array_cid,
                                Register array_reg,
                                Location start_loc);
+
+  // Generates an unrolled loop for copying a known amount of data from
+  // src to dest.
+  void EmitUnrolledCopy(FlowGraphCompiler* compiler,
+                        Register dest_reg,
+                        Register src_reg,
+                        intptr_t num_elements,
+                        bool reversed);
+
+  // Called prior to EmitLoopCopy() to adjust the length register as needed
+  // for the code emitted by EmitLoopCopy. May jump to done if the emitted
+  // loop(s) should be skipped.
+  void PrepareLengthRegForLoop(FlowGraphCompiler* compiler,
+                               Register length_reg,
+                               compiler::Label* done);
+
+  // Generates a loop for copying the data from src to dest, for cases where
+  // either the length is not known at compile time or too large to unroll.
+  //
+  // copy_forwards is only provided (not nullptr) when a backwards loop is
+  // requested. May jump to copy_forwards if backwards iteration is slower than
+  // forwards iteration and the emitted code verifies no actual overlap exists.
+  //
+  // May jump to done if no copying is needed.
+  //
+  // Assumes that PrepareLengthRegForLoop() has been called beforehand.
+  void EmitLoopCopy(FlowGraphCompiler* compiler,
+                    Register dest_reg,
+                    Register src_reg,
+                    Register length_reg,
+                    compiler::Label* done,
+                    compiler::Label* copy_forwards = nullptr);
 
   static bool IsArrayTypeSupported(classid_t array_cid) {
     if (IsTypedDataBaseClassId(array_cid)) {
@@ -5005,6 +5044,7 @@ class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
     return GetDeoptId() != DeoptId::kNone;
   }
 
+  Value* value() const { return inputs_[0]; }
   virtual Representation RequiredInputRepresentation(intptr_t idx) const {
     return kTagged;
   }
@@ -5022,6 +5062,50 @@ class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
 
  private:
   DISALLOW_COPY_AND_ASSIGN(TestCidsInstr);
+};
+
+class TestRangeInstr : public TemplateComparison<1, NoThrow, Pure> {
+ public:
+  TestRangeInstr(const InstructionSource& source,
+                 Value* value,
+                 uword lower,
+                 uword upper,
+                 Representation value_representation);
+
+  DECLARE_COMPARISON_INSTRUCTION(TestRange);
+
+  uword lower() const { return lower_; }
+  uword upper() const { return upper_; }
+
+  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+
+  virtual CompileType ComputeType() const;
+
+  virtual Definition* Canonicalize(FlowGraph* flow_graph);
+
+  virtual bool ComputeCanDeoptimize() const { return false; }
+
+  Value* value() const { return inputs_[0]; }
+  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
+    return value_representation_;
+  }
+
+  virtual bool AttributesEqual(const Instruction& other) const;
+
+  PRINT_OPERANDS_TO_SUPPORT
+
+#define FIELD_LIST(F)                                                          \
+  F(const uword, lower_)                                                       \
+  F(const uword, upper_)                                                       \
+  F(const Representation, value_representation_)
+
+  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(TestRangeInstr,
+                                          TemplateComparison,
+                                          FIELD_LIST)
+#undef FIELD_LIST
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(TestRangeInstr);
 };
 
 class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
@@ -5059,6 +5143,7 @@ class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
     if (is_null_aware()) return kTagged;
     if (operation_cid() == kDoubleCid) return kUnboxedDouble;
     if (operation_cid() == kMintCid) return kUnboxedInt64;
+    if (operation_cid() == kIntegerCid) return kUnboxedUword;
     return kTagged;
   }
 
@@ -7409,7 +7494,7 @@ class LoadClassIdInstr : public TemplateDefinition<1, NoThrow, Pure> {
                             Representation representation = kTagged,
                             bool input_can_be_smi = true)
       : representation_(representation), input_can_be_smi_(input_can_be_smi) {
-    ASSERT(representation == kTagged || representation == kUntagged);
+    ASSERT(representation == kTagged || representation == kUnboxedUword);
     SetInputAt(0, object);
   }
 

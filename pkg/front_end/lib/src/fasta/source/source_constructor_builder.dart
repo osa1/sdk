@@ -15,7 +15,6 @@ import '../builder/declaration_builder.dart';
 import '../builder/formal_parameter_builder.dart';
 import '../builder/member_builder.dart';
 import '../builder/metadata_builder.dart';
-import '../builder/named_type_builder.dart';
 import '../builder/omitted_type_builder.dart';
 import '../builder/type_alias_builder.dart';
 import '../builder/type_builder.dart';
@@ -405,7 +404,12 @@ class DeclaredSourceConstructorBuilder
       super.classBuilder as SourceClassBuilder;
 
   @override
-  Member get readTarget => _constructorTearOff ?? _constructor;
+  Member get readTarget =>
+      _constructorTearOff ??
+      // The case is need to ensure that the upper bound is [Member] and not
+      // [GenericFunction].
+      // ignore: unnecessary_cast
+      _constructor as Member;
 
   @override
   Member? get writeTarget => null;
