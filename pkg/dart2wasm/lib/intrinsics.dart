@@ -492,10 +492,21 @@ class Intrinsifier {
     }
 
     // Compare double or WasmF64.
-    if (leftType == doubleType && rightType == doubleType) {
+    if (leftType == w.NumType.f64 && rightType == w.NumType.f64) {
       codeGen.wrap(node.left, w.NumType.f64);
       codeGen.wrap(node.right, w.NumType.f64);
       b.f64_eq();
+      return w.NumType.i32;
+    }
+
+    // Compare extenref.
+    if (leftType is w.RefType &&
+        leftType.heapType == w.HeapType.extern &&
+        rightType is w.RefType &&
+        rightType.heapType == w.HeapType.extern) {
+      codeGen.wrap(node.left, w.RefType.extern(nullable: true));
+      codeGen.wrap(node.right, w.RefType.extern(nullable: true));
+      b.extern_ref_eq();
       return w.NumType.i32;
     }
 
