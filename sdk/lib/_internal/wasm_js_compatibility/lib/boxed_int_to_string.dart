@@ -8,16 +8,17 @@
 // }
 
 import 'dart:_internal';
+import 'dart:_js_helper';
+import 'dart:_js_types';
+import 'dart:_wasm';
 
 @patch
 class _BoxedInt {
   @patch
-  String toRadixString(int radix) {
-    throw '_BoxedInt.toRadixString in JS compat mode';
-  }
+  String toRadixString(int radix) => JSStringImpl(JS<WasmExternRef?>(
+      '(n, r) => n.toString(r)', toDouble().toExternRef, radix.toDouble()));
 
   @patch
-  String toString() {
-    throw '_BoxedInt.toString in JS comapt mode';
-  }
+  String toString() => JSStringImpl(
+      JS<WasmExternRef?>('(n) => n.toString()', toDouble().toExternRef));
 }
