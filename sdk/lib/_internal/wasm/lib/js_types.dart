@@ -27,12 +27,13 @@ import 'dart:_internal'
         WhereIterable,
         WhereTypeIterable;
 import 'dart:_js_helper' as js;
+import 'dart:_string' show StringBase;
 import 'dart:_string_helper';
 import 'dart:_wasm';
 import 'dart:collection';
-import 'dart:typed_data';
 import 'dart:js_interop';
 import 'dart:math';
+import 'dart:typed_data';
 
 part 'js_array.dart';
 part 'js_string.dart';

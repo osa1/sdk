@@ -624,7 +624,7 @@ class Intrinsifier {
           return translator.voidMarker;
         case "allocateOneByteString":
           if (translator.options.jsCompatibility) {
-            throw "allocateOneByteString in JS compatibility mode";
+            throw "allocateOneByteString in JS compatibility mode when compiling member ${codeGen.member}";
           }
           ClassInfo info = translator.classInfo[translator.oneByteStringClass]!;
           translator.functions.allocateClass(info.classId);
@@ -640,7 +640,7 @@ class Intrinsifier {
           return info.nonNullableType;
         case "writeIntoOneByteString":
           if (translator.options.jsCompatibility) {
-            throw "writeIntoOneByteString in JS compatibility mode";
+            throw "writeIntoOneByteString in JS compatibility mode when compiling member ${codeGen.member}";
           }
           ClassInfo info = translator.classInfo[translator.oneByteStringClass]!;
           w.ArrayType arrayType =
@@ -661,7 +661,7 @@ class Intrinsifier {
           return codeGen.voidMarker;
         case "allocateTwoByteString":
           if (translator.options.jsCompatibility) {
-            throw "allocateTwoByteString in JS compatibility mode";
+            throw "allocateTwoByteString in JS compatibility mode when compiling member ${codeGen.member}";
           }
           ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
           translator.functions.allocateClass(info.classId);
@@ -677,7 +677,7 @@ class Intrinsifier {
           return info.nonNullableType;
         case "writeIntoTwoByteString":
           if (translator.options.jsCompatibility) {
-            throw "writeIntoTwoByteString in JS compatibility mode";
+            throw "writeIntoTwoByteString in JS compatibility mode when compiling member ${codeGen.member}";
           }
           ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
           w.ArrayType arrayType =

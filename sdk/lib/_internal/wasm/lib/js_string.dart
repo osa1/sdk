@@ -11,7 +11,7 @@ String _stringIdentity(String string) => string;
 /// of `sdk/lib/_internal/js_runtime/lib/js_string.dart`.  TODO(joshualitt): Add
 /// `JSString` fastpaths for cases where `String` arguments are really
 /// `JSString`.
-final class JSStringImpl implements String {
+final class JSStringImpl extends StringBase implements String {
   final WasmExternRef? _ref;
 
   JSStringImpl(this._ref);
@@ -653,6 +653,7 @@ final class JSStringImpl implements String {
   // TODO
 
   // Methods to support VM patch files.
+  @override
   int firstNonWhitespace() {
     final len = length;
     int first = 0;
@@ -664,6 +665,7 @@ final class JSStringImpl implements String {
     return first;
   }
 
+  @override
   int lastNonWhitespace() {
     int last = length - 1;
     for (; last >= 0; last--) {
