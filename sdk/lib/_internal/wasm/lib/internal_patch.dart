@@ -48,26 +48,6 @@ double _stringRead(String string, double index) {
   return string.codeUnitAt(index.toInt()).toDouble();
 }
 
-@pragma("wasm:export", "\$stringAllocate1")
-String _stringAllocate1(double length) {
-  return allocateOneByteString(length.toInt());
-}
-
-@pragma("wasm:export", "\$stringWrite1")
-void _stringWrite1(String string, double index, double codePoint) {
-  writeIntoOneByteString(string, index.toInt(), codePoint.toInt());
-}
-
-@pragma("wasm:export", "\$stringAllocate2")
-String _stringAllocate2(double length) {
-  return allocateTwoByteString(length.toInt());
-}
-
-@pragma("wasm:export", "\$stringWrite2")
-void _stringWrite2(String string, double index, double codePoint) {
-  writeIntoTwoByteString(string, index.toInt(), codePoint.toInt());
-}
-
 const bool has63BitSmis = false;
 
 class Lists {
