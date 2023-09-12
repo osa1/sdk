@@ -430,7 +430,7 @@ class Utf8Decoder {
   static String? _convertInterceptedUint8List(
       bool allowMalformed, JSUint8ArrayImpl codeUnits, int start, int end) {
     final decoder = allowMalformed ? _decoderNonfatal : _decoder;
-    if (decoder == null) return null;
+    if (decoder == WasmExternRef.nullRef) return null;
     if (0 == start && end == codeUnits.length) {
       return _useTextDecoder(decoder, codeUnits);
     }
@@ -462,14 +462,14 @@ class Utf8Decoder {
     try {
       return JS<WasmExternRef?>('_ => new TextDecoder("utf-8", {fatal: true})');
     } catch (e) {}
-    return null;
+    return WasmExternRef.nullRef;
   }();
   static final WasmExternRef? _decoderNonfatal = () {
     try {
       return JS<WasmExternRef?>(
           '_ => new TextDecoder("utf-8", {fatal: false})');
     } catch (e) {}
-    return null;
+    return WasmExternRef.nullRef;
   }();
 }
 
