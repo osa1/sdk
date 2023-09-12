@@ -429,6 +429,28 @@ class Utf8Decoder {
 
   static String? _convertInterceptedUint8List(
       bool allowMalformed, JSUint8ArrayImpl codeUnits, int start, int end) {
+    final WasmExternRef? decoder;
+    if (allowMalformed) {
+      decoder =
+          JS<WasmExternRef>('_ => new TextDecoder("utf-8", {fatal: false})');
+    } else {
+      decoder =
+          JS<WasmExternRef>('_ => new TextDecoder("utf-8", {fatal: true})');
+    }
+
+    if (0 == start && end == codeUnits.length) {
+      return JS<String>(
+          '(d, c) => d.decode(c)', decoder, codeUnits.toExternRef);
+    }
+
+    final length = codeUnits.length;
+    end = RangeError.checkValidRange(start, end, length);
+
+    return JS<String>('(d, c) => d.decode(c)', decoder, codeUnits.toExternRef);
+
+    /*
+    TODO(omersa): Closures returning externref aren't compiled right.
+
     final decoder = allowMalformed ? _decoderNonfatal : _decoder;
     if (decoder == WasmExternRef.nullRef) return null;
     if (0 == start && end == codeUnits.length) {
@@ -442,8 +464,10 @@ class Utf8Decoder {
         decoder,
         JSUint8ArrayImpl(JS<WasmExternRef?>('(a, s, e) => a.subarray(s, e)',
             codeUnits.toExternRef, start.toDouble(), end.toDouble())));
+    */
   }
 
+  /*
   static String? _useTextDecoder(
       WasmExternRef? decoder, JSUint8ArrayImpl codeUnits) {
     // If the input is malformed, catch the exception and return `null` to fall
@@ -464,6 +488,7 @@ class Utf8Decoder {
     } catch (e) {}
     return WasmExternRef.nullRef;
   }();
+
   static final WasmExternRef? _decoderNonfatal = () {
     try {
       return JS<WasmExternRef?>(
@@ -471,6 +496,7 @@ class Utf8Decoder {
     } catch (e) {}
     return WasmExternRef.nullRef;
   }();
+  */
 }
 
 @patch
