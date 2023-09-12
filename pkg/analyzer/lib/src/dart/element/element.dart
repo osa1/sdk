@@ -3034,7 +3034,7 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
 
 /// A concrete implementation of a [FieldElement].
 class FieldElementImpl extends PropertyInducingElementImpl
-    with HasCompletionData
+    with _HasAugmentation<FieldElementImpl>, HasCompletionData
     implements FieldElement {
   /// True if this field inherits from a covariant parameter. This happens
   /// when it overrides a field in a supertype that is covariant.
@@ -3146,13 +3146,8 @@ class FieldFormalParameterElementImpl extends ParameterElementImpl
 
 /// A concrete implementation of a [FunctionElement].
 class FunctionElementImpl extends ExecutableElementImpl
+    with _HasAugmentation<FunctionElementImpl>
     implements FunctionElement, FunctionTypedElementImpl {
-  @override
-  FunctionElementImpl? augmentation;
-
-  @override
-  FunctionElementImpl? augmentationTarget;
-
   /// Initialize a newly created function element to have the given [name] and
   /// [offset].
   FunctionElementImpl(super.name, super.offset);
@@ -6222,6 +6217,15 @@ abstract class PropertyInducingElementImpl
   }
 
   @override
+  bool get isAugmentation {
+    return hasModifier(Modifier.AUGMENTATION);
+  }
+
+  set isAugmentation(bool value) {
+    setModifier(Modifier.AUGMENTATION, value);
+  }
+
+  @override
   bool get isConstantEvaluated => true;
 
   @override
@@ -6424,7 +6428,7 @@ class SuperFormalParameterElementImpl extends ParameterElementImpl
 
 /// A concrete implementation of a [TopLevelVariableElement].
 class TopLevelVariableElementImpl extends PropertyInducingElementImpl
-    with HasCompletionData
+    with _HasAugmentation<TopLevelVariableElementImpl>, HasCompletionData
     implements TopLevelVariableElement {
   /// Initialize a newly created synthetic top-level variable element to have
   /// the given [name] and [offset].

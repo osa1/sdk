@@ -152,12 +152,22 @@ class _ElementWriter {
         if (augmentation != null) {
           _elementPrinter.writeNamedElement('augmentation', augmentation);
         }
+      case FunctionElementImpl e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
       case MixinElementImpl e:
         final augmentation = e.augmentation;
         if (augmentation != null) {
           _elementPrinter.writeNamedElement('augmentation', augmentation);
         }
       case PropertyAccessorElementImpl e:
+        final augmentation = e.augmentation;
+        if (augmentation != null) {
+          _elementPrinter.writeNamedElement('augmentation', augmentation);
+        }
+      case PropertyInducingElementImpl e:
         final augmentation = e.augmentation;
         if (augmentation != null) {
           _elementPrinter.writeNamedElement('augmentation', augmentation);
@@ -185,6 +195,13 @@ class _ElementWriter {
 
   void _writeAugmentationTarget(ElementImpl e) {
     switch (e) {
+      case FunctionElementImpl e:
+        if (e.isAugmentation) {
+          _elementPrinter.writeNamedElement(
+            'augmentationTarget',
+            e.augmentationTarget,
+          );
+        }
       case InterfaceElementImpl e:
         if (e.isAugmentation) {
           _elementPrinter.writeNamedElement(
@@ -193,6 +210,13 @@ class _ElementWriter {
           );
         }
       case PropertyAccessorElementImpl e:
+        if (e.isAugmentation) {
+          _elementPrinter.writeNamedElement(
+            'augmentationTarget',
+            e.augmentationTarget,
+          );
+        }
+      case PropertyInducingElementImpl e:
         if (e.isAugmentation) {
           _elementPrinter.writeNamedElement(
             'augmentationTarget',
@@ -509,10 +533,11 @@ class _ElementWriter {
     }
   }
 
-  void _writeFunctionElement(FunctionElement e) {
+  void _writeFunctionElement(FunctionElementImpl e) {
     expect(e.isStatic, isTrue);
 
     _sink.writeIndentedLine(() {
+      _sink.writeIf(e.isAugmentation, 'augment ');
       _sink.writeIf(e.isExternal, 'external ');
       _writeName(e);
       _writeBodyModifiers(e);
@@ -526,6 +551,8 @@ class _ElementWriter {
       _writeTypeParameterElements(e.typeParameters);
       _writeParameterElements(e.parameters);
       _writeType('returnType', e.returnType);
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
     });
 
     _assertNonSyntheticElementSelf(e);
@@ -948,6 +975,7 @@ class _ElementWriter {
     }
 
     _sink.writeIndentedLine(() {
+      _sink.writeIf(e.isAugmentation, 'augment ');
       _sink.writeIf(e.isSynthetic, 'synthetic ');
       _sink.writeIf(e.isStatic, 'static ');
       _sink.writeIf(e is FieldElementImpl && e.isAbstract, 'abstract ');
