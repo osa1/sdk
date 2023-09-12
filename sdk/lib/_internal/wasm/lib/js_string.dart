@@ -8,10 +8,11 @@ String _matchString(Match match) => match[0]!;
 String _stringIdentity(String string) => string;
 
 /// The box class for JS' `string` object. [JSStringImpl] is heavily based off
-/// of `sdk/lib/_internal/js_runtime/lib/js_string.dart`.  TODO(joshualitt): Add
-/// `JSString` fastpaths for cases where `String` arguments are really
-/// `JSString`.
-final class JSStringImpl extends StringBase implements String {
+/// of `sdk/lib/_internal/js_runtime/lib/js_string.dart`.
+///
+/// TODO(joshualitt): Add `JSString` fastpaths for cases where `String`
+/// arguments are really `JSString`.
+final class JSStringImpl implements String {
   final WasmExternRef? _ref;
 
   JSStringImpl(this._ref);
@@ -648,31 +649,4 @@ final class JSStringImpl extends StringBase implements String {
 
   @override
   String toString() => js.stringify(toExternRef);
-
-  // TODO(joshualitt): Rewrite int.parse in JSCM
-  // TODO
-
-  // Methods to support VM patch files.
-  @override
-  int firstNonWhitespace() {
-    final len = length;
-    int first = 0;
-    for (; first < len; first++) {
-      if (!_isWhitespace(codeUnitAt(first))) {
-        break;
-      }
-    }
-    return first;
-  }
-
-  @override
-  int lastNonWhitespace() {
-    int last = length - 1;
-    for (; last >= 0; last--) {
-      if (!_isWhitespace(codeUnitAt(last))) {
-        break;
-      }
-    }
-    return last;
-  }
 }

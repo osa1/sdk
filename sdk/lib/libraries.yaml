@@ -179,14 +179,12 @@ wasm_js_compatibility:
         - _internal/vm_shared/lib/null_patch.dart
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
-        - _internal/wasm_js_compatibility/lib/boxed_int_to_string.dart
         - _internal/wasm/lib/core_patch.dart
         - _internal/wasm/lib/date_patch_patch.dart
-        - _internal/wasm/lib/int_patch.dart
-        - _internal/wasm/lib/string_buffer_patch.dart
-        - _internal/wasm/lib/string_patch.dart
         - _internal/wasm/lib/sync_star_patch.dart
         - _internal/wasm/lib/weak_patch.dart
+        - _internal/wasm_js_compatibility/lib/boxed_int_to_string.dart
+        - _internal/wasm_js_compatibility/lib/int_patch.dart
         - _internal/wasm_js_compatibility/lib/string_buffer_patch.dart
         - _internal/wasm_js_compatibility/lib/string_patch.dart
     typed_data:
@@ -196,8 +194,6 @@ wasm_js_compatibility:
         - _internal/wasm/lib/simd_patch.dart
         - _internal/wasm_js_compatibility/lib/typed_data.dart
         - _internal/wasm_js_compatibility/lib/typed_data_patch.dart
-    _string:
-      uri: _internal/wasm/lib/string.dart
 
 wasm_base:
   include:
@@ -220,6 +216,8 @@ wasm_base:
       patches:
       - _internal/wasm/lib/internal_patch.dart
       - _internal/wasm/lib/internal_string_patch.dart
+    _string:
+      uri: _internal/wasm/lib/string.dart
 
 wasm_common:
   libraries:
@@ -242,8 +240,6 @@ wasm_common:
       uri: _internal/wasm/lib/js_types.dart
     _object_helper:
       uri: _internal/wasm/lib/object_helper.dart
-    _string:
-      uri: _internal/wasm/lib/string.dart
     _string_helper:
       uri: _internal/wasm/lib/string_helper.dart
     _wasm:
