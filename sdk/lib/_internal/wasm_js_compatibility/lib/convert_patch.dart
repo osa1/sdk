@@ -429,6 +429,8 @@ class Utf8Decoder {
 
   static String? _convertInterceptedUint8List(
       bool allowMalformed, JSUint8ArrayImpl codeUnits, int start, int end) {
+    return null;
+    /*
     final WasmExternRef? decoder;
     if (allowMalformed) {
       decoder =
@@ -447,6 +449,7 @@ class Utf8Decoder {
     end = RangeError.checkValidRange(start, end, length);
 
     return JS<String>('(d, c) => d.decode(c)', decoder, codeUnits.toExternRef);
+    */
 
     /*
     TODO(omersa): Closures returning externref aren't compiled right.
