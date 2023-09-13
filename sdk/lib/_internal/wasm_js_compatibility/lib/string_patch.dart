@@ -15,13 +15,14 @@ class String {
   factory String.fromCharCodes(Iterable<int> charCodes,
       [int start = 0, int? end]) {
     // TODO(joshualitt): Fast path when lists are backed by JS array in JSCM.
-    if (charCodes is Uint8List) {
-      return _fromJSArrayLike((charCodes as JSUint8ArrayImpl).toExternRef,
-          start, end, charCodes.length);
-    } else if (charCodes is EfficientLengthIterable<int>) {
-      return _fromEfficientLengthIterable(
-          charCodes, start, end ?? charCodes.length);
-    }
+    // TODO(omersa): Fast cases below commented-out for now as they're buggy.
+    // if (charCodes is Uint8List) {
+    //   return _fromJSArrayLike((charCodes as JSUint8ArrayImpl).toExternRef,
+    //       start, end, charCodes.length);
+    // } else if (charCodes is EfficientLengthIterable<int>) {
+    //   return _fromEfficientLengthIterable(
+    //       charCodes, start, end ?? charCodes.length);
+    // }
     return _fromIterable(charCodes, start, end);
   }
 
