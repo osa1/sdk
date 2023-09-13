@@ -933,19 +933,6 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     _add(const ir.RefEq());
   }
 
-  /// Emit a `ref.eq` instruction for `externref`s.
-  void extern_ref_eq() {
-    assert(_verifyTypes(const [
-      ir.RefType.extern(nullable: true),
-      ir.RefType.extern(nullable: true)
-    ], const [
-      ir.NumType.i32
-    ], trace: const [
-      'ref.eq'
-    ]));
-    _add(const ir.RefEq());
-  }
-
   /// Emit a `br_on_non_null` instruction.
   void br_on_non_null(Label label) {
     assert(_verifyBranchTypes(label, 1, [_topOfStack.withNullability(false)]));
