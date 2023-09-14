@@ -144,8 +144,9 @@ template("build_elf_loader") {
     configs += [
       "..:dart_arch_config",
       "..:dart_config",
-      "..:dart_product_config",
       "..:dart_os_fuchsia_config",
+      "..:dart_product_config",
+      "..:dart_shared_lib",
     ]
     include_dirs = [ ".." ]
     sources = [

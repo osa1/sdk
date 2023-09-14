@@ -5,6 +5,7 @@
 /// A library to facilitate programmatic matching against flow graphs
 /// collected during IL tests. See runtime/docs/infra/il_tests.md for more
 /// info.
+import 'dart:io';
 
 typedef Renamer = String Function(String);
 
@@ -53,19 +54,27 @@ class FlowGraph {
   }
 
   void dump() {
+    String formatOne(Map<String, dynamic> instr) {
+      final inputs = instr['i']?.map((v) => 'v$v').join(', ') ?? '';
+      final successors = instr['s'] != null ? ' goto ${instr['s']}' : '';
+      final attrs = descriptors[instr['o']]
+          ?.attributeIndex
+          .entries
+          .map((e) => '${e.key}: ${instr['d'][e.value]}')
+          .join(',');
+      final condition = instr['cc'] != null ? formatOne(instr['cc']) : '';
+      final attrsWrapped = attrs != null ? '[$attrs]' : '';
+      final inputsWrapped =
+          condition != '' ? ' if $condition then ' : '($inputs)';
+      return '${instr['o']}$attrsWrapped$inputsWrapped$successors';
+    }
+
     for (var block in blocks) {
       print('B${block['b']}[${block['o']}]');
       for (var instr in [...?block['d'], ...?block['is']]) {
         final v = instr['v'] ?? -1;
         final prefix = v != -1 ? 'v$v <- ' : '';
-        final inputs = instr['i']?.map((v) => 'v$v').join(', ') ?? '';
-        final attrs = descriptors[instr['o']]
-            ?.attributeIndex
-            .entries
-            .map((e) => '${e.key}: ${instr['d'][e.value]}')
-            .join(',');
-        final attrsWrapped = attrs != null ? '[$attrs]' : '';
-        print('  ${prefix}${instr['o']}$attrsWrapped($inputs)');
+        print('  ${prefix}${formatOne(instr)}');
       }
     }
   }
@@ -474,3 +483,11 @@ final dynamic match = Matchers();
 /// tests, which are compiled in AOT mode. So instead we let compare_il driver
 /// set this field.
 late String Function(Symbol) getName;
+
+final bool is32BitConfiguration = (() {
+  final configuration = Platform.environment['DART_CONFIGURATION'];
+  if (configuration == null) {
+    throw 'Expected DART_CONFIGURATION to be defined';
+  }
+  return configuration.endsWith('ARM') || configuration.endsWith('ARM_X64');
+})();

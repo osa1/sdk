@@ -203,6 +203,7 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     var nameOffset = nameNode.offset;
 
     var element = ConstructorElementImpl(name, nameOffset);
+    element.isAugmentation = node.augmentKeyword != null;
     element.isConst = node.constKeyword != null;
     element.isExternal = node.externalKeyword != null;
     element.isFactory = node.factoryKeyword != null;
@@ -413,6 +414,8 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     element.methods = holder.methods;
     element.typeParameters = holder.typeParameters;
 
+    // TODO(scheglov) We cannot do this anymore.
+    // Not for class augmentations, not for classes.
     _resolveConstructorFieldFormals(element);
   }
 
@@ -1239,21 +1242,10 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
       _visitPropertyFirst<FieldDeclaration>(node.members);
     });
 
-    // TODO(scheglov) To it after all augmentations
-    if (!element.isAugmentation && !holder.hasConstructors) {
-      holder.addConstructor(
-        ConstructorElementImpl('', -1)..isSynthetic = true,
-      );
-    }
-
     element.accessors = holder.propertyAccessors;
     element.constructors = holder.constructors;
     element.fields = holder.fields;
     element.methods = holder.methods;
-
-    // TODO(scheglov) We cannot do this anymore.
-    // Not for class augmentations, not for classes.
-    _resolveConstructorFieldFormals(element);
   }
 
   void _buildExecutableElementChildren({
@@ -1292,11 +1284,8 @@ class ElementBuilder extends ThrowingAstVisitor<void> {
     });
 
     element.accessors = holder.propertyAccessors;
-    element.constructors = holder.constructors;
     element.fields = holder.fields;
     element.methods = holder.methods;
-
-    _resolveConstructorFieldFormals(element);
   }
 
   void _buildSyntheticVariable({

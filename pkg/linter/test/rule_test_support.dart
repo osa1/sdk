@@ -159,6 +159,8 @@ abstract class LintRuleTest extends PubPackageResolutionTest {
 class PubPackageResolutionTest extends _ContextResolutionTest {
   final List<String> _lintRules = const [];
 
+  bool get addFixnumPackageDep => false;
+
   bool get addFlutterPackageDep => false;
 
   bool get addJsPackageDep => false;
@@ -384,6 +386,14 @@ class PubPackageResolutionTest extends _ContextResolutionTest {
       languageVersion: testPackageLanguageVersion,
     );
 
+    if (addFixnumPackageDep) {
+      var fixnumPath = '/packages/fixnum';
+      addFixnumPackageFiles(
+        getFolder(fixnumPath),
+      );
+      configCopy.add(name: 'fixnum', rootPath: fixnumPath);
+    }
+
     if (addFlutterPackageDep) {
       var flutterPath = '/packages/flutter';
       addFlutterPackageFiles(
@@ -447,12 +457,41 @@ class PubPackageResolutionTest extends _ContextResolutionTest {
     return [...listener.errors];
   }
 
+  /// Creates a fake 'fixnum' package that can be used by tests.
+  static void addFixnumPackageFiles(Folder rootFolder) {
+    var libFolder = rootFolder.getChildAssumingFolder('lib');
+    libFolder.getChildAssumingFile('fixnum.dart').writeAsStringSync(r'''
+library fixnum;
+
+class Int32 {}
+
+class Int64 {}
+''');
+  }
+
   /// Create a fake 'flutter' package that can be used by tests.
   static void addFlutterPackageFiles(Folder rootFolder) {
     var libFolder = rootFolder.getChildAssumingFolder('lib');
     libFolder.getChildAssumingFile('widgets.dart').writeAsStringSync(r'''
+export 'src/widgets/basic.dart';
 export 'src/widgets/container.dart';
 export 'src/widgets/framework.dart';
+''');
+
+    libFolder
+        .getChildAssumingFolder('src')
+        .getChildAssumingFolder('widgets')
+        .getChildAssumingFile('basic.dart')
+        .writeAsStringSync(r'''
+import 'framework.dart';
+
+class SizedBox implements Widget {
+  SizedBox({
+    double height = 0,
+    double width = 0,
+    Widget? child,
+  });
+}
 ''');
 
     libFolder
@@ -476,8 +515,6 @@ class Container extends StatelessWidget {
     Widget? child,
   });
 }
-
-class SizedBox implements Widget {}
 
 class Row implements Widget {}
 ''');

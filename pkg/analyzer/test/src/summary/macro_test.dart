@@ -69,13 +69,6 @@ class MacroElementsTest extends ElementsBaseTest {
         .readAsStringSync();
   }
 
-  Set<String> get _macroApiSet {
-    return {
-      'package:dart_internal/extract_type_arguments.dart',
-      'package:_fe_analyzer_shared/src/macros/api.dart',
-    };
-  }
-
   @override
   Future<void> setUp() async {
     super.setUp();
@@ -108,10 +101,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     configuration.withExportScope = true;
     checkElementText(library, r'''
@@ -138,8 +128,6 @@ library
     package:test/_macro_types.dart
       classes
         class MyClass @-1
-          constructors
-            synthetic @-1
   exportedReferences
     declared self::@class::MyClass
     declared self::@class::A
@@ -171,10 +159,7 @@ import 'a.dart';
 
 @MyMacro.named()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     configuration.withExportScope = true;
     checkElementText(library, r'''
@@ -209,8 +194,6 @@ library
     package:test/_macro_types.dart
       classes
         class MyClass @-1
-          constructors
-            synthetic @-1
   exportedReferences
     declared self::@class::MyClass
     declared self::@class::A
@@ -241,10 +224,7 @@ import 'a.dart' as prefix;
 
 @prefix.MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     configuration.withExportScope = true;
     checkElementText(library, r'''
@@ -279,8 +259,6 @@ library
     package:test/_macro_types.dart
       classes
         class MyClass @-1
-          constructors
-            synthetic @-1
   exportedReferences
     declared self::@class::MyClass
     declared self::@class::A
@@ -311,10 +289,7 @@ import 'a.dart' as prefix;
 
 @prefix.MyMacro.named()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     configuration.withExportScope = true;
     checkElementText(library, r'''
@@ -354,8 +329,6 @@ library
     package:test/_macro_types.dart
       classes
         class MyClass @-1
-          constructors
-            synthetic @-1
   exportedReferences
     declared self::@class::MyClass
     declared self::@class::A
@@ -584,10 +557,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -637,10 +607,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -698,10 +665,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -753,10 +717,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -808,10 +769,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -865,10 +823,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     checkElementText(library, r'''
 library
@@ -1312,10 +1267,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     final A = library.getClass('A') as ClassElementImpl;
     final error = A.macroApplicationErrors.single;
@@ -1345,10 +1297,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     final A = library.getClass('A') as ClassElementImpl;
     final error = A.macroApplicationErrors.single;
@@ -1378,10 +1327,7 @@ import 'a.dart';
 
 @MyMacro()
 class A {}
-''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/a.dart'}
-    ]);
+''');
 
     final A = library.getClass('A') as ClassElementImpl;
     final error = A.macroApplicationErrors.single;
@@ -1492,10 +1438,7 @@ import 'arguments_text.dart';
 
 @ArgumentsTextMacro$argumentsCode
 class A {}
-    ''', preBuildSequence: [
-      _macroApiSet,
-      {'package:test/arguments_text.dart'}
-    ]);
+''');
 
     final A = library.definingCompilationUnit.getClass('A');
     if (expectedErrors != null) {
@@ -1557,13 +1500,7 @@ import 'declaration_text.dart';
 
 @DeclarationTextMacro()
 $declarationCode
-''', preBuildSequence: [
-      _macroApiSet,
-      {
-        'package:test/introspect_shared.dart',
-        'package:test/declaration_text.dart',
-      }
-    ]);
+''');
 
     _assertNoErrorsForClassElement(
       library.definingCompilationUnit.getClass('A'),
@@ -1594,13 +1531,7 @@ $declarationCode
     var library = await buildLibrary('''
 import 'introspect_declarations_phase.dart';
 $declarationCode
-''', preBuildSequence: [
-      _macroApiSet,
-      {
-        'package:test/introspect_shared.dart',
-        'package:test/introspect_declarations_phase.dart',
-      }
-    ]);
+''');
 
     for (final class_ in library.definingCompilationUnit.classes) {
       _assertNoErrorsForClassElement(class_);

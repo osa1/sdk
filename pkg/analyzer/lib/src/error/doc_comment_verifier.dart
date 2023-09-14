@@ -13,45 +13,75 @@ class DocCommentVerifier {
   DocCommentVerifier(this._errorReporter);
 
   void docDirective(DocDirective docDirective) {
-    switch (docDirective) {
-      case YouTubeDocDirective():
-        var widthOffset = docDirective.widthOffset;
-        var widthEnd = docDirective.widthEnd;
-        if (widthOffset == null || widthEnd == null) {
-          _errorReporter.reportErrorForOffset(
-            WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH,
-            docDirective.offset,
-            docDirective.end - docDirective.offset,
-          );
-          return;
-        } else {
-          // TODO: Validate width.
-        }
+    // TODO(srawlins): Validate format of each parameter. For example, an
+    // animation directive's width must be an int, a youtube directive's URL
+    // must be a valid YouTube URL, etc.
 
-        var heightOffset = docDirective.heightOffset;
-        var heightEnd = docDirective.heightEnd;
-        if (heightOffset == null || heightEnd == null) {
-          _errorReporter.reportErrorForOffset(
-            WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT,
-            docDirective.offset,
-            docDirective.end - docDirective.offset,
-          );
-          return;
-        } else {
-          // TODO(srawlins): Validate height.
-        }
+    var positionalArgumentCount = docDirective.positionalArguments.length;
+    var required = docDirective.type.positionalParameters;
+    var requiredCount = docDirective.type.positionalParameters.length;
 
-        var urlOffset = docDirective.urlOffset;
-        var urlEnd = docDirective.urlEnd;
-        if (urlOffset == null || urlEnd == null) {
-          _errorReporter.reportErrorForOffset(
-            WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_URL,
-            docDirective.offset,
-            docDirective.end - docDirective.offset,
-          );
-        } else {
-          // TODO(srawlins): Validate URL.
-        }
+    if (positionalArgumentCount < requiredCount) {
+      var gap = requiredCount - positionalArgumentCount;
+      if (gap == 1) {
+        _errorReporter.reportErrorForOffset(
+          WarningCode.DOC_DIRECTIVE_MISSING_ONE_ARGUMENT,
+          docDirective.offset,
+          docDirective.end - docDirective.offset,
+          [docDirective.type.name, required.last],
+        );
+      } else if (gap == 2) {
+        var missingArguments = [
+          required[required.length - 2],
+          required.last,
+        ];
+        _errorReporter.reportErrorForOffset(
+          WarningCode.DOC_DIRECTIVE_MISSING_TWO_ARGUMENTS,
+          docDirective.offset,
+          docDirective.end - docDirective.offset,
+          [docDirective.type.name, ...missingArguments],
+        );
+      } else if (gap == 3) {
+        var missingArguments = [
+          required[required.length - 3],
+          required[required.length - 2],
+          required.last,
+        ];
+        _errorReporter.reportErrorForOffset(
+          WarningCode.DOC_DIRECTIVE_MISSING_THREE_ARGUMENTS,
+          docDirective.offset,
+          docDirective.end - docDirective.offset,
+          [docDirective.type.name, ...missingArguments],
+        );
+      }
+    }
+
+    if (docDirective.type.restParametersAllowed) {
+      // TODO(srawlins): We probably want to enforce that at least one argument
+      // is given, particularly for 'category' and 'subCategory'.
+      return;
+    }
+
+    if (positionalArgumentCount > requiredCount) {
+      var errorOffset = docDirective.positionalArguments[requiredCount].offset;
+      var errorLength = docDirective.positionalArguments.last.end - errorOffset;
+      _errorReporter.reportErrorForOffset(
+        WarningCode.DOC_DIRECTIVE_HAS_EXTRA_ARGUMENTS,
+        errorOffset,
+        errorLength,
+        [docDirective.type.name, positionalArgumentCount, requiredCount],
+      );
+    }
+
+    for (var namedArgument in docDirective.namedArguments) {
+      if (!docDirective.type.namedParameters.contains(namedArgument.name)) {
+        _errorReporter.reportErrorForOffset(
+          WarningCode.DOC_DIRECTIVE_HAS_UNEXPECTED_NAMED_ARGUMENT,
+          namedArgument.offset,
+          namedArgument.end - namedArgument.offset,
+          [docDirective.type.name, namedArgument.name],
+        );
+      }
     }
   }
 

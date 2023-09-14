@@ -9,11 +9,11 @@ import 'package:kernel/type_environment.dart';
 
 import '../builder/builder.dart';
 import '../builder/constructor_reference_builder.dart';
+import '../builder/declaration_builders.dart';
 import '../builder/formal_parameter_builder.dart';
 import '../builder/function_builder.dart';
 import '../builder/metadata_builder.dart';
 import '../builder/type_builder.dart';
-import '../builder/type_variable_builder.dart';
 import '../dill/dill_member_builder.dart';
 import '../fasta_codes.dart';
 import '../identifiers.dart';
@@ -94,7 +94,7 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       ..isNonNullableByDefault = libraryBuilder.isNonNullableByDefault
       ..isExtensionTypeMember = nameScheme.isExtensionTypeMember;
     nameScheme
-        .getProcedureMemberName(ProcedureKind.Factory, name)
+        .getConstructorMemberName(name, isTearOff: false)
         .attachMember(_procedureInternal);
     _factoryTearOff = createFactoryTearOffProcedure(
         nameScheme.getConstructorMemberName(name, isTearOff: true),

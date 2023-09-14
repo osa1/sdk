@@ -1822,10 +1822,6 @@ HintCode.IMPORT_DEFERRED_LIBRARY_WITH_LOAD_FUNCTION:
 HintCode.IMPORT_OF_LEGACY_LIBRARY_INTO_NULL_SAFE:
   status: noFix
   notes: Deprecated
-HintCode.UNIGNORABLE_IGNORE:
-  status: needsFix
-  notes: |-
-    Remove the ignore comment (or one code in the comment).
 HintCode.UNNECESSARY_CAST:
   status: hasFix
 HintCode.UNNECESSARY_IMPORT:
@@ -3454,18 +3450,26 @@ WarningCode.DEPRECATED_MIXIN_FUNCTION:
     The fix is to remove `Function` from where it's referenced.
 WarningCode.DEPRECATED_NEW_IN_COMMENT_REFERENCE:
   status: hasFix
+WarningCode.DOC_DIRECTIVE_HAS_EXTRA_ARGUMENTS:
+  status: needsFix
+  notes: |-
+    The fix is to remove the extra arguments..
+WarningCode.DOC_DIRECTIVE_HAS_UNEXPECTED_NAMED_ARGUMENT:
+  status: needsFix
+  notes: |-
+    The fix is to remove the unexpected named argument.
 WarningCode.DOC_DIRECTIVE_MISSING_CLOSING_BRACE:
   status: needsEvaluation
+WarningCode.DOC_DIRECTIVE_MISSING_ONE_ARGUMENT:
+  status: noFix
+WarningCode.DOC_DIRECTIVE_MISSING_THREE_ARGUMENTS:
+  status: noFix
+WarningCode.DOC_DIRECTIVE_MISSING_TWO_ARGUMENTS:
+  status: noFix
 WarningCode.DOC_IMPORT_CANNOT_BE_DEFERRED:
   status: needsFix
 WarningCode.DOC_IMPORT_CANNOT_HAVE_CONFIGURATIONS:
   status: needsFix
-WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_HEIGHT:
-  status: needsEvaluation
-WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_URL:
-  status: needsEvaluation
-WarningCode.DOC_YOUTUBE_DIRECTIVE_MISSING_WIDTH:
-  status: needsEvaluation
 WarningCode.DUPLICATE_EXPORT:
   status: needsFix
   notes: |-
@@ -3727,6 +3731,10 @@ WarningCode.UNDEFINED_REFERENCED_PARAMETER:
     Can try to find the correct parameter name.
 WarningCode.UNDEFINED_SHOWN_NAME:
   status: hasFix
+WarningCode.UNIGNORABLE_IGNORE:
+  status: needsFix
+  notes: |-
+    Remove the ignore comment (or one code in the comment).
 WarningCode.UNNECESSARY_CAST_PATTERN:
   status: needsFix
   notes: |-
