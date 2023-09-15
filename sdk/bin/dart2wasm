@@ -3,8 +3,12 @@
 # for details. All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 
-# Run dart2wasm on the Dart VM. This script assumes the Dart repo's
-# directory structure.
+# Run dart2wasm on the Dart VM. This script assumes the Dart repo's directory
+# structure.
+#
+# Usage: dart2wasm input output flags
+
+set -e
 
 function follow_links() {
   file="$1"
@@ -82,10 +86,14 @@ declare -a EXTRA_VM_OPTIONS
 
 # Choose snapshot with or without asserts enabled.
 SNAPSHOT_NAME="dart2wasm"
+RUN_WASM_OPT=0
 case $0 in
   *_developer)
     EXTRA_VM_OPTIONS+=('--enable_asserts')
     SNAPSHOT_NAME="dart2wasm_asserts"
+    ;;
+  *_opt)
+    RUN_WASM_OPT=1
     ;;
 esac
 SNAPSHOT="$BIN_DIR/$SNAPSHOT_NAME.snapshot"
@@ -98,4 +106,9 @@ fi
 
 DART_ROOT="$(cd "${SDK_DIR}/.." ; pwd -P)"
 
-exec "$DART_PRECOMPILED_RUNTIME" "--packages=$DART_ROOT/.packages" "${EXTRA_VM_OPTIONS[@]}" "$SNAPSHOT" "$SDK_ARG" "$PLATFORM_ARG" "$@"
+"$DART_PRECOMPILED_RUNTIME" "--packages=$DART_ROOT/.packages" "${EXTRA_VM_OPTIONS[@]}" "$SNAPSHOT" "$SDK_ARG" "$PLATFORM_ARG" "$@"
+
+if [[ "$RUN_WASM_OPT" == 1 ]]; then
+    # Note: Keep in sync with pkg/dart2wasm/tool_compile_benchmark.
+    "$BIN_DIR"/wasm-opt -all --closed-world -tnh -O3 --type-ssa --gufa -O3 --type-merging "$2" -o "$2"
+fi
