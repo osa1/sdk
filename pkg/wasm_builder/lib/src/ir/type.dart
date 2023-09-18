@@ -441,7 +441,7 @@ class StructHeapType extends HeapType {
       other == HeapType.struct;
 
   @override
-  void serialize(Serializer s) => s.writeByte(0x67); // -0x19
+  void serialize(Serializer s) => s.writeByte(0x6B); // -0x15
 
   @override
   String toString() => "struct";
@@ -867,10 +867,10 @@ class PackedType implements StorageType {
   void serialize(Serializer s) {
     switch (kind) {
       case PackedTypeKind.i8:
-        s.writeByte(0x7A);
+        s.writeByte(0x78); // -0x8
         break;
       case PackedTypeKind.i16:
-        s.writeByte(0x79);
+        s.writeByte(0x77); // -0x9
         break;
     }
   }
