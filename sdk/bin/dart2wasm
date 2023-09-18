@@ -114,6 +114,8 @@ fi
 
 DART_ROOT="$(cd "${SDK_DIR}/.." ; pwd -P)"
 
+set -e
+
 "$DART_PRECOMPILED_RUNTIME" "--packages=$DART_ROOT/.packages" "${EXTRA_VM_OPTIONS[@]}" "$SNAPSHOT" "$SDK_ARG" "$PLATFORM_ARG" "${ARGS[@]}"
 
 if [[ "$OPTIMIZED" == 1 ]]; then
