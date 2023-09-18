@@ -5,10 +5,12 @@
 import("../../sdk_args.gni")
 
 config("binaryen_warnings") {
+  cflags = [ "-Wno-header-hygiene" ]
+
   if (is_clang) {
-    cflags = [ "-Wno-unused-but-set-parameter" ]
+    cflags += [ "-Wno-unused-but-set-parameter" ]
   } else if (!is_win) {
-    cflags = [
+    cflags += [
       "-Wno-unused-variable",
 
       # Bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86465#c16 triggered by
@@ -45,14 +47,15 @@ action("generate_needed_files") {
 
 source_set("binaryen_sources") {
   src_dirs = [
-    "src/src/ir",
+    "src/src/analysis",
     "src/src/asmjs",
     "src/src/cfg",
+    "src/src/emscripten-optimizer",
+    "src/src/ir",
     "src/src/passes",
     "src/src/support",
-    "src/src/wasm",
     "src/src/tools/fuzzing",
-    "src/src/emscripten-optimizer",
+    "src/src/wasm",
   ]
 
   # We avoid listing all sources manually, this means when updating
@@ -70,7 +73,10 @@ source_set("binaryen_sources") {
     }
   }
 
-  include_dirs = [ "src/src" ]
+  include_dirs = [
+    "src/src",
+    "src/third_party/llvm-project/include",
+  ]
 
   # Ensure WasmIntrinsics.cpp/config.h files are generated.
   deps = [ ":generate_needed_files" ]
