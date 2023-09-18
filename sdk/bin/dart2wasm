@@ -3,8 +3,10 @@
 # for details. All rights reserved. Use of this source code is governed by a
 # BSD-style license that can be found in the LICENSE file.
 
-# Run dart2wasm on the Dart VM. This script assumes the Dart repo's
-# directory structure.
+# Run dart2wasm on the Dart VM. This script assumes the Dart repo's directory
+# structure.
+#
+# Last argument must be the output .wasm file.
 
 function follow_links() {
   file="$1"
@@ -116,5 +118,6 @@ DART_ROOT="$(cd "${SDK_DIR}/.." ; pwd -P)"
 
 if [[ "$OPTIMIZED" == 1 ]]; then
     # Keep in sync with pkg/dart2wasm/tool/compile_benchmark.
-    "$BIN_DIR"/wasm-opt -all --closed-world -tnh -O3 --type-ssa --gufa -O3 --type-merging "$2" -o "$2"
+    # Last argument must be the .wasm file.
+    "$BIN_DIR"/wasm-opt -all --closed-world -tnh -O3 --type-ssa --gufa -O3 --type-merging "${ARGS[-1]}" -o "${ARGS[-1]}"
 fi
