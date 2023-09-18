@@ -634,12 +634,12 @@ abstract class DefType extends HeapType {
   // if any.
   void serializeDefinition(Serializer s) {
     if (hasSuperType) {
-      s.writeByte(hasAnySubtypes ? 0x50 : 0x4F);
+      s.writeByte(hasAnySubtypes ? 0x50 : 0x4F); // -0x30, -0x31
       s.writeUnsigned(1);
       assert(isStructuralSubtypeOf(superType!));
       s.write(superType!);
     } else if (hasAnySubtypes) {
-      s.writeByte(0x50);
+      s.writeByte(0x50); // -0x30
       s.writeUnsigned(0);
     }
     serializeDefinitionInner(s);
@@ -687,7 +687,7 @@ class FunctionType extends DefType {
 
   @override
   void serializeDefinitionInner(Serializer s) {
-    s.writeByte(0x60);
+    s.writeByte(0x60); // -0x20
     s.writeList(inputs);
     s.writeList(outputs);
   }
@@ -745,7 +745,7 @@ class StructType extends DataType {
 
   @override
   void serializeDefinitionInner(Serializer s) {
-    s.writeByte(0x5F);
+    s.writeByte(0x5F); // -0x21
     s.writeList(fields);
   }
 }
@@ -778,7 +778,7 @@ class ArrayType extends DataType {
 
   @override
   void serializeDefinitionInner(Serializer s) {
-    s.writeByte(0x5E);
+    s.writeByte(0x5E); // -0x22
     s.write(elementType);
   }
 }
