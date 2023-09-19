@@ -559,7 +559,7 @@
         "dart2wasm-options": [
           "-O"
         ],
-        "host-checked": true,
+        "host-checked": false,
         "timeout": 240
       }
     },
