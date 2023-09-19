@@ -130,7 +130,7 @@ set -e
 "$DART_PRECOMPILED_RUNTIME" "--packages=$DART_ROOT/.packages" "${EXTRA_VM_OPTIONS[@]}" "$SNAPSHOT" "$SDK_ARG" "$PLATFORM_ARG" "${ARGS[@]}"
 
 if [[ "$OPTIMIZED" == 1 ]]; then
-    # Keep in sync with pkg/dart2wasm/tool/compile_benchmark.
+    # Keep optimization parameters after `-g` in sync with pkg/dart2wasm/tool/compile_benchmark.
     # Last argument must be the .wasm file.
-    "$BIN_DIR"/wasm-opt -all --closed-world -tnh -O3 --type-ssa --gufa -O3 --type-merging "${ARGS[-1]}" -o "${ARGS[-1]}"
+    "$BIN_DIR"/wasm-opt -g -all --closed-world -tnh -O3 --type-ssa --gufa -O3 --type-merging "${ARGS[-1]}" -o "${ARGS[-1]}"
 fi
