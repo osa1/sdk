@@ -71,15 +71,26 @@ PLATFORM="$BIN_DIR/dart2wasm_platform.dill"
 # Run wasm-opt with `-O`.
 OPTIMIZED=0
 
+# `-O` also passes `--inlining-limit 10` unless it's also passed by the caller.
+INLINING_LIMIT_PASSED=0
+
 # Arguments except `-O`. These are passed to the Dart main for dart2wasm.
 ARGS=()
 for arg in "$@"; do
   if [ "$arg" = "-O" ]; then
     OPTIMIZED=1
+  elif [ "$arg" = "--inlining-limit" ]; then
+    INLINING_LIMIT_PASSED=1
+    ARGS+=("$arg")
   else
     ARGS+=("$arg")
   fi
 done
+
+if [[ "$OPTIMIZED" == 1 ]] && [[ "$INLINING_LIMIT_PASSED" == 0 ]]; then
+    # Last argument needs to be the output file, so insert it at the beginning.
+    ARGS=("--inlining-limit" "10" "${ARGS[@]}")
+fi
 
 # Not the prettiest way to check for a target, and it doesn't support changing
 # the default, but it will do for experiments.
