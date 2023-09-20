@@ -13,17 +13,19 @@ import 'dart:typed_data';
 @patch
 dynamic _parseJson(
     String source, Object? Function(Object? key, Object? value)? reviver) {
-  JSObject? parsed;
+  WasmExternRef? parsed;
   try {
     parsed = JS<JSObject?>('s => JSON.parse(s)', source.toExternRef);
   } catch (e) {
     throw FormatException(JS<String>('e => String(e)', e.toExternRef));
   }
 
+  Object? parsedObject = JSValue(parsed);
+
   if (reviver == null) {
-    return _convertJsonToDartLazy(parsed);
+    return _convertJsonToDartLazy(parsedObject);
   } else {
-    return _convertJsonToDart(parsed, reviver);
+    return _convertJsonToDart(parsedObject, reviver);
   }
 }
 
@@ -522,14 +524,20 @@ class _Utf8Decoder {
 // TODO use methods in JS helper
 bool _hasProperty(WasmExternRef? object, WasmExternRef? key) => JS<bool>(
     '(o, k) => Object.prototype.hasOwnProperty.call(o, k)', object, key);
+
 WasmExternRef? _getProperty(WasmExternRef? object, WasmExternRef? key) =>
     JS<WasmExternRef?>('(o, k) => o[k]', object, key);
+
 WasmExternRef? _setProperty(
         WasmExternRef? object, WasmExternRef? key, WasmExternRef? value) =>
     JS<WasmExternRef>('(o, k, v) => o[k] = v', object, key, value);
+
 JSArray _getPropertyNames(WasmExternRef? object) =>
     JS<JSArray>('o => Object.keys(o)', object);
+
 bool _isUnprocessed(WasmExternRef? object) => isJSUndefined(object);
+
 WasmExternRef? _newJavaScriptObject() =>
     JS<WasmExternRef?>('_ => Object.create(null)');
+
 int _length(WasmExternRef? a) => JS<double>('a => a.length', a).toInt();
