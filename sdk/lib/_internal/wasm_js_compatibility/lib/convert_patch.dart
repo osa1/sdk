@@ -7,7 +7,7 @@ import 'dart:_js_helper';
 import 'dart:_js_types';
 import 'dart:_wasm';
 import 'dart:collection' show MapBase;
-import 'dart:js_interop' hide JS, JSArray, JSObject;
+import 'dart:js_interop' hide JS, JSArray, JSObject, JSNumber, JSBoolean;
 import 'dart:typed_data';
 
 @patch
@@ -41,25 +41,32 @@ Object? _convertJsonToDart(
       throw 'Expected JSValue!';
     }
 
-    // `JSNull`, `JSNumber`, and `JSBoolean` should be converted as expected.
     final WasmExternRef? ref = o.toExternRef;
-    if (ref.isNull || isJSBoolean(ref) || isJSNumber(ref)) {
-      return o;
+
+    if (ref.isNull) {
+      return null;
     }
 
-    // Box `JSString`.
+    if (isJSBoolean(ref)) {
+      return (o as JSBoolean).toDart;
+    }
+
+    if (isJSNumber(ref)) {
+      return (o as JSNumber).toDartDouble;
+    }
+
     if (isJSString(ref)) {
       return JSStringImpl(ref);
     }
 
     // Iterate through JSArray and convert each entry.
     if (isJSArray(ref)) {
-      final array = o as JSArray;
-      final arrayLength = _length(ref);
+      final JSArray array = o as JSArray;
+      final int arrayLength = _length(ref);
       for (int i = 0; i < arrayLength; i++) {
-        final index = i.toJS.toExternRef;
-        final item = JSValue.box(_getProperty(ref, index));
-        final revivedItem = reviver(i, walk(item)) as JSValue?;
+        final WasmExternRef? index = i.toJS.toExternRef;
+        final JSValue? item = JSValue.box(_getProperty(ref, index));
+        final JSValue? revivedItem = reviver(i, walk(item)) as JSValue?;
         _setProperty(ref, index, revivedItem?.toExternRef);
       }
       return array;
@@ -92,13 +99,20 @@ Object? _convertJsonToDartLazy(Object? o) {
     throw 'Expected JSValue!';
   }
 
-  // `JSNull`, `JSNumber`, and `JSBoolean` should be converted as expected.
   WasmExternRef? ref = o.toExternRef;
-  if (ref.isNull || isJSBoolean(ref) || isJSNumber(ref)) {
-    return o;
+
+  if (ref.isNull) {
+    return null;
   }
 
-  // Box `JSString`.
+  if (isJSBoolean(ref)) {
+    return (o as JSBoolean).toDart;
+  }
+
+  if (isJSNumber(ref)) {
+    return (o as JSNumber).toDartDouble;
+  }
+
   if (isJSString(ref)) {
     return JSStringImpl(ref);
   }
@@ -109,9 +123,8 @@ Object? _convertJsonToDartLazy(Object? o) {
     final int arrayLength = _length(ref);
     for (int i = 0; i < arrayLength; i++) {
       final WasmExternRef? index = i.toJS.toExternRef;
-      final WasmExternRef? item = _getProperty(ref, index);
-      final JSValue convertedItem =
-          _convertJsonToDartLazy(JSValue.box(item)) as JSValue;
+      final JSValue? item = JSValue.box(_getProperty(ref, index));
+      final JSValue convertedItem = _convertJsonToDartLazy(item) as JSValue;
       _setProperty(ref, index, convertedItem.toExternRef);
     }
     return array;
