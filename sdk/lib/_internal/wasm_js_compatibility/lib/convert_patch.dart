@@ -15,7 +15,7 @@ dynamic _parseJson(
     String source, Object? Function(Object? key, Object? value)? reviver) {
   WasmExternRef? parsed;
   try {
-    parsed = JS<JSObject?>('s => JSON.parse(s)', source.toExternRef);
+    parsed = JS<WasmExternRef?>('s => JSON.parse(s)', source.toExternRef);
   } catch (e) {
     throw FormatException(JS<String>('e => String(e)', e.toExternRef));
   }
