@@ -109,7 +109,8 @@ Object? _convertJsonToDartLazy(Object? o) {
     for (int i = 0; i < arrayLength; i++) {
       final WasmExternRef? index = i.toJS.toExternRef;
       final WasmExternRef? item = _getProperty(ref, index);
-      final JSValue convertedItem = _convertJsonToDartLazy(JSValue(item)) as JSValue;
+      final JSValue convertedItem =
+          _convertJsonToDartLazy(JSValue(item)) as JSValue;
       _setProperty(ref, index, convertedItem.toExternRef);
     }
     return array;
@@ -275,7 +276,9 @@ class _JsonMap extends MapBase<String, Object?> {
     List<String>? keys = _keyData;
     if (keys == null) {
       keys = <String>[];
-      final names = _getPropertyNames(_original?.toExternRef).toDart;
+      final names =
+          (JSValue(_getPropertyNames(_original?.toExternRef)) as JSArray)
+              .toDart;
       for (final name in names) {
         keys.add(JSStringImpl(name?.toExternRef));
       }
@@ -532,8 +535,8 @@ WasmExternRef? _setProperty(
         WasmExternRef? object, WasmExternRef? key, WasmExternRef? value) =>
     JS<WasmExternRef>('(o, k, v) => o[k] = v', object, key, value);
 
-JSArray _getPropertyNames(WasmExternRef? object) =>
-    JS<JSArray>('o => Object.keys(o)', object);
+WasmExternRef? _getPropertyNames(WasmExternRef? object) =>
+    JS<WasmExternRef?>('o => Object.keys(o)', object);
 
 bool _isUnprocessed(WasmExternRef? object) => isJSUndefined(object);
 
