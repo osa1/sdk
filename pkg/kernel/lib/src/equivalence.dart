@@ -26,16 +26,6 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   EquivalenceVisitor({this.strategy = const EquivalenceStrategy()});
 
   @override
-  bool defaultNode(Node node, Node other) {
-    return false;
-  }
-
-  @override
-  bool defaultTreeNode(TreeNode node, Node other) {
-    return false;
-  }
-
-  @override
   bool visitLibrary(Library node, Node other) {
     return strategy.checkLibrary(this, node, other);
   }
@@ -59,11 +49,6 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   bool visitExtensionTypeDeclaration(
       ExtensionTypeDeclaration node, Node other) {
     return strategy.checkExtensionTypeDeclaration(this, node, other);
-  }
-
-  @override
-  bool defaultMember(Member node, Node other) {
-    return false;
   }
 
   @override
@@ -97,8 +82,8 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultInitializer(Initializer node, Node other) {
-    return false;
+  bool visitAuxiliaryInitializer(AuxiliaryInitializer node, Node other) {
+    return strategy.checkAuxiliaryInitializer(this, node, other);
   }
 
   @override
@@ -137,8 +122,8 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultExpression(Expression node, Node other) {
-    return false;
+  bool visitAuxiliaryExpression(AuxiliaryExpression node, Node other) {
+    return strategy.checkAuxiliaryExpression(this, node, other);
   }
 
   @override
@@ -356,11 +341,6 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultBasicLiteral(BasicLiteral node, Node other) {
-    return false;
-  }
-
-  @override
   bool visitStringLiteral(StringLiteral node, Node other) {
     return strategy.checkStringLiteral(this, node, other);
   }
@@ -507,8 +487,8 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultStatement(Statement node, Node other) {
-    return false;
+  bool visitAuxiliaryStatement(AuxiliaryStatement node, Node other) {
+    return strategy.checkAuxiliaryStatement(this, node, other);
   }
 
   @override
@@ -648,11 +628,6 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultPattern(Pattern node, Node other) {
-    return false;
-  }
-
-  @override
   bool visitConstantPattern(ConstantPattern node, Node other) {
     return strategy.checkConstantPattern(this, node, other);
   }
@@ -768,8 +743,8 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultDartType(DartType node, Node other) {
-    return false;
+  bool visitAuxiliaryType(AuxiliaryType node, Node other) {
+    return strategy.checkAuxiliaryType(this, node, other);
   }
 
   @override
@@ -848,8 +823,8 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultConstant(Constant node, Node other) {
-    return false;
+  bool visitAuxiliaryConstant(AuxiliaryConstant node, Node other) {
+    return strategy.checkAuxiliaryConstant(this, node, other);
   }
 
   @override
@@ -966,11 +941,6 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultMemberReference(Member node, Node other) {
-    return false;
-  }
-
-  @override
   bool visitFieldReference(Field node, Node other) {
     return false;
   }
@@ -986,7 +956,7 @@ class EquivalenceVisitor implements Visitor1<bool, Node> {
   }
 
   @override
-  bool defaultConstantReference(Constant node, Node other) {
+  bool visitAuxiliaryConstantReference(AuxiliaryConstant node, Node other) {
     return false;
   }
 
@@ -2077,6 +2047,23 @@ class EquivalenceStrategy {
     return result;
   }
 
+  bool checkAuxiliaryInitializer(
+      EquivalenceVisitor visitor, AuxiliaryInitializer? node, Object? other) {
+    if (identical(node, other)) return true;
+    if (node is! AuxiliaryInitializer) return false;
+    if (other is! AuxiliaryInitializer) return false;
+    visitor.pushNodeState(node, other);
+    bool result = true;
+    if (!checkAuxiliaryInitializer_isSynthetic(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
+    if (!checkAuxiliaryInitializer_fileOffset(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
+    visitor.popState();
+    return result;
+  }
+
   bool checkInvalidInitializer(
       EquivalenceVisitor visitor, InvalidInitializer? node, Object? other) {
     if (identical(node, other)) return true;
@@ -2265,6 +2252,20 @@ class EquivalenceStrategy {
       result = visitor.resultOnInequivalence;
     }
     if (!checkFunctionNode_fileOffset(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
+    visitor.popState();
+    return result;
+  }
+
+  bool checkAuxiliaryExpression(
+      EquivalenceVisitor visitor, AuxiliaryExpression? node, Object? other) {
+    if (identical(node, other)) return true;
+    if (node is! AuxiliaryExpression) return false;
+    if (other is! AuxiliaryExpression) return false;
+    visitor.pushNodeState(node, other);
+    bool result = true;
+    if (!checkAuxiliaryExpression_fileOffset(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
     visitor.popState();
@@ -3789,6 +3790,20 @@ class EquivalenceStrategy {
     return result;
   }
 
+  bool checkAuxiliaryStatement(
+      EquivalenceVisitor visitor, AuxiliaryStatement? node, Object? other) {
+    if (identical(node, other)) return true;
+    if (node is! AuxiliaryStatement) return false;
+    if (other is! AuxiliaryStatement) return false;
+    visitor.pushNodeState(node, other);
+    bool result = true;
+    if (!checkAuxiliaryStatement_fileOffset(visitor, node, other)) {
+      result = visitor.resultOnInequivalence;
+    }
+    visitor.popState();
+    return result;
+  }
+
   bool checkExpressionStatement(
       EquivalenceVisitor visitor, ExpressionStatement? node, Object? other) {
     if (identical(node, other)) return true;
@@ -5084,6 +5099,17 @@ class EquivalenceStrategy {
     return result;
   }
 
+  bool checkAuxiliaryType(
+      EquivalenceVisitor visitor, AuxiliaryType? node, Object? other) {
+    if (identical(node, other)) return true;
+    if (node is! AuxiliaryType) return false;
+    if (other is! AuxiliaryType) return false;
+    visitor.pushNodeState(node, other);
+    bool result = true;
+    visitor.popState();
+    return result;
+  }
+
   bool checkInvalidType(
       EquivalenceVisitor visitor, InvalidType? node, Object? other) {
     if (identical(node, other)) return true;
@@ -5336,6 +5362,17 @@ class EquivalenceStrategy {
     if (!checkSupertype_typeArguments(visitor, node, other)) {
       result = visitor.resultOnInequivalence;
     }
+    visitor.popState();
+    return result;
+  }
+
+  bool checkAuxiliaryConstant(
+      EquivalenceVisitor visitor, AuxiliaryConstant? node, Object? other) {
+    if (identical(node, other)) return true;
+    if (node is! AuxiliaryConstant) return false;
+    if (other is! AuxiliaryConstant) return false;
+    visitor.pushNodeState(node, other);
+    bool result = true;
     visitor.popState();
     return result;
   }
@@ -6354,14 +6391,24 @@ class EquivalenceStrategy {
         node.isSynthetic, other.isSynthetic, 'isSynthetic');
   }
 
-  bool checkInvalidInitializer_isSynthetic(EquivalenceVisitor visitor,
-      InvalidInitializer node, InvalidInitializer other) {
+  bool checkAuxiliaryInitializer_isSynthetic(EquivalenceVisitor visitor,
+      AuxiliaryInitializer node, AuxiliaryInitializer other) {
     return checkInitializer_isSynthetic(visitor, node, other);
   }
 
   bool checkInitializer_fileOffset(
       EquivalenceVisitor visitor, Initializer node, Initializer other) {
     return checkTreeNode_fileOffset(visitor, node, other);
+  }
+
+  bool checkAuxiliaryInitializer_fileOffset(EquivalenceVisitor visitor,
+      AuxiliaryInitializer node, AuxiliaryInitializer other) {
+    return checkInitializer_fileOffset(visitor, node, other);
+  }
+
+  bool checkInvalidInitializer_isSynthetic(EquivalenceVisitor visitor,
+      InvalidInitializer node, InvalidInitializer other) {
+    return checkInitializer_isSynthetic(visitor, node, other);
   }
 
   bool checkInvalidInitializer_fileOffset(EquivalenceVisitor visitor,
@@ -6556,6 +6603,16 @@ class EquivalenceStrategy {
     return checkTreeNode_fileOffset(visitor, node, other);
   }
 
+  bool checkExpression_fileOffset(
+      EquivalenceVisitor visitor, Expression node, Expression other) {
+    return checkTreeNode_fileOffset(visitor, node, other);
+  }
+
+  bool checkAuxiliaryExpression_fileOffset(EquivalenceVisitor visitor,
+      AuxiliaryExpression node, AuxiliaryExpression other) {
+    return checkExpression_fileOffset(visitor, node, other);
+  }
+
   bool checkInvalidExpression_message(EquivalenceVisitor visitor,
       InvalidExpression node, InvalidExpression other) {
     return visitor.checkValues(node.message, other.message, 'message');
@@ -6564,11 +6621,6 @@ class EquivalenceStrategy {
   bool checkInvalidExpression_expression(EquivalenceVisitor visitor,
       InvalidExpression node, InvalidExpression other) {
     return visitor.checkNodes(node.expression, other.expression, 'expression');
-  }
-
-  bool checkExpression_fileOffset(
-      EquivalenceVisitor visitor, Expression node, Expression other) {
-    return checkTreeNode_fileOffset(visitor, node, other);
   }
 
   bool checkInvalidExpression_fileOffset(EquivalenceVisitor visitor,
@@ -7875,14 +7927,19 @@ class EquivalenceStrategy {
     return checkTreeNode_fileOffset(visitor, node, other);
   }
 
-  bool checkExpressionStatement_expression(EquivalenceVisitor visitor,
-      ExpressionStatement node, ExpressionStatement other) {
-    return visitor.checkNodes(node.expression, other.expression, 'expression');
-  }
-
   bool checkStatement_fileOffset(
       EquivalenceVisitor visitor, Statement node, Statement other) {
     return checkTreeNode_fileOffset(visitor, node, other);
+  }
+
+  bool checkAuxiliaryStatement_fileOffset(EquivalenceVisitor visitor,
+      AuxiliaryStatement node, AuxiliaryStatement other) {
+    return checkStatement_fileOffset(visitor, node, other);
+  }
+
+  bool checkExpressionStatement_expression(EquivalenceVisitor visitor,
+      ExpressionStatement node, ExpressionStatement other) {
+    return visitor.checkNodes(node.expression, other.expression, 'expression');
   }
 
   bool checkExpressionStatement_fileOffset(EquivalenceVisitor visitor,

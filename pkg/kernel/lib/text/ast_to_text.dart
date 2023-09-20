@@ -279,7 +279,7 @@ abstract class Annotator {
 }
 
 /// A quick and dirty ambiguous text printer.
-class Printer extends Visitor<void> with VisitorVoidMixin {
+class Printer extends VisitorDefault<void> with VisitorVoidMixin {
   final NameSystem syntheticNames;
   final StringSink sink;
   final Annotator? annotator;
@@ -3078,7 +3078,7 @@ class Precedence implements ExpressionVisitor<int> {
   }
 
   @override
-  int defaultExpression(Expression node) => EXPRESSION;
+  int visitAuxiliaryExpression(AuxiliaryExpression node) => EXPRESSION;
 
   @override
   int visitInvalidExpression(InvalidExpression node) => CALLEE;
@@ -3244,9 +3244,6 @@ class Precedence implements ExpressionVisitor<int> {
 
   @override
   int visitLet(Let node) => EXPRESSION;
-
-  @override
-  int defaultBasicLiteral(BasicLiteral node) => CALLEE;
 
   @override
   int visitBlockExpression(BlockExpression node) => EXPRESSION;

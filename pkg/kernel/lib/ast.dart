@@ -1967,7 +1967,7 @@ class ExtensionTypeMemberDescriptor {
 //                            MEMBERS
 // ------------------------------------------------------------------------
 
-abstract class Member extends NamedNode implements Annotatable, FileUriNode {
+sealed class Member extends NamedNode implements Annotatable, FileUriNode {
   /// End offset in the source file it comes from.
   ///
   /// Valid values are from 0 and up, or -1 ([TreeNode.noOffset]) if the file
@@ -3255,7 +3255,7 @@ enum ProcedureKind {
 // ------------------------------------------------------------------------
 
 /// Part of an initializer list in a constructor.
-abstract class Initializer extends TreeNode {
+sealed class Initializer extends TreeNode {
   /// True if this is a synthetic constructor initializer.
   @informative
   bool isSynthetic = false;
@@ -3265,6 +3265,15 @@ abstract class Initializer extends TreeNode {
 
   @override
   R accept1<R, A>(InitializerVisitor1<R, A> v, A arg);
+}
+
+abstract class AuxiliaryInitializer extends Initializer {
+  @override
+  R accept<R>(InitializerVisitor<R> v) => v.visitAuxiliaryInitializer(this);
+
+  @override
+  R accept1<R, A>(InitializerVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryInitializer(this, arg);
 }
 
 /// An initializer with a compile-time error.
@@ -3878,7 +3887,7 @@ class RedirectingFactoryTarget {
 //                                EXPRESSIONS
 // ------------------------------------------------------------------------
 
-abstract class Expression extends TreeNode {
+sealed class Expression extends TreeNode {
   /// Returns the static type of the expression.
   ///
   /// This calls `StaticTypeContext.getExpressionType` which calls
@@ -3975,6 +3984,17 @@ abstract class Expression extends TreeNode {
     printer.writeExpression(this);
     return printer.getText();
   }
+}
+
+/// Abstract subclass of [Expression] that can be used to add [Expression]
+/// subclasses from outside `package:kernel`.
+abstract class AuxiliaryExpression extends Expression {
+  @override
+  R accept<R>(ExpressionVisitor<R> v) => v.visitAuxiliaryExpression(this);
+
+  @override
+  R accept1<R, A>(ExpressionVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryExpression(this, arg);
 }
 
 /// An expression containing compile-time errors.
@@ -8967,7 +8987,7 @@ class TypedefTearOff extends Expression {
 //                              STATEMENTS
 // ------------------------------------------------------------------------
 
-abstract class Statement extends TreeNode {
+sealed class Statement extends TreeNode {
   @override
   R accept<R>(StatementVisitor<R> v);
 
@@ -8980,6 +9000,15 @@ abstract class Statement extends TreeNode {
     printer.writeStatement(this);
     return printer.getText();
   }
+}
+
+abstract class AuxiliaryStatement extends Statement {
+  @override
+  R accept<R>(StatementVisitor<R> v) => v.visitAuxiliaryStatement(this);
+
+  @override
+  R accept1<R, A>(StatementVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryStatement(this, arg);
 }
 
 class ExpressionStatement extends Statement {
@@ -10858,7 +10887,7 @@ enum Nullability {
 ///
 /// The `==` operator on [DartType]s compare based on type equality, not
 /// object identity.
-abstract class DartType extends Node {
+sealed class DartType extends Node {
   const DartType();
 
   @override
@@ -10951,6 +10980,17 @@ abstract class DartType extends Node {
 
   @override
   void toTextInternal(AstPrinter printer);
+}
+
+abstract class AuxiliaryType extends DartType {
+  const AuxiliaryType();
+
+  @override
+  R accept<R>(DartTypeVisitor<R> v) => v.visitAuxiliaryType(this);
+
+  @override
+  R accept1<R, A>(DartTypeVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryType(this, arg);
 }
 
 /// The type arising from invalid type annotations.
@@ -12853,7 +12893,7 @@ class Supertype extends Node {
 //                             CONSTANTS
 // ------------------------------------------------------------------------
 
-abstract class Constant extends Node {
+sealed class Constant extends Node {
   /// Calls the `visit*ConstantReference()` method on visitor [v] for all
   /// constants referenced in this constant.
   ///
@@ -12871,10 +12911,10 @@ abstract class Constant extends Node {
   R accept1<R, A>(ConstantVisitor1<R, A> v, A arg);
 
   /// Calls the `visit*ConstantReference()` method on the visitor [v].
-  R acceptReference<R>(Visitor<R> v);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v);
 
   /// Calls the `visit*ConstantReference()` method on the visitor [v].
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg);
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg);
 
   /// The Kernel AST will reference [Constant]s via [ConstantExpression]s.  The
   /// constants are not required to be canonicalized, but they have to be deeply
@@ -12905,7 +12945,24 @@ abstract class Constant extends Node {
   DartType getType(StaticTypeContext context);
 }
 
-abstract class PrimitiveConstant<T> extends Constant {
+abstract class AuxiliaryConstant extends Constant {
+  @override
+  R accept<R>(ConstantVisitor<R> v) => v.visitAuxiliaryConstant(this);
+
+  @override
+  R accept1<R, A>(ConstantVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryConstant(this, arg);
+
+  @override
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitAuxiliaryConstantReference(this);
+
+  @override
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
+      v.visitAuxiliaryConstantReference(this, arg);
+}
+
+sealed class PrimitiveConstant<T> extends Constant {
   final T value;
 
   PrimitiveConstant(this.value);
@@ -12937,10 +12994,11 @@ class NullConstant extends PrimitiveConstant<Null> {
       v.visitNullConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitNullConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitNullConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitNullConstantReference(this, arg);
 
   @override
@@ -12964,10 +13022,11 @@ class BoolConstant extends PrimitiveConstant<bool> {
       v.visitBoolConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitBoolConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitBoolConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitBoolConstantReference(this, arg);
 
   @override
@@ -12993,10 +13052,11 @@ class IntConstant extends PrimitiveConstant<int> {
       v.visitIntConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitIntConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitIntConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitIntConstantReference(this, arg);
 
   @override
@@ -13022,10 +13082,11 @@ class DoubleConstant extends PrimitiveConstant<double> {
       v.visitDoubleConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitDoubleConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitDoubleConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitDoubleConstantReference(this, arg);
 
   @override
@@ -13057,10 +13118,11 @@ class StringConstant extends PrimitiveConstant<String> {
       v.visitStringConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitStringConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitStringConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitStringConstantReference(this, arg);
 
   @override
@@ -13095,10 +13157,11 @@ class SymbolConstant extends Constant {
       v.visitSymbolConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitSymbolConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitSymbolConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitSymbolConstantReference(this, arg);
 
   @override
@@ -13154,10 +13217,11 @@ class MapConstant extends Constant {
       v.visitMapConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitMapConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitMapConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitMapConstantReference(this, arg);
 
   @override
@@ -13248,10 +13312,11 @@ class ListConstant extends Constant {
       v.visitListConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitListConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitListConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitListConstantReference(this, arg);
 
   @override
@@ -13309,10 +13374,11 @@ class SetConstant extends Constant {
       v.visitSetConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitSetConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitSetConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitSetConstantReference(this, arg);
 
   @override
@@ -13398,10 +13464,11 @@ class RecordConstant extends Constant {
       v.visitRecordConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitRecordConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitRecordConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitRecordConstantReference(this, arg);
 
   @override
@@ -13477,10 +13544,11 @@ class InstanceConstant extends Constant {
       v.visitInstanceConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) => v.visitInstanceConstantReference(this);
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
+      v.visitInstanceConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitInstanceConstantReference(this, arg);
 
   @override
@@ -13541,11 +13609,11 @@ class InstantiationConstant extends Constant {
       v.visitInstantiationConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitInstantiationConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitInstantiationConstantReference(this, arg);
 
   @override
@@ -13616,11 +13684,11 @@ class StaticTearOffConstant extends Constant implements TearOffConstant {
       v.visitStaticTearOffConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitStaticTearOffConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitStaticTearOffConstantReference(this, arg);
 
   @override
@@ -13677,11 +13745,11 @@ class ConstructorTearOffConstant extends Constant implements TearOffConstant {
       v.visitConstructorTearOffConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitConstructorTearOffConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitConstructorTearOffConstantReference(this, arg);
 
   @override
@@ -13738,11 +13806,11 @@ class RedirectingFactoryTearOffConstant extends Constant
       v.visitRedirectingFactoryTearOffConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitRedirectingFactoryTearOffConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitRedirectingFactoryTearOffConstantReference(this, arg);
 
   @override
@@ -13794,11 +13862,11 @@ class TypedefTearOffConstant extends Constant {
       v.visitTypedefTearOffConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitTypedefTearOffConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitTypedefTearOffConstantReference(this, arg);
 
   @override
@@ -13884,11 +13952,11 @@ class TypeLiteralConstant extends Constant {
       v.visitTypeLiteralConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitTypeLiteralConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitTypeLiteralConstantReference(this, arg);
 
   @override
@@ -13932,11 +14000,11 @@ class UnevaluatedConstant extends Constant {
       v.visitUnevaluatedConstant(this, arg);
 
   @override
-  R acceptReference<R>(Visitor<R> v) =>
+  R acceptReference<R>(ConstantReferenceVisitor<R> v) =>
       v.visitUnevaluatedConstantReference(this);
 
   @override
-  R acceptReference1<R, A>(Visitor1<R, A> v, A arg) =>
+  R acceptReference1<R, A>(ConstantReferenceVisitor1<R, A> v, A arg) =>
       v.visitUnevaluatedConstantReference(this, arg);
 
   @override

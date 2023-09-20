@@ -1,6 +1,6 @@
 // Copyright (c) 2022, the Dart project authors. Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
-// BSD-style license that can be found in the LICENSE.md file.
+// BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/deferred_function_literal_heuristic.dart';
 import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart';
@@ -3763,8 +3763,10 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
   /// the unknown type.
   DartType computeFutureValueTypeSchema(DartType type) {
     return type.accept1(new FutureValueTypeVisitor(unhandledTypeHandler:
-        (DartType node, CoreTypes coreTypes,
-            DartType Function(DartType node, CoreTypes coreTypes) recursor) {
+        (AuxiliaryType node,
+            CoreTypes coreTypes,
+            DartType Function(AuxiliaryType node, CoreTypes coreTypes)
+                recursor) {
       if (node is UnknownType) {
         // futureValueTypeSchema(_) = _.
         return node;
@@ -4437,7 +4439,7 @@ class _WhyNotPromotedVisitor
     }
     int offset = node.fileOffset;
     return templateVariableCouldBeNullDueToWrite
-        .withArguments(reason.variable.name!, reason.documentationLink)
+        .withArguments(reason.variable.name!, reason.documentationLink.url)
         .withLocation(inferrer.helper.uri, offset, noLength);
   }
 
@@ -4449,7 +4451,7 @@ class _WhyNotPromotedVisitor
       propertyReference = member;
       propertyType = reason.staticType;
       return templateFieldNotPromoted
-          .withArguments(reason.propertyName, reason.documentationLink)
+          .withArguments(reason.propertyName, reason.documentationLink.url)
           .withLocation(member.fileUri, member.fileOffset, noLength);
     } else {
       assert(member == null,
@@ -4461,7 +4463,7 @@ class _WhyNotPromotedVisitor
   @override
   LocatedMessage visitThisNotPromoted(ThisNotPromoted reason) {
     return templateThisNotPromoted
-        .withArguments(reason.documentationLink)
+        .withArguments(reason.documentationLink.url)
         .withoutLocation();
   }
 }

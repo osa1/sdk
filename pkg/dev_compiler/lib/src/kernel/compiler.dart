@@ -1757,6 +1757,11 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         js_ast.Expression type;
         var memberName = _declareMemberName(member);
         if (member.isAccessor) {
+          // These signatures are used for dynamic access and to inform the
+          // debugger. The `arrayRti` accessor is only used by the dart:_rti
+          // library internals and should not be included in the accessible
+          // signatures.
+          if (c == _jsArrayClass && name == 'arrayRti') continue;
           type = _emitType(member.isGetter
               ? reifiedType.returnType
               : reifiedType.positionalParameters[0]);
@@ -3389,10 +3394,14 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   @override
-  js_ast.Expression defaultDartType(DartType type) => _emitInvalidNode(type);
+  js_ast.Expression visitAuxiliaryType(AuxiliaryType type) {
+    assert(false, 'Unsupported auxiliary type $type (${type.runtimeType}).');
+    return _emitInvalidNode(type);
+  }
 
   @override
-  js_ast.Expression visitInvalidType(InvalidType type) => defaultDartType(type);
+  js_ast.Expression visitInvalidType(InvalidType type) =>
+      _emitInvalidNode(type);
 
   @override
   js_ast.Expression visitDynamicType(DynamicType type) =>
@@ -4530,10 +4539,6 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   @override
-  js_ast.Statement defaultStatement(Statement node) =>
-      _emitInvalidNode(node).toStatement();
-
-  @override
   js_ast.Statement visitExpressionStatement(ExpressionStatement node) {
     var expr = node.expression;
     if (expr is StaticInvocation) {
@@ -5191,16 +5196,8 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   @override
-  js_ast.Expression defaultExpression(Expression node) =>
-      _emitInvalidNode(node);
-
-  @override
-  js_ast.Expression defaultBasicLiteral(BasicLiteral node) =>
-      defaultExpression(node);
-
-  @override
   js_ast.Expression visitInvalidExpression(InvalidExpression node) =>
-      defaultExpression(node);
+      _emitInvalidNode(node);
 
   @override
   js_ast.Expression visitConstantExpression(ConstantExpression node) =>
@@ -6685,6 +6682,12 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   js_ast.Expression _emitEmbeddedGlobal(StaticInvocation node) {
     var constantExpression = node.arguments.positional[1] as ConstantExpression;
     var name = constantExpression.constant as StringConstant;
+    var value = name.value;
+    if (value == 'arrayRti') {
+      // Special case for the rti on a JSArray. These are defined via the dartx
+      // extension functionality.
+      return _emitMemberName('arrayRti', memberClass: _jsArrayClass);
+    }
     return runtimeCall('#', [name.value]);
   }
 
@@ -7831,6 +7834,18 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // This node is internal to the front end and removed by the constant
     // evaluator.
     throw UnsupportedError('ProgramCompiler.visitSwitchExpression');
+  }
+
+  @override
+  js_ast.Expression visitAuxiliaryExpression(AuxiliaryExpression node) {
+    throw UnsupportedError(
+        'Unsupported auxiliary expression $node (${node.runtimeType}).');
+  }
+
+  @override
+  js_ast.Statement visitAuxiliaryStatement(AuxiliaryStatement node) {
+    throw UnsupportedError(
+        'Unsupported auxiliary statement $node (${node.runtimeType}).');
   }
 }
 

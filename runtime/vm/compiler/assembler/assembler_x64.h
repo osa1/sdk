@@ -1206,6 +1206,8 @@ class Assembler : public AssemblerBase {
     }
   }
 
+  void MsanUnpoison(Register base, intptr_t length_in_bytes);
+
 #if defined(TARGET_USES_THREAD_SANITIZER)
   void TsanLoadAcquire(Address addr);
   void TsanStoreRelease(Address addr);
@@ -1352,6 +1354,21 @@ class Assembler : public AssemblerBase {
                         Register instance,
                         Register end_address,
                         Register temp);
+
+  void CheckAllocationCanary(Register top) {
+#if defined(DEBUG)
+    Label okay;
+    cmpl(Address(top, 0), Immediate(kAllocationCanary));
+    j(EQUAL, &okay, Assembler::kNearJump);
+    Stop("Allocation canary");
+    Bind(&okay);
+#endif
+  }
+  void WriteAllocationCanary(Register top) {
+#if defined(DEBUG)
+    movl(Address(top, 0), Immediate(kAllocationCanary));
+#endif
+  }
 
   // Copy [size] bytes from [src] address to [dst] address.
   // [size] should be a multiple of word size.

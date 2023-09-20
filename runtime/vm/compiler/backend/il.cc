@@ -2901,7 +2901,8 @@ Definition* LoadFieldInstr::Canonicalize(FlowGraph* flow_graph) {
     StoreFieldInstr* initializing_store = nullptr;
     for (auto use : instance()->definition()->input_uses()) {
       if (auto store = use->instruction()->AsStoreField()) {
-        if (store->slot().IsIdentical(slot())) {
+        if ((use->use_index() == StoreFieldInstr::kInstancePos) &&
+            store->slot().IsIdentical(slot())) {
           if (initializing_store == nullptr) {
             initializing_store = store;
           } else {
@@ -3367,7 +3368,8 @@ static bool MayBeNumber(CompileType* type) {
   // Note that type 'Number' is a subtype of itself.
   return unwrapped_type.IsTopTypeForSubtyping() ||
          unwrapped_type.IsObjectType() || unwrapped_type.IsTypeParameter() ||
-         unwrapped_type.IsSubtypeOf(Type::Handle(Type::Number()), Heap::kOld);
+         unwrapped_type.IsSubtypeOf(Type::Handle(Type::NullableNumber()),
+                                    Heap::kOld);
 }
 
 // Returns a replacement for a strict comparison and signals if the result has

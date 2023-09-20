@@ -375,18 +375,6 @@ class InferenceVisitorImpl extends InferenceVisitorBase
   }
 
   @override
-  ExpressionInferenceResult defaultExpression(
-      Expression node, DartType typeContext) {
-    return _unhandledExpression(node, typeContext);
-  }
-
-  @override
-  ExpressionInferenceResult defaultBasicLiteral(
-      BasicLiteral node, DartType typeContext) {
-    return _unhandledExpression(node, typeContext);
-  }
-
-  @override
   ExpressionInferenceResult visitBlockExpression(
       BlockExpression node, DartType typeContext) {
     // This is only used for error cases. The spec doesn't use this and
@@ -621,11 +609,6 @@ class InferenceVisitorImpl extends InferenceVisitorBase
   }
 
   @override
-  StatementInferenceResult defaultStatement(Statement node) {
-    return _unhandledStatement(node);
-  }
-
-  @override
   StatementInferenceResult visitAssertBlock(AssertBlock node) {
     return _unhandledStatement(node);
   }
@@ -643,11 +626,6 @@ class InferenceVisitorImpl extends InferenceVisitorBase
   Never _unhandledInitializer(Initializer node) {
     problems.unhandled("${node.runtimeType}", "InferenceVisitor",
         node.fileOffset, node.location!.file);
-  }
-
-  @override
-  InitializerInferenceResult defaultInitializer(Initializer node) {
-    _unhandledInitializer(node);
   }
 
   @override
@@ -11241,9 +11219,23 @@ class InferenceVisitorImpl extends InferenceVisitorBase
   }
 
   @override
-  void defaultPattern(Pattern node, SharedMatchContext arg) {
-    problems.unhandled("$node (${node.runtimeType})", "InferenceVisitor",
-        node.fileOffset, helper.uri);
+  ExpressionInferenceResult visitAuxiliaryExpression(
+      AuxiliaryExpression node, DartType typeContext) {
+    return _unhandledExpression(node, typeContext);
+  }
+
+  @override
+  InitializerInferenceResult visitAuxiliaryInitializer(
+      AuxiliaryInitializer node) {
+    if (node is InternalInitializer) {
+      return node.acceptInference(this);
+    }
+    return _unhandledInitializer(node);
+  }
+
+  @override
+  StatementInferenceResult visitAuxiliaryStatement(AuxiliaryStatement node) {
+    return _unhandledStatement(node);
   }
 }
 

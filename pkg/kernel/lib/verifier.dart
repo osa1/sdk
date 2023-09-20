@@ -1759,7 +1759,7 @@ class VerifyGetStaticType extends RecursiveVisitor {
   }
 }
 
-class CheckParentPointers extends Visitor<void> with VisitorVoidMixin {
+class CheckParentPointers extends VisitorDefault<void> with VisitorVoidMixin {
   static void check(TreeNode node) {
     node.accept(new CheckParentPointers(node.parent));
   }
@@ -1801,7 +1801,7 @@ class KnownTypes implements DartTypeVisitor<bool> {
   const KnownTypes();
 
   @override
-  bool defaultDartType(DartType node) => false;
+  bool visitAuxiliaryType(AuxiliaryType node) => false;
 
   @override
   bool visitDynamicType(DynamicType node) => true;

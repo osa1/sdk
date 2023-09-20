@@ -2929,69 +2929,27 @@ class BinaryPrinter implements Visitor<void>, BinarySink {
   // These are nodes that are never serialized directly.  Reaching one
   // during serialization is an error.
   @override
-  void defaultNode(Node node) {
+  void visitAuxiliaryType(AuxiliaryType node) {
     throw new UnsupportedError(
-        'serialization of generic Node: ${node} (${node.runtimeType})');
+        'serialization of auxiliary DartType: ${node} (${node.runtimeType})');
   }
 
   @override
-  void defaultConstant(Constant node) {
+  void visitAuxiliaryExpression(AuxiliaryExpression node) {
     throw new UnsupportedError(
-        'serialization of generic Constant: ${node} (${node.runtimeType})');
+        'serialization of auxiliary Expression: ${node} (${node.runtimeType})');
   }
 
   @override
-  void defaultBasicLiteral(BasicLiteral node) {
-    throw new UnsupportedError(
-        'serialization of generic BasicLiteral: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultConstantReference(Constant node) {
-    throw new UnsupportedError('serialization of generic Constant reference: '
+  void visitAuxiliaryInitializer(AuxiliaryInitializer node) {
+    throw new UnsupportedError('serialization of auxiliary Initializer: '
         '${node} (${node.runtimeType})');
   }
 
   @override
-  void defaultDartType(DartType node) {
+  void visitAuxiliaryStatement(AuxiliaryStatement node) {
     throw new UnsupportedError(
-        'serialization of generic DartType: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultExpression(Expression node) {
-    throw new UnsupportedError(
-        'serialization of generic Expression: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultInitializer(Initializer node) {
-    throw new UnsupportedError(
-        'serialization of generic Initializer: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultMember(Member node) {
-    throw new UnsupportedError(
-        'serialization of generic Member: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultMemberReference(Member node) {
-    throw new UnsupportedError('serialization of generic Member reference: '
-        '${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultStatement(Statement node) {
-    throw new UnsupportedError(
-        'serialization of generic Statement: ${node} (${node.runtimeType})');
-  }
-
-  @override
-  void defaultTreeNode(TreeNode node) {
-    throw new UnsupportedError(
-        'serialization of generic TreeNode: ${node} (${node.runtimeType})');
+        'serialization of auxiliary Statement: ${node} (${node.runtimeType})');
   }
 
   @override
@@ -3241,9 +3199,15 @@ class BinaryPrinter implements Visitor<void>, BinarySink {
   }
 
   @override
-  void defaultPattern(Pattern node) {
+  void visitAuxiliaryConstant(AuxiliaryConstant node) {
     throw new UnsupportedError(
-        'serialization of generic Pattern: ${node} (${node.runtimeType})');
+        "serialization of auxiliary constant ${node} (${node.runtimeType}).");
+  }
+
+  @override
+  void visitAuxiliaryConstantReference(AuxiliaryConstant node) {
+    throw new UnsupportedError("serialization of auxiliary constant reference "
+        "${node} (${node.runtimeType}).");
   }
 }
 

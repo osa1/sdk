@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:collection';
+import 'dart:typed_data';
 
 import 'package:_fe_analyzer_shared/src/scanner/string_canonicalizer.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
@@ -2694,7 +2695,7 @@ class EnumElementImpl extends InterfaceElementImpl
 
 /// A base class for concrete implementations of an [ExecutableElement].
 abstract class ExecutableElementImpl extends _ExistingElementImpl
-    with TypeParameterizedElementMixin, HasCompletionData
+    with TypeParameterizedElementMixin
     implements ExecutableElement, ElementImplWithFunctionType {
   /// A list containing all of the parameters defined by this executable
   /// element.
@@ -2884,7 +2885,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
 
 /// A concrete implementation of an [ExtensionElement].
 class ExtensionElementImpl extends InstanceElementImpl
-    with AugmentableElement<ExtensionElementImpl>, HasCompletionData
+    with AugmentableElement<ExtensionElementImpl>
     implements ExtensionElement {
   /// The type being extended.
   DartType? _extendedType;
@@ -3046,7 +3047,7 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
 
 /// A concrete implementation of a [FieldElement].
 class FieldElementImpl extends PropertyInducingElementImpl
-    with AugmentableElement<FieldElementImpl>, HasCompletionData
+    with AugmentableElement<FieldElementImpl>
     implements FieldElement {
   /// True if this field inherits from a covariant parameter. This happens
   /// when it overrides a field in a supertype that is covariant.
@@ -3311,11 +3312,6 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
   }
 }
 
-/// This mixins is added to elements that can have cache completion data.
-mixin HasCompletionData {
-  Object? completionData;
-}
-
 /// A concrete implementation of a [HideElementCombinator].
 class HideElementCombinatorImpl implements HideElementCombinator {
   @override
@@ -3435,7 +3431,7 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 }
 
 abstract class InterfaceElementImpl extends InstanceElementImpl
-    with HasCompletionData, MacroTargetElement
+    with MacroTargetElement
     implements InterfaceElement {
   /// A list containing all of the mixins that are applied to the class being
   /// extended in order to derive the superclass of this class.
@@ -3950,6 +3946,8 @@ class LibraryAugmentationElementImpl extends LibraryOrAugmentationElementImpl
     implements LibraryAugmentationElement {
   @override
   final LibraryOrAugmentationElementImpl augmentationTarget;
+
+  MacroGenerationAugmentationLibrary? macroGenerated;
 
   LibraryAugmentationElementLinkedData? linkedData;
 
@@ -4798,6 +4796,17 @@ class LocalVariableElementImpl extends NonParameterVariableElementImpl
   @override
   T? accept<T>(ElementVisitor<T> visitor) =>
       visitor.visitLocalVariableElement(this);
+}
+
+/// Additional information for a macro generated augmentation library.
+class MacroGenerationAugmentationLibrary {
+  final String code;
+  final Uint8List informativeBytes;
+
+  MacroGenerationAugmentationLibrary({
+    required this.code,
+    required this.informativeBytes,
+  });
 }
 
 mixin MacroTargetElement {
@@ -6420,7 +6429,7 @@ class SuperFormalParameterElementImpl extends ParameterElementImpl
 
 /// A concrete implementation of a [TopLevelVariableElement].
 class TopLevelVariableElementImpl extends PropertyInducingElementImpl
-    with AugmentableElement<TopLevelVariableElementImpl>, HasCompletionData
+    with AugmentableElement<TopLevelVariableElementImpl>
     implements TopLevelVariableElement {
   /// Initialize a newly created synthetic top-level variable element to have
   /// the given [name] and [offset].
@@ -6455,7 +6464,7 @@ class TopLevelVariableElementImpl extends PropertyInducingElementImpl
 ///
 /// Clients may not extend, implement or mix-in this class.
 class TypeAliasElementImpl extends _ExistingElementImpl
-    with TypeParameterizedElementMixin, HasCompletionData
+    with TypeParameterizedElementMixin
     implements TypeAliasElement {
   /// Is `true` if the element has direct or indirect reference to itself
   /// from anywhere except a class element or type parameter bounds.

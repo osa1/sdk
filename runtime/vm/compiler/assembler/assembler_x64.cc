@@ -2007,6 +2007,15 @@ LeafRuntimeScope::~LeafRuntimeScope() {
   __ LeaveFrame();
 }
 
+void Assembler::MsanUnpoison(Register base, intptr_t length_in_bytes) {
+  if (base != CallingConventions::kArg1Reg) {
+    movq(CallingConventions::kArg1Reg, base);
+  }
+  LoadImmediate(CallingConventions::kArg2Reg, length_in_bytes);
+  CallCFunction(
+      compiler::Address(THR, kMsanUnpoisonRuntimeEntry.OffsetFromThread()));
+}
+
 #if defined(TARGET_USES_THREAD_SANITIZER)
 void Assembler::TsanLoadAcquire(Address addr) {
   LeafRuntimeScope rt(this, /*frame_size=*/0, /*preserve_registers=*/true);
@@ -2305,6 +2314,7 @@ void Assembler::TryAllocateObject(intptr_t cid,
     // instance_reg: potential next object start.
     cmpq(instance_reg, Address(THR, target::Thread::end_offset()));
     j(ABOVE_EQUAL, failure, distance);
+    CheckAllocationCanary(instance_reg);
     // Successfully allocated the object, now update top to point to
     // next object start and store the class in the class field of object.
     movq(Address(THR, target::Thread::top_offset()), instance_reg);
@@ -2343,6 +2353,7 @@ void Assembler::TryAllocateArray(intptr_t cid,
     // end_address: potential next object start.
     cmpq(end_address, Address(THR, target::Thread::end_offset()));
     j(ABOVE_EQUAL, failure);
+    CheckAllocationCanary(instance);
 
     // Successfully allocated the object(s), now update top to point to
     // next object start and initialize the object.

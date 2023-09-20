@@ -38,6 +38,7 @@ import 'package:wasm_builder/wasm_builder.dart' as w;
 /// method, which emits appropriate conversion code if the produced type is not
 /// a subtype of the expected type.
 class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
+    with ExpressionVisitor1DefaultMixin<w.ValueType, w.ValueType>
     implements InitializerVisitor<void>, StatementVisitor<void> {
   final Translator translator;
   w.FunctionBuilder function;
@@ -149,20 +150,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   @override
-  void defaultInitializer(Initializer node) {
-    unimplemented(node, node.runtimeType, const []);
-  }
-
-  @override
   w.ValueType defaultExpression(Expression node, w.ValueType expectedType) {
     unimplemented(
         node, node.runtimeType, [if (expectedType != voidMarker) expectedType]);
     return expectedType;
-  }
-
-  @override
-  void defaultStatement(Statement node) {
-    unimplemented(node, node.runtimeType, const []);
   }
 
   /// Generate code for the member.
@@ -1416,7 +1407,9 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   @override
-  void visitYieldStatement(YieldStatement node) => defaultStatement(node);
+  void visitYieldStatement(YieldStatement node) {
+    unimplemented(node, node.runtimeType, const []);
+  }
 
   @override
   w.ValueType visitAwaitExpression(
@@ -2141,11 +2134,6 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return translator.outputOrVoid(call(target.reference));
     }
   }
-
-  @override
-  w.ValueType visitFunctionTearOff(
-          FunctionTearOff node, w.ValueType expectedType) =>
-      wrap(node.receiver, expectedType);
 
   @override
   w.ValueType visitInstanceTearOff(
@@ -3189,6 +3177,18 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     translator.constants.instantiateConstant(
         function, b, StringConstant(s), printFunction.type.inputs[0]);
     b.call(printFunction);
+  }
+
+  @override
+  void visitAuxiliaryStatement(AuxiliaryStatement node) {
+    throw UnsupportedError(
+        "Unsupported auxiliary statement ${node} (${node.runtimeType}).");
+  }
+
+  @override
+  void visitAuxiliaryInitializer(AuxiliaryInitializer node) {
+    throw new UnsupportedError(
+        "Unsupported auxiliary initializer ${node} (${node.runtimeType}).");
   }
 }
 

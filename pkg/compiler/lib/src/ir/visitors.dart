@@ -13,7 +13,8 @@ import 'util.dart' show recordShapeOfRecordType;
 
 /// Visitor that converts string literals and concatenations of string literals
 /// into the string value.
-class Stringifier extends ir.ExpressionVisitor<String?> {
+class Stringifier extends ir.ExpressionVisitor<String?>
+    with ir.ExpressionVisitorDefaultMixin<String?> {
   @override
   String visitStringLiteral(ir.StringLiteral node) => node.value;
 
@@ -215,8 +216,9 @@ class DartTypeConverter extends ir.DartTypeVisitor<DartType> {
   }
 
   @override
-  DartType defaultDartType(ir.DartType node) {
-    throw UnsupportedError('Unsupported type $node (${node.runtimeType})');
+  DartType visitAuxiliaryType(ir.AuxiliaryType node) {
+    throw UnsupportedError(
+        'Unsupported auxiliary type $node (${node.runtimeType}).');
   }
 
   @override
@@ -225,17 +227,14 @@ class DartTypeConverter extends ir.DartTypeVisitor<DartType> {
   }
 }
 
-// TODO(fishythefish): Remove default mixin.
-class ConstantValuefier extends ir.ComputeOnceConstantVisitor<ConstantValue>
-    with ir.OnceConstantVisitorDefaultMixin<ConstantValue> {
+class ConstantValuefier extends ir.ComputeOnceConstantVisitor<ConstantValue> {
   final IrToElementMap elementMap;
 
   ConstantValuefier(this.elementMap);
 
   DartTypes get _dartTypes => elementMap.commonElements.dartTypes;
 
-  @override
-  ConstantValue defaultConstant(ir.Constant node) {
+  static Never _unexpectedConstant(ir.Constant node) {
     throw UnsupportedError("Unexpected constant $node (${node.runtimeType}).");
   }
 
@@ -358,4 +357,21 @@ class ConstantValuefier extends ir.ComputeOnceConstantVisitor<ConstantValue>
   ConstantValue visitNullConstant(ir.NullConstant node) {
     return constant_system.createNull();
   }
+
+  @override
+  Never visitConstructorTearOffConstant(ir.ConstructorTearOffConstant node) =>
+      _unexpectedConstant(node);
+
+  @override
+  Never visitRedirectingFactoryTearOffConstant(
+          ir.RedirectingFactoryTearOffConstant node) =>
+      _unexpectedConstant(node);
+
+  @override
+  Never visitTypedefTearOffConstant(ir.TypedefTearOffConstant node) =>
+      _unexpectedConstant(node);
+
+  @override
+  Never visitAuxiliaryConstant(ir.AuxiliaryConstant node) =>
+      _unexpectedConstant(node);
 }
