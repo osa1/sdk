@@ -104,12 +104,12 @@ Object? _convertJsonToDartLazy(Object? o) {
 
   // Iterate through JSArray and convert each entry.
   if (isJSArray(ref)) {
-    final array = o as JSArray;
-    final arrayLength = _length(ref);
+    final JSArray array = o as JSArray;
+    final int arrayLength = _length(ref);
     for (int i = 0; i < arrayLength; i++) {
-      final index = i.toJS.toExternRef;
-      final item = _getProperty(ref, index);
-      final convertedItem = _convertJsonToDartLazy(item) as JSValue;
+      final WasmExternRef? index = i.toJS.toExternRef;
+      final WasmExternRef? item = _getProperty(ref, index);
+      final JSValue convertedItem = _convertJsonToDartLazy(JSValue(item)) as JSValue;
       _setProperty(ref, index, convertedItem.toExternRef);
     }
     return array;
