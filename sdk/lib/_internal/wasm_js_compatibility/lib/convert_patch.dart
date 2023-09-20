@@ -20,7 +20,7 @@ dynamic _parseJson(
     throw FormatException(JS<String>('e => String(e)', e.toExternRef));
   }
 
-  Object? parsedObject = JSValue(parsed);
+  Object? parsedObject = JSValue.box(parsed);
 
   if (reviver == null) {
     return _convertJsonToDartLazy(parsedObject);
@@ -42,7 +42,7 @@ Object? _convertJsonToDart(
     }
 
     // `JSNull`, `JSNumber`, and `JSBoolean` should be converted as expected.
-    WasmExternRef? ref = o.toExternRef;
+    final WasmExternRef? ref = o.toExternRef;
     if (ref.isNull || isJSBoolean(ref) || isJSNumber(ref)) {
       return o;
     }
@@ -72,10 +72,11 @@ Object? _convertJsonToDart(
     final processed = map._processed;
     final keys = map._computeKeys();
     for (int i = 0; i < keys.length; i++) {
-      final key = (keys[i] as JSStringImpl).toExternRef;
-      final item = JSValue.box(_getProperty(ref, key));
-      final revivedItem = reviver(key, item) as JSValue?;
-      _setProperty(processed?.toExternRef, key, revivedItem?.toExternRef);
+      final JSStringImpl key = keys[i] as JSStringImpl;
+      final JSValue? item = JSValue.box(_getProperty(ref, key.toExternRef));
+      final JSValue? revivedItem = reviver(key, item) as JSValue?;
+      _setProperty(
+          processed?.toExternRef, key.toExternRef, revivedItem?.toExternRef);
     }
 
     // Update the JSON map structure so future access is cheaper.
@@ -110,7 +111,7 @@ Object? _convertJsonToDartLazy(Object? o) {
       final WasmExternRef? index = i.toJS.toExternRef;
       final WasmExternRef? item = _getProperty(ref, index);
       final JSValue convertedItem =
-          _convertJsonToDartLazy(JSValue(item)) as JSValue;
+          _convertJsonToDartLazy(JSValue.box(item)) as JSValue;
       _setProperty(ref, index, convertedItem.toExternRef);
     }
     return array;
@@ -241,7 +242,8 @@ class _JsonMap extends MapBase<String, Object?> {
 
       // Compute the value under the assumption that the property
       // is present but potentially not processed.
-      final originalValue = _getStringProperty(_processed?.toExternRef, key);
+      final WasmExternRef? originalValue =
+          _getStringProperty(_processed?.toExternRef, key);
       Object? value;
       if (_isUnprocessed(originalValue)) {
         final valueRef = _getStringProperty(_original?.toExternRef, key);
@@ -277,7 +279,7 @@ class _JsonMap extends MapBase<String, Object?> {
     if (keys == null) {
       keys = <String>[];
       final names =
-          (JSValue(_getPropertyNames(_original?.toExternRef)) as JSArray)
+          (JSValue.boxT<JSArray>(_getPropertyNames(_original?.toExternRef)))
               .toDart;
       for (final name in names) {
         keys.add(JSStringImpl(name?.toExternRef));
@@ -317,17 +319,21 @@ class _JsonMap extends MapBase<String, Object?> {
   }
 
   JSValue? _process(String key) {
-    if (!_hasStringProperty(_original?.toExternRef, key)) return null;
-    var result =
-        _convertJsonToDartLazy(_getStringProperty(_original?.toExternRef, key));
+    if (!_hasStringProperty(_original?.toExternRef, key)) {
+      return null;
+    }
+    final Object? result = _convertJsonToDartLazy(
+        JSValue.box(_getStringProperty(_original?.toExternRef, key)));
     return JSValue.box(
         _setStringProperty(_processed?.toExternRef, key, result?.toExternRef));
   }
 
   static bool _hasStringProperty(WasmExternRef? object, String key) =>
       _hasProperty(object, (key as JSStringImpl).toExternRef);
+
   static WasmExternRef? _getStringProperty(WasmExternRef? object, String key) =>
       _getProperty(object, (key as JSStringImpl).toExternRef);
+
   static WasmExternRef? _setStringProperty(
           WasmExternRef? object, String key, WasmExternRef? value) =>
       _setProperty(object, (key as JSStringImpl).toExternRef, value);
