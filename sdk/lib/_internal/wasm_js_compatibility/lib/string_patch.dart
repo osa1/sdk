@@ -23,28 +23,40 @@ class String {
       throw RangeError.range(end, start, length);
     }
 
-    final end_ = end ?? length;
-
     final it = charCodes.iterator;
     for (int i = 0; i < start; i++) {
       it.moveNext();
     }
 
     int index = 0;
-    final list = Uint32List(end_ - start);
-    while (it.moveNext()) {
-      final code = it.current;
-      if (code <= 0xffff) {
-        list[index++] = code;
-      } else if (code <= 0x10ffff) {
-        list[index++] = _computeHigh(code);
-        list[index++] = _computeLow(code);
-      } else {
-        throw ArgumentError('Invalid code point $code');
+    final listLength = (end ?? length) - start;
+    final list = Uint32List(listLength);
+    if (end == null) {
+      while (it.moveNext()) {
+        list[index++] = it.current;
+      }
+    } else {
+      for (int i = start; i < end; i++) {
+        if (!it.moveNext()) {
+          throw RangeError.range(end, start, i);
+        }
+        list[index++] = it.current;
       }
     }
-    return _fromJSArrayLike(
-        (list as JSIntArrayImpl).toExternRef, start, end_, charCodes.length);
+
+    const kMaxApply = 500;
+    if (listLength <= kMaxApply) {
+      return _fromCharCodeApply(list.toExternRef);
+    }
+
+    String result = '';
+    for (int i = 0; i < listLength; i += kMaxApply) {
+      final chunkEnd =
+          (i + kMaxApply < listLength) ? i + kMaxApply : listLength;
+      result += _fromCharCodeApplySubarray(
+          list.toExternRef, i.toDouble(), chunkEnd.toDouble());
+    }
+    return result;
   }
 
   @patch
@@ -76,33 +88,14 @@ class String {
       JSStringImpl(js.JS<WasmExternRef?>(
           'c => String.fromCharCode.apply(null, c)', charCodes));
 
-  static String _fromCharCodeApplySubarray(WasmExternRef? result,
+  static String _fromCharCodeApplySubarray(
           WasmExternRef? charCodes, double index, double end) =>
+      // TODO(omersa): We should use subarray below, but it breaks stuff
+      // somehow even though the only `charCodes` passed here is a
+      // `JSUint32ArrayImpl` externref (i.e. a JS typed array).
       JSStringImpl(js.JS<WasmExternRef?>(
-          '(r, c, i, e) => String.fromCharCode.apply(null, c.subarray(i, e))',
-          result,
+          '(c, i, e) => String.fromCharCode.apply(null, c.slice(i, e))',
           charCodes,
           index,
           end));
-
-  static String _fromJSArrayLike(
-      WasmExternRef? charCodes, int start, int? endOrNull, int len) {
-    int end = RangeError.checkValidRange(start, endOrNull, len);
-    const kMaxApply = 500;
-    if (end <= kMaxApply && start == 0 && end == len) {
-      return _fromCharCodeApply(charCodes);
-    }
-    String result = '';
-    for (int i = start; i < end; i += kMaxApply) {
-      int chunkEnd = (i + kMaxApply < end) ? i + kMaxApply : end;
-      result += _fromCharCodeApplySubarray((result as JSStringImpl).toExternRef,
-          charCodes, i.toDouble(), chunkEnd.toDouble());
-    }
-    return result;
-  }
-
-  static int _computeHigh(int code) =>
-      0xd800 + ((((code - 0x10000) >> 10) & 0x3ff));
-
-  static int _computeLow(int code) => 0xdc00 + (code & 0x3ff);
 }
