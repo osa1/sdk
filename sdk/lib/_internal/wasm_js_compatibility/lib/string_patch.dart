@@ -79,7 +79,7 @@ class String {
   static String _fromCharCodeApplySubarray(WasmExternRef? result,
           WasmExternRef? charCodes, double index, double end) =>
       JSStringImpl(js.JS<WasmExternRef?>(
-          '(r, c, i, e) => String.fromCharCode.apply(null, c.slice(i, e))',
+          '(r, c, i, e) => String.fromCharCode.apply(null, c.subarray(i, e))',
           result,
           charCodes,
           index,
@@ -95,7 +95,7 @@ class String {
     String result = '';
     for (int i = start; i < end; i += kMaxApply) {
       int chunkEnd = (i + kMaxApply < end) ? i + kMaxApply : end;
-      result = _fromCharCodeApplySubarray((result as JSStringImpl).toExternRef,
+      result += _fromCharCodeApplySubarray((result as JSStringImpl).toExternRef,
           charCodes, i.toDouble(), chunkEnd.toDouble());
     }
     return result;
