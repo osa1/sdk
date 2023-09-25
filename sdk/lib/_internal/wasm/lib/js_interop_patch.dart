@@ -29,15 +29,22 @@ extension NullableUndefineableJSAnyExtension on JSAny? {
   // reified `JSUndefined` and `JSNull`, we have to handle the case where
   // `this == null`. However, after migration we can remove these checks.
   @patch
-  bool get isUndefined => this == null || isJSUndefined(this?.toExternRef);
+  bool get isUndefined =>
+      throw UnimplementedError("JS 'null' and 'undefined' are internalized as "
+          "Dart null in dart2wasm. As such, they can not be differentiated and "
+          "this API should not be used when compiling to Wasm.");
 
   @patch
-  bool get isNull => this == null || this!.toExternRef.isNull;
+  bool get isNull =>
+      throw UnimplementedError("JS 'null' and 'undefined' are internalized as "
+          "Dart null in dart2wasm. As such, they can not be differentiated and "
+          "this API should not be used when compiling to Wasm.");
 
   @patch
-  JSBoolean typeofEquals(JSString type) =>
-      _box<JSBoolean>(js_helper.JS<WasmExternRef?>(
-          '(o, t) => typeof o === t', this?.toExternRef, type.toExternRef));
+  bool typeofEquals(String type) =>
+      _box<JSBoolean>(js_helper.JS<WasmExternRef?>('(o, t) => typeof o === t',
+              this?.toExternRef, type.toJS.toExternRef))
+          .toDart;
 
   @patch
   Object? dartify() => js_util.dartify(this);
@@ -54,9 +61,10 @@ extension NullableObjectUtilExtension on Object? {
 @patch
 extension JSObjectUtilExtension on JSObject {
   @patch
-  JSBoolean instanceof(JSFunction constructor) =>
+  bool instanceof(JSFunction constructor) =>
       _box<JSBoolean>(js_helper.JS<WasmExternRef?>(
-          '(o, c) => o instanceof c', toExternRef, constructor.toExternRef));
+              '(o, c) => o instanceof c', toExternRef, constructor.toExternRef))
+          .toDart;
 }
 
 /// [JSExportedDartFunction] <-> [Function]
