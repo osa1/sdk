@@ -6056,6 +6056,15 @@ class WarningCode extends AnalyzerErrorCode {
   );
 
   ///  Parameters:
+  ///  0: the name of the doc directive argument
+  ///  1: the expected format
+  static const WarningCode DOC_DIRECTIVE_ARGUMENT_WRONG_FORMAT = WarningCode(
+    'DOC_DIRECTIVE_ARGUMENT_WRONG_FORMAT',
+    "The '{0}' argument must be formatted as {1}.",
+    correctionMessage: "Try formatting '{0}' as {1}.",
+  );
+
+  ///  Parameters:
   ///  0: the name of the doc directive
   ///  1: the actual number of arguments
   ///  2: the expected number of arguments
@@ -6132,6 +6141,14 @@ class WarningCode extends AnalyzerErrorCode {
     correctionMessage:
         "Try adding the missing arguments before the closing '}'.",
     uniqueName: 'DOC_DIRECTIVE_MISSING_TWO_ARGUMENTS',
+  );
+
+  ///  Parameters:
+  ///  0: the name of the unknown doc directive.
+  static const WarningCode DOC_DIRECTIVE_UNKNOWN = WarningCode(
+    'DOC_DIRECTIVE_UNKNOWN',
+    "Doc directive '{0}' is unknown.",
+    correctionMessage: "Try using one of the supported doc directives.",
   );
 
   static const WarningCode DOC_IMPORT_CANNOT_BE_DEFERRED = WarningCode(
