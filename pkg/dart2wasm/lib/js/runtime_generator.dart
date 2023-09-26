@@ -13,6 +13,8 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
 
+import 'dart:convert' show json;
+
 JSMethods _performJSInteropTransformations(
     Component component,
     CoreTypes coreTypes,
@@ -49,9 +51,7 @@ class RuntimeFinalizer {
 
   String generate(Iterable<Procedure> translatedProcedures,
       List<String> constantStrings, wasm_target.Mode mode) {
-    String escapeAll(String s) => s.replaceAllMapped(
-        RegExp(r'(`|\\x|\\|\\u)'), (match) => '\\${match[1]!}');
-    String escape(String s) => '`${escapeAll(s)}`';
+    String escape(String s) => json.encode(s);
 
     Set<Procedure> usedProcedures = {};
     List<String> usedJSMethods = [];
