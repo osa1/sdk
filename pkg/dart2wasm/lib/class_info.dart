@@ -218,8 +218,7 @@ class ClassInfoCollector {
       translator.coreTypes.boolClass: translator.coreTypes.boolClass,
       translator.coreTypes.intClass: translator.coreTypes.intClass,
       translator.coreTypes.doubleClass: translator.coreTypes.doubleClass,
-      if (!translator.options.jsCompatibility)
-        translator.coreTypes.stringClass: translator.coreTypes.stringClass,
+      translator.coreTypes.stringClass: translator.coreTypes.stringClass,
       translator.index.getClass("dart:core", "_Type"):
           translator.coreTypes.typeClass,
       translator.index.getClass("dart:core", "_ListBase"):
