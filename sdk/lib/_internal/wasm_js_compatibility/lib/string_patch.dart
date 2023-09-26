@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:_internal' show EfficientLengthIterable, patch;
+import 'dart:_internal' show EfficientLengthIterable, patch, unsafeCast;
 import 'dart:_js_helper' as js;
 import 'dart:_js_types';
 import 'dart:_wasm';
@@ -15,44 +15,58 @@ class String {
   factory String.fromCharCodes(Iterable<int> charCodes,
       [int start = 0, int? end]) {
     final length = charCodes.length;
-    if (start < 0) throw RangeError.range(start, 0, length);
+
+    if (start < 0) {
+      throw RangeError.range(start, 0, length);
+    }
+
     if (end != null && end < start) {
       throw RangeError.range(end, start, length);
     }
+
     if (end != null && end > length) {
       throw RangeError.range(end, start, length);
     }
 
+    // Skip until `start`.
     final it = charCodes.iterator;
     for (int i = 0; i < start; i++) {
       it.moveNext();
     }
 
-    int index = 0;
-    final listLength = (end ?? length) - start;
-    final list = Uint32List(listLength);
-    if (end == null) {
-      while (it.moveNext()) {
-        list[index++] = it.current;
+    // The part of the iterable converted to string is collected in a JS typed
+    // array, to be able to effciently get subarrays, to pass to
+    // `String.fromCharCode.apply`.
+    final charCodesLength = (end ?? length) - start;
+    final typedArrayLength = charCodesLength * 2;
+    final JSUint32ArrayImpl list =
+        unsafeCast<JSUint32ArrayImpl>(Uint32List(typedArrayLength));
+    int index = 0; // index in `list`.
+    end ??= charCodesLength;
+    for (int i = start; i < end; i++) {
+      if (!it.moveNext()) {
+        throw RangeError.range(end, start, i);
       }
-    } else {
-      for (int i = start; i < end; i++) {
-        if (!it.moveNext()) {
-          throw RangeError.range(end, start, i);
-        }
-        list[index++] = it.current;
+      final charCode = it.current;
+      if (charCode <= 0xffff) {
+        list[index++] = charCode;
+      } else if (charCode <= 0x10ffff) {
+        list[index++] = 0xd800 + ((((charCode - 0x10000) >> 10) & 0x3ff));
+        list[index++] = 0xdc00 + (charCode & 0x3ff);
+      } else {
+        throw RangeError.range(charCode, 0, 0x10ffff);
       }
     }
 
+    // Create JS string from `list`.
     const kMaxApply = 500;
-    if (listLength <= kMaxApply) {
-      return _fromCharCodeApply(list.toExternRef);
+    if (index <= kMaxApply) {
+      return _fromCharCodeApplySubarray(list.toExternRef, 0, index.toDouble());
     }
 
     String result = '';
-    for (int i = 0; i < listLength; i += kMaxApply) {
-      final chunkEnd =
-          (i + kMaxApply < listLength) ? i + kMaxApply : listLength;
+    for (int i = 0; i < index; i += kMaxApply) {
+      final chunkEnd = (i + kMaxApply < index) ? i + kMaxApply : index;
       result += _fromCharCodeApplySubarray(
           list.toExternRef, i.toDouble(), chunkEnd.toDouble());
     }
@@ -84,17 +98,10 @@ class String {
     throw RangeError.range(charCode, 0, 0x10ffff);
   }
 
-  static String _fromCharCodeApply(WasmExternRef? charCodes) =>
-      JSStringImpl(js.JS<WasmExternRef?>(
-          'c => String.fromCharCode.apply(null, c)', charCodes));
-
   static String _fromCharCodeApplySubarray(
           WasmExternRef? charCodes, double index, double end) =>
-      // TODO(omersa): We should use subarray below, but it breaks stuff
-      // somehow even though the only `charCodes` passed here is a
-      // `JSUint32ArrayImpl` externref (i.e. a JS typed array).
       JSStringImpl(js.JS<WasmExternRef?>(
-          '(c, i, e) => String.fromCharCode.apply(null, c.slice(i, e))',
+          '(c, i, e) => String.fromCharCode.apply(null, c.subarray(i, e))',
           charCodes,
           index,
           end));
