@@ -164,10 +164,6 @@ wasm_js_compatibility:
   include:
     - target: "wasm_common"
   libraries:
-    convert:
-      uri: convert/convert.dart
-      patches:
-        - _internal/wasm_js_compatibility/lib/convert_patch.dart
     core:
       uri: core/core.dart
       patches:
@@ -254,6 +250,11 @@ wasm_common:
       - _internal/vm_shared/lib/collection_patch.dart
       - _internal/vm_shared/lib/compact_hash.dart
       - _internal/wasm/lib/hash_factories.dart
+    convert:
+      uri: convert/convert.dart
+      patches:
+      - _internal/vm_shared/lib/convert_patch.dart
+      - _internal/wasm/lib/convert_patch.dart
     developer:
       uri: developer/developer.dart
       patches:
