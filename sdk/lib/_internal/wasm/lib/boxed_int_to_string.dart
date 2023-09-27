@@ -17,7 +17,7 @@ const _digits = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 String _intToRadixString(int value, int radix) {
   if (radix < 2 || 36 < radix) {
-    throw new RangeError.range(radix, 2, 36, "radix");
+    throw RangeError.range(radix, 2, 36, "radix");
   }
   if (radix & (radix - 1) == 0) {
     return _toPow2String(value, radix);

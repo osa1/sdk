@@ -1,0 +1,2282 @@
+No build targets found.
+Test configuration:
+    dart2wasm-linux-jscm-d8(architecture: x64, compiler: dart2wasm, mode: release, runtime: d8, system: linux, dart2wasm-options: [--js-compatibility], timeout: 240, host-checked)
+Suites tested: co19, corelib, language, lib
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_to_radix_string_test/01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 806ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_to_radix_string_test_01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 60ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.wasm
+
+exit code:
+1
+
+stdout:
+JavaScriptError
+    at _invokeMain (wasm://wasm/00064072:wasm-function[82]:0xa6ad)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.mjs:126: RangeError: toString() radix argument must be between 2 and 36
+_26: (n, r) => n.toString(r),
+                 ^
+RangeError: toString() radix argument must be between 2 and 36
+    at Number.toString (<anonymous>)
+    at _26 (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.mjs:126:18)
+    at _BoxedInt.toRadixString (wasm://wasm/00064072:wasm-function[584]:0x1313c)
+    at main (wasm://wasm/00064072:wasm-function[75]:0xa30f)
+    at main tear-off trampoline (wasm://wasm/00064072:wasm-function[77]:0xa460)
+    at _invokeMain (wasm://wasm/00064072:wasm-function[82]:0xa671)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_01/integer_to_radix_string_test_01.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_to_radix_string_test/01
+[00:01 |   1% | +    0 | -    1]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_to_radix_string_test/02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 834ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_to_radix_string_test_02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 74ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.wasm
+
+exit code:
+1
+
+stdout:
+JavaScriptError
+    at _invokeMain (wasm://wasm/00064072:wasm-function[82]:0xa6ad)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.mjs:126: RangeError: toString() radix argument must be between 2 and 36
+_26: (n, r) => n.toString(r),
+                 ^
+RangeError: toString() radix argument must be between 2 and 36
+    at Number.toString (<anonymous>)
+    at _26 (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.mjs:126:18)
+    at _BoxedInt.toRadixString (wasm://wasm/00064072:wasm-function[584]:0x1313c)
+    at main (wasm://wasm/00064072:wasm-function[75]:0xa30f)
+    at main tear-off trampoline (wasm://wasm/00064072:wasm-function[77]:0xa460)
+    at _invokeMain (wasm://wasm/00064072:wasm-function[82]:0xa671)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_02/integer_to_radix_string_test_02.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_to_radix_string_test/02
+[00:01 |   2% | +    0 | -    2]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_to_radix_string_test/none
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 846ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_to_radix_string_test_none.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 88ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.wasm
+
+exit code:
+1
+
+stdout:
+JavaScriptError
+    at _invokeMain (wasm://wasm/00064016:wasm-function[82]:0xa696)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.mjs:126: RangeError: toString() radix argument must be between 2 and 36
+_26: (n, r) => n.toString(r),
+                 ^
+RangeError: toString() radix argument must be between 2 and 36
+    at Number.toString (<anonymous>)
+    at _26 (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.mjs:126:18)
+    at _BoxedInt.toRadixString (wasm://wasm/00064016:wasm-function[584]:0x13125)
+    at main (wasm://wasm/00064016:wasm-function[75]:0xa2fb)
+    at main tear-off trampoline (wasm://wasm/00064016:wasm-function[77]:0xa449)
+    at _invokeMain (wasm://wasm/00064016:wasm-function[82]:0xa65a)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_radix_string_test_none/integer_to_radix_string_test_none.mjs:559:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+    at async eventLoop (pkg/dart2wasm/bin/run_wasm.js:279:9)
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_to_radix_string_test/none
+[00:01 |   3% | +    0 | -    3]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_parse_with_limited_ints_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 853ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/int_parse_with_limited_ints_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_parse_with_limited_ints_test/int_parse_with_limited_ints_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 65ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_parse_with_limited_ints_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_parse_with_limited_ints_test/int_parse_with_limited_ints_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_parse_with_limited_ints_test/int_parse_with_limited_ints_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <9223372036854776000>, actual: <9223372036854776000>) fails.
+    at Expect._fail (wasm://wasm/000770d6:wasm-function[622]:0x145a4)
+    at Expect.equals (wasm://wasm/000770d6:wasm-function[590]:0x13a71)
+    at main (wasm://wasm/000770d6:wasm-function[71]:0xa8ff)
+    at main tear-off trampoline (wasm://wasm/000770d6:wasm-function[73]:0xabcc)
+    at _invokeMain (wasm://wasm/000770d6:wasm-function[78]:0xaddd)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_parse_with_limited_ints_test/int_parse_with_limited_ints_test.mjs:545:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_parse_with_limited_ints_test
+[00:01 |   4% | +    0 | -    4]
+
+FAILED: dart2wasm-d8 release_x64 corelib/string_base_vm_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 896ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/string_base_vm_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_base_vm_test/string_base_vm_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 112ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_base_vm_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_base_vm_test/string_base_vm_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_base_vm_test/string_base_vm_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <true>, actual: <false>) fails.
+    at Expect._fail (wasm://wasm/000626aa:wasm-function[592]:0x12eed)
+    at Expect.equals (wasm://wasm/000626aa:wasm-function[588]:0x12da7)
+    at StringBaseTest.testCreation (wasm://wasm/000626aa:wasm-function[585]:0x12b13)
+    at StringBaseTest.testMain (wasm://wasm/000626aa:wasm-function[583]:0x1294e)
+    at main (wasm://wasm/000626aa:wasm-function[74]:0x9c60)
+    at main tear-off trampoline (wasm://wasm/000626aa:wasm-function[76]:0x9c71)
+    at _invokeMain (wasm://wasm/000626aa:wasm-function[81]:0x9e82)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_base_vm_test/string_base_vm_test.mjs:521:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/string_base_vm_test
+[00:01 |   5% | +    0 | -    5]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_parse_radix_int64_test/02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 894ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_int64_test_02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_int64_test_02/int_parse_radix_int64_test_02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 108ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_int64_test_02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_int64_test_02/int_parse_radix_int64_test_02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_int64_test_02/int_parse_radix_int64_test_02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <-9223372036854776000>, actual: <-9223372036854776000>, '111111111111111111111111111111111111111111111111111111111111111/2->9223372036854776000') fails.
+    at Expect._fail (wasm://wasm/0006315a:wasm-function[595]:0x1339e)
+    at Expect.equals (wasm://wasm/0006315a:wasm-function[591]:0x132f7)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_int64_test_02.dart:19:17 (wasm://wasm/0006315a:wasm-function[585]:0x12e12)
+    at main (wasm://wasm/0006315a:wasm-function[76]:0x9d84)
+    at main tear-off trampoline (wasm://wasm/0006315a:wasm-function[78]:0x9df7)
+    at _invokeMain (wasm://wasm/0006315a:wasm-function[83]:0xa008)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_int64_test_02/int_parse_radix_int64_test_02.mjs:525:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_parse_radix_int64_test/02
+[00:01 |   6% | +    0 | -    6]
+
+FAILED: dart2wasm-d8 release_x64 corelib/uri_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 01.000134s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/uri_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_uri_test/uri_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1724:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertSingle
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/uri_test
+[00:01 |   7% | +    0 | -    7]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_to_string_test/01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 962ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_to_string_test_01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_string_test_01/integer_to_string_test_01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 65ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_string_test_01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_string_test_01/integer_to_string_test_01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_string_test_01/integer_to_string_test_01.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <9007199254740993>, actual: <9007199254740992>) fails.
+    at Expect._fail (wasm://wasm/0006200e:wasm-function[588]:0x13166)
+    at Expect.equals (wasm://wasm/0006200e:wasm-function[584]:0x12ff5)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_to_string_test_01.dart:10:7 (wasm://wasm/0006200e:wasm-function[582]:0x12e19)
+    at main (wasm://wasm/0006200e:wasm-function[73]:0x9fa8)
+    at main tear-off trampoline (wasm://wasm/0006200e:wasm-function[75]:0xa126)
+    at _invokeMain (wasm://wasm/0006200e:wasm-function[80]:0xa337)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_to_string_test_01/integer_to_string_test_01.mjs:540:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_to_string_test/01
+[00:01 |   8% | +    0 | -    8]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_parsed_div_rem_vm_test/none
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 961ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_parsed_div_rem_vm_test_none.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_none/integer_parsed_div_rem_vm_test_none.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 110ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_none /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_none/integer_parsed_div_rem_vm_test_none.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_none/integer_parsed_div_rem_vm_test_none.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <1317624576693539300>, actual: <1317624576693539300>) fails.
+    at Expect._fail (wasm://wasm/00063b0a:wasm-function[597]:0x13361)
+    at Expect.equals (wasm://wasm/00063b0a:wasm-function[588]:0x130aa)
+    at divRemParsed (wasm://wasm/00063b0a:wasm-function[586]:0x12e0a)
+    at testDivideRemainder (wasm://wasm/00063b0a:wasm-function[585]:0x12d52)
+    at main (wasm://wasm/00063b0a:wasm-function[76]:0x9f4f)
+    at main tear-off trampoline (wasm://wasm/00063b0a:wasm-function[78]:0x9f60)
+    at _invokeMain (wasm://wasm/00063b0a:wasm-function[83]:0xa171)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_none/integer_parsed_div_rem_vm_test_none.mjs:545:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_parsed_div_rem_vm_test/none
+[00:01 |   9% | +    0 | -    9]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_parsed_div_rem_vm_test/01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 961ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/integer_parsed_div_rem_vm_test_01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_01/integer_parsed_div_rem_vm_test_01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 85ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_01/integer_parsed_div_rem_vm_test_01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_01/integer_parsed_div_rem_vm_test_01.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <1317624576693539300>, actual: <1317624576693539300>) fails.
+    at Expect._fail (wasm://wasm/00063c32:wasm-function[597]:0x133ab)
+    at Expect.equals (wasm://wasm/00063c32:wasm-function[588]:0x130f4)
+    at divRemParsed (wasm://wasm/00063c32:wasm-function[586]:0x12e54)
+    at testDivideRemainder (wasm://wasm/00063c32:wasm-function[585]:0x12d8c)
+    at main (wasm://wasm/00063c32:wasm-function[76]:0x9f89)
+    at main tear-off trampoline (wasm://wasm/00063c32:wasm-function[78]:0x9f9a)
+    at _invokeMain (wasm://wasm/00063c32:wasm-function[83]:0xa1ab)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_integer_parsed_div_rem_vm_test_01/integer_parsed_div_rem_vm_test_01.mjs:547:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_parsed_div_rem_vm_test/01
+[00:01 |  10% | +    0 | -   10]
+
+FAILED: dart2wasm-d8 release_x64 corelib/bigint_from_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 01.000179s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/bigint_from_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_bigint_from_test/bigint_from_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 90ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_bigint_from_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_bigint_from_test/bigint_from_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_bigint_from_test/bigint_from_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <-9007199254740992>, actual: <-9007199254740993>) fails.
+    at Expect._fail (wasm://wasm/0008305e:wasm-function[619]:0x14c77)
+    at Expect.equals (wasm://wasm/0008305e:wasm-function[598]:0x14192)
+    at testInt (wasm://wasm/0008305e:wasm-function[590]:0x13ec1)
+    at main (wasm://wasm/0008305e:wasm-function[77]:0xadc0)
+    at main tear-off trampoline (wasm://wasm/0008305e:wasm-function[79]:0xb08a)
+    at _invokeMain (wasm://wasm/0008305e:wasm-function[84]:0xb29b)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_bigint_from_test/bigint_from_test.mjs:545:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/bigint_from_test
+[00:01 |  11% | +    0 | -   11]
+
+FAILED: dart2wasm-d8 release_x64 corelib/string_fromcharcodes_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 01.000179s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/string_fromcharcodes_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_fromcharcodes_test/string_fromcharcodes_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 97ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_fromcharcodes_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_fromcharcodes_test/string_fromcharcodes_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_fromcharcodes_test/string_fromcharcodes_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws fails: Did not throw
+    at Expect._fail (wasm://wasm/0009cd5e:wasm-function[763]:0x1e609)
+    at Expect.throws (wasm://wasm/0009cd5e:wasm-function[637]:0x17126)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/string_fromcharcodes_test.dart:17:13 (wasm://wasm/0009cd5e:wasm-function[604]:0x15cf3)
+    at main (wasm://wasm/0009cd5e:wasm-function[88]:0xbe2a)
+    at main tear-off trampoline (wasm://wasm/0009cd5e:wasm-function[90]:0xca7c)
+    at _invokeMain (wasm://wasm/0009cd5e:wasm-function[95]:0xcc8e)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_fromcharcodes_test/string_fromcharcodes_test.mjs:578:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/string_fromcharcodes_test
+[00:01 |  12% | +    0 | -   12]
+
+FAILED: dart2wasm-d8 release_x64 corelib/num_try_parse_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 892ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/num_try_parse_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_num_try_parse_test/num_try_parse_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 62ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_num_try_parse_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_num_try_parse_test/num_try_parse_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_num_try_parse_test/num_try_parse_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <0.0>, actual: <0>, 'parse '0.0'') fails.
+    at Expect._fail (wasm://wasm/00066462:wasm-function[594]:0x13bf2)
+    at Expect.identical (wasm://wasm/00066462:wasm-function[615]:0x14366)
+    at expectNumEquals (wasm://wasm/00066462:wasm-function[613]:0x142db)
+    at testParse (wasm://wasm/00066462:wasm-function[588]:0x13a38)
+    at testDouble (wasm://wasm/00066462:wasm-function[587]:0x138af)
+    at main (wasm://wasm/00066462:wasm-function[76]:0xa675)
+    at main tear-off trampoline (wasm://wasm/00066462:wasm-function[78]:0xa9d9)
+    at _invokeMain (wasm://wasm/00066462:wasm-function[83]:0xabea)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/num_try_parse_test
+[00:02 |  13% | +    0 | -   13]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_parse_radix_test/01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 850ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_test_01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_01/int_parse_radix_test_01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 59ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_01/int_parse_radix_test_01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_01/int_parse_radix_test_01.wasm
+
+exit code:
+1
+
+stdout:
+FormatException: Invalid radix-2 number
+0
+    at int._handleFormatError (wasm://wasm/00077196:wasm-function[705]:0x16a9e)
+    at int.parse (wasm://wasm/00077196:wasm-function[591]:0x141e8)
+    at main (wasm://wasm/00077196:wasm-function[76]:0xa98f)
+    at main tear-off trampoline (wasm://wasm/00077196:wasm-function[78]:0xac9b)
+    at _invokeMain (wasm://wasm/00077196:wasm-function[83]:0xaeac)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_01/int_parse_radix_test_01.mjs:553:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_parse_radix_test/01
+[00:02 |  15% | +    0 | -   14]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_parsed_arith_vm_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 876ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/integer_parsed_arith_vm_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_arith_vm_test/integer_parsed_arith_vm_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 62ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_arith_vm_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_arith_vm_test/integer_parsed_arith_vm_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_arith_vm_test/integer_parsed_arith_vm_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <72057594037927940>, actual: <72057594037927940>) fails.
+    at Expect._fail (wasm://wasm/0006a01e:wasm-function[603]:0x14863)
+    at Expect.equals (wasm://wasm/0006a01e:wasm-function[594]:0x14573)
+    at addSubParsed (wasm://wasm/0006a01e:wasm-function[631]:0x15386)
+    at testAddSub (wasm://wasm/0006a01e:wasm-function[585]:0x1381f)
+    at main (wasm://wasm/0006a01e:wasm-function[76]:0xaa95)
+    at main tear-off trampoline (wasm://wasm/0006a01e:wasm-function[78]:0xaabe)
+    at _invokeMain (wasm://wasm/0006a01e:wasm-function[83]:0xaccf)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_arith_vm_test/integer_parsed_arith_vm_test.mjs:643:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_parsed_arith_vm_test
+[00:02 |  16% | +    0 | -   15][00:02 |  17% | +    1 | -   15]
+
+FAILED: dart2wasm-d8 release_x64 corelib/num_parse_test/01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 868ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/num_parse_test_01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_01/num_parse_test_01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 69ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_01/num_parse_test_01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_01/num_parse_test_01.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <9007199254740992>, actual: <9007199254740992>, 'parse '9007199254740992'') fails.
+    at Expect._fail (wasm://wasm/00078302:wasm-function[622]:0x155a5)
+    at Expect.identical (wasm://wasm/00078302:wasm-function[716]:0x17408)
+    at expectNumEquals (wasm://wasm/00078302:wasm-function[714]:0x1737d)
+    at testParse (wasm://wasm/00078302:wasm-function[588]:0x14498)
+    at testInt (wasm://wasm/00078302:wasm-function[585]:0x14141)
+    at testIntAround (wasm://wasm/00078302:wasm-function[586]:0x142c9)
+    at main (wasm://wasm/00078302:wasm-function[76]:0xb09c)
+    at main tear-off trampoline (wasm://wasm/00078302:wasm-function[78]:0xb42d)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/num_parse_test/01
+[00:02 |  18% | +    1 | -   16]
+
+FAILED: dart2wasm-d8 release_x64 corelib/num_parse_test/none
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 888ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/num_parse_test_none.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_none/num_parse_test_none.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 66ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_none /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_none/num_parse_test_none.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_num_parse_test_none/num_parse_test_none.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <9007199254740992>, actual: <9007199254740992>, 'parse '9007199254740992'') fails.
+    at Expect._fail (wasm://wasm/000782e6:wasm-function[622]:0x15598)
+    at Expect.identical (wasm://wasm/000782e6:wasm-function[716]:0x173fb)
+    at expectNumEquals (wasm://wasm/000782e6:wasm-function[714]:0x17370)
+    at testParse (wasm://wasm/000782e6:wasm-function[588]:0x1448b)
+    at testInt (wasm://wasm/000782e6:wasm-function[585]:0x14134)
+    at testIntAround (wasm://wasm/000782e6:wasm-function[586]:0x142bc)
+    at main (wasm://wasm/000782e6:wasm-function[76]:0xb09c)
+    at main tear-off trampoline (wasm://wasm/000782e6:wasm-function[78]:0xb420)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/num_parse_test/none
+[00:02 |  19% | +    1 | -   17][00:02 |  20% | +    2 | -   17]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_try_parse_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 826ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/int_try_parse_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_try_parse_test/int_try_parse_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 572ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_try_parse_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_try_parse_test/int_try_parse_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_try_parse_test/int_try_parse_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.isNull(actual: <0>) fails.
+    at Expect._fail (wasm://wasm/0007808e:wasm-function[609]:0x14685)
+    at Expect.isNull (wasm://wasm/0007808e:wasm-function[607]:0x14644)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/int_try_parse_test.dart:102:17 (wasm://wasm/0007808e:wasm-function[586]:0x142d5)
+    at main (wasm://wasm/0007808e:wasm-function[76]:0xaecd)
+    at main tear-off trampoline (wasm://wasm/0007808e:wasm-function[78]:0xb03e)
+    at _invokeMain (wasm://wasm/0007808e:wasm-function[83]:0xb24f)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_int_try_parse_test/int_try_parse_test.mjs:568:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_try_parse_test
+[00:02 |  21% | +    2 | -   18]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_parse_radix_test/none
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 861ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_test_none.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_none/int_parse_radix_test_none.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 577ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_none /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_none/int_parse_radix_test_none.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_none/int_parse_radix_test_none.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws(0x10/2) fails: Did not throw
+    at Expect._fail (wasm://wasm/000771de:wasm-function[616]:0x14e12)
+    at Expect.throws (wasm://wasm/000771de:wasm-function[607]:0x147de)
+    at Expect.throwsFormatException (wasm://wasm/000771de:wasm-function[598]:0x14324)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_test_none.dart:94:17 (wasm://wasm/000771de:wasm-function[586]:0x1401a)
+    at main (wasm://wasm/000771de:wasm-function[76]:0xac4c)
+    at main tear-off trampoline (wasm://wasm/000771de:wasm-function[78]:0xac9b)
+    at _invokeMain (wasm://wasm/000771de:wasm-function[83]:0xaeac)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_none/int_parse_radix_test_none.mjs:553:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_parse_radix_test/none
+[00:02 |  22% | +    2 | -   19]
+
+FAILED: dart2wasm-d8 release_x64 corelib/string_replace_dollar_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 917ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/string_replace_dollar_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_replace_dollar_test/string_replace_dollar_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 63ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_replace_dollar_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_replace_dollar_test/string_replace_dollar_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_replace_dollar_test/string_replace_dollar_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <'$'\x0A>, actual: <'\x0A>) fails.
+    at Expect._fail (wasm://wasm/0006a33e:wasm-function[663]:0x148f5)
+    at Expect.equals (wasm://wasm/0006a33e:wasm-function[597]:0x135e9)
+    at main (wasm://wasm/0006a33e:wasm-function[87]:0xa59b)
+    at main tear-off trampoline (wasm://wasm/0006a33e:wasm-function[89]:0xa5f4)
+    at _invokeMain (wasm://wasm/0006a33e:wasm-function[94]:0xa806)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_string_replace_dollar_test/string_replace_dollar_test.mjs:561:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/string_replace_dollar_test
+[00:02 |  23% | +    2 | -   20]
+
+FAILED: dart2wasm-d8 release_x64 corelib/integer_parsed_mul_div_vm_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 910ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/corelib/integer_parsed_mul_div_vm_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_mul_div_vm_test/integer_parsed_mul_div_vm_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 80ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_mul_div_vm_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_mul_div_vm_test/integer_parsed_mul_div_vm_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_mul_div_vm_test/integer_parsed_mul_div_vm_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <9223372036854776000>, actual: <9223372036854776000>) fails.
+    at Expect._fail (wasm://wasm/00063fca:wasm-function[594]:0x133c5)
+    at Expect.equals (wasm://wasm/00063fca:wasm-function[588]:0x1322b)
+    at mulDivParsed (wasm://wasm/00063fca:wasm-function[586]:0x12e50)
+    at testMultiplyDivide (wasm://wasm/00063fca:wasm-function[585]:0x12dd3)
+    at main (wasm://wasm/00063fca:wasm-function[76]:0xa002)
+    at main tear-off trampoline (wasm://wasm/00063fca:wasm-function[78]:0xa013)
+    at _invokeMain (wasm://wasm/00063fca:wasm-function[83]:0xa224)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_corelib_integer_parsed_mul_div_vm_test/integer_parsed_mul_div_vm_test.mjs:551:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/integer_parsed_mul_div_vm_test
+[00:02 |  24% | +    2 | -   21]
+
+FAILED: dart2wasm-d8 release_x64 corelib/int_parse_radix_test/02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 899ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_test_02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_02/int_parse_radix_test_02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 547ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_02/int_parse_radix_test_02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_02/int_parse_radix_test_02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws(0x10/2) fails: Did not throw
+    at Expect._fail (wasm://wasm/00077cf6:wasm-function[621]:0x15002)
+    at Expect.throws (wasm://wasm/00077cf6:wasm-function[612]:0x149ce)
+    at Expect.throwsFormatException (wasm://wasm/00077cf6:wasm-function[603]:0x14514)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/int_parse_radix_test_02.dart:94:17 (wasm://wasm/00077cf6:wasm-function[588]:0x14153)
+    at main (wasm://wasm/00077cf6:wasm-function[78]:0xad2d)
+    at main tear-off trampoline (wasm://wasm/00077cf6:wasm-function[80]:0xad7c)
+    at _invokeMain (wasm://wasm/00077cf6:wasm-function[85]:0xaf8d)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_int_parse_radix_test_02/int_parse_radix_test_02.mjs:553:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/int_parse_radix_test/02
+[00:02 |  25% | +    2 | -   22]
+
+FAILED: dart2wasm-d8 release_x64 corelib/string_trimlr_test/none
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 918ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/string_trimlr_test_none.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_none/string_trimlr_test_none.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 74ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_none /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_none/string_trimlr_test_none.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_none/string_trimlr_test_none.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <a\x09a>, actual: <a\x09a>, 'L7') fails. Strings equal but not identical.
+    at Expect._fail (wasm://wasm/0007c172:wasm-function[620]:0x15ed6)
+    at Expect.identical (wasm://wasm/0007c172:wasm-function[591]:0x1487d)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/string_trimlr_test_none.dart:52:7 (wasm://wasm/0007c172:wasm-function[587]:0x13f75)
+    at main (wasm://wasm/0007c172:wasm-function[77]:0xa95f)
+    at main tear-off trampoline (wasm://wasm/0007c172:wasm-function[79]:0xaa5e)
+    at _invokeMain (wasm://wasm/0007c172:wasm-function[84]:0xac6f)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_none/string_trimlr_test_none.mjs:546:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/string_trimlr_test/none
+[00:03 |  26% | +    2 | -   23]
+
+FAILED: dart2wasm-d8 release_x64 corelib/string_trimlr_test/unicode63
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 938ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/string_trimlr_test_unicode63.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_unicode63/string_trimlr_test_unicode63.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 73ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_unicode63 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_unicode63/string_trimlr_test_unicode63.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_unicode63/string_trimlr_test_unicode63.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <a\x09a>, actual: <a\x09a>, 'L7') fails. Strings equal but not identical.
+    at Expect._fail (wasm://wasm/0007c1f6:wasm-function[620]:0x15ef2)
+    at Expect.identical (wasm://wasm/0007c1f6:wasm-function[591]:0x14899)
+    at main closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_tests/corelib/string_trimlr_test_unicode63.dart:52:7 (wasm://wasm/0007c1f6:wasm-function[587]:0x13f91)
+    at main (wasm://wasm/0007c1f6:wasm-function[77]:0xa95f)
+    at main tear-off trampoline (wasm://wasm/0007c1f6:wasm-function[79]:0xaa7a)
+    at _invokeMain (wasm://wasm/0007c1f6:wasm-function[84]:0xac8b)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/multitest_corelib_string_trimlr_test_unicode63/string_trimlr_test_unicode63.mjs:546:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 corelib/string_trimlr_test/unicode63
+[00:03 |  27% | +    2 | -   24][00:03 |  29% | +    3 | -   24][00:03 |  30% | +    4 | -   24][00:03 |  31% | +    5 | -   24][00:03 |  32% | +    6 | -   24]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_9_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 891ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_9_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_9_test/int64_literal_runtime_9_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 63ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_9_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_9_test/int64_literal_runtime_9_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_9_test/int64_literal_runtime_9_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602de:wasm-function[585]:0x12ad5)
+    at Expect.equals (wasm://wasm/000602de:wasm-function[581]:0x12929)
+    at main (wasm://wasm/000602de:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602de:wasm-function[74]:0x9bdc)
+    at _invokeMain (wasm://wasm/000602de:wasm-function[79]:0x9ded)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_9_test/int64_literal_runtime_9_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_9_test
+[00:03 |  33% | +    6 | -   25]
+
+FAILED: dart2wasm-d8 release_x64 language/regress/regress23244_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 949ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/regress/regress23244_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_regress_regress23244_test/regress23244_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 57ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_regress_regress23244_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_regress_regress23244_test/regress23244_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_regress_regress23244_test/regress23244_test.wasm
+
+exit code:
+1
+
+stdout:
+Unsupported operation: ReceivePort
+    at ReceivePort. (wasm://wasm/0009044a:wasm-function[582]:0x145ba)
+    at main inner (wasm://wasm/0009044a:wasm-function[579]:0x14330)
+    at main (wasm://wasm/0009044a:wasm-function[67]:0xb28a)
+    at main tear-off trampoline (wasm://wasm/0009044a:wasm-function[69]:0xb2af)
+    at _invokeMain (wasm://wasm/0009044a:wasm-function[74]:0xb4c0)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_regress_regress23244_test/regress23244_test.mjs:528:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/regress/regress23244_test
+[00:03 |  34% | +    6 | -   26]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_4_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 824ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_4_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_4_test/int64_literal_runtime_4_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 50ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_4_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_4_test/int64_literal_runtime_4_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_4_test/int64_literal_runtime_4_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602d2:wasm-function[585]:0x12ad2)
+    at Expect.equals (wasm://wasm/000602d2:wasm-function[581]:0x12926)
+    at main (wasm://wasm/000602d2:wasm-function[72]:0x9b34)
+    at main tear-off trampoline (wasm://wasm/000602d2:wasm-function[74]:0x9bd9)
+    at _invokeMain (wasm://wasm/000602d2:wasm-function[79]:0x9dea)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_4_test/int64_literal_runtime_4_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_4_test
+[00:03 |  35% | +    6 | -   27]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_10_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 894ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_10_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_10_test/int64_literal_runtime_10_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 72ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_10_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_10_test/int64_literal_runtime_10_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_10_test/int64_literal_runtime_10_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602ea:wasm-function[585]:0x12ad8)
+    at Expect.equals (wasm://wasm/000602ea:wasm-function[581]:0x1292c)
+    at main (wasm://wasm/000602ea:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602ea:wasm-function[74]:0x9bdf)
+    at _invokeMain (wasm://wasm/000602ea:wasm-function[79]:0x9df0)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_10_test/int64_literal_runtime_10_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_10_test
+[00:03 |  36% | +    6 | -   28]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_11_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 870ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_11_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_11_test/int64_literal_runtime_11_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 58ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_11_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_11_test/int64_literal_runtime_11_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_11_test/int64_literal_runtime_11_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602de:wasm-function[585]:0x12ad5)
+    at Expect.equals (wasm://wasm/000602de:wasm-function[581]:0x12929)
+    at main (wasm://wasm/000602de:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602de:wasm-function[74]:0x9bdc)
+    at _invokeMain (wasm://wasm/000602de:wasm-function[79]:0x9ded)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_11_test/int64_literal_runtime_11_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_11_test
+[00:03 |  37% | +    6 | -   29]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_1_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 932ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_1_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_1_test/int64_literal_runtime_1_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 67ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_1_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_1_test/int64_literal_runtime_1_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_1_test/int64_literal_runtime_1_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602ea:wasm-function[585]:0x12ad8)
+    at Expect.equals (wasm://wasm/000602ea:wasm-function[581]:0x1292c)
+    at main (wasm://wasm/000602ea:wasm-function[72]:0x9b3a)
+    at main tear-off trampoline (wasm://wasm/000602ea:wasm-function[74]:0x9bdf)
+    at _invokeMain (wasm://wasm/000602ea:wasm-function[79]:0x9df0)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_1_test/int64_literal_runtime_1_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_1_test
+[00:03 |  38% | +    6 | -   30]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_5_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 947ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_5_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_5_test/int64_literal_runtime_5_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 52ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_5_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_5_test/int64_literal_runtime_5_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_5_test/int64_literal_runtime_5_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602de:wasm-function[585]:0x12ad5)
+    at Expect.equals (wasm://wasm/000602de:wasm-function[581]:0x12929)
+    at main (wasm://wasm/000602de:wasm-function[72]:0x9b37)
+    at main tear-off trampoline (wasm://wasm/000602de:wasm-function[74]:0x9bdc)
+    at _invokeMain (wasm://wasm/000602de:wasm-function[79]:0x9ded)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_5_test/int64_literal_runtime_5_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_5_test
+[00:04 |  39% | +    6 | -   31]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_7_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 853ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_7_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_7_test/int64_literal_runtime_7_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 58ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_7_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_7_test/int64_literal_runtime_7_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_7_test/int64_literal_runtime_7_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602d2:wasm-function[585]:0x12ad2)
+    at Expect.equals (wasm://wasm/000602d2:wasm-function[581]:0x12926)
+    at main (wasm://wasm/000602d2:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602d2:wasm-function[74]:0x9bd9)
+    at _invokeMain (wasm://wasm/000602d2:wasm-function[79]:0x9dea)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_7_test/int64_literal_runtime_7_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_7_test
+[00:04 |  40% | +    6 | -   32]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 806ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_test/int64_literal_runtime_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 60ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_test/int64_literal_runtime_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_test/int64_literal_runtime_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/0006029e:wasm-function[585]:0x12ac5)
+    at Expect.equals (wasm://wasm/0006029e:wasm-function[581]:0x12919)
+    at main (wasm://wasm/0006029e:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/0006029e:wasm-function[74]:0x9bcc)
+    at _invokeMain (wasm://wasm/0006029e:wasm-function[79]:0x9ddd)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_test/int64_literal_runtime_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_test
+[00:04 |  41% | +    6 | -   33]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_8_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 913ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_8_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_8_test/int64_literal_runtime_8_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 43ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_8_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_8_test/int64_literal_runtime_8_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_8_test/int64_literal_runtime_8_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602ea:wasm-function[585]:0x12ad8)
+    at Expect.equals (wasm://wasm/000602ea:wasm-function[581]:0x1292c)
+    at main (wasm://wasm/000602ea:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602ea:wasm-function[74]:0x9bdf)
+    at _invokeMain (wasm://wasm/000602ea:wasm-function[79]:0x9df0)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_8_test/int64_literal_runtime_8_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_8_test
+[00:04 |  43% | +    6 | -   34]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_6_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 897ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_6_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_6_test/int64_literal_runtime_6_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 70ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_6_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_6_test/int64_literal_runtime_6_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_6_test/int64_literal_runtime_6_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602d2:wasm-function[585]:0x12ad2)
+    at Expect.equals (wasm://wasm/000602d2:wasm-function[581]:0x12926)
+    at main (wasm://wasm/000602d2:wasm-function[72]:0x9b27)
+    at main tear-off trampoline (wasm://wasm/000602d2:wasm-function[74]:0x9bd9)
+    at _invokeMain (wasm://wasm/000602d2:wasm-function[79]:0x9dea)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_6_test/int64_literal_runtime_6_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_6_test
+[00:04 |  44% | +    6 | -   35]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_3_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 840ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_3_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_3_test/int64_literal_runtime_3_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 108ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_3_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_3_test/int64_literal_runtime_3_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_3_test/int64_literal_runtime_3_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602de:wasm-function[585]:0x12ad5)
+    at Expect.equals (wasm://wasm/000602de:wasm-function[581]:0x12929)
+    at main (wasm://wasm/000602de:wasm-function[72]:0x9b37)
+    at main tear-off trampoline (wasm://wasm/000602de:wasm-function[74]:0x9bdc)
+    at _invokeMain (wasm://wasm/000602de:wasm-function[79]:0x9ded)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_3_test/int64_literal_runtime_3_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_3_test
+[00:04 |  45% | +    6 | -   36]
+
+FAILED: dart2wasm-d8 release_x64 language/async/return_throw_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 851ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/async/return_throw_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_async_return_throw_test/return_throw_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 75ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_async_return_throw_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_async_return_throw_test/return_throw_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_async_return_throw_test/return_throw_test.wasm
+
+exit code:
+1
+
+stdout:
+f
+    at f inner (wasm://wasm/0007571a:wasm-function[767]:0x163df)
+    at f (wasm://wasm/0007571a:wasm-function[766]:0x16399)
+    at g inner (wasm://wasm/0007571a:wasm-function[765]:0x162e1)
+    at g (wasm://wasm/0007571a:wasm-function[584]:0x134e9)
+    at main inner (wasm://wasm/0007571a:wasm-function[581]:0x1343c)
+    at main (wasm://wasm/0007571a:wasm-function[72]:0xa6f3)
+    at main tear-off trampoline (wasm://wasm/0007571a:wasm-function[74]:0xa715)
+    at _invokeMain (wasm://wasm/0007571a:wasm-function[79]:0xa926)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/async/return_throw_test
+[00:04 |  46% | +    6 | -   37]
+
+FAILED: dart2wasm-d8 release_x64 language/number/int64_literal_runtime_2_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 964ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/number/int64_literal_runtime_2_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_2_test/int64_literal_runtime_2_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 67ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_2_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_2_test/int64_literal_runtime_2_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_2_test/int64_literal_runtime_2_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(at index 16: Expected <...-9223372036854776000>, Found: <...-9223372036854775808>) fails.
+    at Expect._fail (wasm://wasm/000602de:wasm-function[585]:0x12ad5)
+    at Expect.equals (wasm://wasm/000602de:wasm-function[581]:0x12929)
+    at main (wasm://wasm/000602de:wasm-function[72]:0x9b37)
+    at main tear-off trampoline (wasm://wasm/000602de:wasm-function[74]:0x9bdc)
+    at _invokeMain (wasm://wasm/000602de:wasm-function[79]:0x9ded)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_number_int64_literal_runtime_2_test/int64_literal_runtime_2_test.mjs:510:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/number/int64_literal_runtime_2_test
+[00:04 |  47% | +    6 | -   38]
+
+FAILED: dart2wasm-d8 release_x64 language/operator/arithmetic_int64_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 898ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/language/operator/arithmetic_int64_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_operator_arithmetic_int64_test/arithmetic_int64_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 68ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_operator_arithmetic_int64_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_operator_arithmetic_int64_test/arithmetic_int64_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_operator_arithmetic_int64_test/arithmetic_int64_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <1234567890123456800>, actual: <1234567890123456800>) fails.
+    at Expect._fail (wasm://wasm/0006046a:wasm-function[584]:0x12a11)
+    at Expect.equals (wasm://wasm/0006046a:wasm-function[582]:0x129e9)
+    at ArithmeticTest.runOne (wasm://wasm/0006046a:wasm-function[580]:0x128b2)
+    at ArithmeticTest.testMain (wasm://wasm/0006046a:wasm-function[579]:0x12894)
+    at main (wasm://wasm/0006046a:wasm-function[70]:0x9baf)
+    at main tear-off trampoline (wasm://wasm/0006046a:wasm-function[72]:0x9bc0)
+    at _invokeMain (wasm://wasm/0006046a:wasm-function[77]:0x9dd1)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_language_operator_arithmetic_int64_test/arithmetic_int64_test.mjs:513:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 language/operator/arithmetic_int64_test
+[00:04 |  48% | +    6 | -   39][00:04 |  49% | +    7 | -   39]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/chunked_conversion_json_decode1_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 01.000003s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/chunked_conversion_json_decode1_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_chunked_conversion_json_decode1_test/chunked_conversion_json_decode1_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1818:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertChunked
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/chunked_conversion_json_decode1_test
+[00:04 |  50% | +    7 | -   40]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/json_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 941ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_test/json_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1724:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertSingle
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/json_test
+[00:04 |  51% | +    7 | -   41]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/json_chunk_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 01.000013s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_chunk_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_chunk_test/json_chunk_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 87ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_chunk_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_chunk_test/json_chunk_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_chunk_test/json_chunk_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <0>, actual: <-0.99>, '-|0.99e0:-0.99') fails.
+    at Expect._fail (wasm://wasm/000b0f2e:wasm-function[823]:0x1ce5e)
+    at Expect.equals (wasm://wasm/000b0f2e:wasm-function[819]:0x1ccf9)
+    at jsonTest closure at file:///usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_chunk_test.dart:11:53 (wasm://wasm/000b0f2e:wasm-function[812]:0x1cacd)
+    at closure wrapper at file:///usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_chunk_test.dart:11:53 trampoline (wasm://wasm/000b0f2e:wasm-function[815]:0x1cb17)
+    at _SimpleCallbackSink.close (wasm://wasm/000b0f2e:wasm-function[720]:0x1a93b)
+    at _JsonStringDecoderSink.close (wasm://wasm/000b0f2e:wasm-function[721]:0x1a97e)
+    at _JsonStringDecoderSink.close invocation type checker (wasm://wasm/000b0f2e:wasm-function[623]:0x1769e)
+    at method forwarder for 'close' (wasm://wasm/000b0f2e:wasm-function[621]:0x17574)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/json_chunk_test
+[00:04 |  52% | +    7 | -   42]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/json_utf8_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 968ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_utf8_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_utf8_test/json_utf8_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1818:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertChunked
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/json_utf8_test
+[00:05 |  53% | +    7 | -   43]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/streamed_conversion_json_utf8_decode_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 01.000042s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/streamed_conversion_json_utf8_decode_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_streamed_conversion_json_utf8_decode_test/streamed_conversion_json_utf8_decode_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1818:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertChunked
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/streamed_conversion_json_utf8_decode_test
+[00:05 |  54% | +    7 | -   44][00:05 |  55% | +    8 | -   44][00:05 |  56% | +    9 | -   44]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/codec2_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 975ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/codec2_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_codec2_test/codec2_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1818:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertChunked
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/codec2_test
+[00:05 |  58% | +    9 | -   45][00:05 |  59% | +   10 | -   45][00:05 |  60% | +   11 | -   45]
+
+FAILED: dart2wasm-d8 release_x64 lib/convert/json_utf8_chunk_test
+Expected: Pass
+Actual: Crash
+Unexpected compile error.
+
+--- Command "dart2wasm" (took 01.000051s):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/convert/json_utf8_chunk_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_convert_json_utf8_chunk_test/json_utf8_chunk_test.wasm
+
+exit code:
+255
+
+stdout:
+Exception in StaticInvocation at org-dartlang-sdk:///lib/_internal/vm_shared/lib/convert_patch.dart:1818:23
+
+stderr:
+Unhandled exception:
+allocateOneByteString in JS compatibility mode when compiling member _Utf8Decoder.convertChunked
+#0      Intrinsifier.generateStaticIntrinsic (package:dart2wasm/intrinsics.dart:627)
+#1      CodeGenerator.visitStaticInvocation (package:dart2wasm/code_generator.dart:1756)
+#2      StaticInvocation.accept1 (package:kernel/ast.dart:6486)
+#3      CodeGenerator.wrap (package:dart2wasm/code_generator.dart:882)
+#4      CodeGenerator.visitVariableDeclaration (package:dart2wasm/code_generator.dart:1064)
+#5      VariableDeclaration.accept (package:kernel/ast.dart:10634)
+#6      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#7      CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#8      Block.accept (package:kernel/ast.dart:9098)
+#9      CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#10     CodeGenerator.visitIfStatement.<anonymous closure> (package:dart2wasm/code_generator.dart:1433)
+#11     CodeGenerator._conditional (package:dart2wasm/code_generator.dart:1405)
+#12     CodeGenerator.visitIfStatement (package:dart2wasm/code_generator.dart:1431)
+#13     IfStatement.accept (package:kernel/ast.dart:9989)
+#14     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#15     CodeGenerator.visitBlock (package:dart2wasm/code_generator.dart:1015)
+#16     Block.accept (package:kernel/ast.dart:9098)
+#17     CodeGenerator.visitStatement (package:dart2wasm/code_generator.dart:893)
+#18     CodeGenerator.generateBody (package:dart2wasm/code_generator.dart:578)
+#19     CodeGenerator.generate (package:dart2wasm/code_generator.dart:234)
+#20     Translator.translate (package:dart2wasm/translator.dart:351)
+#21     compileToModule (package:dart2wasm/compile.dart:153)
+<asynchronous suspension>
+#22     main (package:dart2wasm/dart2wasm.dart:143)
+<asynchronous suspension>
+#23     main (file:///usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/dart2wasm.dart:7)
+<asynchronous suspension>
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/convert/json_utf8_chunk_test
+[00:05 |  61% | +   11 | -   46][00:05 |  62% | +   12 | -   46]
+
+FAILED: dart2wasm-d8 release_x64 lib/math/math_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 878ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/math/math_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math_test/math_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 58ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math_test/math_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math_test/math_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <true>, actual: <false>) fails.
+    at Expect._fail (wasm://wasm/00067b4a:wasm-function[606]:0x14277)
+    at Expect.equals (wasm://wasm/00067b4a:wasm-function[603]:0x141fb)
+    at MathTest.testParseInt (wasm://wasm/00067b4a:wasm-function[601]:0x13ef0)
+    at MathTest.testMain (wasm://wasm/00067b4a:wasm-function[589]:0x1330c)
+    at main (wasm://wasm/00067b4a:wasm-function[80]:0xa5c5)
+    at main tear-off trampoline (wasm://wasm/00067b4a:wasm-function[82]:0xa5d6)
+    at _invokeMain (wasm://wasm/00067b4a:wasm-function[87]:0xa7e7)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math_test/math_test.mjs:583:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/math/math_test
+[00:05 |  63% | +   12 | -   47]
+
+FAILED: dart2wasm-d8 release_x64 lib/math/math2_test
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 933ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/lib/math/math2_test.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math2_test/math2_test.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 61ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math2_test /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math2_test/math2_test.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math2_test/math2_test.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <true>, actual: <false>) fails.
+    at Expect._fail (wasm://wasm/0006840a:wasm-function[608]:0x1432b)
+    at Expect.equals (wasm://wasm/0006840a:wasm-function[605]:0x142af)
+    at MathLibraryTest.testParseInt (wasm://wasm/0006840a:wasm-function[603]:0x13fa4)
+    at MathLibraryTest.testMain (wasm://wasm/0006840a:wasm-function[590]:0x1332c)
+    at main (wasm://wasm/0006840a:wasm-function[81]:0xa5e0)
+    at main tear-off trampoline (wasm://wasm/0006840a:wasm-function[83]:0xa5f1)
+    at _invokeMain (wasm://wasm/0006840a:wasm-function[88]:0xa802)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_lib_math_math2_test/math2_test.mjs:583:28)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 lib/math/math2_test
+[00:05 |  64% | +   12 | -   48]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Expressions/Numbers/syntax_t06
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 926ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Expressions/Numbers/syntax_t06.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t06/syntax_t06.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 70ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t06 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t06/syntax_t06.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t06/syntax_t06.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <9223372036854775807>, actual: <9223372036854776000>) fails.
+    at _fail (wasm://wasm/0005dace:wasm-function[577]:0x1271e)
+    at Expect.equals (wasm://wasm/0005dace:wasm-function[576]:0x1270f)
+    at main (wasm://wasm/0005dace:wasm-function[67]:0x9983)
+    at main tear-off trampoline (wasm://wasm/0005dace:wasm-function[69]:0x99d9)
+    at _invokeMain (wasm://wasm/0005dace:wasm-function[74]:0x9bea)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t06/syntax_t06.mjs:494:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Expressions/Numbers/syntax_t06
+[00:06 |  65% | +   12 | -   49]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Expressions/Numbers/syntax_t09
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 885ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Expressions/Numbers/syntax_t09.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t09/syntax_t09.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 59ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t09 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t09/syntax_t09.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t09/syntax_t09.wasm
+
+exit code:
+1
+
+stdout:
+Expect.equals(expected: <1234567899876543210>, actual: <1234567899876543200>) fails.
+    at _fail (wasm://wasm/0005d7ce:wasm-function[577]:0x1265e)
+    at Expect.equals (wasm://wasm/0005d7ce:wasm-function[576]:0x1264f)
+    at main (wasm://wasm/0005d7ce:wasm-function[67]:0x98b7)
+    at main tear-off trampoline (wasm://wasm/0005d7ce:wasm-function[69]:0x98e5)
+    at _invokeMain (wasm://wasm/0005d7ce:wasm-function[74]:0x9af6)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Expressions_Numbers_syntax_t09/syntax_t09.mjs:492:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Expressions/Numbers/syntax_t09
+[00:06 |  66% | +   12 | -   50][00:06 |  67% | +   13 | -   50]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Libraries_and_Scripts/Scripts/top_level_main_t06
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 874ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Libraries_and_Scripts/Scripts/top_level_main_t06.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t06/top_level_main_t06.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 60ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t06 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t06/top_level_main_t06.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t06/top_level_main_t06.wasm
+
+exit code:
+1
+
+stdout:
+Unsupported operation: Platform._resolvedExecutable
+    at _Platform._resolvedExecutable (wasm://wasm/00074212:wasm-function[758]:0x15e85)
+    at _Platform.resolvedExecutable (wasm://wasm/00074212:wasm-function[757]:0x15e70)
+    at Platform.resolvedExecutable (wasm://wasm/00074212:wasm-function[580]:0x134d9)
+    at run_main inner (wasm://wasm/00074212:wasm-function[577]:0x13389)
+    at run_main (wasm://wasm/00074212:wasm-function[576]:0x132fc)
+    at main (wasm://wasm/00074212:wasm-function[67]:0xa5e2)
+    at main tear-off trampoline (wasm://wasm/00074212:wasm-function[70]:0xa60b)
+    at _invokeMain (wasm://wasm/00074212:wasm-function[75]:0xa7f2)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Libraries_and_Scripts/Scripts/top_level_main_t06
+[00:06 |  68% | +   13 | -   51]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Libraries_and_Scripts/Scripts/top_level_main_t01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 834ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Libraries_and_Scripts/Scripts/top_level_main_t01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t01/top_level_main_t01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 71ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t01/top_level_main_t01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Libraries_and_Scripts_Scripts_top_level_main_t01/top_level_main_t01.wasm
+
+exit code:
+1
+
+stdout:
+Unsupported operation: Platform._resolvedExecutable
+    at _Platform._resolvedExecutable (wasm://wasm/00074212:wasm-function[758]:0x15e85)
+    at _Platform.resolvedExecutable (wasm://wasm/00074212:wasm-function[757]:0x15e70)
+    at Platform.resolvedExecutable (wasm://wasm/00074212:wasm-function[580]:0x134d9)
+    at run_main inner (wasm://wasm/00074212:wasm-function[577]:0x13389)
+    at run_main (wasm://wasm/00074212:wasm-function[576]:0x132fc)
+    at main (wasm://wasm/00074212:wasm-function[67]:0xa5e2)
+    at main tear-off trampoline (wasm://wasm/00074212:wasm-function[70]:0xa60b)
+    at _invokeMain (wasm://wasm/00074212:wasm-function[75]:0xa7f2)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Libraries_and_Scripts/Scripts/top_level_main_t01
+[00:06 |  69% | +   13 | -   52]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Functions/element_type_A02_t03
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 969ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Functions/element_type_A02_t03.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t03/element_type_A02_t03.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 71ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t03 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t03/element_type_A02_t03.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t03/element_type_A02_t03.wasm
+
+exit code:
+1
+
+stdout:
+Type 'CastStream<Object?, dynamic>' is not a subtype of type 'FutureOr<Stream<int>>' in type cast
+    at main inner (wasm://wasm/0009b3a6:wasm-function[576]:0x155f9)
+    at _awaitHelper closure at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 (wasm://wasm/0009b3a6:wasm-function[750]:0x185c4)
+    at closure wrapper at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 trampoline (wasm://wasm/0009b3a6:wasm-function[754]:0x18691)
+    at _RootZone.runUnary (wasm://wasm/0009b3a6:wasm-function[635]:0x169e2)
+    at _FutureListener.handleValue (wasm://wasm/0009b3a6:wasm-function[630]:0x1682b)
+    at _Future._propagateToListeners closure at org-dartlang-sdk:///lib/async/future_impl.dart:844:33 (wasm://wasm/0009b3a6:wasm-function[604]:0x16164)
+    at _Future._propagateToListeners (wasm://wasm/0009b3a6:wasm-function[601]:0x15d4b)
+    at _Future._completeWithValue (wasm://wasm/0009b3a6:wasm-function[676]:0x172e4)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Functions/element_type_A02_t03
+[00:06 |  70% | +   13 | -   53]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Functions/element_type_A02_t06
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 895ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Functions/element_type_A02_t06.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t06/element_type_A02_t06.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 73ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t06 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t06/element_type_A02_t06.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t06/element_type_A02_t06.wasm
+
+exit code:
+1
+
+stdout:
+Not Iterable<int?>: List<dynamic>
+    at Expect.isRuntimeTypeImplementsIterable (wasm://wasm/0009f32a:wasm-function[583]:0x15ae7)
+    at main inner (wasm://wasm/0009f32a:wasm-function[577]:0x157a6)
+    at _awaitHelper closure at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 (wasm://wasm/0009f32a:wasm-function[1000]:0x1ca23)
+    at closure wrapper at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 trampoline (wasm://wasm/0009f32a:wasm-function[1003]:0x1cad6)
+    at _RootZone.runUnary (wasm://wasm/0009f32a:wasm-function[638]:0x16e2b)
+    at _FutureListener.handleValue (wasm://wasm/0009f32a:wasm-function[633]:0x16c74)
+    at _Future._propagateToListeners closure at org-dartlang-sdk:///lib/async/future_impl.dart:844:33 (wasm://wasm/0009f32a:wasm-function[607]:0x165ad)
+    at _Future._propagateToListeners (wasm://wasm/0009f32a:wasm-function[604]:0x16194)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Functions/element_type_A02_t06
+[00:06 |  72% | +   13 | -   54][00:06 |  73% | +   14 | -   54]
+
+FAILED: dart2wasm-d8 release_x64 co19/Language/Functions/element_type_A02_t04
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 960ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/Language/Functions/element_type_A02_t04.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t04/element_type_A02_t04.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 58ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t04 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t04/element_type_A02_t04.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_Language_Functions_element_type_A02_t04/element_type_A02_t04.wasm
+
+exit code:
+1
+
+stdout:
+Not a Stream<int>: CastStream<Object?, dynamic>
+    at isRuntimeTypeImplementsStream inner (wasm://wasm/0009b4be:wasm-function[730]:0x17df0)
+    at isRuntimeTypeImplementsStream (wasm://wasm/0009b4be:wasm-function[582]:0x157ca)
+    at main inner (wasm://wasm/0009b4be:wasm-function[576]:0x1562e)
+    at _awaitHelper closure at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 (wasm://wasm/0009b4be:wasm-function[751]:0x185ec)
+    at closure wrapper at org-dartlang-sdk:///lib/_internal/wasm/lib/async_patch.dart:82:16 trampoline (wasm://wasm/0009b4be:wasm-function[755]:0x186b9)
+    at _RootZone.runUnary (wasm://wasm/0009b4be:wasm-function[636]:0x16a0a)
+    at _FutureListener.handleValue (wasm://wasm/0009b4be:wasm-function[631]:0x16853)
+    at _Future._propagateToListeners closure at org-dartlang-sdk:///lib/async/future_impl.dart:844:33 (wasm://wasm/0009b4be:wasm-function[605]:0x1618c)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/Language/Functions/element_type_A02_t04
+[00:06 |  74% | +   14 | -   55][00:06 |  75% | +   15 | -   55][00:06 |  76% | +   16 | -   55][00:06 |  77% | +   17 | -   55][00:06 |  78% | +   18 | -   55][00:07 |  79% | +   19 | -   55][00:07 |  80% | +   20 | -   55][00:07 |  81% | +   21 | -   55][00:07 |  82% | +   22 | -   55][00:07 |  83% | +   23 | -   55][00:07 |  84% | +   24 | -   55][00:07 |  86% | +   25 | -   55][00:07 |  87% | +   26 | -   55][00:07 |  88% | +   27 | -   55][00:07 |  89% | +   28 | -   55][00:07 |  90% | +   29 | -   55][00:07 |  91% | +   30 | -   55][00:08 |  92% | +   31 | -   55]
+
+FAILED: dart2wasm-d8 release_x64 co19/LibTest/core/String/trim_A01_t02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 736ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/LibTest/core/String/trim_A01_t02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_String_trim_A01_t02/trim_A01_t02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 39ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_String_trim_A01_t02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_String_trim_A01_t02/trim_A01_t02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_String_trim_A01_t02/trim_A01_t02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.identical(expected: <string>, actual: <string>) fails.
+    at _fail (wasm://wasm/0005e72e:wasm-function[581]:0x1269a)
+    at Expect.identical (wasm://wasm/0005e72e:wasm-function[579]:0x1267b)
+    at main (wasm://wasm/0005e72e:wasm-function[69]:0x98b5)
+    at main tear-off trampoline (wasm://wasm/0005e72e:wasm-function[71]:0x98c6)
+    at _invokeMain (wasm://wasm/0005e72e:wasm-function[76]:0x9ad7)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_String_trim_A01_t02/trim_A01_t02.mjs:496:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/LibTest/core/String/trim_A01_t02
+[00:08 |  93% | +   31 | -   56][00:08 |  94% | +   32 | -   56][00:08 |  95% | +   33 | -   56]
+
+FAILED: dart2wasm-d8 release_x64 co19/LibTest/core/int/parse_A02_t01
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 740ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/LibTest/core/int/parse_A02_t01.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A02_t01/parse_A02_t01.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 37ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A02_t01 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A02_t01/parse_A02_t01.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A02_t01/parse_A02_t01.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws() fails
+    at _fail (wasm://wasm/00061126:wasm-function[595]:0x1303e)
+    at Expect.throws (wasm://wasm/00061126:wasm-function[586]:0x12ae2)
+    at checkFE (wasm://wasm/00061126:wasm-function[579]:0x12903)
+    at main (wasm://wasm/00061126:wasm-function[70]:0x9ba3)
+    at main tear-off trampoline (wasm://wasm/00061126:wasm-function[72]:0x9bfa)
+    at _invokeMain (wasm://wasm/00061126:wasm-function[77]:0x9e0b)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A02_t01/parse_A02_t01.mjs:515:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/LibTest/core/int/parse_A02_t01
+[00:08 |  96% | +   33 | -   57]
+
+FAILED: dart2wasm-d8 release_x64 co19/LibTest/core/int/parse_A03_t02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 765ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/LibTest/core/int/parse_A03_t02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A03_t02/parse_A03_t02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 34ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A03_t02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A03_t02/parse_A03_t02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A03_t02/parse_A03_t02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws() fails
+    at _fail (wasm://wasm/00062c9a:wasm-function[609]:0x12f26)
+    at Expect.throws (wasm://wasm/00062c9a:wasm-function[588]:0x12930)
+    at main (wasm://wasm/00062c9a:wasm-function[70]:0x9aa2)
+    at main tear-off trampoline (wasm://wasm/00062c9a:wasm-function[72]:0x9b46)
+    at _invokeMain (wasm://wasm/00062c9a:wasm-function[77]:0x9d57)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A03_t02/parse_A03_t02.mjs:503:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/LibTest/core/int/parse_A03_t02
+[00:08 |  97% | +   33 | -   58]
+
+FAILED: dart2wasm-d8 release_x64 co19/LibTest/core/int/parse_A04_t02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 728ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/LibTest/core/int/parse_A04_t02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A04_t02/parse_A04_t02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 40ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A04_t02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A04_t02/parse_A04_t02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A04_t02/parse_A04_t02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws() fails
+    at _fail (wasm://wasm/00061d4e:wasm-function[603]:0x12e8d)
+    at Expect.throws (wasm://wasm/00061d4e:wasm-function[586]:0x128d1)
+    at main (wasm://wasm/00061d4e:wasm-function[70]:0x9acd)
+    at main tear-off trampoline (wasm://wasm/00061d4e:wasm-function[72]:0x9b32)
+    at _invokeMain (wasm://wasm/00061d4e:wasm-function[77]:0x9d43)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A04_t02/parse_A04_t02.mjs:508:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/LibTest/core/int/parse_A04_t02
+[00:08 |  98% | +   33 | -   59]
+
+FAILED: dart2wasm-d8 release_x64 co19/LibTest/core/int/parse_A01_t02
+Expected: Pass
+Actual: RuntimeError
+
+--- Command "dart2wasm" (took 825ms):
+DART_CONFIGURATION=ReleaseX64 sdk/bin/dart2wasm_developer -Dtest_runner.configuration=dart2wasm-linux-jscm-d8 /usr/local/google/home/omersa/dart/sdk/sdk/tests/co19/src/LibTest/core/int/parse_A01_t02.dart --js-compatibility /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A01_t02/parse_A01_t02.wasm
+
+exit code:
+0
+
+--- Command "d8" (took 54ms):
+DART_CONFIGURATION=ReleaseX64 TEST_COMPILATION_DIR=/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A01_t02 /usr/local/google/home/omersa/dart/sdk/sdk/third_party/d8/linux/d8 --experimental-wasm-gc --experimental-wasm-type-reflection --wasm-final-types --wasm-disable-deprecated pkg/dart2wasm/bin/run_wasm.js -- /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A01_t02/parse_A01_t02.mjs /usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A01_t02/parse_A01_t02.wasm
+
+exit code:
+1
+
+stdout:
+Expect.throws() fails
+    at _fail (wasm://wasm/00061b7a:wasm-function[600]:0x12fbb)
+    at Expect.throws (wasm://wasm/00061b7a:wasm-function[587]:0x12a0b)
+    at main (wasm://wasm/00061b7a:wasm-function[70]:0x9b16)
+    at main tear-off trampoline (wasm://wasm/00061b7a:wasm-function[72]:0x9b4d)
+    at _invokeMain (wasm://wasm/00061b7a:wasm-function[77]:0x9d5e)
+    at Module.invoke (/usr/local/google/home/omersa/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-jscm-d8/tests_co19_src_LibTest_core_int_parse_A01_t02/parse_A01_t02.mjs:508:28)
+    at main (pkg/dart2wasm/bin/run_wasm.js:351:21)
+    at async action (pkg/dart2wasm/bin/run_wasm.js:296:37)
+pkg/dart2wasm/bin/run_wasm.js:289: [object WebAssembly.Exception]
+  }
+  ^
+
+1 pending unhandled Promise rejection(s) detected.
+
+--- Re-run this test:
+python3 tools/test.py -n dart2wasm-linux-jscm-d8 co19/LibTest/core/int/parse_A01_t02
+[00:08 | 100% | +   33 | -   60]
+
+=== 33 tests passed, 60 failed ===
