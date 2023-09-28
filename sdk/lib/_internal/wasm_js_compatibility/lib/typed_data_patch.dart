@@ -27,8 +27,8 @@ class ByteData {
 class Uint8List {
   @patch
   factory Uint8List(int length) {
-    return JSUint8ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Uint8Array(l)', length.toDouble()));
+    return JSUint8ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l))', length.toDouble()));
   }
 
   @patch
@@ -40,8 +40,8 @@ class Uint8List {
 class Int8List {
   @patch
   factory Int8List(int length) {
-    return JSInt8ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Int8Array(l)', length.toDouble()));
+    return JSInt8ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l))', length.toDouble()));
   }
 
   @patch
@@ -54,7 +54,7 @@ class Uint8ClampedList {
   @patch
   factory Uint8ClampedList(int length) {
     return JSUint8ClampedArrayImpl(js.JS<WasmExternRef?>(
-        'l => new Uint8ClampedArray(l)', length.toDouble()));
+        'l => new DataView(new ArrayBuffer(l))', length.toDouble()));
   }
 
   @patch
@@ -66,8 +66,8 @@ class Uint8ClampedList {
 class Uint16List {
   @patch
   factory Uint16List(int length) {
-    return JSUint16ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Uint16Array(l)', length.toDouble()));
+    return JSUint16ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 2))', length.toDouble()));
   }
 
   @patch
@@ -79,8 +79,8 @@ class Uint16List {
 class Int16List {
   @patch
   factory Int16List(int length) {
-    return JSInt16ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Int16Array(l)', length.toDouble()));
+    return JSInt16ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 2))', length.toDouble()));
   }
 
   @patch
@@ -92,8 +92,8 @@ class Int16List {
 class Uint32List {
   @patch
   factory Uint32List(int length) {
-    return JSUint32ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Uint32Array(l)', length.toDouble()));
+    return JSUint32ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 4))', length.toDouble()));
   }
 
   @patch
@@ -105,8 +105,8 @@ class Uint32List {
 class Int32List {
   @patch
   factory Int32List(int length) {
-    return JSInt32ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Int32Array(l)', length.toDouble()));
+    return JSInt32ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 4))', length.toDouble()));
   }
 
   @patch
@@ -118,8 +118,9 @@ class Int32List {
 class Int32x4List {
   @patch
   factory Int32x4List(int length) {
-    return JSInt32x4ArrayImpl.externalStorage(JSInt32ArrayImpl(js
-        .JS<WasmExternRef?>('l => new Int32Array(l * 4)', length.toDouble())));
+    return JSInt32x4ArrayImpl.externalStorage(JSInt32ArrayImpl(
+        js.JS<WasmExternRef?>(
+            'l => new DataView(new ArrayBuffer(l * 16))', length.toDouble())));
   }
 
   @patch
@@ -137,8 +138,8 @@ class Int32x4List {
 class Int64List {
   @patch
   factory Int64List(int length) {
-    return JSBigInt64ArrayImpl(
-        js.JS<WasmExternRef?>('l => new BigInt64Array(l)', length.toDouble()));
+    return JSBigInt64ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 8))', length.toDouble()));
   }
 
   @patch
@@ -150,8 +151,8 @@ class Int64List {
 class Uint64List {
   @patch
   factory Uint64List(int length) {
-    return JSBigUint64ArrayImpl(
-        js.JS<WasmExternRef?>('l => new BigUint64Array(l)', length.toDouble()));
+    return JSBigUint64ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 8))', length.toDouble()));
   }
 
   @patch
@@ -163,8 +164,8 @@ class Uint64List {
 class Float32List {
   @patch
   factory Float32List(int length) {
-    return JSFloat32ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Float32Array(l)', length.toDouble()));
+    return JSFloat32ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 8))', length.toDouble()));
   }
 
   @patch
@@ -178,7 +179,7 @@ class Float32x4List {
   factory Float32x4List(int length) {
     return JSFloat32x4ArrayImpl.externalStorage(JSFloat32ArrayImpl(
         js.JS<WasmExternRef?>(
-            'l => new Float32Array(l * 4)', length.toDouble())));
+            'l => new DataView(new ArrayBuffer(l * 16))', length.toDouble())));
   }
 
   @patch
@@ -196,8 +197,8 @@ class Float32x4List {
 class Float64List {
   @patch
   factory Float64List(int length) {
-    return JSFloat64ArrayImpl(
-        js.JS<WasmExternRef?>('l => new Float64Array(l)', length.toDouble()));
+    return JSFloat64ArrayImpl(js.JS<WasmExternRef?>(
+        'l => new DataView(new ArrayBuffer(l * 8))', length.toDouble()));
   }
 
   @patch
@@ -211,7 +212,7 @@ class Float64x2List {
   factory Float64x2List(int length) {
     return JSFloat64x2ArrayImpl.externalStorage(JSFloat64ArrayImpl(
         js.JS<WasmExternRef?>(
-            'l => new Float64Array(l * 2)', length.toDouble())));
+            'l => new DataView(new ArrayBuffer(l * 16))', length.toDouble())));
   }
 
   @patch

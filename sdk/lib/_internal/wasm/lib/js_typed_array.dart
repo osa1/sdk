@@ -5,6 +5,7 @@
 part of dart._js_types;
 
 final class JSArrayBufferImpl implements ByteBuffer {
+  /// `externref` of a JS `ArrayBuffer`.
   final WasmExternRef? _ref;
 
   JSArrayBufferImpl(this._ref);
@@ -81,6 +82,7 @@ final class JSArrayBufferImpl implements ByteBuffer {
 }
 
 final class JSArrayBufferViewImpl implements TypedData {
+  /// `externref` of a JS `DataView` or a typed array (in subclasses).
   final WasmExternRef? _ref;
 
   JSArrayBufferViewImpl(this._ref);
