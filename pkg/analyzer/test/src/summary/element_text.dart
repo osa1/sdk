@@ -53,6 +53,7 @@ class ElementTextConfiguration {
   bool withNonSynthetic = false;
   bool withPropertyLinking = false;
   bool withRedirectedConstructors = false;
+  bool withReferences = false;
   bool withSyntheticDartCoreImport = false;
 
   ElementTextConfiguration({
@@ -461,12 +462,13 @@ class _ElementWriter {
     }
   }
 
-  void _writeExtensionElement(ExtensionElement e) {
+  void _writeExtensionElement(ExtensionElementImpl e) {
     _sink.writeIndentedLine(() {
       _writeName(e);
     });
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);
@@ -506,6 +508,7 @@ class _ElementWriter {
     });
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);
@@ -584,6 +587,7 @@ class _ElementWriter {
     });
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);
@@ -658,6 +662,15 @@ class _ElementWriter {
   }
 
   void _writeLibraryOrAugmentationElement(LibraryOrAugmentationElementImpl e) {
+    if (e is LibraryAugmentationElementImpl) {
+      if (e.macroGenerated case final macroGenerated?) {
+        _sink.writelnWithIndent('macroGeneratedCode');
+        _sink.writeln('---');
+        _sink.write(macroGenerated.code);
+        _sink.writeln('---');
+      }
+    }
+
     _writeDocumentation(e);
     _writeMetadata(e);
     _writeSinceSdkVersion(e);
@@ -670,15 +683,6 @@ class _ElementWriter {
     }
 
     _writeElements('exports', e.libraryExports, _writeExportElement);
-
-    if (e is LibraryAugmentationElementImpl) {
-      if (e.macroGenerated case final macroGenerated?) {
-        _sink.writelnWithIndent('macroGeneratedCode');
-        _sink.writeln('---');
-        _sink.writeln(macroGenerated.code);
-        _sink.writeln('---');
-      }
-    }
 
     _sink.writelnWithIndent('definingUnit');
     _sink.withIndent(() {
@@ -912,6 +916,7 @@ class _ElementWriter {
     }
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);
@@ -936,7 +941,9 @@ class _ElementWriter {
     if (e.isSynthetic) {
       expect(e.nameOffset, -1);
     } else {
-      expect(e.getter, isNotNull);
+      if (!e.isAugmentation) {
+        expect(e.getter, isNotNull);
+      }
 
       if (!e.isTempAugmentation) {
         expect(e.nameOffset, isPositive);
@@ -979,6 +986,7 @@ class _ElementWriter {
     }
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);
@@ -992,6 +1000,19 @@ class _ElementWriter {
       _writeAugmentationTarget(e);
       _writeAugmentation(e);
     });
+  }
+
+  void _writeReference(ElementImpl e) {
+    if (!configuration.withReferences) {
+      return;
+    }
+
+    if (e.reference case final reference?) {
+      _sink.writeIndentedLine(() {
+        _sink.write('reference: ');
+        _elementPrinter.writeReference(reference);
+      });
+    }
   }
 
   void _writeShouldUseTypeForInitializerInference(
@@ -1049,6 +1070,7 @@ class _ElementWriter {
     });
 
     _sink.withIndent(() {
+      _writeReference(e);
       _writeDocumentation(e);
       _writeMetadata(e);
       _writeSinceSdkVersion(e);

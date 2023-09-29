@@ -1326,6 +1326,9 @@ $declarationCode
 }
 
 abstract class MacroTypesTest extends MacroElementsBaseTest {
+  @override
+  bool get retainDataForTesting => true;
+
   test_application_newInstance_withoutPrefix() async {
     newFile('$testPackageLibPath/a.dart', r'''
 import 'dart:async';
@@ -1364,11 +1367,13 @@ library
     package:test/test.macro.dart
       macroGeneratedCode
 ---
+library augment 'test.dart';
+
 class MyClass {}
 ---
       definingUnit
         classes
-          class MyClass @6
+          class MyClass @36
             constructors
               synthetic @-1
 ''');
@@ -1412,11 +1417,13 @@ library
     package:test/test.macro.dart
       macroGeneratedCode
 ---
+library augment 'test.dart';
+
 class MyClass {}
 ---
       definingUnit
         classes
-          class MyClass @6
+          class MyClass @36
             constructors
               synthetic @-1
 ''');
@@ -1459,11 +1466,13 @@ library
     package:test/test.macro.dart
       macroGeneratedCode
 ---
+library augment 'test.dart';
+
 class MyClass {}
 ---
       definingUnit
         classes
-          class MyClass @6
+          class MyClass @36
             constructors
               synthetic @-1
 ''');
@@ -1506,14 +1515,587 @@ library
     package:test/test.macro.dart
       macroGeneratedCode
 ---
+library augment 'test.dart';
+
 class MyClass {}
 ---
       definingUnit
         classes
-          class MyClass @6
+          class MyClass @36
             constructors
               synthetic @-1
 ''');
+  }
+
+  test_imports_class() async {
+    useEmptyByteStore();
+
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+import 'dart:async';
+import 'package:_fe_analyzer_shared/src/macros/api.dart';
+import 'a.dart';
+
+macro class MyMacro implements ClassTypesMacro {
+  const MyMacro();
+
+  FutureOr<void> buildTypesForClass(clazz, ClassTypeBuilder builder) async {
+    final identifier = await builder.resolveIdentifier(
+      Uri.parse('package:test/a.dart'),
+      'A',
+    );
+    builder.declareType(
+      'MyClass',
+      DeclarationCode.fromParts([
+        'class MyClass {\n  void foo(',
+        identifier,
+        ' _) {}\n}',
+      ]),
+    );
+  }
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'b.dart';
+
+@MyMacro()
+class X {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false;
+    checkElementText(library, r'''
+library
+  imports
+    package:test/b.dart
+  definingUnit
+    classes
+      class X @35
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+class MyClass {
+  void foo(prefix0.A _) {}
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+      definingUnit
+        classes
+          class MyClass @78
+            methods
+              foo @95
+                parameters
+                  requiredPositional _ @109
+                    type: A
+                returnType: void
+''');
+
+    analyzerStatePrinterConfiguration.filesToPrintContent.add(
+      getFile('$testPackageLibPath/test.macro.dart'),
+    );
+
+    if (keepLinkingLibraries) {
+      assertDriverStateString(testFile, r'''
+files
+  /home/test/lib/a.dart
+    uri: package:test/a.dart
+    current
+      id: file_0
+      kind: library_0
+        libraryImports
+          library_10 dart:core synthetic
+        cycle_0
+          dependencies: dart:core
+          libraries: library_0
+          apiSignature_0
+          users: cycle_1
+      referencingFiles: file_1 file_3
+      unlinkedKey: k00
+  /home/test/lib/b.dart
+    uri: package:test/b.dart
+    current
+      id: file_1
+      kind: library_1
+        libraryImports
+          library_12 dart:async
+          library_4 package:macro/api.dart
+          library_0
+          library_10 dart:core synthetic
+        cycle_1
+          dependencies: cycle_0 dart:core package:macro/api.dart
+          libraries: library_1
+          apiSignature_1
+          users: cycle_2
+      referencingFiles: file_2
+      unlinkedKey: k01
+  /home/test/lib/test.dart
+    uri: package:test/test.dart
+    current
+      id: file_2
+      kind: library_2
+        libraryImports
+          library_1
+          library_10 dart:core synthetic
+        augmentationImports
+          augmentation_3
+        cycle_2
+          dependencies: cycle_1 dart:core
+          libraries: library_2
+          apiSignature_2
+      unlinkedKey: k02
+  /home/test/lib/test.macro.dart
+    uri: package:test/test.macro.dart
+    current
+      id: file_3
+      content
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+class MyClass {
+  void foo(prefix0.A _) {}
+}
+---
+      kind: augmentation_3
+        augmented: library_2
+        library: library_2
+        libraryImports
+          library_0
+          library_10 dart:core synthetic
+      referencingFiles: file_2
+      unlinkedKey: k03
+libraryCycles
+  /home/test/lib/a.dart
+    current: cycle_0
+      key: k04
+    get: []
+    put: [k04]
+  /home/test/lib/b.dart
+    current: cycle_1
+      key: k05
+    get: []
+    put: [k05]
+  /home/test/lib/test.dart
+    current: cycle_2
+      key: k06
+    get: []
+    put: [k06]
+elementFactory
+  hasElement
+    package:test/a.dart
+    package:test/b.dart
+    package:test/test.dart
+''');
+
+      // When we discard the library, we remove its macro file.
+      driverFor(testFile).changeFile(testFile.path);
+      await driverFor(testFile).applyPendingFileChanges();
+      assertDriverStateString(testFile, r'''
+files
+  /home/test/lib/a.dart
+    uri: package:test/a.dart
+    current
+      id: file_0
+      kind: library_0
+        libraryImports
+          library_10 dart:core synthetic
+        cycle_0
+          dependencies: dart:core
+          libraries: library_0
+          apiSignature_0
+          users: cycle_1
+      referencingFiles: file_1
+      unlinkedKey: k00
+  /home/test/lib/b.dart
+    uri: package:test/b.dart
+    current
+      id: file_1
+      kind: library_1
+        libraryImports
+          library_12 dart:async
+          library_4 package:macro/api.dart
+          library_0
+          library_10 dart:core synthetic
+        cycle_1
+          dependencies: cycle_0 dart:core package:macro/api.dart
+          libraries: library_1
+          apiSignature_1
+          users: cycle_6
+      referencingFiles: file_2
+      unlinkedKey: k01
+  /home/test/lib/test.dart
+    uri: package:test/test.dart
+    current
+      id: file_2
+      kind: library_16
+        libraryImports
+          library_1
+          library_10 dart:core synthetic
+        cycle_6
+          dependencies: cycle_1 dart:core
+          libraries: library_16
+          apiSignature_2
+      unlinkedKey: k02
+  /home/test/lib/test.macro.dart
+    uri: package:test/test.macro.dart
+libraryCycles
+  /home/test/lib/a.dart
+    current: cycle_0
+      key: k04
+    get: []
+    put: [k04]
+  /home/test/lib/b.dart
+    current: cycle_1
+      key: k05
+    get: []
+    put: [k05]
+  /home/test/lib/test.dart
+    get: []
+    put: [k06]
+elementFactory
+  hasElement
+    package:test/a.dart
+    package:test/b.dart
+''');
+    } else {
+      assertDriverStateString(testFile, r'''
+files
+  /home/test/lib/a.dart
+    uri: package:test/a.dart
+    current
+      id: file_0
+      kind: library_0
+        libraryImports
+          library_10 dart:core synthetic
+        cycle_0
+          dependencies: dart:core
+          libraries: library_0
+          apiSignature_0
+          users: cycle_1
+      referencingFiles: file_1 file_3
+      unlinkedKey: k00
+  /home/test/lib/b.dart
+    uri: package:test/b.dart
+    current
+      id: file_1
+      kind: library_1
+        libraryImports
+          library_12 dart:async
+          library_4 package:macro/api.dart
+          library_0
+          library_10 dart:core synthetic
+        cycle_1
+          dependencies: cycle_0 dart:core package:macro/api.dart
+          libraries: library_1
+          apiSignature_1
+          users: cycle_2
+      referencingFiles: file_2
+      unlinkedKey: k01
+  /home/test/lib/test.dart
+    uri: package:test/test.dart
+    current
+      id: file_2
+      kind: library_2
+        libraryImports
+          library_1
+          library_10 dart:core synthetic
+        augmentationImports
+          augmentation_3
+        cycle_2
+          dependencies: cycle_1 dart:core
+          libraries: library_2
+          apiSignature_2
+      unlinkedKey: k02
+  /home/test/lib/test.macro.dart
+    uri: package:test/test.macro.dart
+    current
+      id: file_3
+      content
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+class MyClass {
+  void foo(prefix0.A _) {}
+}
+---
+      kind: augmentation_3
+        augmented: library_2
+        library: library_2
+        libraryImports
+          library_0
+          library_10 dart:core synthetic
+      referencingFiles: file_2
+      unlinkedKey: k03
+libraryCycles
+  /home/test/lib/a.dart
+    current: cycle_0
+      key: k04
+    get: []
+    put: [k04]
+  /home/test/lib/b.dart
+    current: cycle_1
+      key: k05
+    get: []
+    put: [k05]
+  /home/test/lib/test.dart
+    current: cycle_2
+      key: k06
+    get: [k06]
+    put: [k06]
+elementFactory
+  hasElement
+    package:test/a.dart
+    package:test/b.dart
+    package:test/test.dart
+  hasReader
+    package:test/test.dart
+''');
+    }
+  }
+
+  test_iterate_merge() async {
+    useEmptyByteStore();
+
+    newFile('$testPackageLibPath/a.dart', r'''
+import 'dart:async';
+import 'package:_fe_analyzer_shared/src/macros/api.dart';
+
+macro class AddClassA implements ClassTypesMacro {
+  const AddClassA();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    final identifier = await builder.resolveIdentifier(
+      Uri.parse('package:test/a.dart'),
+      'AddClassB',
+    );
+    builder.declareType(
+      'MyClass',
+      DeclarationCode.fromParts([
+        '@',
+        identifier,
+        '()\nclass A {}\n',
+      ]),
+    );
+  }
+}
+
+macro class AddClassB implements ClassTypesMacro {
+  const AddClassB();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    builder.declareType(
+      'B',
+      DeclarationCode.fromString('class B {}\n'),
+    );
+  }
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+
+@AddClassA()
+class X {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false;
+    checkElementText(library, r'''
+library
+  imports
+    package:test/a.dart
+  definingUnit
+    classes
+      class X @37
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+@prefix0.AddClassB()
+class A {}
+
+class B {}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+      definingUnit
+        classes
+          class A @99
+          class B @111
+''');
+
+    analyzerStatePrinterConfiguration.filesToPrintContent.add(
+      getFile('$testPackageLibPath/test.macro.dart'),
+    );
+
+    if (keepLinkingLibraries) {
+      assertDriverStateString(testFile, r'''
+files
+  /home/test/lib/a.dart
+    uri: package:test/a.dart
+    current
+      id: file_0
+      kind: library_0
+        libraryImports
+          library_11 dart:async
+          library_3 package:macro/api.dart
+          library_9 dart:core synthetic
+        cycle_0
+          dependencies: dart:core package:macro/api.dart
+          libraries: library_0
+          apiSignature_0
+          users: cycle_1
+      referencingFiles: file_1 file_2
+      unlinkedKey: k00
+  /home/test/lib/test.dart
+    uri: package:test/test.dart
+    current
+      id: file_1
+      kind: library_1
+        libraryImports
+          library_0
+          library_9 dart:core synthetic
+        augmentationImports
+          augmentation_2
+        cycle_1
+          dependencies: cycle_0 dart:core
+          libraries: library_1
+          apiSignature_1
+      unlinkedKey: k01
+  /home/test/lib/test.macro.dart
+    uri: package:test/test.macro.dart
+    current
+      id: file_2
+      content
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+@prefix0.AddClassB()
+class A {}
+
+class B {}
+---
+      kind: augmentation_2
+        augmented: library_1
+        library: library_1
+        libraryImports
+          library_0
+          library_9 dart:core synthetic
+      referencingFiles: file_1
+      unlinkedKey: k02
+libraryCycles
+  /home/test/lib/a.dart
+    current: cycle_0
+      key: k03
+    get: []
+    put: [k03]
+  /home/test/lib/test.dart
+    current: cycle_1
+      key: k04
+    get: []
+    put: [k04]
+elementFactory
+  hasElement
+    package:test/a.dart
+    package:test/test.dart
+''');
+    } else {
+      assertDriverStateString(testFile, r'''
+files
+  /home/test/lib/a.dart
+    uri: package:test/a.dart
+    current
+      id: file_0
+      kind: library_0
+        libraryImports
+          library_11 dart:async
+          library_3 package:macro/api.dart
+          library_9 dart:core synthetic
+        cycle_0
+          dependencies: dart:core package:macro/api.dart
+          libraries: library_0
+          apiSignature_0
+          users: cycle_1
+      referencingFiles: file_1 file_2
+      unlinkedKey: k00
+  /home/test/lib/test.dart
+    uri: package:test/test.dart
+    current
+      id: file_1
+      kind: library_1
+        libraryImports
+          library_0
+          library_9 dart:core synthetic
+        augmentationImports
+          augmentation_2
+        cycle_1
+          dependencies: cycle_0 dart:core
+          libraries: library_1
+          apiSignature_1
+      unlinkedKey: k01
+  /home/test/lib/test.macro.dart
+    uri: package:test/test.macro.dart
+    current
+      id: file_2
+      content
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+@prefix0.AddClassB()
+class A {}
+
+class B {}
+---
+      kind: augmentation_2
+        augmented: library_1
+        library: library_1
+        libraryImports
+          library_0
+          library_9 dart:core synthetic
+      referencingFiles: file_1
+      unlinkedKey: k02
+libraryCycles
+  /home/test/lib/a.dart
+    current: cycle_0
+      key: k03
+    get: []
+    put: [k03]
+  /home/test/lib/test.dart
+    current: cycle_1
+      key: k04
+    get: [k04]
+    put: [k04]
+elementFactory
+  hasElement
+    package:test/a.dart
+    package:test/test.dart
+  hasReader
+    package:test/test.dart
+''');
+    }
   }
 }
 

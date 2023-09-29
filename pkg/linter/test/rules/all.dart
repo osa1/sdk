@@ -8,6 +8,7 @@ import 'annotate_overrides_test.dart' as annotate_overrides;
 import 'annotate_redeclares_test.dart' as annotate_redeclares;
 import 'avoid_annotating_with_dynamic_test.dart'
     as avoid_annotating_with_dynamic;
+import 'avoid_catching_errors_test.dart' as avoid_catching_errors;
 import 'avoid_equals_and_hash_code_on_mutable_classes_test.dart'
     as avoid_equals_and_hash_code_on_mutable_classes;
 import 'avoid_escaping_inner_quotes_test.dart' as avoid_escaping_inner_quotes;
@@ -17,6 +18,7 @@ import 'avoid_function_literals_in_foreach_calls_test.dart'
 import 'avoid_init_to_null_test.dart' as avoid_init_to_null;
 import 'avoid_positional_boolean_parameters_test.dart'
     as avoid_positional_boolean_parameters;
+import 'avoid_print_test.dart' as avoid_print;
 import 'avoid_private_typedef_functions_test.dart'
     as avoid_private_typedef_functions;
 import 'avoid_redundant_argument_values_test.dart'
@@ -43,12 +45,15 @@ import 'avoid_unnecessary_containers_test.dart' as avoid_unnecessary_containers;
 import 'avoid_unused_constructor_parameters_test.dart'
     as avoid_unused_constructor_parameters;
 import 'avoid_void_async_test.dart' as avoid_void_async;
+import 'avoid_web_libraries_in_flutter_test.dart'
+    as avoid_web_libraries_in_flutter;
 import 'await_only_futures_test.dart' as await_only_futures;
 import 'camel_case_extensions_test.dart' as camel_case_extensions;
 import 'camel_case_types_test.dart' as camel_case_types;
 import 'cancel_subscriptions_test.dart' as cancel_subscriptions;
 import 'cast_nullable_to_non_nullable_test.dart'
     as cast_nullable_to_non_nullable;
+import 'close_sinks_test.dart' as close_sinks;
 import 'collection_methods_unrelated_type_test.dart'
     as collection_methods_unrelated_type;
 import 'comment_references_test.dart' as comment_references;
@@ -248,12 +253,14 @@ void main() {
   annotate_overrides.main();
   annotate_redeclares.main();
   avoid_annotating_with_dynamic.main();
+  avoid_catching_errors.main();
   avoid_equals_and_hash_code_on_mutable_classes.main();
   avoid_escaping_inner_quotes.main();
   avoid_final_parameters.main();
   avoid_function_literals_in_foreach_calls.main();
   avoid_init_to_null.main();
   avoid_positional_boolean_parameters.main();
+  avoid_print.main();
   avoid_private_typedef_functions.main();
   avoid_redundant_argument_values.main();
   avoid_relative_lib_imports.main();
@@ -270,11 +277,13 @@ void main() {
   avoid_unnecessary_containers.main();
   avoid_unused_constructor_parameters.main();
   avoid_void_async.main();
+  avoid_web_libraries_in_flutter.main();
   await_only_futures.main();
   camel_case_extensions.main();
   camel_case_types.main();
   cancel_subscriptions.main();
   cast_nullable_to_non_nullable.main();
+  close_sinks.main();
   collection_methods_unrelated_type.main();
   comment_references.main();
   conditional_uri_does_not_exist.main();

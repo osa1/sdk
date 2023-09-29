@@ -824,6 +824,7 @@ class Assembler : public AssemblerBase {
     LoadImmediate(reg, immediate.value());
   }
 
+  void LoadSImmediate(XmmRegister dst, float value);
   void LoadDImmediate(XmmRegister dst, double value);
 
   void Drop(intptr_t stack_elements);
@@ -1073,6 +1074,10 @@ class Assembler : public AssemblerBase {
   void SmiTag(Register reg) override { addl(reg, reg); }
 
   void SmiUntag(Register reg) { sarl(reg, Immediate(kSmiTagSize)); }
+
+  void LoadWordFromBoxOrSmi(Register result, Register value) {
+    UNIMPLEMENTED();
+  }
 
   void BranchIfNotSmi(Register reg,
                       Label* label,

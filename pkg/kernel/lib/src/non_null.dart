@@ -28,9 +28,9 @@ class _NonNullVisitor implements DartTypeVisitor<DartType?> {
   const _NonNullVisitor();
 
   @override
-  DartType? defaultDartType(DartType node) {
+  DartType? visitAuxiliaryType(AuxiliaryType node) {
     throw new UnsupportedError(
-        "Unexpected DartType ${node} (${node.runtimeType})");
+        "Unsupported auxiliary type ${node} (${node.runtimeType}).");
   }
 
   @override
@@ -179,6 +179,11 @@ class _NonNullVisitor implements DartTypeVisitor<DartType?> {
               TypeParameterType.computeNullabilityFromBound(node.parameter)),
           bound);
     }
+  }
+
+  @override
+  DartType? visitStructuralParameterType(StructuralParameterType node) {
+    return null;
   }
 
   @override
