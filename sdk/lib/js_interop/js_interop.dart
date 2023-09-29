@@ -75,9 +75,6 @@ typedef JSAny = js_types.JSAny;
 /// primitives. This is the only allowed `on` type for inline classes written by
 /// users to model JS interop objects. See https://dart.dev/web/js-interop for
 /// more details on how to use JS interop.
-// TODO(srujzs): This class _must_ be sealed before we can make this library
-// public. Either use the CFE mechanisms that exist today, or use the Dart 3
-// sealed classes feature.
 // TODO(joshualitt): Do we need to seal any other JS types on JS backends? We
 // probably want to seal all JS types on Wasm backends.
 // TODO(joshualitt): Add a [JSObject] constructor.

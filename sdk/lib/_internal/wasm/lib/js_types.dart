@@ -84,7 +84,7 @@ class JSAny {
 
 @JS()
 @staticInterop
-class JSObject implements JSAny {
+sealed class JSObject implements JSAny {
   /// Returns a new object literal.
   factory JSObject() => js.JSValue(js.newObjectRaw()) as JSObject;
 }
