@@ -14,6 +14,8 @@ import 'package:analyzer/src/dart/analysis/unlinked_data.dart';
 import 'package:analyzer/src/dart/ast/ast.dart' as ast;
 import 'package:analyzer/src/dart/ast/mixin_super_invoked_names.dart';
 import 'package:analyzer/src/dart/element/element.dart';
+import 'package:analyzer/src/dart/element/field_name_non_promotability_info.dart'
+    as element_model;
 import 'package:analyzer/src/dart/resolver/scope.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary2/combinator.dart';
@@ -64,14 +66,7 @@ abstract class AugmentedInstanceDeclarationBuilder {
         if (existing != null) {
           existing.augmentation = element;
           element.augmentationTarget = existing;
-          // Link the accessor to the variable.
-          final variable = existing.variable;
-          element.variable = variable;
-          if (element.isGetter) {
-            variable.getter = element;
-          } else {
-            variable.setter = element;
-          }
+          element.variable = existing.variable;
         }
       }
       accessors[name] = element;
@@ -99,11 +94,7 @@ abstract class AugmentedInstanceDeclarationBuilder {
         final existing = fields[name];
         if (existing != null) {
           existing.augmentation = element;
-          existing.getter?.variable = element;
-          existing.setter?.variable = element;
           element.augmentationTarget = existing;
-          element.getter = existing.getter;
-          element.setter = existing.setter;
         }
       }
       fields[name] = element;
@@ -1248,6 +1239,14 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement,
         field.isPromotable = true;
       }
     }
+
+    _libraryBuilder.element.fieldNameNonPromotabilityInfo = {
+      for (var MapEntry(:key, :value) in fieldNonPromotabilityInfo.entries)
+        key: element_model.FieldNameNonPromotabilityInfo(
+            conflictingFields: value.conflictingFields,
+            conflictingGetters: value.conflictingGetters,
+            conflictingNsmClasses: value.conflictingNsmClasses)
+    };
   }
 
   /// Records all the non-synthetic instance fields and getters of [class_] into
