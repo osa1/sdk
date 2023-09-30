@@ -325,3 +325,50 @@ abstract class UnmodifiableFloat64ListView implements Float64List {
 
 WasmExternRef? _newDataView(int length) => js.JS<WasmExternRef?>(
     'l => new DataView(new ArrayBuffer(l))', length.toDouble());
+
+@patch
+class Int32x4 {
+  @patch
+  factory Int32x4(int x, int y, int z, int w) = _NaiveInt32x4;
+
+  @patch
+  factory Int32x4.bool(bool x, bool y, bool z, bool w) = _NaiveInt32x4.bool;
+
+  @patch
+  factory Int32x4.fromFloat32x4Bits(Float32x4 x) =
+      _NaiveInt32x4.fromFloat32x4Bits;
+}
+
+@patch
+class Float32x4 {
+  @patch
+  factory Float32x4(double x, double y, double z, double w) = _NaiveFloat32x4;
+
+  @patch
+  factory Float32x4.splat(double v) = _NaiveFloat32x4.splat;
+
+  @patch
+  factory Float32x4.zero() = _NaiveFloat32x4.zero;
+
+  @patch
+  factory Float32x4.fromInt32x4Bits(Int32x4 x) =
+      _NaiveFloat32x4.fromInt32x4Bits;
+
+  @patch
+  factory Float32x4.fromFloat64x2(Float64x2 v) = _NaiveFloat32x4.fromFloat64x2;
+}
+
+@patch
+class Float64x2 {
+  @patch
+  factory Float64x2(double x, double y) = _NaiveFloat64x2;
+
+  @patch
+  factory Float64x2.splat(double v) = _NaiveFloat64x2.splat;
+
+  @patch
+  factory Float64x2.zero() = _NaiveFloat64x2.zero;
+
+  @patch
+  factory Float64x2.fromFloat32x4(Float32x4 v) = _NaiveFloat64x2.fromFloat32x4;
+}
