@@ -168,7 +168,7 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
       .toInt();
 
   int getInt64(int byteOffset, [Endian endian = Endian.big]) => js.JS<int>(
-      '(b, o, e) => b.getBigInt64(o, e)',
+      '(b, o, e) => Number(b.getBigInt64(o, e))',
       toExternRef,
       byteOffset.toDouble(),
       Endian.little == endian);
@@ -188,7 +188,7 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
       .toInt();
 
   int getUint64(int byteOffset, [Endian endian = Endian.big]) => js.JS<int>(
-      '(b, o, e) => b.getBigUint64(o, e)',
+      '(b, o, e) => Number(b.getBigUint64(o, e))',
       toExternRef,
       byteOffset.toDouble(),
       Endian.little == endian);
@@ -214,7 +214,7 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
           byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
 
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigInt64(o, v, e)', toExternRef,
+      js.JS<void>('(b, o, v, e) => b.setBigInt64(o, BigInt(v), e)', toExternRef,
           byteOffset.toDouble(), value, Endian.little == endian);
 
   void setInt8(int byteOffset, int value) => js.JS<void>(
@@ -640,8 +640,8 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>(
-            '(o, i) => o.getBigUint64(i)', toExternRef, (index * 8).toDouble())
+        .JS<double>('(o, i) => Number(o.getBigUint64(i))', toExternRef,
+            (index * 8).toDouble())
         .toInt();
   }
 
@@ -674,15 +674,15 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>(
-            '(o, i) => o.getBigInt64(i)', toExternRef, (index * 8).toDouble())
+        .JS<double>('(o, i) => Number(o.getBigInt64(i))', toExternRef,
+            (index * 8).toDouble())
         .toInt();
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigInt64(i, v)', toExternRef,
+    js.JS<void>('(o, i, v) => o.setBigInt64(i, BigInt(v))', toExternRef,
         (index * 8).toDouble(), value.toDouble());
   }
 
