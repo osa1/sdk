@@ -97,9 +97,6 @@ final class JSArrayBufferImpl implements ByteBuffer {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBufferImpl && js.areEqualInJS(_ref, that._ref);
-
-  @override
-  int get hashCode => 0;
 }
 
 final class JSArrayBufferViewImpl implements TypedData {
@@ -131,9 +128,6 @@ final class JSArrayBufferViewImpl implements TypedData {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBufferViewImpl && js.areEqualInJS(_ref, that._ref);
-
-  @override
-  int get hashCode => 0;
 }
 
 final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
@@ -277,13 +271,14 @@ abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
     // } else {
     List<int> otherList;
     int otherStart;
-    if (iterable is List<int>) {
-      otherList = iterable;
-      otherStart = skipCount;
-    } else {
-      otherList = iterable.skip(skipCount).toList(growable: false);
-      otherStart = 0;
-    }
+    // TODO: "Fast" case below does not handle aliasing.
+    // if (iterable is List<int>) {
+    //   otherList = iterable;
+    //   otherStart = skipCount;
+    // } else {
+    otherList = iterable.skip(skipCount).toList(growable: false);
+    otherStart = 0;
+    // }
     Lists.copy(otherList, otherStart, this, start, count);
     // }
   }
