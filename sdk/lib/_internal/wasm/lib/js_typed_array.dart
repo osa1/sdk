@@ -278,9 +278,20 @@ abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
     // } else {
     otherList = iterable.skip(skipCount).toList(growable: false);
     otherStart = 0;
+
+    print(
+        "otherList=$otherList, otherStart=$otherStart, start=$start, count=$count");
+
     // }
-    Lists.copy(otherList, otherStart, this, start, count);
+    _copy(otherList, otherStart, this, start, count);
     // }
+  }
+}
+
+void _copy(List src, int srcStart, List dst, int dstStart, int count) {
+  for (int i = srcStart, j = dstStart; i < srcStart + count; i++, j++) {
+    print('dst[$j] = ${src[i]}');
+    dst[j] = src[i];
   }
 }
 
@@ -417,15 +428,16 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>('(o, i) => o.getUint16(i)', toExternRef, index.toDouble())
+        .JS<double>(
+            '(o, i) => o.getUint16(i)', toExternRef, (index * 2).toDouble())
         .toInt();
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint16(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    js.JS<void>('(o, i, v) => o.setUint16(i, v)', toExternRef,
+        (index * 2).toDouble(), value.toDouble());
   }
 
   @override
@@ -460,15 +472,16 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>('(o, i) => o.getInt16(i)', toExternRef, index.toDouble())
+        .JS<double>(
+            '(o, i) => o.getInt16(i)', toExternRef, (index * 2).toDouble())
         .toInt();
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setInt16(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    js.JS<void>('(o, i, v) => o.setInt16(i, v)', toExternRef,
+        (index * 2).toDouble(), value.toDouble());
   }
 
   @override
@@ -503,15 +516,16 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>('(o, i) => o.getUint32(i)', toExternRef, index.toDouble())
+        .JS<double>(
+            '(o, i) => o.getUint32(i)', toExternRef, (index * 4).toDouble())
         .toInt();
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint32(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    js.JS<void>('(o, i, v) => o.setUint32(i, v)', toExternRef,
+        (index * 4).toDouble(), value.toDouble());
   }
 
   @override
@@ -546,15 +560,16 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>('(o, i) => o.getInt32(i)', toExternRef, index.toDouble())
+        .JS<double>(
+            '(o, i) => o.getInt32(i)', toExternRef, (index * 4).toDouble())
         .toInt();
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setInt32(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    js.JS<void>('(o, i, v) => o.setInt32(i, v)', toExternRef,
+        (index * 4).toDouble(), value.toDouble());
   }
 
   @override
@@ -645,7 +660,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
     IndexError.check(index, length);
     return js
         .JS<double>(
-            '(o, i) => o.getBigUint64(i)', toExternRef, index.toDouble())
+            '(o, i) => o.getBigUint64(i)', toExternRef, (index * 8).toDouble())
         .toInt();
   }
 
@@ -653,7 +668,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   void operator []=(int index, int value) {
     IndexError.check(index, length);
     js.JS<void>('(o, i, v) => o.setBigUint64(i, v)', toExternRef,
-        index.toDouble(), value.toDouble());
+        (index * 8).toDouble(), value.toDouble());
   }
 
   @override
@@ -682,7 +697,8 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   int operator [](int index) {
     IndexError.check(index, length);
     return js
-        .JS<double>('(o, i) => o.getBigInt64(i)', toExternRef, index.toDouble())
+        .JS<double>(
+            '(o, i) => o.getBigInt64(i)', toExternRef, (index * 8).toDouble())
         .toInt();
   }
 
@@ -690,7 +706,7 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   void operator []=(int index, int value) {
     IndexError.check(index, length);
     js.JS<void>('(o, i, v) => o.setBigInt64(i, v)', toExternRef,
-        index.toDouble(), value.toDouble());
+        (index * 8).toDouble(), value.toDouble());
   }
 
   @override
@@ -766,14 +782,14 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   double operator [](int index) {
     IndexError.check(index, length);
     return js.JS<double>(
-        '(o, i) => o.getFloat32(i)', toExternRef, index.toDouble());
+        '(o, i) => o.getFloat32(i)', toExternRef, (index * 4).toDouble());
   }
 
   @override
   void operator []=(int index, double value) {
     IndexError.check(index, length);
     js.JS<void>('(o, i, v) => o.setFloat32(i, v)', toExternRef,
-        index.toDouble(), value.toDouble());
+        (index * 4).toDouble(), value.toDouble());
   }
 
   @override
@@ -809,14 +825,14 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   double operator [](int index) {
     IndexError.check(index, length);
     return js.JS<double>(
-        '(o, i) => o.getFloat64(i)', toExternRef, index.toDouble());
+        '(o, i) => o.getFloat64(i)', toExternRef, (index * 4).toDouble());
   }
 
   @override
   void operator []=(int index, double value) {
     IndexError.check(index, length);
     js.JS<void>('(o, i, v) => o.setFloat64(i, v)', toExternRef,
-        index.toDouble(), value.toDouble());
+        (index * 4).toDouble(), value.toDouble());
   }
 
   @override
