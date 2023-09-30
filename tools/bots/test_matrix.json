@@ -548,13 +548,13 @@
         "timeout": 240
       }
     },
-    "dart2wasm-(linux|mac|win)-(d8|chrome)": {
+    "dart2wasm-(linux|mac|win)-(d8|chrome|firefox)": {
       "options": {
         "host-checked": true,
         "timeout": 240
       }
     },
-    "dart2wasm-(linux|mac|win)-optimized-(d8|chrome)": {
+    "dart2wasm-(linux|mac|win)-optimized-(d8|chrome|firefox)": {
       "options": {
         "dart2wasm-options": [
           "-O"
@@ -563,7 +563,7 @@
         "timeout": 240
       }
     },
-    "dart2wasm-(linux|mac|win)-jscm-(d8|chrome)": {
+    "dart2wasm-(linux|mac|win)-jscm-(d8|chrome|firefox)": {
       "options": {
         "dart2wasm-options": [
           "--js-compatibility"
@@ -1757,6 +1757,7 @@
           "name": "build dart",
           "script": "tools/build.py",
           "arguments": [
+            "--no-goma",
             "runtime"
           ]
         },
@@ -1782,6 +1783,7 @@
           "name": "build dart",
           "script": "tools/build.py",
           "arguments": [
+            "--no-goma",
             "dart_precompiled_runtime",
             "gen_snapshot",
             "runtime"
@@ -2732,7 +2734,8 @@
     {
       "builders": [
         "dart2wasm-linux-chrome",
-        "dart2wasm-linux-d8"
+        "dart2wasm-linux-d8",
+        "dart2wasm-linux-firefox"
       ],
       "meta": {
         "description": "dart2wasm tests"
