@@ -763,6 +763,9 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @override
   int get length => lengthInBytes ~/ 4;
 
+  @override
+  int get elementSizeInBytes => 4;
+
   factory JSFloat32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
