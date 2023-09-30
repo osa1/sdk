@@ -12,37 +12,53 @@ final class JSArrayBufferImpl implements ByteBuffer {
 
   WasmExternRef? get toExternRef => _ref;
 
+  WasmExternRef? view(int offsetInBytes, int? length) => length == null
+      ? js.JS<WasmExternRef?>(
+          '(b, o) => new DataView(b, o)', toExternRef, offsetInBytes.toDouble())
+      : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', toExternRef,
+          offsetInBytes.toDouble(), length.toDouble());
+
   @override
   int get lengthInBytes =>
       js.JS<double>('o => o.byteLength', toExternRef).toInt();
 
+  @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) =>
       JSUint8ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Int8List asInt8List([int offsetInBytes = 0, int? length]) =>
       JSInt8ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) =>
       JSUint8ClampedArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Uint16List asUint16List([int offsetInBytes = 0, int? length]) =>
       JSUint16ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Int16List asInt16List([int offsetInBytes = 0, int? length]) =>
       JSInt16ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Uint32List asUint32List([int offsetInBytes = 0, int? length]) =>
       JSUint32ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Int32List asInt32List([int offsetInBytes = 0, int? length]) =>
       JSInt32ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Uint64List asUint64List([int offsetInBytes = 0, int? length]) =>
       JSBigUint64ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Int64List asInt64List([int offsetInBytes = 0, int? length]) =>
       JSBigInt64ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
     _offsetAlignmentCheck(offsetInBytes, Int32x4List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Int32x4List.bytesPerElement;
@@ -50,12 +66,15 @@ final class JSArrayBufferImpl implements ByteBuffer {
     return JSInt32x4ArrayImpl.externalStorage(storage);
   }
 
+  @override
   Float32List asFloat32List([int offsetInBytes = 0, int? length]) =>
       JSFloat32ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Float64List asFloat64List([int offsetInBytes = 0, int? length]) =>
       JSFloat64ArrayImpl.view(this, offsetInBytes, length);
 
+  @override
   Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
     _offsetAlignmentCheck(offsetInBytes, Float32x4List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Float32x4List.bytesPerElement;
@@ -63,6 +82,7 @@ final class JSArrayBufferImpl implements ByteBuffer {
     return JSFloat32x4ArrayImpl.externalStorage(storage);
   }
 
+  @override
   Float64x2List asFloat64x2List([int offsetInBytes = 0, int? length]) {
     _offsetAlignmentCheck(offsetInBytes, Float64x2List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Float64x2List.bytesPerElement;
@@ -70,6 +90,7 @@ final class JSArrayBufferImpl implements ByteBuffer {
     return JSFloat64x2ArrayImpl.externalStorage(storage);
   }
 
+  @override
   ByteData asByteData([int offsetInBytes = 0, int? length]) =>
       JSDataViewImpl.view(this, offsetInBytes, length);
 
@@ -272,17 +293,8 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   JSUint8ArrayImpl(super._ref);
 
   factory JSUint8ArrayImpl.view(
-      JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
-    WasmExternRef? jsBuffer;
-    if (length == null) {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o) => new Uint8Array(b, o)',
-          buffer.toExternRef, offsetInBytes.toDouble());
-    } else {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o, l) => new Uint8Array(b, o, l)',
-          buffer.toExternRef, offsetInBytes.toDouble(), length.toDouble());
-    }
-    return JSUint8ArrayImpl(jsBuffer);
-  }
+          JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
+      JSUint8ArrayImpl(buffer.view(offsetInBytes, length));
 
   @override
   int get elementSizeInBytes => 1;
@@ -321,17 +333,8 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   JSInt8ArrayImpl(super._ref);
 
   factory JSInt8ArrayImpl.view(
-      JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
-    WasmExternRef? jsBuffer;
-    if (length == null) {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o) => new Int8Array(b, o)',
-          buffer.toExternRef, offsetInBytes.toDouble());
-    } else {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o, l) => new Int8Array(b, o, l)',
-          buffer.toExternRef, offsetInBytes.toDouble(), length.toDouble());
-    }
-    return JSInt8ArrayImpl(jsBuffer);
-  }
+          JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
+      JSInt8ArrayImpl(buffer.view(offsetInBytes, length));
 
   @override
   int get elementSizeInBytes => 1;
@@ -371,20 +374,8 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   JSUint8ClampedArrayImpl(super._ref);
 
   factory JSUint8ClampedArrayImpl.view(
-      JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
-    WasmExternRef? jsBuffer;
-    if (length == null) {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o) => new Uint8ClampedArray(b, o)',
-          buffer.toExternRef, offsetInBytes.toDouble());
-    } else {
-      jsBuffer = js.JS<WasmExternRef?>(
-          '(b, o, l) => new Uint8ClampedArray(b, o, l)',
-          buffer.toExternRef,
-          offsetInBytes.toDouble(),
-          length.toDouble());
-    }
-    return JSUint8ClampedArrayImpl(jsBuffer);
-  }
+          JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
+      JSUint8ClampedArrayImpl(buffer.view(offsetInBytes, length));
 
   @override
   int get elementSizeInBytes => 1;
@@ -427,12 +418,7 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Uint16List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Uint16Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSUint16ArrayImpl(jsBuffer);
+    return JSUint16ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -475,12 +461,7 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Int16List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Int16Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSInt16ArrayImpl(jsBuffer);
+    return JSInt16ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -523,12 +504,7 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Uint32List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Uint32Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSUint32ArrayImpl(jsBuffer);
+    return JSUint32ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -571,12 +547,7 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Int32List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Int32Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSInt32ArrayImpl(jsBuffer);
+    return JSInt32ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -680,12 +651,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Uint64List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new BigUint64Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSBigUint64ArrayImpl(jsBuffer);
+    return JSBigUint64ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -723,12 +689,7 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     length ??= _adjustLength(buffer, offsetInBytes, Int64List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new BigInt64Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSBigInt64ArrayImpl(jsBuffer);
+    return JSBigInt64ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -806,12 +767,7 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     length ??=
         _adjustLength(buffer, offsetInBytes, Float32List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Float32Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSFloat32ArrayImpl(jsBuffer);
+    return JSFloat32ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
@@ -854,12 +810,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     length ??=
         _adjustLength(buffer, offsetInBytes, Float64List.bytesPerElement);
-    WasmExternRef? jsBuffer = js.JS<WasmExternRef?>(
-        '(b, o, l) => new Float64Array(b, o, l)',
-        buffer.toExternRef,
-        offsetInBytes.toDouble(),
-        length.toDouble());
-    return JSFloat64ArrayImpl(jsBuffer);
+    return JSFloat64ArrayImpl(buffer.view(offsetInBytes, length));
   }
 
   @override
