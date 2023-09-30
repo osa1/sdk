@@ -232,8 +232,8 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
           byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
 
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigUint64(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value, Endian.little == endian);
+      js.JS<void>('(b, o, v, e) => b.setBigUint64(o, BigInt(v), e)',
+          toExternRef, byteOffset.toDouble(), value, Endian.little == endian);
 
   void setUint8(int byteOffset, int value) => js.JS<void>(
       '(b, o, v) => b.setUint8(o, v)',
@@ -663,7 +663,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigUint64(i, v)', toExternRef,
+    js.JS<void>('(o, i, v) => o.setBigUint64(i, BigInt(v))', toExternRef,
         (index * 8).toDouble(), value.toDouble());
   }
 
