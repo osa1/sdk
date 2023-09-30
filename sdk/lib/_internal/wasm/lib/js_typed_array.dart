@@ -254,34 +254,20 @@ abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
   @override
   void setRange(int start, int end, Iterable<int> iterable,
       [int skipCount = 0]) {
-    int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
-    // TODO(omersa): Commenting-out fast paths for now.
-    // int sourceLength = iterable.length;
-    // if (sourceLength - skipCount < count) {
-    //   throw IterableElementError.tooFew();
-    // }
+    List<int> otherList = iterable.skip(skipCount).toList(growable: false);
 
-    // if (iterable is JSArrayBufferViewImpl) {
-    //   _setRangeFast(this, start, end, count, iterable as JSArrayBufferViewImpl,
-    //       sourceLength, skipCount);
-    // } else {
-    List<int> otherList;
-    int otherStart;
-    // TODO: "Fast" case below does not handle aliasing.
-    // if (iterable is List<int>) {
-    //   otherList = iterable;
-    //   otherStart = skipCount;
-    // } else {
-    otherList = iterable.skip(skipCount).toList(growable: false);
-    otherStart = 0;
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
 
-    // }
-    _copy(otherList, otherStart, this, start, count);
-    // }
+    _copy(otherList, 0, this, start, count);
   }
 }
 
@@ -633,14 +619,20 @@ final class JSInt32x4ArrayImpl
   @override
   void setRange(int start, int end, Iterable<Int32x4> iterable,
       [int skipCount = 0]) {
-    int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
     List<Int32x4> otherList = iterable.skip(skipCount).toList(growable: false);
-    int otherStart = 0;
-    _copy(otherList, otherStart, this, start, count);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    _copy(otherList, 0, this, start, count);
   }
 }
 
@@ -747,7 +739,9 @@ abstract class JSFloatArrayImpl extends JSArrayBufferViewImpl
     int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
     int sourceLength = iterable.length;
     if (sourceLength - skipCount < count) {
@@ -925,15 +919,21 @@ final class JSFloat32x4ArrayImpl
   @override
   void setRange(int start, int end, Iterable<Float32x4> iterable,
       [int skipCount = 0]) {
-    int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
     List<Float32x4> otherList =
         iterable.skip(skipCount).toList(growable: false);
-    int otherStart = 0;
-    _copy(otherList, otherStart, this, start, count);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    _copy(otherList, 0, this, start, count);
   }
 }
 
@@ -991,15 +991,21 @@ final class JSFloat64x2ArrayImpl
   @override
   void setRange(int start, int end, Iterable<Float64x2> iterable,
       [int skipCount = 0]) {
-    int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
     List<Float64x2> otherList =
         iterable.skip(skipCount).toList(growable: false);
-    int otherStart = 0;
-    _copy(otherList, otherStart, this, start, count);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    _copy(otherList, 0, this, start, count);
   }
 }
 
