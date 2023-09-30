@@ -111,7 +111,7 @@ final class JSArrayBufferViewImpl implements TypedData {
   WasmExternRef? get toExternRef => _ref;
 
   @override
-  ByteBuffer get buffer =>
+  JSArrayBufferImpl get buffer =>
       JSArrayBufferImpl(js.JS<WasmExternRef?>('o => o.buffer', toExternRef));
 
   @override
@@ -319,13 +319,10 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
 
   @override
   Uint8List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    final source = js.JS<WasmExternRef?>(
-        '(a, s, p) => new Uint8Array(a.subarray(s, p))',
-        toExternRef,
-        start.toDouble(),
-        stop.toDouble());
-    return JSUint8ArrayImpl(source);
+    final newOffset = offsetInBytes + start;
+    final newEnd = end ?? lengthInBytes;
+    final newLength = newEnd - newOffset;
+    return JSUint8ArrayImpl(buffer.view(newOffset, newLength));
   }
 }
 
@@ -359,13 +356,10 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
 
   @override
   Int8List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    final source = js.JS<WasmExternRef?>(
-        '(a, s, p) => new Int8Array(a.subarray(s, p))',
-        toExternRef,
-        start.toDouble(),
-        stop.toDouble());
-    return JSInt8ArrayImpl(source);
+    final newOffset = offsetInBytes + start;
+    final newEnd = end ?? lengthInBytes;
+    final newLength = newEnd - newOffset;
+    return JSInt8ArrayImpl(buffer.view(newOffset, newLength));
   }
 }
 
@@ -401,13 +395,10 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
 
   @override
   Uint8ClampedList sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    final source = js.JS<WasmExternRef?>(
-        '(a, s, p) => new Uint8ClampedArray(a.subarray(s, p))',
-        toExternRef,
-        start.toDouble(),
-        stop.toDouble());
-    return JSUint8ClampedArrayImpl(source);
+    final newOffset = offsetInBytes + start;
+    final newEnd = end ?? lengthInBytes;
+    final newLength = newEnd - newOffset;
+    return JSUint8ClampedArrayImpl(buffer.view(newOffset, newLength));
   }
 }
 
