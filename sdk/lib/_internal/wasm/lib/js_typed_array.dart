@@ -102,10 +102,10 @@ final class JSArrayBufferViewImpl implements TypedData {
       js.JS<double>('o => o.byteOffset', toExternRef).toInt();
 
   @override
-  int get elementSizeInBytes =>
-      js.JS<double>('o => o.BYTES_PER_ELEMENT', toExternRef).toInt();
+  int get elementSizeInBytes => 1;
 
-  int get length => js.JS<double>('o => o.length', toExternRef).toInt();
+  // NOTE(omersa): length need to overridden in subclasses based on element size
+  // int get length => js.JS<double>('o => o.length', toExternRef).toInt();
 
   @override
   bool operator ==(Object that) =>
@@ -227,25 +227,9 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
       value.toDouble());
 }
 
-final class JSIntArrayImpl extends JSArrayBufferViewImpl
+abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
     with ListMixin<int>, FixedLengthListMixin<int> {
   JSIntArrayImpl(super._ref);
-
-  @override
-  int operator [](int index) {
-    IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o[i]', toExternRef, index.toDouble())
-        .toInt();
-  }
-
-  @override
-  void operator []=(int index, int value) {
-    IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o[i] = v', toExternRef, index.toDouble(),
-        value.toDouble());
-  }
-
   @override
   void setAll(int index, Iterable<int> iterable) {
     final end = iterable.length + index;
@@ -260,26 +244,27 @@ final class JSIntArrayImpl extends JSArrayBufferViewImpl
 
     if (skipCount < 0) throw ArgumentError(skipCount);
 
-    int sourceLength = iterable.length;
-    if (sourceLength - skipCount < count) {
-      throw IterableElementError.tooFew();
-    }
+    // TODO(omersa): Commenting-out fast paths for now.
+    // int sourceLength = iterable.length;
+    // if (sourceLength - skipCount < count) {
+    //   throw IterableElementError.tooFew();
+    // }
 
-    if (iterable is JSArrayBufferViewImpl) {
-      _setRangeFast(this, start, end, count, iterable as JSArrayBufferViewImpl,
-          sourceLength, skipCount);
+    // if (iterable is JSArrayBufferViewImpl) {
+    //   _setRangeFast(this, start, end, count, iterable as JSArrayBufferViewImpl,
+    //       sourceLength, skipCount);
+    // } else {
+    List<int> otherList;
+    int otherStart;
+    if (iterable is List<int>) {
+      otherList = iterable;
+      otherStart = skipCount;
     } else {
-      List<int> otherList;
-      int otherStart;
-      if (iterable is List<int>) {
-        otherList = iterable;
-        otherStart = skipCount;
-      } else {
-        otherList = iterable.skip(skipCount).toList(growable: false);
-        otherStart = 0;
-      }
-      Lists.copy(otherList, otherStart, this, start, count);
+      otherList = iterable.skip(skipCount).toList(growable: false);
+      otherStart = 0;
     }
+    Lists.copy(otherList, otherStart, this, start, count);
+    // }
   }
 }
 
@@ -297,6 +282,27 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
           buffer.toExternRef, offsetInBytes.toDouble(), length.toDouble());
     }
     return JSUint8ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int get elementSizeInBytes => 1;
+
+  @override
+  int get length => lengthInBytes;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getUint8(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setUint8(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
   }
 
   @override
@@ -325,6 +331,27 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
           buffer.toExternRef, offsetInBytes.toDouble(), length.toDouble());
     }
     return JSInt8ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int get elementSizeInBytes => 1;
+
+  @override
+  int get length => lengthInBytes;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getInt8(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setInt8(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
   }
 
   @override
@@ -360,6 +387,28 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   }
 
   @override
+  int get elementSizeInBytes => 1;
+
+  @override
+  int get length => lengthInBytes;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getUint8(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    // TODO(omersa): We need to do the clamping in Dart side?
+    js.JS<void>('(o, i, v) => o.setUint8(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
+  }
+
+  @override
   Uint8ClampedList sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     final source = js.JS<WasmExternRef?>(
@@ -384,6 +433,27 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
         offsetInBytes.toDouble(),
         length.toDouble());
     return JSUint16ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int get elementSizeInBytes => 2;
+
+  @override
+  int get length => lengthInBytes ~/ 2;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getUint16(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setUint16(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
   }
 
   @override
@@ -414,6 +484,27 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   }
 
   @override
+  int get elementSizeInBytes => 2;
+
+  @override
+  int get length => lengthInBytes ~/ 2;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getInt16(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setInt16(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
+  }
+
+  @override
   Int16List sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     final source = js.JS<WasmExternRef?>(
@@ -441,6 +532,27 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   }
 
   @override
+  int get elementSizeInBytes => 4;
+
+  @override
+  int get length => lengthInBytes ~/ 4;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getUint32(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setUint32(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
+  }
+
+  @override
   Uint32List sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     final source = js.JS<WasmExternRef?>(
@@ -465,6 +577,27 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
         offsetInBytes.toDouble(),
         length.toDouble());
     return JSInt32ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int get elementSizeInBytes => 4;
+
+  @override
+  int get length => lengthInBytes ~/ 4;
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getInt32(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setInt32(i, v)', toExternRef, index.toDouble(),
+        value.toDouble());
   }
 
   @override
@@ -529,20 +662,14 @@ final class JSInt32x4ArrayImpl
   }
 }
 
-final class JSBigIntArrayImpl extends JSIntArrayImpl {
+abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
   JSBigIntArrayImpl(super._ref);
 
   @override
-  int operator [](int index) {
-    IndexError.check(index, length);
-    return js.JS<int>('(o, i) => o[i]', toExternRef, index.toDouble()).toInt();
-  }
+  int get elementSizeInBytes => 8;
 
   @override
-  void operator []=(int index, int value) {
-    IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o[i] = v', toExternRef, index.toDouble(), value);
-  }
+  int get length => lengthInBytes ~/ 8;
 }
 
 final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
@@ -559,6 +686,22 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
         offsetInBytes.toDouble(),
         length.toDouble());
     return JSBigUint64ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>(
+            '(o, i) => o.getBigUint64(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setBigUint64(i, v)', toExternRef,
+        index.toDouble(), value.toDouble());
   }
 
   @override
@@ -589,6 +732,21 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   }
 
   @override
+  int operator [](int index) {
+    IndexError.check(index, length);
+    return js
+        .JS<double>('(o, i) => o.getBigInt64(i)', toExternRef, index.toDouble())
+        .toInt();
+  }
+
+  @override
+  void operator []=(int index, int value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setBigInt64(i, v)', toExternRef,
+        index.toDouble(), value.toDouble());
+  }
+
+  @override
   Int64List sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     final source = js.JS<WasmExternRef?>(
@@ -600,23 +758,9 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   }
 }
 
-final class JSFloatArrayImpl extends JSArrayBufferViewImpl
+abstract class JSFloatArrayImpl extends JSArrayBufferViewImpl
     with ListMixin<double>, FixedLengthListMixin<double> {
   JSFloatArrayImpl(super._ref);
-
-  @override
-  double operator [](int index) {
-    IndexError.check(index, length);
-    return js.JS<double>('(o, i) => o[i]', toExternRef, index.toDouble());
-  }
-
-  @override
-  void operator []=(int index, double value) {
-    IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o[i] = v', toExternRef, index.toDouble(),
-        value.toDouble());
-  }
-
   @override
   void setAll(int index, Iterable<double> iterable) {
     final end = iterable.length + index;
@@ -671,6 +815,26 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   }
 
   @override
+  int get elementSizeInBytes => 4;
+
+  @override
+  int get length => lengthInBytes ~/ 4;
+
+  @override
+  double operator [](int index) {
+    IndexError.check(index, length);
+    return js.JS<double>(
+        '(o, i) => o.getFloat32(i)', toExternRef, index.toDouble());
+  }
+
+  @override
+  void operator []=(int index, double value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setFloat32(i, v)', toExternRef,
+        index.toDouble(), value.toDouble());
+  }
+
+  @override
   Float32List sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     final source = js.JS<WasmExternRef?>(
@@ -696,6 +860,26 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
         offsetInBytes.toDouble(),
         length.toDouble());
     return JSFloat64ArrayImpl(jsBuffer);
+  }
+
+  @override
+  int get elementSizeInBytes => 8;
+
+  @override
+  int get length => lengthInBytes ~/ 8;
+
+  @override
+  double operator [](int index) {
+    IndexError.check(index, length);
+    return js.JS<double>(
+        '(o, i) => o.getFloat64(i)', toExternRef, index.toDouble());
+  }
+
+  @override
+  void operator []=(int index, double value) {
+    IndexError.check(index, length);
+    js.JS<void>('(o, i, v) => o.setFloat64(i, v)', toExternRef,
+        index.toDouble(), value.toDouble());
   }
 
   @override
