@@ -812,6 +812,19 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
     final stop = RangeError.checkValidRange(start, end, length);
     return JSFloat32ArrayImpl.view(buffer, start * 4, stop - start);
   }
+
+  @override
+  void setRange(int start, int end, Iterable<double> iterable,
+      [int skipCount = 0]) {
+    int count = end - start;
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) throw ArgumentError(skipCount);
+
+    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
+    int otherStart = 0;
+    _copy(otherList, otherStart, this, start, count);
+  }
 }
 
 final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
