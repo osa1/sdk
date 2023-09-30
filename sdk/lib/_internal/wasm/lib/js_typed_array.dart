@@ -390,9 +390,8 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    // TODO(omersa): We need to do the clamping in Dart side?
     js.JS<void>('(o, i, v) => o.setUint8(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+        value.clamp(0, 255).toDouble());
   }
 
   @override
