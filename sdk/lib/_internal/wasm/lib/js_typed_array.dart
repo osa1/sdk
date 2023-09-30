@@ -624,6 +624,27 @@ final class JSInt32x4ArrayImpl
     return JSInt32x4ArrayImpl.externalStorage(
         _storage.sublist(start * 4, stop * 4) as JSInt32ArrayImpl);
   }
+
+  @override
+  void setAll(int index, Iterable<Int32x4> iterable) {
+    print('setAll');
+    final end = iterable.length + index;
+    setRange(index, end, iterable);
+  }
+
+  @override
+  void setRange(int start, int end, Iterable<Int32x4> iterable,
+      [int skipCount = 0]) {
+    int count = end - start;
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) throw ArgumentError(skipCount);
+
+    List<Int32x4> otherList = iterable.skip(skipCount).toList(growable: false);
+    print('otherList = $otherList');
+    int otherStart = 0;
+    _copy(otherList, otherStart, this, start, count);
+  }
 }
 
 abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
@@ -884,6 +905,26 @@ final class JSFloat32x4ArrayImpl
     return JSFloat32x4ArrayImpl.externalStorage(
         _storage.sublist(start * 4, stop * 4) as JSFloat32ArrayImpl);
   }
+
+  @override
+  void setAll(int index, Iterable<Float32x4> iterable) {
+    final end = iterable.length + index;
+    setRange(index, end, iterable);
+  }
+
+  @override
+  void setRange(int start, int end, Iterable<Float32x4> iterable,
+      [int skipCount = 0]) {
+    int count = end - start;
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) throw ArgumentError(skipCount);
+
+    List<Float32x4> otherList =
+        iterable.skip(skipCount).toList(growable: false);
+    int otherStart = 0;
+    _copy(otherList, otherStart, this, start, count);
+  }
 }
 
 final class JSFloat64x2ArrayImpl
@@ -929,6 +970,26 @@ final class JSFloat64x2ArrayImpl
     final stop = RangeError.checkValidRange(start, end, length);
     return JSFloat64x2ArrayImpl.externalStorage(
         _storage.sublist(start * 2, stop * 2) as JSFloat64ArrayImpl);
+  }
+
+  @override
+  void setAll(int index, Iterable<Float64x2> iterable) {
+    final end = iterable.length + index;
+    setRange(index, end, iterable);
+  }
+
+  @override
+  void setRange(int start, int end, Iterable<Float64x2> iterable,
+      [int skipCount = 0]) {
+    int count = end - start;
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) throw ArgumentError(skipCount);
+
+    List<Float64x2> otherList =
+        iterable.skip(skipCount).toList(growable: false);
+    int otherStart = 0;
+    _copy(otherList, otherStart, this, start, count);
   }
 }
 
