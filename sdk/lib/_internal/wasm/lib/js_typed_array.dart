@@ -12,15 +12,11 @@ final class JSArrayBufferImpl implements ByteBuffer {
 
   WasmExternRef? get toExternRef => _ref;
 
-  WasmExternRef? view(int offsetInBytes, int? length) => length == null
-      ? js.JS<WasmExternRef?>(
-          '(b, o) => new DataView(b, o)', toExternRef, offsetInBytes.toDouble())
-      : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', toExternRef,
-          offsetInBytes.toDouble(), length.toDouble());
+  WasmExternRef? view(int offsetInBytes, int? length) =>
+      _newDataView(toExternRef, offsetInBytes, length);
 
   @override
-  int get lengthInBytes =>
-      js.JS<double>('o => o.byteLength', toExternRef).toInt();
+  int get lengthInBytes => _byteLength(toExternRef);
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) =>
@@ -112,8 +108,7 @@ final class JSArrayBufferViewImpl implements TypedData {
       JSArrayBufferImpl(js.JS<WasmExternRef?>('o => o.buffer', toExternRef));
 
   @override
-  int get lengthInBytes =>
-      js.JS<double>('o => o.byteLength', toExternRef).toInt();
+  int get lengthInBytes => _byteLength(toExternRef);
 
   @override
   int get offsetInBytes =>
@@ -121,9 +116,6 @@ final class JSArrayBufferViewImpl implements TypedData {
 
   @override
   int get elementSizeInBytes => 1;
-
-  // NOTE(omersa): length need to overridden in subclasses based on element size
-  // int get length => js.JS<double>('o => o.length', toExternRef).toInt();
 
   @override
   bool operator ==(Object that) =>
@@ -134,132 +126,89 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
   JSDataViewImpl(super._ref);
 
   factory JSDataViewImpl.view(
-      JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
-    WasmExternRef? jsBuffer;
-    if (length == null) {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o) => new DataView(b, o)',
-          buffer.toExternRef, offsetInBytes.toDouble());
-    } else {
-      jsBuffer = js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)',
-          buffer.toExternRef, offsetInBytes.toDouble(), length.toDouble());
-    }
-    return JSDataViewImpl(jsBuffer);
-  }
+          JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
+      JSDataViewImpl(_newDataView(buffer.toExternRef, offsetInBytes, length));
 
   @override
   int get elementSizeInBytes => 1;
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) =>
-      js.JS<double>('(b, o, e) => b.getFloat32(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian);
+      _getFloat32(toExternRef, byteOffset, Endian.little == endian);
 
   @override
   double getFloat64(int byteOffset, [Endian endian = Endian.big]) =>
-      js.JS<double>('(b, o, e) => b.getFloat64(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian);
+      _getFloat64(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getInt16(int byteOffset, [Endian endian = Endian.big]) => js
-      .JS<double>('(b, o, e) => b.getInt16(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian)
-      .toInt();
+  int getInt16(int byteOffset, [Endian endian = Endian.big]) =>
+      _getInt16(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getInt32(int byteOffset, [Endian endian = Endian.big]) => js
-      .JS<double>('(b, o, e) => b.getInt32(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian)
-      .toInt();
+  int getInt32(int byteOffset, [Endian endian = Endian.big]) =>
+      _getInt32(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getInt64(int byteOffset, [Endian endian = Endian.big]) => js.JS<int>(
-      '(b, o, e) => b.getBigInt64(o, e)',
-      toExternRef,
-      byteOffset.toDouble(),
-      Endian.little == endian);
+  int getInt64(int byteOffset, [Endian endian = Endian.big]) =>
+      _getBigInt64(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getInt8(int byteOffset) => js
-      .JS<double>('(b, o) => b.getInt8(o)', toExternRef, byteOffset.toDouble())
-      .toInt();
+  int getInt8(int byteOffset) => _getInt8(toExternRef, byteOffset);
 
   @override
-  int getUint16(int byteOffset, [Endian endian = Endian.big]) => js
-      .JS<double>('(b, o, e) => b.getUint16(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian)
-      .toInt();
+  int getUint16(int byteOffset, [Endian endian = Endian.big]) =>
+      _getUint16(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getUint32(int byteOffset, [Endian endian = Endian.big]) => js
-      .JS<double>('(b, o, e) => b.getUint32(o, e)', toExternRef,
-          byteOffset.toDouble(), Endian.little == endian)
-      .toInt();
+  int getUint32(int byteOffset, [Endian endian = Endian.big]) =>
+      _getUint32(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getUint64(int byteOffset, [Endian endian = Endian.big]) => js.JS<int>(
-      '(b, o, e) => b.getBigUint64(o, e)',
-      toExternRef,
-      byteOffset.toDouble(),
-      Endian.little == endian);
+  int getUint64(int byteOffset, [Endian endian = Endian.big]) =>
+      _getBigUint64(toExternRef, byteOffset, Endian.little == endian);
 
   @override
-  int getUint8(int byteOffset) => js
-      .JS<double>('(b, o) => b.getUint8(o)', toExternRef, byteOffset.toDouble())
-      .toInt();
+  int getUint8(int byteOffset) => _getUint8(toExternRef, byteOffset);
 
   @override
   void setFloat32(int byteOffset, num value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setFloat32(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setFloat32(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setFloat64(int byteOffset, num value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setFloat64(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setFloat64(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setInt16(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setInt16(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setInt16(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setInt32(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setInt32(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setInt32(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigInt64(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value, Endian.little == endian);
+      _setBigInt64(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
-  void setInt8(int byteOffset, int value) => js.JS<void>(
-      '(b, o, v) => b.setInt8(o, v)',
-      toExternRef,
-      byteOffset.toDouble(),
-      value.toDouble());
+  void setInt8(int byteOffset, int value) =>
+      _setInt8(toExternRef, byteOffset, value);
 
   @override
   void setUint16(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setUint16(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setUint16(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setUint32(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setUint32(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value.toDouble(), Endian.little == endian);
+      _setUint32(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigUint64(o, v, e)', toExternRef,
-          byteOffset.toDouble(), value, Endian.little == endian);
+      _setBigUint64(toExternRef, byteOffset, value, Endian.little == endian);
 
   @override
-  void setUint8(int byteOffset, int value) => js.JS<void>(
-      '(b, o, v) => b.setUint8(o, v)',
-      toExternRef,
-      byteOffset.toDouble(),
-      value.toDouble());
+  void setUint8(int byteOffset, int value) =>
+      _setUint8(toExternRef, byteOffset, value);
 }
 
 abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
@@ -313,16 +262,13 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getUint8(i)', toExternRef, index.toDouble())
-        .toInt();
+    return _getUint8(toExternRef, index);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint8(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    _setUint8(toExternRef, index, value);
   }
 
   @override
@@ -350,16 +296,13 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getInt8(i)', toExternRef, index.toDouble())
-        .toInt();
+    return _getInt8(toExternRef, index);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setInt8(i, v)', toExternRef, index.toDouble(),
-        value.toDouble());
+    _setInt8(toExternRef, index, value);
   }
 
   @override
@@ -388,16 +331,13 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getUint8(i)', toExternRef, index.toDouble())
-        .toInt();
+    return _getUint8(toExternRef, index);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint8(i, v)', toExternRef, index.toDouble(),
-        value.clamp(0, 255).toDouble());
+    _setUint8(toExternRef, index, value.clamp(0, 255));
   }
 
   @override
@@ -432,17 +372,13 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getUint16(i, true)', toExternRef,
-            (index * 2).toDouble())
-        .toInt();
+    return _getUint16(toExternRef, index * 2, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint16(i, v, true)', toExternRef,
-        (index * 2).toDouble(), value.toDouble());
+    _setUint16(toExternRef, index * 2, value, true);
   }
 
   @override
@@ -475,17 +411,13 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getInt16(i, true)', toExternRef,
-            (index * 2).toDouble())
-        .toInt();
+    return _getInt16(toExternRef, index * 2, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setInt16(i, v, true)', toExternRef,
-        (index * 2).toDouble(), value.toDouble());
+    _setInt16(toExternRef, index * 2, value, true);
   }
 
   @override
@@ -518,17 +450,13 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getUint32(i, true)', toExternRef,
-            (index * 4).toDouble())
-        .toInt();
+    return _getUint32(toExternRef, index * 4, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setUint32(i, v, true)', toExternRef,
-        (index * 4).toDouble(), value.toDouble());
+    _setUint32(toExternRef, index * 4, value, true);
   }
 
   @override
@@ -561,17 +489,13 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js
-        .JS<double>('(o, i) => o.getInt32(i, true)', toExternRef,
-            (index * 4).toDouble())
-        .toInt();
+    return _getInt32(toExternRef, index * 4, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setInt32(i, v, true)', toExternRef,
-        (index * 4).toDouble(), value.toDouble());
+    _setInt32(toExternRef, index * 4, value, true);
   }
 
   @override
@@ -684,15 +608,13 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js.JS<int>('(o, i) => o.getBigUint64(i, true)', toExternRef,
-        (index * 8).toDouble());
+    return _getBigUint64(toExternRef, index * 8, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigUint64(i, v, true)', toExternRef,
-        (index * 8).toDouble(), value);
+    return _setBigUint64(toExternRef, index * 8, value, true);
   }
 
   @override
@@ -722,15 +644,13 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   @override
   int operator [](int index) {
     IndexError.check(index, length);
-    return js.JS<int>('(o, i) => o.getBigInt64(i, true)', toExternRef,
-        (index * 8).toDouble());
+    return _getBigInt64(toExternRef, index * 8, true);
   }
 
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigInt64(i, v, true)', toExternRef,
-        (index * 8).toDouble(), value);
+    _setBigInt64(toExternRef, index * 8, value, true);
   }
 
   @override
@@ -805,15 +725,13 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @override
   double operator [](int index) {
     IndexError.check(index, length);
-    return js.JS<double>(
-        '(o, i) => o.getFloat32(i, true)', toExternRef, (index * 4).toDouble());
+    return _getFloat32(toExternRef, index * 4, true);
   }
 
   @override
   void operator []=(int index, double value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setFloat32(i, v, true)', toExternRef,
-        (index * 4).toDouble(), value.toDouble());
+    _setFloat32(toExternRef, index * 4, value, true);
   }
 
   @override
@@ -859,15 +777,13 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   @override
   double operator [](int index) {
     IndexError.check(index, length);
-    return js.JS<double>(
-        '(o, i) => o.getFloat64(i, true)', toExternRef, (index * 8).toDouble());
+    return _getFloat64(toExternRef, index * 8, true);
   }
 
   @override
   void operator []=(int index, double value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setFloat64(i, v, true)', toExternRef,
-        (index * 8).toDouble(), value.toDouble());
+    _setFloat64(toExternRef, index * 8, value, true);
   }
 
   @override
@@ -1048,3 +964,109 @@ void _offsetAlignmentCheck(int offset, int alignment) {
         'bytesPerElement ($alignment)');
   }
 }
+
+int _byteLength(WasmExternRef? ref) =>
+    js.JS<double>('o => o.byteLength', ref).toInt();
+
+WasmExternRef? _newDataView(
+        WasmExternRef? ref, int offsetInBytes, int? length) =>
+    length == null
+        ? js.JS<WasmExternRef?>(
+            '(b, o) => new DataView(b, o)', ref, offsetInBytes.toDouble())
+        : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', ref,
+            offsetInBytes.toDouble(), length.toDouble());
+
+int _getUint8(WasmExternRef? ref, int byteOffset) => js
+    .JS<double>('(o, i) => o.getUint8(i)', ref, byteOffset.toDouble())
+    .toInt();
+
+void _setUint8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
+    '(o, i, v) => o.setUint8(i, v)',
+    ref,
+    byteOffset.toDouble(),
+    value.toDouble());
+
+int _getInt8(WasmExternRef? ref, int byteOffset) =>
+    js.JS<double>('(o, i) => o.getInt8(i)', ref, byteOffset.toDouble()).toInt();
+
+void _setInt8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
+    '(o, i, v) => o.setInt8(i, v)',
+    ref,
+    byteOffset.toDouble(),
+    value.toDouble());
+
+int _getUint16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
+    .JS<double>('(o, i, e) => o.getUint16(i, e)', ref, byteOffset.toDouble(),
+        littleEndian)
+    .toInt();
+
+void _setUint16(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setUint16(i, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
+
+int _getInt16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
+    .JS<double>('(o, i, e) => o.getInt16(i, e)', ref, byteOffset.toDouble(),
+        littleEndian)
+    .toInt();
+
+void _setInt16(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setInt16(i, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
+
+int _getUint32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
+    .JS<double>('(o, i, e) => o.getUint32(i, e)', ref, byteOffset.toDouble(),
+        littleEndian)
+    .toInt();
+
+void _setUint32(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setUint32(i, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
+
+int _getInt32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
+    .JS<double>('(o, i, e) => o.getInt32(i, e)', ref, byteOffset.toDouble(),
+        littleEndian)
+    .toInt();
+
+void _setInt32(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setInt32(i, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
+
+int _getBigUint64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
+    js.JS<int>('(o, i, e) => o.getBigUint64(i, e)', ref, byteOffset.toDouble(),
+        littleEndian);
+
+void _setBigUint64(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setBigUint64(i, v, e)', ref,
+        byteOffset.toDouble(), value, littleEndian);
+
+int _getBigInt64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
+    js.JS<int>('(o, i, e) => o.getBigInt64(i, e)', ref, byteOffset.toDouble(),
+        littleEndian);
+
+void _setBigInt64(
+        WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
+    js.JS<void>('(o, i, v, e) => o.setBigInt64(i, v, e)', ref,
+        byteOffset.toDouble(), value, littleEndian);
+
+double _getFloat32(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
+    js.JS<double>('(b, o, e) => b.getFloat32(o, e)', ref, byteOffset.toDouble(),
+        littleEndian);
+
+void _setFloat32(
+        WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
+    js.JS<void>('(b, o, v, e) => b.setFloat32(o, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
+
+double _getFloat64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
+    js.JS<double>('(b, o, e) => b.getFloat64(o, e)', ref, byteOffset.toDouble(),
+        littleEndian);
+
+void _setFloat64(
+        WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
+    js.JS<void>('(b, o, v, e) => b.setFloat64(o, v, e)', ref,
+        byteOffset.toDouble(), value.toDouble(), littleEndian);
