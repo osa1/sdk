@@ -229,7 +229,7 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
 
   @override
   void setInt64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigInt64(o, BigInt(v), e)', toExternRef,
+      js.JS<void>('(b, o, v, e) => b.setBigInt64(o, v, e)', toExternRef,
           byteOffset.toDouble(), value, Endian.little == endian);
 
   @override
@@ -251,8 +251,8 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
 
   @override
   void setUint64(int byteOffset, int value, [Endian endian = Endian.big]) =>
-      js.JS<void>('(b, o, v, e) => b.setBigUint64(o, BigInt(v), e)',
-          toExternRef, byteOffset.toDouble(), value, Endian.little == endian);
+      js.JS<void>('(b, o, v, e) => b.setBigUint64(o, v, e)', toExternRef,
+          byteOffset.toDouble(), value, Endian.little == endian);
 
   @override
   void setUint8(int byteOffset, int value) => js.JS<void>(
@@ -1041,9 +1041,6 @@ void _setRangeFast(JSArrayBufferViewImpl target, int start, int end, int count,
   js.JS<void>('(t, s, i) => t.set(s, i)', target.toExternRef, jsSource,
       start.toDouble());
 }
-
-int _adjustLength(ByteBuffer buffer, int offsetInBytes, int bytesPerElement) =>
-    buffer.lengthInBytes - offsetInBytes;
 
 void _offsetAlignmentCheck(int offset, int alignment) {
   if ((offset % alignment) != 0) {
