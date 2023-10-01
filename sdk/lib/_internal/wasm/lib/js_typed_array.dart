@@ -668,38 +668,6 @@ abstract class JSFloatArrayImpl extends JSArrayBufferViewImpl
     final end = iterable.length + index;
     setRange(index, end, iterable);
   }
-
-  @override
-  void setRange(int start, int end, Iterable<double> iterable,
-      [int skipCount = 0]) {
-    int count = end - start;
-    RangeError.checkValidRange(start, end, length);
-
-    if (skipCount < 0) {
-      throw ArgumentError(skipCount);
-    }
-
-    int sourceLength = iterable.length;
-    if (sourceLength - skipCount < count) {
-      throw IterableElementError.tooFew();
-    }
-
-    if (iterable is JSArrayBufferViewImpl) {
-      _setRangeFast(this, start, end, count, iterable as JSArrayBufferViewImpl,
-          sourceLength, skipCount);
-    } else {
-      List<double> otherList;
-      int otherStart;
-      if (iterable is List<double>) {
-        otherList = iterable;
-        otherStart = skipCount;
-      } else {
-        otherList = iterable.skip(skipCount).toList(growable: false);
-        otherStart = 0;
-      }
-      Lists.copy(otherList, otherStart, this, start, count);
-    }
-  }
 }
 
 final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
@@ -743,14 +711,20 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @override
   void setRange(int start, int end, Iterable<double> iterable,
       [int skipCount = 0]) {
-    int count = end - start;
     RangeError.checkValidRange(start, end, length);
 
-    if (skipCount < 0) throw ArgumentError(skipCount);
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
 
     List<double> otherList = iterable.skip(skipCount).toList(growable: false);
-    int otherStart = 0;
-    _copy(otherList, otherStart, this, start, count);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    _copy(otherList, 0, this, start, count);
   }
 }
 
