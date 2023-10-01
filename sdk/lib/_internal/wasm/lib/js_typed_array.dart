@@ -691,8 +691,8 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigUint64(i, BigInt(v), true)', toExternRef,
-        (index * 8).toDouble(), value.toDouble());
+    js.JS<void>('(o, i, v) => o.setBigUint64(i, v, true)', toExternRef,
+        (index * 8).toDouble(), value);
   }
 
   @override
@@ -729,8 +729,8 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   @override
   void operator []=(int index, int value) {
     IndexError.check(index, length);
-    js.JS<void>('(o, i, v) => o.setBigInt64(i, BigInt(v), true)', toExternRef,
-        (index * 8).toDouble(), value.toDouble());
+    js.JS<void>('(o, i, v) => o.setBigInt64(i, v, true)', toExternRef,
+        (index * 8).toDouble(), value);
   }
 
   @override
