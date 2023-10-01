@@ -274,7 +274,7 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   @override
   Uint8List sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
-    final newEnd = end ?? lengthInBytes;
+    final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSUint8ArrayImpl(buffer.view(newOffset, newLength));
   }
@@ -308,7 +308,7 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   @override
   Int8List sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
-    final newEnd = end ?? lengthInBytes;
+    final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSInt8ArrayImpl(buffer.view(newOffset, newLength));
   }
@@ -343,7 +343,7 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   @override
   Uint8ClampedList sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
-    final newEnd = end ?? lengthInBytes;
+    final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSUint8ClampedArrayImpl(buffer.view(newOffset, newLength));
   }
