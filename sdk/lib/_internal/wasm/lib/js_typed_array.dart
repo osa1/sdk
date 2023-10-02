@@ -16,6 +16,7 @@ final class JSArrayBufferImpl implements ByteBuffer {
       _newDataView(toExternRef, offsetInBytes, length);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => _byteLength(toExternRef);
 
   @override
@@ -108,6 +109,7 @@ final class JSArrayBufferViewImpl implements TypedData {
       JSArrayBufferImpl(js.JS<WasmExternRef?>('o => o.buffer', toExternRef));
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => _byteLength(toExternRef);
 
   @override
@@ -257,6 +259,7 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   int get elementSizeInBytes => 1;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes;
 
   @override
@@ -291,6 +294,7 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   int get elementSizeInBytes => 1;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes;
 
   @override
@@ -326,6 +330,7 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   int get elementSizeInBytes => 1;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes;
 
   @override
@@ -364,9 +369,11 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   int get elementSizeInBytes => 2;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 2) * 2;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 2;
 
   @override
@@ -403,9 +410,11 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   int get elementSizeInBytes => 2;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 2) * 2;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 2;
 
   @override
@@ -442,9 +451,11 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   int get elementSizeInBytes => 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 4;
 
   @override
@@ -470,9 +481,11 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   JSInt32ArrayImpl(super._ref);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 4;
 
   factory JSInt32ArrayImpl.view(
@@ -517,6 +530,7 @@ final class JSInt32x4ArrayImpl
   ByteBuffer get buffer => _storage.buffer;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => _storage.lengthInBytes;
 
   @override
@@ -526,6 +540,7 @@ final class JSInt32x4ArrayImpl
   int get elementSizeInBytes => Int32x4List.bytesPerElement;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => _storage.length ~/ 4;
 
   @override
@@ -592,9 +607,11 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   JSBigUint64ArrayImpl(super._ref);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 8;
 
   factory JSBigUint64ArrayImpl.view(
@@ -628,9 +645,11 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   JSBigInt64ArrayImpl(super._ref);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 8;
 
   factory JSBigInt64ArrayImpl.view(
@@ -674,9 +693,11 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   JSFloat32ArrayImpl(super._ref);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 4;
 
   @override
@@ -691,12 +712,14 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   double operator [](int index) {
     IndexError.check(index, length);
     return _getFloat32(toExternRef, index * 4, true);
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
     IndexError.check(index, length);
     _setFloat32(toExternRef, index * 4, value, true);
@@ -732,9 +755,11 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   JSFloat64ArrayImpl(super._ref);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => lengthInBytes ~/ 8;
 
   @override
@@ -779,6 +804,7 @@ final class JSFloat32x4ArrayImpl
   ByteBuffer get buffer => _storage.buffer;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => _storage.lengthInBytes;
 
   @override
@@ -788,6 +814,7 @@ final class JSFloat32x4ArrayImpl
   int get elementSizeInBytes => Float32x4List.bytesPerElement;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => _storage.length ~/ 4;
 
   @override
@@ -855,6 +882,7 @@ final class JSFloat64x2ArrayImpl
   ByteBuffer get buffer => _storage.buffer;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get lengthInBytes => _storage.lengthInBytes;
 
   @override
@@ -864,6 +892,7 @@ final class JSFloat64x2ArrayImpl
   int get elementSizeInBytes => Float64x2List.bytesPerElement;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get length => _storage.length ~/ 2;
 
   @override
@@ -939,9 +968,11 @@ void _offsetAlignmentCheck(int offset, int alignment) {
   }
 }
 
+@pragma("wasm:prefer-inline")
 int _byteLength(WasmExternRef? ref) =>
     js.JS<double>('o => o.byteLength', ref).toInt();
 
+@pragma("wasm:prefer-inline")
 WasmExternRef? _newDataView(
         WasmExternRef? ref, int offsetInBytes, int? length) =>
     length == null
@@ -950,96 +981,116 @@ WasmExternRef? _newDataView(
         : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', ref,
             offsetInBytes.toDouble(), length.toDouble());
 
+@pragma("wasm:prefer-inline")
 int _getUint8(WasmExternRef? ref, int byteOffset) => js
     .JS<double>('(o, i) => o.getUint8(i)', ref, byteOffset.toDouble())
     .toInt();
 
+@pragma("wasm:prefer-inline")
 void _setUint8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
     '(o, i, v) => o.setUint8(i, v)',
     ref,
     byteOffset.toDouble(),
     value.toDouble());
 
+@pragma("wasm:prefer-inline")
 int _getInt8(WasmExternRef? ref, int byteOffset) =>
     js.JS<double>('(o, i) => o.getInt8(i)', ref, byteOffset.toDouble()).toInt();
 
+@pragma("wasm:prefer-inline")
 void _setInt8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
     '(o, i, v) => o.setInt8(i, v)',
     ref,
     byteOffset.toDouble(),
     value.toDouble());
 
+@pragma("wasm:prefer-inline")
 int _getUint16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
     .JS<double>('(o, i, e) => o.getUint16(i, e)', ref, byteOffset.toDouble(),
         littleEndian)
     .toInt();
 
+@pragma("wasm:prefer-inline")
 void _setUint16(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setUint16(i, v, e)', ref,
         byteOffset.toDouble(), value.toDouble(), littleEndian);
 
+@pragma("wasm:prefer-inline")
 int _getInt16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
     .JS<double>('(o, i, e) => o.getInt16(i, e)', ref, byteOffset.toDouble(),
         littleEndian)
     .toInt();
 
+@pragma("wasm:prefer-inline")
 void _setInt16(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setInt16(i, v, e)', ref,
         byteOffset.toDouble(), value.toDouble(), littleEndian);
 
+@pragma("wasm:prefer-inline")
 int _getUint32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
     .JS<double>('(o, i, e) => o.getUint32(i, e)', ref, byteOffset.toDouble(),
         littleEndian)
     .toInt();
 
+@pragma("wasm:prefer-inline")
 void _setUint32(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setUint32(i, v, e)', ref,
         byteOffset.toDouble(), value.toDouble(), littleEndian);
 
+@pragma("wasm:prefer-inline")
 int _getInt32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
     .JS<double>('(o, i, e) => o.getInt32(i, e)', ref, byteOffset.toDouble(),
         littleEndian)
     .toInt();
 
+@pragma("wasm:prefer-inline")
 void _setInt32(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setInt32(i, v, e)', ref,
         byteOffset.toDouble(), value.toDouble(), littleEndian);
 
+@pragma("wasm:prefer-inline")
 int _getBigUint64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
     js.JS<int>('(o, i, e) => o.getBigUint64(i, e)', ref, byteOffset.toDouble(),
         littleEndian);
 
+@pragma("wasm:prefer-inline")
 void _setBigUint64(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setBigUint64(i, v, e)', ref,
         byteOffset.toDouble(), value, littleEndian);
 
+@pragma("wasm:prefer-inline")
 int _getBigInt64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
     js.JS<int>('(o, i, e) => o.getBigInt64(i, e)', ref, byteOffset.toDouble(),
         littleEndian);
 
+@pragma("wasm:prefer-inline")
 void _setBigInt64(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
     js.JS<void>('(o, i, v, e) => o.setBigInt64(i, v, e)', ref,
         byteOffset.toDouble(), value, littleEndian);
 
+@pragma("wasm:prefer-inline")
 double _getFloat32(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
     js.JS<double>('(b, o, e) => b.getFloat32(o, e)', ref, byteOffset.toDouble(),
         littleEndian);
 
+@pragma("wasm:prefer-inline")
 void _setFloat32(
         WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
     js.JS<void>('(b, o, v, e) => b.setFloat32(o, v, e)', ref,
         byteOffset.toDouble(), value.toDouble(), littleEndian);
 
+@pragma("wasm:prefer-inline")
 double _getFloat64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
     js.JS<double>('(b, o, e) => b.getFloat64(o, e)', ref, byteOffset.toDouble(),
         littleEndian);
 
+@pragma("wasm:prefer-inline")
 void _setFloat64(
         WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
     js.JS<void>('(b, o, v, e) => b.setFloat64(o, v, e)', ref,
