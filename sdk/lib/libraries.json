@@ -31,7 +31,7 @@
       },
       "convert": {
         "uri": "convert/convert.dart",
-        "patches": "_internal/vm_shared/lib/convert_patch.dart"
+        "patches": "_internal/vm/lib/convert_patch.dart"
       },
       "core": {
         "uri": "core/core.dart",
@@ -290,7 +290,6 @@
       "convert": {
         "uri": "convert/convert.dart",
         "patches": [
-          "_internal/vm_shared/lib/convert_patch.dart",
           "_internal/wasm/lib/convert_patch.dart"
         ]
       },
