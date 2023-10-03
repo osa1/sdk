@@ -59,7 +59,7 @@ import '../configuration.dart' show Configuration;
 import '../dill/dill_library_builder.dart' show DillLibraryBuilder;
 import '../export.dart' show Export;
 import '../fasta_codes.dart';
-import '../identifiers.dart' show QualifiedName, flattenName;
+import '../identifiers.dart' show Identifier, QualifiedName, flattenName;
 import '../import.dart' show Import;
 import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/members_builder.dart';
@@ -269,10 +269,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
   /// If `null`, [SourceLoader.computeFieldPromotability] hasn't been called
   /// yet, or field promotion is disabled for this library.  If not `null`,
-  /// field promotion is enabled for this library and this is the set of private
-  /// field names for which promotion is blocked due to the presence of a
-  /// non-final field or a concrete getter.
-  Set<String>? unpromotablePrivateFieldNames;
+  /// information about which fields are promotable in this library.
+  FieldNonPromotabilityInfo? fieldNonPromotabilityInfo;
 
   SourceLibraryBuilder.internal(
       SourceLoader loader,
@@ -690,17 +688,21 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     }
   }
 
-  String? computeAndValidateConstructorName(Object? name, int charOffset,
+  String? computeAndValidateConstructorName(Identifier identifier,
       {isFactory = false}) {
     String className = currentTypeParameterScopeBuilder.name;
     String prefix;
     String? suffix;
-    if (name is QualifiedName) {
-      prefix = name.qualifier as String;
-      suffix = name.name;
+    int charOffset;
+    if (identifier is QualifiedName) {
+      Identifier qualifier = identifier.qualifier as Identifier;
+      prefix = qualifier.name;
+      suffix = identifier.name;
+      charOffset = qualifier.nameOffset;
     } else {
-      prefix = name as String;
+      prefix = identifier.name;
       suffix = null;
+      charOffset = identifier.nameOffset;
     }
     if (libraryFeatures.constructorTearoffs.isEnabled) {
       suffix = suffix == "new" ? "" : suffix;
@@ -889,8 +891,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
           modifiers,
           isTopLevel,
           type ?? addInferableType(),
-          info.name,
-          info.charOffset,
+          info.identifier.name,
+          info.identifier.nameOffset,
           info.charEndOffset,
           startToken,
           hasInitializer,
@@ -1614,16 +1616,16 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     return count;
   }
 
-  /// Sets [unpromotablePrivateFieldNames] based on the contents of this
-  /// library.
+  /// Sets [fieldNonPromotabilityInfo] based on the contents of this library.
   void computeFieldPromotability() {
     _FieldPromotability fieldPromotability = new _FieldPromotability();
+    Map<Member, PropertyNonPromotabilityReason> individualPropertyReasons = {};
 
     // Iterate through all the classes, enums, and mixins in the library,
     // recording the non-synthetic instance fields and getters of each.
-    Iterator<SourceClassBuilder> iterator = localMembersIteratorOfType();
-    while (iterator.moveNext()) {
-      SourceClassBuilder class_ = iterator.current;
+    Iterator<SourceClassBuilder> classIterator = localMembersIteratorOfType();
+    while (classIterator.moveNext()) {
+      SourceClassBuilder class_ = classIterator.current;
       ClassInfo<Class> classInfo = fieldPromotability.addClass(class_.actualCls,
           isAbstract: class_.isAbstract);
       Iterator<SourceMemberBuilder> memberIterator =
@@ -1633,23 +1635,58 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         if (member.isStatic) continue;
         if (member is SourceFieldBuilder) {
           if (member.isSynthesized) continue;
-          // Note: external fields have already been de-sugared into getters, so
-          // we can just pass `false` for `isExternal`.
-          fieldPromotability.addField(classInfo, member.name,
+          PropertyNonPromotabilityReason? reason = fieldPromotability.addField(
+              classInfo, member, member.name,
               isFinal: member.isFinal,
               isAbstract: member.isAbstract,
-              isExternal: false);
+              isExternal: member.isExternal);
+          if (reason != null) {
+            individualPropertyReasons[member.readTarget] = reason;
+          }
         } else if (member is SourceProcedureBuilder && member.isGetter) {
           if (member.isSynthetic) continue;
-          fieldPromotability.addGetter(classInfo, member.name,
+          fieldPromotability.addGetter(classInfo, member, member.name,
               isAbstract: member.isAbstract);
+          individualPropertyReasons[member.procedure] =
+              PropertyNonPromotabilityReason.isNotField;
         }
       }
     }
 
-    // Compute the set of field names that are not promotable.
-    unpromotablePrivateFieldNames =
-        fieldPromotability.computeUnpromotablePrivateFieldNames();
+    // And for each getter in an extension or extension type, make a note of why
+    // it's not promotable.
+    Iterator<SourceExtensionBuilder> extensionIterator =
+        localMembersIteratorOfType();
+    while (extensionIterator.moveNext()) {
+      SourceExtensionBuilder extension_ = extensionIterator.current;
+      for (Builder member in extension_.scope.localMembers) {
+        if (member is SourceProcedureBuilder &&
+            !member.isStatic &&
+            member.isGetter) {
+          individualPropertyReasons[member.procedure] =
+              PropertyNonPromotabilityReason.isNotField;
+        }
+      }
+    }
+    Iterator<SourceExtensionTypeDeclarationBuilder> extensionTypeIterator =
+        localMembersIteratorOfType();
+    while (extensionTypeIterator.moveNext()) {
+      SourceExtensionTypeDeclarationBuilder extensionType =
+          extensionTypeIterator.current;
+      for (Builder member in extensionType.scope.localMembers) {
+        if (member is SourceProcedureBuilder &&
+            !member.isStatic &&
+            member.isGetter) {
+          individualPropertyReasons[member.procedure] =
+              PropertyNonPromotabilityReason.isNotField;
+        }
+      }
+    }
+
+    // Compute information about field non-promotability.
+    fieldNonPromotabilityInfo = new FieldNonPromotabilityInfo(
+        fieldNameInfo: fieldPromotability.computeNonPromotabilityInfo(),
+        individualPropertyReasons: individualPropertyReasons);
   }
 
   @override
@@ -1757,8 +1794,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
   TypeBuilder addNamedType(Object name, NullabilityBuilder nullabilityBuilder,
       List<TypeBuilder>? arguments, int charOffset,
       {required InstanceTypeVariableAccessState instanceTypeVariableAccess}) {
-    if (_omittedTypeDeclarationBuilders != null) {
-      Builder? builder = _omittedTypeDeclarationBuilders[name];
+    if (_omittedTypeDeclarationBuilders != null && name is Identifier) {
+      Builder? builder = _omittedTypeDeclarationBuilders[name.name];
       if (builder is OmittedTypeDeclarationBuilder) {
         return new DependentTypeBuilder(builder.omittedTypeBuilder);
       }
@@ -3255,7 +3292,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
   void addFactoryMethod(
       List<MetadataBuilder>? metadata,
       int modifiers,
-      Object name,
+      Identifier identifier,
       List<FormalParameterBuilder>? formals,
       ConstructorReferenceBuilder? redirectionTarget,
       int startCharOffset,
@@ -3286,11 +3323,11 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     // Prepare the simple procedure name.
     String procedureName;
     String? constructorName =
-        computeAndValidateConstructorName(name, charOffset, isFactory: true);
+        computeAndValidateConstructorName(identifier, isFactory: true);
     if (constructorName != null) {
       procedureName = constructorName;
     } else {
-      procedureName = name as String;
+      procedureName = identifier.name;
     }
 
     ContainerType containerType =
@@ -3526,31 +3563,33 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
   FunctionTypeBuilder addFunctionType(
       TypeBuilder returnType,
-      (
-        List<StructuralVariableBuilder>,
-        Map<TypeVariableBuilder, TypeBuilder>
-      )? freshStructuralParameters,
+      FreshStructuralVariableBuildersFromNominalVariableBuilders?
+          freshStructuralParameters,
       List<FormalParameterBuilder>? formals,
       NullabilityBuilder nullabilityBuilder,
       Uri fileUri,
       int charOffset) {
-    List<StructuralVariableBuilder>? structuralParameters;
     if (freshStructuralParameters != null) {
-      Map<TypeVariableBuilder, TypeBuilder> nominalToStructuralSubstitutionMap;
-      (structuralParameters, nominalToStructuralSubstitutionMap) =
-          freshStructuralParameters;
       if (formals != null) {
         for (FormalParameterBuilder formal in formals) {
-          formal.type = formal.type.subst(nominalToStructuralSubstitutionMap);
+          formal.type =
+              formal.type.subst(freshStructuralParameters.substitutionMap);
         }
       }
-      returnType = returnType.subst(nominalToStructuralSubstitutionMap);
+      returnType = returnType.subst(freshStructuralParameters.substitutionMap);
     }
-    FunctionTypeBuilder builder = new FunctionTypeBuilderImpl(returnType,
-        structuralParameters, formals, nullabilityBuilder, fileUri, charOffset);
-    checkStructuralVariables(structuralParameters, null);
-    if (structuralParameters != null) {
-      for (StructuralVariableBuilder builder in structuralParameters) {
+    List<StructuralVariableBuilder>? structuralVariableBuilders =
+        freshStructuralParameters?.freshStructuralVariableBuilders;
+    FunctionTypeBuilder builder = new FunctionTypeBuilderImpl(
+        returnType,
+        structuralVariableBuilders,
+        formals,
+        nullabilityBuilder,
+        fileUri,
+        charOffset);
+    checkStructuralVariables(structuralVariableBuilders, null);
+    if (structuralVariableBuilders != null) {
+      for (StructuralVariableBuilder builder in structuralVariableBuilders) {
         if (builder.metadata != null) {
           if (!libraryFeatures.genericMetadata.isEnabled) {
             addProblem(messageAnnotationOnFunctionTypeTypeVariable,
@@ -3562,7 +3601,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     // Nested declaration began in `OutlineBuilder.beginFunctionType` or
     // `OutlineBuilder.beginFunctionTypedFormalParameter`.
     endNestedDeclaration(TypeParameterScopeKind.functionType, "#function_type")
-        .resolveNamedTypesWithStructuralVariables(structuralParameters, this);
+        .resolveNamedTypesWithStructuralVariables(
+            structuralVariableBuilders, this);
     return builder;
   }
 
@@ -3607,7 +3647,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
   ///
   /// The function returns a pair of the list of the converted parameters and a
   /// map from the old parameters into the new parameters.
-  (List<StructuralVariableBuilder>, Map<TypeVariableBuilder, TypeBuilder>)?
+  FreshStructuralVariableBuildersFromNominalVariableBuilders?
       convertNominalToStructuralTypeVariables(
           List<TypeVariableBuilder>? nominalTypeVariables) {
     if (nominalTypeVariables == null) return null;
@@ -3649,7 +3689,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       }
     }
     processPendingNullabilities(typeFilter: potentiallyUnsetNullabilities);
-    return (structuralVariables, nominalToStructuralSubstitutionMap);
+    return new FreshStructuralVariableBuildersFromNominalVariableBuilders(
+        structuralVariables, nominalToStructuralSubstitutionMap);
   }
 
   BodyBuilderContext get bodyBuilderContext =>
@@ -5472,7 +5513,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
 /// This class examines all the [Class]es in a library and determines which
 /// fields are promotable within that library.
-class _FieldPromotability extends FieldPromotability<Class> {
+class _FieldPromotability extends FieldPromotability<Class, SourceFieldBuilder,
+    SourceProcedureBuilder> {
   @override
   Iterable<Class> getSuperclasses(Class class_,
       {required bool ignoreImplements}) {
@@ -5827,9 +5869,14 @@ class TypeParameterScopeBuilder {
     Scope? scope;
     for (NamedTypeBuilder namedTypeBuilder in unresolvedNamedTypes) {
       Object? nameOrQualified = namedTypeBuilder.name;
-      String? name = nameOrQualified is QualifiedName
-          ? nameOrQualified.qualifier as String
-          : nameOrQualified as String?;
+      String? name;
+      if (nameOrQualified is QualifiedName) {
+        name = (nameOrQualified.qualifier as Identifier).name;
+      } else if (nameOrQualified is Identifier) {
+        name = nameOrQualified.name;
+      } else {
+        name = nameOrQualified as String?;
+      }
       Builder? declaration;
       if (name != null) {
         if (members != null) {
@@ -5886,9 +5933,14 @@ class TypeParameterScopeBuilder {
     Scope? scope;
     for (NamedTypeBuilder namedTypeBuilder in unresolvedNamedTypes) {
       Object? nameOrQualified = namedTypeBuilder.name;
-      String? name = nameOrQualified is QualifiedName
-          ? nameOrQualified.qualifier as String
-          : nameOrQualified as String?;
+      String? name;
+      if (nameOrQualified is QualifiedName) {
+        name = (nameOrQualified.qualifier as Identifier).name;
+      } else if (nameOrQualified is Identifier) {
+        name = nameOrQualified.name;
+      } else {
+        name = nameOrQualified as String?;
+      }
       Builder? declaration;
       if (name != null) {
         if (members != null) {
@@ -5956,14 +6008,37 @@ class TypeParameterScopeBuilder {
 }
 
 class FieldInfo {
-  final String name;
-  final int charOffset;
+  final Identifier identifier;
   final Token? initializerToken;
   final Token? beforeLast;
   final int charEndOffset;
 
-  const FieldInfo(this.name, this.charOffset, this.initializerToken,
-      this.beforeLast, this.charEndOffset);
+  const FieldInfo(this.identifier, this.initializerToken, this.beforeLast,
+      this.charEndOffset);
+}
+
+/// Information about which fields are promotable in a given library.
+class FieldNonPromotabilityInfo {
+  /// Map whose keys are private field names for which promotion is blocked, and
+  /// whose values are [FieldNameNonPromotabilityInfo] objects containing
+  /// information about why promotion is blocked for the given name.
+  ///
+  /// This map is the final arbiter on whether a given property access is
+  /// considered promotable, but since it is keyed on the field name, it doesn't
+  /// always provide the most specific information about *why* a given property
+  /// isn't promotable; for more detailed information about a specific property,
+  /// see [individualPropertyReasons].
+  final Map<
+      String,
+      FieldNameNonPromotabilityInfo<Class, SourceFieldBuilder,
+          SourceProcedureBuilder>> fieldNameInfo;
+
+  /// Map whose keys are the members that a property get might resolve to, and
+  /// whose values are the reasons why the given property couldn't be promoted.
+  final Map<Member, PropertyNonPromotabilityReason> individualPropertyReasons;
+
+  FieldNonPromotabilityInfo(
+      {required this.fieldNameInfo, required this.individualPropertyReasons});
 }
 
 Uri computeLibraryUri(Builder declaration) {
@@ -5977,7 +6052,7 @@ Uri computeLibraryUri(Builder declaration) {
 }
 
 String extractName(Object name) {
-  return name is QualifiedName ? name.name : name as String;
+  return name is Identifier ? name.name : name as String;
 }
 
 class PostponedProblem {

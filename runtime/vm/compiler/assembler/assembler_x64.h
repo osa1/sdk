@@ -814,6 +814,7 @@ class Assembler : public AssemblerBase {
   void LoadImmediate(Register reg, int64_t immediate) {
     LoadImmediate(reg, Immediate(immediate));
   }
+  void LoadSImmediate(FpuRegister dst, float immediate);
   void LoadDImmediate(FpuRegister dst, double immediate);
   void LoadQImmediate(FpuRegister dst, simd128_value_t immediate);
 
@@ -1071,6 +1072,11 @@ class Assembler : public AssemblerBase {
 #endif
   }
 
+  // Truncates upper bits.
+  void LoadInt32FromBoxOrSmi(Register result, Register value) override;
+
+  void LoadInt64FromBoxOrSmi(Register result, Register value) override;
+
   void BranchIfNotSmi(Register reg,
                       Label* label,
                       JumpDistance distance = kFarJump) {
@@ -1194,6 +1200,9 @@ class Assembler : public AssemblerBase {
     }
   }
 
+  void LoadUnboxedSingle(FpuRegister dst, Register base, int32_t offset) {
+    movss(dst, Address(base, offset));
+  }
   void LoadUnboxedDouble(FpuRegister dst, Register base, int32_t offset) {
     movsd(dst, Address(base, offset));
   }

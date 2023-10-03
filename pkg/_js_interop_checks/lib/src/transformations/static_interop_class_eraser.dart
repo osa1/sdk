@@ -151,12 +151,13 @@ class StaticInteropClassEraser extends Transformer {
   // To avoid this, we use an allowlist that contains libraries that we know use
   // `@staticInterop`.
   late final Set<String> _erasableCoreLibraries = {
+    '_engine',
+    '_skwasm_impl',
+    '_wasm',
+    'convert',
     'js_interop_unsafe',
     'ui',
     'ui_web',
-    '_engine',
-    '_skwasm_impl',
-    'convert',
   };
 
   StaticInteropClassEraser(CoreTypes coreTypes, this.referenceFromIndex,

@@ -1743,6 +1743,37 @@ class Assembler : public AssemblerBase {
 #endif  // defined(DART_COMPRESSED_POINTERS)
   }
 
+  // Truncates upper bits.
+  void LoadInt32FromBoxOrSmi(Register result, Register value) override {
+    if (result == value) {
+      ASSERT(TMP != value);
+      MoveRegister(TMP, value);
+      value = TMP;
+    }
+    ASSERT(value != result);
+    compiler::Label done;
+    sbfx(result, value, kSmiTagSize,
+         Utils::Minimum(static_cast<int>(32), compiler::target::kSmiBits));
+    BranchIfSmi(value, &done);
+    LoadFieldFromOffset(result, value, compiler::target::Mint::value_offset(),
+                        compiler::kFourBytes);
+    Bind(&done);
+  }
+
+  void LoadInt64FromBoxOrSmi(Register result, Register value) override {
+    if (result == value) {
+      ASSERT(TMP != value);
+      MoveRegister(TMP, value);
+      value = TMP;
+    }
+    ASSERT(value != result);
+    compiler::Label done;
+    SmiUntag(result, value);
+    BranchIfSmi(value, &done);
+    LoadFieldFromOffset(result, value, target::Mint::value_offset());
+    Bind(&done);
+  }
+
   // For ARM, the near argument is ignored.
   void BranchIfNotSmi(Register reg,
                       Label* label,
@@ -2126,6 +2157,7 @@ class Assembler : public AssemblerBase {
     LoadImmediate(reg, imm.value());
   }
 
+  void LoadSImmediate(VRegister reg, float immd);
   void LoadDImmediate(VRegister reg, double immd);
   void LoadQImmediate(VRegister reg, simd128_value_t immq);
 

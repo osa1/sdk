@@ -53,7 +53,7 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "00292501dd4d8b0e246130d55a024727e31d62eb",
+  "co19_rev": "6ec024498b3546c775b65cd2d964eb3c6ff0fb2f",
   # This line prevents conflicts when both packages are rolled simultaneously.
   "co19_2_rev": "0454b178fdf6697e898b5e5c7ee553a9bc266faa",
 
@@ -99,7 +99,7 @@ vars = {
   "boringssl_gen_rev": "a468ba9fec3f59edf46a7db98caaca893e1e4d96",
   "boringssl_rev": "74646566e93de7551bfdfc5f49de7462f13d1d05",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
-  "devtools_rev": "61d618843c76b328b1382193378d52eb9f3def04",
+  "devtools_rev": "11ec4ae1036408018143b58d80d6feadbee56a6c",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -168,7 +168,7 @@ vars = {
   "path_rev": "96d9183ad4f9e48109fa8d4b8269cf75f13922dd",
   "pool_rev": "a5bee3540a2b5b3a3c34038667e7cd7bb514dc62",
   "protobuf_rev": "c16bc891978a1764f0d6d8eca54f420242c78a6a",
-  "pub_rev": "1e38c837e4eee40c6d5c5b088e8ed1b512e02980", # disable rev_sdk_deps.dart
+  "pub_rev": "fca927ae2662204805e1646c0c0687369001a41a", # disable rev_sdk_deps.dart
   "pub_semver_rev": "f0be74a446f971db478e68b59ea62e393d6df3bd",
   "shelf_rev": "485197819b93a9f9342c389f1715fb8e17a7ac0f",
   "source_map_stack_trace_rev": "196d7bfa58ef307687907c323ab8e5fb1f382afa",
@@ -179,7 +179,7 @@ vars = {
   "stream_channel_rev": "0ce7ab69c3a2ab83cdeb9dc60e1bacbb83abc165",
   "string_scanner_rev": "da9142cf9809e7e1364144b8193ec60d87f0a4b8",
   "sync_http_rev": "8233f74cd8a87707c13beceb59b56bca41b52966",
-  "tar_rev": "3c68cba8e51c569428222b9185469249206172c6", # external package, review all rolls. disable rev_sdk_deps.dart,
+  "tar_rev": "3c68cba8e51c569428222b9185469249206172c6",
   "term_glyph_rev": "1b28285a7e818b8e87c4d2119d968c5b36d73c7a",
   "test_rev": "8191a355cefe5e6073e597d139bfb46e4b00c493",
   "test_descriptor_rev": "030193dfdfbf85930eae8536909c546151da9e9c",
@@ -191,7 +191,7 @@ vars = {
   "vector_math_rev": "d54af8a2b8b8d935a475a4da6ea5a1b343f29562",
   "watcher_rev": "1aed03e2a8005f45083fdb38cbd4b684cd23082f",
   "web_socket_channel_rev": "af945f1ad3ac4193ed70b4ebfbdcba3b9f0198bc",
-  "webdev_rev": "3078f48fb56a1036bc0f2a08ac51567291d8a837", # https://github.com/dart-lang/webdev/issues/2236
+  "webdev_rev": "3078f48fb56a1036bc0f2a08ac51567291d8a837",
   "webdriver_rev": "21976d657e6505ad113f714bd104420aee23faac",
   "webkit_inspection_protocol_rev": "82f0c1c46dfdba5edf7c5fa84456233121dd69e1",
   "yaml_rev": "ae001879aa377afee2e70cf11b8716d6cc3e2658",

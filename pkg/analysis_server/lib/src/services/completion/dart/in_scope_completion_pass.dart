@@ -4,6 +4,7 @@
 
 import 'package:analysis_server/src/services/completion/dart/completion_state.dart';
 import 'package:analysis_server/src/services/completion/dart/keyword_helper.dart';
+import 'package:analysis_server/src/services/completion/dart/label_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_collector.dart';
 import 'package:analysis_server/src/utilities/extensions/ast.dart';
 import 'package:analyzer/dart/analysis/features.dart';
@@ -30,9 +31,12 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   /// The suggestion collector to which suggestions will be added.
   final SuggestionCollector collector;
 
-  /// A helper that can be used to suggest keywords.
+  /// The helper used to suggest keywords.
   late final KeywordHelper keywordHelper = KeywordHelper(
       collector: collector, featureSet: featureSet, offset: offset);
+
+  /// The helper used to suggest labels.
+  late final LabelHelper labelHelper = LabelHelper(collector: collector);
 
   /// Initialize a newly created completion visitor that can use the [state] to
   /// add candidate suggestions to the [collector].
@@ -135,6 +139,8 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       keywordHelper.addFunctionBodyModifiers(null);
     } else if (node.type.coversOffset(offset)) {
       collector.completionLocation = 'AsExpression_type';
+      // TODO(brianwilkerson) Add a parameter to _forTypeAnnotation to prohibit
+      //  producing `void`, then convert the call below.
       keywordHelper.addKeyword(Keyword.DYNAMIC);
     }
   }
@@ -213,8 +219,11 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitBreakStatement(BreakStatement node) {
-    if (offset <= node.breakKeyword.end) {
+    var breakEnd = node.breakKeyword.end;
+    if (offset <= breakEnd) {
       keywordHelper.addKeyword(Keyword.BREAK);
+    } else if (breakEnd < offset && offset <= node.semicolon.offset) {
+      labelHelper.addLabels(node);
     }
   }
 
@@ -336,8 +345,11 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitContinueStatement(ContinueStatement node) {
-    if (offset <= node.continueKeyword.end) {
+    var continueEnd = node.continueKeyword.end;
+    if (offset <= continueEnd) {
       keywordHelper.addKeyword(Keyword.CONTINUE);
+    } else if (continueEnd < offset && offset <= node.semicolon.offset) {
+      labelHelper.addLabels(node);
     }
   }
 
@@ -532,11 +544,9 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     } else {
       if (offset <= type.end) {
         keywordHelper.addFieldDeclarationKeywords(node);
-        keywordHelper.addKeyword(Keyword.DYNAMIC);
         // TODO(brianwilkerson) `var` should only be suggested if neither
         //  `static` nor `final` are present.
         keywordHelper.addKeyword(Keyword.VAR);
-        keywordHelper.addKeyword(Keyword.VOID);
       }
     }
   }
@@ -644,8 +654,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     if ((returnType == null || returnType.beginToken == returnType.endToken) &&
         offset <= node.name.offset) {
       collector.completionLocation = 'FunctionDeclaration_returnType';
-      keywordHelper.addKeyword(Keyword.DYNAMIC);
-      keywordHelper.addKeyword(Keyword.VOID);
+      _forTypeAnnotation();
     }
   }
 
@@ -698,8 +707,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     if (node.typedefKeyword.coversOffset(offset)) {
       keywordHelper.addKeyword(Keyword.TYPEDEF);
     } else if (offset >= node.equals.end && offset <= node.semicolon.offset) {
-      keywordHelper.addKeyword(Keyword.DYNAMIC);
-      keywordHelper.addKeyword(Keyword.VOID);
+      _forTypeAnnotation();
     }
   }
 
@@ -883,10 +891,9 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   void visitMethodDeclaration(MethodDeclaration node) {
     if (offset >= node.firstTokenAfterCommentAndMetadata.previous!.offset &&
         offset <= node.name.end) {
-      keywordHelper.addKeyword(Keyword.DYNAMIC);
-      keywordHelper.addKeyword(Keyword.VOID);
+      _forTypeAnnotation();
       // If the cursor is at the beginning of the declaration, include the class
-      // body keywords.  See dartbug.com/41039.
+      // member keywords.  See dartbug.com/41039.
       keywordHelper.addClassMemberKeywords();
     }
     var body = node.body;
@@ -941,8 +948,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitNamedType(NamedType node) {
-    keywordHelper.addKeyword(Keyword.DYNAMIC);
-    keywordHelper.addKeyword(Keyword.VOID);
+    _forTypeAnnotation();
   }
 
   @override
@@ -1044,6 +1050,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   @override
   void visitRecordPattern(RecordPattern node) {
     _forExpression(node);
+    // TODO(brianwilkerson) Is there a reason we aren't suggesting 'void'?
     keywordHelper.addKeyword(Keyword.DYNAMIC);
   }
 
@@ -1294,8 +1301,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitTypeArgumentList(TypeArgumentList node) {
-    keywordHelper.addKeyword(Keyword.DYNAMIC);
-    keywordHelper.addKeyword(Keyword.VOID);
+    _forTypeAnnotation();
   }
 
   @override
@@ -1401,8 +1407,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     if (variables.isNotEmpty && offset <= variables[0].name.end) {
       var type = node.type;
       if (type == null && keyword?.keyword != Keyword.VAR) {
-        keywordHelper.addKeyword(Keyword.DYNAMIC);
-        keywordHelper.addKeyword(Keyword.VOID);
+        _forTypeAnnotation();
       } else if (type is RecordTypeAnnotation) {
         // This might be a record pattern that happens to look like a type, in
         // which case the user might be typing `in`.

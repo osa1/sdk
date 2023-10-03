@@ -4,6 +4,7 @@
 
 import 'package:meta/meta.dart';
 
+import '../field_promotability.dart';
 import '../type_inference/assigned_variables.dart';
 import '../type_inference/promotion_key_store.dart';
 import '../type_inference/type_operations.dart';
@@ -2778,11 +2779,10 @@ enum NonPromotionDocumentationLink {
   /// The expression in question is a property get. It couldn't be promoted
   /// because promotion of property gets is not supported.
   ///
-  /// In Dart 3.2, this link will no longer be used, but it was used in Dart
-  /// versions 3.1 and earlier (so the documentation web site should continue to
-  /// support it until most users have upgraded to 3.2 or later).
-  ///
-  /// TODO(paulberry): once this link is no longer used, mark it `@deprecated`.
+  /// This link is no longer used, but it was used in Dart versions 3.1 and
+  /// earlier (so the documentation web site should continue to support it until
+  /// most users have upgraded to 3.2 or later).
+  @deprecated
   property('http://dart.dev/go/non-promo-property'),
 
   /// The expression in question is a reference to a field, but it couldn't be
@@ -2842,7 +2842,11 @@ abstract class NonPromotionReason {
   /// Link to documentation describing this non-promotion reason; this should be
   /// presented to the user as a source of additional information about the
   /// error.
-  NonPromotionDocumentationLink get documentationLink;
+  ///
+  /// In certain circumstances this link may be `null`, in which case the client
+  /// needs to supply a documentation link from the
+  /// [NonPromotionDocumentationLink] enum.
+  NonPromotionDocumentationLink? get documentationLink;
 
   /// Short text description of this non-promotion reason; intended for ID
   /// testing.
@@ -2861,7 +2865,11 @@ abstract class NonPromotionReasonVisitor<R, Node extends Object,
 
   R visitDemoteViaExplicitWrite(DemoteViaExplicitWrite<Variable> reason);
 
-  R visitPropertyNotPromoted(PropertyNotPromoted<Type> reason);
+  R visitPropertyNotPromotedDueToConflict(
+      PropertyNotPromotedDueToConflict<Type> reason);
+
+  R visitPropertyNotPromotedForInherentReason(
+      PropertyNotPromotedForInherentReason<Type> reason);
 
   R visitThisNotPromoted(ThisNotPromoted reason);
 }
@@ -2869,11 +2877,32 @@ abstract class NonPromotionReasonVisitor<R, Node extends Object,
 /// Operations on types and variables, abstracted from concrete type interfaces.
 abstract class Operations<Variable extends Object, Type extends Object>
     implements TypeOperations<Type>, VariableOperations<Variable, Type> {
-  /// Determines whether the given property can be promoted.  [propertyMember]
-  /// will correspond to a `propertyMember` value passed to
+  /// Determines whether the given property can be promoted.
+  ///
+  /// [property] will correspond to a `propertyMember` value passed to
   /// [FlowAnalysis.promotedPropertyType], [FlowAnalysis.propertyGet], or
   /// [FlowAnalysis.pushPropertySubpattern].
   bool isPropertyPromotable(Object property);
+
+  /// Returns additional information about why a given property couldn't be
+  /// promoted. [propertyMember] will correspond to a `propertyMember` value
+  /// passed to [FlowAnalysis.promotedPropertyType], [FlowAnalysis.propertyGet],
+  /// or [FlowAnalysis.pushPropertySubpattern].
+  ///
+  /// This method is only called if a closure returned by
+  /// [FlowAnalysis.whyNotPromoted] is invoked, and the expression being queried
+  /// is a reference to a property that wasn't promoted; this typically means
+  /// that an error occurred and the client is attempting to produce a context
+  /// message to provide additional information about the error (i.e., that the
+  /// error happened due to failed promotion).
+  ///
+  /// The client should return `null` if [property] was not promotable due to a
+  /// conflict with a field, getter, or noSuchMethod forwarder elsewhere in the
+  /// library; if this happens, the closure returned by
+  /// [FlowAnalysis.whyNotPromoted] will yield an object of type
+  /// [PropertyNotPromotedDueToConflict] containing enough information for the
+  /// client to be able to generate the appropriate context information.
+  PropertyNonPromotabilityReason? whyPropertyIsNotPromotable(Object property);
 }
 
 /// Data structure describing the relationship among variables defined by
@@ -3518,7 +3547,8 @@ class PromotionModel<Type extends Object> {
 
 /// Non-promotion reason describing the situation where an expression was not
 /// promoted due to the fact that it's a property get.
-class PropertyNotPromoted<Type extends Object> extends NonPromotionReason {
+abstract base class PropertyNotPromoted<Type extends Object>
+    extends NonPromotionReason {
   /// The name of the property.
   final String propertyName;
 
@@ -3532,19 +3562,66 @@ class PropertyNotPromoted<Type extends Object> extends NonPromotionReason {
   final Type staticType;
 
   PropertyNotPromoted(this.propertyName, this.propertyMember, this.staticType);
+}
+
+/// Non-promotion reason describing the situation where an expression was not
+/// promoted due to the fact that it's a property get, and the target of the
+/// property get has the same name as something else in the library that is not
+/// promotable.
+final class PropertyNotPromotedDueToConflict<Type extends Object>
+    extends PropertyNotPromoted<Type> {
+  PropertyNotPromotedDueToConflict(
+      super.propertyName, super.propertyMember, super.staticType);
 
   @override
-  NonPromotionDocumentationLink get documentationLink =>
-      NonPromotionDocumentationLink.property;
+  Null get documentationLink => null;
 
   @override
-  String get shortName => 'propertyNotPromoted';
+  String get shortName => 'propertyNotPromotedDueToConflict';
 
   @override
   R accept<R, Node extends Object, Variable extends Object,
               Type extends Object>(
           NonPromotionReasonVisitor<R, Node, Variable, Type> visitor) =>
-      visitor.visitPropertyNotPromoted(this as PropertyNotPromoted<Type>);
+      visitor.visitPropertyNotPromotedDueToConflict(
+          this as PropertyNotPromotedDueToConflict<Type>);
+}
+
+/// Non-promotion reason describing the situation where an expression was not
+/// promoted due to the fact that it's a property get, and the target of the
+/// property get is something inherently non-promotable.
+final class PropertyNotPromotedForInherentReason<Type extends Object>
+    extends PropertyNotPromoted<Type> {
+  /// The reason why the property isn't promotable.
+  final PropertyNonPromotabilityReason whyNotPromotable;
+
+  PropertyNotPromotedForInherentReason(super.propertyName, super.propertyMember,
+      super.staticType, this.whyNotPromotable);
+
+  @override
+  NonPromotionDocumentationLink get documentationLink =>
+      switch (whyNotPromotable) {
+        PropertyNonPromotabilityReason.isNotEnabled =>
+          NonPromotionDocumentationLink.fieldPromotionUnavailable,
+        PropertyNonPromotabilityReason.isNotField =>
+          NonPromotionDocumentationLink.nonField,
+        PropertyNonPromotabilityReason.isNotPrivate =>
+          NonPromotionDocumentationLink.publicField,
+        PropertyNonPromotabilityReason.isExternal =>
+          NonPromotionDocumentationLink.externalField,
+        PropertyNonPromotabilityReason.isNotFinal =>
+          NonPromotionDocumentationLink.nonFinalField,
+      };
+
+  @override
+  String get shortName => 'propertyNotPromotedForInherentReason';
+
+  @override
+  R accept<R, Node extends Object, Variable extends Object,
+              Type extends Object>(
+          NonPromotionReasonVisitor<R, Node, Variable, Type> visitor) =>
+      visitor.visitPropertyNotPromotedForInherentReason(
+          this as PropertyNotPromotedForInherentReason<Type>);
 }
 
 /// Target for a property access that might undergo promotion.
@@ -5609,30 +5686,41 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   Map<Type, NonPromotionReason> Function() _getNonPromotionReasons(
       _Reference<Type> reference, PromotionModel<Type>? currentPromotionInfo) {
     if (reference is _PropertyReference<Type>) {
-      _PropertySsaNode<Type>? ssaNode =
-          (reference.ssaNode as _PropertySsaNode<Type>).previousSsaNode;
-      List<List<Type>>? allPreviouslyPromotedTypes;
-      while (ssaNode != null) {
-        PromotionModel<Type> previousPromotionInfo =
-            _current.infoFor(this, ssaNode.promotionKey, ssaNode: ssaNode);
-        List<Type>? promotedTypes = previousPromotionInfo.promotedTypes;
-        if (promotedTypes != null) {
-          (allPreviouslyPromotedTypes ??= []).add(promotedTypes);
-        }
-        ssaNode = ssaNode.previousSsaNode;
-      }
-      if (allPreviouslyPromotedTypes != null) {
-        return () {
-          Map<Type, NonPromotionReason> result = <Type, NonPromotionReason>{};
-          for (List<Type> previouslyPromotedTypes
-              in allPreviouslyPromotedTypes!) {
-            for (Type type in previouslyPromotedTypes) {
-              result[type] = new PropertyNotPromoted(reference.propertyName,
-                  reference.propertyMember, reference._type);
-            }
+      Object? propertyMember = reference.propertyMember;
+      if (propertyMember != null) {
+        PropertyNonPromotabilityReason? whyNotPromotable =
+            operations.whyPropertyIsNotPromotable(propertyMember);
+        _PropertySsaNode<Type>? ssaNode =
+            (reference.ssaNode as _PropertySsaNode<Type>).previousSsaNode;
+        List<List<Type>>? allPreviouslyPromotedTypes;
+        while (ssaNode != null) {
+          PromotionModel<Type> previousPromotionInfo =
+              _current.infoFor(this, ssaNode.promotionKey, ssaNode: ssaNode);
+          List<Type>? promotedTypes = previousPromotionInfo.promotedTypes;
+          if (promotedTypes != null) {
+            (allPreviouslyPromotedTypes ??= []).add(promotedTypes);
           }
-          return result;
-        };
+          ssaNode = ssaNode.previousSsaNode;
+        }
+        if (allPreviouslyPromotedTypes != null) {
+          return () {
+            Map<Type, NonPromotionReason> result = <Type, NonPromotionReason>{};
+            for (List<Type> previouslyPromotedTypes
+                in allPreviouslyPromotedTypes!) {
+              for (Type type in previouslyPromotedTypes) {
+                result[type] = whyNotPromotable == null
+                    ? new PropertyNotPromotedDueToConflict(
+                        reference.propertyName, propertyMember, reference._type)
+                    : new PropertyNotPromotedForInherentReason(
+                        reference.propertyName,
+                        propertyMember,
+                        reference._type,
+                        whyNotPromotable);
+              }
+            }
+            return result;
+          };
+        }
       }
     } else if (currentPromotionInfo != null) {
       Variable? variable =

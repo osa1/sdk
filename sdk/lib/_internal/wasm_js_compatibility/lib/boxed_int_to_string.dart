@@ -17,7 +17,7 @@ class _BoxedInt {
       throw RangeError.range(radix, 2, 36, "radix");
     }
     return JSStringImpl(JS<WasmExternRef?>(
-      '(n, r) => n.toString(r)', toDouble().toExternRef, radix.toDouble()));
+        '(n, r) => n.toString(r)', toDouble().toExternRef, radix.toDouble()));
   }
 
   @patch

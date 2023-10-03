@@ -403,6 +403,10 @@ final class DocCommentBuilder {
       case 'example':
         _pushDocDirective(parser.simpleDirective(DocDirectiveType.example));
         return true;
+      case 'hideConstantImplementations':
+        _pushDocDirective(parser
+            .simpleDirective(DocDirectiveType.hideConstantImplementations));
+        return true;
       case 'inject-html':
         _parseBlockDocDirectiveTag(parser, DocDirectiveType.injectHtml);
         return true;
@@ -422,12 +426,17 @@ final class DocCommentBuilder {
         _pushDocDirective(parser.simpleDirective(DocDirectiveType.youtube));
         return true;
     }
-    _errorReporter?.reportErrorForOffset(
-      WarningCode.DOC_DIRECTIVE_UNKNOWN,
-      _characterSequence._offset + nameIndex,
-      nameEnd - nameIndex,
-      [name],
-    );
+    // Do not report [WarningCode.DOC_DIRECTIVE_UNKNOWN] until Flutter customer
+    // code is either cleaned or we support all of the directives they use.
+    // In particular, https://github.com/macosui/macos_ui uses `@image`.
+    if (1 == 2) {
+      _errorReporter?.reportErrorForOffset(
+        WarningCode.DOC_DIRECTIVE_UNKNOWN,
+        _characterSequence._offset + nameIndex,
+        nameEnd - nameIndex,
+        [name],
+      );
+    }
     return false;
   }
 

@@ -14,6 +14,8 @@ import 'package:analyzer/src/dart/analysis/unlinked_data.dart';
 import 'package:analyzer/src/dart/ast/ast.dart' as ast;
 import 'package:analyzer/src/dart/ast/mixin_super_invoked_names.dart';
 import 'package:analyzer/src/dart/element/element.dart';
+import 'package:analyzer/src/dart/element/field_name_non_promotability_info.dart'
+    as element_model;
 import 'package:analyzer/src/dart/resolver/scope.dart';
 import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/summary2/combinator.dart';
@@ -64,14 +66,7 @@ abstract class AugmentedInstanceDeclarationBuilder {
         if (existing != null) {
           existing.augmentation = element;
           element.augmentationTarget = existing;
-          // Link the accessor to the variable.
-          final variable = existing.variable;
-          element.variable = variable;
-          if (element.isGetter) {
-            variable.getter = element;
-          } else {
-            variable.setter = element;
-          }
+          element.variable = existing.variable;
         }
       }
       accessors[name] = element;
@@ -99,11 +94,7 @@ abstract class AugmentedInstanceDeclarationBuilder {
         final existing = fields[name];
         if (existing != null) {
           existing.augmentation = element;
-          existing.getter?.variable = element;
-          existing.setter?.variable = element;
           element.augmentationTarget = existing;
-          element.getter = existing.getter;
-          element.setter = existing.setter;
         }
       }
       fields[name] = element;
@@ -1188,7 +1179,8 @@ class LinkingUnit {
 
 /// This class examines all the [InterfaceElement]s in a library and determines
 /// which fields are promotable within that library.
-class _FieldPromotability extends FieldPromotability<InterfaceElement> {
+class _FieldPromotability extends FieldPromotability<InterfaceElement,
+    FieldElement, PropertyAccessorElement> {
   /// The [_libraryBuilder] for the library being analyzed.
   final LibraryBuilder _libraryBuilder;
 
@@ -1239,14 +1231,22 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement> {
     }
 
     // Compute the set of field names that are not promotable.
-    var unpromotableFieldNames = computeUnpromotablePrivateFieldNames();
+    var fieldNonPromotabilityInfo = computeNonPromotabilityInfo();
 
     // Set the `isPromotable` bit for each field element that *is* promotable.
     for (var field in _potentiallyPromotableFields) {
-      if (!unpromotableFieldNames.contains(field.name)) {
+      if (fieldNonPromotabilityInfo[field.name] == null) {
         field.isPromotable = true;
       }
     }
+
+    _libraryBuilder.element.fieldNameNonPromotabilityInfo = {
+      for (var MapEntry(:key, :value) in fieldNonPromotabilityInfo.entries)
+        key: element_model.FieldNameNonPromotabilityInfo(
+            conflictingFields: value.conflictingFields,
+            conflictingGetters: value.conflictingGetters,
+            conflictingNsmClasses: value.conflictingNsmClasses)
+    };
   }
 
   /// Records all the non-synthetic instance fields and getters of [class_] into
@@ -1258,11 +1258,11 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement> {
         continue;
       }
 
-      var isPotentiallyPromotable = addField(classInfo, field.name,
+      var nonPromotabilityReason = addField(classInfo, field, field.name,
           isFinal: field.isFinal,
           isAbstract: field.isAbstract,
           isExternal: field.isExternal);
-      if (isPotentiallyPromotable) {
+      if (nonPromotabilityReason == null) {
         _potentiallyPromotableFields.add(field);
       }
     }
@@ -1272,7 +1272,8 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement> {
         continue;
       }
 
-      addGetter(classInfo, accessor.name, isAbstract: accessor.isAbstract);
+      addGetter(classInfo, accessor, accessor.name,
+          isAbstract: accessor.isAbstract);
     }
   }
 }

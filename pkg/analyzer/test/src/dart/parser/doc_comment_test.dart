@@ -1109,6 +1109,30 @@ Comment
 ''');
   }
 
+  test_hideConstantImplementations() {
+    final parseResult = parseStringWithErrors(r'''
+int x = 0;
+
+/// Text.
+/// {@hideConstantImplementations}
+class A {}
+''');
+    parseResult.assertNoErrors();
+
+    final node = parseResult.findNode.comment('hideConstantImplementations');
+    assertParsedNodeText(node, r'''
+Comment
+  tokens
+    /// Text.
+    /// {@hideConstantImplementations}
+  docDirectives
+    SimpleDocDirective
+      tag
+        offset: [26, 57]
+        type: [DocDirectiveType.hideConstantImplementations]
+''');
+  }
+
   test_indentedCodeBlock_afterBlankLine() {
     final parseResult = parseStringWithErrors(r'''
 /// Text.
@@ -1729,6 +1753,7 @@ Comment
 ''');
   }
 
+  @FailingTest(reason: 'Not reporting WarningCode.DOC_DIRECTIVE_UNKNOWN yet')
   test_unknownDocDirective() {
     final parseResult = parseStringWithErrors(r'''
 int x = 0;

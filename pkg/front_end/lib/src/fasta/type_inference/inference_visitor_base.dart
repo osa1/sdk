@@ -3,10 +3,13 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/deferred_function_literal_heuristic.dart';
+import 'package:_fe_analyzer_shared/src/field_promotability.dart';
 import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/assigned_variables.dart';
 import 'package:_fe_analyzer_shared/src/testing/id.dart';
 import 'package:_fe_analyzer_shared/src/util/link.dart';
+import 'package:front_end/src/fasta/source/source_field_builder.dart';
+import 'package:front_end/src/fasta/source/source_procedure_builder.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart'
     show ClassHierarchyBase, ClassHierarchyMembers;
@@ -38,7 +41,8 @@ import '../kernel/type_algorithms.dart' show hasAnyTypeVariables;
 import '../names.dart';
 import '../problems.dart' show internalProblem, unhandled;
 import '../source/source_constructor_builder.dart';
-import '../source/source_library_builder.dart' show SourceLibraryBuilder;
+import '../source/source_library_builder.dart'
+    show FieldNonPromotabilityInfo, SourceLibraryBuilder;
 import '../util/helpers.dart';
 import 'closure_context.dart';
 import 'external_ast_helper.dart';
@@ -264,7 +268,8 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
       for (MapEntry<DartType, NonPromotionReason> entry
           in whyNotPromoted.entries) {
         if (!typeFilter(entry.key)) continue;
-        LocatedMessage? message = entry.value.accept(whyNotPromotedVisitor);
+        List<LocatedMessage> messages =
+            entry.value.accept(whyNotPromotedVisitor);
         if (dataForTesting != null) {
           String nonPromotionReasonText = entry.value.shortName;
           List<String> args = <String>[];
@@ -300,8 +305,8 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
         // promotions to non-nullable.
         // TODO(paulberry): do more testing and then expand on the comment
         // above.
-        if (message != null) {
-          context = [message];
+        if (messages.isNotEmpty) {
+          context = messages;
         }
         break;
       }
@@ -4424,8 +4429,8 @@ FunctionType replaceReturnType(FunctionType functionType, DartType returnType) {
 
 class _WhyNotPromotedVisitor
     implements
-        NonPromotionReasonVisitor<LocatedMessage?, Node, VariableDeclaration,
-            DartType> {
+        NonPromotionReasonVisitor<List<LocatedMessage>, Node,
+            VariableDeclaration, DartType> {
   final InferenceVisitorBase inferrer;
 
   Member? propertyReference;
@@ -4435,7 +4440,7 @@ class _WhyNotPromotedVisitor
   _WhyNotPromotedVisitor(this.inferrer);
 
   @override
-  LocatedMessage? visitDemoteViaExplicitWrite(
+  List<LocatedMessage> visitDemoteViaExplicitWrite(
       DemoteViaExplicitWrite<VariableDeclaration> reason) {
     TreeNode node = reason.node as TreeNode;
     if (inferrer.dataForTesting != null) {
@@ -4443,33 +4448,108 @@ class _WhyNotPromotedVisitor
           .nonPromotionReasonTargets[node] = reason.shortName;
     }
     int offset = node.fileOffset;
-    return templateVariableCouldBeNullDueToWrite
-        .withArguments(reason.variable.name!, reason.documentationLink.url)
-        .withLocation(inferrer.helper.uri, offset, noLength);
+    return [
+      templateVariableCouldBeNullDueToWrite
+          .withArguments(reason.variable.name!, reason.documentationLink.url)
+          .withLocation(inferrer.helper.uri, offset, noLength)
+    ];
   }
 
   @override
-  LocatedMessage? visitPropertyNotPromoted(
-      PropertyNotPromoted<DartType> reason) {
+  List<LocatedMessage> visitPropertyNotPromotedDueToConflict(
+      PropertyNotPromotedDueToConflict<DartType> reason) {
+    FieldNonPromotabilityInfo? fieldNonPromotabilityInfo =
+        this.inferrer.libraryBuilder.fieldNonPromotabilityInfo;
+    if (fieldNonPromotabilityInfo == null) {
+      // This should never happen, since `fieldPromotabilityInfo` is only `null`
+      // if field promotion is disabled for this library; in which case the only
+      // reason a property might not be promoted is because field promotion is
+      // disabled, and that reason is handled by
+      // `visitPropertyNotPromotedForInherentReason`.
+      assert(false);
+      // In the unlikely event that this ever happens in practice, recover by
+      // simply not generating a context message.
+      return const [];
+    }
+    FieldNameNonPromotabilityInfo<Class, SourceFieldBuilder,
+            SourceProcedureBuilder>? fieldNameInfo =
+        fieldNonPromotabilityInfo.fieldNameInfo[reason.propertyName];
+    if (fieldNameInfo == null) {
+      // This should never happen, since `fieldPromotabilityInfo` contains an
+      // entry for every non-promotable field name.
+      assert(false);
+      // In the unlikely event that this ever happens in practice, recover by
+      // simply not generating a context message.
+      return const [];
+    }
+    List<LocatedMessage> messages = [];
+    for (SourceFieldBuilder field in fieldNameInfo.conflictingFields) {
+      messages.add(templateFieldNotPromotedBecauseConflictingField
+          .withArguments(
+              reason.propertyName,
+              field.readTarget.enclosingClass!.name,
+              NonPromotionDocumentationLink.conflictingNonPromotableField.url)
+          .withLocation(field.fileUri, field.charOffset, noLength));
+    }
+    for (SourceProcedureBuilder getter in fieldNameInfo.conflictingGetters) {
+      messages.add(templateFieldNotPromotedBecauseConflictingGetter
+          .withArguments(
+              reason.propertyName,
+              getter.procedure.enclosingClass!.name,
+              NonPromotionDocumentationLink.conflictingGetter.url)
+          .withLocation(getter.fileUri, getter.charOffset, noLength));
+    }
+    for (Class nsmClass in fieldNameInfo.conflictingNsmClasses) {
+      messages.add(templateFieldNotPromotedBecauseConflictingNsmForwarder
+          .withArguments(
+              reason.propertyName,
+              nsmClass.name,
+              NonPromotionDocumentationLink
+                  .conflictingNoSuchMethodForwarder.url)
+          .withLocation(nsmClass.fileUri, nsmClass.fileOffset, noLength));
+    }
+    return messages;
+  }
+
+  @override
+  List<LocatedMessage> visitPropertyNotPromotedForInherentReason(
+      PropertyNotPromotedForInherentReason<DartType> reason) {
     Object? member = reason.propertyMember;
     if (member is Member) {
       propertyReference = member;
       propertyType = reason.staticType;
-      return templateFieldNotPromoted
-          .withArguments(reason.propertyName, reason.documentationLink.url)
-          .withLocation(member.fileUri, member.fileOffset, noLength);
+      Template<Message Function(String, String)> template;
+      switch (reason.whyNotPromotable) {
+        case PropertyNonPromotabilityReason.isNotEnabled:
+          template = templateFieldNotPromotedBecauseNotEnabled;
+        case PropertyNonPromotabilityReason.isNotField:
+          template = templateFieldNotPromotedBecauseNotField;
+        case PropertyNonPromotabilityReason.isNotPrivate:
+          template = templateFieldNotPromotedBecauseNotPrivate;
+        case PropertyNonPromotabilityReason.isExternal:
+          template = templateFieldNotPromotedBecauseExternal;
+        case PropertyNonPromotabilityReason.isNotFinal:
+          template = templateFieldNotPromotedBecauseNotFinal;
+      }
+      return [
+        template
+            .withArguments(reason.propertyName, reason.documentationLink.url)
+            .withLocation(member.fileUri, member.fileOffset, noLength)
+      ];
     } else {
       assert(member == null,
           'Unrecognized property member: ${member.runtimeType}');
-      return null;
+      return const [];
     }
   }
 
   @override
-  LocatedMessage visitThisNotPromoted(ThisNotPromoted reason) {
-    return templateThisNotPromoted
-        .withArguments(reason.documentationLink.url)
-        .withoutLocation();
+  List<LocatedMessage> visitThisNotPromoted(ThisNotPromoted reason) {
+    return [
+      templateThisNotPromoted
+          .withArguments(reason.documentationLink.url)
+          .withoutLocation()
+    ];
   }
 }
 

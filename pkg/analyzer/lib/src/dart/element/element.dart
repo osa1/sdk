@@ -27,6 +27,7 @@ import 'package:analyzer/src/dart/constant/compute.dart';
 import 'package:analyzer/src/dart/constant/evaluation.dart';
 import 'package:analyzer/src/dart/constant/value.dart';
 import 'package:analyzer/src/dart/element/display_string_builder.dart';
+import 'package:analyzer/src/dart/element/field_name_non_promotability_info.dart';
 import 'package:analyzer/src/dart/element/member.dart';
 import 'package:analyzer/src/dart/element/name_union.dart';
 import 'package:analyzer/src/dart/element/nullability_eliminator.dart';
@@ -272,6 +273,12 @@ class ClassElementImpl extends ClassOrMixinElementImpl
     implements ClassElement {
   late AugmentedClassElement augmentedInternal =
       NotAugmentedClassElementImpl(this);
+
+  @override
+  InterfaceType? _nonNullableInstance;
+
+  @override
+  InterfaceType? _nullableInstance;
 
   /// Initialize a newly created class element to have the given [name] at the
   /// given [offset] in the file that contains the declaration of this element.
@@ -2718,6 +2725,18 @@ class EnumElementImpl extends InterfaceElementImpl
   }
 
   @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
+
+  @override
   T? accept<T>(ElementVisitor<T> visitor) {
     return visitor.visitEnumElement(this);
   }
@@ -3073,6 +3092,18 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
 
   @override
   FieldElementImpl get representation => fields.first;
+
+  @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) {
@@ -3639,6 +3670,26 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     }
   }
 
+  /// Potential cache of a non-nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  InterfaceType? get _nonNullableInstance;
+
+  /// Potential cache of a non-nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  set _nonNullableInstance(InterfaceType? newValue);
+
+  /// Potential cache of a nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  InterfaceType? get _nullableInstance;
+
+  /// Potential cache of a nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  set _nullableInstance(InterfaceType? newValue);
+
   @override
   FieldElement? getField(String name) {
     return fields.firstWhereOrNull((fieldElement) => name == fieldElement.name);
@@ -3674,11 +3725,28 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     required List<DartType> typeArguments,
     required NullabilitySuffix nullabilitySuffix,
   }) {
-    return InterfaceTypeImpl(
+    if (typeArguments.isEmpty) {
+      InterfaceType? lookup;
+      if (nullabilitySuffix == NullabilitySuffix.none) {
+        lookup = _nonNullableInstance;
+      } else if (nullabilitySuffix == NullabilitySuffix.question) {
+        lookup = _nullableInstance;
+      }
+      if (lookup != null) return lookup;
+    }
+    final result = InterfaceTypeImpl(
       element: this,
       typeArguments: typeArguments,
       nullabilitySuffix: nullabilitySuffix,
     );
+    if (typeArguments.isEmpty) {
+      if (nullabilitySuffix == NullabilitySuffix.none) {
+        _nonNullableInstance = result;
+      } else if (nullabilitySuffix == NullabilitySuffix.question) {
+        _nullableInstance = result;
+      }
+    }
+    return result;
   }
 
   @override
@@ -4110,6 +4178,11 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   /// The macro executor for the bundle to which this library belongs.
   BundleMacroExecutor? bundleMacroExecutor;
 
+  /// Information about why non-promotable private fields in the library are not
+  /// promotable, or `null` if field promotion is not enabled in this library.
+  /// See [fieldNameNonPromotabilityInfo].
+  Map<String, FieldNameNonPromotabilityInfo>? _fieldNameNonPromotabilityInfo;
+
   /// All augmentations of this library, in the depth-first pre-order order.
   late final List<LibraryAugmentationElementImpl> augmentations =
       _computeAugmentations();
@@ -4179,6 +4252,35 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   set exportNamespace(Namespace exportNamespace) {
     _exportNamespace = exportNamespace;
+  }
+
+  /// Information about why non-promotable private fields in the library are not
+  /// promotable, or `null` if field promotion is not enabled in this library.
+  ///
+  /// There are two ways an access to a private property name might not be
+  /// promotable: the property might be non-promotable for a reason inherent to
+  /// itself (e.g. it's declared as a concrete getter rather than a field, or
+  /// it's a non-final field), or the property might have the same name as an
+  /// inherently non-promotable property elsewhere in the same library (in which
+  /// case the inherently non-promotable property is said to be "conflicting").
+  ///
+  /// When a compile-time error occurs because a property is non-promotable due
+  /// conflicting properties elsewhere in the library, the analyzer needs to be
+  /// able to find the conflicting properties in order to generate context
+  /// messages. This data structure allows that, by mapping each non-promotable
+  /// private name to the set of conflicting declarations.
+  ///
+  /// If a field in the library has a private name and that name does not appear
+  /// as a key in this map, the field is promotable.
+  Map<String, FieldNameNonPromotabilityInfo>?
+      get fieldNameNonPromotabilityInfo {
+    _readLinkedData();
+    return _fieldNameNonPromotabilityInfo;
+  }
+
+  set fieldNameNonPromotabilityInfo(
+      Map<String, FieldNameNonPromotabilityInfo>? value) {
+    _fieldNameNonPromotabilityInfo = value;
   }
 
   bool get hasPartOfDirective {
@@ -4990,6 +5092,18 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   set supertype(InterfaceType? supertype) {
     throw StateError('Attempt to set a supertype for a mixin declaration.');
   }
+
+  @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) {

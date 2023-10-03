@@ -1372,6 +1372,20 @@ class Assembler : public AssemblerBase {
     b(label, NE);
   }
 
+  // Truncates upper bits.
+  void LoadInt32FromBoxOrSmi(Register result, Register value) override {
+    if (result == value) {
+      ASSERT(TMP != value);
+      MoveRegister(TMP, value);
+      value = TMP;
+    }
+    ASSERT(value != result);
+    compiler::Label done;
+    SmiUntag(result, value, &done);
+    LoadFieldFromOffset(result, value, compiler::target::Mint::value_offset());
+    Bind(&done);
+  }
+
   // For ARM, the near argument is ignored.
   void BranchIfSmi(Register reg,
                    Label* label,
