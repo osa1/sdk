@@ -946,6 +946,10 @@ class Translator with KernelNodes {
               if (value is PrimitiveConstant<T>) {
                 return value.value;
               }
+              if (value is! T) {
+                throw ArgumentError("$name pragma argument has unexpected type "
+                    "${value.runtimeType} (expected $T)");
+              }
               return value as T;
             }
           }
