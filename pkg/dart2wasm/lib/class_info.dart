@@ -54,6 +54,7 @@ class FieldIndex {
   static const syncStarIteratorCurrent = 3;
   static const syncStarIteratorYieldStarIterable = 4;
   static const recordFieldBase = 2;
+  static const jsStringImplRef = 2;
 
   static void validate(Translator translator) {
     void check(Class cls, String name, int expectedIndex) {

@@ -153,6 +153,8 @@ mixin KernelNodes {
   // dart:_js_helper procedures
   late final Procedure getInternalizedString =
       index.getTopLevelProcedure("dart:_js_helper", "getInternalizedString");
+  late final Procedure areEqualInJS =
+      index.getTopLevelProcedure("dart:_js_helper", "areEqualInJS");
 
   // dart:_js_types procedures
   late final Procedure jsStringEquals =

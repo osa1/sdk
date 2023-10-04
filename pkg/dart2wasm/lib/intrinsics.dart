@@ -1230,6 +1230,7 @@ class Intrinsifier {
       ClassInfo boolInfo = translator.classInfo[translator.boxedBoolClass]!;
       ClassInfo intInfo = translator.classInfo[translator.boxedIntClass]!;
       ClassInfo doubleInfo = translator.classInfo[translator.boxedDoubleClass]!;
+      ClassInfo jsStringInfo = translator.classInfo[translator.jsStringClass]!;
       w.Local cid = function.addLocal(w.NumType.i32);
 
       // If the references are identical, return true.
@@ -1298,6 +1299,22 @@ class Intrinsifier {
       b.struct_get(doubleInfo.struct, FieldIndex.boxValue);
       b.i64_reinterpret_f64();
       b.i64_eq();
+      b.return_();
+      b.end();
+
+      // Both JSStringImpl?
+      b.local_get(cid);
+      b.i32_const(jsStringInfo.classId);
+      b.i32_eq();
+      b.if_();
+      b.local_get(first);
+      b.ref_cast(jsStringInfo.nonNullableType);
+      b.struct_get(jsStringInfo.struct, FieldIndex.jsStringImplRef);
+      b.local_get(second);
+      b.ref_cast(jsStringInfo.nonNullableType);
+      b.struct_get(jsStringInfo.struct, FieldIndex.jsStringImplRef);
+      b.call(
+          translator.functions.getFunction(translator.areEqualInJS.reference));
       b.return_();
       b.end();
 
