@@ -117,7 +117,7 @@ final class JSStringImpl implements String {
         return split(from).join(to);
       }
     } else if (from is js.JSSyntaxRegExp) {
-      return _replaceJS(js.regExpGetGlobalNative(from), to);
+      return _replaceJS(js.regExpGetGlobalNative(from), _escapeReplacement(to));
     } else {
       int startIndex = 0;
       StringBuffer result = StringBuffer();
@@ -220,7 +220,7 @@ final class JSStringImpl implements String {
     }
     if (from is js.JSSyntaxRegExp) {
       return startIndex == 0
-          ? _replaceJS(js.regExpGetNative(from), to)
+          ? _replaceJS(js.regExpGetNative(from), _escapeReplacement(to))
           : _replaceFirstRE(from, to, startIndex);
     }
     Iterator<Match> matches = from.allMatches(this, startIndex).iterator;
@@ -675,6 +675,14 @@ final class JSStringImpl implements String {
     }
     return last;
   }
+}
+
+String _escapeReplacement(String replacement) {
+  // The JavaScript `String.prototype.replace` method recognizes replacement
+  // patterns in the replacement string. Dart does not have that behavior, so
+  // the replacement patterns need to be escaped.
+  return JSStringImpl(js.JS<WasmExternRef?>(
+      r'(s) => s.replace(/\$/g, "$$$$")', replacement.toExternRef));
 }
 
 bool _jsIdentical(WasmExternRef? ref1, WasmExternRef? ref2) =>
