@@ -45,7 +45,6 @@ final class JSStringImpl implements String {
       throw new RangeError.range(start, 0, string.length);
     }
     if (start + length > string.length) return null;
-    // TODO(lrn): See if this can be optimized.
     for (int i = 0; i < length; i++) {
       if (string.codeUnitAt(start + i) != codeUnitAt(i)) {
         return null;
