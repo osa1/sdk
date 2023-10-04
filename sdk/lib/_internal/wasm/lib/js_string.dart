@@ -654,6 +654,27 @@ final class JSStringImpl implements String {
 
   @override
   String toString() => js.stringify(toExternRef);
+
+  int firstNonWhitespace() {
+    final len = this.length;
+    int first = 0;
+    for (; first < len; first++) {
+      if (!_isWhitespace(this.codeUnitAt(first))) {
+        break;
+      }
+    }
+    return first;
+  }
+
+  int lastNonWhitespace() {
+    int last = this.length - 1;
+    for (; last >= 0; last--) {
+      if (!_isWhitespace(this.codeUnitAt(last))) {
+        break;
+      }
+    }
+    return last;
+  }
 }
 
 bool _jsIdentical(WasmExternRef? ref1, WasmExternRef? ref2) =>
