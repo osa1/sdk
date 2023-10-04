@@ -48,9 +48,9 @@ class String {
         throw RangeError.range(end, start, i);
       }
       final charCode = it.current;
-      if (charCode <= 0xffff) {
+      if (charCode >= 0 && charCode <= 0xffff) {
         list[index++] = charCode;
-      } else if (charCode <= 0x10ffff) {
+      } else if (charCode >= 0 && charCode <= 0x10ffff) {
         list[index++] = 0xd800 + ((((charCode - 0x10000) >> 10) & 0x3ff));
         list[index++] = 0xdc00 + (charCode & 0x3ff);
       } else {
