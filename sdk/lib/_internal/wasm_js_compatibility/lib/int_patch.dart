@@ -14,24 +14,10 @@ class int {
 
   @patch
   static int parse(String source, {int? radix, int onError(String source)?}) {
-    if (source.isEmpty) {
-      return _handleFormatError(onError, source, 0, radix, null) as int;
-    }
-
-    final JSStringImpl sourceImpl = unsafeCast<JSStringImpl>(source);
-    final double value;
-    if (radix != null) {
-      value = JS<double>(
-          '(s, r) => parseInt(s, r)', source.toExternRef, radix.toDouble());
-    } else {
-      value = JS<double>('(s) => parseInt(s)', source.toExternRef);
-    }
-
-    if (value.isNaN) {
-      return _handleFormatError(onError, source, null, radix, null) as int;
-    }
-
-    return value.toInt();
+    int? value = tryParse(source, radix: radix);
+    if (value != null) return value;
+    if (onError != null) return onError(source);
+    throw FormatException(source);
   }
 
   @patch
