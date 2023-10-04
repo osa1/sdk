@@ -22,13 +22,7 @@ dynamic _parseJson(
 class Utf8Decoder {
   @patch
   Converter<List<int>, T> fuse<T>(Converter<String, T> next) {
-    if (next is JsonDecoder) {
-      return new _JsonUtf8Decoder(
-              (next as JsonDecoder)._reviver, this._allowMalformed)
-          as dynamic/*=Converter<List<int>, T>*/;
-    }
-    // TODO(lrn): Recognize a fused decoder where the next step is JsonDecoder.
-    return super.fuse<T>(next);
+    return super.fuse(next);
   }
 
   // Allow intercepting of UTF-8 decoding when built-in lists are passed.
