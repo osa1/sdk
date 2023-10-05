@@ -16,16 +16,10 @@ class String {
       [int start = 0, int? end]) {
     final length = charCodes.length;
 
-    if (start < 0) {
-      throw RangeError.range(start, 0, length);
-    }
+    RangeError.checkValueInInterval(start, 0, length);
 
-    if (end != null && end < start) {
-      throw RangeError.range(end, start, length);
-    }
-
-    if (end != null && end > length) {
-      throw RangeError.range(end, start, length);
+    if (end != null) {
+      RangeError.checkValueInInterval(end, start, length);
     }
 
     // Skip until `start`.
@@ -42,7 +36,7 @@ class String {
     final JSUint32ArrayImpl list =
         unsafeCast<JSUint32ArrayImpl>(Uint32List(typedArrayLength));
     int index = 0; // index in `list`.
-    end ??= charCodesLength;
+    end ??= start + charCodesLength;
     for (int i = start; i < end; i++) {
       if (!it.moveNext()) {
         throw RangeError.range(end, start, i);
