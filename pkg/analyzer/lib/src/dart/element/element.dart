@@ -274,6 +274,12 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   late AugmentedClassElement augmentedInternal =
       NotAugmentedClassElementImpl(this);
 
+  @override
+  InterfaceType? _nonNullableInstance;
+
+  @override
+  InterfaceType? _nullableInstance;
+
   /// Initialize a newly created class element to have the given [name] at the
   /// given [offset] in the file that contains the declaration of this element.
   ClassElementImpl(super.name, super.offset);
@@ -2719,6 +2725,18 @@ class EnumElementImpl extends InterfaceElementImpl
   }
 
   @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
+
+  @override
   T? accept<T>(ElementVisitor<T> visitor) {
     return visitor.visitEnumElement(this);
   }
@@ -3074,6 +3092,18 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
 
   @override
   FieldElementImpl get representation => fields.first;
+
+  @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) {
@@ -3640,6 +3670,26 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     }
   }
 
+  /// Potential cache of a non-nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  InterfaceType? get _nonNullableInstance;
+
+  /// Potential cache of a non-nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  set _nonNullableInstance(InterfaceType? newValue);
+
+  /// Potential cache of a nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  InterfaceType? get _nullableInstance;
+
+  /// Potential cache of a nullable instance of the InterfaceType representing
+  /// this element. Should only be used for types with no type arguments and no
+  /// alias.
+  set _nullableInstance(InterfaceType? newValue);
+
   @override
   FieldElement? getField(String name) {
     return fields.firstWhereOrNull((fieldElement) => name == fieldElement.name);
@@ -3675,11 +3725,28 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     required List<DartType> typeArguments,
     required NullabilitySuffix nullabilitySuffix,
   }) {
-    return InterfaceTypeImpl(
+    if (typeArguments.isEmpty) {
+      InterfaceType? lookup;
+      if (nullabilitySuffix == NullabilitySuffix.none) {
+        lookup = _nonNullableInstance;
+      } else if (nullabilitySuffix == NullabilitySuffix.question) {
+        lookup = _nullableInstance;
+      }
+      if (lookup != null) return lookup;
+    }
+    final result = InterfaceTypeImpl(
       element: this,
       typeArguments: typeArguments,
       nullabilitySuffix: nullabilitySuffix,
     );
+    if (typeArguments.isEmpty) {
+      if (nullabilitySuffix == NullabilitySuffix.none) {
+        _nonNullableInstance = result;
+      } else if (nullabilitySuffix == NullabilitySuffix.question) {
+        _nullableInstance = result;
+      }
+    }
+    return result;
   }
 
   @override
@@ -5027,6 +5094,18 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   }
 
   @override
+  InterfaceType? get _nonNullableInstance => null;
+
+  @override
+  set _nonNullableInstance(InterfaceType? newValue) {}
+
+  @override
+  InterfaceType? get _nullableInstance => null;
+
+  @override
+  set _nullableInstance(InterfaceType? newValue) {}
+
+  @override
   T? accept<T>(ElementVisitor<T> visitor) {
     return visitor.visitMixinElement(this);
   }
@@ -6296,6 +6375,19 @@ abstract class PropertyInducingElementImpl
     setModifier(Modifier.SHOULD_USE_TYPE_FOR_INITIALIZER_INFERENCE, true);
   }
 
+  /// Return `true` if this variable needs the setter.
+  bool get hasSetter {
+    if (isConst) {
+      return false;
+    }
+
+    if (isLate) {
+      return !isFinal || !hasInitializer;
+    }
+
+    return !isFinal;
+  }
+
   @override
   bool get isConstantEvaluated => true;
 
@@ -6371,36 +6463,26 @@ abstract class PropertyInducingElementImpl
     return _type!;
   }
 
-  /// Return `true` if this variable needs the setter.
-  bool get _hasSetter {
-    if (isConst) {
-      return false;
-    }
-
-    if (isLate) {
-      return !isFinal || !hasInitializer;
-    }
-
-    return !isFinal;
-  }
-
   void bindReference(Reference reference) {
     this.reference = reference;
     reference.element = this;
   }
 
-  void createImplicitAccessors(Reference enclosingRef, String name) {
-    getter = PropertyAccessorElementImpl_ImplicitGetter(
+  PropertyAccessorElementImpl createImplicitGetter(Reference reference) {
+    assert(getter == null);
+    return getter = PropertyAccessorElementImpl_ImplicitGetter(
       this,
-      reference: enclosingRef.getChild('@getter').getChild(name),
+      reference: reference,
     );
+  }
 
-    if (_hasSetter) {
-      setter = PropertyAccessorElementImpl_ImplicitSetter(
-        this,
-        reference: enclosingRef.getChild('@setter').getChild(name),
-      );
-    }
+  PropertyAccessorElementImpl createImplicitSetter(Reference reference) {
+    assert(hasSetter);
+    assert(setter == null);
+    return setter = PropertyAccessorElementImpl_ImplicitSetter(
+      this,
+      reference: reference,
+    );
   }
 
   void setLinkedData(Reference reference, ElementLinkedData linkedData) {
