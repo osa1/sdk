@@ -53,9 +53,9 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "6ec024498b3546c775b65cd2d964eb3c6ff0fb2f",
+  "co19_rev": "c1ab21bb5424c3695307ec30a89af1d800d2e90f",
   # This line prevents conflicts when both packages are rolled simultaneously.
-  "co19_2_rev": "0454b178fdf6697e898b5e5c7ee553a9bc266faa",
+  "co19_2_rev": "d87f9096ec0a14cd7c32c33316fb2378b89d6a45",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "f048a4a853e3062056d39c3db100acdde42f16d6",
@@ -179,7 +179,7 @@ vars = {
   "stream_channel_rev": "ffdb20840d05a276699b50fdfc70cf668bfed6e2",
   "string_scanner_rev": "9c525f78fbc4189ee4dc3171a5c79e925b58f58b",
   "sync_http_rev": "8233f74cd8a87707c13beceb59b56bca41b52966",
-  "tar_rev": "3c68cba8e51c569428222b9185469249206172c6",
+  "tar_rev": "748f6e680206752cc8e7a3c30af78a86da9830bd",
   "term_glyph_rev": "cff80de129b2e69c11e3a9d7c6ea0447fc37865b",
   "test_rev": "367aa397ab1cb08755f8a7582ab21101ceb9d29b",
   "test_descriptor_rev": "55b5eac522cc10bd5b2280b1f0cc367b0b69c472",
