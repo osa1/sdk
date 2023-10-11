@@ -12,8 +12,18 @@ final class JSArrayBufferImpl implements ByteBuffer {
 
   WasmExternRef? get toExternRef => _ref;
 
+  /// Get a JS `DataView` of this `ArrayBuffer`.
   WasmExternRef? view(int offsetInBytes, int? length) =>
       _newDataView(toExternRef, offsetInBytes, length);
+
+  WasmExternRef? cloneAsDataView(int offsetInBytes, int? lengthInBytes) {
+    lengthInBytes ??= this.lengthInBytes;
+    return js.JS<WasmExternRef?>('''(o, offsetInBytes, lengthInBytes) => {
+      var dst = new ArrayBuffer(lengthInBytes);
+      new Uint8Array(dst).set(new Uint8Array(o, offsetInBytes, lengthInBytes));
+      return new DataView(dst);
+    }''', toExternRef, offsetInBytes.toDouble(), lengthInBytes.toDouble());
+  }
 
   @override
   @pragma("wasm:prefer-inline")
@@ -289,7 +299,7 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSUint8ArrayImpl(buffer.view(newOffset, newLength));
+    return JSUint8ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -333,7 +343,7 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSInt8ArrayImpl(buffer.view(newOffset, newLength));
+    return JSInt8ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -378,7 +388,8 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSUint8ClampedArrayImpl(buffer.view(newOffset, newLength));
+    return JSUint8ClampedArrayImpl(
+        buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -427,8 +438,11 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
 
   @override
   Uint16List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSUint16ArrayImpl.view(buffer, start * 2, stop - start);
+    final int newOffset = offsetInBytes + (start * 2);
+    final int newEnd = end == null ? lengthInBytes : end * 2;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
+    return JSUint16ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -477,8 +491,11 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
 
   @override
   Int16List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSInt16ArrayImpl.view(buffer, start * 2, stop - start);
+    final int newOffset = offsetInBytes + (start * 2);
+    final int newEnd = end == null ? lengthInBytes : end * 2;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
+    return JSInt16ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -527,8 +544,11 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
 
   @override
   Uint32List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSUint32ArrayImpl.view(buffer, start * 4, stop - start);
+    final int newOffset = offsetInBytes + (start * 4);
+    final int newEnd = end == null ? lengthInBytes : end * 4;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
+    return JSUint32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -577,8 +597,11 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
 
   @override
   Int32List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSInt32ArrayImpl.view(buffer, start * 4, stop - start);
+    final int newOffset = offsetInBytes + (start * 4);
+    final int newEnd = end == null ? lengthInBytes : end * 4;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
+    return JSInt32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -711,8 +734,11 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
 
   @override
   Uint64List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSBigUint64ArrayImpl.view(buffer, start * 8, stop - start);
+    final int newOffset = offsetInBytes + (start * 8);
+    final int newEnd = end == null ? lengthInBytes : end * 8;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
+    return JSBigUint64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -758,8 +784,11 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
 
   @override
   Int64List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSBigInt64ArrayImpl.view(buffer, start * 8, stop - start);
+    final int newOffset = offsetInBytes + (start * 8);
+    final int newEnd = end == null ? lengthInBytes : end * 8;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
+    return JSBigInt64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -819,8 +848,11 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
 
   @override
   Float32List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSFloat32ArrayImpl.view(buffer, start * 4, stop - start);
+    final int newOffset = offsetInBytes + (start * 4);
+    final int newEnd = end == null ? lengthInBytes : end * 4;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
+    return JSFloat32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 
   @override
@@ -888,8 +920,11 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
 
   @override
   Float64List sublist(int start, [int? end]) {
-    final stop = RangeError.checkValidRange(start, end, length);
-    return JSFloat64ArrayImpl.view(buffer, start * 8, stop - start);
+    final int newOffset = offsetInBytes + (start * 8);
+    final int newEnd = end == null ? lengthInBytes : end * 8;
+    final int newLength = newEnd - newOffset;
+    RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
+    return JSFloat64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
