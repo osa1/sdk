@@ -355,23 +355,23 @@ WasmExternRef? jsifyRaw(Object? object) {
   } else if (object is String) {
     return jsStringFromDartString(object);
   } else if (object is js_types.JSInt8ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSUint8ArrayImpl) {
     return object.toJSArrayExternRef();
   } else if (object is js_types.JSUint8ClampedArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSInt16ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSUint16ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSInt32ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSUint32ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSFloat32ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSFloat64ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is Int8List) {
     return jsInt8ArrayFromDartInt8List(object);
   } else if (object is Uint8List) {
@@ -423,19 +423,19 @@ Object? dartifyRaw(WasmExternRef? ref) {
   } else if (isJSUint8Array(ref)) {
     return js_types.JSUint8ArrayImpl.fromJSArray(ref);
   } else if (isJSUint8ClampedArray(ref)) {
-    return js_types.JSUint8ClampedArrayImpl(ref);
+    return js_types.JSUint8ClampedArrayImpl.fromJSArray(ref);
   } else if (isJSInt16Array(ref)) {
-    return js_types.JSInt16ArrayImpl(ref);
+    return js_types.JSInt16ArrayImpl.fromJSArray(ref);
   } else if (isJSUint16Array(ref)) {
-    return js_types.JSUint16ArrayImpl(ref);
+    return js_types.JSUint16ArrayImpl.fromJSArray(ref);
   } else if (isJSInt32Array(ref)) {
-    return js_types.JSInt32ArrayImpl(ref);
+    return js_types.JSInt32ArrayImpl.fromJSArray(ref);
   } else if (isJSUint32Array(ref)) {
-    return js_types.JSUint32ArrayImpl(ref);
+    return js_types.JSUint32ArrayImpl.fromJSArray(ref);
   } else if (isJSFloat32Array(ref)) {
-    return js_types.JSFloat32ArrayImpl(ref);
+    return js_types.JSFloat32ArrayImpl.fromJSArray(ref);
   } else if (isJSFloat64Array(ref)) {
-    return js_types.JSFloat64ArrayImpl(ref);
+    return js_types.JSFloat64ArrayImpl.fromJSArray(ref);
   } else if (isJSArrayBuffer(ref)) {
     return js_types.JSArrayBufferImpl(ref);
   } else if (isJSDataView(ref)) {
