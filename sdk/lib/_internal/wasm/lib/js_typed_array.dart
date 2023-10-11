@@ -266,6 +266,10 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   @pragma("wasm:prefer-inline")
   int get length => lengthInBytes;
 
+  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
+      '(o) => new Uint8Array(o.buffer, o.byteOffset, o.byteLength)',
+      toExternRef);
+
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {

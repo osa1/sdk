@@ -357,7 +357,7 @@ WasmExternRef? jsifyRaw(Object? object) {
   } else if (object is js_types.JSInt8ArrayImpl) {
     return object.toExternRef;
   } else if (object is js_types.JSUint8ArrayImpl) {
-    return object.toExternRef;
+    return object.toJSArrayExternRef();
   } else if (object is js_types.JSUint8ClampedArrayImpl) {
     return object.toExternRef;
   } else if (object is js_types.JSInt16ArrayImpl) {
@@ -421,7 +421,7 @@ Object? dartifyRaw(WasmExternRef? ref) {
   } else if (isJSInt8Array(ref)) {
     return js_types.JSInt8ArrayImpl(ref);
   } else if (isJSUint8Array(ref)) {
-    return js_types.JSUint8ArrayImpl(ref);
+    return js_types.JSUint8ArrayImpl.fromJSArray(ref);
   } else if (isJSUint8ClampedArray(ref)) {
     return js_types.JSUint8ClampedArrayImpl(ref);
   } else if (isJSInt16Array(ref)) {
