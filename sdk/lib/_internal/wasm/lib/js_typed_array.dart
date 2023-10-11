@@ -356,7 +356,7 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   int get length => lengthInBytes;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint8Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Uint8ClampedArray(o.buffer, o.byteOffset, o.byteLength)',
       toExternRef);
 
   @override
@@ -408,7 +408,7 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   int get length => lengthInBytes ~/ 2;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint16Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Uint16Array(o.buffer, o.byteOffset, o.byteLength / 2)',
       toExternRef);
 
   @override
@@ -458,7 +458,7 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   int get length => lengthInBytes ~/ 2;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Int16Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Int16Array(o.buffer, o.byteOffset, o.byteLength / 2)',
       toExternRef);
 
   @override
@@ -508,7 +508,7 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   int get length => lengthInBytes ~/ 4;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint32Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Uint32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
       toExternRef);
 
   @override
@@ -558,7 +558,7 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   int get elementSizeInBytes => 4;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Int32Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Int32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
       toExternRef);
 
   @override
@@ -692,7 +692,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   int get length => lengthInBytes ~/ 8;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new BigUint64Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new BigUint64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
       toExternRef);
 
   @override
@@ -739,7 +739,7 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   int get length => lengthInBytes ~/ 8;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new BigInt64Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new BigInt64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
       toExternRef);
 
   @override
@@ -800,7 +800,7 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   int get elementSizeInBytes => 4;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Float32Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Float32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
       toExternRef);
 
   @override
@@ -869,7 +869,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   int get elementSizeInBytes => 8;
 
   WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Float64Array(o.buffer, o.byteOffset, o.byteLength)',
+      '(o) => new Float64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
       toExternRef);
 
   @override
