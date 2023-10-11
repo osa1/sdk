@@ -316,22 +316,22 @@ class SourceEnumBuilder extends SourceClassBuilder {
               /* typeParameters = */ null,
               <FormalParameterBuilder>[
                 new FormalParameterBuilder(
-                    null,
                     FormalParameterKind.requiredPositional,
                     0,
                     intType,
                     "#index",
                     libraryBuilder,
                     charOffset,
+                    fileUri: fileUri,
                     hasImmediatelyDeclaredInitializer: false),
                 new FormalParameterBuilder(
-                    null,
                     FormalParameterKind.requiredPositional,
                     0,
                     stringType,
                     "#name",
                     libraryBuilder,
                     charOffset,
+                    fileUri: fileUri,
                     hasImmediatelyDeclaredInitializer: false)
               ],
               libraryBuilder,
@@ -360,24 +360,24 @@ class SourceEnumBuilder extends SourceClassBuilder {
           member.formals!.insert(
               0,
               new FormalParameterBuilder(
-                  /* metadata = */ null,
                   FormalParameterKind.requiredPositional,
                   /* modifiers = */ 0,
                   stringType,
                   "#name",
                   libraryBuilder,
                   charOffset,
+                  fileUri: fileUri,
                   hasImmediatelyDeclaredInitializer: false));
           member.formals!.insert(
               0,
               new FormalParameterBuilder(
-                  /* metadata = */ null,
                   FormalParameterKind.requiredPositional,
                   /* modifiers = */ 0,
                   intType,
                   "#index",
                   libraryBuilder,
                   charOffset,
+                  fileUri: fileUri,
                   hasImmediatelyDeclaredInitializer: false));
         }
       }
@@ -740,6 +740,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
 
         arguments.positional.insertAll(0, enumSyntheticArguments);
         arguments.argumentsOriginalOrder?.insertAll(0, enumSyntheticArguments);
+        enumConstantInfo.argumentsBeginToken = null;
       } else {
         arguments = new ArgumentsImpl(enumSyntheticArguments);
       }
