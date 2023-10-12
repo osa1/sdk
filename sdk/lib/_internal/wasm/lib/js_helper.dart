@@ -419,7 +419,7 @@ Object? dartifyRaw(WasmExternRef? ref) {
   } else if (isJSString(ref)) {
     return js_types.JSStringImpl.box(ref);
   } else if (isJSInt8Array(ref)) {
-    return js_types.JSInt8ArrayImpl(ref);
+    return js_types.JSInt8ArrayImpl.fromJSArray(ref);
   } else if (isJSUint8Array(ref)) {
     return js_types.JSUint8ArrayImpl.fromJSArray(ref);
   } else if (isJSUint8ClampedArray(ref)) {
