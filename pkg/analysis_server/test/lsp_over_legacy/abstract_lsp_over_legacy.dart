@@ -5,10 +5,13 @@
 import 'dart:convert';
 
 import 'package:analysis_server/lsp_protocol/protocol.dart';
+import 'package:analysis_server/src/protocol/protocol_internal.dart';
 import 'package:analysis_server/src/protocol_server.dart';
 import 'package:path/path.dart' as path;
+import 'package:test/test.dart';
 
 import '../analysis_server_base.dart';
+import '../lsp/change_verifier.dart';
 import '../lsp/request_helpers_mixin.dart';
 
 abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
@@ -16,7 +19,12 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
         LspRequestHelpersMixin,
         LspEditHelpersMixin,
         LspVerifyEditHelpersMixin {
-  var _requestId = 0;
+  /// The next ID to use for the LSP request that is wrapped inside
+  /// a legacy `lsp.handle` request.
+  var _nextLspRequestId = 0;
+
+  /// The last ID that was used for a legacy request.
+  late String lastSentLegacyRequestId;
 
   @override
   path.Context get pathContext => resourceProvider.pathContext;
@@ -25,6 +33,19 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
   String get projectFolderPath => testPackageRootPath;
 
   Uri get testFileUri => toUri(convertPath(testFilePath));
+
+  Future<void> addOverlay(String filePath, String content) {
+    return handleSuccessfulRequest(
+      AnalysisUpdateContentParams({
+        convertPath(filePath): AddContentOverlay(content),
+      }).toRequest('${_nextLspRequestId++}'),
+    );
+  }
+
+  /// Creates a legacy request with an auto-assigned ID.
+  Request createLegacyRequest(RequestParams params) {
+    return params.toRequest('${_nextLspRequestId++}');
+  }
 
   @override
   Future<T> expectSuccessfulResponseTo<T, R>(
@@ -37,11 +58,7 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
     final messageJson =
         jsonDecode(jsonEncode(message.toJson())) as Map<String, Object?>;
 
-    final legacyRequest = Request(
-      '${_requestId++}',
-      'lsp.handle',
-      LspHandleParams(messageJson).toJson(),
-    );
+    final legacyRequest = createLegacyRequest(LspHandleParams(messageJson));
     final legacyResponse = await handleSuccessfulRequest(legacyRequest);
     final legacyResult = LspHandleResult.fromResponse(legacyResponse);
 
@@ -74,6 +91,12 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
     }
   }
 
+  @override
+  Future<Response> handleRequest(Request request) {
+    lastSentLegacyRequestId = request.id;
+    return super.handleRequest(request);
+  }
+
   /// Gets the number of recorded responses for [method].
   int numberOfRecordedResponses(String method) {
     return server.analyticsManager
@@ -86,5 +109,22 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
   Future<void> setUp() async {
     super.setUp();
     await setRoots(included: [workspaceRootPath], excluded: []);
+  }
+
+  Future<void> updateOverlay(String filePath, SourceEdit edit) {
+    return handleSuccessfulRequest(
+      AnalysisUpdateContentParams({
+        convertPath(filePath): ChangeContentOverlay([edit]),
+      }).toRequest('${_nextLspRequestId++}'),
+    );
+  }
+
+  void verifyEdit(WorkspaceEdit edit, String expected) {
+    final verifier = LspChangeVerifier(this, edit);
+    // For LSP-over-Legacy we set documentChanges in the standard client
+    // capabilities and assume all new users of this will support it.
+    expect(edit.documentChanges, isNotNull);
+    expect(edit.changes, isNull);
+    verifier.verifyFiles(expected);
   }
 }
