@@ -15,12 +15,87 @@ main() {
 
 @reflectiveTest
 class ExtensionTypeDeclarationParserTest extends ParserDiagnosticsTest {
+  test_error_fieldModifier_const() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(const int it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 17, 5),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
   test_error_fieldModifier_final() {
     final parseResult = parseStringWithErrors(r'''
 extension type A(final int it) {}
 ''');
     parseResult.assertErrors([
       error(ParserErrorCode.REPRESENTATION_FIELD_MODIFIER, 17, 5),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
+  test_error_fieldModifier_required() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(required int it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 17, 8),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
+  test_error_fieldModifier_static() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(static int it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 17, 6),
     ]);
 
     final node = parseResult.findNode.singleExtensionTypeDeclaration;
@@ -115,6 +190,31 @@ ExtensionTypeDeclaration
 ''');
   }
 
+  test_error_superFormalParameter() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(super.it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXPECTED_REPRESENTATION_FIELD, 17, 5),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: <empty> <synthetic>
+    fieldName: <empty> <synthetic>
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
   test_error_trailingComma() {
     final parseResult = parseStringWithErrors(r'''
 extension type A(int it,) {}
@@ -137,6 +237,40 @@ ExtensionTypeDeclaration
     rightParenthesis: )
   leftBracket: {
   rightBracket: }
+''');
+  }
+
+  test_error_typeParameters_afterConstructorName() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A._<T>(T _) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXPECTED_REPRESENTATION_FIELD, 16, 0),
+      error(ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR_PARAMETERS, 17, 1),
+      error(ParserErrorCode.EXPECTED_EXTENSION_TYPE_BODY, 17, 1),
+      error(ParserErrorCode.EXPECTED_EXECUTABLE, 18, 1),
+      error(ParserErrorCode.MISSING_CONST_FINAL_VAR_OR_TYPE, 19, 1),
+      error(ParserErrorCode.EXPECTED_TOKEN, 19, 1),
+      error(ParserErrorCode.TOP_LEVEL_OPERATOR, 20, 1),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    constructorName: RepresentationConstructorName
+      period: .
+      name: _
+    leftParenthesis: ( <synthetic>
+    fieldType: NamedType
+      name: <empty> <synthetic>
+    fieldName: <empty> <synthetic>
+    rightParenthesis: ) <synthetic>
+  leftBracket: { <synthetic>
+  rightBracket: } <synthetic>
 ''');
   }
 

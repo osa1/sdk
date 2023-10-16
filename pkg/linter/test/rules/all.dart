@@ -16,6 +16,8 @@ import 'avoid_final_parameters_test.dart' as avoid_final_parameters;
 import 'avoid_function_literals_in_foreach_calls_test.dart'
     as avoid_function_literals_in_foreach_calls;
 import 'avoid_init_to_null_test.dart' as avoid_init_to_null;
+import 'avoid_multiple_declarations_per_line_test.dart'
+    as avoid_multiple_declarations_per_line;
 import 'avoid_positional_boolean_parameters_test.dart'
     as avoid_positional_boolean_parameters;
 import 'avoid_print_test.dart' as avoid_print;
@@ -42,6 +44,7 @@ import 'avoid_types_as_parameter_names_test.dart'
 import 'avoid_types_on_closure_parameters_test.dart'
     as avoid_types_on_closure_parameters;
 import 'avoid_unnecessary_containers_test.dart' as avoid_unnecessary_containers;
+import 'avoid_unstable_final_fields_test.dart' as avoid_unstable_final_fields;
 import 'avoid_unused_constructor_parameters_test.dart'
     as avoid_unused_constructor_parameters;
 import 'avoid_void_async_test.dart' as avoid_void_async;
@@ -60,6 +63,7 @@ import 'comment_references_test.dart' as comment_references;
 import 'conditional_uri_does_not_exist_test.dart'
     as conditional_uri_does_not_exist;
 import 'constant_identifier_names_test.dart' as constant_identifier_names;
+import 'control_flow_in_finally_test.dart' as control_flow_in_finally;
 import 'dangling_library_doc_comments_test.dart'
     as dangling_library_doc_comments;
 import 'depend_on_referenced_packages_test.dart'
@@ -259,6 +263,7 @@ void main() {
   avoid_final_parameters.main();
   avoid_function_literals_in_foreach_calls.main();
   avoid_init_to_null.main();
+  avoid_multiple_declarations_per_line.main();
   avoid_positional_boolean_parameters.main();
   avoid_print.main();
   avoid_private_typedef_functions.main();
@@ -275,6 +280,7 @@ void main() {
   avoid_types_as_parameter_names.main();
   avoid_types_on_closure_parameters.main();
   avoid_unnecessary_containers.main();
+  avoid_unstable_final_fields.main();
   avoid_unused_constructor_parameters.main();
   avoid_void_async.main();
   avoid_web_libraries_in_flutter.main();
@@ -288,6 +294,7 @@ void main() {
   comment_references.main();
   conditional_uri_does_not_exist.main();
   constant_identifier_names.main();
+  control_flow_in_finally.main();
   dangling_library_doc_comments.main();
   depend_on_referenced_packages.main();
   deprecated_consistency.main();

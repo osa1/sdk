@@ -1287,7 +1287,7 @@ severity: $severity
           case ExtensionTypeDeclarationBuilder():
           // TODO(johnniwinther): Handle this case.
           case TypeAliasBuilder():
-          case TypeVariableBuilder():
+          case NominalVariableBuilder():
           case StructuralVariableBuilder():
           case InvalidTypeDeclarationBuilder():
           case BuiltinTypeDeclarationBuilder():
@@ -1853,8 +1853,8 @@ severity: $severity
 
   void finishTypeVariables(Iterable<SourceLibraryBuilder> libraryBuilders,
       ClassBuilder object, TypeBuilder dynamicType) {
-    Map<TypeVariableBuilder, SourceLibraryBuilder> unboundTypeVariableBuilders =
-        {};
+    Map<NominalVariableBuilder, SourceLibraryBuilder>
+        unboundTypeVariableBuilders = {};
     Map<StructuralVariableBuilder, SourceLibraryBuilder>
         unboundFunctionTypeTypeVariableBuilders = {};
     for (SourceLibraryBuilder library in libraryBuilders) {
@@ -1864,13 +1864,13 @@ severity: $severity
 
     // Ensure that type parameters are built after their dependencies by sorting
     // them topologically using references in bounds.
-    List< /* TypeVariableBuilder | FunctionTypeTypeVariableBuilder */ Object>
+    List< /* NominalVariableBuilder | FunctionTypeTypeVariableBuilder */ Object>
         sortedTypeVariables = sortAllTypeVariablesTopologically([
       ...unboundFunctionTypeTypeVariableBuilders.keys,
       ...unboundTypeVariableBuilders.keys
     ]);
     for (Object builder in sortedTypeVariables) {
-      if (builder is TypeVariableBuilder) {
+      if (builder is NominalVariableBuilder) {
         builder.finish(
             unboundTypeVariableBuilders[builder]!, object, dynamicType);
       } else {
@@ -2145,7 +2145,7 @@ severity: $severity
         if (builder is TypeAliasBuilder) {
           TypeAliasBuilder aliasBuilder = builder;
           NamedTypeBuilder namedBuilder = mixedInTypeBuilder;
-          builder = aliasBuilder.unaliasDeclaration(namedBuilder.arguments,
+          builder = aliasBuilder.unaliasDeclaration(namedBuilder.typeArguments,
               isUsedAsClass: true,
               usedAsClassCharOffset: namedBuilder.charOffset,
               usedAsClassFileUri: namedBuilder.fileUri);
@@ -2289,7 +2289,7 @@ severity: $severity
         final TypeAliasBuilder aliasBuilder = typeDeclarationBuilder;
         final NamedTypeBuilder namedBuilder = typeBuilder as NamedTypeBuilder;
         typeDeclarationBuilder = aliasBuilder.unaliasDeclaration(
-            namedBuilder.arguments,
+            namedBuilder.typeArguments,
             isUsedAsClass: true,
             usedAsClassCharOffset: namedBuilder.charOffset,
             usedAsClassFileUri: namedBuilder.fileUri);
@@ -2752,7 +2752,20 @@ severity: $severity
     Set<Class> changedClasses = new Set<Class>();
     for (int i = 0; i < delayedMemberChecks.length; i++) {
       delayedMemberChecks[i].getMember(membersBuilder);
-      changedClasses.add(delayedMemberChecks[i].classBuilder.cls);
+      DeclarationBuilder declarationBuilder =
+          delayedMemberChecks[i].declarationBuilder;
+      switch (declarationBuilder) {
+        case ClassBuilder():
+          // TODO(johnniwinther): Only invalidate class if a member was added.
+          changedClasses.add(declarationBuilder.cls);
+        case ExtensionTypeDeclarationBuilder():
+          // TODO(johnniwinther): Should the member be added to the extension
+          //  type declaration?
+          break;
+        case ExtensionBuilder():
+          throw new UnsupportedError(
+              "Unexpected declaration ${declarationBuilder}.");
+      }
     }
     ticker.logMs(
         "Computed ${delayedMemberChecks.length} combined member signatures");
@@ -2876,9 +2889,11 @@ severity: $severity
     ticker.logMs("Built class hierarchy");
   }
 
-  void buildClassHierarchyMembers(List<SourceClassBuilder> sourceClasses) {
+  void buildClassHierarchyMembers(List<SourceClassBuilder> sourceClasses,
+      List<SourceExtensionTypeDeclarationBuilder> sourceExtensionTypes) {
     ClassMembersBuilder membersBuilder = _membersBuilder =
-        ClassMembersBuilder.build(hierarchyBuilder, sourceClasses);
+        ClassMembersBuilder.build(
+            hierarchyBuilder, sourceClasses, sourceExtensionTypes);
     typeInferenceEngine.membersBuilder = membersBuilder;
     ticker.logMs("Built class hierarchy members");
   }

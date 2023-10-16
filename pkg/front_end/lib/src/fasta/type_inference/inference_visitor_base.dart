@@ -986,33 +986,33 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
     Member? targetTearoff;
     ProcedureKind? targetKind;
     for (ExtensionTypeMemberDescriptor descriptor
-        in extensionType.extensionTypeDeclaration.members) {
+        in extensionType.extensionTypeDeclaration.memberDescriptors) {
       if (descriptor.name == name) {
         switch (descriptor.kind) {
           case ExtensionTypeMemberKind.Method:
             if (!isSetter) {
-              targetMember = descriptor.member.asMember;
-              targetTearoff = descriptor.tearOff?.asMember;
+              targetMember = descriptor.memberReference.asMember;
+              targetTearoff = descriptor.tearOffReference?.asMember;
               targetKind = ProcedureKind.Method;
             }
             break;
           case ExtensionTypeMemberKind.Getter:
             if (!isSetter) {
-              targetMember = descriptor.member.asMember;
+              targetMember = descriptor.memberReference.asMember;
               targetTearoff = null;
               targetKind = ProcedureKind.Getter;
             }
             break;
           case ExtensionTypeMemberKind.Setter:
             if (isSetter) {
-              targetMember = descriptor.member.asMember;
+              targetMember = descriptor.memberReference.asMember;
               targetTearoff = null;
               targetKind = ProcedureKind.Setter;
             }
             break;
           case ExtensionTypeMemberKind.Operator:
             if (!isSetter) {
-              targetMember = descriptor.member.asMember;
+              targetMember = descriptor.memberReference.asMember;
               targetTearoff = null;
               targetKind = ProcedureKind.Operator;
             }
@@ -1275,6 +1275,14 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
             setter: isSetter);
         if (target != null) {
           return target;
+        } else if (receiverBound is ExtensionType &&
+            name.text ==
+                receiverBound.extensionTypeDeclaration.representationName) {
+          ObjectAccessTarget target =
+              objectAccessDescriptor.findNonExtensionTarget(this);
+          if (!target.isMissing) {
+            return target;
+          }
         }
       }
     }
@@ -4201,7 +4209,10 @@ abstract class InferenceVisitorBase implements InferenceVisitor {
     }
 
     readResult ??= new ExpressionInferenceResult(readType, read);
-    if (readTarget.isNullable) {
+    if (readTarget.isNullable &&
+        !(receiverType is ExtensionType &&
+            propertyName.text ==
+                receiverType.extensionTypeDeclaration.representationName)) {
       readResult = wrapExpressionInferenceResultInProblem(
           readResult,
           templateNullablePropertyAccessError.withArguments(
@@ -4521,21 +4532,26 @@ class _WhyNotPromotedVisitor
       PropertyNotPromotedForInherentReason<DartType> reason) {
     Object? member = reason.propertyMember;
     if (member is Member) {
+      if (member case Procedure(:var stubTarget?)) {
+        // Use the stub target so that the context message has a better source
+        // location.
+        member = stubTarget;
+      }
       propertyReference = member;
       propertyType = reason.staticType;
-      Template<Message Function(String, String)> template;
-      switch (reason.whyNotPromotable) {
-        case PropertyNonPromotabilityReason.isNotEnabled:
-          template = templateFieldNotPromotedBecauseNotEnabled;
-        case PropertyNonPromotabilityReason.isNotField:
-          template = templateFieldNotPromotedBecauseNotField;
-        case PropertyNonPromotabilityReason.isNotPrivate:
-          template = templateFieldNotPromotedBecauseNotPrivate;
-        case PropertyNonPromotabilityReason.isExternal:
-          template = templateFieldNotPromotedBecauseExternal;
-        case PropertyNonPromotabilityReason.isNotFinal:
-          template = templateFieldNotPromotedBecauseNotFinal;
-      }
+      Template<Message Function(String, String)> template =
+          switch (reason.whyNotPromotable) {
+        PropertyNonPromotabilityReason.isNotEnabled =>
+          templateFieldNotPromotedBecauseNotEnabled,
+        PropertyNonPromotabilityReason.isNotField =>
+          templateFieldNotPromotedBecauseNotField,
+        PropertyNonPromotabilityReason.isNotPrivate =>
+          templateFieldNotPromotedBecauseNotPrivate,
+        PropertyNonPromotabilityReason.isExternal =>
+          templateFieldNotPromotedBecauseExternal,
+        PropertyNonPromotabilityReason.isNotFinal =>
+          templateFieldNotPromotedBecauseNotFinal
+      };
       return [
         template
             .withArguments(reason.propertyName, reason.documentationLink.url)

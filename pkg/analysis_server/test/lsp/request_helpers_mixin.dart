@@ -6,35 +6,18 @@ import 'dart:async';
 
 import 'package:analysis_server/lsp_protocol/protocol.dart';
 import 'package:analysis_server/src/lsp/constants.dart';
-import 'package:analysis_server/src/lsp/json_parsing.dart';
 import 'package:analysis_server/src/lsp/mapping.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:collection/collection.dart';
+import 'package:language_server_protocol/json_parsing.dart';
+import 'package:path/path.dart' as path;
 import 'package:test/test.dart' as test show expect;
 import 'package:test/test.dart' hide expect;
 
 import 'change_verifier.dart';
 
-/// Helpers to simplify building LSP requests for use in tests.
-///
-/// The actual sending of requests must be supplied by the implementing class
-/// via [expectSuccessfulResponseTo].
-///
-/// These helpers can be used by in-process tests and out-of-process integration
-/// tests and by both the native LSP server and using LSP over the legacy
-/// protocol.
-mixin LspRequestHelpersMixin {
-  int _id = 0;
-
-  final startOfDocPos = Position(line: 0, character: 0);
-
-  final startOfDocRange = Range(
-      start: Position(line: 0, character: 0),
-      end: Position(line: 0, character: 0));
-
-  /// Whether to include 'clientRequestTime' fields in outgoing messages.
-  bool includeClientRequestTime = false;
-
+/// A mixin with helpers for applying LSP edits to strings.
+mixin LspEditHelpersMixin {
   String applyTextEdit(String content, TextEdit edit) {
     final startPos = edit.range.start;
     final endPos = edit.range.end;
@@ -93,6 +76,27 @@ mixin LspRequestHelpersMixin {
     indexedEdits.sort(TextEditWithIndex.compare);
     return indexedEdits.map((e) => e.edit).fold(content, applyTextEdit);
   }
+}
+
+/// Helpers to simplify building LSP requests for use in tests.
+///
+/// The actual sending of requests must be supplied by the implementing class
+/// via [expectSuccessfulResponseTo].
+///
+/// These helpers can be used by in-process tests and out-of-process integration
+/// tests and by both the native LSP server and using LSP over the legacy
+/// protocol.
+mixin LspRequestHelpersMixin {
+  int _id = 0;
+
+  final startOfDocPos = Position(line: 0, character: 0);
+
+  final startOfDocRange = Range(
+      start: Position(line: 0, character: 0),
+      end: Position(line: 0, character: 0));
+
+  /// Whether to include 'clientRequestTime' fields in outgoing messages.
+  bool includeClientRequestTime = false;
 
   Future<List<CallHierarchyIncomingCall>?> callHierarchyIncoming(
       CallHierarchyItem item) {
@@ -547,6 +551,14 @@ mixin LspRequestHelpersMixin {
     );
   }
 
+  Future<WorkspaceEdit> onWillRename(List<FileRename> renames) {
+    final request = makeRequest(
+      Method.workspace_willRenameFiles,
+      RenameFilesParams(files: renames),
+    );
+    return expectSuccessfulResponseTo(request, WorkspaceEdit.fromJson);
+  }
+
   Position positionFromOffset(int offset, String contents) {
     final lineInfo = LineInfo.fromContent(contents);
     return toPosition(lineInfo.getLocation(offset));
@@ -657,4 +669,29 @@ mixin LspRequestHelpersMixin {
       throw '$input was not one of ($T1, $T2)';
     };
   }
+}
+
+/// A mixin with helpers for verifying LSP edits in a given project.
+///
+/// Extends [LspEditHelpersMixin] with methods for accessing file state and
+/// information about the project to build paths.
+mixin LspVerifyEditHelpersMixin on LspEditHelpersMixin {
+  path.Context get pathContext;
+
+  String get projectFolderPath;
+
+  /// A function to get the current contents of a file to apply edits.
+  String? getCurrentFileContent(Uri uri);
+
+  /// Formats a path relative to the project root always using forward slashes.
+  ///
+  /// This is used in the text format for comparing edits.
+  String relativePath(String filePath) => pathContext
+      .relative(filePath, from: projectFolderPath)
+      .replaceAll(r'\', '/');
+
+  /// Formats a path relative to the project root always using forward slashes.
+  ///
+  /// This is used in the text format for comparing edits.
+  String relativeUri(Uri uri) => relativePath(pathContext.fromUri(uri));
 }

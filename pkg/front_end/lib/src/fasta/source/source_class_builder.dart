@@ -34,7 +34,6 @@ import '../builder/nullability_builder.dart';
 import '../builder/type_builder.dart';
 import '../builder/void_type_declaration_builder.dart';
 import '../fasta_codes.dart';
-import '../identifiers.dart';
 import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/hierarchy/hierarchy_node.dart';
@@ -54,7 +53,7 @@ import 'source_member_builder.dart';
 
 Class initializeClass(
     Class? cls,
-    List<TypeVariableBuilder>? typeVariables,
+    List<NominalVariableBuilder>? typeVariables,
     String name,
     SourceLibraryBuilder parent,
     int startCharOffset,
@@ -65,7 +64,7 @@ Class initializeClass(
   cls ??= new Class(
       name: name,
       typeParameters:
-          TypeVariableBuilder.typeParametersFromBuilders(typeVariables),
+          NominalVariableBuilder.typeParametersFromBuilders(typeVariables),
       // If the class is an augmentation class it shouldn't use the reference
       // from index even when available.
       // TODO(johnniwinther): Avoid creating [Class] so early in the builder
@@ -91,7 +90,7 @@ class SourceClassBuilder extends ClassBuilderImpl
   final Class actualCls;
 
   @override
-  List<TypeVariableBuilder>? typeVariables;
+  List<NominalVariableBuilder>? typeVariables;
 
   @override
   TypeBuilder? supertypeBuilder;
@@ -561,7 +560,7 @@ class SourceClassBuilder extends ClassBuilderImpl
         ]);
       } else if (typeVariables != null) {
         int count = 0;
-        for (TypeVariableBuilder t in patch.typeVariables!) {
+        for (NominalVariableBuilder t in patch.typeVariables!) {
           typeVariables![count++].applyPatch(t);
         }
       }
@@ -748,8 +747,8 @@ class SourceClassBuilder extends ClassBuilderImpl
 
     void fail(NamedTypeBuilder target, Message message,
         TypeAliasBuilder? aliasBuilder) {
-      int nameOffset = target.nameOffset;
-      int nameLength = target.nameLength;
+      int nameOffset = target.typeName.nameOffset;
+      int nameLength = target.typeName.nameLength;
       if (aliasBuilder != null) {
         addProblem(message, nameOffset, nameLength, context: [
           messageTypedefCause.withLocation(
@@ -768,7 +767,7 @@ class SourceClassBuilder extends ClassBuilderImpl
       TypeAliasBuilder? aliasBuilder; // Non-null if a type alias is use.
       if (decl is TypeAliasBuilder) {
         aliasBuilder = decl;
-        decl = aliasBuilder.unaliasDeclaration(superClassType.arguments,
+        decl = aliasBuilder.unaliasDeclaration(superClassType.typeArguments,
             isUsedAsClass: true,
             usedAsClassCharOffset: superClassType.charOffset,
             usedAsClassFileUri: superClassType.fileUri);
@@ -845,7 +844,7 @@ class SourceClassBuilder extends ClassBuilderImpl
         TypeAliasBuilder? aliasBuilder; // Non-null if a type alias is used.
         if (typeDeclaration is TypeAliasBuilder) {
           aliasBuilder = typeDeclaration;
-          decl = aliasBuilder.unaliasDeclaration(type.arguments,
+          decl = aliasBuilder.unaliasDeclaration(type.typeArguments,
               isUsedAsClass: true,
               usedAsClassCharOffset: type.charOffset,
               usedAsClassFileUri: type.fileUri);
@@ -958,7 +957,7 @@ class SourceClassBuilder extends ClassBuilderImpl
     if (typeVariables == null) return supertype;
     Message? message;
     for (int i = 0; i < typeVariables!.length; ++i) {
-      TypeVariableBuilder typeVariableBuilder = typeVariables![i];
+      NominalVariableBuilder typeVariableBuilder = typeVariables![i];
       int variance = computeTypeVariableBuilderVariance(
           typeVariableBuilder, supertype, libraryBuilder);
       if (!Variance.greaterThanOrEqual(variance, typeVariables![i].variance)) {
@@ -966,29 +965,29 @@ class SourceClassBuilder extends ClassBuilderImpl
           message = templateInvalidTypeVariableInSupertype.withArguments(
               typeVariables![i].name,
               Variance.keywordString(variance),
-              (supertype.name as Identifier).name);
+              supertype.typeName!.name);
         } else {
           message =
               templateInvalidTypeVariableInSupertypeWithVariance.withArguments(
                   Variance.keywordString(typeVariables![i].variance),
                   typeVariables![i].name,
                   Variance.keywordString(variance),
-                  (supertype.name as Identifier).name);
+                  supertype.typeName!.name);
         }
         libraryBuilder.addProblem(message, charOffset, noLength, fileUri);
       }
     }
     if (message != null) {
-      return new NamedTypeBuilderImpl((supertype.name as Identifier).name,
-          const NullabilityBuilder.omitted(),
+      TypeName typeName = supertype.typeName!;
+      return new NamedTypeBuilderImpl(
+          typeName, const NullabilityBuilder.omitted(),
           fileUri: fileUri,
           charOffset: charOffset,
           instanceTypeVariableAccess:
               InstanceTypeVariableAccessState.Unexpected)
         ..bind(
             libraryBuilder,
-            new InvalidTypeDeclarationBuilder(
-                (supertype.name as Identifier).name,
+            new InvalidTypeDeclarationBuilder(typeName.name,
                 message.withLocation(fileUri, charOffset, noLength)));
     }
     return supertype;
@@ -1189,7 +1188,7 @@ class SourceClassBuilder extends ClassBuilderImpl
         TypeAliasBuilder aliasBuilder = declarationBuilder;
         NamedTypeBuilder namedBuilder = supertype as NamedTypeBuilder;
         declarationBuilder = aliasBuilder.unaliasDeclaration(
-            namedBuilder.arguments,
+            namedBuilder.typeArguments,
             isUsedAsClass: true,
             usedAsClassCharOffset: namedBuilder.charOffset,
             usedAsClassFileUri: namedBuilder.fileUri);
@@ -1209,7 +1208,7 @@ class SourceClassBuilder extends ClassBuilderImpl
           TypeAliasBuilder aliasBuilder = declarationBuilder;
           NamedTypeBuilder namedBuilder = interface as NamedTypeBuilder;
           declarationBuilder = aliasBuilder.unaliasDeclaration(
-              namedBuilder.arguments,
+              namedBuilder.typeArguments,
               isUsedAsClass: true,
               usedAsClassCharOffset: namedBuilder.charOffset,
               usedAsClassFileUri: namedBuilder.fileUri);
@@ -1227,7 +1226,7 @@ class SourceClassBuilder extends ClassBuilderImpl
         TypeAliasBuilder aliasBuilder = declarationBuilder;
         NamedTypeBuilder namedBuilder = mixedInTypeBuilder as NamedTypeBuilder;
         declarationBuilder = aliasBuilder.unaliasDeclaration(
-            namedBuilder.arguments,
+            namedBuilder.typeArguments,
             isUsedAsClass: true,
             usedAsClassCharOffset: namedBuilder.charOffset,
             usedAsClassFileUri: namedBuilder.fileUri);
@@ -2160,12 +2159,13 @@ bool shouldOverrideProblemBeOverlooked(ClassBuilder classBuilder) {
 /// classes that are not valid Dart. For instance `JSInt` in
 /// 'dart:_interceptors' that implements both `int` and `double`, and `JsArray`
 /// in `dart:js` that implement both `ListMixin` and `JsObject`.
-int? getOverlookedOverrideProblemChoice(ClassBuilder classBuilder) {
-  String uri = '${classBuilder.libraryBuilder.importUri}';
-  if (uri == 'dart:js' && classBuilder.fileUri.pathSegments.last == 'js.dart') {
+int? getOverlookedOverrideProblemChoice(DeclarationBuilder declarationBuilder) {
+  String uri = '${declarationBuilder.libraryBuilder.importUri}';
+  if (uri == 'dart:js' &&
+      declarationBuilder.fileUri.pathSegments.last == 'js.dart') {
     return 0;
   } else if (uri == 'dart:_interceptors' &&
-      classBuilder.fileUri.pathSegments.last == 'js_number.dart') {
+      declarationBuilder.fileUri.pathSegments.last == 'js_number.dart') {
     return 1;
   }
   return null;

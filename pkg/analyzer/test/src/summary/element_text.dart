@@ -554,12 +554,12 @@ class _ElementWriter {
           _sink.writeIf(e.isBase, 'base ');
           _sink.writeIf(e.isInterface, 'interface ');
           _sink.writeIf(e.isFinal, 'final ');
-          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _writeNotSimplyBounded(e);
           _sink.writeIf(e.isMixinClass, 'mixin ');
           _sink.write('class ');
           _sink.writeIf(e.isMixinApplication, 'alias ');
         case EnumElementImpl():
-          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _writeNotSimplyBounded(e);
           _sink.write('enum ');
         case ExtensionTypeElementImpl():
           _sink.writeIf(
@@ -570,10 +570,10 @@ class _ElementWriter {
             e.hasImplementsSelfReference,
             'hasImplementsSelfReference ',
           );
-          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _writeNotSimplyBounded(e);
         case MixinElementImpl():
           _sink.writeIf(e.isBase, 'base ');
-          _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+          _writeNotSimplyBounded(e);
           _sink.write('mixin ');
       }
 
@@ -656,6 +656,8 @@ class _ElementWriter {
   }
 
   void _writeLibraryOrAugmentationElement(LibraryOrAugmentationElementImpl e) {
+    _writeReference(e);
+
     if (e is LibraryAugmentationElementImpl) {
       if (e.macroGenerated case final macroGenerated?) {
         _sink.writelnWithIndent('macroGeneratedCode');
@@ -803,8 +805,21 @@ class _ElementWriter {
     }
   }
 
+  void _writeNotSimplyBounded(InterfaceElementImpl e) {
+    if (e.isAugmentation) {
+      return;
+    }
+    _sink.writeIf(!e.isSimplyBounded, 'notSimplyBounded ');
+  }
+
   void _writeParameterElement(ParameterElement e) {
     e as ParameterElementImpl;
+
+    if (e.isNamed && e.enclosingElement is ExecutableElement) {
+      expect(e.reference, isNotNull);
+    } else {
+      expect(e.reference, isNull);
+    }
 
     _sink.writeIndentedLine(() {
       if (e.isRequiredPositional) {
@@ -1146,6 +1161,7 @@ class _ElementWriter {
   }
 
   void _writeUnitElement(CompilationUnitElementImpl e) {
+    _writeReference(e);
     _writeElements('classes', e.classes, _writeInterfaceElement);
     _writeElements('enums', e.enums, _writeInterfaceElement);
     _writeElements('extensions', e.extensions, _writeExtensionElement);

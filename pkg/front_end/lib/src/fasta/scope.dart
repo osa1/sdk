@@ -451,11 +451,11 @@ class Scope extends MutableScope {
         isModifiable: isModifiable, kind: kind);
   }
 
-  Scope withTypeVariables(List<TypeVariableBuilder>? typeVariables) {
+  Scope withTypeVariables(List<NominalVariableBuilder>? typeVariables) {
     if (typeVariables == null) return this;
     Scope newScope = new Scope.nested(this, "type variables",
         isModifiable: false, kind: ScopeKind.typeParameters);
-    for (TypeVariableBuilder t in typeVariables) {
+    for (NominalVariableBuilder t in typeVariables) {
       (newScope._local ??= {})[t.name] = t;
     }
     return newScope;
@@ -991,6 +991,11 @@ mixin ErroneousMemberBuilderMixin implements SourceMemberBuilder {
   @override
   void set parent(Builder? value) {
     throw new UnsupportedError('$runtimeType.parent=');
+  }
+
+  @override
+  DeclarationBuilder get declarationBuilder {
+    throw new UnsupportedError('$runtimeType.declarationBuilder');
   }
 
   @override
@@ -1719,7 +1724,7 @@ extension on Builder {
       return false;
     }
     for (MetadataBuilder metadataBuilder in metadata) {
-      if (metadataBuilder.beginToken.next?.lexeme == 'patch') {
+      if (metadataBuilder.hasPatch) {
         return true;
       }
     }

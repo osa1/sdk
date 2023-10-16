@@ -71,16 +71,6 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
 
 - Added `broadcast` parameter to `Stream.empty` constructor.
 
-#### `dart:cli`
-
-- **Breaking change** [#52121][]:
-  - `waitFor` is disabled by default and slated for removal in 3.4. Attempting
-  to call this function will now throw an exception. Users that still depend
-  on `waitFor` can enable it by passing `--enable_deprecated_wait_for` flag
-  to the VM.
-
-[#52121]: https://github.com/dart-lang/sdk/issues/52121
-
 #### `dart:convert`
 
 - **Breaking change** [#52801][]:
@@ -181,7 +171,7 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
 
 ### Tools
 
-#### Dart Dev Compiler (DDC)
+#### Development JavaScript compiler (DDC)
 
 - Applications compiled by DDC will no longer add members to the native
   JavaScript Object prototype.
@@ -194,7 +184,7 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
   `dart:js_interop`'s `JSSymbol` and `JSBigInt` with extension types to interop
   with these types.
 
-#### Dart2js
+#### Production JavaScript compiler (dart2js)
 
 - **Breaking change for JS interop with Symbols and BigInts**:
   JavaScript `Symbol`s and `BigInt`s are now associated with their own
@@ -207,12 +197,28 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
 
 [#53106]: https://github.com/dart-lang/sdk/issues/53106
 
+#### Dart command line
+
+- The `dart create` command has a new `cli` template
+  to quickly create Dart command-line applications
+  with basic argument parsing capabilities.
+  To learn more about using the template,
+  run `dart help create`.
+
 #### Dart format
 
 - Always split enum declarations containing a line comment.
 - Fix regression in splitting type annotations with library prefixes.
 - Support `--enable-experiment` command-line option to enable language
   experiments.
+
+#### Linter
+
+- Added the experimental [`annotate_redeclares`][] lint.
+- Marked the [`use_build_context_synchronously`][] lint as stable.
+
+[`annotate_redeclares`]: https://dart.dev/lints/annotate_redeclares
+[`use_build_context_synchronously`]: https://dart.dev/lints/use_build_context_synchronously
 
 #### Pub
 

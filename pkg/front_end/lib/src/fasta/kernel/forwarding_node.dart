@@ -20,10 +20,12 @@ import 'combined_member_signature.dart';
 import 'kernel_target.dart';
 
 class ForwardingNode {
+  final SourceClassBuilder classBuilder;
+
   /// The combined member signature for all interface members implemented
   /// by the, possibly synthesized, member for which this [ForwardingNode] was
   /// created.
-  final CombinedClassMemberSignature _combinedMemberSignature;
+  final CombinedMemberSignatureBase _combinedMemberSignature;
 
   final ProcedureKind kind;
 
@@ -39,7 +41,7 @@ class ForwardingNode {
   /// [_superClassMember] is a valid implementation of the interface.
   final ClassMember? _noSuchMethodTarget;
 
-  ForwardingNode(this._combinedMemberSignature, this.kind,
+  ForwardingNode(this.classBuilder, this._combinedMemberSignature, this.kind,
       this._superClassMember, this._mixedInMember, this._noSuchMethodTarget);
 
   /// Finishes handling of this node by propagating covariance and creating
@@ -49,7 +51,6 @@ class ForwardingNode {
   /// If a new member is created, this is returned. Otherwise `null` is
   /// returned.
   Procedure? finalize() {
-    SourceClassBuilder classBuilder = _combinedMemberSignature.classBuilder;
     ClassMember canonicalMember = _combinedMemberSignature.canonicalMember!;
     Member interfaceMember =
         canonicalMember.getMember(_combinedMemberSignature.membersBuilder);
@@ -77,7 +78,7 @@ class ForwardingNode {
       // Covariance can only come from [interfaceMember] so we never need a
       // forwarding stub.
       if (_combinedMemberSignature.neededLegacyErasure) {
-        return _combinedMemberSignature.createMemberFromSignature(
+        return _combinedMemberSignature.createMemberFromSignature(classBuilder,
             // TODO(johnniwinther): Change member signatures to use location
             // of origin.
             copyLocation: false);
@@ -158,12 +159,12 @@ class ForwardingNode {
     bool needsNoSuchMethodForwarder =
         hasNoSuchMethodTarget && !hasValidImplementation;
     bool stubNeeded = cannotReuseExistingMember ||
-        (canonicalMember.classBuilder != classBuilder &&
+        (canonicalMember.declarationBuilder != classBuilder &&
             (needsTypeOrCovarianceUpdate || needsNoSuchMethodForwarder)) ||
         needMixinStub;
     if (stubNeeded) {
-      Procedure stub = _combinedMemberSignature.createMemberFromSignature(
-          copyLocation: false)!;
+      Procedure stub = _combinedMemberSignature
+          .createMemberFromSignature(classBuilder, copyLocation: false)!;
       bool needsForwardingStub =
           _combinedMemberSignature.needsCovarianceMerging || needsSuperImpl;
       if (needsForwardingStub || needMixinStub || needsNoSuchMethodForwarder) {
@@ -298,8 +299,7 @@ class ForwardingNode {
             if (!_combinedMemberSignature.hierarchy.types.isSubtypeOf(
                 parameter.type,
                 superParameterType,
-                _combinedMemberSignature
-                        .classBuilder.libraryBuilder.isNonNullableByDefault
+                classBuilder.libraryBuilder.isNonNullableByDefault
                     ? SubtypeCheckMode.withNullabilities
                     : SubtypeCheckMode.ignoringNullabilities)) {
               expression = new AsExpression(expression, superParameterType)
@@ -327,8 +327,7 @@ class ForwardingNode {
             if (!_combinedMemberSignature.hierarchy.types.isSubtypeOf(
                 parameter.type,
                 superParameterType,
-                _combinedMemberSignature
-                        .classBuilder.libraryBuilder.isNonNullableByDefault
+                classBuilder.libraryBuilder.isNonNullableByDefault
                     ? SubtypeCheckMode.withNullabilities
                     : SubtypeCheckMode.ignoringNullabilities)) {
               expression = new AsExpression(expression, superParameterType)
@@ -366,8 +365,7 @@ class ForwardingNode {
           if (!_combinedMemberSignature.hierarchy.types.isSubtypeOf(
               parameter.type,
               superParameterType,
-              _combinedMemberSignature
-                      .classBuilder.libraryBuilder.isNonNullableByDefault
+              classBuilder.libraryBuilder.isNonNullableByDefault
                   ? SubtypeCheckMode.withNullabilities
                   : SubtypeCheckMode.ignoringNullabilities)) {
             expression = new AsExpression(expression, superParameterType)
@@ -446,6 +444,49 @@ class ForwardingNode {
           ..isForNonNullableByDefault = libraryBuilder.isNonNullableByDefault
           ..fileOffset = procedure.fileOffset;
       }
+    }
+
+    FunctionType signatureType = procedure.function
+        .computeFunctionType(procedure.enclosingLibrary.nonNullable);
+    List<VariableDeclaration> positionalParameters =
+        procedure.function.positionalParameters;
+    List<VariableDeclaration> namedParameters =
+        procedure.function.namedParameters;
+    int requiredParameterCount = procedure.function.requiredParameterCount;
+    bool hasUpdate = false;
+    bool updateNullability(VariableDeclaration parameter,
+        {required bool isRequired}) {
+      // Parameters in nnbd libraries that backends might not be able to pass
+      // a non-null value for must be nullable. This allows backends to do the
+      // appropriate parameter checks in the forwarder stub for null placeholder
+      // arguments. Covariance indicates the type must stay the same.
+      return !(isRequired ||
+              parameter.hasDeclaredInitializer ||
+              parameter.isCovariantByDeclaration ||
+              parameter.isCovariantByClass) &&
+          libraryBuilder.isNonNullableByDefault &&
+          parameter.type.nullability != Nullability.nullable;
+    }
+
+    for (int i = 0; i < positionalParameters.length; i++) {
+      VariableDeclaration parameter = positionalParameters[i];
+      bool isRequired = i < requiredParameterCount;
+      if (updateNullability(parameter, isRequired: isRequired)) {
+        parameter.type =
+            parameter.type.withDeclaredNullability(Nullability.nullable);
+        hasUpdate = true;
+      }
+    }
+
+    for (VariableDeclaration parameter in namedParameters) {
+      if (updateNullability(parameter, isRequired: parameter.isRequired)) {
+        parameter.type =
+            parameter.type.withDeclaredNullability(Nullability.nullable);
+        hasUpdate = true;
+      }
+    }
+    if (hasUpdate) {
+      procedure.signatureType = signatureType;
     }
     procedure.function.body = new ReturnStatement(result)
       ..fileOffset = procedure.fileOffset
