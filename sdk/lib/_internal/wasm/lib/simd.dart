@@ -7,16 +7,16 @@ import 'dart:_internal' show FixedLengthListMixin, unsafeCast;
 import 'dart:collection' show ListMixin;
 import 'dart:math' as math;
 
-final class _NaiveInt32x4List extends Object
+final class NaiveInt32x4List extends Object
     with ListMixin<Int32x4>, FixedLengthListMixin<Int32x4>
     implements Int32x4List {
   final Int32List _storage;
 
-  _NaiveInt32x4List(int length) : _storage = Int32List(length * 4);
+  NaiveInt32x4List(int length) : _storage = Int32List(length * 4);
 
-  _NaiveInt32x4List.externalStorage(Int32List storage) : _storage = storage;
+  NaiveInt32x4List.externalStorage(Int32List storage) : _storage = storage;
 
-  _NaiveInt32x4List._slowFromList(List<Int32x4> list)
+  NaiveInt32x4List._slowFromList(List<Int32x4> list)
       : _storage = Int32List(list.length * 4) {
     for (int i = 0; i < list.length; i++) {
       var e = list[i];
@@ -27,12 +27,12 @@ final class _NaiveInt32x4List extends Object
     }
   }
 
-  factory _NaiveInt32x4List.fromList(List<Int32x4> list) {
-    if (list is _NaiveInt32x4List) {
-      return _NaiveInt32x4List.externalStorage(
+  factory NaiveInt32x4List.fromList(List<Int32x4> list) {
+    if (list is NaiveInt32x4List) {
+      return NaiveInt32x4List.externalStorage(
           Int32List.fromList(list._storage));
     } else {
-      return _NaiveInt32x4List._slowFromList(list);
+      return NaiveInt32x4List._slowFromList(list);
     }
   }
 
@@ -65,15 +65,15 @@ final class _NaiveInt32x4List extends Object
 
   Int32x4List sublist(int start, [int? end]) {
     int stop = RangeError.checkValidRange(start, end, length);
-    return _NaiveInt32x4List.externalStorage(
+    return NaiveInt32x4List.externalStorage(
         _storage.sublist(start * 4, stop * 4));
   }
 }
 
-final class _NaiveUnmodifiableInt32x4List extends _NaiveInt32x4List
+final class _NaiveUnmodifiableInt32x4List extends NaiveInt32x4List
     implements UnmodifiableInt32x4ListView {
   _NaiveUnmodifiableInt32x4List(Int32x4List list)
-      : super.externalStorage(unsafeCast<_NaiveInt32x4List>(list)._storage);
+      : super.externalStorage(unsafeCast<NaiveInt32x4List>(list)._storage);
 
   _NaiveUnmodifiableInt32x4List.externalStorage(Int32List storage)
       : super.externalStorage(storage);
@@ -87,16 +87,16 @@ final class _NaiveUnmodifiableInt32x4List extends _NaiveInt32x4List
   ByteBuffer get buffer => UnmodifiableByteBufferView(super.buffer);
 }
 
-final class _NaiveFloat32x4List extends Object
+final class NaiveFloat32x4List extends Object
     with ListMixin<Float32x4>, FixedLengthListMixin<Float32x4>
     implements Float32x4List {
   final Float32List _storage;
 
-  _NaiveFloat32x4List(int length) : _storage = Float32List(length * 4);
+  NaiveFloat32x4List(int length) : _storage = Float32List(length * 4);
 
-  _NaiveFloat32x4List.externalStorage(this._storage);
+  NaiveFloat32x4List.externalStorage(this._storage);
 
-  _NaiveFloat32x4List._slowFromList(List<Float32x4> list)
+  NaiveFloat32x4List._slowFromList(List<Float32x4> list)
       : _storage = Float32List(list.length * 4) {
     for (int i = 0; i < list.length; i++) {
       var e = list[i];
@@ -107,12 +107,12 @@ final class _NaiveFloat32x4List extends Object
     }
   }
 
-  factory _NaiveFloat32x4List.fromList(List<Float32x4> list) {
-    if (list is _NaiveFloat32x4List) {
-      return _NaiveFloat32x4List.externalStorage(
+  factory NaiveFloat32x4List.fromList(List<Float32x4> list) {
+    if (list is NaiveFloat32x4List) {
+      return NaiveFloat32x4List.externalStorage(
           Float32List.fromList(list._storage));
     } else {
-      return _NaiveFloat32x4List._slowFromList(list);
+      return NaiveFloat32x4List._slowFromList(list);
     }
   }
 
@@ -145,15 +145,15 @@ final class _NaiveFloat32x4List extends Object
 
   Float32x4List sublist(int start, [int? end]) {
     int stop = RangeError.checkValidRange(start, end, length);
-    return _NaiveFloat32x4List.externalStorage(
+    return NaiveFloat32x4List.externalStorage(
         _storage.sublist(start * 4, stop * 4));
   }
 }
 
-final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List
+final class _NaiveUnmodifiableFloat32x4List extends NaiveFloat32x4List
     implements UnmodifiableFloat32x4ListView {
   _NaiveUnmodifiableFloat32x4List(Float32x4List list)
-      : super.externalStorage(unsafeCast<_NaiveFloat32x4List>(list)._storage);
+      : super.externalStorage(unsafeCast<NaiveFloat32x4List>(list)._storage);
 
   _NaiveUnmodifiableFloat32x4List.externalStorage(Float32List storage)
       : super.externalStorage(storage);
@@ -167,16 +167,16 @@ final class _NaiveUnmodifiableFloat32x4List extends _NaiveFloat32x4List
   ByteBuffer get buffer => UnmodifiableByteBufferView(super.buffer);
 }
 
-final class _NaiveFloat64x2List extends Object
+final class NaiveFloat64x2List extends Object
     with ListMixin<Float64x2>, FixedLengthListMixin<Float64x2>
     implements Float64x2List {
   final Float64List _storage;
 
-  _NaiveFloat64x2List(int length) : _storage = Float64List(length * 2);
+  NaiveFloat64x2List(int length) : _storage = Float64List(length * 2);
 
-  _NaiveFloat64x2List.externalStorage(this._storage);
+  NaiveFloat64x2List.externalStorage(this._storage);
 
-  _NaiveFloat64x2List._slowFromList(List<Float64x2> list)
+  NaiveFloat64x2List._slowFromList(List<Float64x2> list)
       : _storage = Float64List(list.length * 2) {
     for (int i = 0; i < list.length; i++) {
       var e = list[i];
@@ -185,12 +185,12 @@ final class _NaiveFloat64x2List extends Object
     }
   }
 
-  factory _NaiveFloat64x2List.fromList(List<Float64x2> list) {
-    if (list is _NaiveFloat64x2List) {
-      return _NaiveFloat64x2List.externalStorage(
+  factory NaiveFloat64x2List.fromList(List<Float64x2> list) {
+    if (list is NaiveFloat64x2List) {
+      return NaiveFloat64x2List.externalStorage(
           Float64List.fromList(list._storage));
     } else {
-      return _NaiveFloat64x2List._slowFromList(list);
+      return NaiveFloat64x2List._slowFromList(list);
     }
   }
 
@@ -219,15 +219,15 @@ final class _NaiveFloat64x2List extends Object
 
   Float64x2List sublist(int start, [int? end]) {
     int stop = RangeError.checkValidRange(start, end, length);
-    return _NaiveFloat64x2List.externalStorage(
+    return NaiveFloat64x2List.externalStorage(
         _storage.sublist(start * 2, stop * 2));
   }
 }
 
-final class _NaiveUnmodifiableFloat64x2List extends _NaiveFloat64x2List
+final class _NaiveUnmodifiableFloat64x2List extends NaiveFloat64x2List
     implements UnmodifiableFloat64x2ListView {
   _NaiveUnmodifiableFloat64x2List(Float64x2List list)
-      : super.externalStorage(unsafeCast<_NaiveFloat64x2List>(list)._storage);
+      : super.externalStorage(unsafeCast<NaiveFloat64x2List>(list)._storage);
 
   _NaiveUnmodifiableFloat64x2List.externalStorage(Float64List storage)
       : super.externalStorage(storage);

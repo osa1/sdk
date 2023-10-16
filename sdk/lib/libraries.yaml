@@ -187,6 +187,10 @@ wasm_js_compatibility:
         - _internal/wasm/lib/simd_patch.dart
         - _internal/wasm_js_compatibility/lib/typed_data.dart
         - _internal/wasm_js_compatibility/lib/typed_data_patch.dart
+    convert:
+      uri: convert/convert.dart
+      patches:
+      - _internal/wasm_js_compatibility/lib/convert_patch.dart
 
 wasm_base:
   include:
@@ -197,8 +201,13 @@ wasm_base:
       patches:
         - _internal/wasm/lib/simd.dart
         - _internal/wasm/lib/simd_patch.dart
-        - _internal/wasm/lib/typed_data.dart
         - _internal/wasm/lib/typed_data_patch.dart
+    convert:
+      uri: convert/convert.dart
+      patches:
+      - _internal/wasm/lib/convert_patch.dart
+    _typed_data:
+        uri: _internal/wasm/lib/typed_data.dart
 
 wasm_common:
   libraries:
@@ -238,10 +247,6 @@ wasm_common:
       - _internal/vm_shared/lib/collection_patch.dart
       - _internal/vm_shared/lib/compact_hash.dart
       - _internal/wasm/lib/hash_factories.dart
-    convert:
-      uri: convert/convert.dart
-      patches:
-      - _internal/wasm/lib/convert_patch.dart
     developer:
       uri: developer/developer.dart
       patches:

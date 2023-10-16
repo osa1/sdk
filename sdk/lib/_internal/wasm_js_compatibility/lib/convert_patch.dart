@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show ClassID, patch, POWERS_OF_TEN, unsafeCast;
-import "dart:_typed_data" show U8List;
 
 import "dart:typed_data" show Uint8List, Uint16List;
 
@@ -30,7 +29,6 @@ class Utf8Decoder {
   @patch
   static String? _convertIntercepted(
       bool allowMalformed, List<int> codeUnits, int start, int? end) {
-    if (codeUnits is U8List) {}
     return null; // This call was not intercepted.
   }
 }

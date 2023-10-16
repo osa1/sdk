@@ -11,31 +11,31 @@ import 'dart:_internal' show patch;
 @patch
 class Int32x4List {
   @patch
-  factory Int32x4List(int length) = _NaiveInt32x4List;
+  factory Int32x4List(int length) = NaiveInt32x4List;
 
   @patch
   factory Int32x4List.fromList(List<Int32x4> elements) =
-      _NaiveInt32x4List.fromList;
+      NaiveInt32x4List.fromList;
 }
 
 @patch
 class Float32x4List {
   @patch
-  factory Float32x4List(int length) = _NaiveFloat32x4List;
+  factory Float32x4List(int length) = NaiveFloat32x4List;
 
   @patch
   factory Float32x4List.fromList(List<Float32x4> elements) =
-      _NaiveFloat32x4List.fromList;
+      NaiveFloat32x4List.fromList;
 }
 
 @patch
 class Float64x2List {
   @patch
-  factory Float64x2List(int length) = _NaiveFloat64x2List;
+  factory Float64x2List(int length) = NaiveFloat64x2List;
 
   @patch
   factory Float64x2List.fromList(List<Float64x2> elements) =
-      _NaiveFloat64x2List.fromList;
+      NaiveFloat64x2List.fromList;
 }
 
 @patch
