@@ -24,6 +24,7 @@ import 'dart:_internal'
         unsafeCast,
         WhereIterable,
         WhereTypeIterable;
+import 'dart:_simd';
 import 'dart:_wasm';
 
 import 'dart:collection' show ListBase;
@@ -1075,7 +1076,7 @@ abstract class ByteBufferBase extends ByteBuffer {
     _rangeCheck(
         lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
-    return _SlowF64List._withMutability(this, offsetInBytes, length, _mutable);
+    return SlowF64List._withMutability(this, offsetInBytes, length, _mutable);
   }
 
   @override
@@ -1097,7 +1098,7 @@ abstract class ByteBufferBase extends ByteBuffer {
     _offsetAlignmentCheck(offsetInBytes, Float64x2List.bytesPerElement);
     // TODO: mutability
     return NaiveFloat64x2List.externalStorage(
-        _SlowF64List._(this, offsetInBytes, length * 2));
+        SlowF64List._(this, offsetInBytes, length * 2));
   }
 }
 
@@ -1353,8 +1354,7 @@ class _F64ByteBuffer extends ByteBufferBase {
         lengthInBytes, offsetInBytes, length * Float64List.bytesPerElement);
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     if (offsetInBytes % Float64List.bytesPerElement != 0) {
-      return _SlowF64List._withMutability(
-          this, offsetInBytes, length, _mutable);
+      return SlowF64List._withMutability(this, offsetInBytes, length, _mutable);
     } else {
       return F64List._withMutability(
           _data, offsetInBytes ~/ Int64List.bytesPerElement, length, _mutable);
@@ -3373,19 +3373,19 @@ class _SlowF32List extends _SlowListBase
   }
 }
 
-class _SlowF64List extends _SlowListBase
+class SlowF64List extends _SlowListBase
     with
         _DoubleListMixin,
         _TypedDoubleListMixin<F64List>,
         _TypedListCommonOperationsMixin
     implements Float64List {
-  _SlowF64List._(ByteBuffer buffer, int offsetInBytes, int length)
+  SlowF64List._(ByteBuffer buffer, int offsetInBytes, int length)
       : super(buffer, offsetInBytes, length);
 
-  factory _SlowF64List._withMutability(
+  factory SlowF64List._withMutability(
           ByteBuffer buffer, int offsetInBytes, int length, bool mutable) =>
       mutable
-          ? _SlowF64List._(buffer, offsetInBytes, length)
+          ? SlowF64List._(buffer, offsetInBytes, length)
           : UnmodifiableSlowF64List._(buffer, offsetInBytes, length);
 
   @override
@@ -3519,7 +3519,7 @@ class UnmodifiableSlowF32List extends _SlowF32List
       : super._(buffer, offsetInBytes, length);
 }
 
-class UnmodifiableSlowF64List extends _SlowF64List
+class UnmodifiableSlowF64List extends SlowF64List
     with _UnmodifiableDoubleListMixin, _UnmodifiableSlowListMixin
     implements UnmodifiableFloat64ListView {
   UnmodifiableSlowF64List(Float64List list)
