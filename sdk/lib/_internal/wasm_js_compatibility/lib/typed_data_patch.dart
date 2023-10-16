@@ -229,7 +229,7 @@ class Float64x2List {
 abstract class UnmodifiableByteBufferView implements Uint8List {
   @patch
   factory UnmodifiableByteBufferView(ByteBuffer data) =
-      UnmodifiableByteBufferViewImpl;
+      _UnmodifiableByteBufferViewImpl;
 }
 
 @patch

@@ -5,7 +5,6 @@
 library dart._simd;
 
 import 'dart:_internal' show FixedLengthListMixin, unsafeCast;
-import 'dart:_typed_data';
 
 import 'dart:collection' show ListMixin;
 import 'dart:math' as math;

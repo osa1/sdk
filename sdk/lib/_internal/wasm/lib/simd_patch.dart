@@ -4,7 +4,6 @@
 
 import 'dart:_internal' show patch;
 import 'dart:_simd';
-import 'dart:_typed_data';
 
 // These are naive patches for SIMD typed data which we can use until Wasm
 // we implement intrinsics for Wasm SIMD.

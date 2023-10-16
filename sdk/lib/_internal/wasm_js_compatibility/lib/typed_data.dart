@@ -13,11 +13,11 @@ import 'dart:typed_data';
 ///
 /// It is a compile-time error for a class to attempt to extend or implement
 /// UnmodifiableByteBufferView.
-final class UnmodifiableByteBufferViewImpl
+final class _UnmodifiableByteBufferViewImpl
     implements ByteBuffer, UnmodifiableByteBufferView {
   final ByteBuffer _data;
 
-  UnmodifiableByteBufferViewImpl(ByteBuffer data) : _data = data;
+  _UnmodifiableByteBufferViewImpl(ByteBuffer data) : _data = data;
 
   int get lengthInBytes => _data.lengthInBytes;
 
