@@ -2,10 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show ClassID, patch, POWERS_OF_TEN, unsafeCast;
+import "dart:_internal";
 import "dart:_typed_data" show U8List;
+import 'dart:_string';
 
 import "dart:typed_data" show Uint8List, Uint16List;
+
+part 'native_utf8_decoder.dart';
 
 @patch
 dynamic _parseJson(
@@ -30,7 +33,10 @@ class Utf8Decoder {
   @patch
   static String? _convertIntercepted(
       bool allowMalformed, List<int> codeUnits, int start, int? end) {
-    if (codeUnits is U8List) {}
+    if (codeUnits is U8List) {
+      return _WasmUtf8Decoder(allowMalformed)
+          .convertSingle(codeUnits, start, end);
+    }
     return null; // This call was not intercepted.
   }
 }

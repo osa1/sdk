@@ -2439,6 +2439,8 @@ class U8List extends _WasmI8ArrayBase
   U8List._(WasmIntArray<WasmI8> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  WasmIntArray<WasmI8> get data => _data;
+
   factory U8List._withMutability(WasmIntArray<WasmI8> buffer, int offsetInBytes,
           int length, bool mutable) =>
       mutable
