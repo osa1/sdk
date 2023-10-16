@@ -3,6 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show ClassID, patch, POWERS_OF_TEN, unsafeCast;
+import "dart:_js_types";
+import 'dart:_wasm';
+import 'dart:_js_helper' as js;
 
 import "dart:typed_data" show Uint8List, Uint16List;
 
@@ -20,6 +23,12 @@ dynamic _parseJson(
 
 @patch
 class Utf8Decoder {
+  // Always fall back to the Dart implementation for strings shorter than this
+  // threshold, as there is a large, constant overhead for using TextDecoder.
+  // TODO(omersa): This is copied from dart2js runtime, make sure the value is
+  // right for dart2wasm.
+  static const int _shortInputThreshold = 15;
+
   @patch
   Converter<List<int>, T> fuse<T>(Converter<String, T> next) {
     return super.fuse(next);
@@ -29,8 +38,83 @@ class Utf8Decoder {
   @patch
   static String? _convertIntercepted(
       bool allowMalformed, List<int> codeUnits, int start, int? end) {
+    if (codeUnits is JSUint8ArrayImpl) {
+      final JSUint8ArrayImpl jsCodeUnits = codeUnits;
+      end ??= jsCodeUnits.length;
+      if (end - start < _shortInputThreshold) {
+        return null;
+      }
+      return _convertInterceptedUint8List(
+          allowMalformed, jsCodeUnits, start, end);
+    }
     return null; // This call was not intercepted.
   }
+
+  static String? _convertInterceptedUint8List(
+      bool allowMalformed, JSUint8ArrayImpl codeUnits, int start, int end) {
+    // TODO(omersa): There's a bug somewhere when compiling lazy statics that
+    // return `WasmExternRef`?
+    // final WasmExternRef? decoder = allowMalformed ? _decoderNonfatal : _decoder;
+    // if (decoder == WasmExternRef.nullRef) {
+    //   return null;
+    // }
+    final WasmExternRef? decoder;
+    try {
+      decoder = allowMalformed
+          ? js.JS<WasmExternRef?>(
+              '() => new TextDecoder("utf-8", {fatal: false})')
+          : js.JS<WasmExternRef?>(
+              '() => new TextDecoder("utf-8", {fatal: true})');
+    } catch (e) {
+      return null;
+    }
+
+    if (0 == start && end == codeUnits.length) {
+      return _useTextDecoder(decoder, codeUnits.toExternRef);
+    }
+    final length = codeUnits.length;
+    end = RangeError.checkValidRange(start, end, length);
+    return _useTextDecoder(
+        decoder,
+        js.JS<WasmExternRef?>(
+            '(codeUnits, start, end) => codeUnits.subarray(start, end)',
+            codeUnits.toExternRef,
+            start.toDouble,
+            end.toDouble));
+  }
+
+  static String? _useTextDecoder(
+      WasmExternRef? decoder, WasmExternRef? codeUnits) {
+    // If the input is malformed, catch the exception and return `null` to fall
+    // back on unintercepted decoder. The fallback will either succeed in
+    // decoding, or report the problem better than TextDecoder.
+    try {
+      return js.JS<String>('(decoder, codeUnits) => decoder.decode(codeUnits)',
+          decoder, codeUnits);
+    } catch (e) {}
+    return null;
+  }
+
+  // TODO(omersa): These values seem to be miscompiled at the use sites, see
+  // above.
+  //
+  // // TextDecoder is not defined on some browsers and on the stand-alone d8 and
+  // // jsshell engines. Use a lazy initializer to do feature detection once.
+  // static final WasmExternRef? _decoder = () {
+  //   try {
+  //     return js
+  //         .JS<WasmExternRef?>('() => new TextDecoder("utf-8", {fatal: true})');
+  //   } catch (e) {}
+  //   return null;
+  // }();
+
+  // static final WasmExternRef? _decoderNonfatal = () {
+  //   try {
+  //     return js
+  //         .JS<WasmExternRef?>('() => new TextDecoder("utf-8", {fatal: false})');
+  //   } catch (e) {}
+  //   return null;
+  // }();
 }
 
 class _JsonUtf8Decoder extends Converter<List<int>, Object?> {
