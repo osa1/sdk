@@ -274,12 +274,6 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   late AugmentedClassElement augmentedInternal =
       NotAugmentedClassElementImpl(this);
 
-  @override
-  InterfaceType? _nonNullableInstance;
-
-  @override
-  InterfaceType? _nullableInstance;
-
   /// Initialize a newly created class element to have the given [name] at the
   /// given [offset] in the file that contains the declaration of this element.
   ClassElementImpl(super.name, super.offset);
@@ -2072,6 +2066,18 @@ abstract class ElementImpl implements Element {
   }
 
   @override
+  bool get hasImmutable {
+    final metadata = this.metadata;
+    for (var i = 0; i < metadata.length; i++) {
+      var annotation = metadata[i];
+      if (annotation.isImmutable) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @override
   bool get hasInternal {
     final metadata = this.metadata;
     for (var i = 0; i < metadata.length; i++) {
@@ -2732,18 +2738,6 @@ class EnumElementImpl extends InterfaceElementImpl
   }
 
   @override
-  InterfaceType? get _nonNullableInstance => null;
-
-  @override
-  set _nonNullableInstance(InterfaceType? newValue) {}
-
-  @override
-  InterfaceType? get _nullableInstance => null;
-
-  @override
-  set _nullableInstance(InterfaceType? newValue) {}
-
-  @override
   T? accept<T>(ElementVisitor<T> visitor) {
     return visitor.visitEnumElement(this);
   }
@@ -3099,18 +3093,6 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
 
   @override
   FieldElementImpl get representation => fields.first;
-
-  @override
-  InterfaceType? get _nonNullableInstance => null;
-
-  @override
-  set _nonNullableInstance(InterfaceType? newValue) {}
-
-  @override
-  InterfaceType? get _nullableInstance => null;
-
-  @override
-  set _nullableInstance(InterfaceType? newValue) {}
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) {
@@ -3526,6 +3508,14 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   /// of this class have been inferred.
   bool hasBeenInferred = false;
 
+  /// The non-nullable instance of this element, without alias.
+  /// Should be used only when the element has no type parameters.
+  InterfaceType? _nonNullableInstance;
+
+  /// The nullable instance of this element, without alias.
+  /// Should be used only when the element has no type parameters.
+  InterfaceType? _nullableInstance;
+
   List<ConstructorElementImpl> _constructors = _Sentinel.constructorElement;
 
   /// Initialize a newly created class element to have the given [name] at the
@@ -3677,26 +3667,6 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     }
   }
 
-  /// Potential cache of a non-nullable instance of the InterfaceType representing
-  /// this element. Should only be used for types with no type arguments and no
-  /// alias.
-  InterfaceType? get _nonNullableInstance;
-
-  /// Potential cache of a non-nullable instance of the InterfaceType representing
-  /// this element. Should only be used for types with no type arguments and no
-  /// alias.
-  set _nonNullableInstance(InterfaceType? newValue);
-
-  /// Potential cache of a nullable instance of the InterfaceType representing
-  /// this element. Should only be used for types with no type arguments and no
-  /// alias.
-  InterfaceType? get _nullableInstance;
-
-  /// Potential cache of a nullable instance of the InterfaceType representing
-  /// this element. Should only be used for types with no type arguments and no
-  /// alias.
-  set _nullableInstance(InterfaceType? newValue);
-
   @override
   FieldElement? getField(String name) {
     return fields.firstWhereOrNull((fieldElement) => name == fieldElement.name);
@@ -3732,27 +3702,40 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     required List<DartType> typeArguments,
     required NullabilitySuffix nullabilitySuffix,
   }) {
+    assert(typeArguments.length == typeParameters.length);
+
     if (typeArguments.isEmpty) {
-      InterfaceType? lookup;
-      if (nullabilitySuffix == NullabilitySuffix.none) {
-        lookup = _nonNullableInstance;
-      } else if (nullabilitySuffix == NullabilitySuffix.question) {
-        lookup = _nullableInstance;
+      switch (nullabilitySuffix) {
+        case NullabilitySuffix.none:
+          if (_nonNullableInstance case final instance?) {
+            return instance;
+          }
+        case NullabilitySuffix.question:
+          if (_nullableInstance case final instance?) {
+            return instance;
+          }
+        case NullabilitySuffix.star:
+          break;
       }
-      if (lookup != null) return lookup;
     }
+
     final result = InterfaceTypeImpl(
       element: this,
       typeArguments: typeArguments,
       nullabilitySuffix: nullabilitySuffix,
     );
+
     if (typeArguments.isEmpty) {
-      if (nullabilitySuffix == NullabilitySuffix.none) {
-        _nonNullableInstance = result;
-      } else if (nullabilitySuffix == NullabilitySuffix.question) {
-        _nullableInstance = result;
+      switch (nullabilitySuffix) {
+        case NullabilitySuffix.none:
+          _nonNullableInstance = result;
+        case NullabilitySuffix.question:
+          _nullableInstance = result;
+        case NullabilitySuffix.star:
+          break;
       }
     }
+
     return result;
   }
 
@@ -4190,9 +4173,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   /// See [fieldNameNonPromotabilityInfo].
   Map<String, FieldNameNonPromotabilityInfo>? _fieldNameNonPromotabilityInfo;
 
-  /// All augmentations of this library, in the depth-first pre-order order.
-  late final List<LibraryAugmentationElementImpl> augmentations =
-      _computeAugmentations();
+  /// The cache for [augmentations].
+  List<LibraryAugmentationElementImpl>? _augmentations;
 
   /// Initialize a newly created library element in the given [context] to have
   /// the given [name] and [offset].
@@ -4208,6 +4190,17 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   List<AugmentationImportElementImpl> get augmentationImports {
     _readLinkedData();
     return super.augmentationImports;
+  }
+
+  @override
+  set augmentationImports(List<AugmentationImportElementImpl> imports) {
+    super.augmentationImports = imports;
+    _augmentations = null;
+  }
+
+  /// All augmentations of this library, in the depth-first pre-order order.
+  List<LibraryAugmentationElementImpl> get augmentations {
+    return _augmentations ??= _computeAugmentations();
   }
 
   @override
@@ -5101,18 +5094,6 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   }
 
   @override
-  InterfaceType? get _nonNullableInstance => null;
-
-  @override
-  set _nonNullableInstance(InterfaceType? newValue) {}
-
-  @override
-  InterfaceType? get _nullableInstance => null;
-
-  @override
-  set _nullableInstance(InterfaceType? newValue) {}
-
-  @override
   T? accept<T>(ElementVisitor<T> visitor) {
     return visitor.visitMixinElement(this);
   }
@@ -5362,6 +5343,9 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement {
 
   @override
   bool get hasFactory => false;
+
+  @override
+  bool get hasImmutable => false;
 
   @override
   bool get hasInternal => false;

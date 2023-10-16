@@ -15,14 +15,19 @@ import 'package:analyzer/src/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:analyzer/src/dart/analysis/unlinked_unit_store.dart';
+import 'package:analyzer_utilities/package_root.dart';
+import 'package:args/args.dart';
 import 'package:heap_snapshot/analysis.dart';
 import 'package:heap_snapshot/format.dart';
+import 'package:path/path.dart';
 import 'package:vm_service/vm_service.dart';
 
-import '../../../test/util/tree_string_sink.dart';
 import 'result.dart';
 
-void main() async {
+void main(List<String> arguments) async {
+  final argParser = ArgParser()..addFlag('write-file');
+  final argResults = argParser.parse(arguments);
+
   final byteStore = MemoryByteStore();
 
   print('First pass, fill ByteStore');
@@ -62,20 +67,27 @@ void main() async {
   );
 
   final allResults = _analyzeSnapshot(heapBytes);
+  _printResults(allResults);
 
-  {
-    final buffer = StringBuffer();
-    final sink = TreeStringSink(sink: buffer, indent: '');
-    writeBenchmarkResult(sink, allResults);
-    print('All results');
-    print('-' * 32);
-    print(buffer);
+  if (argResults['write-file'] == true) {
+    _writeResultFile(allResults);
   }
 }
 
-const String includedPath = '/Users/scheglov/dart/flutter_multi/packages';
+const String includedPath = '/Users/scheglov/dart/flutter_elements/packages';
 
 final Stopwatch timer = Stopwatch();
+
+String get _resultFilePath {
+  return posix.join(
+    packageRoot,
+    'analyzer',
+    'tool',
+    'benchmark',
+    'heap',
+    'flutter_elements.xml',
+  );
+}
 
 /// Analyzes all included files.
 ///
@@ -113,7 +125,8 @@ BenchmarkResultCompound _analyzeSnapshot(Uint8List bytes) {
   );
 
   timer.reset();
-  final graph = HeapSnapshotGraph.fromChunks([bytes.buffer.asByteData()]);
+  final graph = HeapSnapshotGraph.fromChunks(
+      [bytes.buffer.asByteData(bytes.offsetInBytes, bytes.length)]);
   print('[+${timer.elapsedMilliseconds} ms] Create HeapSnapshotGraph');
 
   final analysis = Analysis(graph);
@@ -141,29 +154,52 @@ BenchmarkResultCompound _analyzeSnapshot(Uint8List bytes) {
 
   // It is interesting to see all reachable objects.
   {
-    timer.reset();
     print('Reachable objects');
     final objects = analysis.reachableObjects;
     analysis.printObjectStats(objects, maxLines: 100);
-    print('');
   }
+
+  timer.reset();
 
   allResults.add(
     _doUniqueUriStr(analysis),
   );
 
+  allResults.add(
+    _doInterfaceType(analysis),
+  );
+
+  print('[+${timer.elapsedMilliseconds} ms] Compute benchmark results');
+  print('');
+
   return allResults;
 }
 
+BenchmarkResult _doInterfaceType(Analysis analysis) {
+  final objects = analysis.filterByClass(
+    analysis.reachableObjects,
+    libraryUri: Uri.parse('package:analyzer/src/dart/element/type.dart'),
+    name: 'InterfaceTypeImpl',
+  );
+
+  final measure = analysis.measureObjects(objects);
+  return BenchmarkResultCompound(name: 'InterfaceTypeImpl', children: [
+    BenchmarkResultCount(
+      name: 'count',
+      value: measure.count,
+    ),
+    BenchmarkResultBytes(
+      name: 'size(shallow)',
+      value: measure.size,
+    ),
+  ]);
+}
+
 BenchmarkResult _doUniqueUriStr(Analysis analysis) {
-  print('Instances of: _SimpleUri');
   final uriList = analysis.filterByClass(analysis.reachableObjects,
       libraryUri: Uri.parse('dart:core'), name: '_SimpleUri');
-  analysis.printObjectStats(uriList);
-  print('');
 
   final uriStringList = analysis.findReferences(uriList, [':_uri']);
-
   final uniqueUriStrSet = <String>{};
   final duplicateUriStrList = <String>[];
   for (final objectId in uriStringList) {
@@ -173,7 +209,6 @@ BenchmarkResult _doUniqueUriStr(Analysis analysis) {
       duplicateUriStrList.add(uriStr);
     }
   }
-  print('');
 
   final uriListMeasure = analysis.measureObjects(uriList);
   return BenchmarkResultCompound(name: '_SimpleUri', children: [
@@ -235,6 +270,20 @@ Uint8List _getHeapSnapshot() {
   }
 }
 
+void _printResults(BenchmarkResultCompound allResults) {
+  BenchmarkResult? baseResult;
+  try {
+    final text = io.File(_resultFilePath).readAsStringSync();
+    baseResult = BenchmarkResult.fromXmlText(text);
+  } catch (e) {
+    // ignore
+  }
+
+  print('All results');
+  print('-' * 32);
+  print(allResults.asDisplayText(baseResult));
+}
+
 Future<T> _withNewAnalysisContext<T>(
   Future<T> Function(AnalysisContextCollectionImpl collection) f, {
   required ByteStore byteStore,
@@ -252,6 +301,10 @@ Future<T> _withNewAnalysisContext<T>(
   final result = await f(collection);
   collection.hashCode; // to keep it alive
   return result;
+}
+
+void _writeResultFile(BenchmarkResultCompound result) {
+  io.File(_resultFilePath).writeAsStringSync(result.asXmlText, flush: true);
 }
 
 class _AllElementVisitor extends GeneralizingElementVisitor<void> {

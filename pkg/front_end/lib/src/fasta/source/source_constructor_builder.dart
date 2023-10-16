@@ -59,6 +59,7 @@ import 'source_function_builder.dart';
 
 abstract class SourceConstructorBuilder
     implements ConstructorBuilder, SourceMemberBuilder {
+  @override
   DeclarationBuilder get declarationBuilder;
 
   /// Infers the types of any untyped initializing formals.
@@ -92,7 +93,7 @@ abstract class AbstractSourceConstructorBuilder
       int modifiers,
       this.returnType,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
       SourceLibraryBuilder compilationUnit,
       int charOffset,
@@ -347,7 +348,7 @@ class DeclaredSourceConstructorBuilder
       int modifiers,
       OmittedTypeBuilder returnType,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       this.formals,
       SourceLibraryBuilder compilationUnit,
       int startCharOffset,
@@ -358,7 +359,8 @@ class DeclaredSourceConstructorBuilder
       Reference? tearOffReference,
       NameScheme nameScheme,
       {String? nativeMethodName,
-      required bool forAbstractClassOrEnumOrMixin})
+      required bool forAbstractClassOrEnumOrMixin,
+      bool isSynthetic = false})
       : _hasSuperInitializingFormals =
             formals?.any((formal) => formal.isSuperInitializingFormal) ?? false,
         super(
@@ -375,7 +377,8 @@ class DeclaredSourceConstructorBuilder
     _constructor = new Constructor(new FunctionNode(null),
         name: dummyName,
         fileUri: compilationUnit.fileUri,
-        reference: constructorReference)
+        reference: constructorReference,
+        isSynthetic: isSynthetic)
       ..startFileOffset = startCharOffset
       ..fileOffset = charOffset
       ..fileEndOffset = charEndOffset
@@ -1082,7 +1085,7 @@ class SourceExtensionTypeConstructorBuilder
       int modifiers,
       OmittedTypeBuilder returnType,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
       SourceLibraryBuilder compilationUnit,
       int startCharOffset,

@@ -490,7 +490,8 @@ class KernelTarget extends TargetImplementation {
 
       benchmarker
           ?.enterPhase(BenchmarkPhases.outline_buildClassHierarchyMembers);
-      loader.buildClassHierarchyMembers(sortedSourceClassBuilders);
+      loader.buildClassHierarchyMembers(
+          sortedSourceClassBuilders, sortedSourceExtensionTypeBuilders);
 
       benchmarker?.enterPhase(BenchmarkPhases.outline_computeHierarchy);
       loader.computeHierarchy();
@@ -969,7 +970,7 @@ class KernelTarget extends TargetImplementation {
               builder, constructorReference, tearOffReference));
         }
       case TypeAliasBuilder():
-      case TypeVariableBuilder():
+      case NominalVariableBuilder():
       case StructuralVariableBuilder():
       case ExtensionBuilder():
       case ExtensionTypeDeclarationBuilder():

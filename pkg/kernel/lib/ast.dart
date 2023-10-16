@@ -67,6 +67,7 @@ library kernel.ast;
 import 'dart:collection' show ListBase;
 import 'dart:convert' show utf8;
 
+import 'src/extension_type_erasure.dart';
 import 'visitor.dart';
 export 'visitor.dart';
 
@@ -1569,7 +1570,7 @@ class Extension extends NamedNode
   ///
   /// The members are converted into top-level members and only accessible
   /// by reference through [ExtensionMemberDescriptor].
-  List<ExtensionMemberDescriptor> members;
+  List<ExtensionMemberDescriptor> memberDescriptors;
 
   @override
   List<Expression> annotations = const <Expression>[];
@@ -1593,11 +1594,12 @@ class Extension extends NamedNode
       {required this.name,
       List<TypeParameter>? typeParameters,
       DartType? onType,
-      List<ExtensionMemberDescriptor>? members,
+      List<ExtensionMemberDescriptor>? memberDescriptors,
       required this.fileUri,
       Reference? reference})
       : this.typeParameters = typeParameters ?? <TypeParameter>[],
-        this.members = members ?? <ExtensionMemberDescriptor>[],
+        this.memberDescriptors =
+            memberDescriptors ?? <ExtensionMemberDescriptor>[],
         super(reference) {
     setParents(this.typeParameters, this);
     if (onType != null) {
@@ -1721,18 +1723,18 @@ class ExtensionMemberDescriptor {
   int flags = 0;
 
   /// Reference to the top-level member created for the extension method.
-  final Reference member;
+  final Reference memberReference;
 
   /// Reference to the top-level member created for the extension member tear
   /// off, if any.
-  final Reference? tearOff;
+  final Reference? tearOffReference;
 
   ExtensionMemberDescriptor(
       {required this.name,
       required this.kind,
       bool isStatic = false,
-      required this.member,
-      required this.tearOff}) {
+      required this.memberReference,
+      required this.tearOffReference}) {
     this.isStatic = isStatic;
   }
 
@@ -1746,7 +1748,7 @@ class ExtensionMemberDescriptor {
   @override
   String toString() {
     return 'ExtensionMemberDescriptor($name,$kind,'
-        '${member.toStringInternal()},isStatic=${isStatic})';
+        '${memberReference.toStringInternal()},isStatic=${isStatic})';
   }
 }
 
@@ -1789,11 +1791,19 @@ class ExtensionTypeDeclaration extends NamedNode
   /// library of the extension type declaration.
   late String representationName;
 
+  /// Abstract procedures that are part of the extension type declaration
+  /// interface.
+  ///
+  /// This includes a getter for the representation field and member signatures
+  /// computed as the combined member signature of inherited non-extension type
+  /// members.
+  List<Procedure> _procedures;
+
   /// The members declared by the extension type declaration.
   ///
   /// The members are converted into top-level members and only accessible
   /// by reference through [ExtensionTypeMemberDescriptor].
-  List<ExtensionTypeMemberDescriptor> members;
+  List<ExtensionTypeMemberDescriptor> memberDescriptors;
 
   @override
   List<Expression> annotations = const <Expression>[];
@@ -1815,15 +1825,19 @@ class ExtensionTypeDeclaration extends NamedNode
       {required this.name,
       List<TypeParameter>? typeParameters,
       DartType? declaredRepresentationType,
-      List<ExtensionTypeMemberDescriptor>? members,
+      List<ExtensionTypeMemberDescriptor>? memberDescriptors,
       List<DartType>? implements,
+      List<Procedure>? procedures,
       required this.fileUri,
       Reference? reference})
       : this.typeParameters = typeParameters ?? <TypeParameter>[],
-        this.members = members ?? <ExtensionTypeMemberDescriptor>[],
+        this.memberDescriptors =
+            memberDescriptors ?? <ExtensionTypeMemberDescriptor>[],
         this.implements = implements ?? <DartType>[],
+        this._procedures = procedures ?? <Procedure>[],
         super(reference) {
     setParents(this.typeParameters, this);
+    setParents(this._procedures, this);
     if (declaredRepresentationType != null) {
       this.declaredRepresentationType = declaredRepresentationType;
     }
@@ -1835,6 +1849,20 @@ class ExtensionTypeDeclaration extends NamedNode
   }
 
   Library get enclosingLibrary => parent as Library;
+
+  void addProcedure(Procedure procedure) {
+    procedure.parent = this;
+    procedures.add(procedure);
+  }
+
+  List<Procedure> get procedures => _procedures;
+
+  /// Internal. Should *ONLY* be used from within kernel.
+  ///
+  /// Used for adding procedures when reading the dill file.
+  void set proceduresInternal(List<Procedure> procedures) {
+    _procedures = procedures;
+  }
 
   @override
   R accept<R>(TreeVisitor<R> v) => v.visitExtensionTypeDeclaration(this);
@@ -1851,6 +1879,7 @@ class ExtensionTypeDeclaration extends NamedNode
     visitList(annotations, v);
     visitList(typeParameters, v);
     declaredRepresentationType.accept(v);
+    visitList(procedures, v);
   }
 
   @override
@@ -1858,6 +1887,7 @@ class ExtensionTypeDeclaration extends NamedNode
     v.transformList(annotations, this);
     v.transformList(typeParameters, this);
     declaredRepresentationType = v.visitDartType(declaredRepresentationType);
+    v.transformList(procedures, this);
   }
 
   @override
@@ -1866,6 +1896,7 @@ class ExtensionTypeDeclaration extends NamedNode
     v.transformTypeParameterList(typeParameters, this);
     declaredRepresentationType =
         v.visitDartType(declaredRepresentationType, cannotRemoveSentinel);
+    v.transformProcedureList(procedures, this);
   }
 
   @override
@@ -1932,18 +1963,18 @@ class ExtensionTypeMemberDescriptor {
 
   /// Reference to the top-level member created for the extension type
   /// declaration member.
-  final Reference member;
+  final Reference memberReference;
 
   /// Reference to the top-level member created for the extension type
   /// declaration member tear off, if any.
-  final Reference? tearOff;
+  final Reference? tearOffReference;
 
   ExtensionTypeMemberDescriptor(
       {required this.name,
       required this.kind,
       bool isStatic = false,
-      required this.member,
-      required this.tearOff}) {
+      required this.memberReference,
+      required this.tearOffReference}) {
     this.isStatic = isStatic;
   }
 
@@ -1958,8 +1989,8 @@ class ExtensionTypeMemberDescriptor {
   @override
   String toString() {
     return 'ExtensionTypeMemberDescriptor($name,$kind,'
-        '${member.toStringInternal()},isStatic=${isStatic},'
-        '${tearOff?.toStringInternal()})';
+        '${memberReference.toStringInternal()},isStatic=${isStatic},'
+        '${tearOffReference?.toStringInternal()})';
   }
 }
 
@@ -10993,6 +11024,20 @@ sealed class DartType extends Node {
   /// Returns the non-type parameter type bound of this type.
   DartType get resolveTypeParameterType;
 
+  /// Returns the type with all occurrences of [ExtensionType] replaced by their
+  /// representations, transitively. This is the type used at runtime to
+  /// represent this type.
+  ///
+  /// For instance, for these declarations
+  ///
+  ///    extension type ET1(int id) {}
+  ///    extension type ET2(ET1 id) {}
+  ///    extension type ET3<T>(T id) {}
+  ///
+  /// the extension type erasures for `ET1`, `ET2`, `ET3<ET2>` and `List<ET2>`
+  /// are `int`, `int`, `int`, `List<int>`, respectively.
+  DartType get extensionTypeErasure => computeExtensionTypeErasure(this);
+
   /// Internal implementation of equality using [assumptions] to handle equality
   /// of type parameters on function types coinductively.
   bool equals(Object other, Assumptions? assumptions);
@@ -11793,14 +11838,27 @@ class ExtensionType extends DartType {
   ///
   /// the type erasure of `E1` is `int`, type erasure of `E2<num>` is `num` and
   /// the type erasure of `E3<String>` is `List<String>`.
-  DartType get typeErasure => _computeTypeErasure(
+  @override
+  DartType get extensionTypeErasure => _computeTypeErasure(
       extensionTypeDeclarationReference, typeArguments, declaredNullability);
 
   @override
-  Nullability get nullability => declaredNullability;
+  Nullability get nullability {
+    Nullability nullabilityInducedByRepresentationType = _computeTypeErasure(
+                    extensionTypeDeclarationReference,
+                    typeArguments,
+                    Nullability.nonNullable)
+                .nullability ==
+            Nullability.nonNullable
+        ? Nullability.nonNullable
+        : Nullability.undetermined;
+    return combineNullabilitiesForSubstitution(
+        nullabilityInducedByRepresentationType, declaredNullability);
+  }
 
   @override
-  DartType get resolveTypeParameterType => typeErasure.resolveTypeParameterType;
+  DartType get resolveTypeParameterType =>
+      extensionTypeErasure.resolveTypeParameterType;
 
   static List<DartType> _defaultTypeArguments(
       ExtensionTypeDeclaration extensionTypeDeclaration) {
@@ -11822,9 +11880,7 @@ class ExtensionType extends DartType {
     DartType result = Substitution.fromPairs(
             extensionTypeDeclaration.typeParameters, typeArguments)
         .substituteType(extensionTypeDeclaration.declaredRepresentationType);
-    if (result is ExtensionType) {
-      result = result.typeErasure;
-    }
+    result = result.extensionTypeErasure;
     result = result.withDeclaredNullability(combineNullabilitiesForSubstitution(
         result.nullability, declaredNullability));
     return result;
@@ -15270,8 +15326,8 @@ final ExtensionMemberDescriptor dummyExtensionMemberDescriptor =
     new ExtensionMemberDescriptor(
         name: dummyName,
         kind: ExtensionMemberKind.Getter,
-        member: dummyReference,
-        tearOff: null);
+        memberReference: dummyReference,
+        tearOffReference: null);
 
 /// Non-nullable [ExtensionTypeDeclaration] dummy value.
 ///
@@ -15290,8 +15346,8 @@ final ExtensionTypeMemberDescriptor dummyExtensionTypeMemberDescriptor =
     new ExtensionTypeMemberDescriptor(
         name: dummyName,
         kind: ExtensionTypeMemberKind.Getter,
-        member: dummyReference,
-        tearOff: null);
+        memberReference: dummyReference,
+        tearOffReference: null);
 
 /// Non-nullable [ExtensionType] dummy value.
 ///

@@ -79,7 +79,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       int modifiers,
       this.returnType,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
       this.kind,
       SourceLibraryBuilder libraryBuilder,
@@ -180,7 +180,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   void registerOverrideDependency(Set<ClassMember> overriddenMembers) {
     assert(
         overriddenMembers.every((overriddenMember) =>
-            overriddenMember.classBuilder != classBuilder),
+            overriddenMember.declarationBuilder != classBuilder),
         "Unexpected override dependencies for $this: $overriddenMembers");
     _overrideDependencies ??= {};
     _overrideDependencies!.addAll(overriddenMembers);

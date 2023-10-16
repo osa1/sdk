@@ -796,7 +796,7 @@ void _typeBuildersToText(Iterable<TypeBuilder> types, StringBuffer sb) {
 
 /// Returns a textual representation of the [typeVariable] to be used in
 /// testing.
-String typeVariableBuilderToText(TypeVariableBuilder typeVariable) {
+String typeVariableBuilderToText(NominalVariableBuilder typeVariable) {
   String name = typeVariable.name;
   if (typeVariable.bound != null) {
     return '$name extends ${typeBuilderToText(typeVariable.bound!)}';
@@ -853,9 +853,9 @@ List<String> extensionMethodDescriptorToText(
   }
 
   return [
-    descriptorToText(descriptor.member, forTearOff: false),
-    if (descriptor.tearOff != null)
-      descriptorToText(descriptor.tearOff!, forTearOff: true),
+    descriptorToText(descriptor.memberReference, forTearOff: false),
+    if (descriptor.tearOffReference != null)
+      descriptorToText(descriptor.tearOffReference!, forTearOff: true),
   ];
 }
 

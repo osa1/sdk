@@ -33,7 +33,7 @@ class SourceExtensionBuilder extends ExtensionBuilderImpl
   MergedClassMemberScope? _mergedScope;
 
   @override
-  final List<TypeVariableBuilder>? typeParameters;
+  final List<NominalVariableBuilder>? typeParameters;
 
   @override
   final TypeBuilder onType;
@@ -55,8 +55,8 @@ class SourceExtensionBuilder extends ExtensionBuilderImpl
       : _extension = new Extension(
             name: extensionName.name,
             fileUri: parent.fileUri,
-            typeParameters:
-                TypeVariableBuilder.typeParametersFromBuilders(typeParameters),
+            typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
+                typeParameters),
             reference: referenceFrom?.reference)
           ..isExtensionTypeDeclaration = false
           ..isUnnamedExtension = extensionName.isUnnamedExtension
@@ -149,10 +149,10 @@ class SourceExtensionBuilder extends ExtensionBuilderImpl
         kind = ExtensionMemberKind.Operator;
         break;
     }
-    extension.members.add(new ExtensionMemberDescriptor(
+    extension.memberDescriptors.add(new ExtensionMemberDescriptor(
         name: new Name(name, libraryBuilder.library),
-        member: memberReference,
-        tearOff: tearOffReference,
+        memberReference: memberReference,
+        tearOffReference: tearOffReference,
         isStatic: memberBuilder.isStatic,
         kind: kind));
   }

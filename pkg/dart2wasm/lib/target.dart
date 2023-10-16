@@ -103,6 +103,7 @@ class WasmTarget extends Target {
   Class? _oneByteString;
   Class? _twoByteString;
   Class? _jsString;
+  Class? _closure;
   Map<String, Class>? _nativeClasses;
 
   @override
@@ -497,6 +498,11 @@ class WasmTarget extends Target {
     }
     return _oneByteString ??=
         coreTypes.index.getClass('dart:_string', 'OneByteString');
+  }
+
+  @override
+  Class concreteClosureClass(CoreTypes coreTypes) {
+    return _closure ??= coreTypes.index.getClass('dart:core', '_Closure');
   }
 
   @override

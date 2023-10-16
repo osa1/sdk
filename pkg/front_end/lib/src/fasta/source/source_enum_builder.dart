@@ -90,7 +90,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
   SourceEnumBuilder.internal(
       List<MetadataBuilder>? metadata,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       TypeBuilder supertypeBuilder,
       List<TypeBuilder>? interfaceBuilders,
       Scope scope,
@@ -130,7 +130,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
   factory SourceEnumBuilder(
       List<MetadataBuilder>? metadata,
       String name,
-      List<TypeVariableBuilder>? typeVariables,
+      List<NominalVariableBuilder>? typeVariables,
       TypeBuilder? supertypeBuilder,
       List<TypeBuilder>? interfaceBuilders,
       List<EnumConstantInfo?>? enumConstantInfos,
@@ -174,7 +174,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
     Class cls = new Class(
         name: name,
         typeParameters:
-            TypeVariableBuilder.typeParametersFromBuilders(typeVariables),
+            NominalVariableBuilder.typeParametersFromBuilders(typeVariables),
         reference: referencesFromIndexed?.cls.reference,
         fileUri: fileUri);
     Map<String, MemberBuilder> members = <String, MemberBuilder>{};
@@ -346,7 +346,8 @@ class SourceEnumBuilder extends SourceClassBuilder {
                   containerName: new ClassName(name),
                   containerType: ContainerType.Class,
                   libraryName: libraryName),
-              forAbstractClassOrEnumOrMixin: true);
+              forAbstractClassOrEnumOrMixin: true,
+              isSynthetic: true);
       synthesizedDefaultConstructorBuilder
           .registerInitializedField(valuesBuilder);
       constructors[""] = synthesizedDefaultConstructorBuilder;
@@ -534,17 +535,17 @@ class SourceEnumBuilder extends SourceClassBuilder {
       }
     }
 
-    Map<String, TypeVariableBuilder>? typeVariablesByName;
+    Map<String, NominalVariableBuilder>? typeVariablesByName;
     if (typeVariables != null) {
       typeVariablesByName = {};
-      for (TypeVariableBuilder typeVariable in typeVariables) {
+      for (NominalVariableBuilder typeVariable in typeVariables) {
         typeVariablesByName[typeVariable.name] = typeVariable;
       }
     }
 
     void setParentAndCheckConflicts(String name, Builder member) {
       if (typeVariablesByName != null) {
-        TypeVariableBuilder? tv = typeVariablesByName[name];
+        NominalVariableBuilder? tv = typeVariablesByName[name];
         if (tv != null) {
           enumBuilder.addProblem(
               templateConflictsWithTypeVariable.withArguments(name),
