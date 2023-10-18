@@ -2,16 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal"
-    show
-        ClassID,
-        copyRangeFromUint8ListToOneByteString,
-        patch,
-        POWERS_OF_TEN,
-        unsafeCast,
-        writeIntoOneByteString,
-        writeIntoTwoByteString;
-
+import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
 import "dart:_string";
 import "dart:typed_data" show Uint8List, Uint16List;
 

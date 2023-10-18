@@ -7,16 +7,7 @@
 /// used by patches of that library. We plan to change this when we have a
 /// shared front end and simply use parts.
 
-import "dart:_internal"
-    show
-        ClassID,
-        copyRangeFromUint8ListToOneByteString,
-        patch,
-        POWERS_OF_TEN,
-        unsafeCast,
-        writeIntoOneByteString,
-        writeIntoTwoByteString;
-
+import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
 import "dart:_string";
 import "dart:typed_data" show Uint8List, Uint16List;
 

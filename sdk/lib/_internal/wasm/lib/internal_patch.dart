@@ -4,7 +4,6 @@
 
 import "dart:_js_helper" show JS;
 import "dart:_string";
-import "dart:typed_data" show Uint8List;
 
 part "class_id.dart";
 part "deferred.dart";
