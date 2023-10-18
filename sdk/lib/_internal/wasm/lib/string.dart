@@ -1053,11 +1053,9 @@ final class OneByteString extends StringBase {
 
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
-    int length = endIndex - startIndex;
-    var result = OneByteString.withLength(length);
-    for (int i = 0; i < length; i++) {
-      result._setAt(i, codeUnitAt(startIndex + i));
-    }
+    final length = endIndex - startIndex;
+    final result = OneByteString.withLength(length);
+    result._array.copy(0, _array, startIndex, length);
     return result;
   }
 
@@ -1397,23 +1395,15 @@ final class TwoByteString extends StringBase {
 
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
-    int length = endIndex - startIndex;
-    var result = TwoByteString.withLength(length);
-    for (int i = 0; i < length; i++) {
-      result._setAt(i, codeUnitAt(startIndex + i));
-    }
+    final length = endIndex - startIndex;
+    final result = TwoByteString.withLength(length);
+    result._array.copy(0, _array, startIndex, length);
     return result;
   }
 
   @override
   int _copyIntoTwoByteString(TwoByteString result, int offset) {
-    final from = _array;
-    final int length = from.length;
-    final to = result._array;
-    int j = offset;
-    for (int i = 0; i < length; i++) {
-      to.write(j++, from.readUnsigned(i));
-    }
-    return j;
+    result._array.copy(offset, _array, 0, length);
+    return offset + length;
   }
 }
