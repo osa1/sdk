@@ -4,7 +4,6 @@
 
 import "dart:_internal"
     show
-        allocateOneByteString,
         allocateTwoByteString,
         ClassID,
         copyRangeFromUint8ListToOneByteString,
@@ -14,6 +13,7 @@ import "dart:_internal"
         writeIntoOneByteString,
         writeIntoTwoByteString;
 
+import "dart:_string";
 import "dart:typed_data" show Uint8List, Uint16List;
 
 /// This patch library has no additional parts.
@@ -1717,7 +1717,7 @@ class _Utf8Decoder {
     if (flags == 0) {
       // Pure ASCII.
       assert(size == end - start);
-      String result = allocateOneByteString(size);
+      OneByteString result = OneByteString.withLength(size);
       copyRangeFromUint8ListToOneByteString(bytes, result, start, 0, size);
       return result;
     }
@@ -1811,7 +1811,7 @@ class _Utf8Decoder {
       // Pure ASCII.
       assert(_state == accept);
       assert(size == end - start);
-      String result = allocateOneByteString(size);
+      OneByteString result = OneByteString.withLength(size);
       copyRangeFromUint8ListToOneByteString(bytes, result, start, 0, size);
       return result;
     }
@@ -1896,7 +1896,7 @@ class _Utf8Decoder {
 
   String decode8(Uint8List bytes, int start, int end, int size) {
     assert(start < end);
-    String result = allocateOneByteString(size);
+    OneByteString result = OneByteString.withLength(size);
     int i = start;
     int j = 0;
     if (_state == X1) {

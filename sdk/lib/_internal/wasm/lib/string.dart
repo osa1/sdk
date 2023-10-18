@@ -1006,7 +1006,7 @@ final class OneByteString extends StringBase {
   @pragma("wasm:entry-point")
   WasmIntArray<WasmI8> _array;
 
-  OneByteString._withLength(int length) : _array = WasmIntArray<WasmI8>(length);
+  OneByteString.withLength(int length) : _array = WasmIntArray<WasmI8>(length);
 
   // Same hash as VM
   @override
@@ -1041,7 +1041,7 @@ final class OneByteString extends StringBase {
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
     int length = endIndex - startIndex;
-    var result = OneByteString._withLength(length);
+    var result = OneByteString.withLength(length);
     for (int i = 0; i < length; i++) {
       result.setAt(i, codeUnitAt(startIndex + i));
     }
@@ -1303,9 +1303,7 @@ final class OneByteString extends StringBase {
   // Allocates a string of given length, expecting its content to be
   // set using setAt.
 
-  static OneByteString allocate(int length) {
-    return unsafeCast<OneByteString>(allocateOneByteString(length));
-  }
+  static OneByteString allocate(int length) => OneByteString.withLength(length);
 
   external static OneByteString allocateFromOneByteList(
       List<int> list, int start, int end);

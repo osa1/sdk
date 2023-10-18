@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_js_helper" show JS;
+import "dart:_string";
 import "dart:typed_data" show Uint8List;
 
 part "class_id.dart";
@@ -14,10 +15,6 @@ part "symbol_patch.dart";
 @patch
 bool typeAcceptsNull<T>() => null is T;
 
-/// The returned string is a [_OneByteString] with uninitialized content.
-external String allocateOneByteString(int length);
-
-/// The [string] must be a [_OneByteString]. The [index] must be valid.
 external void writeIntoOneByteString(String string, int index, int codePoint);
 
 /// It is assumed that [from] is a native [Uint8List] class and [to] is a
@@ -49,8 +46,8 @@ double _stringRead(String string, double index) {
 }
 
 @pragma("wasm:export", "\$stringAllocate1")
-String _stringAllocate1(double length) {
-  return allocateOneByteString(length.toInt());
+OneByteString _stringAllocate1(double length) {
+  return OneByteString.withLength(length.toInt());
 }
 
 @pragma("wasm:export", "\$stringWrite1")

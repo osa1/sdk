@@ -4,7 +4,6 @@
 
 import "dart:_internal"
     show
-        allocateOneByteString,
         allocateTwoByteString,
         CodeUnits,
         ClassID,

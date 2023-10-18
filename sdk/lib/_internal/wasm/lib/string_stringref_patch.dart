@@ -10,7 +10,6 @@
 
 import "dart:_internal"
     show
-        allocateOneByteString,
         allocateTwoByteString,
         CodeUnits,
         ClassID,
@@ -1357,7 +1356,7 @@ final class _OneByteString extends _StringBase {
   // set using _setAt.
 
   static _OneByteString _allocate(int length) {
-    return unsafeCast<_OneByteString>(allocateOneByteString(length));
+    return _OneByteString._withLength(length);
   }
 
   external static _OneByteString _allocateFromOneByteList(
