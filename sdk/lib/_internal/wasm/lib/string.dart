@@ -214,10 +214,7 @@ abstract final class StringBase implements String {
     return createFromCharCodes(charCodeList, 0, length, bits);
   }
 
-  // Inlining is disabled as a workaround to http://dartbug.com/37800.
-
   static String createOneByteString(List<int> charCodes, int start, int len) {
-    // It's always faster to do this in Dart than to call into the runtime.
     var s = OneByteString.withLength(len);
 
     // Special case for native Uint8 typed arrays.

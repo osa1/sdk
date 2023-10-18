@@ -17,9 +17,8 @@ bool typeAcceptsNull<T>() => null is T;
 
 external void writeIntoOneByteString(String string, int index, int codePoint);
 
-/// It is assumed that [from] is a native [Uint8List] class and [to] is a
-/// [_OneByteString]. The [fromStart] and [toStart] indices together with the
-/// [length] must specify ranges within the bounds of the list / string.
+/// The [fromStart] and [toStart] indices together with the [length] must
+/// specify ranges within the bounds of the list / string.
 void copyRangeFromUint8ListToOneByteString(
     Uint8List from, String to, int fromStart, int toStart, int length) {
   for (int i = 0; i < length; i++) {
