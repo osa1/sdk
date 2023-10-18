@@ -15,20 +15,6 @@ part "symbol_patch.dart";
 @patch
 bool typeAcceptsNull<T>() => null is T;
 
-external void writeIntoOneByteString(String string, int index, int codePoint);
-
-/// The [fromStart] and [toStart] indices together with the [length] must
-/// specify ranges within the bounds of the list / string.
-void copyRangeFromUint8ListToOneByteString(
-    Uint8List from, String to, int fromStart, int toStart, int length) {
-  for (int i = 0; i < length; i++) {
-    writeIntoOneByteString(to, toStart + i, from[fromStart + i]);
-  }
-}
-
-/// The [string] must be a [_TwoByteString]. The [index] must be valid.
-external void writeIntoTwoByteString(String string, int index, int codePoint);
-
 // String accessors used to perform Dart<->JS string conversion
 
 @pragma("wasm:export", "\$stringLength")
@@ -47,7 +33,7 @@ OneByteString _stringAllocate1(double length) {
 }
 
 @pragma("wasm:export", "\$stringWrite1")
-void _stringWrite1(String string, double index, double codePoint) {
+void _stringWrite1(OneByteString string, double index, double codePoint) {
   writeIntoOneByteString(string, index.toInt(), codePoint.toInt());
 }
 
@@ -57,7 +43,7 @@ TwoByteString _stringAllocate2(double length) {
 }
 
 @pragma("wasm:export", "\$stringWrite2")
-void _stringWrite2(String string, double index, double codePoint) {
+void _stringWrite2(TwoByteString string, double index, double codePoint) {
   writeIntoTwoByteString(string, index.toInt(), codePoint.toInt());
 }
 

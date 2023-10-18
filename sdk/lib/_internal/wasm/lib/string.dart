@@ -39,6 +39,15 @@ void writeIntoOneByteString(OneByteString s, int index, int codePoint) =>
 void writeIntoTwoByteString(TwoByteString s, int index, int codePoint) =>
     s._setAt(index, codePoint);
 
+/// The [fromStart] and [toStart] indices together with the [length] must
+/// specify ranges within the bounds of the list / string.
+void copyRangeFromUint8ListToOneByteString(
+    Uint8List from, OneByteString to, int fromStart, int toStart, int length) {
+  for (int i = 0; i < length; i++) {
+    to._setAt(toStart + i, from[fromStart + i]);
+  }
+}
+
 const int _maxLatin1 = 0xff;
 const int _maxUtf16 = 0xffff;
 
@@ -1307,11 +1316,11 @@ final class OneByteString extends StringBase {
   external static OneByteString allocateFromOneByteList(
       List<int> list, int start, int end);
 
-  // This is internal helper method. Code point value must be a valid
-  // Latin1 value (0..0xFF), index must be valid.
-
+  /// This is internal helper method. Code point value must be a valid Latin1
+  /// value (0..0xFF), index must be valid.
+  @pragma('wasm:prefer-inline')
   void _setAt(int index, int codePoint) {
-    writeIntoOneByteString(this, index, codePoint);
+    _array.write(index, codePoint);
   }
 
   // Should be optimizable to a memory move.
@@ -1363,8 +1372,9 @@ final class TwoByteString extends StringBase {
 
   /// This is internal helper method. Code point value must be a valid UTF-16
   /// value (0..0xFFFF), index must be valid.
+  @pragma('wasm:prefer-inline')
   void _setAt(int index, int codePoint) {
-    writeIntoTwoByteString(this, index, codePoint);
+    _array.write(index, codePoint);
   }
 
   @override

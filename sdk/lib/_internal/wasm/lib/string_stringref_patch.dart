@@ -12,7 +12,6 @@ import "dart:_internal"
     show
         CodeUnits,
         ClassID,
-        copyRangeFromUint8ListToOneByteString,
         doubleToIntBits,
         EfficientLengthIterable,
         intBitsToDouble,
@@ -34,14 +33,19 @@ import 'dart:_wasm';
 
 import "dart:typed_data" show Uint8List, Uint16List;
 
-// Much of this patch file is similar to the VM `string_patch.dart`. It may make
-// sense to share some of the code when the patching mechanism supports patching
-// the same class in multiple patch files.
-
 const int _maxAscii = 0x7f;
 const int _maxLatin1 = 0xff;
 const int _maxUtf16 = 0xffff;
 const int _maxUnicode = 0x10ffff;
+
+/// The [fromStart] and [toStart] indices together with the [length] must
+/// specify ranges within the bounds of the list / string.
+void _copyRangeFromUint8ListToOneByteString(
+    Uint8List from, _OneByteString to, int fromStart, int toStart, int length) {
+  for (int i = 0; i < length; i++) {
+    to._setAt(toStart + i, from[fromStart + i]);
+  }
+}
 
 String _toUpperCase(String string) => JS<String>(
     "s => stringToDartString(stringFromDartString(s).toUpperCase())", string);
@@ -259,7 +263,7 @@ abstract final class _StringBase implements String {
 
     // Special case for native Uint8 typed arrays.
     if (charCodes is Uint8List) {
-      copyRangeFromUint8ListToOneByteString(charCodes, s, start, 0, len);
+      _copyRangeFromUint8ListToOneByteString(charCodes, s, start, 0, len);
       return s;
     }
 
@@ -1361,11 +1365,11 @@ final class _OneByteString extends _StringBase {
   external static _OneByteString _allocateFromOneByteList(
       List<int> list, int start, int end);
 
-  // This is internal helper method. Code point value must be a valid
-  // Latin1 value (0..0xFF), index must be valid.
-
+  /// This is internal helper method. Code point value must be a valid Latin1
+  /// value (0..0xFF), index must be valid.
+  @pragma('wasm:prefer-inline')
   void _setAt(int index, int codePoint) {
-    writeIntoOneByteString(this, index, codePoint);
+    _array.write(index, codePoint);
   }
 
   // Should be optimizable to a memory move.
@@ -1423,11 +1427,11 @@ final class _TwoByteString extends _StringBase {
     return s;
   }
 
-  // This is internal helper method. Code point value must be a valid
-  // UTF-16 value (0..0xFFFF), index must be valid.
-
+  /// This is internal helper method. Code point value must be a valid UTF-16
+  /// value (0..0xFFFF), index must be valid.
+  @pragma('wasm:prefer-inline')
   void _setAt(int index, int codePoint) {
-    writeIntoTwoByteString(this, index, codePoint);
+    _array.write(index, codePoint);
   }
 
   @override
