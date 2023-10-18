@@ -1085,14 +1085,12 @@ final class OneByteString extends StringBase {
     final result = OneByteString.withLength(totalLength);
     final to = result._array;
     final stringsLength = strings.length;
-    int j = 0;
+    int resultOffset = 0;
     for (int s = 0; s < stringsLength; s++) {
       final OneByteString e = unsafeCast<OneByteString>(strings[s]);
-      final from = e._array;
-      final length = from.length;
-      for (int i = 0; i < length; i++) {
-        to.write(j++, from.readUnsigned(i));
-      }
+      final length = e._array.length;
+      to.copy(resultOffset, e._array, 0, length);
+      resultOffset += length;
     }
     return result;
   }
@@ -1310,9 +1308,6 @@ final class OneByteString extends StringBase {
     }
     return this;
   }
-
-  external static OneByteString allocateFromOneByteList(
-      List<int> list, int start, int end);
 
   /// This is internal helper method. Code point value must be a valid Latin1
   /// value (0..0xFF), index must be valid.
