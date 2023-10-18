@@ -640,19 +640,6 @@ class Intrinsifier {
           b.i32_wrap_i64();
           b.array_set(arrayType);
           return codeGen.voidMarker;
-        case "allocateTwoByteString":
-          ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
-          translator.functions.allocateClass(info.classId);
-          w.ArrayType arrayType =
-              translator.wasmArrayType(w.PackedType.i16, "WasmI16");
-          Expression length = node.arguments.positional[0];
-          b.i32_const(info.classId);
-          b.i32_const(initialIdentityHash);
-          codeGen.wrap(length, w.NumType.i64);
-          b.i32_wrap_i64();
-          b.array_new_default(arrayType);
-          b.struct_new(info.struct);
-          return info.nonNullableType;
         case "writeIntoTwoByteString":
           ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
           w.ArrayType arrayType =

@@ -10,7 +10,6 @@
 
 import "dart:_internal"
     show
-        allocateTwoByteString,
         CodeUnits,
         ClassID,
         copyRangeFromUint8ListToOneByteString,
@@ -1411,9 +1410,8 @@ final class _TwoByteString extends _StringBase {
   // Allocates a string of given length, expecting its content to be
   // set using _setAt.
 
-  static _TwoByteString _allocate(int length) {
-    return unsafeCast<_TwoByteString>(allocateTwoByteString(length));
-  }
+  static _TwoByteString _allocate(int length) =>
+      _TwoByteString._withLength(length);
 
   static String _allocateFromTwoByteList(List<int> list, int start, int end) {
     final int length = end - start;

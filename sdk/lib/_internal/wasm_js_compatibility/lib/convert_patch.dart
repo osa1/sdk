@@ -9,7 +9,6 @@
 
 import "dart:_internal"
     show
-        allocateTwoByteString,
         ClassID,
         copyRangeFromUint8ListToOneByteString,
         patch,
@@ -1953,7 +1952,7 @@ class _Utf8Decoder {
     assert(start < end);
     final String typeTable = _Utf8Decoder.typeTable;
     final String transitionTable = _Utf8Decoder.transitionTable;
-    String result = allocateTwoByteString(size);
+    TwoByteString result = TwoByteString.withLength(size);
     int i = start;
     int j = 0;
     int state = _state;

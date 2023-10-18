@@ -1338,8 +1338,7 @@ final class TwoByteString extends StringBase {
   @pragma("wasm:entry-point")
   WasmIntArray<WasmI16> _array;
 
-  TwoByteString._withLength(int length)
-      : _array = WasmIntArray<WasmI16>(length);
+  TwoByteString.withLength(int length) : _array = WasmIntArray<WasmI16>(length);
 
   // Same hash as VM
   @override
@@ -1356,9 +1355,7 @@ final class TwoByteString extends StringBase {
   // Allocates a string of given length, expecting its content to be
   // set using setAt.
 
-  static TwoByteString allocate(int length) {
-    return unsafeCast<TwoByteString>(allocateTwoByteString(length));
-  }
+  static TwoByteString allocate(int length) => TwoByteString.withLength(length);
 
   static String allocateFromTwoByteList(List<int> list, int start, int end) {
     final int length = end - start;
@@ -1398,7 +1395,7 @@ final class TwoByteString extends StringBase {
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
     int length = endIndex - startIndex;
-    var result = TwoByteString._withLength(length);
+    var result = TwoByteString.withLength(length);
     for (int i = 0; i < length; i++) {
       result.setAt(i, codeUnitAt(startIndex + i));
     }

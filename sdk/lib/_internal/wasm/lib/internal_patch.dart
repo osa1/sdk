@@ -27,9 +27,6 @@ void copyRangeFromUint8ListToOneByteString(
   }
 }
 
-/// The returned string is a [_TwoByteString] with uninitialized content.
-external String allocateTwoByteString(int length);
-
 /// The [string] must be a [_TwoByteString]. The [index] must be valid.
 external void writeIntoTwoByteString(String string, int index, int codePoint);
 
@@ -56,8 +53,8 @@ void _stringWrite1(String string, double index, double codePoint) {
 }
 
 @pragma("wasm:export", "\$stringAllocate2")
-String _stringAllocate2(double length) {
-  return allocateTwoByteString(length.toInt());
+TwoByteString _stringAllocate2(double length) {
+  return TwoByteString.withLength(length.toInt());
 }
 
 @pragma("wasm:export", "\$stringWrite2")
