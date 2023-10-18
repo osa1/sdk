@@ -6,8 +6,6 @@ library dart._string;
 
 import "dart:_internal"
     show
-        allocateOneByteString,
-        allocateTwoByteString,
         CodeUnits,
         ClassID,
         copyRangeFromUint8ListToOneByteString,
@@ -20,9 +18,7 @@ import "dart:_internal"
         mix64,
         makeListFixedLength,
         patch,
-        unsafeCast,
-        writeIntoOneByteString,
-        writeIntoTwoByteString;
+        unsafeCast;
 
 import 'dart:_js_helper' show JS;
 import 'dart:_js_types' show JSStringImpl;
@@ -31,6 +27,17 @@ import 'dart:_string_helper';
 import 'dart:_wasm';
 
 import "dart:typed_data" show Uint8List, Uint16List;
+
+/// Static function for `OneByteString._setAt` to avoid making `_setAt` public,
+/// which would allow calling it in dynamic invocations.
+@pragma('wasm:prefer-inline')
+void writeIntoOneByteString(OneByteString s, int index, int codePoint) =>
+    s._setAt(index, codePoint);
+
+/// Same as `writeIntoOneByteString`, but for `TwoByteString`.
+@pragma('wasm:prefer-inline')
+void writeIntoTwoByteString(TwoByteString s, int index, int codePoint) =>
+    s._setAt(index, codePoint);
 
 const int _maxLatin1 = 0xff;
 const int _maxUtf16 = 0xffff;
@@ -211,7 +218,7 @@ abstract final class StringBase implements String {
 
   static String createOneByteString(List<int> charCodes, int start, int len) {
     // It's always faster to do this in Dart than to call into the runtime.
-    var s = OneByteString.allocate(len);
+    var s = OneByteString.withLength(len);
 
     // Special case for native Uint8 typed arrays.
     if (charCodes is Uint8List) {
@@ -221,16 +228,16 @@ abstract final class StringBase implements String {
 
     // Fall through to normal case.
     for (int i = 0; i < len; i++) {
-      s.setAt(i, charCodes[start + i]);
+      s._setAt(i, charCodes[start + i]);
     }
     return s;
   }
 
   static String _createFromOneByteCodes(
       List<int> charCodes, int start, int end) {
-    OneByteString result = OneByteString.allocate(end - start);
+    OneByteString result = OneByteString.withLength(end - start);
     for (int i = start; i < end; i++) {
-      result.setAt(i - start, charCodes[i]);
+      result._setAt(i - start, charCodes[i]);
     }
     return result;
   }
@@ -579,7 +586,7 @@ abstract final class StringBase implements String {
     int replacementLength = replacement.length;
     int totalLength = start + (length - localEnd) + replacementLength;
     if (replacementIsOneByte && this._isOneByte) {
-      var result = OneByteString.allocate(totalLength);
+      var result = OneByteString.withLength(totalLength);
       int index = 0;
       index = result._setRange(index, this, 0, start);
       index = result._setRange(start, replacement, 0, replacementLength);
@@ -646,7 +653,7 @@ abstract final class StringBase implements String {
    */
   static String _joinReplaceAllOneByteResult(
       String base, List matches, int length) {
-    OneByteString result = OneByteString.allocate(length);
+    OneByteString result = OneByteString.withLength(length);
     int writeIndex = 0;
     for (int i = 0; i < matches.length; i++) {
       var entry = matches[i];
@@ -667,13 +674,13 @@ abstract final class StringBase implements String {
           sliceEnd = matches[i];
         }
         for (int j = sliceStart; j < sliceEnd; j++) {
-          result.setAt(writeIndex++, base.codeUnitAt(j));
+          result._setAt(writeIndex++, base.codeUnitAt(j));
         }
       } else {
         // Replacement is a one-byte string.
         String replacement = entry;
         for (int j = 0; j < replacement.length; j++) {
-          result.setAt(writeIndex++, replacement.codeUnitAt(j));
+          result._setAt(writeIndex++, replacement.codeUnitAt(j));
         }
       }
     }
@@ -701,7 +708,7 @@ abstract final class StringBase implements String {
     if (isOneByte) {
       return _joinReplaceAllOneByteResult(base, matches, length);
     }
-    TwoByteString result = TwoByteString.allocate(length);
+    TwoByteString result = TwoByteString.withLength(length);
     int writeIndex = 0;
     for (int i = 0; i < matches.length; i++) {
       var entry = matches[i];
@@ -722,13 +729,13 @@ abstract final class StringBase implements String {
           sliceEnd = matches[i];
         }
         for (int j = sliceStart; j < sliceEnd; j++) {
-          result.setAt(writeIndex++, base.codeUnitAt(j));
+          result._setAt(writeIndex++, base.codeUnitAt(j));
         }
       } else {
         // Replacement is a one-byte string.
         String replacement = entry;
         for (int j = 0; j < replacement.length; j++) {
-          result.setAt(writeIndex++, replacement.codeUnitAt(j));
+          result._setAt(writeIndex++, replacement.codeUnitAt(j));
         }
       }
     }
@@ -980,7 +987,7 @@ abstract final class StringBase implements String {
         totalLength += unsafeCast<StringBase>(str).length;
       }
     }
-    TwoByteString result = TwoByteString.allocate(totalLength);
+    TwoByteString result = TwoByteString.withLength(totalLength);
     int offset = 0;
     for (int i = start; i < end; i++) {
       final str = strings[i];
@@ -1043,7 +1050,7 @@ final class OneByteString extends StringBase {
     int length = endIndex - startIndex;
     var result = OneByteString.withLength(length);
     for (int i = 0; i < length; i++) {
-      result.setAt(i, codeUnitAt(startIndex + i));
+      result._setAt(i, codeUnitAt(startIndex + i));
     }
     return result;
   }
@@ -1071,7 +1078,7 @@ final class OneByteString extends StringBase {
 
   // All element of 'strings' must be OneByteStrings.
   static _concatAll(List strings, int totalLength) {
-    final result = OneByteString.allocate(totalLength);
+    final result = OneByteString.withLength(totalLength);
     final to = result._array;
     final stringsLength = strings.length;
     int j = 0;
@@ -1138,11 +1145,11 @@ final class OneByteString extends StringBase {
     if (times == 1) return this;
     int length = this.length;
     if (this.isEmpty) return this; // Don't clone empty string.
-    OneByteString result = OneByteString.allocate(length * times);
+    OneByteString result = OneByteString.withLength(length * times);
     int index = 0;
     for (int i = 0; i < times; i++) {
       for (int j = 0; j < length; j++) {
-        result.setAt(index++, this.codeUnitAt(j));
+        result._setAt(index++, this.codeUnitAt(j));
       }
     }
     return result;
@@ -1157,22 +1164,22 @@ final class OneByteString extends StringBase {
     if (delta <= 0) return this;
     int padLength = padding.length;
     int resultLength = padLength * delta + length;
-    OneByteString result = OneByteString.allocate(resultLength);
+    OneByteString result = OneByteString.withLength(resultLength);
     int index = 0;
     if (padLength == 1) {
       int padChar = padding.codeUnitAt(0);
       for (int i = 0; i < delta; i++) {
-        result.setAt(index++, padChar);
+        result._setAt(index++, padChar);
       }
     } else {
       for (int i = 0; i < delta; i++) {
         for (int j = 0; j < padLength; j++) {
-          result.setAt(index++, padding.codeUnitAt(j));
+          result._setAt(index++, padding.codeUnitAt(j));
         }
       }
     }
     for (int i = 0; i < length; i++) {
-      result.setAt(index++, this.codeUnitAt(i));
+      result._setAt(index++, this.codeUnitAt(i));
     }
     return result;
   }
@@ -1186,20 +1193,20 @@ final class OneByteString extends StringBase {
     if (delta <= 0) return this;
     int padLength = padding.length;
     int resultLength = length + padLength * delta;
-    OneByteString result = OneByteString.allocate(resultLength);
+    OneByteString result = OneByteString.withLength(resultLength);
     int index = 0;
     for (int i = 0; i < length; i++) {
-      result.setAt(index++, this.codeUnitAt(i));
+      result._setAt(index++, this.codeUnitAt(i));
     }
     if (padLength == 1) {
       int padChar = padding.codeUnitAt(0);
       for (int i = 0; i < delta; i++) {
-        result.setAt(index++, padChar);
+        result._setAt(index++, padChar);
       }
     } else {
       for (int i = 0; i < delta; i++) {
         for (int j = 0; j < padLength; j++) {
-          result.setAt(index++, padding.codeUnitAt(j));
+          result._setAt(index++, padding.codeUnitAt(j));
         }
       }
     }
@@ -1257,12 +1264,12 @@ final class OneByteString extends StringBase {
       final c = this.codeUnitAt(i);
       if (c == _LC_TABLE.codeUnitAt(c)) continue;
       // Upper-case character found.
-      final result = allocate(this.length);
+      final result = OneByteString.withLength(this.length);
       for (int j = 0; j < i; j++) {
-        result.setAt(j, this.codeUnitAt(j));
+        result._setAt(j, this.codeUnitAt(j));
       }
       for (int j = i; j < this.length; j++) {
-        result.setAt(j, _LC_TABLE.codeUnitAt(this.codeUnitAt(j)));
+        result._setAt(j, _LC_TABLE.codeUnitAt(this.codeUnitAt(j)));
       }
       return result;
     }
@@ -1288,22 +1295,17 @@ final class OneByteString extends StringBase {
       }
       // Some lower-case characters found, but all upper-case to single Latin-1
       // characters.
-      final result = allocate(this.length);
+      final result = OneByteString.withLength(this.length);
       for (int j = 0; j < i; j++) {
-        result.setAt(j, this.codeUnitAt(j));
+        result._setAt(j, this.codeUnitAt(j));
       }
       for (int j = i; j < this.length; j++) {
-        result.setAt(j, _UC_TABLE.codeUnitAt(this.codeUnitAt(j)));
+        result._setAt(j, _UC_TABLE.codeUnitAt(this.codeUnitAt(j)));
       }
       return result;
     }
     return this;
   }
-
-  // Allocates a string of given length, expecting its content to be
-  // set using setAt.
-
-  static OneByteString allocate(int length) => OneByteString.withLength(length);
 
   external static OneByteString allocateFromOneByteList(
       List<int> list, int start, int end);
@@ -1311,7 +1313,7 @@ final class OneByteString extends StringBase {
   // This is internal helper method. Code point value must be a valid
   // Latin1 value (0..0xFF), index must be valid.
 
-  void setAt(int index, int codePoint) {
+  void _setAt(int index, int codePoint) {
     writeIntoOneByteString(this, index, codePoint);
   }
 
@@ -1326,7 +1328,7 @@ final class OneByteString extends StringBase {
     assert(0 <= index);
     assert(index + (end - start) <= length);
     for (int i = start; i < end; i++) {
-      setAt(index, oneByteString.codeUnitAt(i));
+      _setAt(index, oneByteString.codeUnitAt(i));
       index += 1;
     }
     return index;
@@ -1352,14 +1354,9 @@ final class TwoByteString extends StringBase {
     return stringFinalizeHash(hash);
   }
 
-  // Allocates a string of given length, expecting its content to be
-  // set using setAt.
-
-  static TwoByteString allocate(int length) => TwoByteString.withLength(length);
-
   static String allocateFromTwoByteList(List<int> list, int start, int end) {
     final int length = end - start;
-    final s = allocate(length);
+    final s = TwoByteString.withLength(length);
     final array = s._array;
     for (int i = 0; i < length; i++) {
       array.write(i, list[start + i]);
@@ -1367,10 +1364,9 @@ final class TwoByteString extends StringBase {
     return s;
   }
 
-  // This is internal helper method. Code point value must be a valid
-  // UTF-16 value (0..0xFFFF), index must be valid.
-
-  void setAt(int index, int codePoint) {
+  /// This is internal helper method. Code point value must be a valid UTF-16
+  /// value (0..0xFFFF), index must be valid.
+  void _setAt(int index, int codePoint) {
     writeIntoTwoByteString(this, index, codePoint);
   }
 
@@ -1397,7 +1393,7 @@ final class TwoByteString extends StringBase {
     int length = endIndex - startIndex;
     var result = TwoByteString.withLength(length);
     for (int i = 0; i < length; i++) {
-      result.setAt(i, codeUnitAt(startIndex + i));
+      result._setAt(i, codeUnitAt(startIndex + i));
     }
     return result;
   }

@@ -622,42 +622,6 @@ class Intrinsifier {
         case "_nativeEffect":
           // Ignore argument
           return translator.voidMarker;
-        case "writeIntoOneByteString":
-          ClassInfo info = translator.classInfo[translator.oneByteStringClass]!;
-          w.ArrayType arrayType =
-              translator.wasmArrayType(w.PackedType.i8, "WasmI8");
-          Field arrayField = translator.oneByteStringClass.fields
-              .firstWhere((f) => f.name.text == '_array');
-          int arrayFieldIndex = translator.fieldIndex[arrayField]!;
-          Expression string = node.arguments.positional[0];
-          Expression index = node.arguments.positional[1];
-          Expression codePoint = node.arguments.positional[2];
-          codeGen.wrap(string, info.nonNullableType);
-          b.struct_get(info.struct, arrayFieldIndex);
-          codeGen.wrap(index, w.NumType.i64);
-          b.i32_wrap_i64();
-          codeGen.wrap(codePoint, w.NumType.i64);
-          b.i32_wrap_i64();
-          b.array_set(arrayType);
-          return codeGen.voidMarker;
-        case "writeIntoTwoByteString":
-          ClassInfo info = translator.classInfo[translator.twoByteStringClass]!;
-          w.ArrayType arrayType =
-              translator.wasmArrayType(w.PackedType.i16, "WasmI16");
-          Field arrayField = translator.oneByteStringClass.fields
-              .firstWhere((f) => f.name.text == '_array');
-          int arrayFieldIndex = translator.fieldIndex[arrayField]!;
-          Expression string = node.arguments.positional[0];
-          Expression index = node.arguments.positional[1];
-          Expression codePoint = node.arguments.positional[2];
-          codeGen.wrap(string, info.nonNullableType);
-          b.struct_get(info.struct, arrayFieldIndex);
-          codeGen.wrap(index, w.NumType.i64);
-          b.i32_wrap_i64();
-          codeGen.wrap(codePoint, w.NumType.i64);
-          b.i32_wrap_i64();
-          b.array_set(arrayType);
-          return codeGen.voidMarker;
         case "floatToIntBits":
           codeGen.wrap(node.arguments.positional.single, w.NumType.f64);
           b.f32_demote_f64();
