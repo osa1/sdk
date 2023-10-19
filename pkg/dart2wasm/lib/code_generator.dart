@@ -2029,21 +2029,6 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
             getter: kind.isGetter, setter: kind.isSetter));
     assert(selector.name == interfaceTarget.name.text);
 
-    /*
-    if (selector.targetCount == 0) {
-      print("Generating call to selector with call count 0: ${selector.name}");
-    }
-
-    if (selector.offset == null) {
-      print("Generating call to selector without offset: ${selector.name}");
-    }
-    */
-
-    if (selector.targetCount == 0 && selector.offset == null) {
-      b.unreachable();
-      return translator.objectInfo.nonNullableType;
-    }
-
     pushReceiver(selector.signature);
 
     if (selector.targetCount == 1) {

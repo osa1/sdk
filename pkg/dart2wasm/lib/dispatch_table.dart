@@ -94,9 +94,6 @@ class SelectorInfo {
     List<bool> ensureBoxed = List.filled(1 + paramInfo.paramCount, false);
     targets.forEach((classId, target) {
       Member member = target.asMember;
-      if (member.isAbstract) {
-        return;
-      }
       DartType receiver =
           InterfaceType(member.enclosingClass!, Nullability.nonNullable);
       List<DartType> positional;
@@ -155,7 +152,9 @@ class SelectorInfo {
         }
       }
       assert(returns.length <= outputSets.length);
-      inputSets[0].add(translator.translateType(receiver));
+      if (!member.isAbstract) {
+        inputSets[0].add(translator.translateType(receiver));
+      }
       ensureBoxed[0] = member.enclosingClass != translator.ffiPointerClass;
       for (int i = 0; i < positional.length; i++) {
         DartType type = positional[i];
