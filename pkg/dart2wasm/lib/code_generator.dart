@@ -2029,6 +2029,13 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
             getter: kind.isGetter, setter: kind.isSetter));
     assert(selector.name == interfaceTarget.name.text);
 
+    if (selector.targetCount == 0 && selector.offset == null) {
+      // This happens when TFA drops members of a class but not the class
+      // itself or the calls to those members. (#53800)
+      b.unreachable();
+      return translator.objectInfo.nonNullableType;
+    }
+
     pushReceiver(selector.signature);
 
     if (selector.targetCount == 1) {
@@ -2036,18 +2043,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return translator.outputOrVoid(call(selector.singularTarget!));
     }
 
-    int? offset = selector.offset;
-    if (offset == null) {
-      // Unreachable call
-      assert(selector.targetCount == 0);
-      b.comment("Virtual call of ${selector.name} with no targets"
-          " at ${node.location}");
-      b.drop();
-      b.block(const [], selector.signature.outputs);
-      b.unreachable();
-      b.end();
-      return translator.outputOrVoid(selector.signature.outputs);
-    }
+    int offset = selector.offset!;
 
     // Receiver is already on stack.
     w.Local receiverVar = addLocal(selector.signature.inputs.first);
