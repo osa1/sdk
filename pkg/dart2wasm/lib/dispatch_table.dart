@@ -94,6 +94,9 @@ class SelectorInfo {
     List<bool> ensureBoxed = List.filled(1 + paramInfo.paramCount, false);
     targets.forEach((classId, target) {
       Member member = target.asMember;
+      if (member.isAbstract) {
+        return;
+      }
       DartType receiver =
           InterfaceType(member.enclosingClass!, Nullability.nonNullable);
       List<DartType> positional;
