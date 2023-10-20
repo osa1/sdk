@@ -59,8 +59,11 @@ class Utf8Decoder {
       if (allowMalformed) {
         int u8listIdx = 0;
         for (int codeUnitsIdx = start; codeUnitsIdx < end; codeUnitsIdx += 1) {
-          // TODO: Negative code units must be replaced with 0xFFFD (replacement character)
-          u8listData.write(u8listIdx++, codeUnits[codeUnitsIdx]);
+          int byte = codeUnits[codeUnitsIdx];
+          if (byte < 0 || byte > 255) {
+            byte = 0xFF;
+          }
+          u8listData.write(u8listIdx++, byte);
         }
       } else {
         int u8listIdx = 0;
