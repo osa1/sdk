@@ -4,6 +4,7 @@
 
 import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
 import "dart:_string";
+import "dart:_typed_data";
 import "dart:typed_data" show Uint8List, Uint16List;
 
 /// This patch library has no additional parts.
@@ -27,7 +28,7 @@ class Utf8Decoder {
   @patch
   Converter<List<int>, T> fuse<T>(Converter<String, T> next) {
     if (next is JsonDecoder) {
-      return new _JsonUtf8Decoder(
+      return _JsonUtf8Decoder(
               (next as JsonDecoder)._reviver, this._allowMalformed)
           as dynamic/*=Converter<List<int>, T>*/;
     }
@@ -35,11 +36,28 @@ class Utf8Decoder {
     return super.fuse<T>(next);
   }
 
-  // Allow intercepting of UTF-8 decoding when built-in lists are passed.
   @patch
   static String? _convertIntercepted(
       bool allowMalformed, List<int> codeUnits, int start, int? end) {
-    return null; // This call was not intercepted.
+    // We intercept the calls always to make sure the standard library UTF8
+    // decoder is only passed `U8List`, so that array accesses will be
+    // monomorphic and inlined.
+    if (codeUnits is U8List) {
+      return _Utf8Decoder(allowMalformed)
+          ._convertSingle(unsafeCast<U8List>(codeUnits), start, end);
+    } else {
+      // TODO(omersa): Check if `codeUnits` is a JS array and call browser UTF8
+      // decoder here.
+      //
+      // If we're passed a `List<int>` other than `U8List` or a JS typed array,
+      // it means the performance is not too important. So we convert the input
+      // to `U8List` to avoid shipping another UTF8 decoder.
+      end ??= codeUnits.length;
+      final length = end - start;
+      final u8list = U8List(length);
+      u8list.setRange(0, length, codeUnits.skip(start).take(length));
+      return _Utf8Decoder(allowMalformed)._convertSingle(u8list, 0, length);
+    }
   }
 }
 
@@ -1470,7 +1488,7 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
  * Chunked JSON parser that parses UTF-8 chunks.
  */
 class _JsonUtf8Parser extends _ChunkedJsonParser<List<int>> {
-  static final Uint8List emptyChunk = Uint8List(0);
+  static final U8List emptyChunk = U8List(0);
 
   final _Utf8Decoder decoder;
   List<int> chunk = emptyChunk;
@@ -1679,20 +1697,13 @@ class _Utf8Decoder {
 
   @patch
   String convertSingle(List<int> codeUnits, int start, int? maybeEnd) {
-    int end = RangeError.checkValidRange(start, maybeEnd, codeUnits.length);
+    // `Utf8Decoder._convertIntercepted` should intercept all calls to call the
+    // right decoder for the `codeUnits` type.
+    throw 'Utf8Decoder.convert was not intercepted';
+  }
 
-    // Have bytes as Uint8List.
-    Uint8List bytes;
-    int errorOffset;
-    if (codeUnits is Uint8List) {
-      bytes = unsafeCast<Uint8List>(codeUnits);
-      errorOffset = 0;
-    } else {
-      bytes = _makeUint8List(codeUnits, start, end);
-      errorOffset = start;
-      end -= start;
-      start = 0;
-    }
+  String _convertSingle(U8List bytes, int start, int? maybeEnd) {
+    final int end = RangeError.checkValidRange(start, maybeEnd, bytes.length);
 
     // Skip initial BOM.
     start = skipBomSingle(bytes, start, end);
@@ -1701,14 +1712,14 @@ class _Utf8Decoder {
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    int size = scan(bytes, start, end);
-    int flags = _scanFlags;
+    final int size = scan(bytes, start, end);
+    final int flags = _scanFlags;
 
     if (flags == 0) {
       // Pure ASCII.
       assert(size == end - start);
       OneByteString result = OneByteString.withLength(size);
-      copyRangeFromUint8ListToOneByteString(bytes, result, start, 0, size);
+      oneByteStringArray(result).copy(0, bytes.data, start, size);
       return result;
     }
 
@@ -1731,7 +1742,7 @@ class _Utf8Decoder {
         _charOrIndex = end;
       }
       final String message = errorDescription(_state);
-      throw FormatException(message, codeUnits, errorOffset + _charOrIndex);
+      throw FormatException(message, bytes, _charOrIndex);
     }
 
     // Start over on slow path.
