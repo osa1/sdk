@@ -191,6 +191,9 @@ class CompileType : public ZoneAllocated {
   // Create non-nullable String type.
   static CompileType String();
 
+  // Create non-nullable Object type.
+  static CompileType Object();
+
   // Perform a join operation over the type lattice.
   void Union(CompileType* other);
 
@@ -209,6 +212,9 @@ class CompileType : public ZoneAllocated {
   }
 
   bool IsNone() const { return (cid_ == kIllegalCid) && (type_ == nullptr); }
+
+  // Return true if value of this type is a non-nullable Object.
+  bool IsObject() const;
 
   // Return true if value of this type is a non-nullable int.
   bool IsInt() { return !is_nullable() && IsNullableInt(); }

@@ -8362,6 +8362,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingGetters
+        self::@class::B::@getter::_foo
 ''');
   }
 
@@ -8414,6 +8418,10 @@ library
         fields
           final _foo @38
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingGetters
+        self::@class::B::@getter::_foo
 ''');
   }
 
@@ -8462,6 +8470,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingFields
+        self::@class::B::@field::_foo
 ''');
   }
 
@@ -8560,6 +8572,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@class::C
 ''');
   }
 
@@ -8680,6 +8696,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@class::E
 ''');
   }
 
@@ -8717,6 +8737,10 @@ library
           final _foo @71
             type: int?
             shouldUseTypeForInitializerInference: true
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@enum::E
 ''');
   }
 
@@ -8746,6 +8770,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@class::C
 ''');
   }
 
@@ -8814,6 +8842,10 @@ library
         fields
           final _foo @23
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@class::C
 ''');
   }
 
@@ -8856,6 +8888,10 @@ library
           final _foo @71
             type: int?
             shouldUseTypeForInitializerInference: true
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingNsmClasses
+        self::@class::C
 ''');
   }
 
@@ -8905,6 +8941,10 @@ library
         fields
           _foo @17
             type: int?
+  fieldNameNonPromotabilityInfo
+    _foo
+      conflictingFields
+        self::@class::A::@field::_foo
 ''');
   }
 
@@ -49193,6 +49233,34 @@ library
 ''');
   }
 
+  test_interfaces_implicitObjectQuestion_fromTypeParameter() async {
+    var library = await buildLibrary(r'''
+extension type A<T>(T it) {}
+''');
+
+    configuration.withConstructors = false;
+    checkElementText(library, r'''
+library
+  definingUnit
+    extensionTypes
+      A @15
+        typeParameters
+          covariant T @17
+            defaultType: dynamic
+        representation: self::@extensionType::A::@field::it
+        primaryConstructor: self::@extensionType::A::@constructor::new
+        typeErasure: T
+        interfaces
+          Object?
+        fields
+          final it @22
+            type: T
+        accessors
+          synthetic get it @-1
+            returnType: T
+''');
+  }
+
   test_interfaces_void() async {
     var library = await buildLibrary(r'''
 typedef A = void;
@@ -49219,6 +49287,44 @@ library
     typeAliases
       A @8
         aliasedType: void
+''');
+  }
+
+  test_isPromotable_representationField_private() async {
+    var library = await buildLibrary(r'''
+extension type A(int? _it) {}
+
+class B {
+  int _it = 0;
+}
+
+class C {
+  int get _it => 0;
+}
+''');
+
+    configuration
+      ..forPromotableFields(extensionTypeNames: {'A'})
+      ..withConstructors = false;
+    checkElementText(library, r'''
+library
+  definingUnit
+    extensionTypes
+      A @15
+        representation: self::@extensionType::A::@field::_it
+        primaryConstructor: self::@extensionType::A::@constructor::new
+        typeErasure: int?
+        interfaces
+          Object?
+        fields
+          final promotable _it @22
+            type: int?
+  fieldNameNonPromotabilityInfo
+    _it
+      conflictingFields
+        self::@class::B::@field::_it
+      conflictingGetters
+        self::@class::C::@getter::_it
 ''');
   }
 
@@ -52111,6 +52217,7 @@ extension on ElementTextConfiguration {
   void forPromotableFields({
     Set<String> classNames = const {},
     Set<String> enumNames = const {},
+    Set<String> extensionTypeNames = const {},
     Set<String> mixinNames = const {},
     Set<String> fieldNames = const {},
   }) {
@@ -52121,6 +52228,8 @@ extension on ElementTextConfiguration {
         return false;
       } else if (e is EnumElement) {
         return enumNames.contains(e.name);
+      } else if (e is ExtensionTypeElement) {
+        return extensionTypeNames.contains(e.name);
       } else if (e is FieldElement) {
         return fieldNames.isEmpty || fieldNames.contains(e.name);
       } else if (e is MixinElement) {

@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_js_helper" show JS;
-import "dart:typed_data" show Uint8List;
+import "dart:_string";
 
 part "class_id.dart";
 part "deferred.dart";
@@ -13,28 +13,6 @@ part "symbol_patch.dart";
 // Compilation to Wasm is always fully null safe.
 @patch
 bool typeAcceptsNull<T>() => null is T;
-
-/// The returned string is a [_OneByteString] with uninitialized content.
-external String allocateOneByteString(int length);
-
-/// The [string] must be a [_OneByteString]. The [index] must be valid.
-external void writeIntoOneByteString(String string, int index, int codePoint);
-
-/// It is assumed that [from] is a native [Uint8List] class and [to] is a
-/// [_OneByteString]. The [fromStart] and [toStart] indices together with the
-/// [length] must specify ranges within the bounds of the list / string.
-void copyRangeFromUint8ListToOneByteString(
-    Uint8List from, String to, int fromStart, int toStart, int length) {
-  for (int i = 0; i < length; i++) {
-    writeIntoOneByteString(to, toStart + i, from[fromStart + i]);
-  }
-}
-
-/// The returned string is a [_TwoByteString] with uninitialized content.
-external String allocateTwoByteString(int length);
-
-/// The [string] must be a [_TwoByteString]. The [index] must be valid.
-external void writeIntoTwoByteString(String string, int index, int codePoint);
 
 // String accessors used to perform Dart<->JS string conversion
 

@@ -1150,7 +1150,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     // stack after each type test. Also, store the stack trace in a local.
     w.Local thrownException = addLocal(translator.topInfo.nonNullableType);
     w.Local thrownStackTrace =
-        addLocal(translator.stackTraceInfo.nonNullableType);
+        addLocal(translator.stackTraceInfo.repr.nonNullableType);
 
     void emitCatchBlock(Catch catch_, bool emitGuard) {
       // For each catch node:
@@ -1864,7 +1864,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       translator.types.makeType(this, typeArguments[elementIdx]);
     }, isGrowable: true);
     final typeArgsLocal = function.addLocal(
-        translator.classInfo[translator.fixedLengthListClass]!.nonNullableType);
+        translator.classInfo[translator.growableListClass]!.nonNullableType);
     b.local_set(typeArgsLocal);
 
     // Evaluate positional arguments
@@ -3709,8 +3709,8 @@ class SwitchInfo {
     } else if (check<StringLiteral, StringConstant>()) {
       // String switch
       nonNullableType = translator.options.jsCompatibility
-          ? translator.classInfo[translator.jsStringClass]!.nonNullableType
-          : translator.classInfo[translator.stringBaseClass]!.nonNullableType;
+          ? translator.classInfo[translator.jsStringClass]!.repr.nonNullableType
+          : translator.classInfo[translator.stringBaseClass]!.repr.nonNullableType;
       nullableType = nonNullableType.withNullability(true);
       compare = () => codeGen.call(translator.options.jsCompatibility
           ? translator.jsStringEquals.reference

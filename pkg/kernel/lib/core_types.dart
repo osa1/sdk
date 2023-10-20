@@ -353,6 +353,9 @@ class CoreTypes {
   late final Field enumNameField =
       index.getField('dart:core', '_Enum', '_name');
 
+  late final Procedure jsGetFlag =
+      index.getTopLevelProcedure('dart:_foreign_helper', 'JS_GET_FLAG');
+
   InterfaceType get objectLegacyRawType {
     return _objectLegacyRawType ??= _legacyRawTypes[objectClass] ??=
         new InterfaceType(objectClass, Nullability.legacy, const <DartType>[]);
@@ -1166,14 +1169,6 @@ class CoreTypes {
     // TOP(FutureOr<T>) is TOP(T).
     if (type is FutureOrType) {
       return isTop(type.typeArgument);
-    }
-
-    // If the instantiated representation type, R, is a top type then the
-    // extension type, V0, is a top type, otherwise V0 is a proper subtype of
-    // Object?.
-    // TODO(johnniwinther): Is this correct?
-    if (type is ExtensionType) {
-      return isTop(type.extensionTypeErasure);
     }
 
     return false;

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal';
+import 'dart:_string';
 
 @pragma("wasm:entry-point")
 final class _BoxedInt extends int {

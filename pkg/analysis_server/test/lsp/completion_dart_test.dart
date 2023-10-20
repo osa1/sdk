@@ -261,15 +261,21 @@ class CompletionLabelDetailsTest extends AbstractCompletionTest {
           '\n    ${completions.map((c) => c.label).join('\n    ')}');
     }
 
-    final labelDetails = completion.labelDetails;
-    if (labelDetails == null) {
-      fail('Completion "$label" does not have labelDetails');
-    }
-
     expect(completion.detail, detail);
     expect(completion.filterText, filterText);
-    expect(labelDetails.detail, labelDetail);
-    expect(labelDetails.description, labelDescription);
+
+    // If both fields are expected to be null, expect the whole object to be
+    // null (to reduce payload size).
+    if (labelDetail == null && labelDescription == null) {
+      expect(completion.labelDetails, isNull);
+    } else {
+      final labelDetails = completion.labelDetails;
+      if (labelDetails == null) {
+        fail('Completion "$label" does not have labelDetails');
+      }
+      expect(labelDetails.detail, labelDetail);
+      expect(labelDetails.description, labelDescription);
+    }
 
     // Verify that resolution does not modify these results.
     final resolved = await resolveCompletion(completion);
@@ -277,7 +283,9 @@ class CompletionLabelDetailsTest extends AbstractCompletionTest {
     expect(resolved.filterText, completion.filterText);
     expect(
       resolved.detail,
-      '${resolvedDetailPrefix ?? ''}${completion.detail}',
+      resolvedDetailPrefix != null
+          ? '$resolvedDetailPrefix${completion.detail ?? ''}'
+          : completion.detail,
     );
     expect(resolved.labelDetails?.detail, completion.labelDetails?.detail);
     expect(
@@ -572,6 +580,23 @@ void f() {
         filterText: null,
         detail: '() → void',
         resolvedDetailPrefix: "Auto import from 'package:test/a.dart'\n\n");
+  }
+
+  Future<void> test_nullNotEmpty() async {
+    final content = '''
+bool a = ^
+''';
+
+    /// expectLabels verifies the whole labelDetails object is null if
+    /// both fields are expected to be null.
+    await expectLabels(
+      content,
+      label: 'true',
+      labelDetail: null,
+      labelDescription: null,
+      filterText: null,
+      detail: null,
+    );
   }
 }
 
@@ -2564,6 +2589,32 @@ void f() { }
     expect(updated, contains('a.abcdefghij'));
   }
 
+  @FailingTest(reason: 'https://github.com/Dart-Code/Dart-Code/issues/4794')
+  Future<void> test_prefixed_enumMember() async {
+    // If the first character of the enum member is typed (`self.MyEnum.o^`)
+    // this test passes. Without any charactres typed (`self.MyEnum.^`) the
+    // dotTarget on the completion is `null`. The containingNode is a
+    // ConstructorName.
+    final content = '''
+import 'main.dart' as self;
+
+enum MyEnum {
+  one,
+  two,
+}
+
+void main() {
+  final x = self.MyEnum.^
+}
+''';
+
+    await initialize();
+    final code = TestCode.parse(content);
+    await openFile(mainFileUri, code.code);
+    final res = await getCompletion(mainFileUri, code.position.position);
+    expect(res.any((c) => c.label == 'one'), isTrue);
+  }
+
   Future<void> test_prefixFilter_endOfSymbol() async {
     final content = '''
     class UniqueNamedClassForLspOne {}
@@ -4148,8 +4199,6 @@ void f() {
   }
 
   Future<void> test_snippets_testGroupBlock() async {
-    // This test fails when running on macOS using Windows style paths. See
-    // explanation in test_snippets_testBlock.
     mainFilePath = join(projectFolderPath, 'test', 'foo_test.dart');
     mainFileUri = pathContext.toUri(mainFilePath);
     final content = '''
@@ -4531,7 +4580,7 @@ abstract class SnippetCompletionTest extends AbstractLspAnalysisServerTest
       // Additional TextEdits come first, because if they have the same offset
       // as edits in the normal edit, they will be inserted first.
       // https://github.com/microsoft/vscode/issues/143888.
-      snippet.additionalTextEdits!
+      (snippet.additionalTextEdits ?? [])
           .followedBy([toTextEdit(snippet.textEdit!)]).toList(),
     );
     return updated;
@@ -4569,7 +4618,10 @@ abstract class SnippetCompletionTest extends AbstractLspAnalysisServerTest
     await openFile(mainFileUri, code.code);
     final res = await getCompletion(mainFileUri, code.position.position);
     final item = res.singleWhere(
-      (c) => c.filterText == prefix && c.label == label,
+      (c) =>
+          c.kind == CompletionItemKind.Snippet &&
+          (c.filterText ?? c.label) == prefix &&
+          c.label == label,
     );
     expect(item.insertTextFormat, InsertTextFormat.Snippet);
     expect(item.insertText, isNull);

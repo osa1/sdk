@@ -1,3 +1,16 @@
+## 3.3.0
+
+### Tools
+
+#### Dart command line
+
+- The `dart create` command now uses v3 of `package:lints`,
+  including multiple new recommended lints by default.
+  To learn more about the updated collection of lints,
+  check out the `package:lints` [3.0.0 changelog entry][lints-3-0].
+
+[lints-3-0]: https://pub.dev/packages/lints/changelog#300
+
 ## 3.2.0
 
 ### Language
@@ -212,6 +225,15 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
 - Support `--enable-experiment` command-line option to enable language
   experiments.
 
+#### DevTools
+
+- Incorporated the [2.26.1][devtools-2-26-1], [2.27.0][devtools-2-27-0], and
+  [2.28.1][devtools-2-28-1] releases of DevTools.
+
+[devtools-2-26-1]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.26.1
+[devtools-2-27-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.27.0
+[devtools-2-28-1]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.28.1
+
 #### Linter
 
 - Added the experimental [`annotate_redeclares`][] lint.
@@ -331,6 +353,14 @@ This is a patch release that:
   `foo(0)`, and not `foo(0, null)`.
 
 ### Tools
+
+#### DevTools
+
+- Incorporated the [2.24.0][devtools-2-24-0] and [2.25.0][devtools-2-25-0]
+  releases of DevTools.
+
+[devtools-2-24-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.24.0
+[devtools-2-25-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.25.0
 
 #### Linter
 
