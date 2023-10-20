@@ -43,8 +43,8 @@ class Utf8Decoder {
     // decoder is only passed `U8List`, so that array accesses will be
     // monomorphic and inlined.
     if (codeUnits is U8List) {
-      return _Utf8Decoder(allowMalformed)
-          ._convertSingle(unsafeCast<U8List>(codeUnits), start, end);
+      return _Utf8Decoder(allowMalformed)._convertSingle(
+          unsafeCast<U8List>(codeUnits), start, end, codeUnits, start);
     } else {
       // TODO(omersa): Check if `codeUnits` is a JS array and call browser UTF8
       // decoder here.
@@ -55,8 +55,26 @@ class Utf8Decoder {
       end ??= codeUnits.length;
       final length = end - start;
       final u8list = U8List(length);
-      u8list.setRange(0, length, codeUnits.skip(start).take(length));
-      return _Utf8Decoder(allowMalformed)._convertSingle(u8list, 0, length);
+      final u8listData = u8list.data;
+      if (allowMalformed) {
+        int u8listIdx = 0;
+        for (int codeUnitsIdx = start; codeUnitsIdx < end; codeUnitsIdx += 1) {
+          // TODO: Negative code units must be replaced with 0xFFFD (replacement character)
+          u8listData.write(u8listIdx++, codeUnits[codeUnitsIdx]);
+        }
+      } else {
+        int u8listIdx = 0;
+        for (int codeUnitsIdx = start; codeUnitsIdx < end; codeUnitsIdx += 1) {
+          final byte = codeUnits[codeUnitsIdx];
+          if (byte < 0 || byte > 255) {
+            throw FormatException(
+                'Invalid UTF-8 byte', codeUnits, codeUnitsIdx);
+          }
+          u8listData.write(u8listIdx++, byte);
+        }
+      }
+      return _Utf8Decoder(allowMalformed)
+          ._convertSingle(u8list, 0, length, codeUnits, start);
     }
   }
 }
@@ -1383,7 +1401,7 @@ abstract class _ChunkedJsonParser<T> {
       message = "Unexpected character";
       if (position == chunkEnd) message = "Unexpected end of input";
     }
-    throw new FormatException(message, chunk, position);
+    throw FormatException(message, chunk, position);
   }
 }
 
@@ -1702,7 +1720,8 @@ class _Utf8Decoder {
     throw 'Utf8Decoder.convert was not intercepted';
   }
 
-  String _convertSingle(U8List bytes, int start, int? maybeEnd) {
+  String _convertSingle(U8List bytes, int start, int? maybeEnd,
+      List<int> actualSource, int actualStart) {
     final int end = RangeError.checkValidRange(start, maybeEnd, bytes.length);
 
     // Skip initial BOM.
@@ -1742,7 +1761,7 @@ class _Utf8Decoder {
         _charOrIndex = end;
       }
       final String message = errorDescription(_state);
-      throw FormatException(message, bytes, _charOrIndex);
+      throw FormatException(message, actualSource, actualStart + _charOrIndex);
     }
 
     // Start over on slow path.
