@@ -1127,7 +1127,6 @@ abstract class _ChunkedJsonParser<T> {
       if (position == end) return position;
       start = position;
     }
-    return -1; // UNREACHABLE.
   }
 
   /**
@@ -1682,7 +1681,6 @@ class _Utf8Decoder {
     _bomIndex = -1;
   }
 
-  @pragma("vm:prefer-inline")
   int scan(Uint8List bytes, int start, int end) {
     // Assumes 0 <= start <= end <= bytes.length
     int size = 0;
@@ -1697,9 +1695,6 @@ class _Utf8Decoder {
     return size;
   }
 
-  @pragma("vm:recognized", "other")
-  @pragma("vm:prefer-inline")
-  @pragma("vm:idempotent")
   int _scan(Uint8List bytes, int start, int end, String scanTable) {
     int size = 0;
     int flags = 0;
@@ -1879,7 +1874,6 @@ class _Utf8Decoder {
     return result;
   }
 
-  @pragma("vm:prefer-inline")
   int skipBomSingle(Uint8List bytes, int start, int end) {
     if (end - start >= 3 &&
         bytes[start] == 0xEF &&
@@ -1890,7 +1884,6 @@ class _Utf8Decoder {
     return start;
   }
 
-  @pragma("vm:prefer-inline")
   int skipBomChunked(Uint8List bytes, int start, int end) {
     assert(start <= end);
     int bomIndex = _bomIndex;

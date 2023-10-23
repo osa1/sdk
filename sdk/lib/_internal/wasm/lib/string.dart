@@ -8,16 +8,8 @@ import "dart:_internal"
     show
         CodeUnits,
         ClassID,
-        copyRangeFromUint8ListToOneByteString,
-        doubleToIntBits,
         EfficientLengthIterable,
-        intBitsToDouble,
-        IterableElementError,
-        jsonEncode,
-        Lists,
-        mix64,
         makeListFixedLength,
-        patch,
         unsafeCast;
 
 import 'dart:_js_helper' show JS;
@@ -60,10 +52,6 @@ String _toUpperCase(String string) => JS<String>(
 
 String _toLowerCase(String string) => JS<String>(
     "s => stringToDartString(stringFromDartString(s).toLowerCase())", string);
-
-extension _StringExtension on String {
-  bool get _isOneByte => this is OneByteString;
-}
 
 /**
  * [StringBase] contains common methods used by concrete String
@@ -591,16 +579,18 @@ abstract final class StringBase implements String {
   String replaceRange(int start, int? end, String replacement) {
     final length = this.length;
     final localEnd = RangeError.checkValidRange(start, end, length);
-    bool replacementIsOneByte = replacement._isOneByte;
+    bool replacementIsOneByte = replacement is OneByteString;
     if (start == 0 && localEnd == length) return replacement;
     int replacementLength = replacement.length;
     int totalLength = start + (length - localEnd) + replacementLength;
-    if (replacementIsOneByte && this._isOneByte) {
-      var result = OneByteString.withLength(totalLength);
+    if (replacementIsOneByte && this is OneByteString) {
+      final this_ = unsafeCast<OneByteString>(this);
+      final result = OneByteString.withLength(totalLength);
       int index = 0;
-      index = result._setRange(index, this, 0, start);
-      index = result._setRange(start, replacement, 0, replacementLength);
-      result._setRange(index, this, localEnd, length);
+      index = result._setRange(index, this_, 0, start);
+      index = result._setRange(
+          start, unsafeCast<OneByteString>(replacement), 0, replacementLength);
+      result._setRange(index, this_, localEnd, length);
       return result;
     }
     List slices = [];
@@ -647,10 +637,10 @@ abstract final class StringBase implements String {
     // No match, or a zero-length match at start with zero-length replacement.
     if (startIndex == 0 && length == 0) return this;
     length += _addReplaceSlice(matches, startIndex, this.length);
-    bool replacementIsOneByte = replacement._isOneByte;
+    bool replacementIsOneByte = replacement is OneByteString;
     if (replacementIsOneByte &&
         length < _maxJoinReplaceOneByteStringLength &&
-        this._isOneByte) {
+        this is OneByteString) {
       // TODO(lrn): Is there a cut-off point, or is runtime always faster?
       return _joinReplaceAllOneByteResult(this, matches, length);
     }
@@ -798,14 +788,14 @@ abstract final class StringBase implements String {
       matches.add(replacement);
       length += replacement.length;
       replacementStringsAreOneByte =
-          replacementStringsAreOneByte && replacement._isOneByte;
+          replacementStringsAreOneByte && replacement is OneByteString;
       startIndex = match.end;
     }
     if (matches.isEmpty) return this;
     length += _addReplaceSlice(matches, startIndex, this.length);
     if (replacementStringsAreOneByte &&
         length < _maxJoinReplaceOneByteStringLength &&
-        this._isOneByte) {
+        this is OneByteString) {
       return _joinReplaceAllOneByteResult(this, matches, length);
     }
     return _joinReplaceAllResult(
@@ -1051,10 +1041,6 @@ final class OneByteString extends StringBase {
     return StringBase._isOneByteWhitespace(codeUnit);
   }
 
-  bool operator ==(Object other) {
-    return super == other;
-  }
-
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
     final length = endIndex - startIndex;
@@ -1149,20 +1135,18 @@ final class OneByteString extends StringBase {
   String operator *(int times) {
     if (times <= 0) return "";
     if (times == 1) return this;
-    int length = this.length;
-    if (this.isEmpty) return this; // Don't clone empty string.
-    OneByteString result = OneByteString.withLength(length * times);
-    int index = 0;
+    final int length = this.length;
+    if (length == 0) return this; // Don't clone empty string.
+    final OneByteString result = OneByteString.withLength(length * times);
+    final WasmIntArray<WasmI8> array = result._array;
     for (int i = 0; i < times; i++) {
-      for (int j = 0; j < length; j++) {
-        result._setAt(index++, this.codeUnitAt(j));
-      }
+      array.copy(i * length, _array, 0, length);
     }
     return result;
   }
 
   String padLeft(int width, [String padding = ' ']) {
-    if (!padding._isOneByte) {
+    if (padding is! OneByteString) {
       return super.padLeft(width, padding);
     }
     int length = this.length;
@@ -1191,7 +1175,7 @@ final class OneByteString extends StringBase {
   }
 
   String padRight(int width, [String padding = ' ']) {
-    if (!padding._isOneByte) {
+    if (padding is! OneByteString) {
       return super.padRight(width, padding);
     }
     int length = this.length;
@@ -1320,21 +1304,16 @@ final class OneByteString extends StringBase {
     _array.write(index, codePoint);
   }
 
-  // Should be optimizable to a memory move.
-  // Accepts both OneByteString and _ExternalOneByteString as argument.
-  // Returns index after last character written.
-  int _setRange(int index, String oneByteString, int start, int end) {
-    assert(oneByteString._isOneByte);
+  /// Returns index after last character written.
+  int _setRange(int index, OneByteString oneByteString, int start, int end) {
     assert(0 <= start);
     assert(start <= end);
     assert(end <= oneByteString.length);
     assert(0 <= index);
     assert(index + (end - start) <= length);
-    for (int i = start; i < end; i++) {
-      _setAt(index, oneByteString.codeUnitAt(i));
-      index += 1;
-    }
-    return index;
+    final rangeLength = end - start;
+    _array.copy(index, oneByteString._array, start, rangeLength);
+    return index + rangeLength;
   }
 }
 
@@ -1387,10 +1366,6 @@ final class TwoByteString extends StringBase {
 
   @override
   int get length => _array.length;
-
-  bool operator ==(Object other) {
-    return super == other;
-  }
 
   @override
   String _substringUncheckedInternal(int startIndex, int endIndex) {
