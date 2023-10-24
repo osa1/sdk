@@ -32,6 +32,16 @@ void testDecodeSlice() {
     Expect.equals("BCD", decoder.convert(ascii, 1, 4));
     Expect.equals("ABCD", decoder.convert(ascii, 0, 4));
 
+    if (ascii is Uint8List) {
+      Expect.equals("ABCDE", decoder.convert(Uint8List.sublistView(ascii, 0)));
+      Expect.equals("ABCDE",
+          decoder.convert(Uint8List.sublistView(ascii, 0, ascii.length)));
+      Expect.equals("CDE", decoder.convert(Uint8List.sublistView(ascii, 2)));
+      Expect.equals("BCD", decoder.convert(Uint8List.sublistView(ascii, 1, 4)));
+      Expect.equals(
+          "ABCD", decoder.convert(Uint8List.sublistView(ascii, 0, 4)));
+    }
+
     Expect.throws(() => decoder.convert(ascii, -1)); //    start < 0.
     Expect.throws(() => decoder.convert(ascii, 6)); //     start > length
     Expect.throws(() => decoder.convert(ascii, 0, -1)); // end < 0
