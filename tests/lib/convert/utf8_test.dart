@@ -58,6 +58,18 @@ void testDecodeSlice() {
     Expect.equals("\u0082\u1041", decoder.convert(utf8, 2));
     Expect.equals("\u0081\u0082", decoder.convert(utf8, 0, 4));
     Expect.equals("\u0082", decoder.convert(utf8, 2, 4));
+
+    if (utf8 is Uint8List) {
+      Expect.equals("\u0081\u0082\u1041",
+          decoder.convert(Uint8List.sublistView(utf8, 0)));
+      Expect.equals(
+          "\u0082\u1041", decoder.convert(Uint8List.sublistView(utf8, 2)));
+      Expect.equals(
+          "\u0081\u0082", decoder.convert(Uint8List.sublistView(utf8, 0, 4)));
+      Expect.equals(
+          "\u0082", decoder.convert(Uint8List.sublistView(utf8, 2, 4)));
+    }
+
     Expect.throws(() => decoder.convert(utf8, 1));
     Expect.throws(() => decoder.convert(utf8, 0, 1));
     Expect.throws(() => decoder.convert(utf8, 2, 5));
