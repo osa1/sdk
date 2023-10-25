@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analysis_server/lsp_protocol/protocol.dart';
 import 'package:analysis_server/src/lsp/constants.dart';
 import 'package:analysis_server/src/lsp/mapping.dart';
+import 'package:analysis_server/src/services/completion/dart/feature_computer.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:collection/collection.dart';
 import 'package:language_server_protocol/json_parsing.dart';
@@ -233,7 +234,7 @@ mixin LspRequestHelpersMixin {
   }
 
   Future<CompletionList> getCompletionList(Uri uri, Position pos,
-      {CompletionContext? context}) {
+      {CompletionContext? context}) async {
     final request = makeRequest(
       Method.textDocument_completion,
       CompletionParams(
@@ -242,7 +243,10 @@ mixin LspRequestHelpersMixin {
         position: pos,
       ),
     );
-    return expectSuccessfulResponseTo(request, CompletionList.fromJson);
+    final completions =
+        await expectSuccessfulResponseTo(request, CompletionList.fromJson);
+    _assertMinimalCompletionListPayload(completions);
+    return completions;
   }
 
   Future<Either2<List<Location>, List<LocationLink>>> getDefinition(
@@ -409,7 +413,9 @@ mixin LspRequestHelpersMixin {
     final completion = completions.singleWhere((c) => c.label == label);
     expect(completion, isNotNull);
 
-    return resolveCompletion(completion);
+    final result = await resolveCompletion(completion);
+    _assertMinimalCompletionItemPayload(result);
+    return result;
   }
 
   Future<List<SelectionRange>?> getSelectionRanges(
@@ -625,6 +631,131 @@ mixin LspRequestHelpersMixin {
     );
     return expectSuccessfulResponseTo(
         request, _fromJsonList(TypeHierarchyItem.fromJson));
+  }
+
+  /// A helper that performs some checks on a completion sent back during
+  /// tests to check for any unnecessary data in the payload that could be
+  /// reduced.
+  void _assertMinimalCompletionItemPayload(CompletionItem completion) {
+    final labelDetails = completion.labelDetails;
+    final textEditInsertRange =
+        completion.textEdit?.map((ranges) => ranges.insert, (range) => null);
+    final textEditReplaceRange =
+        completion.textEdit?.map((ranges) => ranges.replace, (range) => null);
+    final sortText = completion.sortText;
+
+    // Check fields that default to label if not supplied.
+    void expectNotLabel(String? value, String name) {
+      expect(
+        value,
+        isNot(completion.label),
+        reason: '$name should not be set if same as label',
+      );
+    }
+
+    expectNotLabel(completion.insertText, 'insertText');
+    expectNotLabel(completion.filterText, 'filterText');
+    expectNotLabel(completion.sortText, 'sortText');
+    expectNotLabel(completion.textEditText, 'textEditText');
+
+    // If we have separate insert/replace ranges, they should not be the same.
+    if (textEditInsertRange != null) {
+      expect(textEditReplaceRange, isNot(textEditInsertRange));
+    }
+
+    // Check for empty labelDetails.
+    if (labelDetails != null) {
+      expect(
+        labelDetails.description != null || labelDetails.detail != null,
+        isTrue,
+        reason: 'labelDetails should be null if all fields are null',
+      );
+    }
+
+    // Check for empty lists.
+    void expectNotEmpty(Object? value, String name) {
+      expect(
+        value,
+        anyOf(isNull, isNotEmpty),
+        reason: '$name should be null if no items',
+      );
+    }
+
+    expectNotEmpty(completion.additionalTextEdits, 'additionalTextEdits');
+    expectNotEmpty(completion.commitCharacters, 'commitCharacters');
+    expectNotEmpty(completion.tags, 'tags');
+
+    // We convert numeric relevance scores into text because LSP uses text
+    // for sorting. We never need to use more digits in the sortText than there
+    // are in the maximum relevance for this.
+    //
+    // Only do this for sort texts that are numeric because we also use zzz
+    // prefixes with text for snippets.
+    if (sortText != null && int.tryParse(sortText) != null) {
+      expect(
+        sortText.length,
+        lessThanOrEqualTo(maximumRelevance.toString().length),
+        reason: 'sortText never needs to have more characters '
+            'than "$maximumRelevance" (${maximumRelevance.bitLength})',
+      );
+    }
+  }
+
+  /// A helper that performs some checks on all completions sent back during
+  /// tests to check for any unnecessary data in the payload that could be
+  /// reduced.
+  void _assertMinimalCompletionListPayload(CompletionList completions) {
+    for (final completion in completions.items) {
+      final data = completion.data;
+      final commitCharacters = completion.commitCharacters;
+      final insertRange = completion.textEdit
+          ?.map((insertReplace) => insertReplace.insert, (textEdit) => null);
+      final replaceRange = completion.textEdit
+          ?.map((insertReplace) => insertReplace.replace, (textEdit) => null);
+      final combinedRange = completion.textEdit
+          ?.map((insertReplace) => null, (textEdit) => textEdit.range);
+      final insertTextFormat = completion.insertTextFormat;
+      final insertTextMode = completion.insertTextMode;
+
+      final defaults = completions.itemDefaults;
+      final defaultInsertRange = defaults?.editRange
+          ?.map((editRange) => editRange.insert, (range) => null);
+      final defaultReplaceRange = defaults?.editRange
+          ?.map((editRange) => editRange.replace, (range) => null);
+      final defaultCombinedRange =
+          defaults?.editRange?.map((editRange) => null, (range) => range);
+
+      _assertMinimalCompletionItemPayload(completion);
+
+      // Check for fields matching defaults.
+      if (defaults != null) {
+        void expectNotDefault(Object? value, Object? default_, String name) {
+          if (value == null) return;
+          expect(
+            value,
+            isNot(default_),
+            reason: '$name should be omitted if same as default',
+          );
+        }
+
+        expectNotDefault(data?.toJson(), defaults.data, 'data');
+        expectNotDefault(
+            commitCharacters, defaults.commitCharacters, 'commitCharacters');
+
+        expectNotDefault(insertRange, defaultInsertRange, 'insertRange');
+        expectNotDefault(replaceRange, defaultReplaceRange, 'replaceRange');
+        expectNotDefault(combinedRange, defaultCombinedRange, 'combined range');
+        expectNotDefault(
+            insertTextFormat, defaults.insertTextFormat, 'insertTextFormat');
+        expectNotDefault(
+            insertTextMode, defaults.insertTextMode, 'insertTextMode');
+      }
+
+      // If we have separate insert/replace ranges, they should not be the same.
+      if (defaultInsertRange != null) {
+        expect(defaultReplaceRange, isNot(defaultInsertRange));
+      }
+    }
   }
 
   bool Function(Object?, LspJsonReporter) _canParseList<T>(

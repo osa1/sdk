@@ -40,6 +40,57 @@ ExtensionTypeDeclaration
 ''');
   }
 
+  test_error_fieldModifier_covariant() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(covariant int it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 17, 9),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
+  test_error_fieldModifier_covariant_final() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(covariant final int it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 17, 9),
+      error(ParserErrorCode.REPRESENTATION_FIELD_MODIFIER, 27, 5),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
   test_error_fieldModifier_final() {
     final parseResult = parseStringWithErrors(r'''
 extension type A(final int it) {}
@@ -115,6 +166,95 @@ ExtensionTypeDeclaration
 ''');
   }
 
+  test_error_formalParameterModifier_covariant_method_instance() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(int it) {
+  void foo(covariant int a) {}
+}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 38, 9),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  members
+    MethodDeclaration
+      returnType: NamedType
+        name: void
+      name: foo
+      parameters: FormalParameterList
+        leftParenthesis: (
+        parameter: SimpleFormalParameter
+          covariantKeyword: covariant
+          type: NamedType
+            name: int
+          name: a
+        rightParenthesis: )
+      body: BlockFunctionBody
+        block: Block
+          leftBracket: {
+          rightBracket: }
+  rightBracket: }
+''');
+  }
+
+  test_error_formalParameterModifier_covariant_method_static() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(int it) {
+  static void foo(covariant int a) {}
+}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXTRANEOUS_MODIFIER, 45, 9),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: int
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  members
+    MethodDeclaration
+      modifierKeyword: static
+      returnType: NamedType
+        name: void
+      name: foo
+      parameters: FormalParameterList
+        leftParenthesis: (
+        parameter: SimpleFormalParameter
+          covariantKeyword: covariant
+          type: NamedType
+            name: int
+          name: a
+        rightParenthesis: )
+      body: BlockFunctionBody
+        block: Block
+          leftBracket: {
+          rightBracket: }
+  rightBracket: }
+''');
+  }
+
   test_error_multipleFields() {
     final parseResult = parseStringWithErrors(r'''
 extension type A(int a, String b) {}
@@ -171,6 +311,32 @@ extension type A(it) {}
 ''');
     parseResult.assertErrors([
       error(ParserErrorCode.EXPECTED_REPRESENTATION_TYPE, 17, 2),
+    ]);
+
+    final node = parseResult.findNode.singleExtensionTypeDeclaration;
+    assertParsedNodeText(node, r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension
+  typeKeyword: type
+  name: A
+  representation: RepresentationDeclaration
+    leftParenthesis: (
+    fieldType: NamedType
+      name: <empty> <synthetic>
+    fieldName: it
+    rightParenthesis: )
+  leftBracket: {
+  rightBracket: }
+''');
+  }
+
+  test_error_noFieldType_var() {
+    final parseResult = parseStringWithErrors(r'''
+extension type A(var it) {}
+''');
+    parseResult.assertErrors([
+      error(ParserErrorCode.EXPECTED_REPRESENTATION_TYPE, 17, 3),
+      error(ParserErrorCode.REPRESENTATION_FIELD_MODIFIER, 17, 3),
     ]);
 
     final node = parseResult.findNode.singleExtensionTypeDeclaration;
@@ -610,6 +776,33 @@ ExtensionTypeDeclaration
   leftBracket: {
   rightBracket: }
 ''');
+  }
+
+  void test_primaryConstructor_missing() {
+    var parseResult = parseStringWithErrors(r'''
+extension type E {}
+''');
+    parseResult.assertErrors(
+        [error(ParserErrorCode.MISSING_PRIMARY_CONSTRUCTOR, 15, 1)]);
+
+    final node = parseResult.findNode.extensionTypeDeclaration('E');
+    assertParsedNodeText(
+        node,
+        r'''
+ExtensionTypeDeclaration
+  extensionKeyword: extension @0
+  typeKeyword: type @10
+  name: E @15
+  representation: RepresentationDeclaration
+    leftParenthesis: ( @17 <synthetic>
+    fieldType: NamedType
+      name: <empty> @17 <synthetic>
+    fieldName: <empty> @17 <synthetic>
+    rightParenthesis: ) @17 <synthetic>
+  leftBracket: { @17
+  rightBracket: } @18
+''',
+        withOffsets: true);
   }
 
   test_primaryConstructor_named() {

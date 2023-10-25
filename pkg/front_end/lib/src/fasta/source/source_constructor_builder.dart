@@ -35,6 +35,7 @@ import '../messages.dart'
     show
         LocatedMessage,
         Message,
+        messageExtensionTypeConstructorWithSuperFormalParameter,
         messageMoreThanOneSuperInitializer,
         messageRedirectingConstructorWithAnotherInitializer,
         messageRedirectingConstructorWithMultipleRedirectInitializers,
@@ -359,7 +360,8 @@ class DeclaredSourceConstructorBuilder
       Reference? tearOffReference,
       NameScheme nameScheme,
       {String? nativeMethodName,
-      required bool forAbstractClassOrEnumOrMixin})
+      required bool forAbstractClassOrEnumOrMixin,
+      bool isSynthetic = false})
       : _hasSuperInitializingFormals =
             formals?.any((formal) => formal.isSuperInitializingFormal) ?? false,
         super(
@@ -376,7 +378,8 @@ class DeclaredSourceConstructorBuilder
     _constructor = new Constructor(new FunctionNode(null),
         name: dummyName,
         fileUri: compilationUnit.fileUri,
-        reference: constructorReference)
+        reference: constructorReference,
+        isSynthetic: isSynthetic)
       ..startFileOffset = startCharOffset
       ..fileOffset = charOffset
       ..fileEndOffset = charEndOffset
@@ -1155,7 +1158,23 @@ class SourceExtensionTypeConstructorBuilder
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {}
 
   @override
-  void _inferSuperInitializingFormals(ClassHierarchyBase hierarchy) {}
+  void _inferSuperInitializingFormals(ClassHierarchyBase hierarchy) {
+    if (formals != null) {
+      for (FormalParameterBuilder formal in formals!) {
+        if (formal.isSuperInitializingFormal) {
+          TypeBuilder formalTypeBuilder = formal.type;
+          if (formalTypeBuilder is InferableTypeBuilder) {
+            libraryBuilder.addProblem(
+                messageExtensionTypeConstructorWithSuperFormalParameter,
+                formal.charOffset,
+                formal.name.length,
+                formal.fileUri);
+            formalTypeBuilder.registerType(const InvalidType());
+          }
+        }
+      }
+    }
+  }
 
   @override
   int buildBodyNodes(BuildNodesCallback f) {
@@ -1336,6 +1355,11 @@ class ExtensionTypeInitializerToStatementConverter
                 ..fileOffset = node.fileOffset)
             ..fileOffset = node.fileOffset)
         ..fileOffset = node.fileOffset);
+      return;
+    } else if (node is ExtensionTypeRepresentationFieldInitializer) {
+      thisVariable
+        ..initializer = (node.value..parent = thisVariable)
+        ..fileOffset = node.fileOffset;
       return;
     }
     throw new UnsupportedError(

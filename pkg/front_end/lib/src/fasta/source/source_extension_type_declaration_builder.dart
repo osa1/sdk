@@ -22,6 +22,7 @@ import '../builder/name_iterator.dart';
 import '../builder/type_builder.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
+import '../kernel/type_algorithms.dart';
 import '../messages.dart';
 import '../problems.dart';
 import '../scope.dart';
@@ -136,6 +137,36 @@ class SourceExtensionTypeDeclarationBuilder
             typeBuilder.build(libraryBuilder, TypeUse.superType);
         Message? errorMessage;
         List<LocatedMessage>? errorContext;
+
+        if (typeParameters?.isNotEmpty ?? false) {
+          for (NominalVariableBuilder variable in typeParameters!) {
+            int variance = computeTypeVariableBuilderVariance(
+                variable, typeBuilder, libraryBuilder);
+            if (!Variance.greaterThanOrEqual(variance, variable.variance)) {
+              if (variable.parameter.isLegacyCovariant) {
+                errorMessage =
+                    templateWrongTypeParameterVarianceInSuperinterface
+                        .withArguments(variable.name, interface,
+                            libraryBuilder.isNonNullableByDefault);
+              } else {
+                errorMessage =
+                    templateInvalidTypeVariableInSupertypeWithVariance
+                        .withArguments(
+                            Variance.keywordString(variable.variance),
+                            variable.name,
+                            Variance.keywordString(variance),
+                            typeBuilder.typeName!.name);
+              }
+            }
+          }
+          if (errorMessage != null) {
+            libraryBuilder.addProblem(errorMessage, typeBuilder.charOffset!,
+                noLength, typeBuilder.fileUri,
+                context: errorContext);
+            errorMessage = null;
+          }
+        }
+
         if (interface is ExtensionType) {
           if (interface.nullability == Nullability.nullable) {
             errorMessage =
@@ -258,6 +289,14 @@ class SourceExtensionTypeDeclarationBuilder
                   noLength,
                   typeBuilder.fileUri);
             }
+          }
+          if (isBottom(representationType)) {
+            libraryBuilder.addProblem(
+                messageExtensionTypeRepresentationTypeBottom,
+                representationFieldBuilder!.charOffset,
+                representationFieldBuilder!.name.length,
+                representationFieldBuilder!.fileUri);
+            representationType = const InvalidType();
           }
         }
       } else {
@@ -456,6 +495,41 @@ class SourceExtensionTypeDeclarationBuilder
   }
 
   @override
+  void addMemberInternal(SourceMemberBuilder memberBuilder,
+      BuiltMemberKind memberKind, Member member, Member? tearOff) {
+    switch (memberKind) {
+      case BuiltMemberKind.Constructor:
+      case BuiltMemberKind.RedirectingFactory:
+      case BuiltMemberKind.Field:
+      case BuiltMemberKind.Method:
+      case BuiltMemberKind.Factory:
+      case BuiltMemberKind.ExtensionMethod:
+      case BuiltMemberKind.ExtensionGetter:
+      case BuiltMemberKind.ExtensionSetter:
+      case BuiltMemberKind.ExtensionOperator:
+      case BuiltMemberKind.ExtensionField:
+      case BuiltMemberKind.LateIsSetField:
+      case BuiltMemberKind.ExtensionTypeConstructor:
+      case BuiltMemberKind.ExtensionTypeFactory:
+      case BuiltMemberKind.ExtensionTypeRedirectingFactory:
+      case BuiltMemberKind.ExtensionTypeMethod:
+      case BuiltMemberKind.ExtensionTypeGetter:
+      case BuiltMemberKind.LateGetter:
+      case BuiltMemberKind.ExtensionTypeSetter:
+      case BuiltMemberKind.LateSetter:
+      case BuiltMemberKind.ExtensionTypeOperator:
+        unhandled(
+            "${memberBuilder.runtimeType}:${memberKind}",
+            "addMemberInternal",
+            memberBuilder.charOffset,
+            memberBuilder.fileUri);
+      case BuiltMemberKind.ExtensionTypeRepresentationField:
+        assert(tearOff == null, "Unexpected tear-off $tearOff");
+        extensionTypeDeclaration.addProcedure(member as Procedure);
+    }
+  }
+
+  @override
   void addMemberDescriptorInternal(
       SourceMemberBuilder memberBuilder,
       BuiltMemberKind memberKind,
@@ -473,6 +547,7 @@ class SourceExtensionTypeDeclarationBuilder
       case BuiltMemberKind.ExtensionGetter:
       case BuiltMemberKind.ExtensionSetter:
       case BuiltMemberKind.ExtensionOperator:
+      case BuiltMemberKind.ExtensionTypeRepresentationField:
         unhandled("${memberBuilder.runtimeType}:${memberKind}", "buildMembers",
             memberBuilder.charOffset, memberBuilder.fileUri);
       case BuiltMemberKind.ExtensionField:

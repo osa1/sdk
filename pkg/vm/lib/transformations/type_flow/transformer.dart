@@ -378,7 +378,14 @@ class AnnotateKernel extends RecursiveVisitor {
           if (function != null) {
             _closureIdMetadata.indexClosures(closureMember);
             closureId = _closureIdMetadata.getClosureId(function);
-            assert(closureId > 0);
+            if (closureId < 0) {
+              // Closure was tree-shaken and doesn't belong to
+              // the body of [closureMember].
+              closureMember = null;
+              closureId = 0;
+            } else {
+              assert(closureId > 0);
+            }
           } else {
             closureId = 0;
           }
@@ -593,7 +600,9 @@ class AnnotateKernel extends RecursiveVisitor {
 
   @override
   visitProcedure(Procedure node) {
-    _annotateMember(node);
+    if (node.stubKind != ProcedureStubKind.RepresentationField) {
+      _annotateMember(node);
+    }
     super.visitProcedure(node);
   }
 
@@ -1952,6 +1961,7 @@ class _TreeShakerPass2 extends RemovingTransformer {
         switch (node.stubKind) {
           case ProcedureStubKind.Regular:
           case ProcedureStubKind.NoSuchMethodForwarder:
+          case ProcedureStubKind.RepresentationField:
             break;
           case ProcedureStubKind.MemberSignature:
           case ProcedureStubKind.AbstractForwardingStub:

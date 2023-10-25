@@ -145,6 +145,8 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
   int get elementSizeInBytes => 1;
 
   @override
+  ByteData asUnmodifiableView() => UnmodifiableByteDataView(this);
+
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) =>
       _getFloat32(toExternRef, byteOffset, Endian.little == endian);
 
@@ -295,6 +297,9 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   }
 
   @override
+  Uint8List asUnmodifiableView() => UnmodifiableUint8ListView(this);
+
+  @override
   Uint8List sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
@@ -337,6 +342,9 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
     IndexError.check(index, length);
     _setInt8(toExternRef, index, value);
   }
+
+  @override
+  Int8List asUnmodifiableView() => UnmodifiableInt8ListView(this);
 
   @override
   Int8List sublist(int start, [int? end]) {
@@ -382,6 +390,10 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
     IndexError.check(index, length);
     _setUint8(toExternRef, index, value.clamp(0, 255));
   }
+
+  @override
+  Uint8ClampedList asUnmodifiableView() =>
+      UnmodifiableUint8ClampedListView(this);
 
   @override
   Uint8ClampedList sublist(int start, [int? end]) {
@@ -437,6 +449,9 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   }
 
   @override
+  Uint16List asUnmodifiableView() => UnmodifiableUint16ListView(this);
+
+  @override
   Uint16List sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 2);
     final int newEnd = end == null ? lengthInBytes : end * 2;
@@ -488,6 +503,9 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
     IndexError.check(index, length);
     _setInt16(toExternRef, index * 2, value, true);
   }
+
+  @override
+  Int16List asUnmodifiableView() => UnmodifiableInt16ListView(this);
 
   @override
   Int16List sublist(int start, [int? end]) {
@@ -543,6 +561,9 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   }
 
   @override
+  Uint32List asUnmodifiableView() => UnmodifiableUint32ListView(this);
+
+  @override
   Uint32List sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 4);
     final int newEnd = end == null ? lengthInBytes : end * 4;
@@ -594,6 +615,9 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
     IndexError.check(index, length);
     _setInt32(toExternRef, index * 4, value, true);
   }
+
+  @override
+  Int32List asUnmodifiableView() => UnmodifiableInt32ListView(this);
 
   @override
   Int32List sublist(int start, [int? end]) {
@@ -650,6 +674,9 @@ final class JSInt32x4ArrayImpl
     _storage[(index * 4) + 2] = value.z;
     _storage[(index * 4) + 3] = value.w;
   }
+
+  @override
+  Int32x4List asUnmodifiableView() => UnmodifiableInt32x4ListView(this);
 
   @override
   Int32x4List sublist(int start, [int? end]) {
@@ -733,6 +760,9 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   }
 
   @override
+  Uint64List asUnmodifiableView() => UnmodifiableUint64ListView(this);
+
+  @override
   Uint64List sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 8);
     final int newEnd = end == null ? lengthInBytes : end * 8;
@@ -781,6 +811,9 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
     IndexError.check(index, length);
     _setBigInt64(toExternRef, index * 8, value, true);
   }
+
+  @override
+  Int64List asUnmodifiableView() => UnmodifiableInt64ListView(this);
 
   @override
   Int64List sublist(int start, [int? end]) {
@@ -845,6 +878,9 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
     IndexError.check(index, length);
     _setFloat32(toExternRef, index * 4, value, true);
   }
+
+  @override
+  Float32List asUnmodifiableView() => UnmodifiableFloat32ListView(this);
 
   @override
   Float32List sublist(int start, [int? end]) {
@@ -919,6 +955,9 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   }
 
   @override
+  Float64List asUnmodifiableView() => UnmodifiableFloat64ListView(this);
+
+  @override
   Float64List sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 8);
     final int newEnd = end == null ? lengthInBytes : end * 8;
@@ -973,6 +1012,9 @@ final class JSFloat32x4ArrayImpl
     _storage[(index * 4) + 2] = value.z;
     _storage[(index * 4) + 3] = value.w;
   }
+
+  @override
+  Float32x4List asUnmodifiableView() => UnmodifiableFloat32x4ListView(this);
 
   @override
   Float32x4List sublist(int start, [int? end]) {
@@ -1049,6 +1091,9 @@ final class JSFloat64x2ArrayImpl
     _storage[(index * 2) + 0] = value.x;
     _storage[(index * 2) + 1] = value.y;
   }
+
+  @override
+  Float64x2List asUnmodifiableView() => UnmodifiableFloat64x2ListView(this);
 
   @override
   Float64x2List sublist(int start, [int? end]) {

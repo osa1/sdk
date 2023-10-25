@@ -276,14 +276,16 @@ void MemoryCopyInstr::EmitLoopCopy(FlowGraphCompiler* compiler,
 void MemoryCopyInstr::EmitComputeStartPointer(FlowGraphCompiler* compiler,
                                               classid_t array_cid,
                                               Register array_reg,
+                                              Representation array_rep,
                                               Location start_loc) {
-  intptr_t offset;
-  if (IsTypedDataBaseClassId(array_cid)) {
-    __ movq(array_reg,
-            compiler::FieldAddress(
-                array_reg, compiler::target::PointerBase::data_offset()));
-    offset = 0;
+  intptr_t offset = 0;
+  if (array_rep != kTagged) {
+    // Do nothing, array_reg already contains the payload address.
+  } else if (IsTypedDataBaseClassId(array_cid)) {
+    ASSERT_EQUAL(array_rep, kTagged);
+    __ LoadFromSlot(array_reg, array_reg, Slot::PointerBase_data());
   } else {
+    ASSERT_EQUAL(array_rep, kTagged);
     switch (array_cid) {
       case kOneByteStringCid:
         offset =
@@ -294,18 +296,12 @@ void MemoryCopyInstr::EmitComputeStartPointer(FlowGraphCompiler* compiler,
             compiler::target::TwoByteString::data_offset() - kHeapObjectTag;
         break;
       case kExternalOneByteStringCid:
-        __ movq(array_reg,
-                compiler::FieldAddress(array_reg,
-                                       compiler::target::ExternalOneByteString::
-                                           external_data_offset()));
-        offset = 0;
+        __ LoadFromSlot(array_reg, array_reg,
+                        Slot::ExternalOneByteString_external_data());
         break;
       case kExternalTwoByteStringCid:
-        __ movq(array_reg,
-                compiler::FieldAddress(array_reg,
-                                       compiler::target::ExternalTwoByteString::
-                                           external_data_offset()));
-        offset = 0;
+        __ LoadFromSlot(array_reg, array_reg,
+                        Slot::ExternalTwoByteString_external_data());
         break;
       default:
         UNREACHABLE();
@@ -1238,8 +1234,9 @@ void NativeCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
     compiler::ExternalLabel label(NativeEntry::LinkNativeCallEntry());
     __ LoadNativeEntry(RBX, &label,
                        compiler::ObjectPoolBuilderEntry::kPatchable);
-    compiler->GeneratePatchableCall(source(), *stub,
-                                    UntaggedPcDescriptors::kOther, locs());
+    compiler->GeneratePatchableCall(
+        source(), *stub, UntaggedPcDescriptors::kOther, locs(),
+        compiler::ObjectPoolBuilderEntry::kResetToBootstrapNative);
   } else {
     if (is_bootstrap_native()) {
       stub = &StubCode::CallBootstrapNative();
@@ -1255,7 +1252,8 @@ void NativeCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
     // We can never lazy-deopt here because natives are never optimized.
     ASSERT(!compiler->is_optimizing());
     compiler->GenerateNonLazyDeoptableStubCall(
-        source(), *stub, UntaggedPcDescriptors::kOther, locs());
+        source(), *stub, UntaggedPcDescriptors::kOther, locs(),
+        compiler::ObjectPoolBuilderEntry::kNotSnapshotable);
   }
   __ LoadFromOffset(result, RSP, 0);
   compiler->EmitDropArguments(ArgumentCount());  // Drop the arguments.
@@ -1697,9 +1695,7 @@ void Utf8ScanInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   compiler::Label rest, rest_loop, rest_loop_in, done;
 
   // Address of input bytes.
-  __ movq(bytes_reg,
-          compiler::FieldAddress(bytes_reg,
-                                 compiler::target::PointerBase::data_offset()));
+  __ LoadFromSlot(bytes_reg, bytes_reg, Slot::PointerBase_data());
 
   // Pointers to start, end and end-16.
   __ leaq(bytes_ptr_reg, compiler::Address(bytes_reg, start_reg, TIMES_1, 0));
@@ -1814,24 +1810,6 @@ void Utf8ScanInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   } else {
     __ orq(compiler::FieldAddress(decoder_reg, scan_flags_field_offset),
            flags_reg);
-  }
-}
-
-LocationSummary* LoadUntaggedInstr::MakeLocationSummary(Zone* zone,
-                                                        bool opt) const {
-  const intptr_t kNumInputs = 1;
-  return LocationSummary::Make(zone, kNumInputs, Location::RequiresRegister(),
-                               LocationSummary::kNoCall);
-}
-
-void LoadUntaggedInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
-  Register obj = locs()->in(0).reg();
-  Register result = locs()->out(0).reg();
-  if (object()->definition()->representation() == kUntagged) {
-    __ movq(result, compiler::Address(obj, offset()));
-  } else {
-    ASSERT(object()->definition()->representation() == kTagged);
-    __ movq(result, compiler::FieldAddress(obj, offset()));
   }
 }
 

@@ -183,6 +183,10 @@ class Env {
   void bind(String name, Map<String, dynamic> instrOrBlock) {
     final id = instrOrBlock['v'] ?? instrOrBlock['b'];
 
+    if (id == null) {
+      throw 'Instruction is not a definition or a block: ${instrOrBlock['o']}';
+    }
+
     if (nameToId.containsKey(name)) {
       if (nameToId[name] != id) {
         throw 'Binding mismatch for $name: got ${nameToId[name]} and $id';
@@ -561,10 +565,34 @@ final dynamic match = Matchers();
 /// set this field.
 late String Function(Symbol) getName;
 
-final bool is32BitConfiguration = (() {
-  final configuration = Platform.environment['DART_CONFIGURATION'];
-  if (configuration == null) {
+const testRunnerKey = 'test_runner.configuration';
+
+final bool isSimulator = (() {
+  if (bool.hasEnvironment(testRunnerKey)) {
+    const config = String.fromEnvironment(testRunnerKey);
+    return config.contains('-sim');
+  }
+  final runtimeConfiguration = Platform.environment['DART_CONFIGURATION'];
+  if (runtimeConfiguration == null) {
     throw 'Expected DART_CONFIGURATION to be defined';
   }
-  return configuration.endsWith('ARM') || configuration.endsWith('ARM_X64');
+  return runtimeConfiguration.contains('SIM');
+})();
+
+final bool is32BitConfiguration = (() {
+  if (bool.hasEnvironment(testRunnerKey)) {
+    const config = String.fromEnvironment(testRunnerKey);
+    // No IA32 as AOT mode is unsupported there.
+    return config.endsWith('arm') ||
+        config.endsWith('arm_x64') ||
+        config.endsWith('riscv32');
+  }
+  final runtimeConfiguration = Platform.environment['DART_CONFIGURATION'];
+  if (runtimeConfiguration == null) {
+    throw 'Expected DART_CONFIGURATION to be defined';
+  }
+  // No IA32 as AOT mode is unsupported there.
+  return runtimeConfiguration.endsWith('ARM') ||
+      runtimeConfiguration.endsWith('ARM_X64') ||
+      runtimeConfiguration.endsWith('RISCV32');
 })();

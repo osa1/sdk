@@ -1753,7 +1753,7 @@ class Assembler : public AssemblerBase {
     ASSERT(value != result);
     compiler::Label done;
     sbfx(result, value, kSmiTagSize,
-         Utils::Minimum(static_cast<int>(32), compiler::target::kSmiBits));
+         Utils::Minimum(static_cast<intptr_t>(32), compiler::target::kSmiBits));
     BranchIfSmi(value, &done);
     LoadFieldFromOffset(result, value, compiler::target::Mint::value_offset(),
                         compiler::kFourBytes);
@@ -1796,11 +1796,17 @@ class Assembler : public AssemblerBase {
   void BranchLink(const Code& code,
                   ObjectPoolBuilderEntry::Patchability patchable =
                       ObjectPoolBuilderEntry::kNotPatchable,
-                  CodeEntryKind entry_kind = CodeEntryKind::kNormal);
+                  CodeEntryKind entry_kind = CodeEntryKind::kNormal,
+                  ObjectPoolBuilderEntry::SnapshotBehavior snapshot_behavior =
+                      ObjectPoolBuilderEntry::kSnapshotable);
 
-  void BranchLinkPatchable(const Code& code,
-                           CodeEntryKind entry_kind = CodeEntryKind::kNormal) {
-    BranchLink(code, ObjectPoolBuilderEntry::kPatchable, entry_kind);
+  void BranchLinkPatchable(
+      const Code& code,
+      CodeEntryKind entry_kind = CodeEntryKind::kNormal,
+      ObjectPoolBuilderEntry::SnapshotBehavior snapshot_behavior =
+          ObjectPoolBuilderEntry::kSnapshotable) {
+    BranchLink(code, ObjectPoolBuilderEntry::kPatchable, entry_kind,
+               snapshot_behavior);
   }
 
   // Emit a call that shares its object pool entries with other calls

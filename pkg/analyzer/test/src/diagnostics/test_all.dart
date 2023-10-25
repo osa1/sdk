@@ -277,6 +277,8 @@ import 'extension_type_inherited_member_conflict_test.dart'
     as extension_type_inherited_member_conflict;
 import 'extension_type_representation_depends_on_itself_test.dart'
     as extension_type_representation_depends_on_itself;
+import 'extension_type_representation_type_bottom_test.dart'
+    as extension_type_representation_type_bottom;
 import 'extension_type_with_abstract_member_test.dart'
     as extension_type_with_abstract_member;
 import 'external_field_constructor_initializer_test.dart'
@@ -796,6 +798,7 @@ import 'super_formal_parameter_without_associated_positional_test.dart'
     as super_formal_parameter_without_associated_positional;
 import 'super_in_enum_constructor_test.dart' as super_in_enum_constructor;
 import 'super_in_extension_test.dart' as super_in_extension;
+import 'super_in_extension_type_test.dart' as super_in_extension_type;
 import 'super_in_invalid_context_test.dart' as super_in_invalid_context;
 import 'super_in_redirecting_constructor_test.dart'
     as super_in_redirecting_constructor;
@@ -1097,6 +1100,7 @@ main() {
     extension_type_implements_representation_not_supertype.main();
     extension_type_inherited_member_conflict.main();
     extension_type_representation_depends_on_itself.main();
+    extension_type_representation_type_bottom.main();
     extension_type_with_abstract_member.main();
     external_field_constructor_initializer.main();
     external_field_initializer.main();
@@ -1426,6 +1430,7 @@ main() {
     super_formal_parameter_without_associated_positional.main();
     super_in_enum_constructor.main();
     super_in_extension.main();
+    super_in_extension_type.main();
     super_in_invalid_context.main();
     super_in_redirecting_constructor.main();
     super_initializer_in_object.main();

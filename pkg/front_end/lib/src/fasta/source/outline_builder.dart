@@ -1034,7 +1034,8 @@ class OutlineBuilder extends StackListenerImpl {
     }
     libraryBuilder.currentTypeParameterScopeBuilder
         .markAsClassDeclaration(name.lexeme, name.charOffset, typeVariables);
-    libraryBuilder.setCurrentClassName(name.lexeme);
+    libraryBuilder.beginIndexedContainer(name.lexeme,
+        isExtensionTypeDeclaration: false);
     inAbstractOrSealedClass = abstractToken != null || sealedToken != null;
     push(abstractToken != null ? abstractMask : 0);
     push(macroToken ?? NullValues.Token);
@@ -1066,7 +1067,8 @@ class OutlineBuilder extends StackListenerImpl {
     push(typeVariables ?? NullValues.NominalVariables);
     libraryBuilder.currentTypeParameterScopeBuilder
         .markAsMixinDeclaration(name.lexeme, name.charOffset, typeVariables);
-    libraryBuilder.setCurrentClassName(name.lexeme);
+    libraryBuilder.beginIndexedContainer(name.lexeme,
+        isExtensionTypeDeclaration: false);
   }
 
   @override
@@ -1374,7 +1376,7 @@ class OutlineBuilder extends StackListenerImpl {
           isAugmentation: augmentToken != null,
           isMixinClass: mixinToken != null);
     }
-    libraryBuilder.setCurrentClassName(null);
+    libraryBuilder.endIndexedContainer();
     popDeclarationContext(DeclarationContext.Class);
   }
 
@@ -1463,7 +1465,7 @@ class OutlineBuilder extends StackListenerImpl {
           isBase: baseToken != null,
           isAugmentation: augmentToken != null);
     }
-    libraryBuilder.setCurrentClassName(null);
+    libraryBuilder.endIndexedContainer();
     popDeclarationContext(DeclarationContext.Mixin);
   }
 
@@ -1547,13 +1549,15 @@ class OutlineBuilder extends StackListenerImpl {
     pushDeclarationContext(DeclarationContext.ExtensionType);
     List<NominalVariableBuilder>? typeVariables =
         pop() as List<NominalVariableBuilder>?;
+    String name = nameToken.lexeme;
     int offset = nameToken.charOffset;
-    push(nameToken.lexeme);
+    push(name);
     push(offset);
     push(typeVariables ?? NullValues.NominalVariables);
     libraryBuilder.currentTypeParameterScopeBuilder
-        .markAsExtensionTypeDeclaration(
-            nameToken.lexeme, offset, typeVariables);
+        .markAsExtensionTypeDeclaration(name, offset, typeVariables);
+    libraryBuilder.beginIndexedContainer(name,
+        isExtensionTypeDeclaration: true);
   }
 
   @override
@@ -1595,6 +1599,7 @@ class OutlineBuilder extends StackListenerImpl {
         nameOffset,
         endToken.charOffset);
 
+    libraryBuilder.endIndexedContainer();
     popDeclarationContext(DeclarationContext.ExtensionType);
   }
 
@@ -1619,9 +1624,28 @@ class OutlineBuilder extends StackListenerImpl {
       charOffset = identifier.nameOffset;
       constructorName = identifier.name;
     }
+    bool inExtensionType =
+        declarationContext == DeclarationContext.ExtensionType;
     if (formals != null) {
+      if (inExtensionType && formals.isEmpty) {
+        libraryBuilder.addProblem(
+            messageExpectedRepresentationField, charOffset, 1, uri);
+      }
+      if (inExtensionType && formals.length > 1) {
+        libraryBuilder.addProblem(
+            messageMultipleRepresentationFields, charOffset, 1, uri);
+      }
       for (int i = 0; i < formals.length; i++) {
         FormalParameterBuilder formal = formals[i];
+        if (inExtensionType && formal.type is ImplicitTypeBuilder) {
+          libraryBuilder.addProblem(messageExpectedRepresentationType,
+              formal.charOffset, formal.name.length, formal.fileUri);
+        }
+        if (inExtensionType &&
+            Modifier.maskContainsActualModifiers(formal.modifiers)) {
+          libraryBuilder.addProblem(messageRepresentationFieldModifier,
+              formal.charOffset, formal.name.length, formal.fileUri);
+        }
         libraryBuilder.addPrimaryConstructorField(
             // TODO(johnniwinther): Support annotations on annotations on fields
             // defined through a primary constructor. This is not needed for
@@ -2697,6 +2721,15 @@ class OutlineBuilder extends StackListenerImpl {
         assert(last != null);
         formals = [last as FormalParameterBuilder];
       }
+
+      Token? tokenBeforeEnd = endToken.previous;
+      if (tokenBeforeEnd != null &&
+          optional(",", tokenBeforeEnd) &&
+          kind == MemberKind.PrimaryConstructor &&
+          declarationContext == DeclarationContext.ExtensionType) {
+        libraryBuilder.addProblem(messageRepresentationFieldTrailingComma,
+            tokenBeforeEnd.charOffset, 1, uri);
+      }
     } else if (count > 1) {
       Object? last = pop();
       count--;
@@ -2756,6 +2789,16 @@ class OutlineBuilder extends StackListenerImpl {
         }
       }
     }
+    if (formals == null &&
+        declarationContext == DeclarationContext.ExtensionType &&
+        kind == MemberKind.PrimaryConstructor) {
+      // In case of primary constructors of extension types, an error is
+      // reported by the parser if the formals together with the parentheses
+      // around them are missing. To distinguish that case from the case of the
+      // formal parameters present, but lacking the representation field, we
+      // pass the empty list further along instead of `null`.
+      formals = const [];
+    }
     push(beginToken.charOffset);
     push(formals ?? NullValues.FormalParameters);
   }
@@ -2786,7 +2829,8 @@ class OutlineBuilder extends StackListenerImpl {
     } else {
       declarationName = '#enum';
     }
-    libraryBuilder.setCurrentClassName(declarationName);
+    libraryBuilder.beginIndexedContainer(declarationName,
+        isExtensionTypeDeclaration: false);
     pushDeclarationContext(DeclarationContext.Enum);
     libraryBuilder.beginNestedDeclaration(
         TypeParameterScopeKind.enumDeclaration, declarationName);
@@ -2951,7 +2995,7 @@ class OutlineBuilder extends StackListenerImpl {
           .resolveNamedTypes(typeVariables, libraryBuilder);
     }
 
-    libraryBuilder.setCurrentClassName(null);
+    libraryBuilder.endIndexedContainer();
     checkEmpty(enumKeyword.charOffset);
     popDeclarationContext(DeclarationContext.Enum);
   }

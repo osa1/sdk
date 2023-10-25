@@ -4,8 +4,10 @@
 
 import 'dart:async';
 
-import '../vm_service.dart' show VmServerConnection, RPCError, Event, EventKind;
+import 'package:vm_service/vm_service.dart' show RPCError, Event, EventKind;
+
 import 'stream_helpers.dart';
+import 'vm_service_interface.dart' show VmServerConnection;
 
 /// A registry of custom service extensions to [VmServerConnection]s in which
 /// they were registered.
