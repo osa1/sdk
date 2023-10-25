@@ -19,10 +19,15 @@ mixin KernelNodes {
     "dart:typed_data",
     "dart:_string",
     "dart:_wasm",
+    "dart:_js_types",
   ]);
 
   // dart:_internal classes
   late final Class symbolClass = index.getClass("dart:_internal", "Symbol");
+
+  // dart:_js_types classes
+  late final Class jsStringClass =
+      index.getClass("dart:_js_types", "JSStringImpl");
 
   // dart:collection classes
   late final Class hashFieldBaseClass =
