@@ -144,6 +144,12 @@ mixin KernelNodes {
   late final Procedure checkLibraryIsLoaded =
       index.getTopLevelProcedure("dart:_internal", "checkLibraryIsLoaded");
 
+  // dart:_js_types procedures
+  late final Procedure jsStringEquals =
+      index.getProcedure("dart:_js_types", "JSStringImpl", "==");
+  late final Procedure jsStringInterpolate =
+      index.getProcedure("dart:_js_types", "JSStringImpl", "interpolate");
+
   // dart:collection procedures
   late final Procedure mapFactory =
       index.getProcedure("dart:collection", "LinkedHashMap", "_default");
