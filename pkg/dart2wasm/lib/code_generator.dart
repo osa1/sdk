@@ -2029,9 +2029,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
             getter: kind.isGetter, setter: kind.isSetter));
     assert(selector.name == interfaceTarget.name.text);
 
-    if (selector.targetCount == 0 && selector.offset == null) {
+    if (selector.targetCount == 0) {
       // This happens when TFA drops members of a class but not the class
       // itself or the calls to those members. (#53800)
+      b.comment("Virtual call of ${selector.name} with no targets"
+          " at ${node.location}");
       b.unreachable();
       return translator.objectInfo.nonNullableType;
     }
