@@ -1,3 +1,42 @@
+## 3.3.0
+
+### Libraries
+
+#### `dart:typed_data`
+
+- **BREAKING CHANGE** (https://github.com/dart-lang/sdk/issues/53218) The
+  unmodifiable view classes for typed data are deprecated. Instead of using the
+  constructors for these classes to create an unmodifiable view, e.g.
+
+  ```dart
+  Uint8List data = ...
+  final readOnlyView = UnmodifableUint8ListView(data);
+  ```
+
+  use the new `asUnmodifiableView()` method:
+
+  ```dart
+  Uint8List data = ...
+  final readOnlyView = data.asUnmodifiableView();
+  ```
+
+  The reason for this change is to allow more flexibility in the implementation
+  of typed data so the native and web platforms can use different strategies
+  for ensuring typed data has good performance.
+
+  The deprecated types will be removed in the next Dart version.
+
+### Tools
+
+#### Dart command line
+
+- The `dart create` command now uses v3 of `package:lints`,
+  including multiple new recommended lints by default.
+  To learn more about the updated collection of lints,
+  check out the `package:lints` [3.0.0 changelog entry][lints-3-0].
+
+[lints-3-0]: https://pub.dev/packages/lints/changelog#300
+
 ## 3.2.0
 
 ### Language
@@ -236,6 +275,47 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
 - The commands `dart pub get`/`add`/`upgrade` will now show if a dependency
   changed between direct, dev and transitive dependency.
 - The command `dart pub upgrade` no longer shows unchanged dependencies.
+
+## 3.1.5 - 2023-10-25
+
+This is a patch release that:
+
+- Fixes an issue affecting Dart compiled to JavaScript running in Node.js 21. A
+  change in Node.js 21 affected the Dart Web compiler runtime. This patch
+  release accomodates for those changes (issue #53810).
+
+[#53810]: https://github.com/dart-lang/sdk/issues/53810
+
+## 3.1.4 - 2023-10-18
+
+This is a patch release that:
+
+- Fixes an issue in the Dart VM, users are not being able to see
+  value of variables while debugging code (issue [#53747]).
+
+[#53654]: https://github.com/dart-lang/sdk/issues/53747
+
+## 3.1.3 - 2023-09-27
+
+This is a patch release that:
+
+- Fixes a bug in dart2js which would cause the compiler to crash when using
+  `@staticInterop` `@anonymous` factory constructors with type parameters (see
+  issue [#53579] for more details).
+
+- The standalone Dart VM now exports symbols only for the Dart_* embedding API
+  functions, avoiding conflicts with other DSOs loaded into the same process,
+  such as shared libraries loaded through `dart:ffi`, that may have different
+  versions of the same symbols (issue [#53503]).
+
+- Fixes an issue with super slow access to variables while debugging.
+  The fix avoids searching static functions in the imported libraries
+  as references to members are fully resolved by the front-end. (issue
+  [#53541])
+
+[#53579]: https://github.com/dart-lang/sdk/issues/53579
+[#53267]: https://github.com/dart-lang/sdk/issues/53503
+[#53541]: https://github.com/dart-lang/sdk/issues/53541
 
 ## 3.1.2 - 2023-09-13
 

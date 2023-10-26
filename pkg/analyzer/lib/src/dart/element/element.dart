@@ -750,7 +750,7 @@ abstract class ClassOrMixinElementImpl extends InterfaceElementImpl {
 
 /// A concrete implementation of a [CompilationUnitElement].
 class CompilationUnitElementImpl extends UriReferencedElementImpl
-    implements CompilationUnitElement, MacroTargetElementContainer {
+    implements CompilationUnitElement {
   /// The source that corresponds to this compilation unit.
   @override
   final Source source;
@@ -2750,7 +2750,7 @@ class EnumElementImpl extends InterfaceElementImpl
 
 /// A base class for concrete implementations of an [ExecutableElement].
 abstract class ExecutableElementImpl extends _ExistingElementImpl
-    with TypeParameterizedElementMixin
+    with TypeParameterizedElementMixin, MacroTargetElement
     implements ExecutableElement, ElementImplWithFunctionType {
   /// A list containing all of the parameters defined by this executable
   /// element.
@@ -3397,7 +3397,7 @@ class ImportElementPrefixImpl implements ImportElementPrefix {
 }
 
 abstract class InstanceElementImpl extends _ExistingElementImpl
-    with TypeParameterizedElementMixin
+    with TypeParameterizedElementMixin, MacroTargetElement
     implements InstanceElement {
   @override
   ElementLinkedData? linkedData;
@@ -3486,7 +3486,6 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 }
 
 abstract class InterfaceElementImpl extends InstanceElementImpl
-    with MacroTargetElement
     implements InterfaceElement {
   /// A list containing all of the mixins that are applied to the class being
   /// extended in order to derive the superclass of this class.
@@ -4169,7 +4168,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   BundleMacroExecutor? bundleMacroExecutor;
 
   /// Information about why non-promotable private fields in the library are not
-  /// promotable, or `null` if field promotion is not enabled in this library.
+  /// promotable.
+  ///
   /// See [fieldNameNonPromotabilityInfo].
   Map<String, FieldNameNonPromotabilityInfo>? _fieldNameNonPromotabilityInfo;
 
@@ -4245,7 +4245,11 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   /// Information about why non-promotable private fields in the library are not
-  /// promotable, or `null` if field promotion is not enabled in this library.
+  /// promotable.
+  ///
+  /// If field promotion is not enabled in this library, this field is still
+  /// populated, so that the analyzer can figure out whether enabling field
+  /// promotion would cause a field to be promotable.
   ///
   /// There are two ways an access to a private property name might not be
   /// promotable: the property might be non-promotable for a reason inherent to
@@ -4262,10 +4266,9 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   ///
   /// If a field in the library has a private name and that name does not appear
   /// as a key in this map, the field is promotable.
-  Map<String, FieldNameNonPromotabilityInfo>?
-      get fieldNameNonPromotabilityInfo {
+  Map<String, FieldNameNonPromotabilityInfo> get fieldNameNonPromotabilityInfo {
     _readLinkedData();
-    return _fieldNameNonPromotabilityInfo;
+    return _fieldNameNonPromotabilityInfo!;
   }
 
   set fieldNameNonPromotabilityInfo(
@@ -4756,7 +4759,7 @@ class LibraryImportElementImpl extends _ExistingElementImpl
 
 /// A concrete implementation of a [LibraryOrAugmentationElement].
 abstract class LibraryOrAugmentationElementImpl extends ElementImpl
-    implements LibraryOrAugmentationElement, MacroTargetElementContainer {
+    implements LibraryOrAugmentationElement {
   /// The compilation unit that defines this library.
   late CompilationUnitElementImpl _definingCompilationUnit;
 
@@ -4944,9 +4947,6 @@ mixin MacroTargetElement {
     macroApplicationErrors = [...macroApplicationErrors, error];
   }
 }
-
-/// Marker interface for elements that may have [MacroTargetElement]s.
-class MacroTargetElementContainer {}
 
 /// A concrete implementation of a [MethodElement].
 class MethodElementImpl extends ExecutableElementImpl

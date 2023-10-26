@@ -7,6 +7,7 @@ import 'package:front_end/src/fasta/kernel/body_builder_context.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
+import 'package:kernel/reference_from_index.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
@@ -22,6 +23,7 @@ import '../builder/name_iterator.dart';
 import '../builder/type_builder.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
+import '../kernel/type_algorithms.dart';
 import '../messages.dart';
 import '../problems.dart';
 import '../scope.dart';
@@ -59,6 +61,8 @@ class SourceExtensionTypeDeclarationBuilder
 
   final SourceFieldBuilder? representationFieldBuilder;
 
+  final IndexedContainer? indexedContainer;
+
   SourceExtensionTypeDeclarationBuilder(
       List<MetadataBuilder>? metadata,
       int modifiers,
@@ -72,14 +76,14 @@ class SourceExtensionTypeDeclarationBuilder
       int startOffset,
       int nameOffset,
       int endOffset,
-      ExtensionTypeDeclaration? referenceFrom,
+      this.indexedContainer,
       this.representationFieldBuilder)
       : _extensionTypeDeclaration = new ExtensionTypeDeclaration(
             name: name,
             fileUri: parent.fileUri,
             typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
                 typeParameters),
-            reference: referenceFrom?.reference)
+            reference: indexedContainer?.reference)
           ..fileOffset = nameOffset,
         super(metadata, modifiers, name, parent, nameOffset, scope,
             constructorScope);
@@ -136,6 +140,36 @@ class SourceExtensionTypeDeclarationBuilder
             typeBuilder.build(libraryBuilder, TypeUse.superType);
         Message? errorMessage;
         List<LocatedMessage>? errorContext;
+
+        if (typeParameters?.isNotEmpty ?? false) {
+          for (NominalVariableBuilder variable in typeParameters!) {
+            int variance = computeTypeVariableBuilderVariance(
+                variable, typeBuilder, libraryBuilder);
+            if (!Variance.greaterThanOrEqual(variance, variable.variance)) {
+              if (variable.parameter.isLegacyCovariant) {
+                errorMessage =
+                    templateWrongTypeParameterVarianceInSuperinterface
+                        .withArguments(variable.name, interface,
+                            libraryBuilder.isNonNullableByDefault);
+              } else {
+                errorMessage =
+                    templateInvalidTypeVariableInSupertypeWithVariance
+                        .withArguments(
+                            Variance.keywordString(variable.variance),
+                            variable.name,
+                            Variance.keywordString(variance),
+                            typeBuilder.typeName!.name);
+              }
+            }
+          }
+          if (errorMessage != null) {
+            libraryBuilder.addProblem(errorMessage, typeBuilder.charOffset!,
+                noLength, typeBuilder.fileUri,
+                context: errorContext);
+            errorMessage = null;
+          }
+        }
+
         if (interface is ExtensionType) {
           if (interface.nullability == Nullability.nullable) {
             errorMessage =
@@ -258,6 +292,14 @@ class SourceExtensionTypeDeclarationBuilder
                   noLength,
                   typeBuilder.fileUri);
             }
+          }
+          if (isBottom(representationType)) {
+            libraryBuilder.addProblem(
+                messageExtensionTypeRepresentationTypeBottom,
+                representationFieldBuilder!.charOffset,
+                representationFieldBuilder!.name.length,
+                representationFieldBuilder!.fileUri);
+            representationType = const InvalidType();
           }
         }
       } else {

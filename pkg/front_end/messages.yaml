@@ -7433,3 +7433,50 @@ MultipleRepresentationFields:
   script: |
     extension type E(int foo, String bar) {}
   analyzerCode: MULTIPLE_REPRESENTATION_FIELDS
+
+ExtensionTypeConstructorWithSuperFormalParameter:
+  problemMessage: "Extension type constructors can't declare super formal parameters."
+  experiments: inline-class
+  script: |
+    extension type A(int foo) { A.named(this.foo, super.bar); }
+  analyzerCode: EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER
+
+ExtensionTypeRepresentationTypeBottom:
+  problemMessage: "The representation type can't be a bottom type."
+  experiments: inline-class
+  script: |
+    extension type E1(Never foo) {}
+  analyzerCode: EXTENSION_TYPE_REPRESENTATION_TYPE_BOTTOM
+
+RepresentationFieldTrailingComma:
+  problemMessage: "The representation field can't have a trailing comma."
+  experiments: inline-class
+  script: |
+    extension type E(int foo,) {}
+  analyzerCode: REPRESENTATION_FIELD_TRAILING_COMMA
+
+WrongTypeParameterVarianceInSuperinterface:
+  problemMessage: "'#name' can't be used contravariantly or invariantly in '#type'."
+  experiments: inline-class
+  script: |
+    extension type E<X>(List<Function(Object?)> foo) implements List<Function(X)> {}
+  analyzerCode: WRONG_TYPE_PARAMETER_VARIANCE_IN_SUPERINTERFACE
+
+AwaitOfExtensionTypeNotFuture:
+  problemMessage: "The 'await' expression can't be used for an expression with an extension type that is not a subtype of 'Future'."
+  experiments: inline-class
+  script: |
+    extension type E(num foo) { test(E e) async { await e; } }
+  analyzerCode: AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE
+
+NamedParametersInExtensionTypeDeclaration:
+  problemMessage: "Extension type declarations can't have named parameters."
+  experiments: inline-class
+  script: |
+    extension type E(int foo, {dynamic bar}) {}
+
+OptionalParametersInExtensionTypeDeclaration:
+  problemMessage: "Extension type declarations can't have optional parameters."
+  experiments: inline-class
+  script: |
+    extension type E(int foo, [dynamic bar]) {}

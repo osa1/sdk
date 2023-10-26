@@ -100,26 +100,42 @@ class LibraryMacroApplier {
     required LibraryOrAugmentationElementImpl container,
     required OperationPerformanceImpl performance,
   }) async {
-    final collector = _MacroTargetElementCollector();
+    final collector = _MacroTargetElementCollector(container);
     container.accept(collector);
 
+    final fromNode = declarationBuilder.fromNode;
     for (final target in collector.targets) {
       final targetNode = _linker.elementNodes[target.element];
       // TODO(scheglov) support other declarations
-      if (targetNode is ClassDeclaration) {
-        await performance.runAsync(
-          'forClassDeclaration',
-          (performance) async {
-            await _buildApplications(
-              target.target,
-              targetNode.metadata,
-              macro.DeclarationKind.classType,
-              () => declarationBuilder.fromNode.classDeclaration(targetNode),
-              container: target.container,
-              performance: performance,
-            );
-          },
-        );
+      switch (targetNode) {
+        case ClassDeclaration():
+          await performance.runAsync(
+            'forClassDeclaration',
+            (performance) async {
+              await _buildApplications(
+                target.target,
+                targetNode.metadata,
+                macro.DeclarationKind.classType,
+                () => fromNode.classDeclaration(targetNode),
+                container: target.container,
+                performance: performance,
+              );
+            },
+          );
+        case MethodDeclaration():
+          await performance.runAsync(
+            'forMethodDeclaration',
+            (performance) async {
+              await _buildApplications(
+                target.target,
+                targetNode.metadata,
+                macro.DeclarationKind.method,
+                () => fromNode.methodDeclaration(targetNode),
+                container: target.container,
+                performance: performance,
+              );
+            },
+          );
       }
     }
   }
@@ -140,6 +156,16 @@ class LibraryMacroApplier {
           _inferOmittedType,
         )
         .trim();
+  }
+
+  /// Disposes all instantiated macros.
+  void disposeApplications() {
+    for (final target in _targets) {
+      for (final application in target.applications) {
+        macroExecutor.disposeMacro(application.instanceIdentifier);
+      }
+    }
+    _targets.clear();
   }
 
   Future<List<macro.MacroExecutionResult>> executeDeclarationsPhase() async {
@@ -659,27 +685,40 @@ class _MacroTargetElement {
 }
 
 class _MacroTargetElementCollector extends GeneralizingElementVisitor<void> {
-  late final LibraryOrAugmentationElementImpl _container;
+  LibraryOrAugmentationElementImpl container;
   final List<_MacroTargetElement> targets = [];
+
+  _MacroTargetElementCollector(this.container);
 
   @override
   void visitElement(covariant ElementImpl element) {
-    if (element is LibraryOrAugmentationElementImpl) {
-      _container = element;
-    }
     if (element case final MacroTargetElement target) {
       if (target.macroApplicationErrors.isEmpty) {
         targets.add(
           _MacroTargetElement(
-            container: _container,
+            container: container,
             element: element,
             target: target,
           ),
         );
       }
     }
-    if (element is MacroTargetElementContainer) {
-      element.visitChildren(this);
+
+    switch (element) {
+      case AugmentationImportElementImpl():
+        if (element.importedAugmentation case final augmentation?) {
+          container = augmentation;
+          augmentation.visitChildren(this);
+        }
+      case ClassElementImpl():
+        if (!element.isMixinApplication) {
+          element.visitChildren(this);
+        }
+      case CompilationUnitElementImpl():
+      case ExecutableElementImpl():
+      case InstanceElementImpl():
+      case LibraryOrAugmentationElementImpl():
+        element.visitChildren(this);
     }
   }
 }

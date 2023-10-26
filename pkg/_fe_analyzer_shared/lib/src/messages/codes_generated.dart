@@ -341,6 +341,17 @@ const MessageCode messageAwaitNotAsync = const MessageCode("AwaitNotAsync",
         r"""'await' can only be used in 'async' or 'async*' methods.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeAwaitOfExtensionTypeNotFuture =
+    messageAwaitOfExtensionTypeNotFuture;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageAwaitOfExtensionTypeNotFuture = const MessageCode(
+    "AwaitOfExtensionTypeNotFuture",
+    analyzerCodes: <String>["AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE"],
+    problemMessage:
+        r"""The 'await' expression can't be used for an expression with an extension type that is not a subtype of 'Future'.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
     Message Function(
         String
@@ -4399,6 +4410,19 @@ Message _withArgumentsExtensionTypeCombinedMemberSignatureFailed(
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeExtensionTypeConstructorWithSuperFormalParameter =
+    messageExtensionTypeConstructorWithSuperFormalParameter;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageExtensionTypeConstructorWithSuperFormalParameter =
+    const MessageCode("ExtensionTypeConstructorWithSuperFormalParameter",
+        analyzerCodes: <String>[
+      "EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER"
+    ],
+        problemMessage:
+            r"""Extension type constructors can't declare super formal parameters.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeExtensionTypeDeclarationCause =
     messageExtensionTypeDeclarationCause;
 
@@ -4441,6 +4465,16 @@ const MessageCode messageExtensionTypeMemberOneOfContext = const MessageCode(
     severity: Severity.context,
     problemMessage:
         r"""This is one of the inherited extension type members.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeExtensionTypeRepresentationTypeBottom =
+    messageExtensionTypeRepresentationTypeBottom;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageExtensionTypeRepresentationTypeBottom =
+    const MessageCode("ExtensionTypeRepresentationTypeBottom",
+        analyzerCodes: <String>["EXTENSION_TYPE_REPRESENTATION_TYPE_BOTTOM"],
+        problemMessage: r"""The representation type can't be a bottom type.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeExtensionTypeWith = messageExtensionTypeWith;
@@ -10332,6 +10366,16 @@ Message _withArgumentsNamedMixinOverride(String name, String name2) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeNamedParametersInExtensionTypeDeclaration =
+    messageNamedParametersInExtensionTypeDeclaration;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageNamedParametersInExtensionTypeDeclaration =
+    const MessageCode("NamedParametersInExtensionTypeDeclaration",
+        problemMessage:
+            r"""Extension type declarations can't have named parameters.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeNativeClauseShouldBeAnnotation =
     messageNativeClauseShouldBeAnnotation;
 
@@ -11560,6 +11604,16 @@ const MessageCode messageOperatorWithTypeParameters = const MessageCode(
     correctionMessage: r"""Try removing the type parameters.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeOptionalParametersInExtensionTypeDeclaration =
+    messageOptionalParametersInExtensionTypeDeclaration;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageOptionalParametersInExtensionTypeDeclaration =
+    const MessageCode("OptionalParametersInExtensionTypeDeclaration",
+        problemMessage:
+            r"""Extension type declarations can't have optional parameters.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
     Message Function(
         String string,
@@ -12452,6 +12506,17 @@ const MessageCode messageRepresentationFieldModifier = const MessageCode(
     "RepresentationFieldModifier",
     analyzerCodes: <String>["REPRESENTATION_FIELD_MODIFIER"],
     problemMessage: r"""Representation fields can't have modifiers.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeRepresentationFieldTrailingComma =
+    messageRepresentationFieldTrailingComma;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageRepresentationFieldTrailingComma = const MessageCode(
+    "RepresentationFieldTrailingComma",
+    analyzerCodes: <String>["REPRESENTATION_FIELD_TRAILING_COMMA"],
+    problemMessage:
+        r"""The representation field can't have a trailing comma.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name)>

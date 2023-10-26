@@ -947,15 +947,13 @@ abstract class AbstractLateFieldEncoding implements FieldEncoding {
         reference: lateGetterReference)
       ..fileOffset = charOffset
       ..fileEndOffset = charEndOffset
-      ..isNonNullableByDefault = true
-      ..isLoweredLateField = true;
+      ..isNonNullableByDefault = true;
     nameScheme
         .getFieldMemberName(FieldNameType.Getter, name, isSynthesized: true)
         .attachMember(_lateGetter);
     _lateSetter = _createSetter(fileUri, charOffset, lateSetterReference,
         isCovariantByDeclaration: isCovariantByDeclaration);
     if (_lateSetter != null) {
-      _lateSetter!.isLoweredLateField = true;
       nameScheme
           .getFieldMemberName(FieldNameType.Setter, name, isSynthesized: true)
           .attachMember(_lateSetter!);
@@ -1665,6 +1663,9 @@ class _SynthesizedFieldClassMember implements ClassMember {
   @override
   String toString() => '_SynthesizedFieldClassMember('
       '$fieldBuilder,$_member,$_kind,forSetter=${forSetter})';
+
+  @override
+  bool get isExtensionTypeMember => fieldBuilder.isExtensionTypeMember;
 }
 
 class AbstractOrExternalFieldEncoding implements FieldEncoding {
