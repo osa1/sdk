@@ -295,24 +295,24 @@ class DispatchTable {
             metadata.methodOrSetterCalledDynamically ||
             member.name.text == "call");
 
-    final selector = _selectorInfo.putIfAbsent(selectorId, () {
-      final selector = SelectorInfo._(translator, selectorId,
-          _selectorMetadata[selectorId].callCount, paramInfo,
-          isSetter: isSetter);
-      if (calledDynamically) {
-        if (isGetter) {
-          (_dynamicGetters[member.name.text] ??= []).add(selector);
-        } else if (isSetter) {
-          (_dynamicSetters[member.name.text] ??= []).add(selector);
-        } else {
-          (_dynamicMethods[member.name.text] ??= []).add(selector);
-        }
-      }
-      return selector;
-    });
+    final newSelector = !_selectorInfo.containsKey(selectorId);
+    final selector = _selectorInfo.putIfAbsent(
+        selectorId,
+        () => SelectorInfo._(translator, selectorId,
+            _selectorMetadata[selectorId].callCount, paramInfo,
+            isSetter: isSetter));
     assert(selector.isSetter == isSetter);
     selector.hasTearOffUses |= metadata.hasTearOffUses;
     selector.paramInfo.merge(paramInfo);
+    if (newSelector && calledDynamically) {
+      if (isGetter) {
+        (_dynamicGetters[member.name.text] ??= []).add(selector);
+      } else if (isSetter) {
+        (_dynamicSetters[member.name.text] ??= []).add(selector);
+      } else {
+        (_dynamicMethods[member.name.text] ??= []).add(selector);
+      }
+    }
     return selector;
   }
 
