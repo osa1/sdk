@@ -295,6 +295,7 @@ class DispatchTable {
             metadata.methodOrSetterCalledDynamically ||
             member.name.text == "call");
 
+    final newSelector = !_selectorInfo.containsKey(selectorId);
     final selector = _selectorInfo.putIfAbsent(
         selectorId,
         () => SelectorInfo._(translator, selectorId,
@@ -303,7 +304,7 @@ class DispatchTable {
     assert(selector.isSetter == isSetter);
     selector.hasTearOffUses |= metadata.hasTearOffUses;
     selector.paramInfo.merge(paramInfo);
-    if (calledDynamically) {
+    if (newSelector && calledDynamically) {
       if (isGetter) {
         (_dynamicGetters[member.name.text] ??= []).add(selector);
       } else if (isSetter) {
