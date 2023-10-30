@@ -671,3 +671,11 @@ final class JSStringImpl implements String {
     return last;
   }
 }
+
+@pragma("wasm:export", "\$jsStringToJSStringImpl")
+JSStringImpl _jsStringToJSStringImpl(WasmExternRef? string) =>
+    JSStringImpl(string);
+
+@pragma("wasm:export", "\$jsStringFromJSStringImpl")
+WasmExternRef? _jsStringFromJSStringImpl(JSStringImpl string) =>
+    string.toExternRef;
