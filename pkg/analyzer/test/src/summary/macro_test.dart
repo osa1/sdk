@@ -335,6 +335,84 @@ class MacroDeclarationsIntrospectTest extends MacroElementsBaseTest {
     return code.replaceAll('/*macro*/', 'macro');
   }
 
+  test_class_appendInterfaces() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+import 'dart:async';
+import 'package:_fe_analyzer_shared/src/macros/api.dart';
+import 'a.dart';
+
+macro class AddInterfaceA implements ClassTypesMacro {
+  const AddInterfaceA();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    builder.appendInterfaces([
+      NamedTypeAnnotationCode(
+        name: await builder.resolveIdentifier(
+          Uri.parse('package:test/a.dart'),
+          'A',
+        ),
+      ),
+    ]);
+  }
+}
+''');
+
+    await _assertIntrospectDeclarationsText(r'''
+import 'b.dart';
+
+@AddInterfaceA()
+@IntrospectDeclarationsPhaseMacro()
+class X {}
+''', r'''
+class X
+  interfaces
+    A
+''');
+  }
+
+  test_class_appendMixins() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+mixin A {}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+import 'dart:async';
+import 'package:_fe_analyzer_shared/src/macros/api.dart';
+import 'a.dart';
+
+macro class AddInterfaceA implements ClassTypesMacro {
+  const AddInterfaceA();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    builder.appendMixins([
+      NamedTypeAnnotationCode(
+        name: await builder.resolveIdentifier(
+          Uri.parse('package:test/a.dart'),
+          'A',
+        ),
+      ),
+    ]);
+  }
+}
+''');
+
+    await _assertIntrospectDeclarationsText(r'''
+import 'b.dart';
+
+@AddInterfaceA()
+@IntrospectDeclarationsPhaseMacro()
+class X {}
+''', r'''
+class X
+  mixins
+    A
+''');
+  }
+
   test_classDeclaration_imported_interfaces() async {
     newFile('$testPackageLibPath/a.dart', r'''
 class A {}
@@ -372,7 +450,8 @@ class X extends A {}
 ''', r'''
 class X
   superclass
-    abstract class A
+    class A
+      flags: hasAbstract
       superclass
         class Object
 ''');
@@ -494,7 +573,8 @@ class X {
 ''', r'''
 class X
   fields
-    external a
+    a
+      flags: hasExternal
       type: int
     b
       type: int
@@ -513,7 +593,8 @@ class X {
 ''', r'''
 class X
   fields
-    final a
+    a
+      flags: hasFinal
       type: int
     b
       type: int
@@ -532,9 +613,11 @@ class X {
 ''', r'''
 class X
   fields
-    late final a
+    a
+      flags: hasFinal hasLate
       type: int
-    final b
+    b
+      flags: hasFinal
       type: int
 ''');
   }
@@ -551,7 +634,8 @@ class X {
 ''', r'''
 class X
   fields
-    static a
+    a
+      flags: isStatic
       type: int
     b
       type: int
@@ -1536,7 +1620,8 @@ class A
 @DeclarationTextMacro()
 abstract class A {}
 ''', r'''
-abstract class A
+class A
+  flags: hasAbstract
 ''');
   }
 
@@ -2711,6 +2796,103 @@ elementFactory
     package:test/test.dart
 ''');
     }
+  }
+
+  test_order_class2() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {}
+class B {}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+import 'dart:async';
+import 'package:_fe_analyzer_shared/src/macros/api.dart';
+import 'a.dart';
+
+macro class AddInterfaceA implements ClassTypesMacro {
+  const AddInterfaceA();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    builder.appendInterfaces([
+      NamedTypeAnnotationCode(
+        name: await builder.resolveIdentifier(
+          Uri.parse('package:test/a.dart'),
+          'A',
+        ),
+      ),
+    ]);
+  }
+}
+
+macro class AddInterfaceB implements ClassTypesMacro {
+  const AddInterfaceB();
+
+  FutureOr<void> buildTypesForClass(clazz, builder) async {
+    builder.appendInterfaces([
+      NamedTypeAnnotationCode(
+        name: await builder.resolveIdentifier(
+          Uri.parse('package:test/a.dart'),
+          'B',
+        ),
+      ),
+    ]);
+  }
+}
+''');
+
+    var library = await buildLibrary(r'''
+import 'b.dart';
+
+@AddInterfaceB()
+@AddInterfaceA()
+class X {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false
+      ..withReferences = true;
+    checkElementText(library, r'''
+library
+  reference: self
+  imports
+    package:test/b.dart
+  definingUnit
+    reference: self
+    classes
+      class X @58
+        reference: self::@class::X
+        augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::X
+        augmented
+          interfaces
+            A
+            B
+          constructors
+            self::@class::X::@constructor::new
+  augmentationImports
+    package:test/test.macro.dart
+      reference: self::@augmentation::package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+augment class X implements prefix0.A, prefix0.B {
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+      definingUnit
+        reference: self::@augmentation::package:test/test.macro.dart
+        classes
+          augment class X @86
+            reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::X
+            augmentationTarget: self::@class::X
+            interfaces
+              A
+              B
+''');
   }
 }
 
