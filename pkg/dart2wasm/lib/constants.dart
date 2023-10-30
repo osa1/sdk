@@ -894,8 +894,8 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
   ConstantInfo? visitSymbolConstant(SymbolConstant constant) {
     ClassInfo info = translator.classInfo[translator.symbolClass]!;
     translator.functions.allocateClass(info.classId);
-    w.RefType stringType =
-        translator.classInfo[translator.coreTypes.stringClass]!.nonNullableType;
+    w.RefType stringType = translator
+        .classInfo[translator.coreTypes.stringClass]!.repr.nonNullableType;
     StringConstant nameConstant = StringConstant(constant.name);
     bool lazy = ensureConstant(nameConstant)?.isLazy ?? false;
     return createConstant(constant, info.nonNullableType, lazy: lazy,
