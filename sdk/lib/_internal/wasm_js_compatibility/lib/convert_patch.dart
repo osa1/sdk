@@ -117,26 +117,6 @@ class Utf8Decoder {
   // }();
 }
 
-class _JsonUtf8Decoder extends Converter<List<int>, Object?> {
-  final Object? Function(Object? key, Object? value)? _reviver;
-  final bool _allowMalformed;
-
-  _JsonUtf8Decoder(this._reviver, this._allowMalformed);
-
-  Object? convert(List<int> input) {
-    var parser = _JsonUtf8DecoderSink._createParser(_reviver, _allowMalformed);
-    parser.chunk = input;
-    parser.chunkEnd = input.length;
-    parser.parse(0);
-    parser.close();
-    return parser.result;
-  }
-
-  ByteConversionSink startChunkedConversion(Sink<Object?> sink) {
-    return new _JsonUtf8DecoderSink(_reviver, sink, _allowMalformed);
-  }
-}
-
 //// Implementation ///////////////////////////////////////////////////////////
 
 // Simple API for JSON parsing.
@@ -1521,48 +1501,6 @@ class _JsonDecoderSink extends _StringSinkConversionSink<StringBuffer> {
 }
 
 /**
- * Implements the chunked conversion from a JSON string to its corresponding
- * object.
- *
- * The sink only creates one object, but its input can be chunked.
- */
-class _JsonStringDecoderSink extends StringConversionSinkBase {
-  _JsonStringParser _parser;
-  final Object? Function(Object? key, Object? value)? _reviver;
-  final Sink<Object?> _sink;
-
-  _JsonStringDecoderSink(this._reviver, this._sink)
-      : _parser = _createParser(_reviver);
-
-  static _JsonStringParser _createParser(
-      Object? Function(Object? key, Object? value)? reviver) {
-    return new _JsonStringParser(new _JsonListener(reviver));
-  }
-
-  void addSlice(String chunk, int start, int end, bool isLast) {
-    _parser.chunk = chunk;
-    _parser.chunkEnd = end;
-    _parser.parse(start);
-    if (isLast) _parser.close();
-  }
-
-  void add(String chunk) {
-    addSlice(chunk, 0, chunk.length, false);
-  }
-
-  void close() {
-    _parser.close();
-    var decoded = _parser.result;
-    _sink.add(decoded);
-    _sink.close();
-  }
-
-  ByteConversionSink asUtf8Sink(bool allowMalformed) {
-    return new _JsonUtf8DecoderSink(_reviver, _sink, allowMalformed);
-  }
-}
-
-/**
  * Chunked JSON parser that parses UTF-8 chunks.
  */
 class _JsonUtf8Parser extends _ChunkedJsonParser<List<int>> {
@@ -1622,46 +1560,6 @@ class _JsonUtf8Parser extends _ChunkedJsonParser<List<int>> {
   double parseDouble(int start, int end) {
     String string = getString(start, end, 0x7f);
     return _parseDouble(string, 0, string.length);
-  }
-}
-
-/**
- * Implements the chunked conversion from a UTF-8 encoding of JSON
- * to its corresponding object.
- */
-class _JsonUtf8DecoderSink extends ByteConversionSink {
-  final _JsonUtf8Parser _parser;
-  final Sink<Object?> _sink;
-
-  _JsonUtf8DecoderSink(reviver, this._sink, bool allowMalformed)
-      : _parser = _createParser(reviver, allowMalformed);
-
-  static _JsonUtf8Parser _createParser(
-      Object? Function(Object? key, Object? value)? reviver,
-      bool allowMalformed) {
-    return new _JsonUtf8Parser(new _JsonListener(reviver), allowMalformed);
-  }
-
-  void addSlice(List<int> chunk, int start, int end, bool isLast) {
-    _addChunk(chunk, start, end);
-    if (isLast) close();
-  }
-
-  void add(List<int> chunk) {
-    _addChunk(chunk, 0, chunk.length);
-  }
-
-  void _addChunk(List<int> chunk, int start, int end) {
-    _parser.chunk = chunk;
-    _parser.chunkEnd = end;
-    _parser.parse(start);
-  }
-
-  void close() {
-    _parser.close();
-    var decoded = _parser.result;
-    _sink.add(decoded);
-    _sink.close();
   }
 }
 
