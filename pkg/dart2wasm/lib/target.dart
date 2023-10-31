@@ -142,51 +142,37 @@ class WasmTarget extends Target {
   TargetFlags get flags => TargetFlags();
 
   @override
-  List<String> get extraRequiredLibraries {
-    final libs = [
-      'dart:_http',
-      'dart:_internal',
-      'dart:_js_helper',
-      'dart:_js_types',
-      'dart:_wasm',
-      'dart:async',
-      'dart:developer',
-      'dart:ffi',
-      'dart:io',
-      'dart:js',
-      'dart:js_interop',
-      'dart:js_interop_unsafe',
-      'dart:js_util',
-      'dart:nativewrappers',
-      'dart:typed_data',
-    ];
-
-    if (mode != Mode.jsCompatibility) {
-      libs.add('dart:_string');
-    }
-
-    return libs;
-  }
+  List<String> get extraRequiredLibraries => [
+        'dart:_http',
+        'dart:_internal',
+        'dart:_js_helper',
+        'dart:_js_types',
+        'dart:_wasm',
+        'dart:async',
+        'dart:developer',
+        'dart:ffi',
+        'dart:io',
+        'dart:js',
+        'dart:js_interop',
+        'dart:js_interop_unsafe',
+        'dart:js_util',
+        'dart:nativewrappers',
+        'dart:typed_data',
+        if (mode != Mode.jsCompatibility) 'dart:_string',
+      ];
 
   @override
-  List<String> get extraIndexedLibraries {
-    final libs = [
-      'dart:_js_helper',
-      'dart:_js_types',
-      'dart:_wasm',
-      'dart:collection',
-      'dart:js_interop',
-      'dart:js_interop_unsafe',
-      'dart:js_util',
-      'dart:typed_data',
-    ];
-
-    if (mode != Mode.jsCompatibility) {
-      libs.add('dart:_string');
-    }
-
-    return libs;
-  }
+  List<String> get extraIndexedLibraries => [
+        'dart:_js_helper',
+        'dart:_js_types',
+        'dart:_wasm',
+        'dart:collection',
+        'dart:js_interop',
+        'dart:js_interop_unsafe',
+        'dart:js_util',
+        'dart:typed_data',
+        if (mode != Mode.jsCompatibility) 'dart:_string',
+      ];
 
   @override
   bool mayDefineRestrictedType(Uri uri) => uri.isScheme('dart');

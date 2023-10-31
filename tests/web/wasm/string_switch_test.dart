@@ -16,12 +16,11 @@ void main() {
     ''');
 
   String jsString = getProperty(globalThis, "jsString");
-  Expect.equals(jsString, "hi");
 
   switch (jsString) {
     case "hi":
       break;
     default:
-      Expect.fail("Unexpected JS String");
+      Expect.fail("Unexpected JS String: $jsString");
   }
 }
