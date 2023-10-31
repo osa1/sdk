@@ -2424,16 +2424,6 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
             parameters: constructorElement.parameters,
             errorReporter: errorReporter,
           );
-          for (var argument in argumentList.arguments) {
-            analyzeExpression(argument, argument.staticParameterElement?.type);
-            popRewrite();
-          }
-          arguments.typeArguments?.accept(this);
-
-          var whyNotPromotedList =
-              <Map<DartType, NonPromotionReason> Function()>[];
-          checkForArgumentTypesNotAssignableInList(
-              argumentList, whyNotPromotedList);
         } else if (definingLibrary.featureSet
             .isEnabled(Feature.enhanced_enums)) {
           var requiredParameterCount = constructorElement.parameters
@@ -2449,6 +2439,20 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
           }
         }
       }
+    }
+
+    var arguments = node.arguments;
+    if (arguments != null) {
+      var argumentList = arguments.argumentList;
+      for (var argument in argumentList.arguments) {
+        analyzeExpression(argument, argument.staticParameterElement?.type);
+        popRewrite();
+      }
+      arguments.typeArguments?.accept(this);
+
+      var whyNotPromotedList = <Map<DartType, NonPromotionReason> Function()>[];
+      checkForArgumentTypesNotAssignableInList(
+          argumentList, whyNotPromotedList);
     }
 
     elementResolver.visitEnumConstantDeclaration(node);
@@ -5390,7 +5394,9 @@ class _WhyNotPromotedVisitor
             message: message,
             offset: property.nonSynthetic.nameOffset,
             length: property.nameLength,
-            url: reason.documentationLink.url)
+            url: reason.documentationLink.url),
+        if (!reason.fieldPromotionEnabled)
+          _fieldPromotionUnavailableMessage(property, propertyName)
       ];
     } else {
       assert(receiverElement == null,
@@ -5414,11 +5420,12 @@ class _WhyNotPromotedVisitor
       void addConflictMessage(
           {required Element conflictingElement,
           required String kind,
-          required Element class_,
+          required Element enclosingElement,
           required NonPromotionDocumentationLink link}) {
-        var className = class_.name;
+        var enclosingKindName = enclosingElement.kind.displayName;
+        var enclosingName = enclosingElement.name;
         var message = "'$propertyName' couldn't be promoted because there is a "
-            "conflicting $kind in class '$className'";
+            "conflicting $kind in $enclosingKindName '$enclosingName'";
         var nonSyntheticElement = conflictingElement.nonSynthetic;
         messages.add(DiagnosticMessageImpl(
             filePath: nonSyntheticElement.source!.fullName,
@@ -5433,7 +5440,7 @@ class _WhyNotPromotedVisitor
           addConflictMessage(
               conflictingElement: field,
               kind: 'non-promotable field',
-              class_: field.enclosingElement,
+              enclosingElement: field.enclosingElement,
               link:
                   NonPromotionDocumentationLink.conflictingNonPromotableField);
         }
@@ -5441,33 +5448,26 @@ class _WhyNotPromotedVisitor
           addConflictMessage(
               conflictingElement: getter,
               kind: 'getter',
-              class_: getter.enclosingElement,
+              enclosingElement: getter.enclosingElement,
               link: NonPromotionDocumentationLink.conflictingGetter);
         }
         for (var nsmClass in fieldNameInfo.conflictingNsmClasses) {
           addConflictMessage(
               conflictingElement: nsmClass,
               kind: 'noSuchMethod forwarder',
-              class_: nsmClass,
+              enclosingElement: nsmClass,
               link: NonPromotionDocumentationLink
                   .conflictingNoSuchMethodForwarder);
         }
       }
-      if (messages.isEmpty) {
+      if (reason.fieldPromotionEnabled) {
         // The only possible non-inherent reasons for field promotion to fail
-        // are because of conflicts and because field promotion is disabled. The
-        // loops above failed to find any conflicts, so field promotion must
-        // have failed because it was disabled.
-        assert(!reason.fieldPromotionEnabled);
-        messages.add(DiagnosticMessageImpl(
-            filePath: property.source.fullName,
-            message:
-                "'$propertyName' refers to a field. It couldn't be promoted "
-                "because field promotion is only available in Dart 3.2 and "
-                "above.",
-            offset: property.nonSynthetic.nameOffset,
-            length: property.nameLength,
-            url: NonPromotionDocumentationLink.fieldPromotionUnavailable.url));
+        // are because of conflicts and because field promotion is disabled. So
+        // if field promotion is enabled, the loops above should have found a
+        // conflict.
+        assert(messages.isNotEmpty);
+      } else {
+        messages.add(_fieldPromotionUnavailableMessage(property, propertyName));
       }
       return messages;
     } else {
@@ -5498,5 +5498,17 @@ class _WhyNotPromotedVisitor
         offset: node.offset,
         length: node.length,
         url: reason.documentationLink.url);
+  }
+
+  DiagnosticMessageImpl _fieldPromotionUnavailableMessage(
+      PropertyAccessorElement property, String propertyName) {
+    return DiagnosticMessageImpl(
+        filePath: property.source.fullName,
+        message: "'$propertyName' couldn't be promoted "
+            "because field promotion is only available in Dart 3.2 and "
+            "above.",
+        offset: property.nonSynthetic.nameOffset,
+        length: property.nameLength,
+        url: NonPromotionDocumentationLink.fieldPromotionUnavailable.url);
   }
 }
