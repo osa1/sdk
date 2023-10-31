@@ -89,8 +89,10 @@ class Utf8Decoder {
     // back on unintercepted decoder. The fallback will either succeed in
     // decoding, or report the problem better than TextDecoder.
     try {
-      return js.JS<String>('(decoder, codeUnits) => decoder.decode(codeUnits)',
-          decoder, codeUnits);
+      return JSStringImpl(js.JS<WasmExternRef?>(
+          '(decoder, codeUnits) => decoder.decode(codeUnits)',
+          decoder,
+          codeUnits));
     } catch (e) {}
     return null;
   }
