@@ -130,6 +130,7 @@ wasm:
         - _internal/wasm/lib/boxed_int_to_string.dart
         - _internal/wasm/lib/core_patch.dart
         - _internal/wasm/lib/date_patch_patch.dart
+        - _internal/wasm/lib/int_common_patch.dart
         - _internal/wasm/lib/int_patch.dart
         - _internal/wasm/lib/string_buffer_patch.dart
         - _internal/wasm/lib/string_patch.dart
@@ -154,6 +155,7 @@ wasm_stringref:
         - _internal/wasm/lib/boxed_int_to_string.dart
         - _internal/wasm/lib/core_patch.dart
         - _internal/wasm/lib/date_patch_patch.dart
+        - _internal/wasm/lib/int_common_patch.dart
         - _internal/wasm/lib/int_patch.dart
         - _internal/wasm/lib/string_buffer_patch.dart
         - _internal/wasm/lib/string_stringref_patch.dart
@@ -181,6 +183,7 @@ wasm_js_compatibility:
         - _internal/wasm/lib/boxed_int.dart
         - _internal/wasm/lib/core_patch.dart
         - _internal/wasm/lib/date_patch_patch.dart
+        - _internal/wasm/lib/int_common_patch.dart
         - _internal/wasm/lib/sync_star_patch.dart
         - _internal/wasm/lib/weak_patch.dart
         - _internal/wasm_js_compatibility/lib/boxed_int_to_string.dart
@@ -223,6 +226,7 @@ wasm_common:
       patches:
         - _internal/wasm/lib/boxed_double.dart
         - _internal/wasm/lib/boxed_int.dart
+        - _internal/wasm/lib/int_common_patch.dart
     _http:
       uri: _http/http.dart
     _internal:
