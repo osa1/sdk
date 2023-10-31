@@ -1787,20 +1787,26 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     w.ValueType callWithNullCheck(
         Procedure target, void Function(w.ValueType) onNull) {
-      late w.Label done;
-      final w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Call, (signature) {
-        done = b.block(const [], signature.outputs);
-        final w.Label nullReceiver = b.block();
-        wrap(node.receiver, translator.topInfo.nullableType);
-        b.br_on_null(nullReceiver);
+      w.Label? done = null;
+      final w.ValueType resultType = _virtualCall(
+          node.location, target, _VirtualCallKind.Call, (signature) {
+        if (signature == null) {
+          wrap(node.receiver, translator.topInfo.nullableType);
+        } else {
+          done = b.block(const [], signature.outputs);
+          final w.Label nullReceiver = b.block();
+          wrap(node.receiver, translator.topInfo.nullableType);
+          b.br_on_null(nullReceiver);
+        }
       }, (_) {
         _visitArguments(node.arguments, node.interfaceTargetReference, 1);
       });
-      b.br(done);
-      b.end(); // end nullReceiver
-      onNull(resultType);
-      b.end();
+      if (done != null) {
+        b.br(done!);
+        b.end(); // end nullReceiver
+        onNull(resultType);
+        b.end();
+      }
       return resultType;
     }
 
@@ -1833,8 +1839,13 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _visitArguments(node.arguments, node.interfaceTargetReference, 1);
       return translator.outputOrVoid(call(singleTarget.reference));
     }
-    return _virtualCall(node, target, _VirtualCallKind.Call,
-        (signature) => wrap(node.receiver, signature.inputs.first), (_) {
+    return _virtualCall(node.location, target, _VirtualCallKind.Call,
+        (signature) {
+      final expectedType = signature == null
+          ? translator.topInfo.nullableType
+          : signature.inputs.first;
+      wrap(node.receiver, expectedType);
+    }, (_) {
       _visitArguments(node.arguments, node.interfaceTargetReference, 1);
     });
   }
@@ -1986,7 +1997,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         call(singleTarget.reference);
       } else {
         _virtualCall(
-          node,
+          node.location,
           node.interfaceTarget,
           _VirtualCallKind.Call,
           left,
@@ -2019,10 +2030,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   w.ValueType _virtualCall(
-      TreeNode node,
+      Location? location,
       Member interfaceTarget,
       _VirtualCallKind kind,
-      void pushReceiver(w.FunctionType signature),
+      void pushReceiver(w.FunctionType? signature),
       void pushArguments(w.FunctionType signature)) {
     SelectorInfo selector = translator.dispatchTable.selectorForTarget(
         interfaceTarget.referenceAs(
@@ -2033,7 +2044,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       // This happens when TFA drops members of a class but not the class
       // itself or the calls to those members. (#53800)
       b.comment("Virtual call of ${selector.name} with no targets"
-          " at ${node.location}");
+          " at $location");
+      pushReceiver(null);
       b.unreachable();
       return translator.objectInfo.nonNullableType;
     }
@@ -2278,29 +2290,36 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   w.ValueType visitInstanceGet(InstanceGet node, w.ValueType expectedType) {
     Member target = node.interfaceTarget;
     if (node.kind == InstanceAccessKind.Object) {
-      late w.Label doneLabel;
-      w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
-        doneLabel = b.block(const [], signature.outputs);
-        w.Label nullLabel = b.block();
-        wrap(node.receiver, translator.topInfo.nullableType);
-        b.br_on_null(nullLabel);
+      w.Label? doneLabel = null;
+      w.ValueType resultType = _virtualCall(
+          node.location, target, _VirtualCallKind.Get, (signature) {
+        if (signature == null) {
+          wrap(node.receiver, translator.topInfo.nullableType);
+        } else {
+          doneLabel = b.block(const [], signature.outputs);
+          w.Label nullLabel = b.block();
+          wrap(node.receiver, translator.topInfo.nullableType);
+          b.br_on_null(nullLabel);
+        }
       }, (_) {});
-      b.br(doneLabel);
-      b.end(); // nullLabel
-      switch (target.name.text) {
-        case "hashCode":
-          b.i64_const(2011);
-          break;
-        case "runtimeType":
-          wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
-          break;
-        default:
-          unimplemented(
-              node, "Nullable get of ${target.name.text}", [resultType]);
-          break;
+      if (doneLabel != null) {
+        b.br(doneLabel!);
+        b.end(); // nullLabel
+        switch (target.name.text) {
+          case "hashCode":
+            b.i64_const(2011);
+            break;
+          case "runtimeType":
+            wrap(ConstantExpression(TypeLiteralConstant(NullType())),
+                resultType);
+            break;
+          default:
+            unimplemented(
+                node, "Nullable get of ${target.name.text}", [resultType]);
+            break;
+        }
+        b.end(); // doneLabel
       }
-      b.end(); // doneLabel
       return resultType;
     }
     Member? singleTarget = translator.singleTarget(node);
@@ -2308,8 +2327,13 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return _directGet(singleTarget, node.receiver,
           () => intrinsifier.generateInstanceGetterIntrinsic(node));
     } else {
-      return _virtualCall(node, target, _VirtualCallKind.Get,
-          (signature) => wrap(node.receiver, signature.inputs.first), (_) {});
+      return _virtualCall(node.location, target, _VirtualCallKind.Get,
+          (signature) {
+        final expectedType = signature == null
+            ? translator.topInfo.nullableType
+            : signature.inputs.first;
+        wrap(node.receiver, expectedType);
+      }, (_) {});
     }
   }
 
@@ -2413,56 +2437,71 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     Member target = node.interfaceTarget;
 
     if (node.kind == InstanceAccessKind.Object) {
-      late w.Label doneLabel;
-      w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
-        doneLabel = b.block(const [], signature.outputs);
-        w.Label nullLabel = b.block();
-        wrap(node.receiver, translator.topInfo.nullableType);
-        b.br_on_null(nullLabel);
-        translator.convertType(
-            function, translator.topInfo.nullableType, signature.inputs[0]);
+      w.Label? doneLabel = null;
+      w.ValueType resultType = _virtualCall(
+          node.location, target, _VirtualCallKind.Get, (signature) {
+        if (signature == null) {
+          wrap(node.receiver, translator.topInfo.nullableType);
+        } else {
+          doneLabel = b.block(const [], signature.outputs);
+          w.Label nullLabel = b.block();
+          wrap(node.receiver, translator.topInfo.nullableType);
+          b.br_on_null(nullLabel);
+          translator.convertType(
+              function, translator.topInfo.nullableType, signature.inputs[0]);
+        }
       }, (_) {});
-      b.br(doneLabel);
-      b.end(); // nullLabel
-      switch (target.name.text) {
-        case "toString":
-          wrap(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullToString)),
-              resultType);
-          break;
-        case "noSuchMethod":
-          wrap(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullNoSuchMethod)),
-              resultType);
-          break;
-        default:
-          unimplemented(
-              node, "Nullable tear-off of ${target.name.text}", [resultType]);
-          break;
+      if (doneLabel != null) {
+        b.br(doneLabel!);
+        b.end(); // nullLabel
+        switch (target.name.text) {
+          case "toString":
+            wrap(
+                ConstantExpression(
+                    StaticTearOffConstant(translator.nullToString)),
+                resultType);
+            break;
+          case "noSuchMethod":
+            wrap(
+                ConstantExpression(
+                    StaticTearOffConstant(translator.nullNoSuchMethod)),
+                resultType);
+            break;
+          default:
+            unimplemented(
+                node, "Nullable tear-off of ${target.name.text}", [resultType]);
+            break;
+        }
+        b.end(); // doneLabel
       }
-      b.end(); // doneLabel
       return resultType;
     }
 
-    return _virtualCall(node, target, _VirtualCallKind.Get,
-        (signature) => wrap(node.receiver, signature.inputs.first), (_) {});
+    return _virtualCall(node.location, target, _VirtualCallKind.Get,
+        (signature) {
+      final expectedType = signature == null
+          ? translator.topInfo.nullableType
+          : signature.inputs.first;
+      wrap(node.receiver, expectedType);
+    }, (_) {});
   }
 
   @override
   w.ValueType visitInstanceSet(InstanceSet node, w.ValueType expectedType) {
     bool preserved = expectedType != voidMarker;
-    w.Local? temp;
     Member? singleTarget = translator.singleTarget(node);
     if (singleTarget != null) {
       return _directSet(singleTarget, node.receiver, node.value,
           preserved: preserved);
     } else {
-      _virtualCall(node, node.interfaceTarget, _VirtualCallKind.Set,
-          (signature) => wrap(node.receiver, signature.inputs.first),
+      w.Local? temp;
+      _virtualCall(node.location, node.interfaceTarget, _VirtualCallKind.Set,
           (signature) {
+        final expectedType = signature == null
+            ? translator.topInfo.nullableType
+            : signature.inputs.first;
+        wrap(node.receiver, expectedType);
+      }, (signature) {
         w.ValueType paramType = signature.inputs.last;
         wrap(node.value, paramType);
         if (preserved) {
