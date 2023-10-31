@@ -3708,9 +3708,8 @@ class SwitchInfo {
       compare = () => codeGen.b.i64_eq();
     } else if (check<StringLiteral, StringConstant>()) {
       // String switch
-      nonNullableType = translator.options.jsCompatibility
-          ? translator.classInfo[translator.jsStringClass]!.nonNullableType
-          : translator.classInfo[translator.stringBaseClass]!.nonNullableType;
+      nonNullableType = translator
+          .classInfo[translator.coreTypes.stringClass]!.repr.nonNullableType;
       nullableType = translator
           .classInfo[translator.coreTypes.stringClass]!.repr.nullableType;
       compare = () => codeGen.call(translator.options.jsCompatibility
