@@ -9,10 +9,6 @@ import "dart:typed_data" show Int64List;
 
 @patch
 class int {
-  @patch
-  external const factory int.fromEnvironment(String name,
-      {int defaultValue = 0});
-
   static int? _tryParseSmi(String str, int first, int last) {
     assert(first <= last);
     var ix = first;

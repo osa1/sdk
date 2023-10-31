@@ -9,10 +9,6 @@ import 'dart:_js_helper' as js;
 @patch
 class int {
   @patch
-  external const factory int.fromEnvironment(String name,
-      {int defaultValue = 0});
-
-  @patch
   static int parse(String source,
       {int? radix, @deprecated int onError(String source)?}) {
     int? value = tryParse(source, radix: radix);

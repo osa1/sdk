@@ -6,6 +6,10 @@ import 'dart:_internal' show patch;
 
 @patch
 class int {
+  @patch
+  external const factory int.fromEnvironment(String name,
+      {int defaultValue = 0});
+
   /// Wasm i64.div_s instruction.
   external int _div_s(int divisor);
 
