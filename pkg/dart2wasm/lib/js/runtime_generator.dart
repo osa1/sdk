@@ -64,7 +64,7 @@ class RuntimeFinalizer {
     String internalizedStrings = '';
     if (constantStrings.isNotEmpty) {
       internalizedStrings = '''
-strings: [
+s: [
   ${constantStrings.map(escape).join(',\n')}
 ],''';
     }

@@ -1040,7 +1040,7 @@ class Translator with KernelNodes {
       return internalizedString;
     }
     final i = internalizedStringsForJSRuntime.length;
-    internalizedString = m.globals.import('strings', '$i',
+    internalizedString = m.globals.import('s', '$i',
         w.GlobalType(w.RefType.extern(nullable: true), mutable: false));
     _internalizedStringGlobals[s] = internalizedString;
     internalizedStringsForJSRuntime.add(s);
