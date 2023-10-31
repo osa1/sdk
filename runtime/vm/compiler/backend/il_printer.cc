@@ -144,6 +144,12 @@ class IlTestPrinter : public AllStatic {
       if (defn->ssa_temp_index() != -1) {
         writer->PrintProperty("v", defn->ssa_temp_index());
       }
+
+      if (defn->HasType()) {
+        writer->OpenObject("T");
+        defn->Type()->PrintTo(writer);
+        writer->CloseObject();
+      }
     }
     writer->PrintProperty("o", instr->DebugName());
     if (auto branch = instr->AsBranch()) {
@@ -895,6 +901,15 @@ void StaticCallInstr::PrintOperandsTo(BaseTextBuffer* f) const {
   }
   if (result_type() != nullptr) {
     f->Printf(", result_type = %s", result_type()->ToCString());
+  }
+}
+
+void CachableIdempotentCallInstr::PrintOperandsTo(BaseTextBuffer* f) const {
+  f->Printf(" %s<%" Pd "> ", String::Handle(function().name()).ToCString(),
+            type_args_len());
+  for (intptr_t i = 0; i < ArgumentCount(); ++i) {
+    if (i > 0) f->AddString(", ");
+    ArgumentValueAt(i)->PrintTo(f);
   }
 }
 

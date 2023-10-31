@@ -341,6 +341,17 @@ const MessageCode messageAwaitNotAsync = const MessageCode("AwaitNotAsync",
         r"""'await' can only be used in 'async' or 'async*' methods.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeAwaitOfExtensionTypeNotFuture =
+    messageAwaitOfExtensionTypeNotFuture;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageAwaitOfExtensionTypeNotFuture = const MessageCode(
+    "AwaitOfExtensionTypeNotFuture",
+    analyzerCodes: <String>["AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE"],
+    problemMessage:
+        r"""The 'await' expression can't be used for an expression with an extension type that is not a subtype of 'Future'.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
     Message Function(
         String
@@ -5514,7 +5525,7 @@ const Template<
         Message Function(String name, String string)>(
     "FieldNotPromotedBecauseNotEnabled",
     problemMessageTemplate:
-        r"""'#name' refers to a field. It couldn't be promoted because field promotion is only available in Dart 3.2 and above.""",
+        r"""'#name' couldn't be promoted because field promotion is only available in Dart 3.2 and above.""",
     correctionMessageTemplate: r"""See #string""",
     withArguments: _withArgumentsFieldNotPromotedBecauseNotEnabled);
 
@@ -5533,7 +5544,7 @@ Message _withArgumentsFieldNotPromotedBecauseNotEnabled(
   if (string.isEmpty) throw 'No string provided';
   return new Message(codeFieldNotPromotedBecauseNotEnabled,
       problemMessage:
-          """'${name}' refers to a field. It couldn't be promoted because field promotion is only available in Dart 3.2 and above.""",
+          """'${name}' couldn't be promoted because field promotion is only available in Dart 3.2 and above.""",
       correctionMessage: """See ${string}""",
       arguments: {'name': name, 'string': string});
 }
@@ -10355,6 +10366,16 @@ Message _withArgumentsNamedMixinOverride(String name, String name2) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeNamedParametersInExtensionTypeDeclaration =
+    messageNamedParametersInExtensionTypeDeclaration;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageNamedParametersInExtensionTypeDeclaration =
+    const MessageCode("NamedParametersInExtensionTypeDeclaration",
+        problemMessage:
+            r"""Extension type declarations can't have named parameters.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeNativeClauseShouldBeAnnotation =
     messageNativeClauseShouldBeAnnotation;
 
@@ -11581,6 +11602,16 @@ const MessageCode messageOperatorWithTypeParameters = const MessageCode(
     problemMessage:
         r"""Types parameters aren't allowed when defining an operator.""",
     correctionMessage: r"""Try removing the type parameters.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeOptionalParametersInExtensionTypeDeclaration =
+    messageOptionalParametersInExtensionTypeDeclaration;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageOptionalParametersInExtensionTypeDeclaration =
+    const MessageCode("OptionalParametersInExtensionTypeDeclaration",
+        problemMessage:
+            r"""Extension type declarations can't have optional parameters.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<

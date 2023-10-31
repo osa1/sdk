@@ -41,6 +41,7 @@ import '../kernel/collections.dart'
         SpreadMapEntry,
         convertToElement;
 import '../kernel/exhaustiveness.dart';
+import '../kernel/hierarchy/class_member.dart';
 import '../kernel/implicit_type_argument.dart' show ImplicitTypeArgument;
 import '../kernel/internal_ast.dart';
 import '../kernel/late_lowering.dart' as late_lowering;
@@ -661,7 +662,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           isSetter: false, includeExtensionMethods: true);
       switch (callMember.kind) {
         case ObjectAccessTargetKind.instanceMember:
-          Member? target = callMember.member;
+          Member? target = callMember.classMember;
           if (target is Procedure && target.kind == ProcedureKind.Method) {
             operandType = callMember.getGetterType(this);
             operand = new InstanceTearOff(
@@ -673,7 +674,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         case ObjectAccessTargetKind.extensionMember:
         case ObjectAccessTargetKind.extensionTypeMember:
           if (callMember.tearoffTarget != null &&
-              callMember.declarationMethodKind == ProcedureKind.Method) {
+              callMember.declarationMethodKind == ClassMemberKind.Method) {
             operandType = callMember.getGetterType(this);
             operand = new StaticInvocation(
                 callMember.tearoffTarget as Procedure,
@@ -814,7 +815,19 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         isVoidAllowed: !isNonNullableByDefault);
     DartType operandType = operandResult.inferredType;
     DartType flattenType = typeSchemaEnvironment.flatten(operandType);
-    node.operand = operandResult.expression..parent = node;
+    if (operandType is ExtensionType &&
+        typeSchemaEnvironment.hierarchy.getExtensionTypeAsInstanceOfClass(
+                operandType, coreTypes.futureClass,
+                isNonNullableByDefault:
+                    libraryBuilder.isNonNullableByDefault) ==
+            null) {
+      Expression wrapped = operandResult.expression;
+      node.operand = helper.wrapInProblem(
+          wrapped, messageAwaitOfExtensionTypeNotFuture, wrapped.fileOffset, 1);
+      wrapped.parent = node.operand;
+    } else {
+      node.operand = operandResult.expression..parent = node;
+    }
     DartType runtimeCheckType = new InterfaceType(
         coreTypes.futureClass, libraryBuilder.nonNullable, [flattenType]);
     if (!typeSchemaEnvironment.isSubtypeOf(
@@ -1051,7 +1064,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         ensureAssignableResult(receiverType, receiverResult).expression;
 
     ObjectAccessTarget target = new ExtensionAccessTarget(receiverType,
-        node.target, null, ProcedureKind.Setter, extensionTypeArguments);
+        node.target, null, ClassMemberKind.Setter, extensionTypeArguments);
 
     DartType valueType = target.getSetterType(this);
 
@@ -1133,7 +1146,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     ObjectAccessTarget readTarget = node.getter == null
         ? const ObjectAccessTarget.missing()
         : new ExtensionAccessTarget(receiverType, node.getter!, null,
-            ProcedureKind.Getter, extensionTypeArguments);
+            ClassMemberKind.Getter, extensionTypeArguments);
 
     DartType readType = readTarget.getGetterType(this);
 
@@ -1156,7 +1169,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     ObjectAccessTarget writeTarget = node.setter == null
         ? const ObjectAccessTarget.missing()
         : new ExtensionAccessTarget(receiverType, node.setter!, null,
-            ProcedureKind.Setter, extensionTypeArguments);
+            ClassMemberKind.Setter, extensionTypeArguments);
 
     DartType valueType = writeTarget.getSetterType(this);
 
@@ -1506,8 +1519,9 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     if (inferredExpressionType is InterfaceType) {
       // TODO(johnniwinther): Should we use the type of
       //  `iterable.iterator.current` instead?
-      List<DartType>? supertypeArguments = hierarchyBuilder
-          .getTypeArgumentsAsInstanceOf(inferredExpressionType, iterableClass);
+      List<DartType>? supertypeArguments =
+          hierarchyBuilder.getInterfaceTypeArgumentsAsInstanceOfClass(
+              inferredExpressionType, iterableClass);
       if (supertypeArguments != null) {
         inferredType = supertypeArguments[0];
       }
@@ -5407,7 +5421,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     Expression assignment = new SuperMethodInvocation(
         indexSetName,
         new Arguments(<Expression>[index, value])..fileOffset = node.fileOffset,
-        indexSetTarget.member as Procedure)
+        indexSetTarget.classMember as Procedure)
       ..fileOffset = node.fileOffset;
 
     VariableDeclaration assignmentVariable =
@@ -5446,7 +5460,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     }
 
     ObjectAccessTarget target = new ExtensionAccessTarget(receiverType,
-        node.setter, null, ProcedureKind.Operator, extensionTypeArguments);
+        node.setter, null, ClassMemberKind.Method, extensionTypeArguments);
 
     DartType indexType = target.getIndexKeyType(this);
     DartType valueType = target.getIndexSetValueType(this);
@@ -5734,7 +5748,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           readIndex,
         ])
           ..fileOffset = node.readOffset,
-        readTarget.member as Procedure)
+        readTarget.classMember as Procedure)
       ..fileOffset = node.readOffset;
 
     flowAnalysis.ifNullExpression_rightBegin(read, readType);
@@ -5768,7 +5782,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         indexSetName,
         new Arguments(<Expression>[writeIndex, value])
           ..fileOffset = node.writeOffset,
-        writeTarget.member as Procedure)
+        writeTarget.classMember as Procedure)
       ..fileOffset = node.writeOffset;
 
     Expression replacement;
@@ -5851,14 +5865,14 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     ObjectAccessTarget readTarget = node.getter != null
         ? new ExtensionAccessTarget(receiverType, node.getter!, null,
-            ProcedureKind.Operator, extensionTypeArguments)
+            ClassMemberKind.Method, extensionTypeArguments)
         : const ObjectAccessTarget.missing();
 
     DartType readIndexType = readTarget.getIndexKeyType(this);
 
     ObjectAccessTarget writeTarget = node.setter != null
         ? new ExtensionAccessTarget(receiverType, node.setter!, null,
-            ProcedureKind.Operator, extensionTypeArguments)
+            ClassMemberKind.Method, extensionTypeArguments)
         : const ObjectAccessTarget.missing();
 
     DartType writeIndexType = writeTarget.getIndexKeyType(this);
@@ -6064,7 +6078,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       FunctionType functionType = equalsTarget.getFunctionType(this);
       equals = new EqualsCall(left, right,
           functionType: functionType,
-          interfaceTarget: equalsTarget.member as Procedure)
+          interfaceTarget: equalsTarget.classMember as Procedure)
         ..fileOffset = fileOffset;
       if (isNot) {
         equals = new Not(equals)..fileOffset = fileOffset;
@@ -6074,11 +6088,12 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       FunctionType functionType = new FunctionType([const DynamicType()],
           const NeverType.nonNullable(), libraryBuilder.nonNullable);
       // Ensure operator == member even for `Never`.
-      Member target = findInterfaceMember(const DynamicType(), equalsName, -1,
-              instrumented: false, isSetter: false)
-          .member!;
+      ObjectAccessTarget target = findInterfaceMember(
+          const DynamicType(), equalsName, -1,
+          instrumented: false, isSetter: false);
       equals = new EqualsCall(left, right,
-          functionType: functionType, interfaceTarget: target as Procedure)
+          functionType: functionType,
+          interfaceTarget: target.classMember as Procedure)
         ..fileOffset = fileOffset;
       if (isNot) {
         equals = new Not(equals)..fileOffset = fileOffset;
@@ -6164,7 +6179,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       case ObjectAccessTargetKind.nullableExtensionMember:
       case ObjectAccessTargetKind.extensionTypeMember:
       case ObjectAccessTargetKind.nullableExtensionTypeMember:
-        assert(binaryTarget.declarationMethodKind != ProcedureKind.Setter);
+        assert(binaryTarget.declarationMethodKind != ClassMemberKind.Setter);
         binary = new StaticInvocation(
             binaryTarget.member as Procedure,
             new Arguments(<Expression>[
@@ -6230,7 +6245,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
               ..fileOffset = fileOffset,
             functionType: new FunctionType(
                 [rightType], binaryType, libraryBuilder.nonNullable),
-            interfaceTarget: binaryTarget.member as Procedure)
+            interfaceTarget: binaryTarget.classMember as Procedure)
           ..fileOffset = fileOffset;
 
         if (binaryCheckKind ==
@@ -6309,7 +6324,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       case ObjectAccessTargetKind.nullableExtensionMember:
       case ObjectAccessTargetKind.extensionTypeMember:
       case ObjectAccessTargetKind.nullableExtensionTypeMember:
-        assert(unaryTarget.declarationMethodKind != ProcedureKind.Setter);
+        assert(unaryTarget.declarationMethodKind != ClassMemberKind.Setter);
         unary = new StaticInvocation(
             unaryTarget.member as Procedure,
             new Arguments(<Expression>[
@@ -6350,7 +6365,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
             unaryName, new Arguments(<Expression>[])..fileOffset = fileOffset,
             functionType: new FunctionType(
                 <DartType>[], unaryType, libraryBuilder.nonNullable),
-            interfaceTarget: unaryTarget.member as Procedure)
+            interfaceTarget: unaryTarget.classMember as Procedure)
           ..fileOffset = fileOffset;
 
         if (unaryCheckKind == MethodContravarianceCheckKind.checkMethodReturn) {
@@ -6498,7 +6513,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
               ..fileOffset = fileOffset,
             functionType: new FunctionType(
                 [indexType], readType, libraryBuilder.nonNullable),
-            interfaceTarget: readTarget.member as Procedure)
+            interfaceTarget: readTarget.classMember as Procedure)
           ..fileOffset = fileOffset;
         if (readCheckKind == MethodContravarianceCheckKind.checkMethodReturn) {
           if (instrumentation != null) {
@@ -6569,7 +6584,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       case ObjectAccessTargetKind.nullableExtensionMember:
       case ObjectAccessTargetKind.extensionTypeMember:
       case ObjectAccessTargetKind.nullableExtensionTypeMember:
-        assert(writeTarget.declarationMethodKind != ProcedureKind.Setter);
+        assert(writeTarget.declarationMethodKind != ClassMemberKind.Setter);
         write = new StaticInvocation(
             writeTarget.member as Procedure,
             new Arguments(<Expression>[receiver, index, value],
@@ -6625,7 +6640,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
             new Arguments(<Expression>[index, value])..fileOffset = fileOffset,
             functionType: new FunctionType([indexType, valueType],
                 const VoidType(), libraryBuilder.nonNullable),
-            interfaceTarget: writeTarget.member as Procedure)
+            interfaceTarget: writeTarget.classMember as Procedure)
           ..fileOffset = fileOffset;
         break;
       case ObjectAccessTargetKind.recordIndexed:
@@ -6676,7 +6691,9 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         propertyGetNode,
         computePropertyTarget(receiver),
         propertyName.text,
-        readTarget.member,
+        readTarget is ExtensionTypeRepresentationAccessTarget
+            ? readTarget.representationField
+            : readTarget.member,
         readType);
     return createPropertyGet(
         fileOffset: fileOffset,
@@ -6795,7 +6812,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
             throw new UnsupportedError('Unexpected target kind $writeTarget');
         }
         write = new InstanceSet(kind, receiver, propertyName, value,
-            interfaceTarget: writeTarget.member!)
+            interfaceTarget: writeTarget.classMember!)
           ..fileOffset = fileOffset;
         break;
       case ObjectAccessTargetKind.recordIndexed:
@@ -7171,7 +7188,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           readIndex,
         ])
           ..fileOffset = node.readOffset,
-        readTarget.member as Procedure)
+        readTarget.classMember as Procedure)
       ..fileOffset = node.readOffset;
 
     VariableDeclaration? leftVariable;
@@ -7226,7 +7243,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         indexSetName,
         new Arguments(<Expression>[writeIndex, valueExpression])
           ..fileOffset = node.writeOffset,
-        writeTarget.member as Procedure)
+        writeTarget.classMember as Procedure)
       ..fileOffset = node.writeOffset;
 
     Expression replacement;
@@ -7291,7 +7308,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     ObjectAccessTarget readTarget = node.getter != null
         ? new ExtensionAccessTarget(receiverType, node.getter!, null,
-            ProcedureKind.Operator, extensionTypeArguments)
+            ClassMemberKind.Method, extensionTypeArguments)
         : const ObjectAccessTarget.missing();
 
     Expression receiver =
@@ -7352,7 +7369,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
     ObjectAccessTarget writeTarget = node.setter != null
         ? new ExtensionAccessTarget(receiverType, node.setter!, null,
-            ProcedureKind.Operator, extensionTypeArguments)
+            ClassMemberKind.Method, extensionTypeArguments)
         : const ObjectAccessTarget.missing();
 
     DartType writeIndexType = writeTarget.getIndexKeyType(this);
@@ -9997,7 +10014,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         equalsInvokeTarget.isObjectMember ||
         equalsInvokeTarget.isNever);
 
-    node.equalsTarget = equalsInvokeTarget.member as Procedure;
+    node.equalsTarget = equalsInvokeTarget.classMember as Procedure;
     node.equalsType = equalsInvokeTarget.getFunctionType(this);
 
     assert(checkStack(node, stackBase, [
@@ -10264,14 +10281,14 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     assert(lengthTarget.isInstanceMember);
 
     DartType lengthType = node.lengthType = lengthTarget.getGetterType(this);
-    node.lengthTarget = lengthTarget.member!;
+    node.lengthTarget = lengthTarget.classMember!;
 
     ObjectAccessTarget sublistInvokeTarget = findInterfaceMember(
         lookupType, sublistName, node.fileOffset,
         includeExtensionMethods: true, isSetter: false);
     assert(sublistInvokeTarget.isInstanceMember);
 
-    node.sublistTarget = sublistInvokeTarget.member as Procedure;
+    node.sublistTarget = sublistInvokeTarget.classMember as Procedure;
     node.sublistType = sublistInvokeTarget.getFunctionType(this);
 
     ObjectAccessTarget minusTarget = findInterfaceMember(
@@ -10280,7 +10297,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     assert(minusTarget.isInstanceMember);
     assert(minusTarget.isSpecialCasedBinaryOperator(this));
 
-    node.minusTarget = minusTarget.member as Procedure;
+    node.minusTarget = minusTarget.classMember as Procedure;
     node.minusType = replaceReturnType(
         minusTarget.getFunctionType(this),
         typeSchemaEnvironment.getTypeOfSpecialCasedBinaryOperator(
@@ -10292,7 +10309,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         includeExtensionMethods: true, isSetter: false);
     assert(indexGetTarget.isInstanceMember);
 
-    node.indexGetTarget = indexGetTarget.member as Procedure;
+    node.indexGetTarget = indexGetTarget.classMember as Procedure;
     node.indexGetType = indexGetTarget.getFunctionType(this);
 
     for (Pattern pattern in node.patterns) {
@@ -10308,7 +10325,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           includeExtensionMethods: true, isSetter: false);
       assert(greaterThanOrEqualTarget.isInstanceMember);
 
-      node.lengthCheckTarget = greaterThanOrEqualTarget.member as Procedure;
+      node.lengthCheckTarget =
+          greaterThanOrEqualTarget.classMember as Procedure;
       node.lengthCheckType = greaterThanOrEqualTarget.getFunctionType(this);
     } else if (node.patterns.isEmpty) {
       ObjectAccessTarget lessThanOrEqualsInvokeTarget = findInterfaceMember(
@@ -10317,7 +10335,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       assert(lessThanOrEqualsInvokeTarget.isInstanceMember ||
           lessThanOrEqualsInvokeTarget.isObjectMember);
 
-      node.lengthCheckTarget = lessThanOrEqualsInvokeTarget.member as Procedure;
+      node.lengthCheckTarget =
+          lessThanOrEqualsInvokeTarget.classMember as Procedure;
       node.lengthCheckType = lessThanOrEqualsInvokeTarget.getFunctionType(this);
     } else {
       ObjectAccessTarget equalsInvokeTarget = findInterfaceMember(
@@ -10326,7 +10345,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       assert(equalsInvokeTarget.isInstanceMember ||
           equalsInvokeTarget.isObjectMember);
 
-      node.lengthCheckTarget = equalsInvokeTarget.member as Procedure;
+      node.lengthCheckTarget = equalsInvokeTarget.classMember as Procedure;
       node.lengthCheckType = equalsInvokeTarget.getFunctionType(this);
     }
 
@@ -10417,12 +10436,12 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
       switch (fieldTarget.kind) {
         case ObjectAccessTargetKind.instanceMember:
-          field.target = fieldTarget.member!;
+          field.target = fieldTarget.classMember!;
           field.resultType = fieldTarget.getGetterType(this);
           field.accessKind = ObjectAccessKind.Instance;
           break;
         case ObjectAccessTargetKind.objectMember:
-          field.target = fieldTarget.member!;
+          field.target = fieldTarget.classMember!;
           field.resultType = fieldTarget.getGetterType(this);
           field.accessKind = ObjectAccessKind.Object;
           break;
@@ -10481,7 +10500,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
           break;
       }
       if (fieldTarget.isInstanceMember || fieldTarget.isObjectMember) {
-        Member interfaceMember = fieldTarget.member!;
+        // TODO(johnniwinther): Use [fieldTarget] to compute the checked type.
+        Member interfaceMember = fieldTarget.classMember!;
         if (interfaceMember is Procedure) {
           DartType typeToCheck = isNonNullableByDefault
               ? interfaceMember.function
@@ -10489,11 +10509,12 @@ class InferenceVisitorImpl extends InferenceVisitorBase
               : interfaceMember.function.returnType;
           field.checkReturn =
               InferenceVisitorBase.returnedTypeParametersOccurNonCovariantly(
-                  interfaceMember.enclosingClass!, typeToCheck);
+                  interfaceMember.enclosingTypeDeclaration!, typeToCheck);
         } else if (interfaceMember is Field) {
           field.checkReturn =
               InferenceVisitorBase.returnedTypeParametersOccurNonCovariantly(
-                  interfaceMember.enclosingClass!, interfaceMember.type);
+                  interfaceMember.enclosingTypeDeclaration!,
+                  interfaceMember.type);
         }
       }
     }
@@ -10596,12 +10617,12 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
         node.functionType = invokeTarget.getFunctionType(this);
         node.accessKind = RelationalAccessKind.Instance;
-        Procedure? target = invokeTarget.member as Procedure?;
+        Procedure? target = invokeTarget.classMember as Procedure?;
         if (target == null) {
           target = findInterfaceMember(
                   const DynamicType(), equalsName, node.fileOffset,
                   instrumented: false, isSetter: false)
-              .member as Procedure;
+              .classMember as Procedure;
           node.functionType = new FunctionType([const DynamicType()],
               const NeverType.nonNullable(), libraryBuilder.nonNullable);
         }
@@ -10614,7 +10635,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         switch (invokeTarget.kind) {
           case ObjectAccessTargetKind.instanceMember:
             node.functionType = invokeTarget.getFunctionType(this);
-            node.target = invokeTarget.member as Procedure;
+            node.target = invokeTarget.classMember as Procedure;
             node.accessKind = RelationalAccessKind.Instance;
             break;
           case ObjectAccessTargetKind.nullableInstanceMember:
@@ -10723,7 +10744,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         includeExtensionMethods: true, isSetter: false);
     assert(containsKeyTarget.isInstanceMember);
 
-    node.containsKeyTarget = containsKeyTarget.member as Procedure;
+    node.containsKeyTarget = containsKeyTarget.classMember as Procedure;
     node.containsKeyType = containsKeyTarget.getFunctionType(this);
 
     ObjectAccessTarget indexGetTarget = findInterfaceMember(
@@ -10731,7 +10752,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         includeExtensionMethods: true, isSetter: false);
     assert(indexGetTarget.isInstanceMember);
 
-    node.indexGetTarget = indexGetTarget.member as Procedure;
+    node.indexGetTarget = indexGetTarget.classMember as Procedure;
     node.indexGetType = indexGetTarget.getFunctionType(this);
 
     assert(checkStack(node, stackBase, [
@@ -11109,6 +11130,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
     ObjectAccessTarget fieldAccessTarget = findInterfaceMember(receiverType,
         new Name(fieldName, libraryBuilder.library), field.pattern.fileOffset,
         isSetter: false, includeExtensionMethods: true);
+    // TODO(johnniwinther): Should we use the `fieldAccessTarget.classMember`
+    //  here?
     return (fieldAccessTarget.member, fieldAccessTarget.getGetterType(this));
   }
 
