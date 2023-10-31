@@ -25,9 +25,16 @@ class int {
   static int? tryParse(String source, {int? radix}) {
     // TODO(omersa): JS's `parseInt` is not compatible, copy dart2js's
     // implementation.
-    return js
-        .JS<double>('(s, r) => parseInt(s, r)',
-            unsafeCast<JSStringImpl>(source).toExternRef, radix)
-        .toInt();
+    if (radix == null) {
+      return js
+          .JS<double>('(s) => parseInt(s)',
+              unsafeCast<JSStringImpl>(source).toExternRef)
+          .toInt();
+    } else {
+      return js
+          .JS<double>('(s, r) => parseInt(s, r)',
+              unsafeCast<JSStringImpl>(source).toExternRef, radix.toDouble())
+          .toInt();
+    }
   }
 }
