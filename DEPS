@@ -76,13 +76,11 @@ vars = {
   "d8_tag": "version:11.9.95",
   "jsshell_tag": "version:95.0",
 
-  # As Flutter does, we use Fuchsia's GN and Clang toolchain. These revision
-  # should be kept up to date with the revisions pulled by the Flutter engine.
-  # The list of revisions for these tools comes from Fuchsia, here:
-  # https://fuchsia.googlesource.com/integration/+/HEAD/toolchain
-  # If there are problems with the toolchain, contact fuchsia-toolchain@.
-  "clang_version": "git_revision:6d667d4b261e81f325756fdfd5bb43b3b3d2451d",
-  "gn_version": "git_revision:991530ce394efb58fcd848195469022fa17ae126",
+  # https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/clang
+  "clang_version": "git_revision:00396e6a1a0b79fda008cb4e86b616d7952b33c8",
+
+  # https://chrome-infra-packages.appspot.com/p/gn/gn
+  "gn_version": "git_revision:e4702d7409069c4f12d45ea7b7f0890717ca3f4b",
 
   "reclient_version": "git_revision:81e819b39d4743462857cc55430d898b9fcca1af",
 
@@ -103,7 +101,7 @@ vars = {
   "boringssl_gen_rev": "a468ba9fec3f59edf46a7db98caaca893e1e4d96",
   "boringssl_rev": "74646566e93de7551bfdfc5f49de7462f13d1d05",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
-  "devtools_rev": "d2f59cf9cb072f64baa7268a0a97cf422f44edbf",
+  "devtools_rev": "f73b42303c9715f5659130f8f1b6dc91fa12d82f",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -189,7 +187,7 @@ vars = {
   "test_descriptor_rev": "55b5eac522cc10bd5b2280b1f0cc367b0b69c472",
   "test_process_rev": "d610333f099884ef91660bffb72d7c668cec5b4c",
   "test_reflective_loader_rev": "8593eb160f796179f77c8edb6fde050433810211",
-  "tools_rev": "e828d4504ab1cf2478a2de503f6d90284585d4d5",
+  "tools_rev": "01c0b529fb2c1243088239d1ca474fe6d49399f9",
   "typed_data_rev": "d1c15ed29d10568cd713fba77d01c4d79b03ccf8",
   "usage_rev": "d7d2964433f26b9a3c60dc9c6677f00c005ee9fb",
   "vector_math_rev": "294896dedc6da2a736f47c3c6a19643df934641c",
