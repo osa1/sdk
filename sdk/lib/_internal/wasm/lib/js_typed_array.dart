@@ -27,7 +27,7 @@ final class JSArrayBufferImpl implements ByteBuffer {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => _byteLength(toExternRef);
+  int get lengthInBytes => _arrayBufferByteLength(toExternRef);
 
   @override
   Uint8List asUint8List([int offsetInBytes = 0, int? length]) =>
@@ -120,7 +120,7 @@ final class JSArrayBufferViewImpl implements TypedData {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => _byteLength(toExternRef);
+  int get lengthInBytes => _dataViewByteLength(toExternRef);
 
   @override
   int get offsetInBytes =>
@@ -1161,8 +1161,15 @@ WasmExternRef? _dataViewFromJSArray(WasmExternRef? jsArrayRef) =>
         jsArrayRef);
 
 @pragma("wasm:prefer-inline")
-int _byteLength(WasmExternRef? ref) =>
+int _arrayBufferByteLength(WasmExternRef? ref) =>
     js.JS<double>('o => o.byteLength', ref).toInt();
+
+@pragma("wasm:prefer-inline")
+int _dataViewByteLength(WasmExternRef? ref) => js
+    .JS<double>(
+        "Function.prototype.call.bind(Object.getOwnPropertyDescriptor(DataView.prototype, 'byteLength').get)",
+        ref)
+    .toInt();
 
 @pragma("wasm:prefer-inline")
 WasmExternRef? _newDataView(
@@ -1175,115 +1182,118 @@ WasmExternRef? _newDataView(
 
 @pragma("wasm:prefer-inline")
 int _getUint8(WasmExternRef? ref, int byteOffset) => js
-    .JS<double>('(o, i) => o.getUint8(i)', ref, byteOffset.toDouble())
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getUint8)',
+        ref, byteOffset.toDouble())
     .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setUint8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
-    '(o, i, v) => o.setUint8(i, v)',
+    'Function.prototype.call.bind(DataView.prototype.setUint8)',
     ref,
     byteOffset.toDouble(),
     value.toDouble());
 
 @pragma("wasm:prefer-inline")
-int _getInt8(WasmExternRef? ref, int byteOffset) =>
-    js.JS<double>('(o, i) => o.getInt8(i)', ref, byteOffset.toDouble()).toInt();
+int _getInt8(WasmExternRef? ref, int byteOffset) => js
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getInt8)', ref,
+        byteOffset.toDouble())
+    .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setInt8(WasmExternRef? ref, int byteOffset, int value) => js.JS<void>(
-    '(o, i, v) => o.setInt8(i, v)',
+    'Function.prototype.call.bind(DataView.prototype.setInt8)',
     ref,
     byteOffset.toDouble(),
     value.toDouble());
 
 @pragma("wasm:prefer-inline")
 int _getUint16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
-    .JS<double>('(o, i, e) => o.getUint16(i, e)', ref, byteOffset.toDouble(),
-        littleEndian)
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getUint16)',
+        ref, byteOffset.toDouble(), littleEndian)
     .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setUint16(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setUint16(i, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setUint16)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 int _getInt16(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
-    .JS<double>('(o, i, e) => o.getInt16(i, e)', ref, byteOffset.toDouble(),
-        littleEndian)
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getInt16)',
+        ref, byteOffset.toDouble(), littleEndian)
     .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setInt16(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setInt16(i, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setInt16)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 int _getUint32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
-    .JS<double>('(o, i, e) => o.getUint32(i, e)', ref, byteOffset.toDouble(),
-        littleEndian)
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getUint32)',
+        ref, byteOffset.toDouble(), littleEndian)
     .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setUint32(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setUint32(i, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setUint32)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 int _getInt32(WasmExternRef? ref, int byteOffset, bool littleEndian) => js
-    .JS<double>('(o, i, e) => o.getInt32(i, e)', ref, byteOffset.toDouble(),
-        littleEndian)
+    .JS<double>('Function.prototype.call.bind(DataView.prototype.getInt32)',
+        ref, byteOffset.toDouble(), littleEndian)
     .toInt();
 
 @pragma("wasm:prefer-inline")
 void _setInt32(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setInt32(i, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setInt32)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 int _getBigUint64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
-    js.JS<int>('(o, i, e) => o.getBigUint64(i, e)', ref, byteOffset.toDouble(),
-        littleEndian);
+    js.JS<int>('Function.prototype.call.bind(DataView.prototype.getBigUint64)',
+        ref, byteOffset.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 void _setBigUint64(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setBigUint64(i, v, e)', ref,
-        byteOffset.toDouble(), value, littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setBigUint64)',
+        ref, byteOffset.toDouble(), value, littleEndian);
 
 @pragma("wasm:prefer-inline")
 int _getBigInt64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
-    js.JS<int>('(o, i, e) => o.getBigInt64(i, e)', ref, byteOffset.toDouble(),
-        littleEndian);
+    js.JS<int>('Function.prototype.call.bind(DataView.prototype.getBigInt64)',
+        ref, byteOffset.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 void _setBigInt64(
         WasmExternRef? ref, int byteOffset, int value, bool littleEndian) =>
-    js.JS<void>('(o, i, v, e) => o.setBigInt64(i, v, e)', ref,
-        byteOffset.toDouble(), value, littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setBigInt64)',
+        ref, byteOffset.toDouble(), value, littleEndian);
 
 @pragma("wasm:prefer-inline")
 double _getFloat32(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
-    js.JS<double>('(b, o, e) => b.getFloat32(o, e)', ref, byteOffset.toDouble(),
-        littleEndian);
+    js.JS<double>('Function.prototype.call.bind(DataView.prototype.getFloat32)',
+        ref, byteOffset.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 void _setFloat32(
         WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
-    js.JS<void>('(b, o, v, e) => b.setFloat32(o, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setFloat32)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 double _getFloat64(WasmExternRef? ref, int byteOffset, bool littleEndian) =>
-    js.JS<double>('(b, o, e) => b.getFloat64(o, e)', ref, byteOffset.toDouble(),
-        littleEndian);
+    js.JS<double>('Function.prototype.call.bind(DataView.prototype.getFloat64)',
+        ref, byteOffset.toDouble(), littleEndian);
 
 @pragma("wasm:prefer-inline")
 void _setFloat64(
         WasmExternRef? ref, int byteOffset, num value, bool littleEndian) =>
-    js.JS<void>('(b, o, v, e) => b.setFloat64(o, v, e)', ref,
-        byteOffset.toDouble(), value.toDouble(), littleEndian);
+    js.JS<void>('Function.prototype.call.bind(DataView.prototype.setFloat64)',
+        ref, byteOffset.toDouble(), value.toDouble(), littleEndian);
