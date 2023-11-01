@@ -55,13 +55,13 @@ class String {
     // Create JS string from `list`.
     const kMaxApply = 500;
     if (index <= kMaxApply) {
-      return _fromCharCodeApplySubarray(list.toExternRef, 0, index);
+      return _fromCharCodeApplySubarray(list, 0, index);
     }
 
     String result = '';
     for (int i = 0; i < index; i += kMaxApply) {
       final chunkEnd = (i + kMaxApply < index) ? i + kMaxApply : index;
-      result += _fromCharCodeApplySubarray(list.toExternRef, i, chunkEnd);
+      result += _fromCharCodeApplySubarray(list, i, chunkEnd);
     }
     return result;
   }
@@ -92,11 +92,11 @@ class String {
   }
 
   static String _fromCharCodeApplySubarray(
-          WasmExternRef? charCodes, int index, int end) =>
-      // `charCodes` is a `DataView`.
-      JSStringImpl(js.JS<WasmExternRef?>(
-          '(c, i, e) => String.fromCharCode.apply(null, new Uint32Array(c.buffer, c.offsetInBytes + i, e))',
-          charCodes,
-          WasmI32.fromInt(index * 4),
-          WasmI32.fromInt(index + end)));
+      JSUint32ArrayImpl charCodes, int index, int end) {
+    return JSStringImpl(js.JS<WasmExternRef?>(
+        '(c, i, e) => String.fromCharCode.apply(null, new Uint32Array(c.buffer, c.byteOffset + i, e))',
+        charCodes.toExternRef,
+        WasmI32.fromInt(index * 4),
+        WasmI32.fromInt(end - index)));
+  }
 }
