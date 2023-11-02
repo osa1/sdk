@@ -687,4 +687,4 @@ WasmExternRef? _jsStringFromJSStringImpl(JSStringImpl string) =>
     string.toExternRef;
 
 bool _jsIdentical(WasmExternRef? ref1, WasmExternRef? ref2) =>
-    js.JS<bool>('(o1, o2) => Object.is(o1, o2)', ref1, ref2);
+    js.JS<bool>('Object.is', ref1, ref2);
