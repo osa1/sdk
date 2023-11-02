@@ -446,6 +446,10 @@ class Intrinsifier {
         codeGen.wrap(right, rightType);
         code(b);
         return outType;
+      } else if (name == "~/" && leftType == intType && rightType == intType) {
+        codeGen.wrap(left, intType);
+        codeGen.wrap(right, intType);
+        return codeGen.call(translator.truncDiv.reference).single;
       }
     } else if (node.arguments.positional.isEmpty) {
       // Unary operator
