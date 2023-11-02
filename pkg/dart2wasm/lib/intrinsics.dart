@@ -436,7 +436,6 @@ class Intrinsifier {
       Expression left = node.receiver;
       Expression right = node.arguments.positional.single;
       DartType argType = dartTypeOf(right);
-      if (argType is VoidType) return null;
       w.ValueType leftType = translator.translateType(receiverType);
       w.ValueType rightType = translator.translateType(argType);
       var code = _binaryOperatorMap[leftType]?[rightType]?[name];
@@ -576,7 +575,7 @@ class Intrinsifier {
               t != boolType &&
               t != doubleType &&
               !translator.hierarchy
-                  .isSubtypeOf(intType.classNode, t.classNode))) {
+                  .isSubInterfaceOf(intType.classNode, t.classNode))) {
             codeGen.wrap(first, w.RefType.eq(nullable: true));
             codeGen.wrap(second, w.RefType.eq(nullable: true));
             b.ref_eq();
