@@ -2424,16 +2424,6 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
             parameters: constructorElement.parameters,
             errorReporter: errorReporter,
           );
-          for (var argument in argumentList.arguments) {
-            analyzeExpression(argument, argument.staticParameterElement?.type);
-            popRewrite();
-          }
-          arguments.typeArguments?.accept(this);
-
-          var whyNotPromotedList =
-              <Map<DartType, NonPromotionReason> Function()>[];
-          checkForArgumentTypesNotAssignableInList(
-              argumentList, whyNotPromotedList);
         } else if (definingLibrary.featureSet
             .isEnabled(Feature.enhanced_enums)) {
           var requiredParameterCount = constructorElement.parameters
@@ -2449,6 +2439,20 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
           }
         }
       }
+    }
+
+    var arguments = node.arguments;
+    if (arguments != null) {
+      var argumentList = arguments.argumentList;
+      for (var argument in argumentList.arguments) {
+        analyzeExpression(argument, argument.staticParameterElement?.type);
+        popRewrite();
+      }
+      arguments.typeArguments?.accept(this);
+
+      var whyNotPromotedList = <Map<DartType, NonPromotionReason> Function()>[];
+      checkForArgumentTypesNotAssignableInList(
+          argumentList, whyNotPromotedList);
     }
 
     elementResolver.visitEnumConstantDeclaration(node);
@@ -5364,72 +5368,6 @@ class _WhyNotPromotedVisitor
   }
 
   @override
-  List<DiagnosticMessage> visitPropertyNotPromotedDueToConflict(
-      PropertyNotPromotedDueToConflict<DartType> reason) {
-    var receiverElement = reason.propertyMember;
-    if (receiverElement is PropertyAccessorElement) {
-      var property = propertyReference = receiverElement;
-      propertyType = reason.staticType;
-      var propertyName = reason.propertyName;
-      var library = receiverElement.library as LibraryElementImpl;
-      var fieldNonPromotabilityInfo = library.fieldNameNonPromotabilityInfo;
-      assert(
-          fieldNonPromotabilityInfo != null,
-          'should not be null unless field promotion is disabled, '
-          'in which case the non-promotion would not be due to conflict');
-      var fieldNameInfo = fieldNonPromotabilityInfo?[reason.propertyName];
-      assert(fieldNameInfo != null,
-          'every non-promotable field name should have an entry');
-      if (fieldNameInfo == null) {
-        // In the unlikely event that non-promotability info is unavailable,
-        // recover by not generating a context message.
-        return [];
-      }
-      var messages = <DiagnosticMessage>[];
-      for (var field in fieldNameInfo.conflictingFields) {
-        var className = field.enclosingElement.name;
-        var message = "'$propertyName' couldn't be promoted because there is a "
-            "conflicting non-promotable field in class '$className'";
-        messages.add(DiagnosticMessageImpl(
-            filePath: field.source!.fullName,
-            message: message,
-            offset: field.nonSynthetic.nameOffset,
-            length: property.nameLength,
-            url: NonPromotionDocumentationLink
-                .conflictingNonPromotableField.url));
-      }
-      for (var getter in fieldNameInfo.conflictingGetters) {
-        var className = getter.enclosingElement.name;
-        var message = "'$propertyName' couldn't be promoted because there is a "
-            "conflicting getter in class '$className'";
-        messages.add(DiagnosticMessageImpl(
-            filePath: getter.source.fullName,
-            message: message,
-            offset: getter.nonSynthetic.nameOffset,
-            length: property.nameLength,
-            url: NonPromotionDocumentationLink.conflictingGetter.url));
-      }
-      for (var nsmClass in fieldNameInfo.conflictingNsmClasses) {
-        var className = nsmClass.name;
-        var message = "'$propertyName' couldn't be promoted because there is a "
-            "conflicting noSuchMethod forwarder in class '$className'";
-        messages.add(DiagnosticMessageImpl(
-            filePath: nsmClass.source.fullName,
-            message: message,
-            offset: nsmClass.nonSynthetic.nameOffset,
-            length: className.length,
-            url: NonPromotionDocumentationLink
-                .conflictingNoSuchMethodForwarder.url));
-      }
-      return messages;
-    } else {
-      assert(receiverElement == null,
-          'Unrecognized property element: ${receiverElement.runtimeType}');
-      return [];
-    }
-  }
-
-  @override
   List<DiagnosticMessage> visitPropertyNotPromotedForInherentReason(
       PropertyNotPromotedForInherentReason<DartType> reason) {
     var receiverElement = reason.propertyMember;
@@ -5438,10 +5376,6 @@ class _WhyNotPromotedVisitor
       propertyType = reason.staticType;
       var propertyName = reason.propertyName;
       String message = switch (reason.whyNotPromotable) {
-        PropertyNonPromotabilityReason.isNotEnabled =>
-          "'$propertyName' refers to a field. It couldn't be promoted "
-              "because field promotion is only available in Dart 3.2 and "
-              "above.",
         PropertyNonPromotabilityReason.isNotField =>
           "'$propertyName' refers to a getter so it couldn't be promoted.",
         PropertyNonPromotabilityReason.isNotPrivate =>
@@ -5460,8 +5394,82 @@ class _WhyNotPromotedVisitor
             message: message,
             offset: property.nonSynthetic.nameOffset,
             length: property.nameLength,
-            url: reason.documentationLink.url)
+            url: reason.documentationLink.url),
+        if (!reason.fieldPromotionEnabled)
+          _fieldPromotionUnavailableMessage(property, propertyName)
       ];
+    } else {
+      assert(receiverElement == null,
+          'Unrecognized property element: ${receiverElement.runtimeType}');
+      return [];
+    }
+  }
+
+  @override
+  List<DiagnosticMessage> visitPropertyNotPromotedForNonInherentReason(
+      PropertyNotPromotedForNonInherentReason<DartType> reason) {
+    var receiverElement = reason.propertyMember;
+    if (receiverElement is PropertyAccessorElement) {
+      var property = propertyReference = receiverElement;
+      propertyType = reason.staticType;
+      var propertyName = reason.propertyName;
+      var library = receiverElement.library as LibraryElementImpl;
+      var fieldNonPromotabilityInfo = library.fieldNameNonPromotabilityInfo;
+      var fieldNameInfo = fieldNonPromotabilityInfo[reason.propertyName];
+      var messages = <DiagnosticMessage>[];
+      void addConflictMessage(
+          {required Element conflictingElement,
+          required String kind,
+          required Element enclosingElement,
+          required NonPromotionDocumentationLink link}) {
+        var enclosingKindName = enclosingElement.kind.displayName;
+        var enclosingName = enclosingElement.name;
+        var message = "'$propertyName' couldn't be promoted because there is a "
+            "conflicting $kind in $enclosingKindName '$enclosingName'";
+        var nonSyntheticElement = conflictingElement.nonSynthetic;
+        messages.add(DiagnosticMessageImpl(
+            filePath: nonSyntheticElement.source!.fullName,
+            message: message,
+            offset: nonSyntheticElement.nameOffset,
+            length: nonSyntheticElement.nameLength,
+            url: link.url));
+      }
+
+      if (fieldNameInfo != null) {
+        for (var field in fieldNameInfo.conflictingFields) {
+          addConflictMessage(
+              conflictingElement: field,
+              kind: 'non-promotable field',
+              enclosingElement: field.enclosingElement,
+              link:
+                  NonPromotionDocumentationLink.conflictingNonPromotableField);
+        }
+        for (var getter in fieldNameInfo.conflictingGetters) {
+          addConflictMessage(
+              conflictingElement: getter,
+              kind: 'getter',
+              enclosingElement: getter.enclosingElement,
+              link: NonPromotionDocumentationLink.conflictingGetter);
+        }
+        for (var nsmClass in fieldNameInfo.conflictingNsmClasses) {
+          addConflictMessage(
+              conflictingElement: nsmClass,
+              kind: 'noSuchMethod forwarder',
+              enclosingElement: nsmClass,
+              link: NonPromotionDocumentationLink
+                  .conflictingNoSuchMethodForwarder);
+        }
+      }
+      if (reason.fieldPromotionEnabled) {
+        // The only possible non-inherent reasons for field promotion to fail
+        // are because of conflicts and because field promotion is disabled. So
+        // if field promotion is enabled, the loops above should have found a
+        // conflict.
+        assert(messages.isNotEmpty);
+      } else {
+        messages.add(_fieldPromotionUnavailableMessage(property, propertyName));
+      }
+      return messages;
     } else {
       assert(receiverElement == null,
           'Unrecognized property element: ${receiverElement.runtimeType}');
@@ -5490,5 +5498,17 @@ class _WhyNotPromotedVisitor
         offset: node.offset,
         length: node.length,
         url: reason.documentationLink.url);
+  }
+
+  DiagnosticMessageImpl _fieldPromotionUnavailableMessage(
+      PropertyAccessorElement property, String propertyName) {
+    return DiagnosticMessageImpl(
+        filePath: property.source.fullName,
+        message: "'$propertyName' couldn't be promoted "
+            "because field promotion is only available in Dart 3.2 and "
+            "above.",
+        offset: property.nonSynthetic.nameOffset,
+        length: property.nameLength,
+        url: NonPromotionDocumentationLink.fieldPromotionUnavailable.url);
   }
 }

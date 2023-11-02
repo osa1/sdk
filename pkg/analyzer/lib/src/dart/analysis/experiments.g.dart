@@ -240,7 +240,7 @@ class ExperimentalFeatures {
     isEnabledByDefault: IsEnabledByDefault.inline_class,
     isExpired: IsExpired.inline_class,
     documentation: 'Extension Types',
-    experimentalReleaseVersion: null,
+    experimentalReleaseVersion: Version.parse('3.3.0'),
     releaseVersion: null,
   );
 
@@ -250,7 +250,7 @@ class ExperimentalFeatures {
     isEnabledByDefault: IsEnabledByDefault.macros,
     isExpired: IsExpired.macros,
     documentation: 'Static meta-programming',
-    experimentalReleaseVersion: null,
+    experimentalReleaseVersion: Version.parse('3.3.0'),
     releaseVersion: null,
   );
 

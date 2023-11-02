@@ -23,6 +23,9 @@ abstract class MemberBuilder implements ModifierBuilder {
 
   LibraryBuilder get libraryBuilder;
 
+  /// The declared name of this member;
+  Name get memberName;
+
   /// The [Member] built by this builder;
   Member get member;
 
@@ -192,20 +195,10 @@ abstract class BuilderClassMember implements ClassMember {
   Uri get fileUri => memberBuilder.fileUri;
 
   @override
-  Name get name {
-    // The name must be derived from the declared name and not the generated
-    // name. For instance for extension type members the generated name might
-    // be `ExtensionType|_id` but the return named should be `_id` private to
-    // library in which it was declared.
-    //
-    // Therefore, if the member name is already private, use the library of the
-    // of the member name, otherwise use the enclosing library.
-    // TODO(johnniwinther): Find a more robust way to compute this.
-    return new Name(
-        memberBuilder.name,
-        memberBuilder.member.name.library ??
-            memberBuilder.libraryBuilder.library);
-  }
+  bool get isExtensionTypeMember => memberBuilder.isExtensionTypeMember;
+
+  @override
+  Name get name => memberBuilder.memberName;
 
   @override
   String get fullName {
@@ -260,6 +253,12 @@ abstract class BuilderClassMember implements ClassMember {
 
   @override
   bool get hasDeclarations => false;
+
+  @override
+  bool get forSetter => memberKind == ClassMemberKind.Setter;
+
+  @override
+  bool get isProperty => memberKind != ClassMemberKind.Method;
 
   @override
   List<ClassMember> get declarations =>

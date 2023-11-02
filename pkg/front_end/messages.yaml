@@ -5481,7 +5481,7 @@ VariableCouldBeNullDueToWrite:
   correctionMessage: "Try null checking the variable after the assignment.  See #string"
 
 FieldNotPromotedBecauseNotEnabled:
-  problemMessage: "'#name' refers to a field. It couldn't be promoted because field promotion is only available in Dart 3.2 and above."
+  problemMessage: "'#name' couldn't be promoted because field promotion is only available in Dart 3.2 and above."
   correctionMessage: "See #string"
   script: >
     // @dart=3.1
@@ -7309,7 +7309,7 @@ InvalidExtensionTypeSuperInterface:
     extension type E(num n) implements int {}
 
 InvalidExtensionTypeSuperExtensionType:
-  problemMessage: "The representation type '#type' of extension type '#name' must be a subtype of the representation type '#type2' of the implemented extension type '#type3'."
+  problemMessage: "The representation type '#type' of extension type '#name' must be either a subtype of the representation type '#type2' of the implemented extension type '#type3' or a subtype of '#type3' itself."
   correctionMessage: "Try changing the representation type to a subtype of '#type2'."
   experiments: inline-class
   script: |
@@ -7468,3 +7468,15 @@ AwaitOfExtensionTypeNotFuture:
   script: |
     extension type E(num foo) { test(E e) async { await e; } }
   analyzerCode: AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE
+
+NamedParametersInExtensionTypeDeclaration:
+  problemMessage: "Extension type declarations can't have named parameters."
+  experiments: inline-class
+  script: |
+    extension type E(int foo, {dynamic bar}) {}
+
+OptionalParametersInExtensionTypeDeclaration:
+  problemMessage: "Extension type declarations can't have optional parameters."
+  experiments: inline-class
+  script: |
+    extension type E(int foo, [dynamic bar]) {}

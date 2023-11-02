@@ -7,6 +7,7 @@ import 'package:front_end/src/fasta/kernel/body_builder_context.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
+import 'package:kernel/reference_from_index.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
@@ -31,6 +32,7 @@ import '../util/helpers.dart';
 import 'class_declaration.dart';
 import 'source_builder_mixins.dart';
 import 'source_constructor_builder.dart';
+import 'source_factory_builder.dart';
 import 'source_field_builder.dart';
 import 'source_library_builder.dart';
 import 'source_member_builder.dart';
@@ -60,6 +62,8 @@ class SourceExtensionTypeDeclarationBuilder
 
   final SourceFieldBuilder? representationFieldBuilder;
 
+  final IndexedContainer? indexedContainer;
+
   SourceExtensionTypeDeclarationBuilder(
       List<MetadataBuilder>? metadata,
       int modifiers,
@@ -73,14 +77,14 @@ class SourceExtensionTypeDeclarationBuilder
       int startOffset,
       int nameOffset,
       int endOffset,
-      ExtensionTypeDeclaration? referenceFrom,
+      this.indexedContainer,
       this.representationFieldBuilder)
       : _extensionTypeDeclaration = new ExtensionTypeDeclaration(
             name: name,
             fileUri: parent.fileUri,
             typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
                 typeParameters),
-            reference: referenceFrom?.reference)
+            reference: indexedContainer?.reference)
           ..fileOffset = nameOffset,
         super(metadata, modifiers, name, parent, nameOffset, scope,
             constructorScope);
@@ -198,8 +202,7 @@ class SourceExtensionTypeDeclarationBuilder
             }
           } else {
             Class cls = interface.classNode;
-            if (LibraryBuilder.isObject(cls, coreLibrary) ||
-                LibraryBuilder.isFunction(cls, coreLibrary) ||
+            if (LibraryBuilder.isFunction(cls, coreLibrary) ||
                 LibraryBuilder.isRecord(cls, coreLibrary)) {
               if (aliasBuilder != null) {
                 errorMessage =
@@ -455,26 +458,39 @@ class SourceExtensionTypeDeclarationBuilder
                 typeBuilder.fileUri);
           }
         } else if (interface is ExtensionType) {
-          DartType instantiatedRepresentationType =
-              Substitution.fromExtensionType(interface).substituteType(interface
-                  .extensionTypeDeclaration.declaredRepresentationType);
-          if (!hierarchyBuilder.types.isSubtypeOf(
-              declaredRepresentationType,
-              instantiatedRepresentationType,
-              SubtypeCheckMode.withNullabilities)) {
-            libraryBuilder.addProblem(
-                templateInvalidExtensionTypeSuperExtensionType.withArguments(
-                    declaredRepresentationType,
-                    name,
-                    instantiatedRepresentationType,
-                    interface,
-                    true),
-                typeBuilder.charOffset!,
-                noLength,
-                typeBuilder.fileUri);
+          if (!hierarchyBuilder.types.isSubtypeOf(declaredRepresentationType,
+              interface, SubtypeCheckMode.withNullabilities)) {
+            DartType instantiatedImplementedRepresentationType =
+                Substitution.fromExtensionType(interface).substituteType(
+                    interface
+                        .extensionTypeDeclaration.declaredRepresentationType);
+            if (!hierarchyBuilder.types.isSubtypeOf(
+                declaredRepresentationType,
+                instantiatedImplementedRepresentationType,
+                SubtypeCheckMode.withNullabilities)) {
+              libraryBuilder.addProblem(
+                  templateInvalidExtensionTypeSuperExtensionType.withArguments(
+                      declaredRepresentationType,
+                      name,
+                      instantiatedImplementedRepresentationType,
+                      interface,
+                      true),
+                  typeBuilder.charOffset!,
+                  noLength,
+                  typeBuilder.fileUri);
+            }
           }
         }
       }
+    }
+  }
+
+  void checkRedirectingFactories(TypeEnvironment typeEnvironment) {
+    Iterator<SourceFactoryBuilder> iterator =
+        constructorScope.filteredIterator<SourceFactoryBuilder>(
+            parent: this, includeDuplicates: true, includeAugmentations: true);
+    while (iterator.moveNext()) {
+      iterator.current.checkRedirectingFactories(typeEnvironment);
     }
   }
 

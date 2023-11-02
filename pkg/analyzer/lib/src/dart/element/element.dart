@@ -551,6 +551,9 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   }
 
   @override
+  ElementKind get kind => ElementKind.CLASS;
+
+  @override
   set methods(List<MethodElementImpl> methods) {
     assert(!isMixinApplication);
     super.methods = methods;
@@ -742,10 +745,6 @@ abstract class ClassOrMixinElementImpl extends InterfaceElementImpl {
   set isBase(bool isBase) {
     setModifier(Modifier.BASE, isBase);
   }
-
-  /// TODO(scheglov) Do we need a separate kind for `MixinElement`?
-  @override
-  ElementKind get kind => ElementKind.CLASS;
 }
 
 /// A concrete implementation of a [CompilationUnitElement].
@@ -2813,6 +2812,15 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   }
 
   @override
+  bool get isExtensionTypeMember {
+    return hasModifier(Modifier.EXTENSION_TYPE_MEMBER);
+  }
+
+  set isExtensionTypeMember(bool value) {
+    setModifier(Modifier.EXTENSION_TYPE_MEMBER, value);
+  }
+
+  @override
   bool get isExternal {
     return hasModifier(Modifier.EXTERNAL);
   }
@@ -4168,7 +4176,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   BundleMacroExecutor? bundleMacroExecutor;
 
   /// Information about why non-promotable private fields in the library are not
-  /// promotable, or `null` if field promotion is not enabled in this library.
+  /// promotable.
+  ///
   /// See [fieldNameNonPromotabilityInfo].
   Map<String, FieldNameNonPromotabilityInfo>? _fieldNameNonPromotabilityInfo;
 
@@ -4244,7 +4253,11 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   /// Information about why non-promotable private fields in the library are not
-  /// promotable, or `null` if field promotion is not enabled in this library.
+  /// promotable.
+  ///
+  /// If field promotion is not enabled in this library, this field is still
+  /// populated, so that the analyzer can figure out whether enabling field
+  /// promotion would cause a field to be promotable.
   ///
   /// There are two ways an access to a private property name might not be
   /// promotable: the property might be non-promotable for a reason inherent to
@@ -4261,10 +4274,9 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   ///
   /// If a field in the library has a private name and that name does not appear
   /// as a key in this map, the field is promotable.
-  Map<String, FieldNameNonPromotabilityInfo>?
-      get fieldNameNonPromotabilityInfo {
+  Map<String, FieldNameNonPromotabilityInfo> get fieldNameNonPromotabilityInfo {
     _readLinkedData();
-    return _fieldNameNonPromotabilityInfo;
+    return _fieldNameNonPromotabilityInfo!;
   }
 
   set fieldNameNonPromotabilityInfo(
@@ -5054,6 +5066,9 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   }
 
   @override
+  ElementKind get kind => ElementKind.MIXIN;
+
+  @override
   List<InterfaceType> get mixins => const [];
 
   @override
@@ -5134,95 +5149,99 @@ class Modifier implements Comparable<Modifier> {
   /// Indicates that the element is an enum constant field.
   static const Modifier ENUM_CONSTANT = Modifier('ENUM_CONSTANT', 9);
 
+  /// Indicates that the element is an extension type member.
+  static const Modifier EXTENSION_TYPE_MEMBER =
+      Modifier('EXTENSION_TYPE_MEMBER', 10);
+
   /// Indicates that a class element was defined by an enum declaration.
-  static const Modifier EXTERNAL = Modifier('EXTERNAL', 10);
+  static const Modifier EXTERNAL = Modifier('EXTERNAL', 11);
 
   /// Indicates that the modifier 'factory' was applied to the element.
-  static const Modifier FACTORY = Modifier('FACTORY', 11);
+  static const Modifier FACTORY = Modifier('FACTORY', 12);
 
   /// Indicates that the modifier 'final' was applied to the element.
-  static const Modifier FINAL = Modifier('FINAL', 12);
+  static const Modifier FINAL = Modifier('FINAL', 13);
 
   /// Indicates that an executable element has a body marked as being a
   /// generator.
-  static const Modifier GENERATOR = Modifier('GENERATOR', 13);
+  static const Modifier GENERATOR = Modifier('GENERATOR', 14);
 
   /// Indicates that the pseudo-modifier 'get' was applied to the element.
-  static const Modifier GETTER = Modifier('GETTER', 14);
+  static const Modifier GETTER = Modifier('GETTER', 15);
 
   /// A flag used for libraries indicating that the variable has an explicit
   /// initializer.
-  static const Modifier HAS_INITIALIZER = Modifier('HAS_INITIALIZER', 15);
+  static const Modifier HAS_INITIALIZER = Modifier('HAS_INITIALIZER', 16);
 
   /// A flag used for libraries indicating that the defining compilation unit
   /// has a `part of` directive, meaning that this unit should be a part,
   /// but is used as a library.
   static const Modifier HAS_PART_OF_DIRECTIVE =
-      Modifier('HAS_PART_OF_DIRECTIVE', 16);
+      Modifier('HAS_PART_OF_DIRECTIVE', 17);
 
   /// Indicates that the value of [Element.sinceSdkVersion] was computed.
   static const Modifier HAS_SINCE_SDK_VERSION_COMPUTED =
-      Modifier('HAS_SINCE_SDK_VERSION_COMPUTED', 17);
+      Modifier('HAS_SINCE_SDK_VERSION_COMPUTED', 18);
 
   /// [HAS_SINCE_SDK_VERSION_COMPUTED] and the value was not `null`.
   static const Modifier HAS_SINCE_SDK_VERSION_VALUE =
-      Modifier('HAS_SINCE_SDK_VERSION_VALUE', 18);
+      Modifier('HAS_SINCE_SDK_VERSION_VALUE', 19);
 
   /// Indicates that the associated element did not have an explicit type
   /// associated with it. If the element is an [ExecutableElement], then the
   /// type being referred to is the return type.
-  static const Modifier IMPLICIT_TYPE = Modifier('IMPLICIT_TYPE', 19);
+  static const Modifier IMPLICIT_TYPE = Modifier('IMPLICIT_TYPE', 20);
 
   /// Indicates that the modifier 'inline' was applied to the element.
-  static const Modifier INLINE = Modifier('INLINE', 20);
+  static const Modifier INLINE = Modifier('INLINE', 21);
 
   /// Indicates that the modifier 'interface' was applied to the element.
-  static const Modifier INTERFACE = Modifier('INTERFACE', 21);
+  static const Modifier INTERFACE = Modifier('INTERFACE', 22);
 
   /// Indicates that the method invokes the super method with the same name.
-  static const Modifier INVOKES_SUPER_SELF = Modifier('INVOKES_SUPER_SELF', 22);
+  static const Modifier INVOKES_SUPER_SELF = Modifier('INVOKES_SUPER_SELF', 23);
 
   /// Indicates that modifier 'lazy' was applied to the element.
-  static const Modifier LATE = Modifier('LATE', 23);
+  static const Modifier LATE = Modifier('LATE', 24);
 
   /// Indicates that a class is a macro builder.
-  static const Modifier MACRO = Modifier('MACRO', 24);
+  static const Modifier MACRO = Modifier('MACRO', 25);
 
   /// Indicates that a class is a mixin application.
-  static const Modifier MIXIN_APPLICATION = Modifier('MIXIN_APPLICATION', 25);
+  static const Modifier MIXIN_APPLICATION = Modifier('MIXIN_APPLICATION', 26);
 
   /// Indicates that a class is a mixin class.
-  static const Modifier MIXIN_CLASS = Modifier('MIXIN_CLASS', 26);
+  static const Modifier MIXIN_CLASS = Modifier('MIXIN_CLASS', 27);
 
-  static const Modifier PROMOTABLE = Modifier('IS_PROMOTABLE', 27);
+  static const Modifier PROMOTABLE = Modifier('IS_PROMOTABLE', 28);
 
   /// Indicates whether the type of a [PropertyInducingElementImpl] should be
   /// used to infer the initializer. We set it to `false` if the type was
   /// inferred from the initializer itself.
   static const Modifier SHOULD_USE_TYPE_FOR_INITIALIZER_INFERENCE =
-      Modifier('SHOULD_USE_TYPE_FOR_INITIALIZER_INFERENCE', 28);
+      Modifier('SHOULD_USE_TYPE_FOR_INITIALIZER_INFERENCE', 29);
 
   /// Indicates that the modifier 'sealed' was applied to the element.
-  static const Modifier SEALED = Modifier('SEALED', 29);
+  static const Modifier SEALED = Modifier('SEALED', 30);
 
   /// Indicates that the pseudo-modifier 'set' was applied to the element.
-  static const Modifier SETTER = Modifier('SETTER', 30);
+  static const Modifier SETTER = Modifier('SETTER', 31);
 
   /// See [TypeParameterizedElement.isSimplyBounded].
-  static const Modifier SIMPLY_BOUNDED = Modifier('SIMPLY_BOUNDED', 31);
+  static const Modifier SIMPLY_BOUNDED = Modifier('SIMPLY_BOUNDED', 32);
 
   /// Indicates that the modifier 'static' was applied to the element.
-  static const Modifier STATIC = Modifier('STATIC', 32);
+  static const Modifier STATIC = Modifier('STATIC', 33);
 
   /// Indicates that the element does not appear in the source code but was
   /// implicitly created. For example, if a class does not define any
   /// constructors, an implicit zero-argument constructor will be created and it
   /// will be marked as being synthetic.
-  static const Modifier SYNTHETIC = Modifier('SYNTHETIC', 33);
+  static const Modifier SYNTHETIC = Modifier('SYNTHETIC', 34);
 
   /// Indicates that the element was appended to this enclosing element to
   /// simulate temporary the effect of applying augmentation.
-  static const Modifier TEMP_AUGMENTATION = Modifier('TEMP_AUGMENTATION', 34);
+  static const Modifier TEMP_AUGMENTATION = Modifier('TEMP_AUGMENTATION', 35);
 
   static const List<Modifier> values = [
     ABSTRACT,
@@ -5234,6 +5253,7 @@ class Modifier implements Comparable<Modifier> {
     DEFERRED,
     ENUM,
     ENUM_CONSTANT,
+    EXTENSION_TYPE_MEMBER,
     EXTERNAL,
     FACTORY,
     FINAL,

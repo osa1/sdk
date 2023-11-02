@@ -530,7 +530,8 @@ class KernelTarget extends TargetImplementation {
 
       benchmarker
           ?.enterPhase(BenchmarkPhases.outline_checkRedirectingFactories);
-      loader.checkRedirectingFactories(sortedSourceClassBuilders);
+      loader.checkRedirectingFactories(
+          sortedSourceClassBuilders, sortedSourceExtensionTypeBuilders);
 
       benchmarker
           ?.enterPhase(BenchmarkPhases.outline_finishSynthesizedParameters);
@@ -849,7 +850,7 @@ class KernelTarget extends TargetImplementation {
       if (proc.isFactory) return;
     }
 
-    IndexedContainer? indexedClass = builder.referencesFromIndexed;
+    IndexedContainer? indexedClass = builder.indexedContainer;
     Reference? constructorReference;
     Reference? tearOffReference;
     if (indexedClass != null) {
@@ -907,7 +908,7 @@ class KernelTarget extends TargetImplementation {
       installForwardingConstructors(supertype);
     }
 
-    IndexedContainer? indexedClass = builder.referencesFromIndexed;
+    IndexedContainer? indexedClass = builder.indexedContainer;
     Reference? constructorReference;
     Reference? tearOffReference;
     if (indexedClass != null) {

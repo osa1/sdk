@@ -11,6 +11,8 @@ import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/dart/ast/ast.dart' as ast;
+import 'package:analyzer/src/dart/element/element.dart';
 
 class ClassDeclarationImpl extends macro.ClassDeclarationImpl {
   late final ClassElement element;
@@ -35,49 +37,31 @@ class ClassDeclarationImpl extends macro.ClassDeclarationImpl {
 }
 
 class DeclarationBuilder {
+  final ast.AstNode? Function(Element?) nodeOfElement;
+
+  final Map<Element, IdentifierImpl> _identifierMap = Map.identity();
   final Map<Uri, List<ast.Annotation>> libraryMetadataMap = {};
 
   late final DeclarationBuilderFromNode fromNode =
       DeclarationBuilderFromNode(this);
 
-  final DeclarationBuilderFromElement fromElement =
-      DeclarationBuilderFromElement();
+  late final DeclarationBuilderFromElement fromElement =
+      DeclarationBuilderFromElement(this);
 
-  /// Associate declarations that were previously created for nodes with the
-  /// corresponding elements. So, we can access them uniformly via interfaces,
-  /// mixins, etc.
-  void transferToElements() {
-    for (final entry in fromNode._namedTypeMap.entries) {
-      final element = entry.key.element;
-      if (element != null) {
-        final declaration = entry.value;
-        fromElement._identifierMap[element] = declaration;
-      }
-    }
-    for (final entry in fromNode._declaredIdentifierMap.entries) {
-      final element = entry.key;
-      final declaration = entry.value;
-      fromElement._identifierMap[element] = declaration;
-    }
-
-    for (final entry in fromNode._classMap.entries) {
-      final element = entry.key.declaredElement!;
-      final declaration = entry.value;
-      fromElement._classMap[element] = declaration;
-    }
-    for (final entry in fromNode._methodMap.entries) {
-      final element = entry.key.declaredElement!;
-      final declaration = entry.value;
-      fromElement._methodMap[element] = declaration;
-    }
-  }
+  DeclarationBuilder({
+    required this.nodeOfElement,
+  });
 }
 
 class DeclarationBuilderFromElement {
-  final Map<Element, IdentifierImpl> _identifierMap = Map.identity();
+  final DeclarationBuilder declarationBuilder;
+
   final Map<Element, LibraryImpl> _libraryMap = Map.identity();
 
   final Map<ClassElement, IntrospectableClassDeclarationImpl> _classMap =
+      Map.identity();
+
+  final Map<MixinElement, IntrospectableMixinDeclarationImpl> _mixinMap =
       Map.identity();
 
   final Map<FieldElement, FieldDeclarationImpl> _fieldMap = Map.identity();
@@ -88,6 +72,8 @@ class DeclarationBuilderFromElement {
   final Map<TypeParameterElement, macro.TypeParameterDeclarationImpl>
       _typeParameterMap = Map.identity();
 
+  DeclarationBuilderFromElement(this.declarationBuilder);
+
   macro.IntrospectableClassDeclarationImpl classElement(ClassElement element) {
     return _classMap[element] ??= _introspectableClassElement(element);
   }
@@ -97,7 +83,8 @@ class DeclarationBuilderFromElement {
   }
 
   macro.IdentifierImpl identifier(Element element) {
-    return _identifierMap[element] ??= IdentifierImplFromElement(
+    final map = declarationBuilder._identifierMap;
+    return map[element] ??= IdentifierImplFromElement(
       id: macro.RemoteInstance.uniqueId,
       name: element.name!,
       element: element,
@@ -122,6 +109,10 @@ class DeclarationBuilderFromElement {
 
   macro.MethodDeclarationImpl methodElement(MethodElement element) {
     return _methodMap[element] ??= _methodElement(element);
+  }
+
+  macro.IntrospectableMixinDeclarationImpl mixinElement(MixinElement element) {
+    return _mixinMap[element] ??= _introspectableMixinElement(element);
   }
 
   macro.TypeParameterDeclarationImpl typeParameter(
@@ -162,7 +153,7 @@ class DeclarationBuilderFromElement {
   }
 
   FieldDeclarationImpl _fieldElement(FieldElement element) {
-    final enclosingClass = element.enclosingElement as ClassElement;
+    final enclosingElement = element.enclosingElement;
     return FieldDeclarationImpl(
       id: macro.RemoteInstance.uniqueId,
       identifier: identifier(element),
@@ -172,7 +163,7 @@ class DeclarationBuilderFromElement {
       hasFinal: element.isFinal,
       hasLate: element.isLate,
       type: _dartType(element.type),
-      definingType: identifier(enclosingClass),
+      definingType: identifier(enclosingElement),
       isStatic: element.isStatic,
     );
   }
@@ -204,6 +195,22 @@ class DeclarationBuilderFromElement {
       hasSealed: element.isSealed,
       mixins: element.mixins.map(_interfaceType).toList(),
       superclass: element.supertype.mapOrNull(_interfaceType),
+      element: element,
+    );
+  }
+
+  IntrospectableMixinDeclarationImpl _introspectableMixinElement(
+      MixinElement element) {
+    return IntrospectableMixinDeclarationImpl._(
+      id: macro.RemoteInstance.uniqueId,
+      identifier: identifier(element),
+      library: library(element),
+      metadata: _buildMetadata(element),
+      typeParameters: element.typeParameters.map(_typeParameter).toList(),
+      hasBase: element.isBase,
+      interfaces: element.interfaces.map(_interfaceType).toList(),
+      superclassConstraints:
+          element.superclassConstraints.map(_interfaceType).toList(),
       element: element,
     );
   }
@@ -255,21 +262,14 @@ class DeclarationBuilderFromNode {
 
   final Map<ast.NamedType, IdentifierImpl> _namedTypeMap = Map.identity();
 
-  final Map<Element, IdentifierImpl> _declaredIdentifierMap = Map.identity();
   final Map<Element, LibraryImpl> _libraryMap = Map.identity();
-
-  final Map<ast.ClassDeclaration, IntrospectableClassDeclarationImpl>
-      _classMap = Map.identity();
-
-  final Map<ast.MethodDeclaration, MethodDeclarationImpl> _methodMap =
-      Map.identity();
 
   DeclarationBuilderFromNode(this.declarationBuilder);
 
   macro.ClassDeclarationImpl classDeclaration(
     ast.ClassDeclaration node,
   ) {
-    return _classMap[node] ??= _introspectableClassDeclaration(node);
+    return _introspectableClassDeclaration(node);
   }
 
   macro.LibraryImpl library(Element element) {
@@ -298,7 +298,13 @@ class DeclarationBuilderFromNode {
   macro.MethodDeclarationImpl methodDeclaration(
     ast.MethodDeclaration node,
   ) {
-    return _methodMap[node] ??= _methodDeclaration(node);
+    return _methodDeclaration(node);
+  }
+
+  macro.MixinDeclarationImpl mixinDeclaration(
+    ast.MixinDeclaration node,
+  ) {
+    return _introspectableMixinDeclaration(node);
   }
 
   List<macro.MetadataAnnotationImpl> _buildMetadata(
@@ -309,11 +315,29 @@ class DeclarationBuilderFromNode {
   }
 
   macro.IdentifierImpl _declaredIdentifier(Token name, Element element) {
-    return _declaredIdentifierMap[element] ??= _DeclaredIdentifierImpl(
+    final map = declarationBuilder._identifierMap;
+    return map[element] ??= _DeclaredIdentifierImpl(
       id: macro.RemoteInstance.uniqueId,
       name: name.lexeme,
       element: element,
     );
+  }
+
+  macro.IdentifierImpl _definingType(ast.AstNode node) {
+    final parentNode = node.parent;
+    switch (parentNode) {
+      case ast.ClassDeclaration():
+        final parentElement = parentNode.declaredElement!;
+        final typeElement = parentElement.augmentationTarget ?? parentElement;
+        return _declaredIdentifier(parentNode.name, typeElement);
+      case ast.MixinDeclaration():
+        final parentElement = parentNode.declaredElement!;
+        final typeElement = parentElement.augmentationTarget ?? parentElement;
+        return _declaredIdentifier(parentNode.name, typeElement);
+      default:
+        // TODO(scheglov) other parents
+        throw UnimplementedError('(${parentNode.runtimeType}) $parentNode');
+    }
   }
 
   macro.ParameterDeclarationImpl _formalParameter(ast.FormalParameter node) {
@@ -368,14 +392,32 @@ class DeclarationBuilderFromNode {
   IntrospectableClassDeclarationImpl _introspectableClassDeclaration(
     ast.ClassDeclaration node,
   ) {
-    final element = node.declaredElement!;
+    final element = node.declaredElement as ClassElementImpl;
+
+    final interfaceNodes = <ast.NamedType>[];
+    final mixinNodes = <ast.NamedType>[];
+    for (var current = node;;) {
+      if (current.implementsClause case final clause?) {
+        interfaceNodes.addAll(clause.interfaces);
+      }
+      if (current.withClause case final clause?) {
+        mixinNodes.addAll(clause.mixinTypes);
+      }
+      final nextElement = current.declaredElement?.augmentation;
+      final nextNode = declarationBuilder.nodeOfElement(nextElement);
+      if (nextNode is! ast.ClassDeclaration) {
+        break;
+      }
+      current = nextNode;
+    }
+
     return IntrospectableClassDeclarationImpl._(
       id: macro.RemoteInstance.uniqueId,
       identifier: _declaredIdentifier(node.name, element),
       library: library(element),
       metadata: _buildMetadata(node.metadata),
       typeParameters: _typeParameters(node.typeParameters),
-      interfaces: _namedTypes(node.implementsClause?.interfaces),
+      interfaces: _namedTypes(interfaceNodes),
       hasAbstract: node.abstractKeyword != null,
       hasBase: node.baseKeyword != null,
       hasExternal: false,
@@ -383,8 +425,43 @@ class DeclarationBuilderFromNode {
       hasInterface: node.interfaceKeyword != null,
       hasMixin: node.mixinKeyword != null,
       hasSealed: node.sealedKeyword != null,
-      mixins: _namedTypes(node.withClause?.mixinTypes),
+      mixins: _namedTypes(mixinNodes),
       superclass: node.extendsClause?.superclass.mapOrNull(_namedType),
+      element: element,
+    );
+  }
+
+  IntrospectableMixinDeclarationImpl _introspectableMixinDeclaration(
+    ast.MixinDeclaration node,
+  ) {
+    final element = node.declaredElement as MixinElementImpl;
+
+    final onNodes = <ast.NamedType>[];
+    final interfaceNodes = <ast.NamedType>[];
+    for (var current = node;;) {
+      if (current.onClause case final clause?) {
+        onNodes.addAll(clause.superclassConstraints);
+      }
+      if (current.implementsClause case final clause?) {
+        interfaceNodes.addAll(clause.interfaces);
+      }
+      final nextElement = current.declaredElement?.augmentation;
+      final nextNode = declarationBuilder.nodeOfElement(nextElement);
+      if (nextNode is! ast.MixinDeclaration) {
+        break;
+      }
+      current = nextNode;
+    }
+
+    return IntrospectableMixinDeclarationImpl._(
+      id: macro.RemoteInstance.uniqueId,
+      identifier: _declaredIdentifier(node.name, element),
+      library: library(element),
+      metadata: _buildMetadata(node.metadata),
+      typeParameters: _typeParameters(node.typeParameters),
+      hasBase: node.baseKeyword != null,
+      interfaces: _namedTypes(interfaceNodes),
+      superclassConstraints: _namedTypes(onNodes),
       element: element,
     );
   }
@@ -392,12 +469,7 @@ class DeclarationBuilderFromNode {
   MethodDeclarationImpl _methodDeclaration(
     ast.MethodDeclaration node,
   ) {
-    // TODO(scheglov) other parents
-    final parentNode = node.parent as ast.ClassDeclaration;
-    final parentElement = parentNode.declaredElement!;
-    final typeElement = parentElement.augmentationTarget ?? parentElement;
-    final definingType = _declaredIdentifier(parentNode.name, typeElement);
-
+    final definingType = _definingType(node);
     final element = node.declaredElement!;
 
     return MethodDeclarationImpl._(
@@ -591,6 +663,23 @@ class IntrospectableClassDeclarationImpl
     required super.hasSealed,
     required super.mixins,
     required super.superclass,
+    required this.element,
+  });
+}
+
+class IntrospectableMixinDeclarationImpl
+    extends macro.IntrospectableMixinDeclarationImpl {
+  final MixinElement element;
+
+  IntrospectableMixinDeclarationImpl._({
+    required super.id,
+    required super.identifier,
+    required super.library,
+    required super.metadata,
+    required super.typeParameters,
+    required super.hasBase,
+    required super.interfaces,
+    required super.superclassConstraints,
     required this.element,
   });
 }

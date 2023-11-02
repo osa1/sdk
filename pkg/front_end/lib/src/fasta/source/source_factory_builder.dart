@@ -61,6 +61,8 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
 
   List<SourceFactoryBuilder>? _patches;
 
+  final MemberName _memberName;
+
   SourceFactoryBuilder(
       List<MetadataBuilder>? metadata,
       int modifiers,
@@ -78,7 +80,8 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       AsyncMarker asyncModifier,
       NameScheme nameScheme,
       {String? nativeMethodName})
-      : super(metadata, modifiers, name, typeVariables, formals, libraryBuilder,
+      : _memberName = nameScheme.getDeclaredName(name),
+        super(metadata, modifiers, name, typeVariables, formals, libraryBuilder,
             charOffset, nativeMethodName) {
     _procedureInternal = new Procedure(
         dummyName,
@@ -106,6 +109,9 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       ?..isExtensionTypeMember = nameScheme.isExtensionTypeMember;
     this.asyncModifier = asyncModifier;
   }
+
+  @override
+  Name get memberName => _memberName.name;
 
   @override
   DeclarationBuilder get declarationBuilder => super.declarationBuilder!;
@@ -329,6 +335,8 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
   List<DartType>? typeArguments;
 
   FreshTypeParameters? _tearOffTypeParameters;
+
+  bool _hasBeenCheckedAsRedirectingFactory = false;
 
   RedirectingFactoryBuilder(
       List<MetadataBuilder>? metadata,
@@ -731,6 +739,9 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
 
   @override
   void _checkRedirectingFactory(TypeEnvironment typeEnvironment) {
+    if (_hasBeenCheckedAsRedirectingFactory) return;
+    _hasBeenCheckedAsRedirectingFactory = true;
+
     // Check that factory declaration is not cyclic.
     if (_isCyclicRedirectingFactory(this)) {
       libraryBuilder.addProblemForRedirectingFactory(
@@ -780,6 +791,16 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
     // happened during [_computeRedirecteeType].
     if (redirecteeType == null) {
       return;
+    }
+
+    Builder? redirectionTargetBuilder = redirectionTarget.target;
+    if (redirectionTargetBuilder is RedirectingFactoryBuilder) {
+      redirectionTargetBuilder._checkRedirectingFactory(typeEnvironment);
+      String? errorMessage = redirectionTargetBuilder
+          .function.redirectingFactoryTarget?.errorMessage;
+      if (errorMessage != null) {
+        setRedirectingFactoryError(errorMessage);
+      }
     }
 
     // Redirection to generative enum constructors is forbidden and is reported

@@ -35,6 +35,7 @@ class MacroElementsMerger {
   void perform() {
     _rewriteImportPrefixes();
     _mergeClasses();
+    _mergeFunctions();
     _mergeUnitPropertyAccessors();
     _mergeUnitVariables();
   }
@@ -66,11 +67,47 @@ class MacroElementsMerger {
     }
   }
 
+  void _mergeFunctions() {
+    for (final partialUnit in partialUnits) {
+      final elementsToAdd = <FunctionElementImpl>[];
+      for (final element in partialUnit.element.functions) {
+        final reference = element.reference!;
+        final containerRef = element.isAugmentation
+            ? unitReference.getChild('@functionAugmentation')
+            : unitReference.getChild('@function');
+        final existingRef = containerRef[element.name];
+        if (existingRef == null) {
+          elementsToAdd.add(element);
+          containerRef.addChildReference(element.name, reference);
+        } else {
+          final existingElement = existingRef.element as FunctionElementImpl;
+          if (existingElement.augmentation == element) {
+            existingElement.augmentation = null;
+          }
+        }
+      }
+      unitElement.functions = [
+        ...unitElement.functions,
+        ...elementsToAdd,
+      ].toFixedList();
+    }
+  }
+
   void _mergeInstanceChildren(
     Reference existingRef,
     InstanceElementImpl existingElement,
     InstanceElementImpl newElement,
   ) {
+    if (existingElement is InterfaceElementImpl &&
+        newElement is InterfaceElementImpl) {
+      if (newElement.interfaces.isNotEmpty) {
+        existingElement.interfaces = [
+          ...existingElement.interfaces,
+          ...newElement.interfaces
+        ].toFixedList();
+      }
+    }
+
     final containerRef = existingRef.getChild('@method');
     for (final element in newElement.methods) {
       final reference = element.reference!;
