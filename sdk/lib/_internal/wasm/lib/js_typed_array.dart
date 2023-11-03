@@ -116,7 +116,7 @@ abstract class JSArrayBase implements TypedData {
 
   WasmExternRef? get toExternRef => _ref;
 
-  WasmExternRef? toJSArrayExternRef();
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
 
   @override
   JSArrayBufferImpl get buffer =>
@@ -269,12 +269,10 @@ abstract class JSIntArrayImpl extends JSArrayBase
 
     if (iterable is JSArrayBase) {
       final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      return _setRangeFast(
-          source.toExternRef,
-          skipCount * source.elementSizeInBytes,
-          toExternRef,
-          start * elementSizeInBytes,
-          (end - start) * elementSizeInBytes);
+      final length = end - start;
+      final sourceArray = source.toJSArrayExternRef(skipCount, length);
+      final targetArray = toJSArrayExternRef(start, length);
+      _setRangeFast(targetArray, sourceArray);
     }
 
     List<int> otherList = iterable.skip(skipCount).toList(growable: false);
@@ -316,8 +314,8 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
           WasmExternRef?>(
       '(o, start, length) => new Uint8Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start,
-      length ?? this.length);
+      WasmI32.fromInt(start),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -374,8 +372,8 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
           WasmExternRef?>(
       '(o, start, length) => new Int8Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start,
-      length ?? this.length);
+      WasmI32.fromInt(start),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -419,8 +417,8 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
           WasmExternRef?>(
       '(o, start, length) => new Uint8ClampedArray(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start,
-      length ?? this.length);
+      WasmI32.fromInt(start),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -480,8 +478,8 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
           WasmExternRef?>(
       '(o, start, length) => new Uint16Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 2,
-      length ?? this.length);
+      WasmI32.fromInt(start * 2),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -540,8 +538,8 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
           WasmExternRef?>(
       '(o, start, length) => new Int16Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 2,
-      length ?? this.length);
+      WasmI32.fromInt(start * 2),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -600,8 +598,8 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
           WasmExternRef?>(
       '(o, start, length) => new Uint32Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 4,
-      length ?? this.length);
+      WasmI32.fromInt(start * 4),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -660,8 +658,8 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
           WasmExternRef?>(
       '(o, start, length) => new Int32Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 4,
-      length ?? this.length);
+      WasmI32.fromInt(start * 4),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -808,8 +806,8 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
           WasmExternRef?>(
       '(o, start, length) => new BigUint64Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 8,
-      length ?? this.length);
+      WasmI32.fromInt(start * 8),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -865,8 +863,8 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
           WasmExternRef?>(
       '(o, start, length) => new BigInt64Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 8,
-      length ?? this.length);
+      WasmI32.fromInt(start * 8),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -937,8 +935,8 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
           WasmExternRef?>(
       '(o, start, length) => new Float32Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 4,
-      length ?? this.length);
+      WasmI32.fromInt(start * 4),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -977,12 +975,10 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
 
     if (iterable is JSArrayBase) {
       final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      return _setRangeFast(
-          source.toExternRef,
-          skipCount * source.elementSizeInBytes,
-          toExternRef,
-          start * elementSizeInBytes,
-          (end - start) * elementSizeInBytes);
+      final length = end - start;
+      final sourceArray = source.toJSArrayExternRef(skipCount, length);
+      final targetArray = toJSArrayExternRef(start, length);
+      _setRangeFast(targetArray, sourceArray);
     }
 
     List<double> otherList = iterable.skip(skipCount).toList(growable: false);
@@ -1026,8 +1022,8 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
           WasmExternRef?>(
       '(o, start, length) => new Float64Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
-      start * 8,
-      length ?? this.length);
+      WasmI32.fromInt(start * 8),
+      WasmI32.fromInt(length ?? (this.length - start)));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1218,19 +1214,8 @@ final class JSFloat64x2ArrayImpl
   }
 }
 
-void _setRangeFast(WasmExternRef? sourceDataView, int sourceStart,
-        WasmExternRef? targetDataView, int targetStart, int length) =>
-    js.JS<void>(
-        '''(sourceDataView, sourceStart, targetDataView, targetStart, length) => {
-    let targetArray = new Uint8Array(targetDataView.buffer, targetDataView.byteOffset + targetStart, length);
-    let sourceArray = new Uint8Array(sourceDataView.buffer, sourceDataView.byteOffset + sourceStart, length);
-    targetArray.set(sourceArray);
-  }''',
-        sourceDataView,
-        WasmI32.fromInt(sourceStart),
-        targetDataView,
-        WasmI32.fromInt(targetStart),
-        WasmI32.fromInt(length));
+void _setRangeFast(WasmExternRef? targetArray, WasmExternRef? sourceArray) =>
+    js.JS<void>('(t, s) => t.set(s)', targetArray, sourceArray);
 
 void _offsetAlignmentCheck(int offset, int alignment) {
   if ((offset % alignment) != 0) {
