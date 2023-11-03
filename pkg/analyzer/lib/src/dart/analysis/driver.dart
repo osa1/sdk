@@ -13,6 +13,7 @@ import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/exception/exception.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/context/packages.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options_map.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/driver_based_analysis_context.dart';
 import 'package:analyzer/src/dart/analysis/feature_set_provider.dart';
@@ -49,6 +50,7 @@ import 'package:analyzer/src/summary2/package_bundle_format.dart';
 import 'package:analyzer/src/util/file_paths.dart' as file_paths;
 import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/utilities/uri_cache.dart';
+import 'package:meta/meta.dart';
 
 /// This class computes [AnalysisResult]s for Dart files.
 ///
@@ -86,7 +88,7 @@ import 'package:analyzer/src/utilities/uri_cache.dart';
 /// TODO(scheglov) Clean up the list of implicitly analyzed files.
 class AnalysisDriver implements AnalysisDriverGeneric {
   /// The version of data format, should be incremented on every format change.
-  static const int DATA_VERSION = 316;
+  static const int DATA_VERSION = 317;
 
   /// The number of exception contexts allowed to write. Once this field is
   /// zero, we stop writing any new exception contexts in this process.
@@ -265,6 +267,10 @@ class AnalysisDriver implements AnalysisDriverGeneric {
 
   bool _disposed = false;
 
+  /// A map that associates files to corresponding analysis options.
+  /// todo(pq): his will replace the single [_analysisOptions] instance.
+  final AnalysisOptionsMap? _analysisOptionsMap;
+
   /// Create a new instance of [AnalysisDriver].
   ///
   /// The given [SourceFactory] is cloned to ensure that it does not contain a
@@ -280,6 +286,8 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     this.macroSupport,
     this.ownedFiles,
     this.analysisContext,
+    // todo(pq): to replace analysis options instance
+    AnalysisOptionsMap? analysisOptionsMap,
     FileContentCache? fileContentCache,
     UnlinkedUnitStore? unlinkedUnitStore,
     InfoDeclarationStore? infoDeclarationStore,
@@ -297,6 +305,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
         _infoDeclarationStore =
             infoDeclarationStore ?? NoOpInfoDeclarationStore(),
         _analysisOptions = analysisOptions,
+        _analysisOptionsMap = analysisOptionsMap,
         _logger = logger,
         _packages = packages,
         _sourceFactory = sourceFactory,
@@ -318,6 +327,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   Set<String> get addedFiles => _fileTracker.addedFiles;
 
   /// Return the analysis options used to control analysis.
+  //todo(pq): @Deprecated("Use 'getAnalysisOptionsForFile(file)' instead")
   AnalysisOptions get analysisOptions => _analysisOptions;
 
   /// Return the current analysis session.
@@ -657,6 +667,10 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     _scheduler.notify(this);
     return completer.future;
   }
+
+  @experimental
+  AnalysisOptions getAnalysisOptionsForFile(File file) =>
+      _analysisOptionsMap?.getOptions(file) ?? AnalysisOptionsImpl();
 
   /// Return the cached [ResolvedUnitResult] for the Dart file with the given
   /// [path]. If there is no cached result, return `null`. Usually only results
@@ -1356,6 +1370,9 @@ class AnalysisDriver implements AnalysisDriverGeneric {
           performance: OperationPerformanceImpl('<root>'),
         );
 
+        // todo(pq): pass this into the library analyzer.
+        //var options = libraryContext.analysisContext.getAnalysisOptionsForFile(file.resource);
+
         var results = LibraryAnalyzer(
           analysisOptions as AnalysisOptionsImpl,
           declaredVariables,
@@ -1465,6 +1482,9 @@ class AnalysisDriver implements AnalysisDriverGeneric {
         targetLibrary: library,
         performance: OperationPerformanceImpl('<root>'),
       );
+
+      // todo(pq): pass this into the library analyzer.
+      //var options = libraryContext.analysisContext.getAnalysisOptionsForFile(library.file.resource);
 
       var unitResults = LibraryAnalyzer(
               analysisOptions as AnalysisOptionsImpl,
@@ -1925,6 +1945,9 @@ class AnalysisDriver implements AnalysisDriverGeneric {
         },
       );
       var unitElement = libraryContext.computeUnitElement(library, file);
+
+      // todo(pq): pass this into the library analyzer.
+      //var options = libraryContext.analysisContext.getAnalysisOptionsForFile(file.resource);
 
       var analysisResult = LibraryAnalyzer(
         analysisOptions as AnalysisOptionsImpl,
