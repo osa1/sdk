@@ -1129,22 +1129,19 @@ final class JSFloat64x2ArrayImpl
   }
 }
 
-void _setRangeFast(JSArrayBufferViewImpl target, int start, int end, int count,
-    JSArrayBufferViewImpl source, int sourceLength, int skipCount) {
-  WasmExternRef? jsSource;
-  if (skipCount != 0 || sourceLength != count) {
-    // Create a view of the exact subrange that is copied from the source.
-    jsSource = js.JS<WasmExternRef?>(
-        '(s, k, e) => s.subarray(k, e)',
-        source.toExternRef,
-        skipCount.toDouble(),
-        (skipCount + count).toDouble());
-  } else {
-    jsSource = source.toExternRef;
-  }
-  js.JS<void>('(t, s, i) => t.set(s, i)', target.toExternRef, jsSource,
-      start.toDouble());
-}
+void _setRangeFast(WasmExternRef? sourceDataView, int sourceStart,
+        WasmExternRef? targetDataView, int targetStart, int length) =>
+    js.JS<void>(
+        '''(sourceDataView, sourceStart, targetDataView, targetStart, length) => {
+    let targetArray = new Uint8Array(targetDataView.buffer, targetStart, length);
+    let sourceArray = new Uint8Array(sourceDataView.buffer, sourceStart, length);
+    targetArray.set(sourceArray);
+  }''',
+        sourceDataView,
+        WasmI32.fromInt(sourceStart),
+        targetDataView,
+        WasmI32.fromInt(targetStart),
+        WasmI32.fromInt(length));
 
 void _offsetAlignmentCheck(int offset, int alignment) {
   if ((offset % alignment) != 0) {
