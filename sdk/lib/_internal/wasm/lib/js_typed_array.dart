@@ -916,6 +916,16 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
       throw ArgumentError(skipCount);
     }
 
+    if (iterable is JSArrayBase) {
+      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
+      return _setRangeFast(
+          source.toExternRef,
+          skipCount * source.elementSizeInBytes,
+          toExternRef,
+          start * elementSizeInBytes,
+          (end - start) * elementSizeInBytes);
+    }
+
     List<double> otherList = iterable.skip(skipCount).toList(growable: false);
 
     int count = end - start;
