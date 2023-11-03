@@ -248,6 +248,16 @@ abstract class JSIntArrayImpl extends JSArrayBase
       throw ArgumentError(skipCount);
     }
 
+    if (iterable is JSArrayBase) {
+      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
+      return _setRangeFast(
+          source.toExternRef,
+          skipCount * source.elementSizeInBytes,
+          toExternRef,
+          start * elementSizeInBytes,
+          (end - start) * elementSizeInBytes);
+    }
+
     List<int> otherList = iterable.skip(skipCount).toList(growable: false);
 
     int count = end - start;
@@ -1139,8 +1149,8 @@ void _setRangeFast(WasmExternRef? sourceDataView, int sourceStart,
         WasmExternRef? targetDataView, int targetStart, int length) =>
     js.JS<void>(
         '''(sourceDataView, sourceStart, targetDataView, targetStart, length) => {
-    let targetArray = new Uint8Array(targetDataView.buffer, targetStart, length);
-    let sourceArray = new Uint8Array(sourceDataView.buffer, sourceStart, length);
+    let targetArray = new Uint8Array(targetDataView.buffer, targetDataView.byteOffset + targetStart, length);
+    let sourceArray = new Uint8Array(sourceDataView.buffer, sourceDataView.byteOffset + sourceStart, length);
     targetArray.set(sourceArray);
   }''',
         sourceDataView,
