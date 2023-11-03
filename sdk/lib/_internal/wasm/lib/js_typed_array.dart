@@ -312,9 +312,12 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   int get length => lengthInBytes;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint8Array(o.buffer, o.byteOffset, o.byteLength)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Uint8Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -367,9 +370,12 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   }
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Int8Array(o.buffer, o.byteOffset, o.byteLength)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Int8Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -409,9 +415,12 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   int get length => lengthInBytes;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint8ClampedArray(o.buffer, o.byteOffset, o.byteLength)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Uint8ClampedArray(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -467,9 +476,12 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   int get length => lengthInBytes ~/ 2;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint16Array(o.buffer, o.byteOffset, o.byteLength / 2)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Uint16Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 2,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -524,9 +536,12 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   int get length => lengthInBytes ~/ 2;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Int16Array(o.buffer, o.byteOffset, o.byteLength / 2)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Int16Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 2,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -581,9 +596,12 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   int get length => lengthInBytes ~/ 4;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Uint32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Uint32Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 4,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -638,9 +656,12 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   int get elementSizeInBytes => 4;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Int32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Int32Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 4,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -783,9 +804,12 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   int get length => lengthInBytes ~/ 8;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new BigUint64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new BigUint64Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 8,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -837,9 +861,12 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   int get length => lengthInBytes ~/ 8;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new BigInt64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new BigInt64Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 8,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -906,9 +933,12 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   int get elementSizeInBytes => 4;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Float32Array(o.buffer, o.byteOffset, o.byteLength / 4)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Float32Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 4,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -992,9 +1022,12 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   int get elementSizeInBytes => 8;
 
   @override
-  WasmExternRef? toJSArrayExternRef() => js.JS<WasmExternRef?>(
-      '(o) => new Float64Array(o.buffer, o.byteOffset, o.byteLength / 8)',
-      toExternRef);
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
+          WasmExternRef?>(
+      '(o, start, length) => new Float64Array(o.buffer, o.byteOffset + start, length)',
+      toExternRef,
+      start * 8,
+      length ?? this.length);
 
   @override
   @pragma("wasm:prefer-inline")
