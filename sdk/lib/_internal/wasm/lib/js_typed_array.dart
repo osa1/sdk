@@ -4,6 +4,7 @@
 
 part of dart._js_types;
 
+/// A JS `ArrayBuffer`.
 final class JSArrayBufferImpl implements ByteBuffer {
   /// `externref` of a JS `ArrayBuffer`.
   final WasmExternRef? _ref;
@@ -106,11 +107,12 @@ final class JSArrayBufferImpl implements ByteBuffer {
       that is JSArrayBufferImpl && js.areEqualInJS(_ref, that._ref);
 }
 
-final class JSArrayBufferViewImpl implements TypedData {
-  /// `externref` of a JS `DataView` or a typed array (in subclasses).
+/// Base class for all JS typed array classes.
+abstract class JSArrayBase implements TypedData {
+  /// `externref` of a JS `DataView`.
   final WasmExternRef? _ref;
 
-  JSArrayBufferViewImpl(this._ref);
+  JSArrayBase(this._ref);
 
   WasmExternRef? get toExternRef => _ref;
 
@@ -131,10 +133,11 @@ final class JSArrayBufferViewImpl implements TypedData {
 
   @override
   bool operator ==(Object that) =>
-      that is JSArrayBufferViewImpl && js.areEqualInJS(_ref, that._ref);
+      that is JSArrayBase && js.areEqualInJS(_ref, that._ref);
 }
 
-final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
+/// A JS `DataView`.
+final class JSDataViewImpl extends JSArrayBase implements ByteData {
   JSDataViewImpl(super._ref);
 
   factory JSDataViewImpl.view(
@@ -225,7 +228,8 @@ final class JSDataViewImpl extends JSArrayBufferViewImpl implements ByteData {
       _setUint8(toExternRef, byteOffset, value);
 }
 
-abstract class JSIntArrayImpl extends JSArrayBufferViewImpl
+/// Base class for `int` typed lists.
+abstract class JSIntArrayImpl extends JSArrayBase
     with ListMixin<int>, FixedLengthListMixin<int> {
   JSIntArrayImpl(super._ref);
 
@@ -711,6 +715,7 @@ final class JSInt32x4ArrayImpl
   }
 }
 
+/// Base class for 64-bit `int` typed lists.
 abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
   JSBigIntArrayImpl(super._ref);
 
@@ -825,7 +830,8 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   }
 }
 
-abstract class JSFloatArrayImpl extends JSArrayBufferViewImpl
+/// Base class for `double` typed lists.
+abstract class JSFloatArrayImpl extends JSArrayBase
     with ListMixin<double>, FixedLengthListMixin<double> {
   JSFloatArrayImpl(super._ref);
 
