@@ -272,7 +272,7 @@ abstract class JSIntArrayImpl extends JSArrayBase
       final length = end - start;
       final sourceArray = source.toJSArrayExternRef(skipCount, length);
       final targetArray = toJSArrayExternRef(start, length);
-      _setRangeFast(targetArray, sourceArray);
+      return _setRangeFast(targetArray, sourceArray);
     }
 
     List<int> otherList = iterable.skip(skipCount).toList(growable: false);
@@ -903,6 +903,33 @@ abstract class JSFloatArrayImpl extends JSArrayBase
     final end = iterable.length + index;
     setRange(index, end, iterable);
   }
+
+  @override
+  void setRange(int start, int end, Iterable<double> iterable,
+      [int skipCount = 0]) {
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
+
+    if (iterable is JSArrayBase) {
+      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
+      final length = end - start;
+      final sourceArray = source.toJSArrayExternRef(skipCount, length);
+      final targetArray = toJSArrayExternRef(start, length);
+      return _setRangeFast(targetArray, sourceArray);
+    }
+
+    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    _copy(otherList, 0, this, start, count);
+  }
 }
 
 final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
@@ -962,33 +989,6 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSFloat32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
-  }
-
-  @override
-  void setRange(int start, int end, Iterable<double> iterable,
-      [int skipCount = 0]) {
-    RangeError.checkValidRange(start, end, length);
-
-    if (skipCount < 0) {
-      throw ArgumentError(skipCount);
-    }
-
-    if (iterable is JSArrayBase) {
-      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      final length = end - start;
-      final sourceArray = source.toJSArrayExternRef(skipCount, length);
-      final targetArray = toJSArrayExternRef(start, length);
-      _setRangeFast(targetArray, sourceArray);
-    }
-
-    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
-
-    int count = end - start;
-    if (otherList.length < count) {
-      throw IterableElementError.tooFew();
-    }
-
-    _copy(otherList, 0, this, start, count);
   }
 }
 
