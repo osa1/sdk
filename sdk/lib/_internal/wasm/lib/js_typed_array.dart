@@ -9,13 +9,14 @@ final class JSArrayBufferImpl implements ByteBuffer {
   /// `externref` of a JS `ArrayBuffer`.
   final WasmExternRef? _ref;
 
-  JSArrayBufferImpl(this._ref);
+  JSArrayBufferImpl.fromRef(this._ref);
 
+  @pragma("wasm:prefer-inline")
   WasmExternRef? get toExternRef => _ref;
 
   /// Get a JS `DataView` of this `ArrayBuffer`.
   WasmExternRef? view(int offsetInBytes, int? length) =>
-      _newDataView(toExternRef, offsetInBytes, length);
+      _newDataViewFromArrayBuffer(toExternRef, offsetInBytes, length);
 
   WasmExternRef? cloneAsDataView(int offsetInBytes, int? lengthInBytes) {
     lengthInBytes ??= this.lengthInBytes;
@@ -114,24 +115,21 @@ abstract class JSArrayBase implements TypedData {
 
   JSArrayBase(this._ref);
 
+  @pragma("wasm:prefer-inline")
   WasmExternRef? get toExternRef => _ref;
 
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
 
   @override
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl(js.JS<WasmExternRef?>('o => o.buffer', toExternRef));
+      JSArrayBufferImpl.fromRef(_dataViewBuffer(_ref));
 
   @override
   @pragma("wasm:prefer-inline")
   int get lengthInBytes => _dataViewByteLength(toExternRef);
 
   @override
-  int get offsetInBytes =>
-      js.JS<double>('o => o.byteOffset', toExternRef).toInt();
-
-  @override
-  int get elementSizeInBytes => 1;
+  int get offsetInBytes => _dataViewByteOffset(_ref);
 
   @override
   bool operator ==(Object that) =>
@@ -143,32 +141,39 @@ final class JSDataViewImpl implements ByteData {
   /// `externref` of a JS `DataView`.
   final WasmExternRef? _ref;
 
-  JSDataViewImpl(this._ref);
+  JSDataViewImpl(int length) : _ref = _newDataView(length);
+
+  JSDataViewImpl.fromRef(this._ref);
 
   factory JSDataViewImpl.view(
           JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
-      JSDataViewImpl(_newDataView(buffer.toExternRef, offsetInBytes, length));
+      JSDataViewImpl.fromRef(_newDataViewFromArrayBuffer(
+          buffer.toExternRef, offsetInBytes, length));
 
+  @pragma("wasm:prefer-inline")
   WasmExternRef? get toExternRef => _ref;
 
   @override
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl(js.JS<WasmExternRef?>('o => o.buffer', toExternRef));
+      JSArrayBufferImpl.fromRef(_dataViewBuffer(toExternRef));
 
   @override
   @pragma("wasm:prefer-inline")
   int get lengthInBytes => _dataViewByteLength(toExternRef);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get offsetInBytes =>
       js.JS<double>('o => o.byteOffset', toExternRef).toInt();
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 1;
 
   @override
   ByteData asUnmodifiableView() => UnmodifiableByteDataView(this);
 
+  @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) =>
       _getFloat32(toExternRef, byteOffset, Endian.little == endian);
 
@@ -286,6 +291,7 @@ abstract class JSIntArrayImpl extends JSArrayBase
   }
 }
 
+// TODO: Inline and optimize this.
 void _copy(List src, int srcStart, List dst, int dstStart, int count) {
   for (int i = srcStart, j = dstStart; i < srcStart + count; i++, j++) {
     dst[j] = src[i];
@@ -293,16 +299,20 @@ void _copy(List src, int srcStart, List dst, int dstStart, int count) {
 }
 
 final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
-  JSUint8ArrayImpl(super._ref);
+  JSUint8ArrayImpl._(super._ref);
+
+  factory JSUint8ArrayImpl(int length) =>
+      JSUint8ArrayImpl._(_newDataView(length));
 
   factory JSUint8ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSUint8ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSUint8ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSUint8ArrayImpl.view(
           JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
-      JSUint8ArrayImpl(buffer.view(offsetInBytes, length));
+      JSUint8ArrayImpl._(buffer.view(offsetInBytes, length));
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 1;
 
   @override
@@ -339,21 +349,25 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSUint8ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSUint8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
-  JSInt8ArrayImpl(super._ref);
+  JSInt8ArrayImpl._(super._ref);
+
+  factory JSInt8ArrayImpl(int length) =>
+      JSInt8ArrayImpl._(_newDataView(length));
 
   factory JSInt8ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSInt8ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSInt8ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSInt8ArrayImpl.view(
           JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
-      JSInt8ArrayImpl(buffer.view(offsetInBytes, length));
+      JSInt8ArrayImpl._(buffer.view(offsetInBytes, length));
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 1;
 
   @override
@@ -390,22 +404,26 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSInt8ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSInt8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
     implements Uint8ClampedList {
-  JSUint8ClampedArrayImpl(super._ref);
+  JSUint8ClampedArrayImpl._(super._ref);
+
+  factory JSUint8ClampedArrayImpl(int length) =>
+      JSUint8ClampedArrayImpl._(_newDataView(length));
 
   factory JSUint8ClampedArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSUint8ClampedArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSUint8ClampedArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSUint8ClampedArrayImpl.view(
           JSArrayBufferImpl buffer, int offsetInBytes, int? length) =>
-      JSUint8ClampedArrayImpl(buffer.view(offsetInBytes, length));
+      JSUint8ClampedArrayImpl._(buffer.view(offsetInBytes, length));
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 1;
 
   @override
@@ -443,26 +461,30 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
-    return JSUint8ClampedArrayImpl(
+    return JSUint8ClampedArrayImpl._(
         buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
-  JSUint16ArrayImpl(super._ref);
+  JSUint16ArrayImpl._(super._ref);
+
+  factory JSUint16ArrayImpl(int length) =>
+      JSUint16ArrayImpl._(_newDataView(length * 2));
 
   factory JSUint16ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSUint16ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSUint16ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSUint16ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 2);
-    return JSUint16ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSUint16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 2;
 
   @override
@@ -504,25 +526,29 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
     final int newEnd = end == null ? lengthInBytes : end * 2;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
-    return JSUint16ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSUint16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
-  JSInt16ArrayImpl(super._ref);
+  JSInt16ArrayImpl._(super._ref);
+
+  factory JSInt16ArrayImpl(int length) =>
+      JSInt16ArrayImpl._(_newDataView(length * 2));
 
   factory JSInt16ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSInt16ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSInt16ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSInt16ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 2);
-    return JSInt16ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSInt16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 2;
 
   @override
@@ -564,25 +590,29 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
     final int newEnd = end == null ? lengthInBytes : end * 2;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
-    return JSInt16ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSInt16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
-  JSUint32ArrayImpl(super._ref);
+  JSUint32ArrayImpl._(super._ref);
+
+  factory JSUint32ArrayImpl(int length) =>
+      JSUint32ArrayImpl._(_newDataView(length * 4));
 
   factory JSUint32ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSUint32ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSUint32ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSUint32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
-    return JSUint32ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSUint32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 4;
 
   @override
@@ -624,22 +654,25 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
-    return JSUint32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSUint32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
-  JSInt32ArrayImpl(super._ref);
+  JSInt32ArrayImpl._(super._ref);
+
+  factory JSInt32ArrayImpl(int length) =>
+      JSInt32ArrayImpl._(_newDataView(length * 4));
 
   factory JSInt32ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSInt32ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSInt32ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSInt32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
-    return JSInt32ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSInt32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
@@ -651,6 +684,7 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   int get length => lengthInBytes ~/ 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 4;
 
   @override
@@ -684,7 +718,7 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
-    return JSInt32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSInt32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -780,17 +814,20 @@ abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
 
 final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
     implements Uint64List {
-  JSBigUint64ArrayImpl(super._ref);
+  JSBigUint64ArrayImpl._(super._ref);
+
+  factory JSBigUint64ArrayImpl(int length) =>
+      JSBigUint64ArrayImpl._(_newDataView(length * 8));
 
   factory JSBigUint64ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSBigUint64ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSBigUint64ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSBigUint64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
-    return JSBigUint64ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSBigUint64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
@@ -832,22 +869,25 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
-    return JSBigUint64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSBigUint64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
-  JSBigInt64ArrayImpl(super._ref);
+  JSBigInt64ArrayImpl._(super._ref);
+
+  factory JSBigInt64ArrayImpl(int length) =>
+      JSBigInt64ArrayImpl._(_newDataView(length * 8));
 
   factory JSBigInt64ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSBigInt64ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSBigInt64ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSBigInt64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
-    return JSBigInt64ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSBigInt64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
@@ -889,7 +929,7 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
-    return JSBigInt64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSBigInt64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -933,17 +973,20 @@ abstract class JSFloatArrayImpl extends JSArrayBase
 }
 
 final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
-  JSFloat32ArrayImpl(super._ref);
+  JSFloat32ArrayImpl._(super._ref);
+
+  factory JSFloat32ArrayImpl(int length) =>
+      JSFloat32ArrayImpl._(_newDataView(length * 4));
 
   factory JSFloat32ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSFloat32ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSFloat32ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSFloat32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
-    return JSFloat32ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSFloat32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
@@ -955,6 +998,7 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   int get length => lengthInBytes ~/ 4;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 4;
 
   @override
@@ -988,22 +1032,25 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
-    return JSFloat32ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSFloat32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
 final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
-  JSFloat64ArrayImpl(super._ref);
+  JSFloat64ArrayImpl._(super._ref);
+
+  factory JSFloat64ArrayImpl(int length) =>
+      JSFloat64ArrayImpl._(_newDataView(length * 8));
 
   factory JSFloat64ArrayImpl.fromJSArray(WasmExternRef? jsArrayRef) =>
-      JSFloat64ArrayImpl(_dataViewFromJSArray(jsArrayRef));
+      JSFloat64ArrayImpl._(_dataViewFromJSArray(jsArrayRef));
 
   factory JSFloat64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     final lengthInBytes =
         (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
-    return JSFloat64ArrayImpl(buffer.view(offsetInBytes, lengthInBytes));
+    return JSFloat64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
@@ -1015,6 +1062,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   int get length => lengthInBytes ~/ 8;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 8;
 
   @override
@@ -1048,7 +1096,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
-    return JSFloat64ArrayImpl(buffer.cloneAsDataView(newOffset, newLength));
+    return JSFloat64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
 }
 
@@ -1224,8 +1272,10 @@ void _offsetAlignmentCheck(int offset, int alignment) {
   }
 }
 
-// TODO FIXME: Adding prefer-inline pragma here somehow makes this function
-// "external".
+@pragma("wasm:prefer-inline")
+WasmExternRef? _newDataView(int length) => js.JS<WasmExternRef?>(
+    'l => new DataView(new ArrayBuffer(l))', WasmI32.fromInt(length));
+
 WasmExternRef? _dataViewFromJSArray(WasmExternRef? jsArrayRef) =>
     js.JS<WasmExternRef?>(
         '(o) => new DataView(o.buffer, o.byteOffset, o.byteLength)',
@@ -1233,7 +1283,14 @@ WasmExternRef? _dataViewFromJSArray(WasmExternRef? jsArrayRef) =>
 
 @pragma("wasm:prefer-inline")
 int _arrayBufferByteLength(WasmExternRef? ref) =>
-    js.JS<double>('o => o.byteLength', ref).toInt();
+    js.JS<WasmI32>('o => o.byteLength', ref).toIntSigned();
+
+WasmExternRef? _dataViewBuffer(WasmExternRef? dataViewRef) =>
+    js.JS<WasmExternRef?>('o => o.buffer', dataViewRef);
+
+@pragma("wasm:prefer-inline")
+int _dataViewByteOffset(WasmExternRef? dataViewRef) =>
+    js.JS<WasmI32>('o => o.byteOffset', dataViewRef).toIntSigned();
 
 @pragma("wasm:prefer-inline")
 int _dataViewByteLength(WasmExternRef? ref) => js
@@ -1243,13 +1300,13 @@ int _dataViewByteLength(WasmExternRef? ref) => js
     .toInt();
 
 @pragma("wasm:prefer-inline")
-WasmExternRef? _newDataView(
-        WasmExternRef? ref, int offsetInBytes, int? length) =>
+WasmExternRef? _newDataViewFromArrayBuffer(
+        WasmExternRef? bufferRef, int offsetInBytes, int? length) =>
     length == null
-        ? js.JS<WasmExternRef?>(
-            '(b, o) => new DataView(b, o)', ref, offsetInBytes.toDouble())
-        : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', ref,
-            offsetInBytes.toDouble(), length.toDouble());
+        ? js.JS<WasmExternRef?>('(b, o) => new DataView(b, o)', bufferRef,
+            WasmI32.fromInt(offsetInBytes))
+        : js.JS<WasmExternRef?>('(b, o, l) => new DataView(b, o, l)', bufferRef,
+            WasmI32.fromInt(offsetInBytes), WasmI32.fromInt(length));
 
 @pragma("wasm:prefer-inline")
 int _getUint8(WasmExternRef? ref, int byteOffset) => js

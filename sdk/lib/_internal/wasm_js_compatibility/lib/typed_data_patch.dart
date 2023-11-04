@@ -2,214 +2,164 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:_internal' show FixedLengthListMixin, patch, UnmodifiableListBase;
-import 'dart:_js_helper' as js;
+import 'dart:_internal' show patch;
 import 'dart:_js_types';
-import 'dart:_simd';
-import 'dart:_string_helper';
-import 'dart:_wasm';
-import 'dart:js_interop';
 import 'dart:typed_data';
-
-// TODO(joshualitt): Optimizations for this file:
-//   * Move list to JS and allocate on the JS side for `fromLength`
-//     constructors.
 
 @patch
 class ByteData {
   @patch
-  factory ByteData(int length) {
-    return JSDataViewImpl(_newDataView(length));
-  }
+  factory ByteData(int length) = JSDataViewImpl;
 }
 
 @patch
 class Uint8List {
   @patch
-  factory Uint8List(int length) {
-    return JSUint8ArrayImpl(_newDataView(length));
-  }
+  factory Uint8List(int length) = JSUint8ArrayImpl;
 
   @patch
   factory Uint8List.fromList(List<int> elements) =>
-      Uint8List(elements.length)..setRange(0, elements.length, elements);
+      JSUint8ArrayImpl(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Int8List {
   @patch
-  factory Int8List(int length) {
-    return JSInt8ArrayImpl(_newDataView(length));
-  }
+  factory Int8List(int length) = JSInt8ArrayImpl;
 
   @patch
   factory Int8List.fromList(List<int> elements) =>
-      Int8List(elements.length)..setRange(0, elements.length, elements);
+      JSInt8ArrayImpl(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Uint8ClampedList {
   @patch
-  factory Uint8ClampedList(int length) {
-    return JSUint8ClampedArrayImpl(_newDataView(length));
-  }
+  factory Uint8ClampedList(int length) = JSUint8ClampedArrayImpl;
 
   @patch
   factory Uint8ClampedList.fromList(List<int> elements) =>
-      Uint8ClampedList(elements.length)..setRange(0, elements.length, elements);
+      JSUint8ClampedArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Uint16List {
   @patch
-  factory Uint16List(int length) {
-    return JSUint16ArrayImpl(_newDataView(length * 2));
-  }
+  factory Uint16List(int length) = JSUint16ArrayImpl;
 
   @patch
   factory Uint16List.fromList(List<int> elements) =>
-      Uint16List(elements.length)..setRange(0, elements.length, elements);
+      JSUint16ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Int16List {
   @patch
-  factory Int16List(int length) {
-    return JSInt16ArrayImpl(_newDataView(length * 2));
-  }
+  factory Int16List(int length) = JSInt16ArrayImpl;
 
   @patch
   factory Int16List.fromList(List<int> elements) =>
-      Int16List(elements.length)..setRange(0, elements.length, elements);
+      JSInt16ArrayImpl(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Uint32List {
   @patch
-  factory Uint32List(int length) {
-    return JSUint32ArrayImpl(_newDataView(length * 4));
-  }
+  factory Uint32List(int length) = JSUint32ArrayImpl;
 
   @patch
   factory Uint32List.fromList(List<int> elements) =>
-      Uint32List(elements.length)..setRange(0, elements.length, elements);
+      JSUint32ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Int32List {
   @patch
-  factory Int32List(int length) {
-    return JSInt32ArrayImpl(_newDataView(length * 4));
-  }
+  factory Int32List(int length) = JSInt32ArrayImpl;
 
   @patch
   factory Int32List.fromList(List<int> elements) =>
-      Int32List(elements.length)..setRange(0, elements.length, elements);
+      JSInt32ArrayImpl(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Int32x4List {
   @patch
-  factory Int32x4List(int length) {
-    return JSInt32x4ArrayImpl.externalStorage(
-        JSInt32ArrayImpl(_newDataView(length * 16)));
-  }
+  factory Int32x4List(int length) =>
+      JSInt32x4ArrayImpl.externalStorage(JSInt32ArrayImpl(length * 4));
 
   @patch
-  factory Int32x4List.fromList(List<Int32x4> elements) {
-    final length = elements.length;
-    final l = Int32x4List(length);
-    for (var i = 0; i < length; i++) {
-      l[i] = elements[i];
-    }
-    return l;
-  }
+  factory Int32x4List.fromList(List<Int32x4> elements) =>
+      Int32x4List(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Int64List {
   @patch
-  factory Int64List(int length) {
-    return JSBigInt64ArrayImpl(_newDataView(length * 8));
-  }
+  factory Int64List(int length) = JSBigInt64ArrayImpl;
 
   @patch
   factory Int64List.fromList(List<int> elements) =>
-      Int64List(elements.length)..setRange(0, elements.length, elements);
+      JSBigInt64ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Uint64List {
   @patch
-  factory Uint64List(int length) {
-    return JSBigUint64ArrayImpl(_newDataView(length * 8));
-  }
+  factory Uint64List(int length) = JSBigUint64ArrayImpl;
 
   @patch
   factory Uint64List.fromList(List<int> elements) =>
-      Uint64List(elements.length)..setRange(0, elements.length, elements);
+      JSBigUint64ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Float32List {
   @patch
-  factory Float32List(int length) {
-    return JSFloat32ArrayImpl(_newDataView(length * 4));
-  }
+  factory Float32List(int length) = JSFloat32ArrayImpl;
 
   @patch
   factory Float32List.fromList(List<double> elements) =>
-      Float32List(elements.length)..setRange(0, elements.length, elements);
+      JSFloat32ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Float32x4List {
   @patch
-  factory Float32x4List(int length) {
-    return JSFloat32x4ArrayImpl.externalStorage(
-        JSFloat32ArrayImpl(_newDataView(length * 16)));
-  }
+  factory Float32x4List(int length) =>
+      JSFloat32x4ArrayImpl.externalStorage(JSFloat32ArrayImpl(length * 4));
 
   @patch
-  factory Float32x4List.fromList(List<Float32x4> elements) {
-    final length = elements.length;
-    final l = Float32x4List(length);
-    for (var i = 0; i < length; i++) {
-      l[i] = elements[i];
-    }
-    return l;
-  }
+  factory Float32x4List.fromList(List<Float32x4> elements) =>
+      Float32x4List(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
 class Float64List {
   @patch
-  factory Float64List(int length) {
-    return JSFloat64ArrayImpl(_newDataView(length * 8));
-  }
+  factory Float64List(int length) = JSFloat64ArrayImpl;
 
   @patch
   factory Float64List.fromList(List<double> elements) =>
-      Float64List(elements.length)..setRange(0, elements.length, elements);
+      JSFloat64ArrayImpl(elements.length)
+        ..setRange(0, elements.length, elements);
 }
 
 @patch
 class Float64x2List {
   @patch
-  factory Float64x2List(int length) {
-    return JSFloat64x2ArrayImpl.externalStorage(
-        JSFloat64ArrayImpl(_newDataView(length * 16)));
-  }
+  factory Float64x2List(int length) =>
+      JSFloat64x2ArrayImpl.externalStorage(JSFloat64ArrayImpl(length * 2));
 
   @patch
-  factory Float64x2List.fromList(List<Float64x2> elements) {
-    final length = elements.length;
-    final l = Float64x2List(length);
-    for (var i = 0; i < length; i++) {
-      l[i] = elements[i];
-    }
-    return l;
-  }
+  factory Float64x2List.fromList(List<Float64x2> elements) =>
+      Float64x2List(elements.length)..setRange(0, elements.length, elements);
 }
 
 @patch
@@ -323,6 +273,3 @@ abstract class UnmodifiableFloat64ListView implements Float64List {
   factory UnmodifiableFloat64ListView(Float64List list) =
       _UnmodifiableFloat64ListViewImpl;
 }
-
-WasmExternRef? _newDataView(int length) => js.JS<WasmExternRef?>(
-    'l => new DataView(new ArrayBuffer(l))', length.toDouble());

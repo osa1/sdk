@@ -440,9 +440,9 @@ Object? dartifyRaw(WasmExternRef? ref) {
   } else if (isJSFloat64Array(ref)) {
     return js_types.JSFloat64ArrayImpl.fromJSArray(ref);
   } else if (isJSArrayBuffer(ref)) {
-    return js_types.JSArrayBufferImpl(ref);
+    return js_types.JSArrayBufferImpl.fromRef(ref);
   } else if (isJSDataView(ref)) {
-    return js_types.JSDataViewImpl(ref);
+    return js_types.JSDataViewImpl.fromRef(ref);
   } else if (isJSArray(ref)) {
     return toDartList(ref);
   } else if (isJSWrappedDartFunction(ref)) {

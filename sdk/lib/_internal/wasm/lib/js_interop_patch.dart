@@ -136,7 +136,7 @@ extension JSPromiseToFuture on JSPromise {
 @patch
 extension JSArrayBufferToByteBuffer on JSArrayBuffer {
   @patch
-  ByteBuffer get toDart => js_types.JSArrayBufferImpl(toExternRef);
+  ByteBuffer get toDart => js_types.JSArrayBufferImpl.fromRef(toExternRef);
 }
 
 @patch
@@ -156,7 +156,7 @@ extension ByteBufferToJSArrayBuffer on ByteBuffer {
 @patch
 extension JSDataViewToByteData on JSDataView {
   @patch
-  ByteData get toDart => js_types.JSDataViewImpl(toExternRef);
+  ByteData get toDart => js_types.JSDataViewImpl.fromRef(toExternRef);
 }
 
 @patch
