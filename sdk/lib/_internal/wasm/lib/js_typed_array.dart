@@ -287,14 +287,10 @@ abstract class JSIntArrayImpl extends JSArrayBase
       throw IterableElementError.tooFew();
     }
 
-    _copy(otherList, 0, this, start, count);
-  }
-}
-
-// TODO: Inline and optimize this.
-void _copy(List src, int srcStart, List dst, int dstStart, int count) {
-  for (int i = srcStart, j = dstStart; i < srcStart + count; i++, j++) {
-    dst[j] = src[i];
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
   }
 }
 
@@ -800,7 +796,10 @@ final class JSInt32x4ArrayImpl
       throw IterableElementError.tooFew();
     }
 
-    _copy(otherList, 0, this, start, count);
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
   }
 }
 
@@ -968,7 +967,10 @@ abstract class JSFloatArrayImpl extends JSArrayBase
       throw IterableElementError.tooFew();
     }
 
-    _copy(otherList, 0, this, start, count);
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
   }
 }
 
@@ -1179,7 +1181,10 @@ final class JSFloat32x4ArrayImpl
       throw IterableElementError.tooFew();
     }
 
-    _copy(otherList, 0, this, start, count);
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
   }
 }
 
@@ -1258,7 +1263,10 @@ final class JSFloat64x2ArrayImpl
       throw IterableElementError.tooFew();
     }
 
-    _copy(otherList, 0, this, start, count);
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
   }
 }
 
