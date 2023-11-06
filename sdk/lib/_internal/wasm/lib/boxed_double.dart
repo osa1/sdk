@@ -4,6 +4,7 @@
 
 import 'dart:_internal' show doubleToIntBits, intBitsToDouble;
 import 'dart:_js_helper' show JS;
+import 'dart:_wasm';
 
 @pragma("wasm:entry-point")
 final class _BoxedDouble extends double {
@@ -95,7 +96,7 @@ final class _BoxedDouble extends double {
       return (a * b) / (a * b);
     }
 
-    if ((aBits << 1)._le_u(bBits << 1)) {
+    if (WasmI64.fromInt(aBits << 1).le_u(bBits << 1)) {
       if ((aBits << 1) == (bBits << 1)) {
         // abs(a) == abs(b), so remainder = +/- 0.0 depending on sign of a
         return 0.0._copysign(a);
@@ -203,7 +204,7 @@ final class _BoxedDouble extends double {
   bool get isNegative {
     // Sign bit set, not NaN
     int bits = doubleToIntBits(this);
-    return (bits ^ _signMask)._le_u(_exponentMask);
+    return WasmI64.fromInt(bits ^ _signMask).le_u(_exponentMask);
   }
 
   @pragma("wasm:prefer-inline")
@@ -271,8 +272,8 @@ final class _BoxedDouble extends double {
 
     // Add 0.5 to the absolute value of the number and truncate the result.
     final int shift = (_exponentBias + _mantissaBits - 1) - exponent;
-    final int adjust = 1._shl(shift);
-    final int mask = (-2)._shl(shift);
+    final int adjust = WasmI64.fromInt(1).shl(shift);
+    final int mask = WasmI64.fromInt(-2).shl(shift);
     final int rounded = (bits + adjust) & mask;
     return intBitsToDouble(rounded);
   }

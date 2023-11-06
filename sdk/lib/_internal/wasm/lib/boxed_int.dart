@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal';
+import 'dart:_wasm';
 
 @pragma("wasm:entry-point")
 final class _BoxedInt extends int {
@@ -57,7 +58,7 @@ final class _BoxedInt extends int {
       throw IntegerDivisionByZeroException();
     }
 
-    return a._div_s(b);
+    return WasmI64.fromInt(a).div_s(b);
   }
 
   @pragma("wasm:prefer-inline")
@@ -74,8 +75,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator >>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shr_s(shift);
+    if (WasmI64.fromInt(shift).lt_u(64)) {
+      return WasmI64.fromInt(value).shr_s(shift);
     }
 
     if (shift < 0) {
@@ -83,14 +84,14 @@ final class _BoxedInt extends int {
     }
 
     // shift >= 64, 0 or -1 depending on sign: `this >= 0 ? 0 : -1`
-    return value._shr_s(63);
+    return WasmI64.fromInt(value).shr_s(63);
   }
 
   @pragma("wasm:prefer-inline")
   int operator >>>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shr_u(shift);
+    if (WasmI64.fromInt(shift).lt_u(64)) {
+      return WasmI64.fromInt(value).shr_u(shift);
     }
 
     if (shift < 0) {
@@ -104,8 +105,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator <<(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shl(shift);
+    if (WasmI64.fromInt(shift).lt_u(64)) {
+      return WasmI64.fromInt(value).shl(shift);
     }
 
     if (shift < 0) {

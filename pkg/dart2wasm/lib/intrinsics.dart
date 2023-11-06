@@ -46,11 +46,9 @@ class Intrinsifier {
         '<=': (c) => c.b.i64_le_s(),
         '>': (c) => c.b.i64_gt_s(),
         '>=': (c) => c.b.i64_ge_s(),
-        '_div_s': (c) => c.b.i64_div_s(),
         '_shl': (c) => c.b.i64_shl(),
         '_shr_s': (c) => c.b.i64_shr_s(),
         '_shr_u': (c) => c.b.i64_shr_u(),
-        '_le_u': (c) => c.b.i64_le_u(),
         '_lt_u': (c) => c.b.i64_lt_u(),
         '~/': (c) => c.call(c.translator.truncDiv.reference),
       }
@@ -122,12 +120,7 @@ class Intrinsifier {
   }
 
   static bool isComparison(String op) =>
-      op == '<' ||
-      op == '<=' ||
-      op == '>' ||
-      op == '>=' ||
-      op == '_le_u' ||
-      op == '_lt_u';
+      op == '<' || op == '<=' || op == '>' || op == '>=';
 
   Intrinsifier(this.codeGen);
 
@@ -360,9 +353,43 @@ class Intrinsifier {
               throw 'Unknown i32 conversion to $receiverType';
           }
         case w.NumType.i64:
-          assert(name == "toInt");
-          codeGen.wrap(receiver, w.NumType.i64);
-          return w.NumType.i64;
+          switch (name) {
+            case "toInt":
+              codeGen.wrap(receiver, w.NumType.i64);
+              return w.NumType.i64;
+            case "div_s":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_div_s();
+              return w.NumType.i64;
+            case "le_u":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_le_u();
+              return boolType;
+            case "lt_u":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_lt_u();
+              return boolType;
+            case "shr_s":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_shr_s();
+              return w.NumType.i64;
+            case "shr_u":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_shr_u();
+              return w.NumType.i64;
+            case "shl":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_shl();
+              return w.NumType.i64;
+            default:
+              throw 'Unknown WasmI64 member: $name';
+          }
         case w.NumType.f32:
           assert(name == "toDouble");
           codeGen.wrap(receiver, w.NumType.f32);
