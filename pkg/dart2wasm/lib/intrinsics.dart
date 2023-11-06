@@ -369,9 +369,17 @@ class Intrinsifier {
           b.f64_promote_f32();
           return w.NumType.f64;
         case w.NumType.f64:
-          assert(name == "toDouble");
-          codeGen.wrap(receiver, w.NumType.f64);
-          return w.NumType.f64;
+          switch (name) {
+            case "toDouble":
+              codeGen.wrap(receiver, w.NumType.f64);
+              return w.NumType.f64;
+            case "toInt":
+              codeGen.wrap(receiver, w.NumType.f64);
+              b.i64_trunc_sat_f64_s();
+              return w.NumType.i64;
+            default:
+              throw 'Unknown f64 conversion to $receiverType';
+          }
       }
     }
 

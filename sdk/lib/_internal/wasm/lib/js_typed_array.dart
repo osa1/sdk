@@ -474,8 +474,9 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   factory JSUint16ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 2);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1)
+        : length * 2);
     return JSUint16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
@@ -485,11 +486,7 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 2) * 2;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 2;
+  int get length => lengthInBytes >>> 1;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -538,8 +535,9 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   factory JSInt16ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 2);
+    final lengthInBytes = (length == null
+        ? ((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1
+        : length * 2);
     return JSInt16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
@@ -549,11 +547,7 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 2) * 2;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 2;
+  int get length => lengthInBytes >>> 1;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -602,8 +596,9 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   factory JSUint32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        : length * 4);
     return JSUint32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
@@ -613,11 +608,7 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 4;
+  int get length => lengthInBytes >>> 2;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -666,18 +657,15 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   factory JSInt32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        : length * 4);
     return JSInt32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 4;
+  int get length => lengthInBytes >>> 2;
 
   @override
   @pragma("wasm:prefer-inline")
@@ -824,18 +812,15 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   factory JSBigUint64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        : length * 8);
     return JSBigUint64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 8;
+  int get length => lengthInBytes >>> 3;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -884,18 +869,15 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   factory JSBigInt64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        : length * 8);
     return JSBigInt64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 8;
+  int get length => lengthInBytes >>> 3;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -986,18 +968,15 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   factory JSFloat32ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 4);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        : length * 4);
     return JSFloat32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 4) * 4;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 4;
+  int get length => lengthInBytes >>> 2;
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1050,18 +1029,15 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   factory JSFloat64ArrayImpl.view(
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
-    final lengthInBytes =
-        (length == null ? buffer.lengthInBytes - offsetInBytes : length * 8);
+    final lengthInBytes = (length == null
+        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        : length * 8);
     return JSFloat64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
 
   @override
   @pragma("wasm:prefer-inline")
-  int get lengthInBytes => (super.lengthInBytes ~/ 8) * 8;
-
-  @override
-  @pragma("wasm:prefer-inline")
-  int get length => lengthInBytes ~/ 8;
+  int get length => lengthInBytes >>> 3;
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1305,7 +1281,6 @@ int _dataViewByteLength(WasmExternRef? ref) => js
     .JS<WasmF64>(
         "Function.prototype.call.bind(Object.getOwnPropertyDescriptor(DataView.prototype, 'byteLength').get)",
         ref)
-    .toDouble()
     .toInt();
 
 @pragma("wasm:prefer-inline")

@@ -177,7 +177,12 @@ class WasmF64 extends _WasmFloat {
   const WasmF64(this._value);
 
   external factory WasmF64.fromDouble(double value);
+
+  /// Boxes the Wasm `f64` as `_BoxedDouble`.
   external double toDouble();
+
+  /// `i64.trunc_sat_f64_s`.
+  external int toInt();
 }
 
 /// A Wasm array with integer element type.
