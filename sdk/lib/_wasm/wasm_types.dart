@@ -178,7 +178,6 @@ class WasmF64 extends _WasmFloat {
 
   external factory WasmF64.fromDouble(double value);
 
-  /// Boxes the Wasm `f64` as `_BoxedDouble`.
   external double toDouble();
 
   /// `i64.trunc_sat_f64_s`.
