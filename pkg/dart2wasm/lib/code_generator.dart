@@ -1804,14 +1804,14 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return resultType;
     }
 
-    final Procedure target = node.interfaceTarget;
+    final Procedure interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` members that can be called with a `null` receiver.
-    if (target == translator.objectToString) {
-      return callWithNullCheck(
-          target, (resultType) => wrap(StringLiteral("null"), resultType));
-    } else if (target == translator.objectNoSuchMethod) {
-      return callWithNullCheck(target, (resultType) {
+    if (interfaceTarget == translator.objectToString) {
+      return callWithNullCheck(interfaceTarget,
+          (resultType) => wrap(StringLiteral("null"), resultType));
+    } else if (interfaceTarget == translator.objectNoSuchMethod) {
+      return callWithNullCheck(interfaceTarget, (resultType) {
         // Object? receiver
         b.ref_null(translator.topInfo.struct);
         // Invocation invocation
@@ -1828,7 +1828,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _visitArguments(node.arguments, node.interfaceTargetReference, 1);
       return translator.outputOrVoid(call(singleTarget.reference));
     }
-    return _virtualCall(node, target, _VirtualCallKind.Call,
+    return _virtualCall(node, interfaceTarget, _VirtualCallKind.Call,
         (signature) => wrap(node.receiver, signature.inputs.first), (_) {
       _visitArguments(node.arguments, node.interfaceTargetReference, 1);
     });
@@ -2273,14 +2273,14 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
   @override
   w.ValueType visitInstanceGet(InstanceGet node, w.ValueType expectedType) {
-    Member target = node.interfaceTarget;
+    final Member interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` getters that can be called with a `null` receiver.
-    if (target == translator.objectHashCode ||
-        target == translator.objectRuntimeType) {
+    if (interfaceTarget == translator.objectHashCode ||
+        interfaceTarget == translator.objectRuntimeType) {
       late w.Label doneLabel;
-      w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
+      w.ValueType resultType = _virtualCall(
+          node, interfaceTarget, _VirtualCallKind.Get, (signature) {
         doneLabel = b.block(const [], signature.outputs);
         w.Label nullLabel = b.block();
         wrap(node.receiver, translator.topInfo.nullableType);
@@ -2288,10 +2288,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       }, (_) {});
       b.br(doneLabel);
       b.end(); // nullLabel
-      if (target == translator.objectHashCode) {
+      if (interfaceTarget == translator.objectHashCode) {
         b.i64_const(2011);
       } else {
-        assert(target == translator.objectRuntimeType);
+        assert(interfaceTarget == translator.objectRuntimeType);
         wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
       }
       b.end(); // doneLabel
@@ -2303,7 +2303,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return _directGet(singleTarget, node.receiver,
           () => intrinsifier.generateInstanceGetterIntrinsic(node));
     } else {
-      return _virtualCall(node, target, _VirtualCallKind.Get,
+      return _virtualCall(node, interfaceTarget, _VirtualCallKind.Get,
           (signature) => wrap(node.receiver, signature.inputs.first), (_) {});
     }
   }
@@ -2405,14 +2405,14 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   @override
   w.ValueType visitInstanceTearOff(
       InstanceTearOff node, w.ValueType expectedType) {
-    Member target = node.interfaceTarget;
+    final Member interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` members that can be torn-off from a `null` receiver.
-    if (target == translator.objectToString ||
-        target == translator.objectNoSuchMethod) {
+    if (interfaceTarget == translator.objectToString ||
+        interfaceTarget == translator.objectNoSuchMethod) {
       late w.Label doneLabel;
-      w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
+      w.ValueType resultType = _virtualCall(
+          node, interfaceTarget, _VirtualCallKind.Get, (signature) {
         doneLabel = b.block(const [], signature.outputs);
         w.Label nullLabel = b.block();
         wrap(node.receiver, translator.topInfo.nullableType);
@@ -2422,11 +2422,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       }, (_) {});
       b.br(doneLabel);
       b.end(); // nullLabel
-      if (target == translator.objectToString) {
+      if (interfaceTarget == translator.objectToString) {
         wrap(ConstantExpression(StaticTearOffConstant(translator.nullToString)),
             resultType);
       } else {
-        assert(target == translator.objectNoSuchMethod);
+        assert(interfaceTarget == translator.objectNoSuchMethod);
         wrap(
             ConstantExpression(
                 StaticTearOffConstant(translator.nullNoSuchMethod)),
@@ -2436,7 +2436,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return resultType;
     }
 
-    return _virtualCall(node, target, _VirtualCallKind.Get,
+    return _virtualCall(node, interfaceTarget, _VirtualCallKind.Get,
         (signature) => wrap(node.receiver, signature.inputs.first), (_) {});
   }
 
