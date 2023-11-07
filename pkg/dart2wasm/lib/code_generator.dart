@@ -1805,24 +1805,19 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     }
 
     final Procedure target = node.interfaceTarget;
-    if (node.kind == InstanceAccessKind.Object) {
-      switch (target.name.text) {
-        case "toString":
-          return callWithNullCheck(
-              target, (resultType) => wrap(StringLiteral("null"), resultType));
-        case "noSuchMethod":
-          return callWithNullCheck(target, (resultType) {
-            // Object? receiver
-            b.ref_null(translator.topInfo.struct);
-            // Invocation invocation
-            _visitArguments(node.arguments, node.interfaceTargetReference, 1);
-            call(translator.noSuchMethodErrorThrowWithInvocation.reference);
-          });
-        default:
-          unimplemented(node, "Nullable invocation of ${target.name.text}",
-              [if (expectedType != voidMarker) expectedType]);
-          return expectedType;
-      }
+
+    // Handle `Object` members that can be called with a `null` receiver.
+    if (target == translator.objectToString) {
+      return callWithNullCheck(
+          target, (resultType) => wrap(StringLiteral("null"), resultType));
+    } else if (target == translator.objectNoSuchMethod) {
+      return callWithNullCheck(target, (resultType) {
+        // Object? receiver
+        b.ref_null(translator.topInfo.struct);
+        // Invocation invocation
+        _visitArguments(node.arguments, node.interfaceTargetReference, 1);
+        call(translator.noSuchMethodErrorThrowWithInvocation.reference);
+      });
     }
 
     Member? singleTarget = translator.singleTarget(node);
@@ -2279,6 +2274,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   @override
   w.ValueType visitInstanceGet(InstanceGet node, w.ValueType expectedType) {
     Member target = node.interfaceTarget;
+
+    // Handle `Object` getters that can be called with a `null` receiver.
     if (target == translator.objectHashCode ||
         target == translator.objectRuntimeType) {
       late w.Label doneLabel;
@@ -2300,6 +2297,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       b.end(); // doneLabel
       return resultType;
     }
+
     Member? singleTarget = translator.singleTarget(node);
     if (singleTarget != null) {
       return _directGet(singleTarget, node.receiver,
@@ -2409,7 +2407,9 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       InstanceTearOff node, w.ValueType expectedType) {
     Member target = node.interfaceTarget;
 
-    if (node.kind == InstanceAccessKind.Object) {
+    // Handle `Object` members that can torn-off with a `null` receiver.
+    if (target == translator.objectToString ||
+        target == translator.objectNoSuchMethod) {
       late w.Label doneLabel;
       w.ValueType resultType =
           _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
@@ -2422,23 +2422,15 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       }, (_) {});
       b.br(doneLabel);
       b.end(); // nullLabel
-      switch (target.name.text) {
-        case "toString":
-          wrap(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullToString)),
-              resultType);
-          break;
-        case "noSuchMethod":
-          wrap(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullNoSuchMethod)),
-              resultType);
-          break;
-        default:
-          unimplemented(
-              node, "Nullable tear-off of ${target.name.text}", [resultType]);
-          break;
+      if (target == translator.objectToString) {
+        wrap(ConstantExpression(StaticTearOffConstant(translator.nullToString)),
+            resultType);
+      } else {
+        assert(target == translator.objectNoSuchMethod);
+        wrap(
+            ConstantExpression(
+                StaticTearOffConstant(translator.nullNoSuchMethod)),
+            resultType);
       }
       b.end(); // doneLabel
       return resultType;
