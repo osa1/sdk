@@ -1807,17 +1807,19 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     final Procedure interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` members that can be called with a `null` receiver.
-    if (interfaceTarget == translator.objectToString) {
-      return callWithNullCheck(interfaceTarget,
-          (resultType) => wrap(StringLiteral("null"), resultType));
-    } else if (interfaceTarget == translator.objectNoSuchMethod) {
-      return callWithNullCheck(interfaceTarget, (resultType) {
-        // Object? receiver
-        b.ref_null(translator.topInfo.struct);
-        // Invocation invocation
-        _visitArguments(node.arguments, node.interfaceTargetReference, 1);
-        call(translator.noSuchMethodErrorThrowWithInvocation.reference);
-      });
+    if (dartTypeOf(node.receiver).isPotentiallyNullable) {
+      if (interfaceTarget == translator.objectToString) {
+        return callWithNullCheck(interfaceTarget,
+            (resultType) => wrap(StringLiteral("null"), resultType));
+      } else if (interfaceTarget == translator.objectNoSuchMethod) {
+        return callWithNullCheck(interfaceTarget, (resultType) {
+          // Object? receiver
+          b.ref_null(translator.topInfo.struct);
+          // Invocation invocation
+          _visitArguments(node.arguments, node.interfaceTargetReference, 1);
+          call(translator.noSuchMethodErrorThrowWithInvocation.reference);
+        });
+      }
     }
 
     Member? singleTarget = translator.singleTarget(node);
@@ -2276,26 +2278,28 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     final Member interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` getters that can be called with a `null` receiver.
-    if (interfaceTarget == translator.objectHashCode ||
-        interfaceTarget == translator.objectRuntimeType) {
-      late w.Label doneLabel;
-      w.ValueType resultType = _virtualCall(
-          node, interfaceTarget, _VirtualCallKind.Get, (signature) {
-        doneLabel = b.block(const [], signature.outputs);
-        w.Label nullLabel = b.block();
-        wrap(node.receiver, translator.topInfo.nullableType);
-        b.br_on_null(nullLabel);
-      }, (_) {});
-      b.br(doneLabel);
-      b.end(); // nullLabel
-      if (interfaceTarget == translator.objectHashCode) {
-        b.i64_const(2011);
-      } else {
-        assert(interfaceTarget == translator.objectRuntimeType);
-        wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
+    if (dartTypeOf(node.receiver).isPotentiallyNullable) {
+      if (interfaceTarget == translator.objectHashCode ||
+          interfaceTarget == translator.objectRuntimeType) {
+        late w.Label doneLabel;
+        w.ValueType resultType = _virtualCall(
+            node, interfaceTarget, _VirtualCallKind.Get, (signature) {
+          doneLabel = b.block(const [], signature.outputs);
+          w.Label nullLabel = b.block();
+          wrap(node.receiver, translator.topInfo.nullableType);
+          b.br_on_null(nullLabel);
+        }, (_) {});
+        b.br(doneLabel);
+        b.end(); // nullLabel
+        if (interfaceTarget == translator.objectHashCode) {
+          b.i64_const(2011);
+        } else {
+          assert(interfaceTarget == translator.objectRuntimeType);
+          wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
+        }
+        b.end(); // doneLabel
+        return resultType;
       }
-      b.end(); // doneLabel
-      return resultType;
     }
 
     Member? singleTarget = translator.singleTarget(node);
@@ -2408,32 +2412,36 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     final Member interfaceTarget = node.interfaceTarget;
 
     // Handle `Object` members that can be torn-off from a `null` receiver.
-    if (interfaceTarget == translator.objectToString ||
-        interfaceTarget == translator.objectNoSuchMethod) {
-      late w.Label doneLabel;
-      w.ValueType resultType = _virtualCall(
-          node, interfaceTarget, _VirtualCallKind.Get, (signature) {
-        doneLabel = b.block(const [], signature.outputs);
-        w.Label nullLabel = b.block();
-        wrap(node.receiver, translator.topInfo.nullableType);
-        b.br_on_null(nullLabel);
-        translator.convertType(
-            function, translator.topInfo.nullableType, signature.inputs[0]);
-      }, (_) {});
-      b.br(doneLabel);
-      b.end(); // nullLabel
-      if (interfaceTarget == translator.objectToString) {
-        wrap(ConstantExpression(StaticTearOffConstant(translator.nullToString)),
-            resultType);
-      } else {
-        assert(interfaceTarget == translator.objectNoSuchMethod);
-        wrap(
-            ConstantExpression(
-                StaticTearOffConstant(translator.nullNoSuchMethod)),
-            resultType);
+    if (dartTypeOf(node.receiver).isPotentiallyNullable) {
+      if (interfaceTarget == translator.objectToString ||
+          interfaceTarget == translator.objectNoSuchMethod) {
+        late w.Label doneLabel;
+        w.ValueType resultType = _virtualCall(
+            node, interfaceTarget, _VirtualCallKind.Get, (signature) {
+          doneLabel = b.block(const [], signature.outputs);
+          w.Label nullLabel = b.block();
+          wrap(node.receiver, translator.topInfo.nullableType);
+          b.br_on_null(nullLabel);
+          translator.convertType(
+              function, translator.topInfo.nullableType, signature.inputs[0]);
+        }, (_) {});
+        b.br(doneLabel);
+        b.end(); // nullLabel
+        if (interfaceTarget == translator.objectToString) {
+          wrap(
+              ConstantExpression(
+                  StaticTearOffConstant(translator.nullToString)),
+              resultType);
+        } else {
+          assert(interfaceTarget == translator.objectNoSuchMethod);
+          wrap(
+              ConstantExpression(
+                  StaticTearOffConstant(translator.nullNoSuchMethod)),
+              resultType);
+        }
+        b.end(); // doneLabel
+        return resultType;
       }
-      b.end(); // doneLabel
-      return resultType;
     }
 
     return _virtualCall(node, interfaceTarget, _VirtualCallKind.Get,
