@@ -129,6 +129,7 @@ abstract class JSArrayBase implements TypedData {
   int get lengthInBytes => _dataViewByteLength(toExternRef);
 
   @override
+  @pragma("wasm:prefer-inline")
   int get offsetInBytes => _dataViewByteOffset(_ref);
 
   @override
@@ -163,8 +164,7 @@ final class JSDataViewImpl implements ByteData {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get offsetInBytes =>
-      js.JS<double>('o => o.byteOffset', toExternRef).toInt();
+  int get offsetInBytes => _dataViewByteOffset(_ref);
 
   @override
   @pragma("wasm:prefer-inline")
