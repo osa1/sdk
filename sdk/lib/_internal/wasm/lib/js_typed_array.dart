@@ -120,6 +120,8 @@ abstract class JSArrayBase implements TypedData {
 
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
 
+  int get length;
+
   @override
   JSArrayBufferImpl get buffer =>
       JSArrayBufferImpl.fromRef(_dataViewBuffer(_ref));
@@ -253,9 +255,10 @@ final class JSDataViewImpl implements ByteData {
 }
 
 /// Base class for `int` typed lists.
-abstract class JSIntArrayImpl extends JSArrayBase
-    with ListMixin<int>, FixedLengthListMixin<int> {
-  JSIntArrayImpl(super._ref);
+abstract class _JSIntArrayImpl extends JSArrayBase {
+  _JSIntArrayImpl(super._ref);
+
+  void operator []=(int index, int value);
 
   @override
   void setAll(int index, Iterable<int> iterable) {
@@ -294,7 +297,9 @@ abstract class JSIntArrayImpl extends JSArrayBase
   }
 }
 
-final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
+final class JSUint8ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Uint8List {
   JSUint8ArrayImpl._(super._ref);
 
   factory JSUint8ArrayImpl(int length) =>
@@ -349,7 +354,9 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   }
 }
 
-final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
+final class JSInt8ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Int8List {
   JSInt8ArrayImpl._(super._ref);
 
   factory JSInt8ArrayImpl(int length) =>
@@ -404,7 +411,8 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   }
 }
 
-final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
+final class JSUint8ClampedArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
     implements Uint8ClampedList {
   JSUint8ClampedArrayImpl._(super._ref);
 
@@ -462,7 +470,9 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   }
 }
 
-final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
+final class JSUint16ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Uint16List {
   JSUint16ArrayImpl._(super._ref);
 
   factory JSUint16ArrayImpl(int length) =>
@@ -523,7 +533,9 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   }
 }
 
-final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
+final class JSInt16ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Int16List {
   JSInt16ArrayImpl._(super._ref);
 
   factory JSInt16ArrayImpl(int length) =>
@@ -584,7 +596,9 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   }
 }
 
-final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
+final class JSUint32ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Uint32List {
   JSUint32ArrayImpl._(super._ref);
 
   factory JSUint32ArrayImpl(int length) =>
@@ -645,7 +659,9 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   }
 }
 
-final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
+final class JSInt32ArrayImpl extends _JSIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Int32List {
   JSInt32ArrayImpl._(super._ref);
 
   factory JSInt32ArrayImpl(int length) =>
@@ -792,7 +808,7 @@ final class JSInt32x4ArrayImpl
 }
 
 /// Base class for 64-bit `int` typed lists.
-abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
+abstract class JSBigIntArrayImpl extends _JSIntArrayImpl {
   JSBigIntArrayImpl(super._ref);
 
   @override
@@ -800,6 +816,7 @@ abstract class JSBigIntArrayImpl extends JSIntArrayImpl {
 }
 
 final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
     implements Uint64List {
   JSBigUint64ArrayImpl._(super._ref);
 
@@ -857,7 +874,9 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   }
 }
 
-final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
+final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl
+    with ListMixin<int>, FixedLengthListMixin<int>
+    implements Int64List {
   JSBigInt64ArrayImpl._(super._ref);
 
   factory JSBigInt64ArrayImpl(int length) =>
