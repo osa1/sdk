@@ -2279,7 +2279,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   @override
   w.ValueType visitInstanceGet(InstanceGet node, w.ValueType expectedType) {
     Member target = node.interfaceTarget;
-    if (node.kind == InstanceAccessKind.Object) {
+    if (target == translator.objectHashCode ||
+        target == translator.objectRuntimeType) {
       late w.Label doneLabel;
       w.ValueType resultType =
           _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
@@ -2290,17 +2291,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       }, (_) {});
       b.br(doneLabel);
       b.end(); // nullLabel
-      switch (target.name.text) {
-        case "hashCode":
-          b.i64_const(2011);
-          break;
-        case "runtimeType":
-          wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
-          break;
-        default:
-          unimplemented(
-              node, "Nullable get of ${target.name.text}", [resultType]);
-          break;
+      if (target == translator.objectHashCode) {
+        b.i64_const(2011);
+      } else {
+        assert(target == translator.objectRuntimeType);
+        wrap(ConstantExpression(TypeLiteralConstant(NullType())), resultType);
       }
       b.end(); // doneLabel
       return resultType;
