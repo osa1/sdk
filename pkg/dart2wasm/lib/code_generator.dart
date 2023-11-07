@@ -2407,7 +2407,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       InstanceTearOff node, w.ValueType expectedType) {
     Member target = node.interfaceTarget;
 
-    // Handle `Object` members that can torn-off with a `null` receiver.
+    // Handle `Object` members that can be torn-off from a `null` receiver.
     if (target == translator.objectToString ||
         target == translator.objectNoSuchMethod) {
       late w.Label doneLabel;
