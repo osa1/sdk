@@ -553,6 +553,53 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       this[j] = otherList[i];
     }
   }
+
+  int get length;
+
+  int get elementSizeInBytes;
+
+  int get lengthInBytes;
+
+  @override
+  bool get isEmpty => length == 0;
+
+  @override
+  bool get isNotEmpty => !isEmpty;
+
+  @override
+  String join([String separator = ""]) {
+    StringBuffer buffer = StringBuffer();
+    buffer.writeAll(this as Iterable, separator);
+    return buffer.toString();
+  }
+
+  @override
+  void clear() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  bool remove(Object? element) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  void removeRange(int start, int end) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  void replaceRange(int start, int end, Iterable iterable) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError("Cannot resize a fixed-length list");
+  }
+
+  @override
+  String toString() => ListBase.listToString(this as List);
 }
 
 final class _TypedListIterator<E> implements Iterator<E> {
@@ -582,51 +629,8 @@ final class _TypedListIterator<E> implements Iterator<E> {
   E get current => _current as E;
 }
 
-/// Base class for `int` typed lists.
-abstract class _JSIntArrayImpl extends JSArrayBase {
-  _JSIntArrayImpl(super._ref);
-
-  void operator []=(int index, int value);
-
-  @override
-  void setAll(int index, Iterable<int> iterable) {
-    final end = iterable.length + index;
-    setRange(index, end, iterable);
-  }
-
-  @override
-  void setRange(int start, int end, Iterable<int> iterable,
-      [int skipCount = 0]) {
-    RangeError.checkValidRange(start, end, length);
-
-    if (skipCount < 0) {
-      throw ArgumentError(skipCount);
-    }
-
-    if (iterable is JSArrayBase) {
-      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      final length = end - start;
-      final sourceArray = source.toJSArrayExternRef(skipCount, length);
-      final targetArray = toJSArrayExternRef(start, length);
-      return _setRangeFast(targetArray, sourceArray);
-    }
-
-    List<int> otherList = iterable.skip(skipCount).toList(growable: false);
-
-    int count = end - start;
-    if (otherList.length < count) {
-      throw IterableElementError.tooFew();
-    }
-
-    // TODO(omersa): Use unchecked operations here.
-    for (int i = 0, j = start; i < count; i++, j++) {
-      this[j] = otherList[i];
-    }
-  }
-}
-
-final class JSUint8ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSUint8ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Uint8List {
   JSUint8ArrayImpl._(super._ref);
 
@@ -682,8 +686,8 @@ final class JSUint8ArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSInt8ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSInt8ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Int8List {
   JSInt8ArrayImpl._(super._ref);
 
@@ -739,8 +743,8 @@ final class JSInt8ArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSUint8ClampedArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSUint8ClampedArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Uint8ClampedList {
   JSUint8ClampedArrayImpl._(super._ref);
 
@@ -798,8 +802,8 @@ final class JSUint8ClampedArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSUint16ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSUint16ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Uint16List {
   JSUint16ArrayImpl._(super._ref);
 
@@ -861,8 +865,8 @@ final class JSUint16ArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSInt16ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSInt16ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Int16List {
   JSInt16ArrayImpl._(super._ref);
 
@@ -924,8 +928,8 @@ final class JSInt16ArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSUint32ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSUint32ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Uint32List {
   JSUint32ArrayImpl._(super._ref);
 
@@ -987,8 +991,8 @@ final class JSUint32ArrayImpl extends _JSIntArrayImpl
   }
 }
 
-final class JSInt32ArrayImpl extends _JSIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSInt32ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Int32List {
   JSInt32ArrayImpl._(super._ref);
 
@@ -1135,16 +1139,8 @@ final class JSInt32x4ArrayImpl
   }
 }
 
-/// Base class for 64-bit `int` typed lists.
-abstract class JSBigIntArrayImpl extends _JSIntArrayImpl {
-  JSBigIntArrayImpl(super._ref);
-
-  @override
-  int get elementSizeInBytes => 8;
-}
-
-final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSBigUint64ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Uint64List {
   JSBigUint64ArrayImpl._(super._ref);
 
@@ -1166,6 +1162,9 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   int get length => lengthInBytes >>> 3;
+
+  @override
+  int get elementSizeInBytes => 8;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
@@ -1202,8 +1201,8 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   }
 }
 
-final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl
-    with ListMixin<int>, FixedLengthListMixin<int>
+final class JSBigInt64ArrayImpl extends JSArrayBase
+    with _IntListMixin
     implements Int64List {
   JSBigInt64ArrayImpl._(super._ref);
 
@@ -1225,6 +1224,10 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   int get length => lengthInBytes >>> 3;
+
+  @override
+  @pragma("wasm:prefer-inline")
+  int get elementSizeInBytes => 8;
 
   @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
