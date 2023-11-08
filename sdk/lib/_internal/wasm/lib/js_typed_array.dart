@@ -173,7 +173,8 @@ final class JSDataViewImpl implements ByteData {
   int get elementSizeInBytes => 1;
 
   @override
-  ByteData asUnmodifiableView() => UnmodifiableByteDataView(this);
+  UnmodifiableByteDataView asUnmodifiableView() =>
+      UnmodifiableByteDataView(this);
 
   @override
   double getFloat32(int byteOffset, [Endian endian = Endian.big]) =>
@@ -670,14 +671,14 @@ final class JSUint8ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint8(toExternRef, index);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint8(toExternRef, index, value);
   }
 
@@ -759,7 +760,7 @@ final class JSInt8ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt8(toExternRef, index);
   }
 
@@ -774,7 +775,7 @@ final class JSInt8ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt8(toExternRef, index, value);
   }
 
@@ -831,14 +832,14 @@ final class JSUint8ClampedArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint8(toExternRef, index);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint8(toExternRef, index, value.clamp(0, 255));
   }
 
@@ -877,7 +878,7 @@ final class JSUint16ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -2)
         : length * 2);
     return JSUint16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -901,14 +902,14 @@ final class JSUint16ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint16(toExternRef, index * 2, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint16(toExternRef, index * 2, value, true);
   }
 
@@ -947,7 +948,7 @@ final class JSInt16ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? ((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1
+        ? ((buffer.lengthInBytes - offsetInBytes) & -2)
         : length * 2);
     return JSInt16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -971,14 +972,14 @@ final class JSInt16ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt16(toExternRef, index * 2, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt16(toExternRef, index * 2, value, true);
   }
 
@@ -1017,7 +1018,7 @@ final class JSUint32ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSUint32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1041,14 +1042,14 @@ final class JSUint32ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint32(toExternRef, index * 4, value, true);
   }
 
@@ -1087,7 +1088,7 @@ final class JSInt32ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSInt32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1111,14 +1112,14 @@ final class JSInt32ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt32(toExternRef, index * 4, value, true);
   }
 
@@ -1170,7 +1171,7 @@ final class JSInt32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Int32x4 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     int _x = _storage[(index * 4) + 0];
     int _y = _storage[(index * 4) + 1];
     int _z = _storage[(index * 4) + 2];
@@ -1181,7 +1182,7 @@ final class JSInt32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Int32x4 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 4) + 0] = value.x;
     _storage[(index * 4) + 1] = value.y;
     _storage[(index * 4) + 2] = value.z;
@@ -1189,13 +1190,14 @@ final class JSInt32x4ArrayImpl
   }
 
   @override
-  Int32x4List asUnmodifiableView() => UnmodifiableInt32x4ListView(this);
+  UnmodifiableInt32x4ListView asUnmodifiableView() =>
+      UnmodifiableInt32x4ListView(this);
 
   @override
-  Int32x4List sublist(int start, [int? end]) {
+  JSInt32x4ArrayImpl sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     return JSInt32x4ArrayImpl.externalStorage(
-        _storage.sublist(start * 4, stop * 4) as JSInt32ArrayImpl);
+        _storage.sublist(start * 4, stop * 4));
   }
 
   @override
@@ -1242,7 +1244,7 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSBigUint64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1252,6 +1254,7 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
   int get length => lengthInBytes >>> 3;
 
   @override
+  @pragma("wasm:prefer-inline")
   int get elementSizeInBytes => 8;
 
   @override
@@ -1265,14 +1268,14 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getBigUint64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _setBigUint64(toExternRef, index * 8, value, true);
   }
 
@@ -1311,7 +1314,7 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSBigInt64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1335,14 +1338,14 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getBigInt64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setBigInt64(toExternRef, index * 8, value, true);
   }
 
@@ -1421,7 +1424,7 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSFloat32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1445,22 +1448,23 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getFloat32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setFloat32(toExternRef, index * 4, value, true);
   }
 
   @override
-  Float32List asUnmodifiableView() => UnmodifiableFloat32ListView(this);
+  UnmodifiableFloat32ListView asUnmodifiableView() =>
+      UnmodifiableFloat32ListView(this);
 
   @override
-  Float32List sublist(int start, [int? end]) {
+  JSFloat32ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 4);
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
@@ -1482,7 +1486,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSFloat64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1506,22 +1510,23 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getFloat64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setFloat64(toExternRef, index * 8, value, true);
   }
 
   @override
-  Float64List asUnmodifiableView() => UnmodifiableFloat64ListView(this);
+  UnmodifiableFloat64ListView asUnmodifiableView() =>
+      UnmodifiableFloat64ListView(this);
 
   @override
-  Float64List sublist(int start, [int? end]) {
+  JSFloat64ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 8);
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
@@ -1558,7 +1563,7 @@ final class JSFloat32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Float32x4 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     double _x = _storage[(index * 4) + 0];
     double _y = _storage[(index * 4) + 1];
     double _z = _storage[(index * 4) + 2];
@@ -1569,7 +1574,7 @@ final class JSFloat32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Float32x4 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 4) + 0] = value.x;
     _storage[(index * 4) + 1] = value.y;
     _storage[(index * 4) + 2] = value.z;
@@ -1577,13 +1582,14 @@ final class JSFloat32x4ArrayImpl
   }
 
   @override
-  Float32x4List asUnmodifiableView() => UnmodifiableFloat32x4ListView(this);
+  UnmodifiableFloat32x4ListView asUnmodifiableView() =>
+      UnmodifiableFloat32x4ListView(this);
 
   @override
-  Float32x4List sublist(int start, [int? end]) {
+  JSFloat32x4ArrayImpl sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     return JSFloat32x4ArrayImpl.externalStorage(
-        _storage.sublist(start * 4, stop * 4) as JSFloat32ArrayImpl);
+        _storage.sublist(start * 4, stop * 4));
   }
 
   @override
@@ -1644,7 +1650,7 @@ final class JSFloat64x2ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Float64x2 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     double _x = _storage[(index * 2) + 0];
     double _y = _storage[(index * 2) + 1];
     return Float64x2(_x, _y);
@@ -1653,19 +1659,20 @@ final class JSFloat64x2ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Float64x2 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 2) + 0] = value.x;
     _storage[(index * 2) + 1] = value.y;
   }
 
   @override
-  Float64x2List asUnmodifiableView() => UnmodifiableFloat64x2ListView(this);
+  UnmodifiableFloat64x2ListView asUnmodifiableView() =>
+      UnmodifiableFloat64x2ListView(this);
 
   @override
-  Float64x2List sublist(int start, [int? end]) {
+  JSFloat64x2ArrayImpl sublist(int start, [int? end]) {
     final stop = RangeError.checkValidRange(start, end, length);
     return JSFloat64x2ArrayImpl.externalStorage(
-        _storage.sublist(start * 2, stop * 2) as JSFloat64ArrayImpl);
+        _storage.sublist(start * 2, stop * 2));
   }
 
   @override
@@ -1695,6 +1702,13 @@ final class JSFloat64x2ArrayImpl
     for (int i = 0, j = start; i < count; i++, j++) {
       this[j] = otherList[i];
     }
+  }
+}
+
+@pragma("wasm:prefer-inline")
+void _indexCheck(int index, int length) {
+  if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+    throw IndexError.withLength(index, length);
   }
 }
 
@@ -1733,6 +1747,7 @@ int _dataViewByteLength(WasmExternRef? ref) => js
     .JS<WasmF64>(
         "Function.prototype.call.bind(Object.getOwnPropertyDescriptor(DataView.prototype, 'byteLength').get)",
         ref)
+    .truncSatS()
     .toInt();
 
 @pragma("wasm:prefer-inline")
