@@ -577,11 +577,8 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   bool get isNotEmpty => !isEmpty;
 
   @override
-  String join([String separator = ""]) {
-    StringBuffer buffer = StringBuffer();
-    buffer.writeAll(this, separator);
-    return buffer.toString();
-  }
+  String join([String separator = ""]) =>
+      (StringBuffer()..writeAll(this, separator)).toString();
 
   @override
   void clear() {
@@ -1481,6 +1478,361 @@ abstract class JSFloatArrayImpl extends JSArrayBase
       this[j] = otherList[i];
     }
   }
+}
+
+mixin _DoubleListMixin on JSArrayBase implements List<double> {
+  void _setUnchecked(int index, double value);
+
+  double _getUnchecked(int index);
+
+  Iterable<T> whereType<T>() => WhereTypeIterable<T>(this);
+
+  Iterable<double> followedBy(Iterable<double> other) =>
+      FollowedByIterable<double>.firstEfficient(this, other);
+
+  List<R> cast<R>() => List.castFrom<double, R>(this);
+
+  void set first(double value) {
+    if (length == 0) {
+      throw IndexError.withLength(0, length, indexable: this);
+    }
+    _setUnchecked(0, value);
+  }
+
+  void set last(double value) {
+    if (length == 0) {
+      throw IndexError.withLength(0, length, indexable: this);
+    }
+    _setUnchecked(length - 1, value);
+  }
+
+  int indexWhere(bool test(double element), [int start = 0]) {
+    final length = this.length;
+    if (start < 0) start = 0;
+    for (int i = start; i < length; i++) {
+      if (test(_getUnchecked(i))) return i;
+    }
+    return -1;
+  }
+
+  int lastIndexWhere(bool test(double element), [int? start]) {
+    final length = this.length;
+    int startIndex = (start == null || start >= length) ? length - 1 : start;
+    for (int i = startIndex; i >= 0; i--) {
+      if (test(_getUnchecked(i))) return i;
+    }
+    return -1;
+  }
+
+  List<double> operator +(List<double> other) => [...this, ...other];
+
+  bool contains(Object? element) {
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (_getUnchecked(i) == element) return true;
+    }
+    return false;
+  }
+
+  void shuffle([Random? random]) {
+    random ??= Random();
+    var i = length;
+    while (i > 1) {
+      int pos = random.nextInt(i);
+      i -= 1;
+      var tmp = _getUnchecked(i);
+      _setUnchecked(i, _getUnchecked(pos));
+      _setUnchecked(pos, tmp);
+    }
+  }
+
+  Iterable<double> where(bool f(double element)) =>
+      WhereIterable<double>(this, f);
+
+  Iterable<double> take(int n) => SubListIterable<double>(this, 0, n);
+
+  Iterable<double> takeWhile(bool test(double element)) =>
+      TakeWhileIterable<double>(this, test);
+
+  Iterable<double> skip(int n) => SubListIterable<double>(this, n, null);
+
+  Iterable<double> skipWhile(bool test(double element)) =>
+      SkipWhileIterable<double>(this, test);
+
+  Iterable<double> get reversed => ReversedListIterable<double>(this);
+
+  Map<int, double> asMap() => ListMapView<double>(this);
+
+  Iterable<double> getRange(int start, [int? end]) {
+    int endIndex = RangeError.checkValidRange(start, end, this.length);
+    return SubListIterable<double>(this, start, endIndex);
+  }
+
+  Iterator<double> get iterator => _TypedListIterator<double>(this);
+
+  List<double> toList({bool growable = true}) {
+    return List<double>.from(this, growable: growable);
+  }
+
+  Set<double> toSet() {
+    return Set<double>.from(this);
+  }
+
+  void forEach(void f(double element)) {
+    final length = this.length;
+    for (var i = 0; i < length; i++) {
+      f(_getUnchecked(i));
+    }
+  }
+
+  double reduce(double combine(double value, double element)) {
+    final length = this.length;
+    if (length == 0) throw IterableElementError.noElement();
+    var value = _getUnchecked(0);
+    for (var i = 1; i < length; ++i) {
+      value = combine(value, _getUnchecked(i));
+    }
+    return value;
+  }
+
+  T fold<T>(T initialValue, T combine(T initialValue, double element)) {
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      initialValue = combine(initialValue, _getUnchecked(i));
+    }
+    return initialValue;
+  }
+
+  Iterable<T> map<T>(T f(double element)) => MappedIterable<double, T>(this, f);
+
+  Iterable<T> expand<T>(Iterable<T> f(double element)) =>
+      ExpandIterable<double, T>(this, f);
+
+  bool every(bool f(double element)) {
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (!f(_getUnchecked(i))) return false;
+    }
+    return true;
+  }
+
+  bool any(bool f(double element)) {
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (f(_getUnchecked(i))) return true;
+    }
+    return false;
+  }
+
+  double firstWhere(bool test(double element), {double orElse()?}) {
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      var element = _getUnchecked(i);
+      if (test(element)) return element;
+    }
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  double lastWhere(bool test(double element), {double orElse()?}) {
+    final length = this.length;
+    for (var i = length - 1; i >= 0; --i) {
+      var element = _getUnchecked(i);
+      if (test(element)) {
+        return element;
+      }
+    }
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  double singleWhere(bool test(double element), {double orElse()?}) {
+    var result = null;
+    bool foundMatching = false;
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      var element = _getUnchecked(i);
+      if (test(element)) {
+        if (foundMatching) {
+          throw IterableElementError.tooMany();
+        }
+        result = element;
+        foundMatching = true;
+      }
+    }
+    if (foundMatching) return result;
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  double elementAt(int index) {
+    return this[index];
+  }
+
+  void add(double value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void addAll(Iterable<double> value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void insert(int index, double value) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void insertAll(int index, Iterable<double> values) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void sort([int compare(double a, double b)?]) {
+    Sort.sort(this, compare ?? Comparable.compare);
+  }
+
+  int indexOf(double element, [int start = 0]) {
+    final length = this.length;
+    if (start >= length) {
+      return -1;
+    } else if (start < 0) {
+      start = 0;
+    }
+    for (int i = start; i < length; i++) {
+      if (_getUnchecked(i) == element) return i;
+    }
+    return -1;
+  }
+
+  int lastIndexOf(double element, [int? start]) {
+    final length = this.length;
+    int startIndex = (start == null || start >= length) ? length - 1 : start;
+    for (int i = startIndex; i >= 0; i--) {
+      if (_getUnchecked(i) == element) return i;
+    }
+    return -1;
+  }
+
+  double removeLast() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  double removeAt(int index) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void removeWhere(bool test(double element)) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void retainWhere(bool test(double element)) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  double get first {
+    if (length > 0) return _getUnchecked(0);
+    throw IterableElementError.noElement();
+  }
+
+  double get last {
+    final length = this.length;
+    if (length > 0) return _getUnchecked(length - 1);
+    throw IterableElementError.noElement();
+  }
+
+  double get single {
+    final length = this.length;
+    if (length == 1) return _getUnchecked(0);
+    if (length == 0) throw IterableElementError.noElement();
+    throw IterableElementError.tooMany();
+  }
+
+  void fillRange(int start, int end, [double? fillValue]) {
+    RangeError.checkValidRange(start, end, this.length);
+    if (start == end) return;
+    if (fillValue == null) {
+      throw ArgumentError.notNull("fillValue");
+    }
+    for (var i = start; i < end; ++i) {
+      _setUnchecked(i, fillValue);
+    }
+  }
+
+  void setAll(int index, Iterable<double> iterable) {
+    final end = iterable.length + index;
+    setRange(index, end, iterable);
+  }
+
+  void setRange(int start, int end, Iterable<double> iterable,
+      [int skipCount = 0]) {
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
+
+    if (iterable is JSArrayBase) {
+      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
+      final length = end - start;
+      final sourceArray = source.toJSArrayExternRef(skipCount, length);
+      final targetArray = toJSArrayExternRef(start, length);
+      return _setRangeFast(targetArray, sourceArray);
+    }
+
+    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
+
+    final count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    // TODO(omersa): Use unchecked read.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      _setUnchecked(j, otherList[i]);
+    }
+  }
+
+  int get length;
+
+  int get elementSizeInBytes;
+
+  int get lengthInBytes;
+
+  @override
+  bool get isEmpty => length == 0;
+
+  @override
+  bool get isNotEmpty => !isEmpty;
+
+  @override
+  String join([String separator = ""]) =>
+      (StringBuffer()..writeAll(this, separator)).toString();
+
+  @override
+  void clear() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  bool remove(Object? element) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  void removeRange(int start, int end) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  void replaceRange(int start, int end, Iterable iterable) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  @override
+  set length(int newLength) {
+    throw UnsupportedError("Cannot resize a fixed-length list");
+  }
+
+  @override
+  String toString() => ListBase.listToString(this);
 }
 
 final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
