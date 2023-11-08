@@ -553,7 +553,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
 
     List<int> otherList = iterable.skip(skipCount).toList(growable: false);
 
-    int count = end - start;
+    final count = end - start;
     if (otherList.length < count) {
       throw IterableElementError.tooFew();
     }
@@ -1275,7 +1275,7 @@ final class JSInt32x4ArrayImpl
 
     List<Int32x4> otherList = iterable.skip(skipCount).toList(growable: false);
 
-    int count = end - start;
+    final count = end - start;
     if (otherList.length < count) {
       throw IterableElementError.tooFew();
     }
@@ -1471,7 +1471,7 @@ abstract class JSFloatArrayImpl extends JSArrayBase
 
     List<double> otherList = iterable.skip(skipCount).toList(growable: false);
 
-    int count = end - start;
+    final count = end - start;
     if (otherList.length < count) {
       throw IterableElementError.tooFew();
     }
@@ -1688,7 +1688,7 @@ final class JSFloat32x4ArrayImpl
     List<Float32x4> otherList =
         iterable.skip(skipCount).toList(growable: false);
 
-    int count = end - start;
+    final count = end - start;
     if (otherList.length < count) {
       throw IterableElementError.tooFew();
     }
@@ -1771,7 +1771,7 @@ final class JSFloat64x2ArrayImpl
     List<Float64x2> otherList =
         iterable.skip(skipCount).toList(growable: false);
 
-    int count = end - start;
+    final count = end - start;
     if (otherList.length < count) {
       throw IterableElementError.tooFew();
     }
