@@ -624,7 +624,6 @@ final class _TypedListIterator<E> implements Iterator<E> {
   bool moveNext() {
     int nextPosition = _position + 1;
     if (nextPosition < _length) {
-      // TODO(#52971): Use unchecked read here.
       _current = _array[nextPosition];
       _position = nextPosition;
       return true;
@@ -692,6 +691,39 @@ final class JSUint8ArrayImpl extends JSArrayBase
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSUint8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSUint8ArrayImplIterator get iterator => _JSUint8ArrayImplIterator(this);
+}
+
+final class _JSUint8ArrayImplIterator implements Iterator<int> {
+  final WasmExternRef? _ref;
+  final int _length;
+  int _position = -1;
+  int _current = 0;
+
+  _JSUint8ArrayImplIterator(JSUint8ArrayImpl array)
+      : _ref = array._ref,
+        _length = array.length;
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getUint8(_ref, _position);
+      return true;
+    }
+    return false;
+  }
+
+  @pragma("wasm:prefer-inline")
+  int get current {
+    if (_position < 0 || _position >= _length) {
+      throw '';
+    } else {
+      return _current;
+    }
   }
 }
 
