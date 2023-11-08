@@ -602,6 +602,14 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   String toString() => ListBase.listToString(this as List);
 }
 
+// TODO(omersa): This mixin should override other update methods (probably just
+// setRange) that don't use `[]=` to modify the list.
+mixin _UnmodifiableIntListMixin {
+  void operator []=(int index, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+}
+
 final class _TypedListIterator<E> implements Iterator<E> {
   final List<E> _array;
   final int _length;
@@ -675,15 +683,22 @@ final class JSUint8ArrayImpl extends JSArrayBase
   }
 
   @override
-  Uint8List asUnmodifiableView() => UnmodifiableUint8ListView(this);
+  UnmodifiableJSUint8Array asUnmodifiableView() =>
+      UnmodifiableJSUint8Array._(_ref);
 
   @override
-  Uint8List sublist(int start, [int? end]) {
+  JSUint8ArrayImpl sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSUint8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSUint8Array extends JSUint8ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableUint8ListView {
+  UnmodifiableJSUint8Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSInt8ArrayImpl extends JSArrayBase
@@ -732,15 +747,22 @@ final class JSInt8ArrayImpl extends JSArrayBase
   }
 
   @override
-  Int8List asUnmodifiableView() => UnmodifiableInt8ListView(this);
+  UnmodifiableJSInt8Array asUnmodifiableView() =>
+      UnmodifiableJSInt8Array._(_ref);
 
   @override
-  Int8List sublist(int start, [int? end]) {
+  JSInt8ArrayImpl sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSInt8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSInt8Array extends JSInt8ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableInt8ListView {
+  UnmodifiableJSInt8Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSUint8ClampedArrayImpl extends JSArrayBase
@@ -789,17 +811,23 @@ final class JSUint8ClampedArrayImpl extends JSArrayBase
   }
 
   @override
-  Uint8ClampedList asUnmodifiableView() =>
-      UnmodifiableUint8ClampedListView(this);
+  UnmodifiableJSUint8ClampedArray asUnmodifiableView() =>
+      UnmodifiableJSUint8ClampedArray._(_ref);
 
   @override
-  Uint8ClampedList sublist(int start, [int? end]) {
+  JSUint8ClampedArrayImpl sublist(int start, [int? end]) {
     final newOffset = offsetInBytes + start;
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSUint8ClampedArrayImpl._(
         buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSUint8ClampedArray extends JSUint8ClampedArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableUint8ClampedListView {
+  UnmodifiableJSUint8ClampedArray._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSUint16ArrayImpl extends JSArrayBase
@@ -853,16 +881,23 @@ final class JSUint16ArrayImpl extends JSArrayBase
   }
 
   @override
-  Uint16List asUnmodifiableView() => UnmodifiableUint16ListView(this);
+  UnmodifiableJSUint16Array asUnmodifiableView() =>
+      UnmodifiableJSUint16Array._(_ref);
 
   @override
-  Uint16List sublist(int start, [int? end]) {
+  JSUint16ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 2);
     final int newEnd = end == null ? lengthInBytes : end * 2;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSUint16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSUint16Array extends JSUint16ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableUint16ListView {
+  UnmodifiableJSUint16Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSInt16ArrayImpl extends JSArrayBase
@@ -916,16 +951,23 @@ final class JSInt16ArrayImpl extends JSArrayBase
   }
 
   @override
-  Int16List asUnmodifiableView() => UnmodifiableInt16ListView(this);
+  UnmodifiableJSInt16Array asUnmodifiableView() =>
+      UnmodifiableJSInt16Array._(_ref);
 
   @override
-  Int16List sublist(int start, [int? end]) {
+  JSInt16ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 2);
     final int newEnd = end == null ? lengthInBytes : end * 2;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSInt16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSInt16Array extends JSInt16ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableInt16ListView {
+  UnmodifiableJSInt16Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSUint32ArrayImpl extends JSArrayBase
@@ -979,16 +1021,23 @@ final class JSUint32ArrayImpl extends JSArrayBase
   }
 
   @override
-  Uint32List asUnmodifiableView() => UnmodifiableUint32ListView(this);
+  UnmodifiableJSUint32Array asUnmodifiableView() =>
+      UnmodifiableJSUint32Array._(_ref);
 
   @override
-  Uint32List sublist(int start, [int? end]) {
+  JSUint32ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 4);
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSUint32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSUint32Array extends JSUint32ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableUint32ListView {
+  UnmodifiableJSUint32Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSInt32ArrayImpl extends JSArrayBase
@@ -1042,16 +1091,23 @@ final class JSInt32ArrayImpl extends JSArrayBase
   }
 
   @override
-  Int32List asUnmodifiableView() => UnmodifiableInt32ListView(this);
+  UnmodifiableJSInt32Array asUnmodifiableView() =>
+      UnmodifiableJSInt32Array._(_ref);
 
   @override
-  Int32List sublist(int start, [int? end]) {
+  JSInt32ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 4);
     final int newEnd = end == null ? lengthInBytes : end * 4;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSInt32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSInt32Array extends JSInt32ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableInt32ListView {
+  UnmodifiableJSInt32Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSInt32x4ArrayImpl
@@ -1189,16 +1245,23 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
   }
 
   @override
-  Uint64List asUnmodifiableView() => UnmodifiableUint64ListView(this);
+  UnmodifiableJSBigUint64Array asUnmodifiableView() =>
+      UnmodifiableJSBigUint64Array._(_ref);
 
   @override
-  Uint64List sublist(int start, [int? end]) {
+  JSBigUint64ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 8);
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigUint64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSBigUint64Array extends JSBigUint64ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableUint64ListView {
+  UnmodifiableJSBigUint64Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSBigInt64ArrayImpl extends JSArrayBase
@@ -1252,16 +1315,23 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
   }
 
   @override
-  Int64List asUnmodifiableView() => UnmodifiableInt64ListView(this);
+  UnmodifiableJSBigInt64Array asUnmodifiableView() =>
+      UnmodifiableJSBigInt64Array._(_ref);
 
   @override
-  Int64List sublist(int start, [int? end]) {
+  JSBigInt64ArrayImpl sublist(int start, [int? end]) {
     final int newOffset = offsetInBytes + (start * 8);
     final int newEnd = end == null ? lengthInBytes : end * 8;
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigInt64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSBigInt64Array extends JSBigInt64ArrayImpl
+    with _UnmodifiableIntListMixin
+    implements UnmodifiableInt64ListView {
+  UnmodifiableJSBigInt64Array._(WasmExternRef? ref) : super._(ref);
 }
 
 /// Base class for `double` typed lists.
