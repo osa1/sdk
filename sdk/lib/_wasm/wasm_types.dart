@@ -151,7 +151,11 @@ class WasmI64 extends _WasmInt {
   const WasmI64(this._value);
 
   external factory WasmI64.fromInt(int value);
+
   external int toInt();
+
+  /// `i64.le_u`.
+  external bool leU(WasmI64 other);
 }
 
 /// The Wasm `f32` type.

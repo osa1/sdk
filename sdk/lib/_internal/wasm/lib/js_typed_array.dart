@@ -326,14 +326,14 @@ final class JSUint8ArrayImpl extends JSIntArrayImpl implements Uint8List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint8(toExternRef, index);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint8(toExternRef, index, value);
   }
 
@@ -373,7 +373,7 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt8(toExternRef, index);
   }
 
@@ -388,7 +388,7 @@ final class JSInt8ArrayImpl extends JSIntArrayImpl implements Int8List {
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt8(toExternRef, index, value);
   }
 
@@ -437,14 +437,14 @@ final class JSUint8ClampedArrayImpl extends JSIntArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint8(toExternRef, index);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint8(toExternRef, index, value.clamp(0, 255));
   }
 
@@ -499,14 +499,14 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint16(toExternRef, index * 2, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint16(toExternRef, index * 2, value, true);
   }
 
@@ -560,14 +560,14 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt16(toExternRef, index * 2, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt16(toExternRef, index * 2, value, true);
   }
 
@@ -621,14 +621,14 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getUint32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setUint32(toExternRef, index * 4, value, true);
   }
 
@@ -682,14 +682,14 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getInt32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setInt32(toExternRef, index * 4, value, true);
   }
 
@@ -734,7 +734,7 @@ final class JSInt32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Int32x4 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     int _x = _storage[(index * 4) + 0];
     int _y = _storage[(index * 4) + 1];
     int _z = _storage[(index * 4) + 2];
@@ -745,7 +745,7 @@ final class JSInt32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Int32x4 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 4) + 0] = value.x;
     _storage[(index * 4) + 1] = value.y;
     _storage[(index * 4) + 2] = value.z;
@@ -833,14 +833,14 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getBigUint64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _setBigUint64(toExternRef, index * 8, value, true);
   }
 
@@ -890,14 +890,14 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getBigInt64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setBigInt64(toExternRef, index * 8, value, true);
   }
 
@@ -993,14 +993,14 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getFloat32(toExternRef, index * 4, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setFloat32(toExternRef, index * 4, value, true);
   }
 
@@ -1054,14 +1054,14 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     return _getFloat64(toExternRef, index * 8, true);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, double value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _setFloat64(toExternRef, index * 8, value, true);
   }
 
@@ -1106,7 +1106,7 @@ final class JSFloat32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Float32x4 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     double _x = _storage[(index * 4) + 0];
     double _y = _storage[(index * 4) + 1];
     double _z = _storage[(index * 4) + 2];
@@ -1117,7 +1117,7 @@ final class JSFloat32x4ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Float32x4 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 4) + 0] = value.x;
     _storage[(index * 4) + 1] = value.y;
     _storage[(index * 4) + 2] = value.z;
@@ -1192,7 +1192,7 @@ final class JSFloat64x2ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   Float64x2 operator [](int index) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     double _x = _storage[(index * 2) + 0];
     double _y = _storage[(index * 2) + 1];
     return Float64x2(_x, _y);
@@ -1201,7 +1201,7 @@ final class JSFloat64x2ArrayImpl
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, Float64x2 value) {
-    IndexError.check(index, length);
+    _indexCheck(index, length);
     _storage[(index * 2) + 0] = value.x;
     _storage[(index * 2) + 1] = value.y;
   }
@@ -1243,6 +1243,13 @@ final class JSFloat64x2ArrayImpl
     for (int i = 0, j = start; i < count; i++, j++) {
       this[j] = otherList[i];
     }
+  }
+}
+
+@pragma("wasm:prefer-inline")
+void _indexCheck(int index, int length) {
+  if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+    throw IndexError.withLength(index, length);
   }
 }
 

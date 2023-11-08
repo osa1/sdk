@@ -360,9 +360,18 @@ class Intrinsifier {
               throw 'Unknown WasmI32 member $name';
           }
         case w.NumType.i64:
-          assert(name == "toInt");
-          codeGen.wrap(receiver, w.NumType.i64);
-          return w.NumType.i64;
+          switch (name) {
+            case "toInt":
+              codeGen.wrap(receiver, w.NumType.i64);
+              return w.NumType.i64;
+            case "leU":
+              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              b.i64_le_u();
+              return boolType;
+            default:
+              throw 'Unknown WasmI64 member $name';
+          }
         case w.NumType.f32:
           assert(name == "toDouble");
           codeGen.wrap(receiver, w.NumType.f32);
