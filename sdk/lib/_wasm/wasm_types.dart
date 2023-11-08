@@ -181,7 +181,7 @@ class WasmF64 extends _WasmFloat {
   external double toDouble();
 
   /// `i64.trunc_sat_f64_s`.
-  external int toInt();
+  external WasmI64 truncSatS();
 }
 
 /// A Wasm array with integer element type.

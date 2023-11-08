@@ -1256,7 +1256,6 @@ void _offsetAlignmentCheck(int offset, int alignment) {
   }
 }
 
-@pragma("wasm:prefer-inline")
 WasmExternRef? _newDataView(int length) => js.JS<WasmExternRef?>(
     'l => new DataView(new ArrayBuffer(l))', WasmI32.fromInt(length));
 
@@ -1281,6 +1280,7 @@ int _dataViewByteLength(WasmExternRef? ref) => js
     .JS<WasmF64>(
         "Function.prototype.call.bind(Object.getOwnPropertyDescriptor(DataView.prototype, 'byteLength').get)",
         ref)
+    .truncSatS()
     .toInt();
 
 @pragma("wasm:prefer-inline")

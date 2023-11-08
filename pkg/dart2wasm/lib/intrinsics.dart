@@ -357,7 +357,7 @@ class Intrinsifier {
               b.i32_ne();
               return w.NumType.i32;
             default:
-              throw 'Unknown i32 conversion to $receiverType';
+              throw 'Unknown WasmI32 member $name';
           }
         case w.NumType.i64:
           assert(name == "toInt");
@@ -373,12 +373,12 @@ class Intrinsifier {
             case "toDouble":
               codeGen.wrap(receiver, w.NumType.f64);
               return w.NumType.f64;
-            case "toInt":
+            case "truncSatS":
               codeGen.wrap(receiver, w.NumType.f64);
               b.i64_trunc_sat_f64_s();
               return w.NumType.i64;
             default:
-              throw 'Unknown f64 conversion to $receiverType';
+              throw 'Unknown WasmF64 member $name';
           }
       }
     }
