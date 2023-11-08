@@ -254,6 +254,334 @@ final class JSDataViewImpl implements ByteData {
       _setUint8(toExternRef, byteOffset, value);
 }
 
+mixin _IntListMixin on JSArrayBase implements List<int> {
+  Iterable<T> whereType<T>() => WhereTypeIterable<T>(this);
+
+  Iterable<int> followedBy(Iterable<int> other) =>
+      FollowedByIterable<int>.firstEfficient(this, other);
+
+  List<R> cast<R>() => List.castFrom<int, R>(this);
+  void set first(int value) {
+    if (this.length == 0) {
+      throw IndexError.withLength(0, length, indexable: this);
+    }
+    this[0] = value;
+  }
+
+  void set last(int value) {
+    if (this.length == 0) {
+      throw IndexError.withLength(0, length, indexable: this);
+    }
+    this[this.length - 1] = value;
+  }
+
+  int indexWhere(bool test(int element), [int start = 0]) {
+    if (start < 0) start = 0;
+    for (int i = start; i < length; i++) {
+      if (test(this[i])) return i;
+    }
+    return -1;
+  }
+
+  int lastIndexWhere(bool test(int element), [int? start]) {
+    int startIndex =
+        (start == null || start >= this.length) ? this.length - 1 : start;
+    for (int i = startIndex; i >= 0; i--) {
+      if (test(this[i])) return i;
+    }
+    return -1;
+  }
+
+  List<int> operator +(List<int> other) => [...this, ...other];
+
+  bool contains(Object? element) {
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      if (this[i] == element) return true;
+    }
+    return false;
+  }
+
+  void shuffle([Random? random]) {
+    random ??= Random();
+    var i = this.length;
+    while (i > 1) {
+      int pos = random.nextInt(i);
+      i -= 1;
+      var tmp = this[i];
+      this[i] = this[pos];
+      this[pos] = tmp;
+    }
+  }
+
+  Iterable<int> where(bool f(int element)) => WhereIterable<int>(this, f);
+
+  Iterable<int> take(int n) => SubListIterable<int>(this, 0, n);
+
+  Iterable<int> takeWhile(bool test(int element)) =>
+      TakeWhileIterable<int>(this, test);
+
+  Iterable<int> skip(int n) => SubListIterable<int>(this, n, null);
+
+  Iterable<int> skipWhile(bool test(int element)) =>
+      SkipWhileIterable<int>(this, test);
+
+  Iterable<int> get reversed => ReversedListIterable<int>(this);
+
+  Map<int, int> asMap() => ListMapView<int>(this);
+
+  Iterable<int> getRange(int start, [int? end]) {
+    int endIndex = RangeError.checkValidRange(start, end, this.length);
+    return SubListIterable<int>(this, start, endIndex);
+  }
+
+  Iterator<int> get iterator => _TypedListIterator<int>(this);
+
+  List<int> toList({bool growable = true}) {
+    return List<int>.from(this, growable: growable);
+  }
+
+  Set<int> toSet() {
+    return Set<int>.from(this);
+  }
+
+  void forEach(void f(int element)) {
+    var len = this.length;
+    for (var i = 0; i < len; i++) {
+      f(this[i]);
+    }
+  }
+
+  int reduce(int combine(int value, int element)) {
+    var len = this.length;
+    if (len == 0) throw IterableElementError.noElement();
+    var value = this[0];
+    for (var i = 1; i < len; ++i) {
+      value = combine(value, this[i]);
+    }
+    return value;
+  }
+
+  T fold<T>(T initialValue, T combine(T initialValue, int element)) {
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      initialValue = combine(initialValue, this[i]);
+    }
+    return initialValue;
+  }
+
+  Iterable<T> map<T>(T f(int element)) => MappedIterable<int, T>(this, f);
+
+  Iterable<T> expand<T>(Iterable<T> f(int element)) =>
+      ExpandIterable<int, T>(this, f);
+
+  bool every(bool f(int element)) {
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      if (!f(this[i])) return false;
+    }
+    return true;
+  }
+
+  bool any(bool f(int element)) {
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      if (f(this[i])) return true;
+    }
+    return false;
+  }
+
+  int firstWhere(bool test(int element), {int orElse()?}) {
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      var element = this[i];
+      if (test(element)) return element;
+    }
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  int lastWhere(bool test(int element), {int orElse()?}) {
+    var len = this.length;
+    for (var i = len - 1; i >= 0; --i) {
+      var element = this[i];
+      if (test(element)) {
+        return element;
+      }
+    }
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  int singleWhere(bool test(int element), {int orElse()?}) {
+    var result = null;
+    bool foundMatching = false;
+    var len = this.length;
+    for (var i = 0; i < len; ++i) {
+      var element = this[i];
+      if (test(element)) {
+        if (foundMatching) {
+          throw IterableElementError.tooMany();
+        }
+        result = element;
+        foundMatching = true;
+      }
+    }
+    if (foundMatching) return result;
+    if (orElse != null) return orElse();
+    throw IterableElementError.noElement();
+  }
+
+  int elementAt(int index) {
+    return this[index];
+  }
+
+  void add(int value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void addAll(Iterable<int> value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void insert(int index, int value) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void insertAll(int index, Iterable<int> values) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void sort([int compare(int a, int b)?]) {
+    Sort.sort(this, compare ?? Comparable.compare);
+  }
+
+  int indexOf(int element, [int start = 0]) {
+    if (start >= this.length) {
+      return -1;
+    } else if (start < 0) {
+      start = 0;
+    }
+    for (int i = start; i < this.length; i++) {
+      if (this[i] == element) return i;
+    }
+    return -1;
+  }
+
+  int lastIndexOf(int element, [int? start]) {
+    int startIndex =
+        (start == null || start >= this.length) ? this.length - 1 : start;
+    for (int i = startIndex; i >= 0; i--) {
+      if (this[i] == element) return i;
+    }
+    return -1;
+  }
+
+  int removeLast() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  int removeAt(int index) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void removeWhere(bool test(int element)) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void retainWhere(bool test(int element)) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  int get first {
+    if (length > 0) return this[0];
+    throw IterableElementError.noElement();
+  }
+
+  int get last {
+    if (length > 0) return this[length - 1];
+    throw IterableElementError.noElement();
+  }
+
+  int get single {
+    if (length == 1) return this[0];
+    if (length == 0) throw IterableElementError.noElement();
+    throw IterableElementError.tooMany();
+  }
+
+  void fillRange(int start, int end, [int? fillValue]) {
+    RangeError.checkValidRange(start, end, this.length);
+    if (start == end) return;
+    if (fillValue == null) {
+      throw ArgumentError.notNull("fillValue");
+    }
+    for (var i = start; i < end; ++i) {
+      this[i] = fillValue;
+    }
+  }
+
+  void setAll(int index, Iterable<int> iterable) {
+    final end = iterable.length + index;
+    setRange(index, end, iterable);
+  }
+
+  void setRange(int start, int end, Iterable<int> iterable,
+      [int skipCount = 0]) {
+    RangeError.checkValidRange(start, end, length);
+
+    if (skipCount < 0) {
+      throw ArgumentError(skipCount);
+    }
+
+    if (iterable is JSArrayBase) {
+      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
+      final length = end - start;
+      final sourceArray = source.toJSArrayExternRef(skipCount, length);
+      final targetArray = toJSArrayExternRef(start, length);
+      return _setRangeFast(targetArray, sourceArray);
+    }
+
+    List<int> otherList = iterable.skip(skipCount).toList(growable: false);
+
+    int count = end - start;
+    if (otherList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    // TODO(omersa): Use unchecked operations here.
+    for (int i = 0, j = start; i < count; i++, j++) {
+      this[j] = otherList[i];
+    }
+  }
+}
+
+final class _TypedListIterator<E> implements Iterator<E> {
+  final List<E> _array;
+  final int _length;
+  int _position;
+  E? _current;
+
+  _TypedListIterator(List<E> array)
+      : _array = array,
+        _length = array.length,
+        _position = -1;
+
+  bool moveNext() {
+    int nextPosition = _position + 1;
+    if (nextPosition < _length) {
+      // TODO(#52971): Use unchecked read here.
+      _current = _array[nextPosition];
+      _position = nextPosition;
+      return true;
+    }
+    _position = _length;
+    _current = null;
+    return false;
+  }
+
+  E get current => _current as E;
+}
+
 /// Base class for `int` typed lists.
 abstract class _JSIntArrayImpl extends JSArrayBase {
   _JSIntArrayImpl(super._ref);
