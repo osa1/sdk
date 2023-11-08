@@ -256,39 +256,45 @@ final class JSDataViewImpl implements ByteData {
 }
 
 mixin _IntListMixin on JSArrayBase implements List<int> {
+  void _setUnchecked(int index, int value);
+
+  int _getUnchecked(int index);
+
   Iterable<T> whereType<T>() => WhereTypeIterable<T>(this);
 
   Iterable<int> followedBy(Iterable<int> other) =>
       FollowedByIterable<int>.firstEfficient(this, other);
 
   List<R> cast<R>() => List.castFrom<int, R>(this);
+
   void set first(int value) {
-    if (this.length == 0) {
+    if (length == 0) {
       throw IndexError.withLength(0, length, indexable: this);
     }
-    this[0] = value;
+    _setUnchecked(0, value);
   }
 
   void set last(int value) {
-    if (this.length == 0) {
+    if (length == 0) {
       throw IndexError.withLength(0, length, indexable: this);
     }
-    this[this.length - 1] = value;
+    _setUnchecked(length - 1, value);
   }
 
   int indexWhere(bool test(int element), [int start = 0]) {
+    final length = this.length;
     if (start < 0) start = 0;
     for (int i = start; i < length; i++) {
-      if (test(this[i])) return i;
+      if (test(_getUnchecked(i))) return i;
     }
     return -1;
   }
 
   int lastIndexWhere(bool test(int element), [int? start]) {
-    int startIndex =
-        (start == null || start >= this.length) ? this.length - 1 : start;
+    final length = this.length;
+    int startIndex = (start == null || start >= length) ? length - 1 : start;
     for (int i = startIndex; i >= 0; i--) {
-      if (test(this[i])) return i;
+      if (test(_getUnchecked(i))) return i;
     }
     return -1;
   }
@@ -296,22 +302,22 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   List<int> operator +(List<int> other) => [...this, ...other];
 
   bool contains(Object? element) {
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      if (this[i] == element) return true;
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (_getUnchecked(i) == element) return true;
     }
     return false;
   }
 
   void shuffle([Random? random]) {
     random ??= Random();
-    var i = this.length;
+    var i = length;
     while (i > 1) {
       int pos = random.nextInt(i);
       i -= 1;
-      var tmp = this[i];
-      this[i] = this[pos];
-      this[pos] = tmp;
+      var tmp = _getUnchecked(i);
+      _setUnchecked(i, _getUnchecked(pos));
+      _setUnchecked(pos, tmp);
     }
   }
 
@@ -347,26 +353,26 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   }
 
   void forEach(void f(int element)) {
-    var len = this.length;
-    for (var i = 0; i < len; i++) {
-      f(this[i]);
+    final length = this.length;
+    for (var i = 0; i < length; i++) {
+      f(_getUnchecked(i));
     }
   }
 
   int reduce(int combine(int value, int element)) {
-    var len = this.length;
-    if (len == 0) throw IterableElementError.noElement();
-    var value = this[0];
-    for (var i = 1; i < len; ++i) {
-      value = combine(value, this[i]);
+    final length = this.length;
+    if (length == 0) throw IterableElementError.noElement();
+    var value = _getUnchecked(0);
+    for (var i = 1; i < length; ++i) {
+      value = combine(value, _getUnchecked(i));
     }
     return value;
   }
 
   T fold<T>(T initialValue, T combine(T initialValue, int element)) {
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      initialValue = combine(initialValue, this[i]);
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      initialValue = combine(initialValue, _getUnchecked(i));
     }
     return initialValue;
   }
@@ -377,25 +383,25 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       ExpandIterable<int, T>(this, f);
 
   bool every(bool f(int element)) {
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      if (!f(this[i])) return false;
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (!f(_getUnchecked(i))) return false;
     }
     return true;
   }
 
   bool any(bool f(int element)) {
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      if (f(this[i])) return true;
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      if (f(_getUnchecked(i))) return true;
     }
     return false;
   }
 
   int firstWhere(bool test(int element), {int orElse()?}) {
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      var element = this[i];
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      var element = _getUnchecked(i);
       if (test(element)) return element;
     }
     if (orElse != null) return orElse();
@@ -403,9 +409,9 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   }
 
   int lastWhere(bool test(int element), {int orElse()?}) {
-    var len = this.length;
-    for (var i = len - 1; i >= 0; --i) {
-      var element = this[i];
+    final length = this.length;
+    for (var i = length - 1; i >= 0; --i) {
+      var element = _getUnchecked(i);
       if (test(element)) {
         return element;
       }
@@ -417,9 +423,9 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   int singleWhere(bool test(int element), {int orElse()?}) {
     var result = null;
     bool foundMatching = false;
-    var len = this.length;
-    for (var i = 0; i < len; ++i) {
-      var element = this[i];
+    final length = this.length;
+    for (var i = 0; i < length; ++i) {
+      var element = _getUnchecked(i);
       if (test(element)) {
         if (foundMatching) {
           throw IterableElementError.tooMany();
@@ -458,22 +464,23 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   }
 
   int indexOf(int element, [int start = 0]) {
-    if (start >= this.length) {
+    final length = this.length;
+    if (start >= length) {
       return -1;
     } else if (start < 0) {
       start = 0;
     }
-    for (int i = start; i < this.length; i++) {
-      if (this[i] == element) return i;
+    for (int i = start; i < length; i++) {
+      if (_getUnchecked(i) == element) return i;
     }
     return -1;
   }
 
   int lastIndexOf(int element, [int? start]) {
-    int startIndex =
-        (start == null || start >= this.length) ? this.length - 1 : start;
+    final length = this.length;
+    int startIndex = (start == null || start >= length) ? length - 1 : start;
     for (int i = startIndex; i >= 0; i--) {
-      if (this[i] == element) return i;
+      if (_getUnchecked(i) == element) return i;
     }
     return -1;
   }
@@ -495,17 +502,19 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   }
 
   int get first {
-    if (length > 0) return this[0];
+    if (length > 0) return _getUnchecked(0);
     throw IterableElementError.noElement();
   }
 
   int get last {
-    if (length > 0) return this[length - 1];
+    final length = this.length;
+    if (length > 0) return _getUnchecked(length - 1);
     throw IterableElementError.noElement();
   }
 
   int get single {
-    if (length == 1) return this[0];
+    final length = this.length;
+    if (length == 1) return _getUnchecked(0);
     if (length == 0) throw IterableElementError.noElement();
     throw IterableElementError.tooMany();
   }
@@ -517,7 +526,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       throw ArgumentError.notNull("fillValue");
     }
     for (var i = start; i < end; ++i) {
-      this[i] = fillValue;
+      _setUnchecked(i, fillValue);
     }
   }
 
@@ -549,9 +558,9 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       throw IterableElementError.tooFew();
     }
 
-    // TODO(omersa): Use unchecked operations here.
+    // TODO(omersa): Use unchecked read.
     for (int i = 0, j = start; i < count; i++, j++) {
-      this[j] = otherList[i];
+      _setUnchecked(j, otherList[i]);
     }
   }
 
@@ -570,7 +579,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   @override
   String join([String separator = ""]) {
     StringBuffer buffer = StringBuffer();
-    buffer.writeAll(this as Iterable, separator);
+    buffer.writeAll(this, separator);
     return buffer.toString();
   }
 
@@ -600,7 +609,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   }
 
   @override
-  String toString() => ListBase.listToString(this as List);
+  String toString() => ListBase.listToString(this);
 }
 
 // TODO(omersa): This mixin should override other update methods (probably just
@@ -667,6 +676,13 @@ final class JSUint8ArrayImpl extends JSArrayBase
       toExternRef,
       WasmI32.fromInt(start),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getUint8(toExternRef, index);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setUint8(toExternRef, index, value);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -758,19 +774,26 @@ final class JSInt8ArrayImpl extends JSArrayBase
   int get length => lengthInBytes;
 
   @override
-  @pragma("wasm:prefer-inline")
-  int operator [](int index) {
-    _indexCheck(index, length);
-    return _getInt8(toExternRef, index);
-  }
-
-  @override
   WasmExternRef? toJSArrayExternRef([int start = 0, int? length]) => js.JS<
           WasmExternRef?>(
       '(o, start, length) => new Int8Array(o.buffer, o.byteOffset + start, length)',
       toExternRef,
       WasmI32.fromInt(start),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getInt8(toExternRef, index);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setInt8(toExternRef, index, value);
+
+  @override
+  @pragma("wasm:prefer-inline")
+  int operator [](int index) {
+    _indexCheck(index, length);
+    return _getInt8(toExternRef, index);
+  }
 
   @override
   @pragma("wasm:prefer-inline")
@@ -828,6 +851,13 @@ final class JSUint8ClampedArrayImpl extends JSArrayBase
       toExternRef,
       WasmI32.fromInt(start),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getUint8(toExternRef, index);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setUint8(toExternRef, index, value.clamp(0, 255));
 
   @override
   @pragma("wasm:prefer-inline")
@@ -899,6 +929,13 @@ final class JSUint16ArrayImpl extends JSArrayBase
       WasmI32.fromInt(start * 2),
       WasmI32.fromInt(length ?? (this.length - start)));
 
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getUint16(toExternRef, index * 2, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setUint16(toExternRef, index * 2, value, true);
+
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
@@ -968,6 +1005,13 @@ final class JSInt16ArrayImpl extends JSArrayBase
       toExternRef,
       WasmI32.fromInt(start * 2),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getInt16(toExternRef, index * 2, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setInt16(toExternRef, index * 2, value, true);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1039,6 +1083,13 @@ final class JSUint32ArrayImpl extends JSArrayBase
       WasmI32.fromInt(start * 4),
       WasmI32.fromInt(length ?? (this.length - start)));
 
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getUint32(toExternRef, index * 4, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setUint32(toExternRef, index * 4, value, true);
+
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
@@ -1108,6 +1159,13 @@ final class JSInt32ArrayImpl extends JSArrayBase
       toExternRef,
       WasmI32.fromInt(start * 4),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getInt32(toExternRef, index * 4, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setInt32(toExternRef, index * 4, value, true);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1265,6 +1323,13 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
       WasmI32.fromInt(start * 8),
       WasmI32.fromInt(length ?? (this.length - start)));
 
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getBigUint64(toExternRef, index * 8, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setBigUint64(toExternRef, index * 8, value, true);
+
   @override
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
@@ -1334,6 +1399,13 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
       toExternRef,
       WasmI32.fromInt(start * 8),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  int _getUnchecked(int index) => _getBigInt64(toExternRef, index * 8, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, int value) =>
+      _setBigInt64(toExternRef, index * 8, value, true);
 
   @override
   @pragma("wasm:prefer-inline")
@@ -1445,6 +1517,9 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
       WasmI32.fromInt(start * 4),
       WasmI32.fromInt(length ?? (this.length - start)));
 
+  @pragma("wasm:prefer-inline")
+  double _getUnchecked(int index) => _getFloat32(toExternRef, index * 4, true);
+
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
@@ -1506,6 +1581,9 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
       toExternRef,
       WasmI32.fromInt(start * 8),
       WasmI32.fromInt(length ?? (this.length - start)));
+
+  @pragma("wasm:prefer-inline")
+  double _getUnchecked(int index) => _getFloat64(toExternRef, index * 8, true);
 
   @override
   @pragma("wasm:prefer-inline")
