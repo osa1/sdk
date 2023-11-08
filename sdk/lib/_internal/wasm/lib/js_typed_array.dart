@@ -1835,7 +1835,9 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   String toString() => ListBase.listToString(this);
 }
 
-final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
+final class JSFloat32ArrayImpl extends JSArrayBase
+    with _DoubleListMixin
+    implements Float32List {
   JSFloat32ArrayImpl._(super._ref);
 
   factory JSFloat32ArrayImpl(int length) =>
@@ -1872,6 +1874,10 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   @pragma("wasm:prefer-inline")
   double _getUnchecked(int index) => _getFloat32(toExternRef, index * 4, true);
 
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, double value) =>
+      _setFloat32(toExternRef, index * 4, value, true);
+
   @override
   @pragma("wasm:prefer-inline")
   double operator [](int index) {
@@ -1900,7 +1906,9 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
   }
 }
 
-final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
+final class JSFloat64ArrayImpl extends JSArrayBase
+    with _DoubleListMixin
+    implements Float64List {
   JSFloat64ArrayImpl._(super._ref);
 
   factory JSFloat64ArrayImpl(int length) =>
@@ -1936,6 +1944,10 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
 
   @pragma("wasm:prefer-inline")
   double _getUnchecked(int index) => _getFloat64(toExternRef, index * 8, true);
+
+  @pragma("wasm:prefer-inline")
+  void _setUnchecked(int index, double value) =>
+      _setFloat64(toExternRef, index * 8, value, true);
 
   @override
   @pragma("wasm:prefer-inline")
