@@ -475,7 +475,7 @@ final class JSUint16ArrayImpl extends JSIntArrayImpl implements Uint16List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint16List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -2)
         : length * 2);
     return JSUint16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -536,7 +536,7 @@ final class JSInt16ArrayImpl extends JSIntArrayImpl implements Int16List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int16List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? ((buffer.lengthInBytes - offsetInBytes) >>> 1) << 1
+        ? ((buffer.lengthInBytes - offsetInBytes) & -2)
         : length * 2);
     return JSInt16ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -597,7 +597,7 @@ final class JSUint32ArrayImpl extends JSIntArrayImpl implements Uint32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSUint32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -658,7 +658,7 @@ final class JSInt32ArrayImpl extends JSIntArrayImpl implements Int32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSInt32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -813,7 +813,7 @@ final class JSBigUint64ArrayImpl extends JSBigIntArrayImpl
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Uint64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSBigUint64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -870,7 +870,7 @@ final class JSBigInt64ArrayImpl extends JSBigIntArrayImpl implements Int64List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Int64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSBigInt64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -969,7 +969,7 @@ final class JSFloat32ArrayImpl extends JSFloatArrayImpl implements Float32List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float32List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 2) << 2)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -4)
         : length * 4);
     return JSFloat32ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
@@ -1030,7 +1030,7 @@ final class JSFloat64ArrayImpl extends JSFloatArrayImpl implements Float64List {
       JSArrayBufferImpl buffer, int offsetInBytes, int? length) {
     _offsetAlignmentCheck(offsetInBytes, Float64List.bytesPerElement);
     final lengthInBytes = (length == null
-        ? (((buffer.lengthInBytes - offsetInBytes) >>> 3) << 3)
+        ? ((buffer.lengthInBytes - offsetInBytes) & -8)
         : length * 8);
     return JSFloat64ArrayImpl._(buffer.view(offsetInBytes, lengthInBytes));
   }
