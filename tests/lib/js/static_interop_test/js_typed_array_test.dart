@@ -429,28 +429,28 @@ void sublistTest() {
   listIntTest(Uint8List(16).toJS.toDart.buffer.asInt64List());
 }
 
-@JS('checkElementSize')
-external JSBoolean checkElementSizeInJS(JSAny a, int b);
+@JS()
+external JSNumber elementSizeInBytes(JSAny a);
 
 @JS()
 external void eval(String code);
 
 void elementSizeTest() {
-  Expect.equals(checkElementSizeInJS(Uint8List(4).toJS, 1).toDart, true);
-  Expect.equals(checkElementSizeInJS(Uint8ClampedList(4).toJS, 1).toDart, true);
-  Expect.equals(checkElementSizeInJS(Int8List(4).toJS, 1).toDart, true);
-  Expect.equals(checkElementSizeInJS(Uint16List(4).toJS, 2).toDart, true);
-  Expect.equals(checkElementSizeInJS(Int16List(4).toJS, 2).toDart, true);
-  Expect.equals(checkElementSizeInJS(Uint32List(4).toJS, 4).toDart, true);
-  Expect.equals(checkElementSizeInJS(Int32List(4).toJS, 4).toDart, true);
-  Expect.equals(checkElementSizeInJS(Float32List(4).toJS, 4).toDart, true);
-  Expect.equals(checkElementSizeInJS(Float64List(4).toJS, 8).toDart, true);
+  Expect.equals(elementSizeInBytes(Uint8List(4).toJS).toDartInt, 1);
+  Expect.equals(elementSizeInBytes(Uint8ClampedList(4).toJS).toDartInt, 1);
+  Expect.equals(elementSizeInBytes(Int8List(4).toJS).toDartInt, 1);
+  Expect.equals(elementSizeInBytes(Uint16List(4).toJS).toDartInt, 2);
+  Expect.equals(elementSizeInBytes(Int16List(4).toJS).toDartInt, 2);
+  Expect.equals(elementSizeInBytes(Uint32List(4).toJS).toDartInt, 4);
+  Expect.equals(elementSizeInBytes(Int32List(4).toJS).toDartInt, 4);
+  Expect.equals(elementSizeInBytes(Float32List(4).toJS).toDartInt, 4);
+  Expect.equals(elementSizeInBytes(Float64List(4).toJS).toDartInt, 8);
 }
 
 void main() {
   eval('''
-    globalThis.checkElementSize = function(array, elementSize) {
-      return array.BYTES_PER_ELEMENT == elementSize;
+    globalThis.elementSizeInBytes = function(array) {
+      return array.BYTES_PER_ELEMENT;
     }
   ''');
 
