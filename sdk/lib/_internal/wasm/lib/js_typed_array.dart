@@ -9,7 +9,11 @@ final class JSArrayBufferImpl implements ByteBuffer {
   /// `externref` of a JS `ArrayBuffer`.
   final WasmExternRef? _ref;
 
-  JSArrayBufferImpl.fromRef(this._ref);
+  final bool _immutable;
+
+  JSArrayBufferImpl.fromRef(this._ref) : _immutable = false;
+
+  JSArrayBufferImpl.fromRefImmutable(this._ref) : _immutable = true;
 
   @pragma("wasm:prefer-inline")
   WasmExternRef? get toExternRef => _ref;
@@ -32,63 +36,87 @@ final class JSArrayBufferImpl implements ByteBuffer {
   int get lengthInBytes => _arrayBufferByteLength(toExternRef);
 
   @override
-  Uint8List asUint8List([int offsetInBytes = 0, int? length]) =>
-      JSUint8ArrayImpl.view(this, offsetInBytes, length);
+  Uint8List asUint8List([int offsetInBytes = 0, int? length]) {
+    final view = JSUint8ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Int8List asInt8List([int offsetInBytes = 0, int? length]) =>
-      JSInt8ArrayImpl.view(this, offsetInBytes, length);
+  Int8List asInt8List([int offsetInBytes = 0, int? length]) {
+    final view = JSInt8ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) =>
-      JSUint8ClampedArrayImpl.view(this, offsetInBytes, length);
+  Uint8ClampedList asUint8ClampedList([int offsetInBytes = 0, int? length]) {
+    final view = JSUint8ClampedArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Uint16List asUint16List([int offsetInBytes = 0, int? length]) =>
-      JSUint16ArrayImpl.view(this, offsetInBytes, length);
+  Uint16List asUint16List([int offsetInBytes = 0, int? length]) {
+    final view = JSUint16ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Int16List asInt16List([int offsetInBytes = 0, int? length]) =>
-      JSInt16ArrayImpl.view(this, offsetInBytes, length);
+  Int16List asInt16List([int offsetInBytes = 0, int? length]) {
+    final view = JSInt16ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Uint32List asUint32List([int offsetInBytes = 0, int? length]) =>
-      JSUint32ArrayImpl.view(this, offsetInBytes, length);
+  Uint32List asUint32List([int offsetInBytes = 0, int? length]) {
+    final view = JSUint32ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Int32List asInt32List([int offsetInBytes = 0, int? length]) =>
-      JSInt32ArrayImpl.view(this, offsetInBytes, length);
+  Int32List asInt32List([int offsetInBytes = 0, int? length]) {
+    final view = JSInt32ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Uint64List asUint64List([int offsetInBytes = 0, int? length]) =>
-      JSBigUint64ArrayImpl.view(this, offsetInBytes, length);
+  Uint64List asUint64List([int offsetInBytes = 0, int? length]) {
+    final view = JSBigUint64ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Int64List asInt64List([int offsetInBytes = 0, int? length]) =>
-      JSBigInt64ArrayImpl.view(this, offsetInBytes, length);
+  Int64List asInt64List([int offsetInBytes = 0, int? length]) {
+    final view = JSBigInt64ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
   Int32x4List asInt32x4List([int offsetInBytes = 0, int? length]) {
     _offsetAlignmentCheck(offsetInBytes, Int32x4List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Int32x4List.bytesPerElement;
     final storage = JSInt32ArrayImpl.view(this, offsetInBytes, length * 4);
-    return JSInt32x4ArrayImpl.externalStorage(storage);
+    final view = JSInt32x4ArrayImpl.externalStorage(storage);
+    return _immutable ? view.asUnmodifiableView() : view;
   }
 
   @override
-  Float32List asFloat32List([int offsetInBytes = 0, int? length]) =>
-      JSFloat32ArrayImpl.view(this, offsetInBytes, length);
+  Float32List asFloat32List([int offsetInBytes = 0, int? length]) {
+    final view = JSFloat32ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
-  Float64List asFloat64List([int offsetInBytes = 0, int? length]) =>
-      JSFloat64ArrayImpl.view(this, offsetInBytes, length);
+  Float64List asFloat64List([int offsetInBytes = 0, int? length]) {
+    final view = JSFloat64ArrayImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
   Float32x4List asFloat32x4List([int offsetInBytes = 0, int? length]) {
     _offsetAlignmentCheck(offsetInBytes, Float32x4List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Float32x4List.bytesPerElement;
     final storage = JSFloat32ArrayImpl.view(this, offsetInBytes, length * 4);
-    return JSFloat32x4ArrayImpl.externalStorage(storage);
+    final view = JSFloat32x4ArrayImpl.externalStorage(storage);
+    return _immutable ? view.asUnmodifiableView() : view;
   }
 
   @override
@@ -96,12 +124,15 @@ final class JSArrayBufferImpl implements ByteBuffer {
     _offsetAlignmentCheck(offsetInBytes, Float64x2List.bytesPerElement);
     length ??= (lengthInBytes - offsetInBytes) ~/ Float64x2List.bytesPerElement;
     final storage = JSFloat64ArrayImpl.view(this, offsetInBytes, length * 2);
-    return JSFloat64x2ArrayImpl.externalStorage(storage);
+    final view = JSFloat64x2ArrayImpl.externalStorage(storage);
+    return _immutable ? view.asUnmodifiableView() : view;
   }
 
   @override
-  ByteData asByteData([int offsetInBytes = 0, int? length]) =>
-      JSDataViewImpl.view(this, offsetInBytes, length);
+  ByteData asByteData([int offsetInBytes = 0, int? length]) {
+    final view = JSDataViewImpl.view(this, offsetInBytes, length);
+    return _immutable ? view.asUnmodifiableView() : view;
+  }
 
   @override
   bool operator ==(Object that) =>
@@ -611,8 +642,16 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
 
 // TODO(omersa): This mixin should override other update methods (probably just
 // setRange) that don't use `[]=` to modify the list.
-mixin _UnmodifiableIntListMixin {
+mixin _UnmodifiableIntListMixin on JSArrayBase {
+  JSArrayBufferImpl get buffer =>
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+
   void operator []=(int index, int value) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  void setRange(int start, int end, Iterable<int> iterable,
+      [int skipCount = 0]) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
   }
 }
@@ -1835,6 +1874,20 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   String toString() => ListBase.listToString(this);
 }
 
+mixin _UnmodifiableDoubleListMixin on JSArrayBase {
+  JSArrayBufferImpl get buffer =>
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+
+  void operator []=(int index, double value) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+
+  void setRange(int start, int end, Iterable<double> iterable,
+      [int skipCount = 0]) {
+    throw UnsupportedError("Cannot modify an unmodifiable list");
+  }
+}
+
 final class JSFloat32ArrayImpl extends JSArrayBase
     with _DoubleListMixin
     implements Float32List {
@@ -1893,8 +1946,8 @@ final class JSFloat32ArrayImpl extends JSArrayBase
   }
 
   @override
-  UnmodifiableFloat32ListView asUnmodifiableView() =>
-      UnmodifiableFloat32ListView(this);
+  UnmodifiableJSFloat32Array asUnmodifiableView() =>
+      UnmodifiableJSFloat32Array._(_ref);
 
   @override
   JSFloat32ArrayImpl sublist(int start, [int? end]) {
@@ -1904,6 +1957,12 @@ final class JSFloat32ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSFloat32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSFloat32Array extends JSFloat32ArrayImpl
+    with _UnmodifiableDoubleListMixin
+    implements UnmodifiableFloat32ListView {
+  UnmodifiableJSFloat32Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSFloat64ArrayImpl extends JSArrayBase
@@ -1964,8 +2023,8 @@ final class JSFloat64ArrayImpl extends JSArrayBase
   }
 
   @override
-  UnmodifiableFloat64ListView asUnmodifiableView() =>
-      UnmodifiableFloat64ListView(this);
+  UnmodifiableJSFloat64Array asUnmodifiableView() =>
+      UnmodifiableJSFloat64Array._(_ref);
 
   @override
   JSFloat64ArrayImpl sublist(int start, [int? end]) {
@@ -1975,6 +2034,12 @@ final class JSFloat64ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSFloat64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+}
+
+final class UnmodifiableJSFloat64Array extends JSFloat64ArrayImpl
+    with _UnmodifiableDoubleListMixin
+    implements UnmodifiableFloat64ListView {
+  UnmodifiableJSFloat64Array._(WasmExternRef? ref) : super._(ref);
 }
 
 final class JSFloat32x4ArrayImpl
