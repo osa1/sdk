@@ -183,7 +183,7 @@ extension Int8ListToJSInt8Array on Int8List {
   JSInt8Array get toJS {
     final t = this;
     return _box<JSInt8Array>(t is js_types.JSInt8ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsInt8ArrayFromDartInt8List(t));
   }
 }
@@ -201,7 +201,7 @@ extension Uint8ListToJSUint8Array on Uint8List {
   JSUint8Array get toJS {
     final t = this;
     return _box<JSUint8Array>(t is js_types.JSUint8ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsUint8ArrayFromDartUint8List(t));
   }
 }
@@ -220,7 +220,7 @@ extension Uint8ClampedListToJSUint8ClampedArray on Uint8ClampedList {
   JSUint8ClampedArray get toJS {
     final t = this;
     return _box<JSUint8ClampedArray>(t is js_types.JSUint8ClampedArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsUint8ClampedArrayFromDartUint8ClampedList(t));
   }
 }
@@ -238,7 +238,7 @@ extension Int16ListToJSInt16Array on Int16List {
   JSInt16Array get toJS {
     final t = this;
     return _box<JSInt16Array>(t is js_types.JSInt16ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsInt16ArrayFromDartInt16List(t));
   }
 }
@@ -256,7 +256,7 @@ extension Uint16ListToJSInt16Array on Uint16List {
   JSUint16Array get toJS {
     final t = this;
     return _box<JSUint16Array>(t is js_types.JSUint16ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsUint16ArrayFromDartUint16List(t));
   }
 }
@@ -274,7 +274,7 @@ extension Int32ListToJSInt32Array on Int32List {
   JSInt32Array get toJS {
     final t = this;
     return _box<JSInt32Array>(t is js_types.JSInt32ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsInt32ArrayFromDartInt32List(t));
   }
 }
@@ -292,7 +292,7 @@ extension Uint32ListToJSUint32Array on Uint32List {
   JSUint32Array get toJS {
     final t = this;
     return _box<JSUint32Array>(t is js_types.JSUint32ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsUint32ArrayFromDartUint32List(t));
   }
 }
@@ -311,7 +311,7 @@ extension Float32ListToJSFloat32Array on Float32List {
   JSFloat32Array get toJS {
     final t = this;
     return _box<JSFloat32Array>(t is js_types.JSFloat32ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsFloat32ArrayFromDartFloat32List(t));
   }
 }
@@ -330,7 +330,7 @@ extension Float64ListToJSFloat64Array on Float64List {
   JSFloat64Array get toJS {
     final t = this;
     return _box<JSFloat64Array>(t is js_types.JSFloat64ArrayImpl
-        ? t.toExternRef
+        ? t.toJSArrayExternRef()
         : jsFloat64ArrayFromDartFloat64List(t));
   }
 }

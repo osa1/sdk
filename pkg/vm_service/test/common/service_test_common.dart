@@ -5,6 +5,7 @@
 library service_test_common;
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:path/path.dart';
 import 'package:test/test.dart';
@@ -59,6 +60,10 @@ Future<void> syncNext(VmService service, IsolateRef isolateRef) async {
   }
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasPausedFor(
     VmService service, IsolateRef isolateRef, String kind) async {
   Completer<dynamic>? completer = Completer();
@@ -96,23 +101,43 @@ Future<void> hasPausedFor(
   return completer?.future; // Will complete when breakpoint hit.
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasStoppedAtBreakpoint(VmService service, IsolateRef isolate) {
   return hasPausedFor(service, isolate, EventKind.kPauseBreakpoint);
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasStoppedPostRequest(VmService service, IsolateRef isolate) {
   return hasPausedFor(service, isolate, EventKind.kPausePostRequest);
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasStoppedWithUnhandledException(
     VmService service, IsolateRef isolate) {
   return hasPausedFor(service, isolate, EventKind.kPauseException);
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasStoppedAtExit(VmService service, IsolateRef isolate) {
   return hasPausedFor(service, isolate, EventKind.kPauseExit);
 }
 
+// WARNING: interleaving calls based on hasPausedFor using Future.wait() may
+// cause the debug stream to be cancelled after one of the checks completes.
+// If another check is waiting on an event, it will no longer be notified of
+// the event, causing the test to hang.
 Future<void> hasPausedAtStart(VmService service, IsolateRef isolate) {
   return hasPausedFor(service, isolate, EventKind.kPauseStart);
 }
@@ -526,6 +551,34 @@ Future<void> evaluateAndExpect(
   if (kind != null) {
     expect(result.kind!, kind);
   }
+}
+
+Future<HeapSnapshotGraph> fetchHeapSnapshot(
+  VmService service,
+  IsolateRef isolateRef,
+) async {
+  final isolateId = isolateRef.id!;
+  final completer = Completer<void>();
+  late final StreamSubscription sub;
+  final data = <ByteData>[];
+  sub = service.onHeapSnapshotEvent.listen((event) async {
+    data.add(event.data!);
+    if (event.last == true) {
+      sub.cancel();
+      await service.streamCancel(EventStreams.kHeapSnapshot);
+      completer.complete();
+    }
+  });
+  await service.streamListen(EventStreams.kHeapSnapshot);
+  await service.requestHeapSnapshot(isolateId);
+  await completer.future;
+  return HeapSnapshotGraph.fromChunks(data);
+}
+
+IsolateTest reloadSources({bool pause = false}) {
+  return (VmService service, IsolateRef isolateRef) async {
+    await service.reloadSources(isolateRef.id!, pause: pause);
+  };
 }
 
 IsolateTest hasLocalVarInTopStackFrame(String varName) {

@@ -132,9 +132,7 @@ class _ServiceTesteeLauncher {
       List<String>? extraArgs) {
     String dartExecutable = io.Platform.executable;
 
-    var fullArgs = <String>[
-      '--disable-dart-dev',
-    ];
+    final fullArgs = <String>[];
     if (pause_on_start) {
       fullArgs.add('--pause-isolates-on-start');
     }
@@ -167,7 +165,7 @@ class _ServiceTesteeLauncher {
       List<String> /*!*/ arguments, Map<String, String> dartEnvironment) {
     var environment = _TESTEE_SPAWN_ENV;
     var bashEnvironment = StringBuffer();
-    environment.forEach((k, v) => bashEnvironment.write("$k=$v "));
+    environment.forEach((k, v) => bashEnvironment.write('$k=$v '));
     dartEnvironment.forEach((k, v) {
       arguments.insert(0, '-D$k=$v');
     });
@@ -262,6 +260,7 @@ class _ServiceTesterRunner {
     bool pause_on_unhandled_exceptions = false,
     bool testeeControlsServer = false,
     bool useAuthToken = false,
+    bool allowForNonZeroExitCode = false,
     VmServiceFactory serviceFactory = VmService.defaultFactory,
   }) async {
     var process = _ServiceTesteeLauncher(scriptName);
@@ -272,10 +271,10 @@ class _ServiceTesterRunner {
           .launch(pause_on_start, pause_on_exit, pause_on_unhandled_exceptions,
               testeeControlsServer, useAuthToken, experiments, extraArgs)
           .then((Uri serverAddress) async {
-        if (mainArgs!.contains("--gdb")) {
+        if (mainArgs!.contains('--gdb')) {
           var pid = process.process!.pid;
           var wait = Duration(seconds: 10);
-          print("Testee has pid $pid, waiting $wait before continuing");
+          print('Testee has pid $pid, waiting $wait before continuing');
           io.sleep(wait);
         }
         setupAddresses(serverAddress);
@@ -326,11 +325,11 @@ class _ServiceTesterRunner {
 
     final exitCode = await process.exitCode;
     if (exitCode != 0) {
-      if (!process.killedByTester) {
-        throw "Testee exited with unexpected exitCode: $exitCode";
+      if (!(process.killedByTester || allowForNonZeroExitCode)) {
+        throw 'Testee exited with unexpected exitCode: $exitCode';
       }
     }
-    print("** Process exited: $exitCode");
+    print('** Process exited: $exitCode');
   }
 
   Future<IsolateRef> getFirstIsolate(VmService service) async {
@@ -383,29 +382,33 @@ Future<void> runIsolateTests(
   bool pause_on_unhandled_exceptions = false,
   bool testeeControlsServer = false,
   bool useAuthToken = false,
+  bool allowForNonZeroExitCode = false,
   List<String>? experiments,
   List<String>? extraArgs,
 }) async {
   assert(!pause_on_start || testeeBefore == null);
   if (_isTestee()) {
     await _ServiceTesteeRunner().run(
-        testeeBefore: testeeBefore,
-        testeeConcurrent: testeeConcurrent,
-        pause_on_start: pause_on_start,
-        pause_on_exit: pause_on_exit);
+      testeeBefore: testeeBefore,
+      testeeConcurrent: testeeConcurrent,
+      pause_on_start: pause_on_start,
+      pause_on_exit: pause_on_exit,
+    );
   } else {
     await _ServiceTesterRunner().run(
-        mainArgs: mainArgs,
-        scriptName: scriptName,
-        extraArgs: extraArgs,
-        isolateTests: tests,
-        pause_on_start: pause_on_start,
-        pause_on_exit: pause_on_exit,
-        verbose_vm: verbose_vm,
-        experiments: experiments,
-        pause_on_unhandled_exceptions: pause_on_unhandled_exceptions,
-        testeeControlsServer: testeeControlsServer,
-        useAuthToken: useAuthToken);
+      mainArgs: mainArgs,
+      scriptName: scriptName,
+      extraArgs: extraArgs,
+      isolateTests: tests,
+      pause_on_start: pause_on_start,
+      pause_on_exit: pause_on_exit,
+      verbose_vm: verbose_vm,
+      experiments: experiments,
+      pause_on_unhandled_exceptions: pause_on_unhandled_exceptions,
+      testeeControlsServer: testeeControlsServer,
+      useAuthToken: useAuthToken,
+      allowForNonZeroExitCode: allowForNonZeroExitCode,
+    );
   }
 }
 
