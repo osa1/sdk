@@ -430,7 +430,7 @@ final class JSStringImpl implements String {
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trim()', toExternRef));
     if (result.length == 0) return result;
-    int firstCode = result.codeUnitAt(0);
+    int firstCode = result._codeUnitAtUnchecked(0);
     int startIndex = 0;
     if (firstCode == nelCodeUnit) {
       startIndex = _skipLeadingWhitespace(result, 1);
