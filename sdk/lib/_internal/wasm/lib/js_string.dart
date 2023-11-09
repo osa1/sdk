@@ -4,13 +4,6 @@
 
 part of dart._js_types;
 
-String _matchString(Match match) => match[0]!;
-String _stringIdentity(String string) => string;
-
-/// The box class for JS' `string` object. [JSStringImpl] is heavily based off
-/// of `sdk/lib/_internal/js_runtime/lib/js_string.dart`.  TODO(joshualitt): Add
-/// `JSString` fastpaths for cases where `String` arguments are really
-/// `JSString`.
 final class JSStringImpl implements String {
   final WasmExternRef? _ref;
 
@@ -506,14 +499,14 @@ final class JSStringImpl implements String {
   String padLeft(int width, [String padding = ' ']) {
     int delta = width - this.length;
     if (delta <= 0) return this;
-    return padding * delta + this;
+    return (padding * delta) + this;
   }
 
   @override
   String padRight(int width, [String padding = ' ']) {
     int delta = width - this.length;
     if (delta <= 0) return this;
-    return this + padding * delta;
+    return this + (padding * delta);
   }
 
   @override
@@ -602,7 +595,7 @@ final class JSStringImpl implements String {
   int get hashCode {
     int hash = 0;
     for (int i = 0; i < length; i++) {
-      hash = stringCombineHashes(hash, codeUnitAt(i));
+      hash = stringCombineHashes(hash, _codeUnitAtUnchecked(i));
     }
     return stringFinalizeHash(hash);
   }
@@ -614,8 +607,7 @@ final class JSStringImpl implements String {
   @override
   String operator [](int index) {
     RangeError.checkValueInInterval(index, 0, length - 1);
-    return JSStringImpl(js.JS<WasmExternRef?>(
-        '(s, i) => s[i]', toExternRef, index.toDouble().toExternRef));
+    return JSStringImpl(_jsFromCharCode(_codeUnitAtUnchecked(index)));
   }
 
   @override
@@ -687,6 +679,10 @@ final class JSStringImpl implements String {
   }
 }
 
+String _matchString(Match match) => match[0]!;
+
+String _stringIdentity(String string) => string;
+
 @pragma("wasm:export", "\$jsStringToJSStringImpl")
 JSStringImpl _jsStringToJSStringImpl(WasmExternRef? string) =>
     JSStringImpl(string);
@@ -726,3 +722,7 @@ bool _jsEquals(WasmExternRef? s1, WasmExternRef? s2) =>
 @pragma("wasm:prefer-inline")
 int _jsCompare(WasmExternRef? s1, WasmExternRef? s2) =>
     js.JS<WasmI32>('WebAssembly.String.compare', s1, s2).toIntSigned();
+
+@pragma("wasm:prefer-inline")
+WasmExternRef _jsFromCharCode(int charCode) => js.JS<WasmExternRef>(
+    'WebAssembly.String.fromCharCode', WasmI32.fromInt(charCode));
