@@ -38,10 +38,7 @@ final class JSStringImpl implements String {
   @override
   int codeUnitAt(int index) {
     RangeError.checkValueInInterval(index, 0, length - 1);
-    return js
-        .JS<double>('(s, i) => s.charCodeAt(i)', toExternRef,
-            index.toDouble().toExternRef)
-        .toInt();
+    return _jsCharCodeAt(toExternRef, index);
   }
 
   @override
@@ -688,3 +685,9 @@ WasmExternRef? _jsStringFromJSStringImpl(JSStringImpl string) =>
 
 bool _jsIdentical(WasmExternRef? ref1, WasmExternRef? ref2) =>
     js.JS<bool>('Object.is', ref1, ref2);
+
+@pragma("wasm:prefer-inline")
+int _jsCharCodeAt(WasmExternRef? stringRef, int index) => js
+    .JS<WasmI32>(
+        'WebAssembly.String.charCodeAt', stringRef, WasmI32.fromInt(index))
+    .toIntUnsigned();
