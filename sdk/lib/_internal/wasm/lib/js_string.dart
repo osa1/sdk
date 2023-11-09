@@ -36,6 +36,7 @@ final class JSStringImpl implements String {
   }
 
   @override
+  @pragma("wasm:prefer-inline")
   int codeUnitAt(int index) {
     RangeError.checkValueInInterval(index, 0, length - 1);
     return _jsCharCodeAt(toExternRef, index);
@@ -44,7 +45,7 @@ final class JSStringImpl implements String {
   @override
   Iterable<Match> allMatches(String string, [int start = 0]) {
     if (0 > start || start > string.length) {
-      throw new RangeError.range(start, 0, string.length);
+      throw RangeError.range(start, 0, string.length);
     }
     return StringAllMatchesIterable(string, this, start);
   }
@@ -52,7 +53,7 @@ final class JSStringImpl implements String {
   @override
   Match? matchAsPrefix(String string, [int start = 0]) {
     if (start < 0 || start > string.length) {
-      throw new RangeError.range(start, 0, string.length);
+      throw RangeError.range(start, 0, string.length);
     }
     if (start + length > string.length) return null;
     // TODO(lrn): See if this can be optimized.
@@ -67,8 +68,7 @@ final class JSStringImpl implements String {
   @override
   String operator +(String other) {
     if (other is JSStringImpl) {
-      return JSStringImpl(js.JS<WasmExternRef?>(
-          '(a, b) => a + b', toExternRef, other.toExternRef));
+      return JSStringImpl(_jsConcatenate(toExternRef, other.toExternRef));
     }
 
     // TODO(joshualitt): Refactor `string_patch.dart` so we can directly
@@ -309,9 +309,8 @@ final class JSStringImpl implements String {
 
   @override
   String substring(int start, [int? end]) {
-    end = RangeError.checkValidRange(start, end, this.length);
-    return JSStringImpl(js.JS<WasmExternRef?>('(o, s, i) => o.substring(s, i)',
-        toExternRef, start.toDouble(), end.toDouble()));
+    end = RangeError.checkValidRange(start, end, length);
+    return JSStringImpl(_jsSubstring(toExternRef, start, end));
   }
 
   @override
@@ -604,7 +603,8 @@ final class JSStringImpl implements String {
   }
 
   @override
-  int get length => js.JS<double>('s => s.length', toExternRef).toInt();
+  @pragma("wasm:prefer-inline")
+  int get length => _jsLength(toExternRef);
 
   @override
   String operator [](int index) {
@@ -691,3 +691,18 @@ int _jsCharCodeAt(WasmExternRef? stringRef, int index) => js
     .JS<WasmI32>(
         'WebAssembly.String.charCodeAt', stringRef, WasmI32.fromInt(index))
     .toIntUnsigned();
+
+WasmExternRef? _jsConcatenate(WasmExternRef? s1, WasmExternRef? s2) =>
+    //TODO (omersa): concatenate not available in v8 yet
+    // js.JS<WasmExternRef?>('WebAssembly.String.concatenate', s1, s2);
+    js.JS<WasmExternRef?>('(a, b) => a + b', s1, s2);
+
+@pragma("wasm:prefer-inline")
+WasmExternRef _jsSubstring(
+        WasmExternRef? stringRef, int startIndex, int endIndex) =>
+    js.JS<WasmExternRef>('WebAssembly.String.substring', stringRef,
+        WasmI32.fromInt(startIndex), WasmI32.fromInt(endIndex));
+
+@pragma("wasm:prefer-inline")
+int _jsLength(WasmExternRef? stringRef) =>
+    js.JS<WasmI32>('WebAssembly.String.length', stringRef).toIntUnsigned();
