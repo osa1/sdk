@@ -429,7 +429,31 @@ void sublistTest() {
   listIntTest(Uint8List(16).toJS.toDart.buffer.asInt64List());
 }
 
+@JS('checkElementSize')
+external JSBoolean checkElementSizeInJS(JSAny a, int b);
+
+@JS()
+external void eval(String code);
+
+void elementSizeTest() {
+  Expect.equals(checkElementSizeInJS(Uint8List(4).toJS, 1).toDart, true);
+  Expect.equals(checkElementSizeInJS(Uint8ClampedList(4).toJS, 1).toDart, true);
+  Expect.equals(checkElementSizeInJS(Int8List(4).toJS, 1).toDart, true);
+  Expect.equals(checkElementSizeInJS(Uint16List(4).toJS, 2).toDart, true);
+  Expect.equals(checkElementSizeInJS(Int16List(4).toJS, 2).toDart, true);
+  Expect.equals(checkElementSizeInJS(Uint32List(4).toJS, 4).toDart, true);
+  Expect.equals(checkElementSizeInJS(Int32List(4).toJS, 4).toDart, true);
+  Expect.equals(checkElementSizeInJS(Float32List(4).toJS, 4).toDart, true);
+  Expect.equals(checkElementSizeInJS(Float64List(4).toJS, 8).toDart, true);
+}
+
 void main() {
+  eval('''
+    globalThis.checkElementSize = function(array, elementSize) {
+      return array.BYTES_PER_ELEMENT == elementSize;
+    }
+  ''');
+
   for (final mode in [
     TestMode.jsReceiver,
     TestMode.jsArgument,
@@ -445,4 +469,5 @@ void main() {
   testSimd();
   bigTest();
   sublistTest();
+  elementSizeTest();
 }
