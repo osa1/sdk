@@ -42,6 +42,11 @@ final class JSStringImpl implements String {
     return _jsCharCodeAt(toExternRef, index);
   }
 
+  @pragma("wasm:prefer-inline")
+  int _codeUnitAtUnchecked(int index) {
+    return _jsCharCodeAt(toExternRef, index);
+  }
+
   @override
   Iterable<Match> allMatches(String string, [int start = 0]) {
     if (0 > start || start > string.length) {
@@ -618,25 +623,32 @@ final class JSStringImpl implements String {
     if (identical(this, other)) {
       return true;
     }
-    if (other is JSStringImpl && length == other.length) {
-      return js.areEqualInJS(toExternRef, other.toExternRef);
-    } else if (other is String && length == other.length) {
+
+    if (other is JSStringImpl) {
+      return _jsEquals(toExternRef, other.toExternRef);
+    }
+
+    if (other is String && length == other.length) {
       for (int i = 0; i < length; i++) {
-        if (codeUnitAt(i) != other.codeUnitAt(i)) {
+        if (_codeUnitAtUnchecked(i) != other.codeUnitAt(i)) {
           return false;
         }
       }
       return true;
     }
+
     return false;
   }
 
   @override
   int compareTo(String other) {
-    int otherLength = other.length;
-    int len = (length < otherLength) ? length : otherLength;
+    if (other is JSStringImpl) {
+      return _jsCompare(toExternRef, other.toExternRef);
+    }
+    final otherLength = other.length;
+    final len = (length < otherLength) ? length : otherLength;
     for (int i = 0; i < len; i++) {
-      int thisCodeUnit = this.codeUnitAt(i);
+      int thisCodeUnit = _codeUnitAtUnchecked(i);
       int otherCodeUnit = other.codeUnitAt(i);
       if (thisCodeUnit < otherCodeUnit) {
         return -1;
@@ -654,10 +666,10 @@ final class JSStringImpl implements String {
   String toString() => js.stringify(toExternRef);
 
   int firstNonWhitespace() {
-    final len = this.length;
+    final length = this.length;
     int first = 0;
-    for (; first < len; first++) {
-      if (!_isWhitespace(this.codeUnitAt(first))) {
+    for (; first < length; first++) {
+      if (!_isWhitespace(_codeUnitAtUnchecked(first))) {
         break;
       }
     }
@@ -665,9 +677,9 @@ final class JSStringImpl implements String {
   }
 
   int lastNonWhitespace() {
-    int last = this.length - 1;
+    int last = length - 1;
     for (; last >= 0; last--) {
-      if (!_isWhitespace(this.codeUnitAt(last))) {
+      if (!_isWhitespace(_codeUnitAtUnchecked(last))) {
         break;
       }
     }
@@ -706,3 +718,11 @@ WasmExternRef _jsSubstring(
 @pragma("wasm:prefer-inline")
 int _jsLength(WasmExternRef? stringRef) =>
     js.JS<WasmI32>('WebAssembly.String.length', stringRef).toIntUnsigned();
+
+@pragma("wasm:prefer-inline")
+bool _jsEquals(WasmExternRef? s1, WasmExternRef? s2) =>
+    js.JS<WasmI32>('WebAssembly.String.equals', s1, s2).toBool();
+
+@pragma("wasm:prefer-inline")
+int _jsCompare(WasmExternRef? s1, WasmExternRef? s2) =>
+    js.JS<WasmI32>('WebAssembly.String.compare', s1, s2).toIntSigned();
