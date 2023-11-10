@@ -650,10 +650,10 @@ mixin _IntListMixin implements List<int> {
 // TODO(omersa): This mixin should override other update methods (probably just
 // setRange) that don't use `[]=` to modify the list.
 mixin _UnmodifiableIntListMixin {
-  WasmExternRef? _ref;
+  WasmExternRef? get toExternRef;
 
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(toExternRef));
 
   void operator []=(int index, int value) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
@@ -1899,10 +1899,10 @@ mixin _DoubleListMixin implements List<double> {
 }
 
 mixin _UnmodifiableDoubleListMixin {
-  WasmExternRef? _ref;
+  WasmExternRef? get toExternRef;
 
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(toExternRef));
 
   void operator []=(int index, double value) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
