@@ -442,7 +442,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   int firstWhere(bool test(int element), {int orElse()?}) {
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) return element;
     }
     if (orElse != null) return orElse();
@@ -452,7 +452,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   int lastWhere(bool test(int element), {int orElse()?}) {
     final length = this.length;
     for (var i = length - 1; i >= 0; --i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         return element;
       }
@@ -466,7 +466,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
     bool foundMatching = false;
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         if (foundMatching) {
           throw IterableElementError.tooMany();
@@ -1772,7 +1772,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   double firstWhere(bool test(double element), {double orElse()?}) {
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) return element;
     }
     if (orElse != null) return orElse();
@@ -1782,7 +1782,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   double lastWhere(bool test(double element), {double orElse()?}) {
     final length = this.length;
     for (var i = length - 1; i >= 0; --i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         return element;
       }
@@ -1796,7 +1796,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
     bool foundMatching = false;
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         if (foundMatching) {
           throw IterableElementError.tooMany();
