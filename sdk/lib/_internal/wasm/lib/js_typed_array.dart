@@ -168,6 +168,42 @@ abstract class JSArrayBase implements TypedData {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBase && js.areEqualInJS(_ref, that._ref);
+
+  void clear() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  bool remove(Object? element) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void removeRange(int start, int end) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void replaceRange(int start, int end, Iterable iterable) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  set length(int newLength) {
+    throw UnsupportedError("Cannot resize a fixed-length list");
+  }
+
+  void add(dynamic value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void addAll(Iterable value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void insert(int index, dynamic value) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void insertAll(int index, Iterable values) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
 }
 
 /// A JS `DataView`.
@@ -484,22 +520,6 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
     return this[index];
   }
 
-  void add(int value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void addAll(Iterable<int> value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void insert(int index, int value) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
-  void insertAll(int index, Iterable<int> values) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
   void sort([int compare(int a, int b)?]) {
     Sort.sort(this, compare ?? Comparable.compare);
   }
@@ -622,37 +642,14 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       (StringBuffer()..writeAll(this, separator)).toString();
 
   @override
-  void clear() {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  bool remove(Object? element) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void removeRange(int start, int end) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void replaceRange(int start, int end, Iterable iterable) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError("Cannot resize a fixed-length list");
-  }
-
-  @override
   String toString() => ListBase.listToString(this);
 }
 
 // TODO(omersa): This mixin should override other update methods (probably just
 // setRange) that don't use `[]=` to modify the list.
-mixin _UnmodifiableIntListMixin on JSArrayBase {
+mixin _UnmodifiableIntListMixin {
+  WasmExternRef? _ref;
+
   JSArrayBufferImpl get buffer =>
       JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
 
@@ -1573,48 +1570,6 @@ final class UnmodifiableJSBigInt64Array extends JSBigInt64ArrayImpl
   UnmodifiableJSBigInt64Array._(WasmExternRef? ref) : super._(ref);
 }
 
-/// Base class for `double` typed lists.
-abstract class JSFloatArrayImpl extends JSArrayBase
-    with ListMixin<double>, FixedLengthListMixin<double> {
-  JSFloatArrayImpl(super._ref);
-
-  @override
-  void setAll(int index, Iterable<double> iterable) {
-    final end = iterable.length + index;
-    setRange(index, end, iterable);
-  }
-
-  @override
-  void setRange(int start, int end, Iterable<double> iterable,
-      [int skipCount = 0]) {
-    RangeError.checkValidRange(start, end, length);
-
-    if (skipCount < 0) {
-      throw ArgumentError(skipCount);
-    }
-
-    if (iterable is JSArrayBase) {
-      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      final length = end - start;
-      final sourceArray = source.toJSArrayExternRef(skipCount, length);
-      final targetArray = toJSArrayExternRef(start, length);
-      return _setRangeFast(targetArray, sourceArray);
-    }
-
-    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
-
-    final count = end - start;
-    if (otherList.length < count) {
-      throw IterableElementError.tooFew();
-    }
-
-    // TODO(omersa): Use unchecked operations here.
-    for (int i = 0, j = start; i < count; i++, j++) {
-      this[j] = otherList[i];
-    }
-  }
-}
-
 abstract class _DoubleArrayIteratorBase implements Iterator<double> {
   final WasmExternRef? _ref;
   final int _length;
@@ -1814,22 +1769,6 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
     return this[index];
   }
 
-  void add(double value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void addAll(Iterable<double> value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void insert(int index, double value) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
-  void insertAll(int index, Iterable<double> values) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
   void sort([int compare(double a, double b)?]) {
     Sort.sort(this, compare ?? Comparable.compare);
   }
@@ -1950,31 +1889,6 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   @override
   String join([String separator = ""]) =>
       (StringBuffer()..writeAll(this, separator)).toString();
-
-  @override
-  void clear() {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  bool remove(Object? element) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void removeRange(int start, int end) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void replaceRange(int start, int end, Iterable iterable) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError("Cannot resize a fixed-length list");
-  }
 
   @override
   String toString() => ListBase.listToString(this);
