@@ -666,32 +666,6 @@ mixin _UnmodifiableIntListMixin on JSArrayBase {
   }
 }
 
-final class _TypedListIterator<E> implements Iterator<E> {
-  final List<E> _array;
-  final int _length;
-  int _position;
-  E? _current;
-
-  _TypedListIterator(List<E> array)
-      : _array = array,
-        _length = array.length,
-        _position = -1;
-
-  bool moveNext() {
-    int nextPosition = _position + 1;
-    if (nextPosition < _length) {
-      _current = _array[nextPosition];
-      _position = nextPosition;
-      return true;
-    }
-    _position = _length;
-    _current = null;
-    return false;
-  }
-
-  E get current => _current as E;
-}
-
 final class JSUint8ArrayImpl extends JSArrayBase
     with _IntListMixin
     implements Uint8List {
@@ -1641,6 +1615,18 @@ abstract class JSFloatArrayImpl extends JSArrayBase
   }
 }
 
+abstract class _DoubleArrayIteratorBase implements Iterator<double> {
+  final WasmExternRef? _ref;
+  final int _length;
+  int _position = -1;
+  double _current = 0;
+
+  _DoubleArrayIteratorBase(this._ref, this._length);
+
+  @pragma("wasm:prefer-inline")
+  double get current => _current;
+}
+
 mixin _DoubleListMixin on JSArrayBase implements List<double> {
   void _setUnchecked(int index, double value);
 
@@ -1728,8 +1714,6 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
     int endIndex = RangeError.checkValidRange(start, end, this.length);
     return SubListIterable<double>(this, start, endIndex);
   }
-
-  Iterator<double> get iterator => _TypedListIterator<double>(this);
 
   List<double> toList({bool growable = true}) {
     return List<double>.from(this, growable: growable);
@@ -2079,6 +2063,24 @@ final class JSFloat32ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSFloat32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSFloat32ArrayIterator get iterator => _JSFloat32ArrayIterator(this);
+}
+
+final class _JSFloat32ArrayIterator extends _DoubleArrayIteratorBase {
+  _JSFloat32ArrayIterator(JSFloat32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getFloat32(_ref, _position, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSFloat32Array extends JSFloat32ArrayImpl
@@ -2155,6 +2157,24 @@ final class JSFloat64ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSFloat64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSFloat64ArrayIterator get iterator => _JSFloat64ArrayIterator(this);
+}
+
+final class _JSFloat64ArrayIterator extends _DoubleArrayIteratorBase {
+  _JSFloat64ArrayIterator(JSFloat64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getFloat64(_ref, _position, true);
+      return true;
+    }
+    return false;
   }
 }
 
