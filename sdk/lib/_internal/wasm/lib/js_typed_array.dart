@@ -1894,7 +1894,9 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   String toString() => ListBase.listToString(this);
 }
 
-mixin _UnmodifiableDoubleListMixin on JSArrayBase {
+mixin _UnmodifiableDoubleListMixin {
+  WasmExternRef? _ref;
+
   JSArrayBufferImpl get buffer =>
       JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
 
