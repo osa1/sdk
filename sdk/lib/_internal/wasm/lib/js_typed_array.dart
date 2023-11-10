@@ -334,7 +334,9 @@ abstract class _IntArrayIteratorBase implements Iterator<int> {
   int get current => _current;
 }
 
-mixin _IntListMixin on JSArrayBase implements List<int> {
+mixin _IntListMixin implements List<int> {
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
+
   void _setUnchecked(int index, int value);
 
   int _getUnchecked(int index);
@@ -1582,7 +1584,9 @@ abstract class _DoubleArrayIteratorBase implements Iterator<double> {
   double get current => _current;
 }
 
-mixin _DoubleListMixin on JSArrayBase implements List<double> {
+mixin _DoubleListMixin implements List<double> {
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
+
   void _setUnchecked(int index, double value);
 
   double _getUnchecked(int index);
