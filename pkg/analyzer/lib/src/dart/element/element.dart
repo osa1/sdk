@@ -2469,7 +2469,6 @@ abstract class ElementImpl implements Element {
     bool multiline = false,
   }) {
     var builder = ElementDisplayStringBuilder(
-      skipAllDynamicArguments: false,
       withNullability: withNullability,
       multiline: multiline,
     );
@@ -6345,7 +6344,9 @@ class PropertyAccessorElementImpl_ImplicitSetter
 
 /// A concrete implementation of a [PropertyInducingElement].
 abstract class PropertyInducingElementImpl
-    extends NonParameterVariableElementImpl implements PropertyInducingElement {
+    extends NonParameterVariableElementImpl
+    with MacroTargetElement
+    implements PropertyInducingElement {
   /// The getter associated with this element.
   @override
   PropertyAccessorElementImpl? getter;

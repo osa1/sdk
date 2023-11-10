@@ -155,7 +155,7 @@ class LibraryMacroApplier {
         .buildAugmentationLibrary(
           results,
           declarationBuilder.typeDeclarationOf,
-          _resolveIdentifier,
+          declarationBuilder.resolveIdentifier,
           _inferOmittedType,
         )
         .trim();
@@ -241,6 +241,20 @@ class LibraryMacroApplier {
     required macro.DeclarationKind targetDeclarationKind,
     required List<ast.Annotation> annotations,
   }) async {
+    if (targetNode is ast.FieldDeclaration) {
+      for (final field in targetNode.fields.variables) {
+        await _addAnnotations(
+          libraryElement: libraryElement,
+          container: container,
+          declarationsPhaseElement: declarationsPhaseElement,
+          targetNode: field,
+          targetDeclarationKind: macro.DeclarationKind.field,
+          annotations: annotations,
+        );
+      }
+      return;
+    }
+
     final targetElement =
         targetNode.declaredElement.ifTypeOrNull<MacroTargetElement>();
     if (targetElement == null) {
@@ -336,19 +350,8 @@ class LibraryMacroApplier {
     }
   }
 
-  macro.Declaration _buildDeclaration(ast.AstNode targetNode) {
-    final fromNode = declarationBuilder.fromNode;
-    switch (targetNode) {
-      case ast.ClassDeclaration():
-        return fromNode.classDeclaration(targetNode);
-      case ast.MethodDeclaration():
-        return fromNode.methodDeclaration(targetNode);
-      case ast.MixinDeclaration():
-        return fromNode.mixinDeclaration(targetNode);
-      default:
-        // TODO(scheglov) incomplete
-        throw UnimplementedError('${targetNode.runtimeType}');
-    }
+  macro.Declaration _buildDeclaration(ast.AstNode node) {
+    return declarationBuilder.buildDeclaration(node);
   }
 
   bool _hasInterfaceDependenciesSatisfied(_MacroApplication application) {
@@ -516,21 +519,6 @@ class LibraryMacroApplier {
       }
     }
     return null;
-  }
-
-  macro.ResolvedIdentifier _resolveIdentifier(macro.Identifier identifier) {
-    if (identifier is IdentifierImplFromElement) {
-      // TODO(scheglov) other elements
-      final element = identifier.element as InterfaceElementImpl;
-      return macro.ResolvedIdentifier(
-        // TODO(scheglov) other kinds
-        kind: macro.IdentifierKind.topLevelMember,
-        name: element.name,
-        uri: element.source.uri,
-        staticScope: null,
-      );
-    }
-    throw UnimplementedError();
   }
 
   static macro.Arguments _buildArguments({
@@ -702,36 +690,30 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
 
   @override
   Future<List<macro.FieldDeclaration>> fieldsOf(
-    covariant macro.IntrospectableType type,
+    macro.IntrospectableType type,
   ) async {
-    switch (type) {
-      case IntrospectableClassDeclarationImpl():
-        return type.element.fields
-            .where((e) => !e.isSynthetic)
-            .map(declarationBuilder.fromElement.fieldElement)
-            .toList();
-      case IntrospectableMixinDeclarationImpl():
-        return type.element.fields
-            .where((e) => !e.isSynthetic)
-            .map(declarationBuilder.fromElement.fieldElement)
-            .toList();
+    final element = (type as HasElement).element;
+    if (element case InstanceElement(:final augmented?)) {
+      return augmented.fields
+          .where((e) => !e.isSynthetic)
+          .map(declarationBuilder.fromElement.fieldElement)
+          .toList();
     }
-    // TODO(scheglov) implement
-    throw UnsupportedError('Only introspection on classes is supported');
+    throw StateError('Unexpected: ${type.runtimeType}');
   }
 
   @override
   Future<List<macro.MethodDeclaration>> methodsOf(
-      covariant macro.IntrospectableType type) async {
-    switch (type) {
-      case IntrospectableClassDeclarationImpl():
-        return type.element.augmented!.methods
-            .where((e) => !e.isSynthetic)
-            .map(declarationBuilder.fromElement.methodElement)
-            .toList();
+    macro.IntrospectableType type,
+  ) async {
+    final element = (type as HasElement).element;
+    if (element case InstanceElement(:final augmented?)) {
+      return [
+        ...augmented.accessors.whereNot((e) => e.isSynthetic),
+        ...augmented.methods,
+      ].map(declarationBuilder.fromElement.methodElement).toList();
     }
-    // TODO(scheglov) implement
-    throw UnsupportedError('Only introspection on classes is supported');
+    throw StateError('Unexpected: ${type.runtimeType}');
   }
 
   @override
