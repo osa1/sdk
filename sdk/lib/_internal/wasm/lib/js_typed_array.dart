@@ -286,6 +286,18 @@ final class JSDataViewImpl implements ByteData {
       _setUint8(toExternRef, byteOffset, value);
 }
 
+abstract class _IntArrayIteratorBase implements Iterator<int> {
+  final WasmExternRef? _ref;
+  final int _length;
+  int _position = -1;
+  int _current = 0;
+
+  _IntArrayIteratorBase(this._ref, this._length);
+
+  @pragma("wasm:prefer-inline")
+  int get current => _current;
+}
+
 mixin _IntListMixin on JSArrayBase implements List<int> {
   void _setUnchecked(int index, int value);
 
@@ -372,8 +384,6 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
     int endIndex = RangeError.checkValidRange(start, end, this.length);
     return SubListIterable<int>(this, start, endIndex);
   }
-
-  Iterator<int> get iterator => _TypedListIterator<int>(this);
 
   List<int> toList({bool growable = true}) {
     return List<int>.from(this, growable: growable);
@@ -747,18 +757,11 @@ final class JSUint8ArrayImpl extends JSArrayBase
   }
 
   @override
-  _JSUint8ArrayImplIterator get iterator => _JSUint8ArrayImplIterator(this);
+  _JSUint8ArrayIterator get iterator => _JSUint8ArrayIterator(_ref, length);
 }
 
-final class _JSUint8ArrayImplIterator implements Iterator<int> {
-  final WasmExternRef? _ref;
-  final int _length;
-  int _position = -1;
-  int _current = 0;
-
-  _JSUint8ArrayImplIterator(JSUint8ArrayImpl array)
-      : _ref = array._ref,
-        _length = array.length;
+final class _JSUint8ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint8ArrayIterator(WasmExternRef? ref, int length) : super(ref, length);
 
   @pragma("wasm:prefer-inline")
   bool moveNext() {
@@ -768,15 +771,6 @@ final class _JSUint8ArrayImplIterator implements Iterator<int> {
       return true;
     }
     return false;
-  }
-
-  @pragma("wasm:prefer-inline")
-  int get current {
-    if (_position < 0 || _position >= _length) {
-      throw '';
-    } else {
-      return _current;
-    }
   }
 }
 
@@ -848,6 +842,23 @@ final class JSInt8ArrayImpl extends JSArrayBase
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSInt8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSInt8ArrayIterator get iterator => _JSInt8ArrayIterator(this);
+}
+
+final class _JSInt8ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt8ArrayIterator(JSInt8ArrayImpl array) : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt8(_ref, _position);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -921,6 +932,9 @@ final class JSUint8ClampedArrayImpl extends JSArrayBase
     return JSUint8ClampedArrayImpl._(
         buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint8ArrayIterator get iterator => _JSUint8ArrayIterator(_ref, length);
 }
 
 final class UnmodifiableJSUint8ClampedArray extends JSUint8ClampedArrayImpl
@@ -997,6 +1011,24 @@ final class JSUint16ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSUint16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSUint16ArrayIterator get iterator => _JSUint16ArrayIterator(this);
+}
+
+final class _JSUint16ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint16ArrayIterator(JSUint16ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getUint16(_ref, _position, true);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -1075,6 +1107,24 @@ final class JSInt16ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSInt16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSInt16ArrayIterator get iterator => _JSInt16ArrayIterator(this);
+}
+
+final class _JSInt16ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt16ArrayIterator(JSInt16ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt16(_ref, _position, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSInt16Array extends JSInt16ArrayImpl
@@ -1152,6 +1202,24 @@ final class JSUint32ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSUint32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint32ArrayIterator get iterator => _JSUint32ArrayIterator(this);
+}
+
+final class _JSUint32ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint32ArrayIterator(JSUint32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getUint32(_ref, _position, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSUint32Array extends JSUint32ArrayImpl
@@ -1228,6 +1296,24 @@ final class JSInt32ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSInt32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSInt32ArrayIterator get iterator => _JSInt32ArrayIterator(this);
+}
+
+final class _JSInt32ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt32ArrayIterator(JSInt32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt32(_ref, _position, true);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -1392,6 +1478,24 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigUint64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint64ArrayIterator get iterator => _JSUint64ArrayIterator(this);
+}
+
+final class _JSUint64ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint64ArrayIterator(JSBigUint64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getBigUint64(_ref, _position, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSBigUint64Array extends JSBigUint64ArrayImpl
@@ -1468,6 +1572,24 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigInt64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSInt64ArrayIterator get iterator => _JSInt64ArrayIterator(this);
+}
+
+final class _JSInt64ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt64ArrayIterator(JSBigInt64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getBigInt64(_ref, _position, true);
+      return true;
+    }
+    return false;
   }
 }
 
