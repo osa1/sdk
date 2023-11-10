@@ -999,7 +999,7 @@ final class _JSUint16ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getUint16(_ref, _position, true);
+      _current = _getUint16(_ref, _position * 2, true);
       return true;
     }
     return false;
@@ -1094,7 +1094,7 @@ final class _JSInt16ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getInt16(_ref, _position, true);
+      _current = _getInt16(_ref, _position * 2, true);
       return true;
     }
     return false;
@@ -1189,7 +1189,7 @@ final class _JSUint32ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getUint32(_ref, _position, true);
+      _current = _getUint32(_ref, _position * 4, true);
       return true;
     }
     return false;
@@ -1284,7 +1284,7 @@ final class _JSInt32ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getInt32(_ref, _position, true);
+      _current = _getInt32(_ref, _position * 4, true);
       return true;
     }
     return false;
@@ -1465,7 +1465,7 @@ final class _JSUint64ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getBigUint64(_ref, _position, true);
+      _current = _getBigUint64(_ref, _position * 8, true);
       return true;
     }
     return false;
@@ -1560,7 +1560,7 @@ final class _JSInt64ArrayIterator extends _IntArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getBigInt64(_ref, _position, true);
+      _current = _getBigInt64(_ref, _position * 8, true);
       return true;
     }
     return false;
@@ -2076,7 +2076,7 @@ final class _JSFloat32ArrayIterator extends _DoubleArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getFloat32(_ref, _position, true);
+      _current = _getFloat32(_ref, _position * 4, true);
       return true;
     }
     return false;
@@ -2171,7 +2171,7 @@ final class _JSFloat64ArrayIterator extends _DoubleArrayIteratorBase {
   bool moveNext() {
     _position += 1;
     if (_position < _length) {
-      _current = _getFloat64(_ref, _position, true);
+      _current = _getFloat64(_ref, _position * 8, true);
       return true;
     }
     return false;
