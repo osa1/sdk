@@ -27,6 +27,11 @@ WasmVoid? fun(WasmEqRef arg) {
   Expect.equals("Dart object", arg.toObject());
 }
 
+final WasmExternRef? lazyStatic = () {
+  var dartObjectRef = WasmEqRef.fromObject("Dart object");
+  return singularArray(dartObjectRef.externalize());
+}();
+
 class WasmFields {
   final WasmI32 i32;
   final WasmI64 i64;
@@ -147,6 +152,8 @@ test() {
   Expect.isFalse(arrayA == arrayAlit1);
   Expect.isFalse(arrayAlit2 == arrayAlit3);
   Expect.isTrue(arrayAlit3 == arrayAlit4);
+
+  Expect.isFalse(lazyStatic.isNull);
 }
 
 main() {
