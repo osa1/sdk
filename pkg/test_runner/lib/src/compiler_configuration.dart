@@ -603,9 +603,7 @@ class Dart2WasmCompilerConfiguration extends CompilerConfiguration {
     final args = testFile.dartOptions;
     return [
       '--experimental-wasm-gc',
-      '--experimental-wasm-type-reflection',
-      '--wasm-final-types',
-      '--wasm-disable-deprecated',
+      '--turboshaft-wasm',
       'pkg/dart2wasm/bin/run_wasm.js',
       '--',
       '${filename.substring(0, filename.lastIndexOf('.'))}.mjs',
