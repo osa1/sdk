@@ -602,7 +602,6 @@ class Dart2WasmCompilerConfiguration extends CompilerConfiguration {
     final filename = artifact!.filename;
     final args = testFile.dartOptions;
     return [
-      '--experimental-wasm-gc',
       '--turboshaft-wasm',
       'pkg/dart2wasm/bin/run_wasm.js',
       '--',
