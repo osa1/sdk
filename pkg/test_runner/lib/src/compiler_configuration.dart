@@ -603,6 +603,7 @@ class Dart2WasmCompilerConfiguration extends CompilerConfiguration {
     final args = testFile.dartOptions;
     return [
       '--turboshaft-wasm',
+      '--experimental-wasm-imported-strings',
       'pkg/dart2wasm/bin/run_wasm.js',
       '--',
       '${filename.substring(0, filename.lastIndexOf('.'))}.mjs',
