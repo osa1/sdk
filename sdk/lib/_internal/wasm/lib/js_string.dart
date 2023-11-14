@@ -9,10 +9,24 @@ final class JSStringImpl implements String {
 
   JSStringImpl(this._ref);
 
+  @pragma("wasm:prefer-inline")
   static String? box(WasmExternRef? ref) =>
       js.isDartNull(ref) ? null : JSStringImpl(ref);
 
+  @pragma("wasm:prefer-inline")
   WasmExternRef? get toExternRef => _ref;
+
+  @override
+  @pragma("wasm:prefer-inline")
+  int get length => _jsLength(toExternRef);
+
+  @override
+  @pragma("wasm:prefer-inline")
+  bool get isEmpty => length == 0;
+
+  @override
+  @pragma("wasm:prefer-inline")
+  bool get isNotEmpty => !isEmpty;
 
   @pragma("wasm:entry-point")
   static String interpolate(List<Object?> values) {
@@ -22,7 +36,7 @@ final class JSStringImpl implements String {
       final s = o.toString();
       final jsString =
           s is JSStringImpl ? js.JSValue.boxT<JSAny?>(s.toExternRef) : s.toJS;
-      array[i] = jsString;
+      array._setUnchecked(i, jsString);
     }
     return JSStringImpl(
         js.JS<WasmExternRef?>("a => a.join('')", array.toExternRef));
@@ -31,7 +45,9 @@ final class JSStringImpl implements String {
   @override
   @pragma("wasm:prefer-inline")
   int codeUnitAt(int index) {
-    RangeError.checkValueInInterval(index, 0, length - 1);
+    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+      throw IndexError.withLength(index, length);
+    }
     return _jsCharCodeAt(toExternRef, index);
   }
 
@@ -42,7 +58,7 @@ final class JSStringImpl implements String {
 
   @override
   Iterable<Match> allMatches(String string, [int start = 0]) {
-    if (0 > start || start > string.length) {
+    if (start < 0 || start > string.length) {
       throw RangeError.range(start, 0, string.length);
     }
     return StringAllMatchesIterable(string, this, start);
@@ -144,6 +160,7 @@ final class JSStringImpl implements String {
         StringBuffer buffer = StringBuffer();
         int i = 0;
         buffer.write(onNonMatch(""));
+        final length = this.length;
         while (i < length) {
           buffer.write(onMatch(StringMatch(i, this, "")));
           // Special case to avoid splitting a surrogate pair.
@@ -167,6 +184,7 @@ final class JSStringImpl implements String {
       }
       StringBuffer buffer = StringBuffer();
       int startIndex = 0;
+      final length = this.length;
       while (startIndex < length) {
         int position = indexOf(from, startIndex);
         if (position == -1) {
@@ -392,9 +410,10 @@ final class JSStringImpl implements String {
 
   /// Finds the index of the first non-whitespace character, or the
   /// end of the string. Start looking at position [index].
-  static int _skipLeadingWhitespace(String string, int index) {
-    while (index < string.length) {
-      int codeUnit = string.codeUnitAt(index);
+  static int _skipLeadingWhitespace(JSStringImpl string, int index) {
+    final stringLength = string.length;
+    while (index < stringLength) {
+      int codeUnit = string._codeUnitAtUnchecked(index);
       if (codeUnit != spaceCodeUnit &&
           codeUnit != carriageReturnCodeUnit &&
           !_isWhitespace(codeUnit)) {
@@ -407,9 +426,9 @@ final class JSStringImpl implements String {
 
   /// Finds the index after the last non-whitespace character, or 0.
   /// Start looking at position [index - 1].
-  static int _skipTrailingWhitespace(String string, int index) {
+  static int _skipTrailingWhitespace(JSStringImpl string, int index) {
     while (index > 0) {
-      int codeUnit = string.codeUnitAt(index - 1);
+      int codeUnit = string._codeUnitAtUnchecked(index - 1);
       if (codeUnit != spaceCodeUnit &&
           codeUnit != carriageReturnCodeUnit &&
           !_isWhitespace(codeUnit)) {
@@ -522,8 +541,9 @@ final class JSStringImpl implements String {
 
   @override
   int indexOf(Pattern pattern, [int start = 0]) {
-    if (start < 0 || start > this.length) {
-      throw RangeError.range(start, 0, this.length);
+    final length = this.length;
+    if (start < 0 || start > length) {
+      throw RangeError.range(start, 0, length);
     }
     if (pattern is JSStringImpl) {
       return _jsIndexOf(pattern.toExternRef, start);
@@ -533,7 +553,7 @@ final class JSStringImpl implements String {
       Match? match = js.firstMatchAfter(pattern, this, start);
       return (match == null) ? -1 : match.start;
     } else {
-      for (int i = start; i <= this.length; i++) {
+      for (int i = start; i <= length; i++) {
         if (pattern.matchAsPrefix(this, i) != null) return i;
       }
       return -1;
@@ -583,12 +603,6 @@ final class JSStringImpl implements String {
     }
   }
 
-  @override
-  bool get isEmpty => length == 0;
-
-  @override
-  bool get isNotEmpty => !isEmpty;
-
   /// This must be kept in sync with `StringBase.hashCode` in string_patch.dart.
   /// TODO(joshualitt): Find some way to cache the hash code.
   @override
@@ -602,11 +616,10 @@ final class JSStringImpl implements String {
 
   @override
   @pragma("wasm:prefer-inline")
-  int get length => _jsLength(toExternRef);
-
-  @override
   String operator [](int index) {
-    RangeError.checkValueInInterval(index, 0, length - 1);
+    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+      throw IndexError.withLength(index, length);
+    }
     return JSStringImpl(_jsFromCharCode(_codeUnitAtUnchecked(index)));
   }
 
