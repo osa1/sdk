@@ -51,7 +51,6 @@ abstract class SharedPrinter {
 
   Future<void> writeField(FieldDeclaration e) async {
     _assertEnclosingClass(e);
-
     sink.writelnWithIndent(e.identifier.name);
 
     await sink.withIndent(() async {
@@ -67,6 +66,7 @@ abstract class SharedPrinter {
   }
 
   Future<void> writeMethodDeclaration(MethodDeclaration e) async {
+    _assertEnclosingClass(e);
     sink.writelnWithIndent(e.identifier.name);
 
     await sink.withIndent(() async {
@@ -79,7 +79,6 @@ abstract class SharedPrinter {
         'isSetter': e.isSetter,
         'isStatic': e.isStatic,
       });
-
       await _writeMetadata(e);
       await _writeNamedFormalParameters(e.namedParameters);
       await _writePositionalFormalParameters(e.positionalParameters);
@@ -113,9 +112,29 @@ abstract class SharedPrinter {
   }
 
   void _assertEnclosingClass(MemberDeclaration e) {
-    if (e.definingType != _enclosingDeclarationIdentifier) {
+    final enclosing = _enclosingDeclarationIdentifier;
+    if (enclosing != null && e.definingType != enclosing) {
       throw StateError('Mismatch: definingClass');
     }
+  }
+
+  bool _shouldWriteArguments(ConstructorMetadataAnnotation annotation) {
+    return !const {
+      'IntrospectDeclarationsPhaseMacro',
+      'IntrospectTypesPhaseMacro',
+    }.contains(annotation.type.name);
+  }
+
+  Future<void> _writeExpressionCode(
+    ExpressionCode code, {
+    String? name,
+  }) async {
+    await sink.writeIndentedLine(() async {
+      if (name != null) {
+        sink.write('$name: ');
+      }
+      sink.write('${code.parts}');
+    });
   }
 
   Future<void> _writeFormalParameter(ParameterDeclaration e) async {
@@ -149,6 +168,22 @@ abstract class SharedPrinter {
           final constructorName = e.constructor.name;
           if (constructorName.isNotEmpty) {
             sink.writelnWithIndent('constructorName: $constructorName');
+          }
+          if (_shouldWriteArguments(e)) {
+            await sink.writeElements(
+              'positionalArguments',
+              e.positionalArguments,
+              (argument) async {
+                await _writeExpressionCode(argument);
+              },
+            );
+            await sink.writeElements(
+              'namedArguments',
+              e.namedArguments.entries,
+              (entry) async {
+                await _writeExpressionCode(name: entry.key, entry.value);
+              },
+            );
           }
         });
       case IdentifierMetadataAnnotation():
@@ -223,6 +258,9 @@ abstract class SharedPrinter {
             default:
               throw UnimplementedError('${declaration.runtimeType}');
           }
+        case OmittedTypeAnnotation():
+          // No declaration, yet.
+          break;
         default:
           throw UnimplementedError('(${type.runtimeType}) $type');
       }
@@ -249,6 +287,11 @@ abstract class SharedPrinter {
           'fields',
           await introspector.fieldsOf(e),
           writeField,
+        );
+        await sink.writeElements(
+          'methods',
+          await introspector.methodsOf(e),
+          writeMethodDeclaration,
         );
       }
     }

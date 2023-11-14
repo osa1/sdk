@@ -106,6 +106,12 @@ class Linker {
     _writeLibraries();
   }
 
+  void _buildClassSyntheticConstructors() {
+    for (final library in builders.values) {
+      library.buildClassSyntheticConstructors();
+    }
+  }
+
   void _buildElementNameUnions() {
     for (final builder in builders.values) {
       final element = builder.element;
@@ -155,9 +161,7 @@ class Linker {
 
     _createTypeSystem();
     _resolveTypes();
-    _resolveConstructorFieldFormals();
-    _buildEnumChildren();
-    _computeFieldPromotability();
+    _setDefaultSupertypes();
 
     await performance.runAsync(
       'executeMacroDeclarationsPhase',
@@ -168,6 +172,19 @@ class Linker {
       },
     );
 
+    await performance.runAsync(
+      'executeMacroDefinitionsPhase',
+      (performance) async {
+        await _executeMacroDefinitionsPhase(
+          performance: performance,
+        );
+      },
+    );
+
+    _buildClassSyntheticConstructors();
+    _resolveConstructorFieldFormals();
+    _buildEnumChildren();
+    _computeFieldPromotability();
     SuperConstructorResolver(this).perform();
     _performTopLevelInference();
     _resolveConstructors();
@@ -224,10 +241,6 @@ class Linker {
         }
       },
     );
-
-    for (final library in builders.values) {
-      library.buildClassSyntheticConstructors();
-    }
 
     for (var library in builders.values) {
       library.buildInitialExportScope();
@@ -318,6 +331,16 @@ class Linker {
     }
   }
 
+  Future<void> _executeMacroDefinitionsPhase({
+    required OperationPerformanceImpl performance,
+  }) async {
+    for (final library in builders.values) {
+      await library.executeMacroDefinitionsPhase(
+        performance: performance,
+      );
+    }
+  }
+
   Future<void> _mergeMacroAugmentations({
     required OperationPerformanceImpl performance,
   }) async {
@@ -369,6 +392,12 @@ class Linker {
     computeSimplyBounded(this);
     TypeAliasSelfReferenceFinder().perform(this);
     TypesBuilder(this).build(nodesToBuildType);
+  }
+
+  void _setDefaultSupertypes() {
+    for (final library in builders.values) {
+      library.setDefaultSupertypes();
+    }
   }
 
   void _writeLibraries() {

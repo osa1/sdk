@@ -168,6 +168,42 @@ abstract class JSArrayBase implements TypedData {
   @override
   bool operator ==(Object that) =>
       that is JSArrayBase && js.areEqualInJS(_ref, that._ref);
+
+  void clear() {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  bool remove(Object? element) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void removeRange(int start, int end) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  void replaceRange(int start, int end, Iterable iterable) {
+    throw UnsupportedError("Cannot remove from a fixed-length list");
+  }
+
+  set length(int newLength) {
+    throw UnsupportedError("Cannot resize a fixed-length list");
+  }
+
+  void add(dynamic value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void addAll(Iterable value) {
+    throw UnsupportedError("Cannot add to a fixed-length list");
+  }
+
+  void insert(int index, dynamic value) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
+
+  void insertAll(int index, Iterable values) {
+    throw UnsupportedError("Cannot insert into a fixed-length list");
+  }
 }
 
 /// A JS `DataView`.
@@ -286,7 +322,21 @@ final class JSDataViewImpl implements ByteData {
       _setUint8(toExternRef, byteOffset, value);
 }
 
-mixin _IntListMixin on JSArrayBase implements List<int> {
+abstract class _IntArrayIteratorBase implements Iterator<int> {
+  final WasmExternRef? _ref;
+  final int _length;
+  int _position = -1;
+  int _current = 0;
+
+  _IntArrayIteratorBase(this._ref, this._length);
+
+  @pragma("wasm:prefer-inline")
+  int get current => _current;
+}
+
+mixin _IntListMixin implements List<int> {
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
+
   void _setUnchecked(int index, int value);
 
   int _getUnchecked(int index);
@@ -373,8 +423,6 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
     return SubListIterable<int>(this, start, endIndex);
   }
 
-  Iterator<int> get iterator => _TypedListIterator<int>(this);
-
   List<int> toList({bool growable = true}) {
     return List<int>.from(this, growable: growable);
   }
@@ -432,7 +480,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   int firstWhere(bool test(int element), {int orElse()?}) {
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) return element;
     }
     if (orElse != null) return orElse();
@@ -442,7 +490,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
   int lastWhere(bool test(int element), {int orElse()?}) {
     final length = this.length;
     for (var i = length - 1; i >= 0; --i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         return element;
       }
@@ -456,7 +504,7 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
     bool foundMatching = false;
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         if (foundMatching) {
           throw IterableElementError.tooMany();
@@ -472,22 +520,6 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
 
   int elementAt(int index) {
     return this[index];
-  }
-
-  void add(int value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void addAll(Iterable<int> value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void insert(int index, int value) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
-  void insertAll(int index, Iterable<int> values) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void sort([int compare(int a, int b)?]) {
@@ -612,39 +644,16 @@ mixin _IntListMixin on JSArrayBase implements List<int> {
       (StringBuffer()..writeAll(this, separator)).toString();
 
   @override
-  void clear() {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  bool remove(Object? element) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void removeRange(int start, int end) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void replaceRange(int start, int end, Iterable iterable) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError("Cannot resize a fixed-length list");
-  }
-
-  @override
   String toString() => ListBase.listToString(this);
 }
 
 // TODO(omersa): This mixin should override other update methods (probably just
 // setRange) that don't use `[]=` to modify the list.
-mixin _UnmodifiableIntListMixin on JSArrayBase {
+mixin _UnmodifiableIntListMixin {
+  WasmExternRef? get toExternRef;
+
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(toExternRef));
 
   void operator []=(int index, int value) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
@@ -654,32 +663,6 @@ mixin _UnmodifiableIntListMixin on JSArrayBase {
       [int skipCount = 0]) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
   }
-}
-
-final class _TypedListIterator<E> implements Iterator<E> {
-  final List<E> _array;
-  final int _length;
-  int _position;
-  E? _current;
-
-  _TypedListIterator(List<E> array)
-      : _array = array,
-        _length = array.length,
-        _position = -1;
-
-  bool moveNext() {
-    int nextPosition = _position + 1;
-    if (nextPosition < _length) {
-      _current = _array[nextPosition];
-      _position = nextPosition;
-      return true;
-    }
-    _position = _length;
-    _current = null;
-    return false;
-  }
-
-  E get current => _current as E;
 }
 
 final class JSUint8ArrayImpl extends JSArrayBase
@@ -747,18 +730,11 @@ final class JSUint8ArrayImpl extends JSArrayBase
   }
 
   @override
-  _JSUint8ArrayImplIterator get iterator => _JSUint8ArrayImplIterator(this);
+  _JSUint8ArrayIterator get iterator => _JSUint8ArrayIterator(_ref, length);
 }
 
-final class _JSUint8ArrayImplIterator implements Iterator<int> {
-  final WasmExternRef? _ref;
-  final int _length;
-  int _position = -1;
-  int _current = 0;
-
-  _JSUint8ArrayImplIterator(JSUint8ArrayImpl array)
-      : _ref = array._ref,
-        _length = array.length;
+final class _JSUint8ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint8ArrayIterator(WasmExternRef? ref, int length) : super(ref, length);
 
   @pragma("wasm:prefer-inline")
   bool moveNext() {
@@ -768,15 +744,6 @@ final class _JSUint8ArrayImplIterator implements Iterator<int> {
       return true;
     }
     return false;
-  }
-
-  @pragma("wasm:prefer-inline")
-  int get current {
-    if (_position < 0 || _position >= _length) {
-      throw '';
-    } else {
-      return _current;
-    }
   }
 }
 
@@ -848,6 +815,23 @@ final class JSInt8ArrayImpl extends JSArrayBase
     final newEnd = RangeError.checkValidRange(newOffset, end, lengthInBytes);
     final newLength = newEnd - newOffset;
     return JSInt8ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSInt8ArrayIterator get iterator => _JSInt8ArrayIterator(this);
+}
+
+final class _JSInt8ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt8ArrayIterator(JSInt8ArrayImpl array) : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt8(_ref, _position);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -921,6 +905,9 @@ final class JSUint8ClampedArrayImpl extends JSArrayBase
     return JSUint8ClampedArrayImpl._(
         buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint8ArrayIterator get iterator => _JSUint8ArrayIterator(_ref, length);
 }
 
 final class UnmodifiableJSUint8ClampedArray extends JSUint8ClampedArrayImpl
@@ -997,6 +984,24 @@ final class JSUint16ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSUint16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSUint16ArrayIterator get iterator => _JSUint16ArrayIterator(this);
+}
+
+final class _JSUint16ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint16ArrayIterator(JSUint16ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getUint16(_ref, _position * 2, true);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -1075,6 +1080,24 @@ final class JSInt16ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 2, newEnd ~/ 2, lengthInBytes ~/ 2);
     return JSInt16ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSInt16ArrayIterator get iterator => _JSInt16ArrayIterator(this);
+}
+
+final class _JSInt16ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt16ArrayIterator(JSInt16ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt16(_ref, _position * 2, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSInt16Array extends JSInt16ArrayImpl
@@ -1152,6 +1175,24 @@ final class JSUint32ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSUint32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint32ArrayIterator get iterator => _JSUint32ArrayIterator(this);
+}
+
+final class _JSUint32ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint32ArrayIterator(JSUint32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getUint32(_ref, _position * 4, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSUint32Array extends JSUint32ArrayImpl
@@ -1228,6 +1269,24 @@ final class JSInt32ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSInt32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSInt32ArrayIterator get iterator => _JSInt32ArrayIterator(this);
+}
+
+final class _JSInt32ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt32ArrayIterator(JSInt32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getInt32(_ref, _position * 4, true);
+      return true;
+    }
+    return false;
   }
 }
 
@@ -1392,6 +1451,24 @@ final class JSBigUint64ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigUint64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSUint64ArrayIterator get iterator => _JSUint64ArrayIterator(this);
+}
+
+final class _JSUint64ArrayIterator extends _IntArrayIteratorBase {
+  _JSUint64ArrayIterator(JSBigUint64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getBigUint64(_ref, _position * 8, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSBigUint64Array extends JSBigUint64ArrayImpl
@@ -1469,6 +1546,24 @@ final class JSBigInt64ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSBigInt64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSInt64ArrayIterator get iterator => _JSInt64ArrayIterator(this);
+}
+
+final class _JSInt64ArrayIterator extends _IntArrayIteratorBase {
+  _JSInt64ArrayIterator(JSBigInt64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getBigInt64(_ref, _position * 8, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSBigInt64Array extends JSBigInt64ArrayImpl
@@ -1477,49 +1572,21 @@ final class UnmodifiableJSBigInt64Array extends JSBigInt64ArrayImpl
   UnmodifiableJSBigInt64Array._(WasmExternRef? ref) : super._(ref);
 }
 
-/// Base class for `double` typed lists.
-abstract class JSFloatArrayImpl extends JSArrayBase
-    with ListMixin<double>, FixedLengthListMixin<double> {
-  JSFloatArrayImpl(super._ref);
+abstract class _DoubleArrayIteratorBase implements Iterator<double> {
+  final WasmExternRef? _ref;
+  final int _length;
+  int _position = -1;
+  double _current = 0;
 
-  @override
-  void setAll(int index, Iterable<double> iterable) {
-    final end = iterable.length + index;
-    setRange(index, end, iterable);
-  }
+  _DoubleArrayIteratorBase(this._ref, this._length);
 
-  @override
-  void setRange(int start, int end, Iterable<double> iterable,
-      [int skipCount = 0]) {
-    RangeError.checkValidRange(start, end, length);
-
-    if (skipCount < 0) {
-      throw ArgumentError(skipCount);
-    }
-
-    if (iterable is JSArrayBase) {
-      final JSArrayBase source = unsafeCast<JSArrayBase>(iterable);
-      final length = end - start;
-      final sourceArray = source.toJSArrayExternRef(skipCount, length);
-      final targetArray = toJSArrayExternRef(start, length);
-      return _setRangeFast(targetArray, sourceArray);
-    }
-
-    List<double> otherList = iterable.skip(skipCount).toList(growable: false);
-
-    final count = end - start;
-    if (otherList.length < count) {
-      throw IterableElementError.tooFew();
-    }
-
-    // TODO(omersa): Use unchecked operations here.
-    for (int i = 0, j = start; i < count; i++, j++) {
-      this[j] = otherList[i];
-    }
-  }
+  @pragma("wasm:prefer-inline")
+  double get current => _current;
 }
 
-mixin _DoubleListMixin on JSArrayBase implements List<double> {
+mixin _DoubleListMixin implements List<double> {
+  WasmExternRef? toJSArrayExternRef([int start = 0, int? length]);
+
   void _setUnchecked(int index, double value);
 
   double _getUnchecked(int index);
@@ -1607,8 +1674,6 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
     return SubListIterable<double>(this, start, endIndex);
   }
 
-  Iterator<double> get iterator => _TypedListIterator<double>(this);
-
   List<double> toList({bool growable = true}) {
     return List<double>.from(this, growable: growable);
   }
@@ -1666,7 +1731,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   double firstWhere(bool test(double element), {double orElse()?}) {
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) return element;
     }
     if (orElse != null) return orElse();
@@ -1676,7 +1741,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
   double lastWhere(bool test(double element), {double orElse()?}) {
     final length = this.length;
     for (var i = length - 1; i >= 0; --i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         return element;
       }
@@ -1690,7 +1755,7 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
     bool foundMatching = false;
     final length = this.length;
     for (var i = 0; i < length; ++i) {
-      var element = _getUnchecked(i);
+      final element = _getUnchecked(i);
       if (test(element)) {
         if (foundMatching) {
           throw IterableElementError.tooMany();
@@ -1706,22 +1771,6 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
 
   double elementAt(int index) {
     return this[index];
-  }
-
-  void add(double value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void addAll(Iterable<double> value) {
-    throw UnsupportedError("Cannot add to a fixed-length list");
-  }
-
-  void insert(int index, double value) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
-  }
-
-  void insertAll(int index, Iterable<double> values) {
-    throw UnsupportedError("Cannot insert into a fixed-length list");
   }
 
   void sort([int compare(double a, double b)?]) {
@@ -1846,37 +1895,14 @@ mixin _DoubleListMixin on JSArrayBase implements List<double> {
       (StringBuffer()..writeAll(this, separator)).toString();
 
   @override
-  void clear() {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  bool remove(Object? element) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void removeRange(int start, int end) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  void replaceRange(int start, int end, Iterable iterable) {
-    throw UnsupportedError("Cannot remove from a fixed-length list");
-  }
-
-  @override
-  set length(int newLength) {
-    throw UnsupportedError("Cannot resize a fixed-length list");
-  }
-
-  @override
   String toString() => ListBase.listToString(this);
 }
 
-mixin _UnmodifiableDoubleListMixin on JSArrayBase {
+mixin _UnmodifiableDoubleListMixin {
+  WasmExternRef? get toExternRef;
+
   JSArrayBufferImpl get buffer =>
-      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(_ref));
+      JSArrayBufferImpl.fromRefImmutable(_dataViewBuffer(toExternRef));
 
   void operator []=(int index, double value) {
     throw UnsupportedError("Cannot modify an unmodifiable list");
@@ -1957,6 +1983,24 @@ final class JSFloat32ArrayImpl extends JSArrayBase
     RangeError.checkValidRange(newOffset ~/ 4, newEnd ~/ 4, lengthInBytes ~/ 4);
     return JSFloat32ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
   }
+
+  @override
+  _JSFloat32ArrayIterator get iterator => _JSFloat32ArrayIterator(this);
+}
+
+final class _JSFloat32ArrayIterator extends _DoubleArrayIteratorBase {
+  _JSFloat32ArrayIterator(JSFloat32ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getFloat32(_ref, _position * 4, true);
+      return true;
+    }
+    return false;
+  }
 }
 
 final class UnmodifiableJSFloat32Array extends JSFloat32ArrayImpl
@@ -2033,6 +2077,24 @@ final class JSFloat64ArrayImpl extends JSArrayBase
     final int newLength = newEnd - newOffset;
     RangeError.checkValidRange(newOffset ~/ 8, newEnd ~/ 8, lengthInBytes ~/ 8);
     return JSFloat64ArrayImpl._(buffer.cloneAsDataView(newOffset, newLength));
+  }
+
+  @override
+  _JSFloat64ArrayIterator get iterator => _JSFloat64ArrayIterator(this);
+}
+
+final class _JSFloat64ArrayIterator extends _DoubleArrayIteratorBase {
+  _JSFloat64ArrayIterator(JSFloat64ArrayImpl array)
+      : super(array._ref, array.length);
+
+  @pragma("wasm:prefer-inline")
+  bool moveNext() {
+    _position += 1;
+    if (_position < _length) {
+      _current = _getFloat64(_ref, _position * 8, true);
+      return true;
+    }
+    return false;
   }
 }
 

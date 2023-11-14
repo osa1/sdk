@@ -2631,11 +2631,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
 
   /// Execute a function body using the [StatementConstantEvaluator].
   Constant executeBody(Statement statement) {
-    if (!enableConstFunctions && !inExtensionTypeConstConstructor) {
-      throw new UnsupportedError("Statement evaluation is only supported when "
-          "in extension type const constructors or when the const functions "
-          "feature is enabled.");
-    }
     StatementConstantEvaluator statementEvaluator =
         new StatementConstantEvaluator(this);
     ExecutionStatus status = statement.accept(statementEvaluator);
@@ -2662,11 +2657,6 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
   /// Returns [null] on success and an error-"constant" on failure, as such the
   /// return value should be checked.
   AbortConstant? executeConstructorBody(Constructor constructor) {
-    if (!enableConstFunctions && !inExtensionTypeConstConstructor) {
-      throw new UnsupportedError("Statement evaluation is only supported when "
-          "in extension type const constructors or when the const functions "
-          "feature is enabled.");
-    }
     final Statement body = constructor.function.body!;
     StatementConstantEvaluator statementEvaluator =
         new StatementConstantEvaluator(this);
@@ -5133,7 +5123,8 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
       value ? trueConstant : falseConstant;
 
   bool isSubtype(Constant constant, DartType type, SubtypeCheckMode mode) {
-    DartType constantType = constant.getType(staticTypeContext);
+    DartType constantType =
+        constant.getType(staticTypeContext).extensionTypeErasure;
     if (mode == SubtypeCheckMode.ignoringNullabilities) {
       constantType = rawLegacyErasure(constantType) ?? constantType;
     }
@@ -5250,10 +5241,10 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
     return result;
   }
 
-  /// Returns the type on success and null on failure.
+  /// Returns the reified type on success and null on failure.
   /// Note that on failure an errorConstant is saved in [_gotError].
   DartType? _evaluateDartType(TreeNode node, DartType type) {
-    final DartType result = env.substituteType(type);
+    final DartType result = env.substituteType(type.extensionTypeErasure);
 
     if (!isInstantiated(result)) {
       // TODO(johnniwinther): Maybe we should always report this in the body
@@ -5487,7 +5478,14 @@ class ConstantEvaluator implements ExpressionVisitor<Constant> {
 class StatementConstantEvaluator implements StatementVisitor<ExecutionStatus> {
   ConstantEvaluator exprEvaluator;
 
-  StatementConstantEvaluator(this.exprEvaluator);
+  StatementConstantEvaluator(this.exprEvaluator) {
+    if (!exprEvaluator.enableConstFunctions &&
+        !exprEvaluator.inExtensionTypeConstConstructor) {
+      throw new UnsupportedError("Statement evaluation is only supported when "
+          "in inline class const constructors or when the const functions "
+          "feature is enabled.");
+    }
+  }
 
   /// Evaluate the expression using the [ConstantEvaluator].
   Constant evaluate(Expression expr) => expr.accept(exprEvaluator);

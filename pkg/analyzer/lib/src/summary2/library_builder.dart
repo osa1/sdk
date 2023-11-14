@@ -271,6 +271,10 @@ class LibraryBuilder {
       constructor.reference = reference;
 
       classElement.constructors = [constructor].toFixedList();
+
+      if (classElement.augmented case AugmentedClassElementImpl augmented) {
+        augmented.constructors = classElement.constructors;
+      }
     }
   }
 
@@ -415,6 +419,69 @@ class LibraryBuilder {
       unit: macroLinkingUnit.node,
     );
     return true;
+  }
+
+  Future<void> executeMacroDefinitionsPhase({
+    required OperationPerformanceImpl performance,
+  }) async {
+    final macroApplier = linker.macroApplier;
+    if (macroApplier == null) {
+      return;
+    }
+
+    while (true) {
+      final results = await macroApplier.executeDefinitionsPhase();
+
+      // TODO(scheglov): Try to de-duplicate code below.
+
+      // No more applications to execute.
+      if (results == null) {
+        break;
+      }
+
+      // No results from the application.
+      if (results.isEmpty) {
+        continue;
+      }
+
+      _macroResults.add(results);
+
+      final augmentationCode = macroApplier.buildAugmentationLibraryCode(
+        results,
+      );
+      if (augmentationCode == null) {
+        continue;
+      }
+
+      final importState = kind.addMacroAugmentation(
+        augmentationCode,
+        addLibraryAugmentDirective: true,
+        partialIndex: _macroResults.length,
+      );
+
+      final augmentation = _addMacroAugmentation(importState);
+
+      final macroLinkingUnit = units.last;
+      ElementBuilder(
+        libraryBuilder: this,
+        container: macroLinkingUnit.container,
+        unitReference: macroLinkingUnit.reference,
+        unitElement: macroLinkingUnit.element,
+      ).buildDeclarationElements(macroLinkingUnit.node);
+
+      final nodesToBuildType = NodesToBuildType();
+      final resolver =
+          ReferenceResolver(linker, nodesToBuildType, augmentation);
+      macroLinkingUnit.node.accept(resolver);
+      TypesBuilder(linker).build(nodesToBuildType);
+
+      // Append applications from the partial augmentation.
+      await macroApplier.add(
+        libraryElement: element,
+        container: augmentation,
+        unit: macroLinkingUnit.node,
+      );
+    }
   }
 
   Future<void> executeMacroTypesPhase({
@@ -635,6 +702,35 @@ class LibraryBuilder {
         linkingUnit.container,
       );
       linkingUnit.node.accept(resolver);
+    }
+  }
+
+  void setDefaultSupertypes() {
+    var shouldResetClassHierarchies = false;
+    final objectType = element.typeProvider.objectType;
+    for (final interface in element.topLevelElements) {
+      switch (interface) {
+        case ClassElementImpl():
+          if (interface.isAugmentation) continue;
+          if (interface.isDartCoreObject) continue;
+          if (interface.supertype == null) {
+            shouldResetClassHierarchies = true;
+            interface.supertype = objectType;
+          }
+        case MixinElementImpl():
+          if (interface.isAugmentation) continue;
+          final augmented = interface.augmented!;
+          if (augmented.superclassConstraints.isEmpty) {
+            shouldResetClassHierarchies = true;
+            interface.superclassConstraints = [objectType];
+            if (augmented is AugmentedMixinElementImpl) {
+              augmented.superclassConstraints = [objectType];
+            }
+          }
+      }
+    }
+    if (shouldResetClassHierarchies) {
+      element.session.classHierarchy.removeOfLibraries({uri});
     }
   }
 

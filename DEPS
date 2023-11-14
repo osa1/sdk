@@ -55,7 +55,7 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "cee2c7fe253fa70df29f28e7610a824800a477c5",
+  "co19_rev": "306f82e85b3d9e596eed38d36cbef369643515c0",
   # This line prevents conflicts when both packages are rolled simultaneously.
   "co19_2_rev": "d87f9096ec0a14cd7c32c33316fb2378b89d6a45",
 
@@ -84,7 +84,7 @@ vars = {
 
   "reclient_version": "git_revision:81e819b39d4743462857cc55430d898b9fcca1af",
 
-  # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/gn
+  # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core
   "fuchsia_sdk_version": "version:16.20231105.3.1",
   "download_fuchsia_deps": False,
 
@@ -101,7 +101,7 @@ vars = {
   "boringssl_gen_rev": "a468ba9fec3f59edf46a7db98caaca893e1e4d96",
   "boringssl_rev": "74646566e93de7551bfdfc5f49de7462f13d1d05",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
-  "devtools_rev": "28a3978da5f230d4311fd2a4e2effaf0ef620de7",
+  "devtools_rev": "fec80c6e29b627aa17e8b15f72cb4013a28d14ec",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -124,12 +124,12 @@ vars = {
   "async_rev": "992457079da78dede35a56257d698288c467dc91",
   "bazel_worker_rev": "3d9cd5823fc96872b7275fe99a4fabc4dcfe57c8",
   "benchmark_harness_rev": "e59f675ae00578e46a283d5868b36e4554398309",
-  "boolean_selector_rev": "7f523c392056bea55176530a7b1434aa99549e0f",
-  "browser_launcher_rev": "4f9e7843b683c9e9357aaf263a929ec6ecf959c8",
+  "boolean_selector_rev": "caea8d41cab1b7f4cc3c86d15a27c011ab01766b",
+  "browser_launcher_rev": "f60df1d9b1f7b90e4eaeedccc3952fdd6ffba28a",
   "characters_rev": "7633a16a22c626e19ca750223237396315268a06",
   "cli_util_rev": "500dffab6e00332c4c0b814359f06c8a9c3a5573",
   "clock_rev": "f975668839f45bad561d6227f88297bbbcff03fa",
-  "collection_rev": "e8d7e925cc3d48d16d7455de6ac8484ecad46bda",
+  "collection_rev": "f309148623c4755ce9d6c00850092458325058ca",
   "convert_rev": "35031701fab532ada1a75c51155c0a6801055d88",
   "crypto_rev": "f3e64d234416466683e29a4b20cf751684cbae6a",
   "csslib_rev": "17346e528b19c09b2d20589e0ffa0f01a5ad54ad",
@@ -148,19 +148,19 @@ vars = {
   "ecosystem_rev": "dda788671e943525b7393f7e2430de38e73c03dc",
   "ffi_rev": "c926657618443ff4821411ede01684096b503f84",
   "file_rev": "cd3a9324f6483f313ba1f0f3ff382ea4e6982ef2",
-  "fixnum_rev": "3279f5d2a7b01eb315dc0f6cbae57cae8cee35e4",
+  "fixnum_rev": "6b0888c96554136e4f4ecf03cc52359b1974ede2",
   "flute_rev": "f42b09f77132210499ec8ed819a60c260af03db6",
   "glob_rev": "7c9a121e92687b7ac6456ec0796eb1e5c0373d90",
   "html_rev": "06bc148600b1d1a70f2256bdf788c213f1f60f55",
-  "http_rev": "a2f3c1db0348196940a3a73b7d96b8e21ab7482a",
+  "http_rev": "f0a02f98f7c921e86ecc81c70f38bb6fbccc81b9",
   "http_multi_server_rev": "2238a6baac24af12a3fcef6185493e5aa1c2a2a4",
   "http_parser_rev": "1cf5b7c556fa76f10b1d5e8576b54bb2d6b67e24",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "json_rpc_2_rev": "460545c62d12c2cd4635054e327846628288cb7e",
-  "leak_tracker_rev": "d3c9060d082ff4913c12ed1a5f47dbb2a93f4639",
+  "leak_tracker_rev": "a618a55598e94c1b58dab6ab13297a23b3a3f287",
   "lints_rev": "f58fd77bbff4ff4a62826a7bbfb9a72f0f03dd3c",
   "logging_rev": "324a0b5fd2b49b80ea4fbe2b48aac7794000e25a",
-  "markdown_rev": "efb73b3db22f47925d942d3ad1a0cdcd6dece944",
+  "markdown_rev": "3774ad02e812ceeb32ad0d98a987b0acffa63cf6",
   "matcher_rev": "3d03fa1a3e8f166b9e2ec8557c5d5e83ae1c85bc",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   "mime_rev": "8ebf9463a7a230213cee0adc3c019dad78d364ac",
@@ -183,17 +183,17 @@ vars = {
   "sync_http_rev": "d8e9f3de7be658b1c00d5b65aecba8640fc4ce46",
   "tar_rev": "3383397b082c084c327587a293591fac74bc8af3",
   "term_glyph_rev": "7c1eb9d799a3cbbc554c3a283af4d6cee9043297",
-  "test_rev": "075faffb08873fbc6d105f08408c426b6ab54b09", # https://github.com/dart-lang/test/issues/2126
+  "test_rev": "8ba0940d24e36b9276a18b34cd8d6fe396d2c172",
   "test_descriptor_rev": "c417cbb6498ba6d3ac6f7b14fdc43aefc212ab2e",
   "test_process_rev": "c21e40d7c06c862d14b1f53651ae0bd3cf81ca44",
   "test_reflective_loader_rev": "17d40bb06f55f727a79c0f0016d7510294f5db03",
-  "tools_rev": "d898ad12eccd19bb15d57df4493f9f449b9ab842",
+  "tools_rev": "2e36b8d326e95ed256a74ee2ebdcfff5be502c57",
   "typed_data_rev": "0b16bd26c90bc9ac08e8b4b259aa3d7bead34feb",
   "usage_rev": "e99690ae6d5fa9ec24ac5218bcd3621e8e3ae8a9",
   "vector_math_rev": "294896dedc6da2a736f47c3c6a19643df934641c",
   "watcher_rev": "b2b278ae4198b4c431a145ddcfdab1460d5f9ec5",
   "web_socket_channel_rev": "82ac73fef05c474095c740a9525b4cfb61611c3d",
-  "webdev_rev": "5ad79c240b000a50057612d6af4573f6e649f65c",
+  "webdev_rev": "6961b202c343e12893e6c664ef70336b7c3845c3",
   "webdriver_rev": "43ed1dbefc39866ebccc31d3704a0e71400ef4a2",
   "webkit_inspection_protocol_rev": "667c55e6f65638592768e0325b75420e39b01d2e",
   "yaml_rev": "98a3aab54b09d355e094fdb4e5abd9083a2876b8",
@@ -649,41 +649,36 @@ Var("dart_root") + "/third_party/pkg/tar":
       "dep_type": "cipd",
   },
 
-  # TODO(38752): Confirm if mac sdk is necessary in dart.
-  Var("dart_root") + "/third_party/fuchsia/sdk/mac": {
-    "packages": [
-      {
-      "package": "fuchsia/sdk/gn/mac-amd64",
-      "version": Var("fuchsia_sdk_version"),
-      }
-    ],
-    "condition":
-        'download_fuchsia_deps and host_os == "mac" and host_cpu == "x64"',
-    "dep_type": "cipd",
-  },
-
-  # TODO(38752): Migrate to core sdk, gn sdk is deprecating.
   Var("dart_root") + "/third_party/fuchsia/sdk/linux": {
     "packages": [
       {
-      "package": "fuchsia/sdk/gn/linux-amd64",
+      "package": "fuchsia/sdk/core/${{platform}}",
       "version": Var("fuchsia_sdk_version"),
       }
     ],
-    "condition":
-        'download_fuchsia_deps and host_os == "linux" and host_cpu == "x64"',
+    "condition": 'download_fuchsia_deps and host_os == "linux"',
     "dep_type": "cipd",
   },
 
   Var("dart_root") + "/third_party/fuchsia/test_scripts": {
     "packages": [
       {
-      "package": "chromium/fuchsia/test-scripts/fuchsia",
-      "version": "version:2@56179f1724e9bf82ce7abf5577884e5d217b52e9",
+      "package": "chromium/fuchsia/test-scripts",
+      "version": "version:2@542d79b983ec1cdf95d9cb3aea0ea528a4b3569d",
       }
     ],
-    "condition":
-        'download_fuchsia_deps and host_os == "linux" and host_cpu == "x64"',
+    "condition": 'download_fuchsia_deps',
+    "dep_type": "cipd",
+  },
+
+  Var("dart_root") + "/third_party/fuchsia/gn-sdk": {
+    "packages": [
+      {
+      "package": "chromium/fuchsia/gn-sdk",
+      "version": "version:2@7f1f23fce153ca079a77492d9d47d803d60b774e",
+      }
+    ],
+    "condition": 'download_fuchsia_deps',
     "dep_type": "cipd",
   },
 

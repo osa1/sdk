@@ -5,48 +5,48 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:vm_service/vm_service.dart';
 import 'package:test/test.dart';
+import 'package:vm_service/vm_service.dart';
 
 import 'common/test_helper.dart';
 
 @pragma('vm:entry-point') // Prevent obfuscation
-var int8List;
+late Int8List int8List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var int16List;
+late Int16List int16List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var int32List;
+late Int32List int32List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var int64List;
+late Int64List int64List;
 
 @pragma('vm:entry-point') // Prevent obfuscation
-var uint8List;
+late Uint8List uint8List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var uint16List;
+late Uint16List uint16List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var uint32List;
+late Uint32List uint32List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var uint64List;
+late Uint64List uint64List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var uint8ClampedList;
+late Uint8ClampedList uint8ClampedList;
 
 @pragma('vm:entry-point') // Prevent obfuscation
-var float32List;
+late Float32List float32List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var float64List;
+late Float64List float64List;
 
 @pragma('vm:entry-point') // Prevent obfuscation
-var int32x4;
+late Int32x4 int32x4;
 @pragma('vm:entry-point') // Prevent obfuscation
-var float32x4;
+late Float32x4 float32x4;
 @pragma('vm:entry-point') // Prevent obfuscation
-var float64x2;
+late Float64x2 float64x2;
 @pragma('vm:entry-point') // Prevent obfuscation
-var int32x4List;
+late Int32x4List int32x4List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var float32x4List;
+late Float32x4List float32x4List;
 @pragma('vm:entry-point') // Prevent obfuscation
-var float64x2List;
+late Float64x2List float64x2List;
 
 void script() {
   int8List = Int8List(2);
@@ -179,20 +179,20 @@ final tests = <IsolateTest>[
       }
     }
 
-    expectTypedData('int8List', int8List);
-    expectTypedData('int16List', int16List);
-    expectTypedData('int32List', int32List);
-    expectTypedData('int64List', int64List);
-    expectTypedData('uint8List', uint8List);
-    expectTypedData('uint16List', uint16List);
-    expectTypedData('uint32List', uint32List);
-    expectTypedData('uint64List', uint64List);
-    expectTypedData('uint8ClampedList', uint8ClampedList);
-    expectTypedData('float32List', float32List);
-    expectTypedData('float64List', float64List);
-    expectTypedData('int32x4List', int32x4List);
-    expectTypedData('float32x4List', float32x4List);
-    expectTypedData('float64x2List', float64x2List);
+    await expectTypedData('int8List', int8List);
+    await expectTypedData('int16List', int16List);
+    await expectTypedData('int32List', int32List);
+    await expectTypedData('int64List', int64List);
+    await expectTypedData('uint8List', uint8List);
+    await expectTypedData('uint16List', uint16List);
+    await expectTypedData('uint32List', uint32List);
+    await expectTypedData('uint64List', uint64List);
+    await expectTypedData('uint8ClampedList', uint8ClampedList);
+    await expectTypedData('float32List', float32List);
+    await expectTypedData('float64List', float64List);
+    await expectTypedData('int32x4List', int32x4List);
+    await expectTypedData('float32x4List', float32x4List);
+    await expectTypedData('float64x2List', float64x2List);
   },
 ];
 
