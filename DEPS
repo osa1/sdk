@@ -82,7 +82,7 @@ vars = {
   # https://chrome-infra-packages.appspot.com/p/gn/gn
   "gn_version": "git_revision:e4702d7409069c4f12d45ea7b7f0890717ca3f4b",
 
-  "reclient_version": "git_revision:81e819b39d4743462857cc55430d898b9fcca1af",
+  "reclient_version": "git_revision:f75cfb7bca0c04516330f27867a855e8d1186677",
 
   # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core
   "fuchsia_sdk_version": "version:16.20231105.3.1",
@@ -181,7 +181,7 @@ vars = {
   "stream_channel_rev": "178104d0f1316b0120cf0031b8dbae0cbfec4c26",
   "string_scanner_rev": "a7105ef03ed8373c7d995461fcf4994a6f4e781d",
   "sync_http_rev": "d8e9f3de7be658b1c00d5b65aecba8640fc4ce46",
-  "tar_rev": "3383397b082c084c327587a293591fac74bc8af3",
+  "tar_rev": "0fc831c6e93be5342d4863d9e464428e73007cce",
   "term_glyph_rev": "7c1eb9d799a3cbbc554c3a283af4d6cee9043297",
   "test_rev": "8ba0940d24e36b9276a18b34cd8d6fe396d2c172",
   "test_descriptor_rev": "c417cbb6498ba6d3ac6f7b14fdc43aefc212ab2e",
