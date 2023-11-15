@@ -783,7 +783,7 @@ class _F32ByteData extends ByteDataBase {
     byteOffset += offsetInBytes;
     final byteIndex = byteOffset ~/ elementSizeInBytes;
     final element = floatToIntBits(_data.read(byteIndex));
-    final byteElementIndex = byteOffset & elementSizeInBytes;
+    final byteElementIndex = byteOffset & 3;
     final b1 = byteElementIndex == 0 ? value : (element & 0xFF);
     final b2 = byteElementIndex == 1 ? value : ((element >> 8) & 0xFF);
     final b3 = byteElementIndex == 2 ? value : ((element >> 16) & 0xFF);
