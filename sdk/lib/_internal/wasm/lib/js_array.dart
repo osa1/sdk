@@ -30,18 +30,18 @@ class JSArrayImpl implements List<JSAny?> {
   JSAny? removeAt(int index) {
     RangeError.checkValueInInterval(index, 0, length - 1);
     return js.JSValue.boxT<JSAny?>(js.JS<WasmExternRef?>(
-        '(a, i) => a.splice(i, 1)[0]', toExternRef, index.toJS.toExternRef));
+        '(a, i) => a.splice(i, 1)[0]', toExternRef, WasmI32.fromInt(index)));
   }
 
   @override
   void insert(int index, JSAny? value) {
     RangeError.checkValueInInterval(index, 0, length);
     js.JS<void>('(a, i, v) => a.splice(i, 0, v)', toExternRef,
-        index.toJS.toExternRef, value.toExternRef);
+        WasmI32.fromInt(index), value.toExternRef);
   }
 
   void _setLengthUnsafe(int newLength) => js.JS<void>(
-      '(a, l) => a.length = l', toExternRef, newLength.toJS.toExternRef);
+      '(a, l) => a.length = l', toExternRef, WasmI32.fromInt(newLength));
 
   @override
   void insertAll(int index, Iterable<JSAny?> iterable) {
@@ -72,7 +72,7 @@ class JSArrayImpl implements List<JSAny?> {
     for (var i = 0; i < length; i++) {
       if (this[i] == element) {
         js.JS<void>(
-            '(a, i) => a.splice(i, 1)', toExternRef, i.toJS.toExternRef);
+            '(a, i) => a.splice(i, 1)', toExternRef, WasmI32.fromInt(i));
         return true;
       }
     }
@@ -243,7 +243,7 @@ class JSArrayImpl implements List<JSAny?> {
   List<JSAny?> sublist(int start, [int? end]) {
     end = RangeError.checkValidRange(start, end, length);
     return JSArrayImpl(js.JS<WasmExternRef?>('(a, s, e) => a.slice(s, e)',
-        toExternRef, start.toJS.toExternRef, end.toJS.toExternRef));
+        toExternRef, WasmI32.fromInt(start), WasmI32.fromInt(end)));
   }
 
   @override
@@ -276,7 +276,7 @@ class JSArrayImpl implements List<JSAny?> {
     RangeError.checkValidRange(start, end, length);
     int deleteCount = end - start;
     js.JS<void>('(a, s, e) => a.splice(s, e)', toExternRef,
-        start.toJS.toExternRef, deleteCount.toJS.toExternRef);
+        WasmI32.fromInt(start), WasmI32.fromInt(deleteCount));
   }
 
   @override
@@ -463,20 +463,20 @@ class JSArrayImpl implements List<JSAny?> {
       throw RangeError.range(newLength, 0, null);
     }
     js.JS<void>(
-        '(a, l) => a.length = l', toExternRef, newLength.toJS.toExternRef);
+        '(a, l) => a.length = l', toExternRef, WasmI32.fromInt(newLength));
   }
 
   @override
   JSAny? operator [](int index) {
     RangeError.checkValueInInterval(index, 0, length - 1);
     return js.JSValue.boxT<JSAny?>(js.JS<WasmExternRef?>(
-        '(a, i) => a[i]', toExternRef, index.toJS.toExternRef));
+        '(a, i) => a[i]', toExternRef, WasmI32.fromInt(index)));
   }
 
   @override
   void operator []=(int index, JSAny? value) {
     RangeError.checkValueInInterval(index, 0, length - 1);
-    js.JS<void>('(a, i, v) => a[i] = v', toExternRef, index.toJS.toExternRef,
+    js.JS<void>('(a, i, v) => a[i] = v', toExternRef, WasmI32.fromInt(index),
         value.toExternRef);
   }
 
