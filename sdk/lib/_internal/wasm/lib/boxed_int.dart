@@ -32,6 +32,7 @@ final class _BoxedInt extends int {
       ? _modulo(this, other)
       : _BoxedDouble.modulo(toDouble(), unsafeCast<double>(other));
 
+  @pragma("wasm:prefer-inline")
   static int _modulo(int a, int b) {
     int rem = a - (a ~/ b) * b;
     if (rem < 0) {
