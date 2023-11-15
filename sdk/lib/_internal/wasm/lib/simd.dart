@@ -89,7 +89,7 @@ final class NaiveInt32x4List
 
     final List<Int32x4> fromList = from.skip(skipCount).toList(growable: false);
 
-    if ((fromList.length - skipCount) < count) {
+    if (fromList.length < count) {
       throw IterableElementError.tooFew();
     }
 
@@ -271,7 +271,7 @@ final class NaiveFloat64x2List
     final List<Float64x2> fromList =
         from.skip(skipCount).toList(growable: false);
 
-    if ((fromList.length - skipCount) < count) {
+    if (fromList.length < count) {
       throw IterableElementError.tooFew();
     }
 
