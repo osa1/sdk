@@ -9,6 +9,7 @@ import 'package:analyzer/dart/sdk/build_sdk_summary.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
+import 'package:analyzer/source/line_info.dart';
 import 'package:analyzer/src/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart';
@@ -18,7 +19,6 @@ import 'package:analyzer/src/dart/analysis/file_state.dart';
 import 'package:analyzer/src/dart/analysis/results.dart';
 import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/sdk.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/manifest/manifest_validator.dart';
 import 'package:analyzer/src/pubspec/pubspec_validator.dart';
 import 'package:analyzer/src/source/path_filter.dart';
@@ -173,9 +173,10 @@ class Driver implements CommandLineStarter {
     // time during the following analysis.
     SeverityProcessor defaultSeverityProcessor;
     defaultSeverityProcessor = (AnalysisError error) {
-      // TODO(pq): get file path from `error.source.fullName`
+      var filePath = error.source.fullName;
+      var file = analysisDriver!.resourceProvider.getFile(filePath);
       return determineProcessedSeverity(
-          error, options, analysisDriver!.analysisOptions);
+          error, options, analysisDriver!.getAnalysisOptionsForFile(file));
     };
 
     // We currently print out to stderr to ensure that when in batch mode we

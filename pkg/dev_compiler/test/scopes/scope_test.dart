@@ -14,7 +14,8 @@ import 'package:kernel/dart_scope_calculator.dart';
 import '../id_testing_helper.dart';
 
 Future<void> main(List<String> args) async {
-  var dataDir = Directory.fromUri(Platform.script.resolve('data'));
+  var dataDir = Directory.fromUri(
+      Platform.script.resolve('../../../front_end/test/scopes/data'));
   await runTests<Features>(dataDir,
       args: args,
       createUriForFileName: createUriForFileName,

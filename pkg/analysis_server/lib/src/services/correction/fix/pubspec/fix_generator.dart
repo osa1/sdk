@@ -9,8 +9,9 @@ import 'package:analysis_server/src/utilities/yaml_node_locator.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
+import 'package:analyzer/source/line_info.dart';
+import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/generated/java_core.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/pubspec/pubspec_warning_code.dart';
 import 'package:analyzer/src/pubspec/validators/missing_dependency_validator.dart';
 import 'package:analyzer/src/util/yaml.dart';
@@ -55,7 +56,7 @@ class PubspecFixGenerator {
 
   /// Returns the end-of-line marker to use for the `pubspec.yaml` file.
   String get endOfLine {
-    // TODO(brianwilkerson) Share this with CorrectionUtils, probably by
+    // TODO(brianwilkerson): Share this with CorrectionUtils, probably by
     //  creating a subclass of CorrectionUtils containing utilities that are
     //  only dependent on knowing the content of the file. Also consider moving
     //  this kind of utility into the ChangeBuilder API directly.
@@ -238,7 +239,7 @@ class PubspecFixGenerator {
       return;
     }
     await builder.addGenericFileEdit(file, (builder) {
-      // TODO(brianwilkerson) Generalize this to add a key to any map by
+      // TODO(brianwilkerson): Generalize this to add a key to any map by
       //  inserting the indentation of the line containing `firstOffset` after
       //  the end-of-line marker.
       builder.addSimpleInsertion(firstOffset, 'name: $packageName$endOfLine');

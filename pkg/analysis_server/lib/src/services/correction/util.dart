@@ -19,12 +19,13 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/file_system/file_system.dart';
+import 'package:analyzer/source/source.dart';
+import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/ast/utilities.dart';
 import 'package:analyzer/src/dart/scanner/reader.dart';
 import 'package:analyzer/src/dart/scanner/scanner.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart'
     show SourceChange, SourceEdit;
 import 'package:analyzer_plugin/src/utilities/string_utilities.dart';
@@ -177,7 +178,7 @@ List<SimpleIdentifier> findPrefixElementReferences(
   return collector.references;
 }
 
-/// TODO(scheglov) replace with nodes once there will be
+// TODO(scheglov): replace with nodes once there will be
 /// [CompilationUnit.getComments].
 ///
 /// Returns [SourceRange]s of all comments in [unit].
@@ -1777,7 +1778,7 @@ class _InvertedCondition {
 
   static _InvertedCondition _binary2(
       _InvertedCondition left, String operation, _InvertedCondition right) {
-    // TODO(scheglov) consider merging with "_binary()" after testing
+    // TODO(scheglov): consider merging with "_binary()" after testing
     return _InvertedCondition(
         1 << 20, '${left._source}$operation${right._source}');
   }
