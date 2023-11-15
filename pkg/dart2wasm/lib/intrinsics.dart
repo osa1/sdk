@@ -52,7 +52,8 @@ class Intrinsifier {
         '_shr_u': (c) => c.b.i64_shr_u(),
         '_le_u': (c) => c.b.i64_le_u(),
         '_lt_u': (c) => c.b.i64_lt_u(),
-        '~/': (c) => c.call(c.translator.truncDiv.reference),
+        '~/': (c) => c.call(c.translator.boxedIntTruncDiv.reference),
+        '%': (c) => c.call(c.translator.boxedIntModulo.reference),
       }
     },
     doubleType: {
