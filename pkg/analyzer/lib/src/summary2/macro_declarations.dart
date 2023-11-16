@@ -41,6 +41,30 @@ class ClassDeclarationImpl extends macro.ClassDeclarationImpl {
   });
 }
 
+class ConstructorDeclarationImpl extends macro.ConstructorDeclarationImpl {
+  final ConstructorElement element;
+
+  ConstructorDeclarationImpl._({
+    required super.id,
+    required super.identifier,
+    required super.library,
+    required super.metadata,
+    required super.hasAbstract,
+    required super.hasBody,
+    required super.hasExternal,
+    required super.isGetter,
+    required super.isOperator,
+    required super.isSetter,
+    required super.namedParameters,
+    required super.positionalParameters,
+    required super.returnType,
+    required super.typeParameters,
+    required super.definingType,
+    required super.isFactory,
+    required this.element,
+  });
+}
+
 class DeclarationBuilder {
   final ast.AstNode? Function(Element?) nodeOfElement;
 
@@ -60,6 +84,8 @@ class DeclarationBuilder {
     switch (node) {
       case ast.ClassDeclaration():
         return fromNode.classDeclaration(node);
+      case ast.ConstructorDeclaration():
+        return fromNode.constructorDeclaration(node);
       case ast.MethodDeclaration():
         return fromNode.methodDeclaration(node);
       case ast.MixinDeclaration():
@@ -67,7 +93,7 @@ class DeclarationBuilder {
       case ast.VariableDeclaration():
         return fromNode.variableDeclaration(node);
     }
-    // TODO(scheglov) incomplete
+    // TODO(scheglov): incomplete
     throw UnimplementedError('${node.runtimeType}');
   }
 
@@ -106,7 +132,7 @@ class DeclarationBuilder {
           staticScope: null,
         );
       default:
-        // TODO(scheglov) other elements
+        // TODO(scheglov): other elements
         throw UnimplementedError('${element.runtimeType}');
     }
   }
@@ -223,6 +249,9 @@ class DeclarationBuilderFromElement {
   final Map<MixinElement, IntrospectableMixinDeclarationImpl> _mixinMap =
       Map.identity();
 
+  final Map<ConstructorElement, ConstructorDeclarationImpl> _constructorMap =
+      Map.identity();
+
   final Map<FieldElement, FieldDeclarationImpl> _fieldMap = Map.identity();
 
   final Map<ExecutableElement, MethodDeclarationImpl> _methodMap =
@@ -237,15 +266,24 @@ class DeclarationBuilderFromElement {
     return _classMap[element] ??= _introspectableClassElement(element);
   }
 
+  ConstructorDeclarationImpl constructorElement(ConstructorElement element) {
+    return _constructorMap[element] ??= _constructorElement(element);
+  }
+
   macro.FieldDeclarationImpl fieldElement(FieldElement element) {
     return _fieldMap[element] ??= _fieldElement(element);
   }
 
   macro.IdentifierImpl identifier(Element element) {
+    final name = switch (element) {
+      PropertyAccessorElement(isSetter: true) => element.displayName,
+      _ => element.name!,
+    };
+
     final map = declarationBuilder._identifierMap;
     return map[element] ??= IdentifierImplFromElement(
       id: macro.RemoteInstance.uniqueId,
-      name: element.displayName,
+      name: name,
       element: element,
     );
   }
@@ -293,6 +331,29 @@ class DeclarationBuilderFromElement {
 
   List<macro.MetadataAnnotationImpl> _buildMetadata(Element element) {
     return declarationBuilder._buildMetadata(element);
+  }
+
+  ConstructorDeclarationImpl _constructorElement(ConstructorElement element) {
+    final enclosing = element.enclosingInstanceElement;
+    return ConstructorDeclarationImpl._(
+      element: element,
+      id: macro.RemoteInstance.uniqueId,
+      identifier: identifier(element),
+      library: library(element),
+      metadata: _buildMetadata(element),
+      hasAbstract: element.isAbstract,
+      hasBody: !element.isAbstract,
+      hasExternal: element.isExternal,
+      isGetter: false,
+      isOperator: false,
+      isSetter: false,
+      isFactory: element.isFactory,
+      namedParameters: _namedFormalParameters(element.parameters),
+      positionalParameters: _positionalFormalParameters(element.parameters),
+      returnType: _dartType(element.returnType),
+      typeParameters: element.typeParameters.map(_typeParameter).toList(),
+      definingType: identifier(enclosing),
+    );
   }
 
   macro.TypeAnnotationImpl _dartType(DartType type) {
@@ -465,6 +526,38 @@ class DeclarationBuilderFromNode {
     return _introspectableClassDeclaration(node);
   }
 
+  macro.ConstructorDeclarationImpl constructorDeclaration(
+    ast.ConstructorDeclaration node,
+  ) {
+    final definingType = _definingType(node);
+    final element = node.declaredElement!;
+
+    return ConstructorDeclarationImpl._(
+      id: macro.RemoteInstance.uniqueId,
+      definingType: definingType,
+      element: element,
+      identifier: _declaredIdentifier2(node.name?.lexeme ?? '', element),
+      library: library(element),
+      metadata: _buildMetadata(element),
+      hasAbstract: false,
+      hasBody: node.body is! ast.EmptyFunctionBody,
+      hasExternal: node.externalKeyword != null,
+      isGetter: false,
+      isOperator: false,
+      isSetter: false,
+      isFactory: node.factoryKeyword != null,
+      namedParameters: _namedFormalParameters(node.parameters),
+      positionalParameters: _positionalFormalParameters(node.parameters),
+      returnType: macro.NamedTypeAnnotationImpl(
+        id: macro.RemoteInstance.uniqueId,
+        identifier: definingType,
+        typeArguments: const [],
+        isNullable: false,
+      ),
+      typeParameters: const [],
+    );
+  }
+
   macro.LibraryImpl library(Element element) {
     final library = element.library!;
 
@@ -549,6 +642,15 @@ class DeclarationBuilderFromNode {
     );
   }
 
+  macro.IdentifierImpl _declaredIdentifier2(String name, Element element) {
+    final map = declarationBuilder._identifierMap;
+    return map[element] ??= _DeclaredIdentifierImpl(
+      id: macro.RemoteInstance.uniqueId,
+      name: name,
+      element: element,
+    );
+  }
+
   macro.IdentifierImpl _definingType(ast.AstNode node) {
     final parentNode = node.parent;
     switch (parentNode) {
@@ -561,7 +663,7 @@ class DeclarationBuilderFromNode {
         final typeElement = parentElement.augmentationTarget ?? parentElement;
         return _declaredIdentifier(parentNode.name, typeElement);
       default:
-        // TODO(scheglov) other parents
+        // TODO(scheglov): other parents
         throw UnimplementedError('(${parentNode.runtimeType}) $parentNode');
     }
   }

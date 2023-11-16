@@ -60,7 +60,7 @@ abstract class BaseIRContainer with IRToStringMixin {
 /// Flags describing properties of a function declaration that affect the
 /// interpretation of its body.
 ///
-/// TODO(paulberry): when extension types are supported, make this an extension
+// TODO(paulberry): when extension types are supported, make this an extension
 /// type.
 class FunctionFlags {
   static const _asyncBit = 0;
@@ -112,7 +112,7 @@ class FunctionFlags {
 /// stream. This integer is an index into an auxiliary table stored in a subtype
 /// of [BaseIRContainer].
 ///
-/// TODO(paulberry): when extension types are supported, make this an extension
+// TODO(paulberry): when extension types are supported, make this an extension
 /// type.
 class LiteralRef {
   final int index;
@@ -164,7 +164,36 @@ class RawIRWriter with _RawIRWriterMixin {
   @override
   final _params1 = <int>[];
 
+  int _localVariableCount = 0;
+
+  int get localVariableCount => _localVariableCount;
+
   int get nextInstructionAddress => _opcodes.length;
+
+  @override
+  void alloc(int count) {
+    _localVariableCount += count;
+    super.alloc(count);
+  }
+
+  @override
+  void release(int count) {
+    _localVariableCount -= count;
+    super.release(count);
+  }
+
+  /// Outputs the necessary IR to release local variables until
+  /// [localVariableCount] is equal to [desiredLocalVariableCount].
+  ///
+  /// Does nothing if [localVariableCount] is already equal to
+  /// [desiredLocalVariableCount].
+  void releaseTo(int desiredLocalVariableCount) {
+    var releaseCount = localVariableCount - desiredLocalVariableCount;
+    assert(releaseCount >= 0);
+    if (releaseCount > 0) {
+      release(releaseCount);
+    }
+  }
 }
 
 /// Wrapper for an integer representing a Dart type.
@@ -173,7 +202,7 @@ class RawIRWriter with _RawIRWriterMixin {
 /// integer is an index into an auxiliary table stored in a subtype of
 /// [BaseIRContainer].
 ///
-/// TODO(paulberry): when extension types are supported, make this an extension
+// TODO(paulberry): when extension types are supported, make this an extension
 /// type.
 class TypeRef {
   final int index;
