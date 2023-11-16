@@ -35,12 +35,12 @@ List<macro.ArgumentKind> _dartTypeArgumentKinds(DartType dartType) => [
         DartType(isDartCoreNull: true) => macro.ArgumentKind.nil,
         DartType(isDartCoreObject: true) => macro.ArgumentKind.object,
         DartType(isDartCoreString: true) => macro.ArgumentKind.string,
-        // TODO: Support nested type arguments for collections.
+        // TODO(jakemac): Support nested type arguments for collections.
         DartType(isDartCoreList: true) => macro.ArgumentKind.list,
         DartType(isDartCoreMap: true) => macro.ArgumentKind.map,
         DartType(isDartCoreSet: true) => macro.ArgumentKind.set,
         DynamicType() => macro.ArgumentKind.dynamic,
-        // TODO: Support type annotations and code objects
+        // TODO(jakemac): Support type annotations and code objects
         _ =>
           throw UnsupportedError('Unsupported macro type argument $dartType'),
       },
@@ -53,7 +53,7 @@ List<macro.ArgumentKind> _dartTypeArgumentKinds(DartType dartType) => [
 List<macro.ArgumentKind> _typeArgumentsForNode(ast.TypedLiteral node) {
   if (node.typeArguments == null) {
     return [
-      // TODO: Use downward inference to build these types and detect maps
+      // TODO(jakemac): Use downward inference to build these types and detect maps
       // versus sets.
       if (node is ast.ListLiteral || node is ast.SetOrMapLiteral)
         macro.ArgumentKind.dynamic,
@@ -193,7 +193,7 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      annotationIndex: 0, // TODO(scheglov)
+      annotationIndex: 0, // TODO(scheglov): revisit
       onError: (error) {
         application.targetElement.addMacroApplicationError(error);
       },
@@ -230,7 +230,7 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      annotationIndex: 0, // TODO(scheglov)
+      annotationIndex: 0, // TODO(scheglov): revisit
       onError: (error) {
         application.targetElement.addMacroApplicationError(error);
       },
@@ -261,7 +261,7 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      annotationIndex: 0, // TODO(scheglov)
+      annotationIndex: 0, // TODO(scheglov): revisit
       onError: (error) {
         application.targetElement.addMacroApplicationError(error);
       },
@@ -310,11 +310,11 @@ class LibraryMacroApplier {
       final arguments = await _runWithCatchingExceptions(
         () async {
           return _buildArguments(
-            annotationIndex: 0, // TODO(scheglov)
+            annotationIndex: 0, // TODO(scheglov): revisit
             node: importedMacro.arguments,
           );
         },
-        annotationIndex: 0, // TODO(scheglov)
+        annotationIndex: 0, // TODO(scheglov): revisit
         onError: (error) {
           targetElement.addMacroApplicationError(error);
         },
@@ -339,7 +339,6 @@ class LibraryMacroApplier {
         declarationsPhaseElement: declarationsPhaseElement,
         targetNode: targetNode,
         targetElement: targetElement,
-        targetDeclarationKind: targetDeclarationKind,
         annotationNode: annotation,
         instance: instance,
         phasesToExecute: phasesToExecute,
@@ -375,12 +374,17 @@ class LibraryMacroApplier {
     );
 
     for (final member in members.reversed) {
+      final memberDeclarationKind = switch (member) {
+        ast.ConstructorDeclaration() => macro.DeclarationKind.constructor,
+        ast.FieldDeclaration() => macro.DeclarationKind.field,
+        ast.MethodDeclaration() => macro.DeclarationKind.method,
+      };
+
       await _addAnnotations(
         libraryElement: libraryElement,
         container: container,
         targetNode: member,
-        // TODO(scheglov) incomplete
-        targetDeclarationKind: macro.DeclarationKind.method,
+        targetDeclarationKind: memberDeclarationKind,
         declarationsPhaseElement: declarationsPhaseInterface,
         annotations: member.metadata,
       );
@@ -495,10 +499,10 @@ class LibraryMacroApplier {
   }
 
   Set<InstanceElement>? _interfaceDependencies(InstanceElement? element) {
-    // TODO(scheglov) other elements
+    // TODO(scheglov): other elements
     switch (element) {
       case ExtensionElement():
-        // TODO(scheglov) implement
+        // TODO(scheglov): implement
         throw UnimplementedError();
       case MixinElement():
         final augmented = element.augmented;
@@ -729,9 +733,15 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
 
   @override
   Future<List<macro.ConstructorDeclaration>> constructorsOf(
-      covariant macro.IntrospectableType type) {
-    // TODO: implement constructorsOf
-    throw UnimplementedError();
+    covariant macro.IntrospectableType type,
+  ) async {
+    final element = (type as HasElement).element;
+    if (element case InterfaceElement(:final augmented?)) {
+      return augmented.constructors
+          .map(declarationBuilder.fromElement.constructorElement)
+          .toList();
+    }
+    throw StateError('Unexpected: ${type.runtimeType}');
   }
 
   @override
@@ -777,19 +787,19 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
 
   @override
   Future<List<macro.TypeDeclaration>> typesOf(covariant macro.Library library) {
-    // TODO: implement typesOf
+    // TODO(jakemac): implement typesOf
     throw UnimplementedError();
   }
 
   @override
   Future<List<macro.EnumValueDeclaration>> valuesOf(
       covariant macro.IntrospectableEnum type) {
-    // TODO: implement valuesOf
+    // TODO(jakemac): implement valuesOf
     throw UnimplementedError();
   }
 
   DartType _resolve(macro.TypeAnnotationCode type) {
-    // TODO(scheglov) write tests
+    // TODO(scheglov): write tests
     if (type is macro.NamedTypeAnnotationCode) {
       final identifier = type.name as IdentifierImpl;
       final element = identifier.element;
@@ -801,11 +811,11 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
               : NullabilitySuffix.none,
         );
       } else {
-        // TODO(scheglov) Implement other elements.
+        // TODO(scheglov): Implement other elements.
         throw UnimplementedError('(${element.runtimeType}) $element');
       }
     } else {
-      // TODO(scheglov) Implement other types.
+      // TODO(scheglov): Implement other types.
       throw UnimplementedError('(${type.runtimeType}) $type');
     }
   }
@@ -858,7 +868,6 @@ class _MacroApplication {
   final InstanceElement? declarationsPhaseElement;
   final ast.AstNode targetNode;
   final MacroTargetElement targetElement;
-  final macro.DeclarationKind targetDeclarationKind;
   final ast.Annotation annotationNode;
   final macro.MacroInstanceIdentifier instance;
   final Set<macro.Phase> phasesToExecute;
@@ -868,7 +877,6 @@ class _MacroApplication {
     required this.declarationsPhaseElement,
     required this.targetNode,
     required this.targetElement,
-    required this.targetDeclarationKind,
     required this.annotationNode,
     required this.instance,
     required this.phasesToExecute,
@@ -891,13 +899,13 @@ class _StaticTypeImpl implements macro.StaticType {
 
   @override
   Future<bool> isExactly(_StaticTypeImpl other) {
-    // TODO: implement isExactly
+    // TODO(scheglov): implement isExactly
     throw UnimplementedError();
   }
 
   @override
   Future<bool> isSubtypeOf(_StaticTypeImpl other) {
-    // TODO(scheglov) write tests
+    // TODO(scheglov): write tests
     return Future.value(
       typeSystem.isSubtypeOf(type, other.type),
     );
