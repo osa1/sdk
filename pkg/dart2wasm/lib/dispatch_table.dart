@@ -11,6 +11,7 @@ import 'package:dart2wasm/translator.dart';
 
 import 'package:kernel/ast.dart';
 
+import 'package:vm/metadata/inferred_type.dart';
 import 'package:vm/metadata/procedure_attributes.dart';
 import 'package:vm/metadata/table_selector.dart';
 
@@ -75,7 +76,10 @@ class SelectorInfo {
   /// The selector's member's name.
   String get name => paramInfo.member!.name.text;
 
+  final Map<TreeNode, InferredType> _inferredArgTypeMetadata;
+
   SelectorInfo._(this.translator, this.id, this.callCount, this.paramInfo,
+      this._inferredArgTypeMetadata,
       {required this.isSetter});
 
   /// Compute the signature for the functions implementing members targeted by
@@ -137,6 +141,10 @@ class SelectorInfo {
                 ensureBoxed[index] = true;
               }
             }
+
+            final inferredType = _inferredArgTypeMetadata[param];
+            print("${param.location} ${param.type} --> ${inferredType}");
+
             return param.type;
           }
 
@@ -232,6 +240,7 @@ class DispatchTable {
   final Translator translator;
   final List<TableSelectorInfo> _selectorMetadata;
   final Map<TreeNode, ProcedureAttributesMetadata> _procedureAttributeMetadata;
+  final Map<TreeNode, InferredType> _inferredArgTypeMetadata;
 
   /// Maps selector IDs to selectors.
   final Map<int, SelectorInfo> _selectorInfo = {};
@@ -264,6 +273,10 @@ class DispatchTable {
         _procedureAttributeMetadata =
             (translator.component.metadata["vm.procedure-attributes.metadata"]
                     as ProcedureAttributesMetadataRepository)
+                .mapping,
+        _inferredArgTypeMetadata =
+            (translator.component.metadata["vm.inferred-arg-type.metadata"]
+                    as InferredArgTypeMetadataRepository)
                 .mapping;
 
   SelectorInfo selectorForTarget(Reference target) {
@@ -297,8 +310,12 @@ class DispatchTable {
 
     final selector = _selectorInfo.putIfAbsent(
         selectorId,
-        () => SelectorInfo._(translator, selectorId,
-            _selectorMetadata[selectorId].callCount, paramInfo,
+        () => SelectorInfo._(
+            translator,
+            selectorId,
+            _selectorMetadata[selectorId].callCount,
+            paramInfo,
+            _inferredArgTypeMetadata,
             isSetter: isSetter));
     assert(selector.isSetter == isSetter);
     selector.hasTearOffUses |= metadata.hasTearOffUses;

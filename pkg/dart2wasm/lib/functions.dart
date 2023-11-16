@@ -9,6 +9,7 @@ import 'package:dart2wasm/reference_extensions.dart';
 import 'package:dart2wasm/translator.dart';
 
 import 'package:kernel/ast.dart';
+import 'package:vm/metadata/inferred_type.dart';
 
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
@@ -18,19 +19,29 @@ import 'package:wasm_builder/wasm_builder.dart' as w;
 class FunctionCollector {
   final Translator translator;
 
-  // Wasm function for each Dart function
+  /// Wasm function for each Dart function.
   final Map<Reference, w.BaseFunction> _functions = {};
-  // Names of exported functions
+
+  /// Names of exported functions.
   final Map<Reference, String> _exports = {};
-  // Functions for which code has not yet been generated
+
+  /// Functions for which code has not yet been generated.
   final List<Reference> _worklist = [];
-  // Class IDs for classes that are allocated somewhere in the program
+
+  /// Class IDs for classes that are allocated somewhere in the program
   final Set<int> _allocatedClasses = {};
-  // For each class ID, which functions should be added to the worklist if an
-  // allocation of that class is encountered
+
+  /// For each class ID, which functions should be added to the worklist if an
+  /// allocation of that class is encountered
   final Map<int, List<Reference>> _pendingAllocation = {};
 
-  FunctionCollector(this.translator);
+  final Map<TreeNode, InferredType> _inferredArgTypeMetadata;
+
+  FunctionCollector(this.translator)
+      : _inferredArgTypeMetadata =
+            (translator.component.metadata["vm.inferred-arg-type.metadata"]
+                    as InferredArgTypeMetadataRepository)
+                .mapping;
 
   w.ModuleBuilder get m => translator.m;
 
@@ -62,8 +73,8 @@ class FunctionCollector {
           // to be unified with function types defined in FFI modules or using
           // `WebAssembly.Function`.
           m.types.splitRecursionGroup();
-          w.FunctionType ftype = _makeFunctionType(
-              translator, member.reference, [member.function.returnType], null,
+          w.FunctionType ftype = _makeFunctionType(translator, member.reference,
+              [member.function.returnType], null, _inferredArgTypeMetadata,
               isImportOrExport: true);
           m.types.splitRecursionGroup();
           _functions[member.reference] =
@@ -81,8 +92,8 @@ class FunctionCollector {
         // publicly exposed types to be defined in separate recursion groups
         // from GC types.
         m.types.splitRecursionGroup();
-        _makeFunctionType(
-            translator, member.reference, [member.function.returnType], null,
+        _makeFunctionType(translator, member.reference,
+            [member.function.returnType], null, _inferredArgTypeMetadata,
             isImportOrExport: true);
         m.types.splitRecursionGroup();
       }
@@ -105,8 +116,8 @@ class FunctionCollector {
         _worklist.add(target);
         assert(!node.isInstanceMember);
         assert(!node.isGetter);
-        w.FunctionType ftype = _makeFunctionType(
-            translator, target, [node.function.returnType], null,
+        w.FunctionType ftype = _makeFunctionType(translator, target,
+            [node.function.returnType], null, _inferredArgTypeMetadata,
             isImportOrExport: true);
         w.BaseFunction function = m.functions.define(ftype, "$node");
         _functions[target] = function;
@@ -160,7 +171,8 @@ class FunctionCollector {
     }
 
     Member member = target.asMember;
-    final ftype = member.accept1(_FunctionTypeGenerator(translator), target);
+    final ftype = member.accept1(
+        _FunctionTypeGenerator(translator, _inferredArgTypeMetadata), target);
 
     if (target.isInitializerReference) {
       return action(ftype, '${member} initializer');
@@ -201,15 +213,17 @@ class FunctionCollector {
 
 class _FunctionTypeGenerator extends MemberVisitor1<w.FunctionType, Reference> {
   final Translator translator;
+  final Map<TreeNode, InferredType> _inferredArgTypeMetadata;
 
-  _FunctionTypeGenerator(this.translator);
+  _FunctionTypeGenerator(this.translator, this._inferredArgTypeMetadata);
 
   @override
   w.FunctionType visitField(Field node, Reference target) {
     if (!node.isInstanceMember) {
       if (target == node.fieldReference) {
         // Static field initializer function
-        return _makeFunctionType(translator, target, [node.type], null);
+        return _makeFunctionType(
+            translator, target, [node.type], null, _inferredArgTypeMetadata);
       }
       String kind = target == node.setterReference ? "setter" : "getter";
       throw "No implicit $kind function for static field: $node";
@@ -222,15 +236,15 @@ class _FunctionTypeGenerator extends MemberVisitor1<w.FunctionType, Reference> {
     assert(!node.isAbstract);
     return node.isInstanceMember
         ? translator.dispatchTable.selectorForTarget(node.reference).signature
-        : _makeFunctionType(
-            translator, target, [node.function.returnType], null);
+        : _makeFunctionType(translator, target, [node.function.returnType],
+            null, _inferredArgTypeMetadata);
   }
 
   @override
   w.FunctionType visitConstructor(Constructor node, Reference target) {
     // Get this constructor's argument types
-    List<w.ValueType> arguments = _getInputTypes(
-        translator, target, null, false, translator.translateType);
+    List<w.ValueType> arguments = _getInputTypes(translator, target, null,
+        false, translator.translateType, _inferredArgTypeMetadata);
 
     if (translator.constructorClosures[node.reference] == null) {
       // We need the contexts of the constructor before generating the
@@ -378,7 +392,8 @@ List<w.ValueType> _getInputTypes(
     Reference target,
     w.ValueType? receiverType,
     bool isImportOrExport,
-    w.ValueType Function(DartType) translateType) {
+    w.ValueType Function(DartType) translateType,
+    Map<TreeNode, InferredType> inferredArgTypeMetadata) {
   Member member = target.asMember;
   int typeParamCount = 0;
   Iterable<DartType> params;
@@ -395,6 +410,10 @@ List<w.ValueType> _getInputTypes(
     Map<String, DartType> nameTypes = {
       for (var p in function.namedParameters) p.name!: p.type
     };
+    for (var p in function.positionalParameters) {
+      final inferredType = inferredArgTypeMetadata[p];
+      print("${p.location} ${p.type} --> ${inferredType}");
+    }
     params = [
       for (var p in function.positionalParameters) p.type,
       for (String name in names) nameTypes[name]!
@@ -420,8 +439,12 @@ List<w.ValueType> _getInputTypes(
   return inputs;
 }
 
-w.FunctionType _makeFunctionType(Translator translator, Reference target,
-    List<DartType> returnTypes, w.ValueType? receiverType,
+w.FunctionType _makeFunctionType(
+    Translator translator,
+    Reference target,
+    List<DartType> returnTypes,
+    w.ValueType? receiverType,
+    Map<TreeNode, InferredType> inferredArgTypeMetadata,
     {bool isImportOrExport = false}) {
   Member member = target.asMember;
 
@@ -430,8 +453,8 @@ w.FunctionType _makeFunctionType(Translator translator, Reference target,
       ? translator.translateExternalType(type)
       : translator.translateType(type);
 
-  final List<w.ValueType> inputs = _getInputTypes(
-      translator, target, receiverType, isImportOrExport, translateType);
+  final List<w.ValueType> inputs = _getInputTypes(translator, target,
+      receiverType, isImportOrExport, translateType, inferredArgTypeMetadata);
 
   // Mutable fields have initializer setters with a non-empty output list,
   // so check that the member is a Procedure
