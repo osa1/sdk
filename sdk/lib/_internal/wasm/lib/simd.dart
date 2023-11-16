@@ -179,6 +179,30 @@ final class NaiveFloat32x4List
     return NaiveFloat32x4List.externalStorage(
         _storage.sublist(start * 4, stop * 4));
   }
+
+  void setRange(int start, int end, Iterable<Float32x4> from,
+      [int skipCount = 0]) {
+    if (0 > start || start > end || end > length) {
+      RangeError.checkValidRange(start, end, length); // Always throws.
+    }
+    if (skipCount < 0) {
+      throw RangeError.range(skipCount, 0, null, "skipCount");
+    }
+
+    final count = end - start;
+    if (count == 0) return;
+
+    final List<Float32x4> fromList =
+        from.skip(skipCount).toList(growable: false);
+
+    if (fromList.length < count) {
+      throw IterableElementError.tooFew();
+    }
+
+    for (int i = start; i < end; i += 1) {
+      this[i] = fromList[i - start];
+    }
+  }
 }
 
 final class NaiveUnmodifiableFloat32x4List extends NaiveFloat32x4List
