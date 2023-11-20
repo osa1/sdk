@@ -1393,7 +1393,9 @@ final class TwoByteString extends StringBase {
 
   @override
   int codeUnitAt(int index) {
-    RangeError.checkValueInInterval(index, 0, length - 1);
+    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+      throw IndexError.withLength(index, length);
+    }
     return _array.readUnsigned(index);
   }
 
