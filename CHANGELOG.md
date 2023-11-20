@@ -2,6 +2,11 @@
 
 ### Libraries
 
+#### `dart:core`
+
+- `String.fromCharCodes` now allow `start` and `end` to be after the end of
+  the `Iterable` argument, just like `skip` and `take` does on an `Iterable`.
+
 #### `dart:nativewrappers`
 
 - **Breaking Change** [#51896][]: The NativeWrapperClasses are marked `base` so
@@ -81,7 +86,7 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
   ```dart
   class Example {
     final int? _privateField;
-    Example1(this._privateField);
+    Example(this._privateField);
 
     f() {
       if (_privateField != null) {
@@ -93,7 +98,7 @@ constraint][language version] lower bound to 3.2 or greater (`sdk: '^3.2.0'`).
   }
 
   // Private field promotions also work from outside of the class:
-  f(Example1 x) {
+  f(Example x) {
     if (x._privateField != null) {
       int i = x._privateField; // OK
     }

@@ -493,6 +493,7 @@ class List<E> implements Iterable<E> {
   external factory List.unmodifiable(Iterable elements);
 
   E get last => throw 0;
+  set length(int newLength) {}
   E operator [](int index) => throw 0;
   void operator []=(int index, E value) {}
 
@@ -861,12 +862,6 @@ extension StructPointer<T extends Struct> on Pointer<T> {
   external T get ref;
 
   external T operator [](int index);
-}
-
-final class FfiNative<T> {
-  final String nativeName;
-  final bool isLeaf;
-  const FfiNative(this.nativeName, {this.isLeaf = false});
 }
 
 @Since('2.19')

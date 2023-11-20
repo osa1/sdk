@@ -346,7 +346,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
               declarationElement is PropertyAccessorElementImpl) &&
           !declarationElement.isStatic) {
         // Instance methods must have the receiver as an extra parameter in the
-        // FfiNative annotation.
+        // Native annotation.
         if (formalParameters.length + 1 != ffiParameterTypes.length) {
           _errorReporter.reportErrorForNode(
               FfiCode.FFI_NATIVE_UNEXPECTED_NUMBER_OF_PARAMETERS_WITH_RECEIVER,
@@ -370,7 +370,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
         ffiParameterTypes = ffiParameterTypes.sublist(1);
         ffiParameters = ffiParameters.sublist(1);
       } else {
-        // Number of parameters in the FfiNative annotation must match the
+        // Number of parameters in the Native annotation must match the
         // annotated declaration.
         if (formalParameters.length != ffiParameterTypes.length) {
           _errorReporter.reportErrorForNode(
@@ -539,8 +539,9 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
       if (nativeType.isCompoundSubtype) {
         if (!allowEmptyStruct) {
           if (nativeType.element.isEmptyStruct) {
-            // TODO(dartbug.com/36780): This results in an error message not
-            // mentioning empty structs at all.
+            // TODO(dacoharkes): This results in an error message not  mentioning
+            // empty structs at all.
+            // dartbug.com/36780
             return false;
           }
         }
@@ -845,8 +846,8 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
     // Validate that the return types are compatible.
     if (!_validateCompatibleNativeType(
         dartType.returnType, nativeType.returnType)) {
-      // TODO(http://dartbug.com/49518): Fix inconsistency between `FfiNative`
-      // and `asFunction`.
+      // TODO(dacoharkes): Fix inconsistency between `FfiNative` and `asFunction`.
+      // http://dartbug.com/49518
       if (!allowStricterReturn) {
         return false;
       } else if (!_validateCompatibleNativeType(
@@ -1068,7 +1069,7 @@ class FfiVerifier extends RecursiveAstVisitor<void> {
       return;
     }
 
-    // TODO(brianwilkerson) Validate that `f` is a top-level function.
+    // TODO(brianwilkerson): Validate that `f` is a top-level function.
     final DartType R = (T as FunctionType).returnType;
     if ((FT as FunctionType).returnType is VoidType ||
         R.isPointer ||

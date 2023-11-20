@@ -69,18 +69,34 @@ class _Instructions {
 
   _Instructions() {
     // Encodings
+    var callDescriptor = encoding('CallDescriptorRef');
+    var argumentNames = encoding('ArgumentNamesRef');
     var functionFlags =
         encoding('FunctionFlags', fieldName: '_flags', constructorName: '_');
     var literal = encoding('LiteralRef');
+    var stackIndices = encoding('StackIndicesRef');
     var type = encoding('TypeRef');
+    const uint = _TrivialEncoding('int');
 
+    // Local variable access
+    _addInstruction('alloc', [uint('count')]);
+    _addInstruction('release', [uint('count')]);
+    _addInstruction('readLocal', [uint('localIndex')]);
+    _addInstruction('writeLocal', [uint('localIndex')]);
     // Primitive operations
     _addInstruction('literal', [literal('value')]);
     // Stack manipulation
     _addInstruction('drop', []);
+    _addInstruction('dup', []);
+    _addInstruction(
+        'shuffle', [uint('popCount'), stackIndices('stackIndices')]);
     // Flow control
     _addInstruction('function', [type('type'), functionFlags('flags')]);
     _addInstruction('end', []);
+    _addInstruction('br', [uint('nesting')]);
+    // Invocations and tearoffs
+    _addInstruction('call',
+        [(callDescriptor('callDescriptor')), (argumentNames('argumentNames'))]);
   }
 
   _NontrivialEncoding encoding(String type,
@@ -143,8 +159,8 @@ mixin IRToStringMixin implements RawIRContainerInterface {
 
   void outputOpcode() {
     output('''
-/// TODO(paulberry): when extension types are supported, make this an extension
-/// type, as well as all the `_ParameterShape` classes.
+// TODO(paulberry): when extension types are supported, make this an extension
+// type, as well as all the `_ParameterShape` classes.
 class Opcode {
   final int index;
 
@@ -297,6 +313,19 @@ class _ParameterShape {
     }
     return true;
   }
+}
+
+class _TrivialEncoding extends _Encoding {
+  const _TrivialEncoding(super.type);
+
+  @override
+  String decode(String value) => value;
+
+  @override
+  String encode(String value) => value;
+
+  @override
+  String stringInterpolation(String value) => '\${$value}';
 }
 
 extension<T> on List<T> {

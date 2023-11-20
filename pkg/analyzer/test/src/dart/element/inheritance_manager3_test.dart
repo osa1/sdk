@@ -1132,31 +1132,9 @@ extension type A(int it) {}
     printerConfiguration.withObjectMembers = true;
     assertInterfaceText(element, r'''
 map
-  ==: dart:core::@class::Object::@method::==
-  hashCode: dart:core::@class::Object::@getter::hashCode
   it: self::@extensionType::A::@getter::it
-  noSuchMethod: dart:core::@class::Object::@method::noSuchMethod
-  runtimeType: dart:core::@class::Object::@getter::runtimeType
-  toString: dart:core::@class::Object::@method::toString
 declared
   it: self::@extensionType::A::@getter::it
-redeclared
-  ==
-    dart:core::@class::Object::@method::==
-  hashCode
-    dart:core::@class::Object::@getter::hashCode
-  noSuchMethod
-    dart:core::@class::Object::@method::noSuchMethod
-  runtimeType
-    dart:core::@class::Object::@getter::runtimeType
-  toString
-    dart:core::@class::Object::@method::toString
-inheritedMap
-  ==: dart:core::@class::Object::@method::==
-  hashCode: dart:core::@class::Object::@getter::hashCode
-  noSuchMethod: dart:core::@class::Object::@method::noSuchMethod
-  runtimeType: dart:core::@class::Object::@getter::runtimeType
-  toString: dart:core::@class::Object::@method::toString
 ''');
   }
 
@@ -2029,7 +2007,7 @@ abstract class B extends A {
       findElement.classOrMixin('B'),
       Name(null, 'foo'),
     )!;
-    // TODO(scheglov) It would be nice to use `_assertGetMember`.
+    // TODO(scheglov): It would be nice to use `_assertGetMember`.
     // But we need a way to check covariance.
     // Maybe check the element display string, not the type.
     expect(member.parameters[0].isCovariant, isTrue);
@@ -2052,7 +2030,7 @@ class C extends B implements A {}
       Name(null, 'foo'),
       concrete: true,
     )!;
-    // TODO(scheglov) It would be nice to use `_assertGetMember`.
+    // TODO(scheglov): It would be nice to use `_assertGetMember`.
     expect(member.declaration, same(findElement.method('foo', of: 'B')));
     expect(member.parameters[0].isCovariant, isTrue);
   }
@@ -2142,7 +2120,7 @@ abstract class B extends A {
       findElement.classOrMixin('B'),
       Name(null, 'foo='),
     )!;
-    // TODO(scheglov) It would be nice to use `_assertGetMember`.
+    // TODO(scheglov): It would be nice to use `_assertGetMember`.
     // But we need a way to check covariance.
     // Maybe check the element display string, not the type.
     expect(member.parameters[0].isCovariant, isTrue);
@@ -2165,7 +2143,7 @@ class C extends B implements A {}
       Name(null, 'foo='),
       concrete: true,
     )!;
-    // TODO(scheglov) It would be nice to use `_assertGetMember`.
+    // TODO(scheglov): It would be nice to use `_assertGetMember`.
     expect(member.declaration, same(findElement.setter('foo', of: 'B')));
     expect(member.parameters[0].isCovariant, isTrue);
   }

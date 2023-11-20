@@ -2763,6 +2763,151 @@ library
 ''');
   }
 
+  test_constructors_augment2() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart';
+augment class A {
+  augment A.named();
+}
+''');
+
+    newFile('$testPackageLibPath/b.dart', r'''
+library augment 'test.dart';
+augment class A {
+  augment A.named();
+}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'a.dart';
+import augment 'b.dart';
+class A {
+  A.named();
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class A @56
+        augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A
+        constructors
+          named @64
+            periodOffset: 63
+            nameEnd: 69
+            augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::named
+        augmented
+          constructors
+            self::@augmentation::package:test/b.dart::@classAugmentation::A::@constructorAugmentation::named
+  augmentationImports
+    package:test/a.dart
+      definingUnit
+        classes
+          augment class A @43
+            augmentationTarget: self::@class::A
+            augmentation: self::@augmentation::package:test/b.dart::@classAugmentation::A
+            constructors
+              augment named @59
+                periodOffset: 58
+                nameEnd: 64
+                augmentationTarget: self::@class::A::@constructor::named
+                augmentation: self::@augmentation::package:test/b.dart::@classAugmentation::A::@constructorAugmentation::named
+    package:test/b.dart
+      definingUnit
+        classes
+          augment class A @43
+            augmentationTarget: self::@augmentation::package:test/a.dart::@classAugmentation::A
+            constructors
+              augment named @59
+                periodOffset: 58
+                nameEnd: 64
+                augmentationTarget: self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::named
+''');
+  }
+
+  test_constructors_augment_named() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart';
+augment class A {
+  augment A.named();
+}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'a.dart';
+class A {
+  A.named();
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class A @31
+        augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A
+        constructors
+          named @39
+            periodOffset: 38
+            nameEnd: 44
+            augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::named
+        augmented
+          constructors
+            self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::named
+  augmentationImports
+    package:test/a.dart
+      definingUnit
+        classes
+          augment class A @43
+            augmentationTarget: self::@class::A
+            constructors
+              augment named @59
+                periodOffset: 58
+                nameEnd: 64
+                augmentationTarget: self::@class::A::@constructor::named
+''');
+  }
+
+  test_constructors_augment_unnamed() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+library augment 'test.dart';
+augment class A {
+  augment A();
+}
+''');
+
+    var library = await buildLibrary(r'''
+import augment 'a.dart';
+class A {
+  A();
+}
+''');
+
+    checkElementText(library, r'''
+library
+  definingUnit
+    classes
+      class A @31
+        augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A
+        constructors
+          @37
+            augmentation: self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::new
+        augmented
+          constructors
+            self::@augmentation::package:test/a.dart::@classAugmentation::A::@constructorAugmentation::new
+  augmentationImports
+    package:test/a.dart
+      definingUnit
+        classes
+          augment class A @43
+            augmentationTarget: self::@class::A
+            constructors
+              augment @57
+                augmentationTarget: self::@class::A::@constructor::new
+''');
+  }
+
   test_inferTypes_method_ofAugment() async {
     newFile('$testPackageLibPath/a.dart', r'''
 class A {
@@ -10035,8 +10180,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -10564,8 +10707,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -11997,8 +12138,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -24140,8 +24279,6 @@ library
         representation: self::@extensionType::E::@def::0::@field::it
         primaryConstructor: self::@extensionType::E::@def::0::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             reference: self::@extensionType::E::@def::0::@field::it
@@ -24162,8 +24299,6 @@ library
         representation: self::@extensionType::E::@def::1::@field::it
         primaryConstructor: self::@extensionType::E::@def::1::@constructor::new
         typeErasure: double
-        interfaces
-          Object
         fields
           final it @52
             reference: self::@extensionType::E::@def::1::@field::it
@@ -25812,8 +25947,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -26166,8 +26299,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -39798,8 +39929,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -39934,8 +40063,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @32
             type: int
@@ -45852,7 +45979,7 @@ typedef void F(int a, b, [int c, d]);
 ''');
     var F = library.definingCompilationUnit.typeAliases.single;
     var function = F.aliasedElement as GenericFunctionTypeElement;
-    // TODO(scheglov) Use better textual presentation with all information.
+    // TODO(scheglov): Use better textual presentation with all information.
     expect(function.parameters[0].hasImplicitType, false);
     expect(function.parameters[1].hasImplicitType, true);
     expect(function.parameters[2].hasImplicitType, false);
@@ -48711,8 +48838,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @27
             type: int
@@ -48744,8 +48869,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::named
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @27
             codeOffset: 23
@@ -48784,8 +48907,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: num
-        interfaces
-          Object
         fields
           final it @21
             type: num
@@ -48823,8 +48944,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: num
-        interfaces
-          Object
         fields
           final it @21
             type: num
@@ -48862,8 +48981,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: num
-        interfaces
-          Object
         fields
           final it @21
             type: num
@@ -48912,8 +49029,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             codeOffset: 17
@@ -48951,8 +49066,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @30
             type: int
@@ -48984,8 +49097,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49020,8 +49131,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49056,8 +49165,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49092,8 +49199,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @43
             metadata
@@ -49133,8 +49238,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49262,8 +49365,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: num
-        interfaces
-          Object
         fields
           final it @21
             type: num
@@ -49324,8 +49425,6 @@ library
         representation: self::@extensionType::X::@field::it
         primaryConstructor: self::@extensionType::X::@constructor::new
         typeErasure: int?
-        interfaces
-          Object?
         fields
           final it @22
             type: int?
@@ -49352,8 +49451,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: T
-        interfaces
-          Object?
         fields
           final it @22
             type: T
@@ -49416,8 +49513,6 @@ library
         representation: self::@extensionType::A::@field::_it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int?
-        interfaces
-          Object?
         fields
           final promotable _it @22
             type: int?
@@ -49459,8 +49554,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @43
             type: int
@@ -49492,8 +49585,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49525,8 +49616,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49562,8 +49651,6 @@ library
         representation: self::@extensionType::A::@field::<empty>
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final <empty> @17
             codeOffset: 17
@@ -49603,8 +49690,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @34
             type: int
@@ -49630,8 +49715,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49664,8 +49747,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final it @19
             type: InvalidType
@@ -49676,8 +49757,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final it @46
             type: InvalidType
@@ -49703,8 +49782,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final it @19
             type: B
@@ -49715,8 +49792,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final it @52
             type: InvalidType
@@ -49740,8 +49815,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: InvalidType
-        interfaces
-          Object?
         fields
           final it @19
             type: InvalidType
@@ -49767,8 +49840,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49779,8 +49850,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: int Function(int)
-        interfaces
-          Object
         fields
           final it @62
             type: A Function(A)
@@ -49809,8 +49878,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: T
-        interfaces
-          Object?
         fields
           final it @22
             type: T
@@ -49821,8 +49888,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: double
-        interfaces
-          Object
         fields
           final it @57
             type: A<double>
@@ -49848,8 +49913,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49860,8 +49923,6 @@ library
         representation: self::@extensionType::B::@field::it
         primaryConstructor: self::@extensionType::B::@constructor::new
         typeErasure: List<int>
-        interfaces
-          Object
         fields
           final it @54
             type: List<A>
@@ -49885,8 +49946,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: int
-        interfaces
-          Object
         fields
           final it @21
             type: int
@@ -49915,8 +49974,6 @@ library
         representation: self::@extensionType::A::@field::it
         primaryConstructor: self::@extensionType::A::@constructor::new
         typeErasure: Map<T, U>
-        interfaces
-          Object
         fields
           final it @45
             type: Map<T, U>

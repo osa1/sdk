@@ -55,7 +55,7 @@ vars = {
 
   # co19 is a cipd package. Use update.sh in tests/co19[_2] to update these
   # hashes.
-  "co19_rev": "306f82e85b3d9e596eed38d36cbef369643515c0",
+  "co19_rev": "460758bf4c298812d47b24f7e5040c75088c3ebf",
   # This line prevents conflicts when both packages are rolled simultaneously.
   "co19_2_rev": "d87f9096ec0a14cd7c32c33316fb2378b89d6a45",
 
@@ -82,7 +82,7 @@ vars = {
   # https://chrome-infra-packages.appspot.com/p/gn/gn
   "gn_version": "git_revision:e4702d7409069c4f12d45ea7b7f0890717ca3f4b",
 
-  "reclient_version": "git_revision:81e819b39d4743462857cc55430d898b9fcca1af",
+  "reclient_version": "git_revision:f75cfb7bca0c04516330f27867a855e8d1186677",
 
   # Update from https://chrome-infra-packages.appspot.com/p/fuchsia/sdk/core
   "fuchsia_sdk_version": "version:16.20231105.3.1",
@@ -158,14 +158,14 @@ vars = {
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "json_rpc_2_rev": "460545c62d12c2cd4635054e327846628288cb7e",
   "leak_tracker_rev": "a618a55598e94c1b58dab6ab13297a23b3a3f287",
-  "lints_rev": "f58fd77bbff4ff4a62826a7bbfb9a72f0f03dd3c",
+  "lints_rev": "3810f8b3dc3205cfaa4ccc0054b021e68046d851",
   "logging_rev": "324a0b5fd2b49b80ea4fbe2b48aac7794000e25a",
   "markdown_rev": "3774ad02e812ceeb32ad0d98a987b0acffa63cf6",
   "matcher_rev": "3d03fa1a3e8f166b9e2ec8557c5d5e83ae1c85bc",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   "mime_rev": "8ebf9463a7a230213cee0adc3c019dad78d364ac",
-  "mockito_rev": "fcb9779f8e8a15b2ca1757611b3e32a84e24c7ed",
-  "native_rev": "eaea725b0939815e7d007a34808a7293b179a2ad",
+  "mockito_rev": "fb8a2b5731553f5ed22107e1a0f7af8918d28442",
+  "native_rev": "5dca10ea324bb19f104126d72472280091829873",
   "package_config_rev": "33dd24659147bd7ed2fa87aeacc52d199be766b4",
   "path_rev": "18ec71f7dde21d8518702d77215fb0b2fa45e970",
   "pool_rev": "3c1bd422da311d95b65a04a5f28de2c0e8193692",
@@ -176,18 +176,18 @@ vars = {
   "source_map_stack_trace_rev": "220962658bf67304207aedc7eeedca6ef64a7c72",
   "source_maps_rev": "87dc58736b5bd334502005cdbd4d325aba9bc696",
   "source_span_rev": "ed16e0d1323f15e478027430b53e0ef0dbc25a83",
-  "sse_rev": "8ddb95fbe7c07d91aee92f35f70ac5c839f82c35",
+  "sse_rev": "0f6ca113c602aeca6b12ebe00af24bd4e52ebb99",
   "stack_trace_rev": "6496ff88cf5c168c2548a454160c27004d176009",
   "stream_channel_rev": "178104d0f1316b0120cf0031b8dbae0cbfec4c26",
   "string_scanner_rev": "a7105ef03ed8373c7d995461fcf4994a6f4e781d",
   "sync_http_rev": "d8e9f3de7be658b1c00d5b65aecba8640fc4ce46",
-  "tar_rev": "3383397b082c084c327587a293591fac74bc8af3",
+  "tar_rev": "0fc831c6e93be5342d4863d9e464428e73007cce",
   "term_glyph_rev": "7c1eb9d799a3cbbc554c3a283af4d6cee9043297",
   "test_rev": "8ba0940d24e36b9276a18b34cd8d6fe396d2c172",
   "test_descriptor_rev": "c417cbb6498ba6d3ac6f7b14fdc43aefc212ab2e",
   "test_process_rev": "c21e40d7c06c862d14b1f53651ae0bd3cf81ca44",
   "test_reflective_loader_rev": "17d40bb06f55f727a79c0f0016d7510294f5db03",
-  "tools_rev": "2e36b8d326e95ed256a74ee2ebdcfff5be502c57",
+  "tools_rev": "2e36b8d326e95ed256a74ee2ebdcfff5be502c57", # b/311742925
   "typed_data_rev": "0b16bd26c90bc9ac08e8b4b259aa3d7bead34feb",
   "usage_rev": "e99690ae6d5fa9ec24ac5218bcd3621e8e3ae8a9",
   "vector_math_rev": "294896dedc6da2a736f47c3c6a19643df934641c",
