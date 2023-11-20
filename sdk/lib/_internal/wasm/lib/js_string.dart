@@ -713,9 +713,9 @@ int _jsCharCodeAt(WasmExternRef? stringRef, int index) => js
         'WebAssembly.String.charCodeAt', stringRef, WasmI32.fromInt(index))
     .toIntUnsigned();
 
-WasmExternRef? _jsConcatenate(WasmExternRef? s1, WasmExternRef? s2) =>
+WasmExternRef _jsConcatenate(WasmExternRef? s1, WasmExternRef? s2) =>
     //TODO (omersa): This is renamed to 'concatenate' in the spec.
-    js.JS<WasmExternRef?>('WebAssembly.String.concat', s1, s2);
+    js.JS<WasmExternRef>('WebAssembly.String.concat', s1, s2);
 
 @pragma("wasm:prefer-inline")
 WasmExternRef _jsSubstring(
