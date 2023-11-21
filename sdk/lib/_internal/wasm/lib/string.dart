@@ -51,6 +51,12 @@ void copyRangeFromUint8ListToOneByteString(
   }
 }
 
+extension OneByteStringUnsafeExtensions on String {
+  @pragma('wasm:prefer-inline')
+  int oneByteStringCodeUnitAtUnchecked(int index) =>
+      unsafeCast<OneByteString>(this)._codeUnitAtUnchecked(index);
+}
+
 const int _maxLatin1 = 0xff;
 const int _maxUtf16 = 0xffff;
 

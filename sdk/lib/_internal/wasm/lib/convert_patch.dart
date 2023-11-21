@@ -1699,8 +1699,7 @@ class _Utf8Decoder {
     int size = 0;
     int flags = 0;
     for (int i = start; i < end; i++) {
-      int t = oneByteStringCodeUnitAtUnchecked(
-          unsafeCast<OneByteString>(scanTable), bytes[i]);
+      int t = scanTable.oneByteStringCodeUnitAtUnchecked(bytes[i]);
       size += t & sizeMask;
       flags |= t;
     }
@@ -1964,8 +1963,6 @@ class _Utf8Decoder {
 
   String decode16(Uint8List bytes, int start, int end, int size) {
     assert(start < end);
-    final OneByteString typeTable =
-        unsafeCast<OneByteString>(_Utf8Decoder.typeTable);
     final String transitionTable = _Utf8Decoder.transitionTable;
     TwoByteString result = TwoByteString.withLength(size);
     int i = start;
@@ -1977,7 +1974,8 @@ class _Utf8Decoder {
     assert(!isErrorState(state));
     final int byte = bytes[i++];
     final int type =
-        oneByteStringCodeUnitAtUnchecked(typeTable, byte) & typeMask;
+        _Utf8Decoder.typeTable.oneByteStringCodeUnitAtUnchecked(byte) &
+            typeMask;
     if (state == accept) {
       char = byte & (shiftedByteMask >> type);
       state = transitionTable.codeUnitAt(type);
@@ -1989,7 +1987,8 @@ class _Utf8Decoder {
     while (i < end) {
       final int byte = bytes[i++];
       final int type =
-          oneByteStringCodeUnitAtUnchecked(typeTable, byte) & typeMask;
+          _Utf8Decoder.typeTable.oneByteStringCodeUnitAtUnchecked(byte) &
+              typeMask;
       if (state == accept) {
         if (char >= 0x10000) {
           assert(char < 0x110000);
