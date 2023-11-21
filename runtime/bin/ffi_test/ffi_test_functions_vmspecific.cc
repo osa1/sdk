@@ -1125,7 +1125,7 @@ DART_EXPORT void SetArgumentTo42(void* token) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Functions for testing @FfiNative.
+// Functions for testing @Native.
 
 DART_EXPORT Dart_Handle GetRootLibraryUrl() {
   Dart_Handle root_lib = Dart_RootLibrary();
