@@ -82,9 +82,9 @@ enum ExperimentalFlag {
 
   inlineClass(
       name: 'inline-class',
-      isEnabledByDefault: false,
+      isEnabledByDefault: true,
       isExpired: false,
-      experimentEnabledVersion: defaultLanguageVersion,
+      experimentEnabledVersion: const Version(3, 3),
       experimentReleasedVersion: const Version(3, 3)),
 
   macros(
@@ -135,6 +135,13 @@ enum ExperimentalFlag {
       isExpired: true,
       experimentEnabledVersion: const Version(3, 0),
       experimentReleasedVersion: const Version(3, 0)),
+
+  resourceIdentifiers(
+      name: 'resource-identifiers',
+      isEnabledByDefault: false,
+      isExpired: false,
+      experimentEnabledVersion: defaultLanguageVersion,
+      experimentReleasedVersion: defaultLanguageVersion),
 
   sealedClass(
       name: 'sealed-class',

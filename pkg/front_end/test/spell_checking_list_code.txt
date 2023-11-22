@@ -63,6 +63,7 @@ aot
 ap
 api
 apis
+arch
 app
 apparently
 applicable
@@ -724,6 +725,7 @@ ic
 id
 ide
 ideal
+identification
 identifies
 identifying
 ideographic

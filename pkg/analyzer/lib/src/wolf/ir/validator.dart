@@ -200,6 +200,10 @@ class _Validator {
           var count = Opcode.alloc.decodeCount(ir, address);
           check(count >= 0, 'Negative alloc count');
           localCount += count;
+        case Opcode.await_:
+          check(functionFlags.isAsync, 'Await in synchronous function');
+          popValues(1);
+          pushValues(1);
         case Opcode.block:
           var inputCount = Opcode.block.decodeInputCount(ir, address);
           var outputCount = Opcode.block.decodeOutputCount(ir, address);
@@ -254,7 +258,27 @@ class _Validator {
           functionFlags = kind;
           valueStackDepth =
               ValueCount(ir.countParameters(type) + (kind.isInstance ? 1 : 0));
+        case Opcode.identical:
+          popValues(2);
+          pushValues(1);
+        case Opcode.is_:
+          popValues(1);
+          pushValues(1);
         case Opcode.literal:
+          pushValues(1);
+        case Opcode.loop:
+          var inputCount = Opcode.loop.decodeInputCount(ir, address);
+          check(inputCount >= 0, 'Negative input count');
+          popValues(inputCount);
+          controlFlowStack.add(_ControlFlowElement(
+              localCountBefore: localCount,
+              functionFlagsBefore: functionFlags,
+              valueStackDepthAfter: ValueCount.indeterminate,
+              branchValueCount: inputCount));
+          valueStackDepth = ValueCount(0);
+          pushValues(inputCount);
+        case Opcode.not:
+          popValues(1);
           pushValues(1);
         case Opcode.readLocal:
           var localIndex = Opcode.readLocal.decodeLocalIndex(ir, address);
@@ -285,6 +309,9 @@ class _Validator {
           var localIndex = Opcode.writeLocal.decodeLocalIndex(ir, address);
           check(localIndex >= 0, 'Negative local index');
           check(localIndex < localCount, 'No such local');
+          popValues(1);
+        case Opcode.yield_:
+          check(functionFlags.isGenerator, 'Yield in non-generator function');
           popValues(1);
         default:
           fail('Unexpected opcode ${opcode.describe()}');
