@@ -98,7 +98,7 @@ const jsRuntimeBlobPart3 = r'''
     if (WebAssembly.String === undefined) {
         console.log("WebAssembly.String is undefined, adding polyfill");
         WebAssembly.String = {
-            "charCodeAt": (s, i) => c.charCodeAt(i),
+            "charCodeAt": (s, i) => s.charCodeAt(i),
             "compare": (s1, s2) => {
                 if (s1 < s2) return -1;
                 if (s1 > s2) return 1;
