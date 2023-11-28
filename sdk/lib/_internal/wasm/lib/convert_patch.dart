@@ -1670,8 +1670,7 @@ class _Utf8Decoder {
 
   @patch
   String convertSingle(List<int> codeUnits, int start, int? maybeEnd) {
-    final codeUnitsLength = codeUnits.length;
-    int end = RangeError.checkValidRange(start, maybeEnd, codeUnitsLength);
+    int end = RangeError.checkValidRange(start, maybeEnd, codeUnits.length);
     if (start == end) return "";
 
     if (codeUnits is JSUint8ArrayImpl) {

@@ -1488,7 +1488,8 @@ class _Utf8Decoder {
     if (start == end) return "";
 
     if (codeUnits is JSUint8ArrayImpl) {
-      JSStringImpl? decoded = decodeUtf8(codeUnits, start, end, allowMalformed);
+      JSStringImpl? decoded =
+          decodeUtf8JS(codeUnits, start, end, allowMalformed);
       if (decoded != null) return decoded;
     }
 
