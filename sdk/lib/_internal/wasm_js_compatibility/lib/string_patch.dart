@@ -14,13 +14,18 @@ class String {
   @patch
   factory String.fromCharCodes(Iterable<int> charCodes,
       [int start = 0, int? end]) {
+    RangeError.checkNotNegative(start, "start");
+    if (end != null) {
+      if (end < start) {
+        throw RangeError.range(end, start, null, "end");
+      }
+      if (end == start) return "";
+    }
+
     final length = charCodes.length;
 
-    RangeError.checkValueInInterval(start, 0, length);
-
-    if (end != null) {
-      RangeError.checkValueInInterval(end, start, length);
-    }
+    end = (end == null || end > length) ? length : end;
+    if (start >= end) return "";
 
     // Skip until `start`.
     final it = charCodes.iterator;
@@ -31,12 +36,11 @@ class String {
     // The part of the iterable converted to string is collected in a JS typed
     // array, to be able to effciently get subarrays, to pass to
     // `String.fromCharCode.apply`.
-    final charCodesLength = (end ?? length) - start;
+    final charCodesLength = end - start;
     final typedArrayLength = charCodesLength * 2;
     final JSUint32ArrayImpl list =
         unsafeCast<JSUint32ArrayImpl>(Uint32List(typedArrayLength));
     int index = 0; // index in `list`.
-    end ??= start + charCodesLength;
     for (int i = start; i < end; i++) {
       if (!it.moveNext()) {
         throw RangeError.range(end, start, i);
