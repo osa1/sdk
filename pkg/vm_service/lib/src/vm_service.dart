@@ -1797,7 +1797,8 @@ class VmService {
     if (message is String) {
       _processMessageStr(message);
     } else if (message is Uint8List) {
-      _processMessageByteData(ByteData.view(message.buffer));
+      _processMessageByteData(ByteData.view(
+          message.buffer, message.offsetInBytes, message.lengthInBytes));
     } else if (message is List<int>) {
       final list = Uint8List.fromList(message);
       _processMessageByteData(ByteData.view(list.buffer));
