@@ -51,7 +51,7 @@ JSStringImpl? _useTextDecoder(
 // TextDecoder is not defined on some browsers and on the stand-alone d8 and
 // jsshell engines. Use a lazy initializer to do feature detection once.
 //
-// Globls need to return boxed Dart values, so these return `JSAny?` instead
+// Globals need to return boxed Dart values, so these return `JSAny?` instead
 // of `WasmExternRef?`.
 final JSAny? _decoder = () {
   try {
