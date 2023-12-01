@@ -8,24 +8,13 @@ import '../../../../client/completion_driver_test.dart';
 
 void main() {
   defineReflectiveSuite(() {
-    defineReflectiveTests(LocalReferenceTest1);
-    defineReflectiveTests(LocalReferenceTest2);
+    defineReflectiveTests(LocalReferenceTest);
   });
 }
 
 @reflectiveTest
-class LocalReferenceTest1 extends AbstractCompletionDriverTest
-    with LocalReferenceTestCases {
-  @override
-  TestingCompletionProtocol get protocol => TestingCompletionProtocol.version1;
-}
-
-@reflectiveTest
-class LocalReferenceTest2 extends AbstractCompletionDriverTest
-    with LocalReferenceTestCases {
-  @override
-  TestingCompletionProtocol get protocol => TestingCompletionProtocol.version2;
-}
+class LocalReferenceTest extends AbstractCompletionDriverTest
+    with LocalReferenceTestCases {}
 
 mixin LocalReferenceTestCases on AbstractCompletionDriverTest {
   @override
@@ -74,23 +63,11 @@ import 'package:meta/meta.dart';
 bool f0(int bar, [bool boo, int baz]) => false;
 void f() {h^}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  f0
-    kind: functionInvocation
-    defaultArgumentList: bar
-    defaultArgumentListRanges: [0, 3]
-''');
-    }
   }
 
   Future<void> test_argDefaults_function_with_required_named() async {
@@ -102,23 +79,11 @@ import 'package:meta/meta.dart';
 bool f0(int bar, {bool? boo, required int baz}) => false;
 void f() {h^}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  f0
-    kind: functionInvocation
-    defaultArgumentList: bar, baz: baz
-    defaultArgumentListRanges: [0, 3, 10, 3]
-''');
-    }
   }
 
   Future<void> test_argDefaults_inherited_method_with_required_named() async {
@@ -186,8 +151,7 @@ void f0() {
   expect(^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   B0
     kind: class
@@ -198,21 +162,6 @@ suggestions
   h0
     kind: functionInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_imported_function() async {
@@ -230,8 +179,7 @@ void f0() {
   expect(^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   B0
     kind: class
@@ -242,21 +190,6 @@ suggestions
   h0
     kind: functionInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void>
@@ -278,8 +211,7 @@ void f0() {
   new A0(^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -291,28 +223,11 @@ suggestions
     kind: constructorInvocation
   b0
     kind: function
+  f0
+    kind: function
   h0
     kind: function
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: function
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_instanceCreationExpression_typedefArg() async {
@@ -334,8 +249,7 @@ void f0() {
   new A0(^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -347,28 +261,11 @@ suggestions
     kind: constructorInvocation
   b0
     kind: function
+  f0
+    kind: function
   h0
     kind: function
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: function
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_local_function() async {
@@ -386,8 +283,7 @@ void f() {
   expect(^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   B0
     kind: class
@@ -398,21 +294,6 @@ suggestions
   h0
     kind: functionInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_local_method() async {
@@ -431,8 +312,7 @@ class B0 {
 }
 String b0() => true;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   B0
     kind: class
@@ -443,21 +323,6 @@ suggestions
   h0
     kind: functionInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  b1
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_methodInvocation_functionalArg() async {
@@ -479,8 +344,7 @@ void f0() {
   b0(^);
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: constructorInvocation
@@ -494,30 +358,11 @@ suggestions
     kind: function
   b1
     kind: functionInvocation
+  f0
+    kind: function
   h0
     kind: function
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: function
-  b1
-    kind: functionInvocation
-  b2
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_methodInvocation_functionalArg2() async {
@@ -539,8 +384,7 @@ void f() {
   b0(inc: ^);
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: constructorInvocation
@@ -559,27 +403,6 @@ suggestions
   h0
     kind: function
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: function
-  b1
-    kind: functionInvocation
-  b2
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_methodInvocation_methodArg() async {
@@ -601,8 +424,7 @@ void f0() {
   new B0().bar(^);
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: constructorInvocation
@@ -612,26 +434,11 @@ suggestions
     kind: class
   B0
     kind: constructorInvocation
+  f0
+    kind: function
   h0
     kind: function
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  B0
-    kind: class
-  B0
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  h0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_argumentList_namedFieldParam_tear_off() async {
@@ -961,23 +768,11 @@ void f() {
   i0^ b = 1;
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-''');
-    }
   }
 
   Future<void> test_assignmentExpression_type_partial_newline() async {
@@ -992,27 +787,11 @@ void f0() {
     // Allow non-types preceding an identifier on LHS of assignment if newline
     // follows first identifier because user is probably starting a new
     // statement.
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  a0
-    kind: localVariable
-  f0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_awaitExpression() async {
@@ -1201,8 +980,7 @@ class X0 {
 }
 class Z0 {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -1258,66 +1036,6 @@ suggestions
   l0
     kind: functionInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  C0
-    kind: class
-  C0
-    kind: constructorInvocation
-  D0
-    kind: functionInvocation
-  D1
-    kind: functionInvocation
-    deprecated: true
-  E0
-    kind: class
-  E0
-    kind: constructorInvocation
-  G0
-    kind: class
-  G0
-    kind: constructorInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: getter
-  T1
-    kind: topLevelVariable
-  T2
-    kind: setter
-  T3
-    kind: topLevelVariable
-  X0
-    kind: class
-  X0
-    kind: constructorInvocation
-  Z0
-    kind: class
-  Z0
-    kind: constructorInvocation
-  _T2
-    kind: topLevelVariable
-  a0
-    kind: methodInvocation
-  b0
-    kind: methodInvocation
-  b1
-    kind: setter
-  c0
-    kind: getter
-  f0
-    kind: localVariable
-  g0
-    kind: library
-  l0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_block_final() async {
@@ -1392,8 +1110,7 @@ class X0 {
 }
 class Z0 {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -1410,25 +1127,6 @@ suggestions
   g0.G0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  C0
-    kind: class
-  E0
-    kind: class
-  G0
-    kind: class
-  X0
-    kind: class
-  Z0
-    kind: class
-  g0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_block_final2() async {
@@ -1527,8 +1225,7 @@ class X0 {
 }
 class Z0 {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -1545,25 +1242,6 @@ suggestions
   g0.G0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  C0
-    kind: class
-  E0
-    kind: class
-  G0
-    kind: class
-  X0
-    kind: class
-  Z0
-    kind: class
-  g0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_block_final_var() async {
@@ -1638,8 +1316,7 @@ class X0 {
 }
 class Z0 {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -1656,25 +1333,6 @@ suggestions
   g0.G0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  C0
-    kind: class
-  E0
-    kind: class
-  G0
-    kind: class
-  X0
-    kind: class
-  Z0
-    kind: class
-  g0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_block_identifier_partial() async {
@@ -1739,8 +1397,7 @@ class X0 {
 }
 class Z0 {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
@@ -1749,52 +1406,6 @@ suggestions
   D0
     kind: constructorInvocation
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  D0
-    kind: class
-  D0
-    kind: constructorInvocation
-  D1
-    kind: functionInvocation
-    deprecated: true
-  D2
-    kind: functionInvocation
-  D3
-    kind: class
-  D3
-    kind: constructorInvocation
-  G0
-    kind: class
-  G0
-    kind: constructorInvocation
-  T1
-    kind: topLevelVariable
-  T3
-    kind: topLevelVariable
-  T5
-    kind: topLevelVariable
-  X0
-    kind: class
-  X0
-    kind: constructorInvocation
-  Z0
-    kind: class
-  Z0
-    kind: constructorInvocation
-  _T6
-    kind: topLevelVariable
-  a0
-    kind: methodInvocation
-  b0
-    kind: methodInvocation
-  f0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_block_inherited_imported() async {
@@ -2192,36 +1803,11 @@ class X {
 }
 class Z {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  D1
-    kind: functionInvocation
-    deprecated: true
-  D2
-    kind: functionInvocation
-  T1
-    kind: topLevelVariable
-  T3
-    kind: topLevelVariable
-  T5
-    kind: topLevelVariable
-  T7
-    kind: getter
-  T8
-    kind: setter
-  _T6
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_block_setterWithoutParameters() async {
@@ -2348,8 +1934,7 @@ void f() {
   a0^..b0
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
@@ -2360,23 +1945,6 @@ suggestions
   a0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  X0
-    kind: class
-  X0
-    kind: constructorInvocation
-  a0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_catchClause_onType() async {
@@ -2470,8 +2038,7 @@ import "b.dart" as x0;
 class _B {}
 A0 T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -2481,18 +2048,6 @@ suggestions
   x0.B0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-    deprecated: true
-  B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_classDeclaration_body_final() async {
@@ -2507,8 +2062,7 @@ class A0 {
 class _B0 {}
 A0 T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -2519,17 +2073,6 @@ suggestions
   x0.B
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  _B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_classDeclaration_body_final_field() async {
@@ -2545,8 +2088,7 @@ class A0 {
 class _B0 {}
 A0 T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -2557,17 +2099,6 @@ suggestions
   x0.B
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  _B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_classDeclaration_body_final_field2() async {
@@ -2583,8 +2114,7 @@ class A0 {
 class _B0 {}
 A0 S1;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -2597,19 +2127,6 @@ suggestions
   _B0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  A0
-    kind: class
-  S2
-    kind: library
-  _B0
-    kind: class
-''');
-    }
   }
 
   Future<void> test_classDeclaration_body_final_final() async {
@@ -2625,8 +2142,7 @@ class A0 {
 class _B0 {}
 A0 T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -2637,17 +2153,6 @@ suggestions
   x0.B
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  _B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_classDeclaration_body_final_var() async {
@@ -2663,8 +2168,7 @@ class A0 {
 class _B0 {}
 A0 T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -2675,17 +2179,6 @@ suggestions
   x0.B
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  _B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_classReference_in_comment() async {
@@ -2805,8 +2298,7 @@ class C {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -2815,21 +2307,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_conditionalExpression_elseExpression_empty() async {
@@ -2905,8 +2382,7 @@ class C {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -2915,21 +2391,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_conditionalExpression_partial_thenExpression_empty() async {
@@ -3007,8 +2468,7 @@ class C {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -3017,21 +2477,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_constructor_parameters_mixed_required_and_named() async {
@@ -3259,6 +2704,9 @@ suggestions
   }
 
   Future<void> test_defaultFormalParameter_named_expression() async {
+    // TODO(brianwilkerson): This is invalid code and there's no clear answer as
+    //  to what ought to be suggested. Consider deleting the test, or making it
+    //  so that we don't suggest anything.
     await computeSuggestions('''
 f0() {}
 void bar() {}
@@ -3272,8 +2720,6 @@ suggestions
     kind: class
   A0
     kind: constructorInvocation
-  a0
-    kind: methodInvocation
   f0
     kind: functionInvocation
 ''');
@@ -3642,8 +3088,7 @@ class C2 {
   void b0() {}
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   A0
     kind: class
@@ -3666,29 +3111,6 @@ suggestions
   f0
     kind: methodInvocation
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  C1
-    kind: class
-  C2
-    kind: class
-  C2
-    kind: constructorInvocation
-  F0
-    kind: functionInvocation
-  F1
-    kind: typeAlias
-  b0
-    kind: methodInvocation
-  f0
-    kind: methodInvocation
-''');
-    }
   }
 
   Future<void> test_expressionStatement_name() async {
@@ -3715,21 +3137,15 @@ class A0 {}
 mixin M0 {}
 class B extends ^
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    // TODO(brianwilkerson): We should not be suggesting `M0` because you can't
+    //  extend a mixin.
+    assertResponse(r'''
 suggestions
   A0
     kind: class
   M0
     kind: mixin
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  A0
-    kind: class
-''');
-    }
   }
 
   Future<void> test_extensionDeclaration_extendedType() async {
@@ -3794,21 +3210,13 @@ extension E0 on int {^}
 class _B {}
 A T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   x0
     kind: library
   x0.B
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_extensionDeclaration_shadowed() async {
@@ -3965,21 +3373,11 @@ void f() {
   for (int i0 in i^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  v0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_forEachStatement3() async {
@@ -3989,21 +3387,11 @@ void f() {
   for (int i0 in (i^))
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  v0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_forEachStatement_body_typed() async {
@@ -4248,25 +3636,13 @@ f0() {
   for (int i0 = 0; i0 < 10; ++i^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   i0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  f0
-    kind: functionInvocation
-  i0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_function_parameters_mixed_required_and_named() async {
@@ -4509,18 +3885,18 @@ suggestions
   }
 
   Future<void> test_functionExpression_expressionBody() async {
-    // This test fails because the OpType at the completion location doesn't
-    // allow for functions that return `void`. But because the expected return
-    // type is `dynamic` we probably want to allow it.
     await computeSuggestions('''
 void f0() {
   g0(() => ^);
 }
 void g0(dynamic Function() h) {}
 ''');
-    // This should suggest both 'f0' and 'g0'.
     assertResponse(r'''
 suggestions
+  f0
+    kind: function
+  g0
+    kind: function
 ''');
   }
 
@@ -4631,29 +4007,13 @@ class A0 {
 }
 class X {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   _c0
     kind: field
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  _c0
-    kind: field
-  b0
-    kind: field
-''');
-    }
   }
 
   Future<void> test_ifStatement_invocation() async {
@@ -4673,21 +4033,11 @@ suggestions
 class M0 {}
 void f(M1^) {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  M0
-    kind: class
-''');
-    }
   }
 
   Future<void> test_implementsClause() async {
@@ -4710,8 +4060,7 @@ suggestions
 import "dart^";
 void f() {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 4
 suggestions
@@ -4737,44 +4086,11 @@ suggestions
     kind: import
   dart:math
     kind: import
-  package:test/test.dart
-    kind: import
-''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 4
-suggestions
-  dart:
-    kind: import
-  dart:async
-    kind: import
-  dart:async2
-    kind: import
-  dart:collection
-    kind: import
-  dart:convert
-    kind: import
-  dart:core
-    kind: import
-  dart:ffi
-    kind: import
-  dart:html
-    kind: import
-  dart:io
-    kind: import
-  dart:isolate
-    kind: import
-  dart:math
-    kind: import
-  package:
-    kind: import
-  package:test/
+  dart:typed_data
     kind: import
   package:test/test.dart
     kind: import
 ''');
-    }
   }
 
   Future<void> test_inDartDoc_reference3() async {
@@ -4794,21 +4110,11 @@ suggestions
 /// The [m^]
 void f0(aaa, bbb) {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  f0
-    kind: function
-''');
-    }
   }
 
   Future<void> test_indexExpression() async {
@@ -4886,8 +4192,7 @@ class C {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -4896,21 +4201,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_inferredType() async {
@@ -5579,21 +4869,11 @@ void f0() {
   if (a0 is Obj^)
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 3
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 3
-suggestions
-  A0
-    kind: class
-''');
-    }
   }
 
   Future<void> test_keyword() async {
@@ -5616,29 +4896,11 @@ void f() {
   new^ X.c0();
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 3
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 3
-suggestions
-  T0
-    kind: topLevelVariable
-  m0
-    kind: topLevelVariable
-  n0
-    kind: functionInvocation
-  n1
-    kind: topLevelVariable
-  n2
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_Literal_list() async {
@@ -5893,8 +5155,7 @@ typedef D2();
 class C2 {}
 foo = {T^
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -5903,33 +5164,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  C1
-    kind: class
-  C1
-    kind: constructorInvocation
-  C2
-    kind: class
-  C2
-    kind: constructorInvocation
-  D1
-    kind: typeAlias
-  D2
-    kind: typeAlias
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_mapLiteralEntry2() async {
@@ -5950,8 +5184,7 @@ typedef D2();
 class C2 {}
 foo = {7:T^}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -5960,33 +5193,6 @@ suggestions
   T1
     kind: topLevelVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  C1
-    kind: class
-  C1
-    kind: constructorInvocation
-  C2
-    kind: class
-  C2
-    kind: constructorInvocation
-  D1
-    kind: typeAlias
-  D2
-    kind: typeAlias
-  F1
-    kind: functionInvocation
-  F2
-    kind: functionInvocation
-  T0
-    kind: topLevelVariable
-  T1
-    kind: topLevelVariable
-''');
-    }
   }
 
   Future<void> test_method_inClass() async {
@@ -6381,8 +5587,7 @@ class A {
 class X {}
 class Z {}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -6391,20 +5596,6 @@ suggestions
   _g0
     kind: field
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  _a0
-    kind: methodInvocation
-  _g0
-    kind: field
-  f0
-    kind: field
-    deprecated: true
-''');
-    }
   }
 
   Future<void> test_methodDeclaration_parameter() async {
@@ -6735,27 +5926,13 @@ class C1{
   void f() {f^}
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   f1
     kind: methodInvocation
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  C1
-    kind: class
-  C1
-    kind: constructorInvocation
-  f1
-    kind: methodInvocation
-''');
-    }
   }
 
   Future<void> test_mixin_ordering() async {
@@ -6801,8 +5978,7 @@ mixin M0 {^}
 class _B0 {}
 A T0;
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   M0
     kind: mixin
@@ -6813,19 +5989,6 @@ suggestions
   x0.B0
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  B0
-    kind: class
-  M0
-    kind: mixin
-  _B0
-    kind: class
-  x0
-    kind: library
-''');
-    }
   }
 
   Future<void> test_mixinDeclaration_method_access() async {
@@ -6890,21 +6053,11 @@ class B {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 4
 suggestions
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 4
-suggestions
-  f0
-    kind: functionInvocation
-''');
-    }
   }
 
   Future<void> test_new_instance() async {
@@ -7366,8 +6519,7 @@ class X0 {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
@@ -7376,23 +6528,6 @@ suggestions
   A0
     kind: constructorInvocation
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  A0
-    kind: class
-  A0
-    kind: constructorInvocation
-  X0
-    kind: class
-  X0
-    kind: constructorInvocation
-  f0
-    kind: methodInvocation
-''');
-    }
   }
 
   Future<void> test_prefixedIdentifier_propertyAccess() async {
@@ -7593,25 +6728,13 @@ void f() {
   _^
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   _a0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  _a0
-    kind: localVariable
-  a0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_prioritization_public() async {
@@ -7622,25 +6745,13 @@ void f() {
   a^
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   a0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  _a0
-    kind: localVariable
-  a0
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_propertyAccess_expression() async {
@@ -7853,29 +6964,13 @@ g0(int x0) {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   b0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  b0
-    kind: localVariable
-  g0
-    kind: functionInvocation
-  t0
-    kind: localVariable
-  x0
-    kind: parameter
-''');
-    }
   }
 
   Future<void> test_switchStatement_case_var_language219() async {
@@ -7890,29 +6985,13 @@ g0(int x0) {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
   b0
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  b0
-    kind: localVariable
-  g0
-    kind: functionInvocation
-  t0
-    kind: localVariable
-  x0
-    kind: parameter
-''');
-    }
   }
 
   Future<void> test_switchStatement_empty() async {
@@ -8077,25 +7156,13 @@ class A0 implements I0 {
 }
 class X0{}
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 2
 suggestions
   b0
     kind: field
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 2
-suggestions
-  _c0
-    kind: field
-  b0
-    kind: field
-''');
-    }
   }
 
   Future<void> test_thisExpression_constructor_param3() async {
@@ -8292,8 +7359,7 @@ void f() {
   C<C^> c;
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 replacement
   left: 1
 suggestions
@@ -8302,21 +7368,6 @@ suggestions
   C1
     kind: class
 ''');
-    } else {
-      assertResponse(r'''
-replacement
-  left: 1
-suggestions
-  C0
-    kind: class
-  C1
-    kind: class
-  T1
-    kind: typeAlias
-  T2
-    kind: typeAlias
-''');
-    }
   }
 
   Future<void> test_typeArgumentList_functionReference() async {
@@ -8487,8 +7538,7 @@ class C0 {
   }
 }
 ''');
-    if (isProtocolVersion2) {
-      assertResponse(r'''
+    assertResponse(r'''
 suggestions
   C0
     kind: class
@@ -8511,33 +7561,6 @@ suggestions
   f2
     kind: localVariable
 ''');
-    } else {
-      assertResponse(r'''
-suggestions
-  C0
-    kind: class
-  C0
-    kind: constructorInvocation
-  X0
-    kind: class
-  X0.c
-    kind: constructorInvocation
-  Y0
-    kind: class
-  Y0._d
-    kind: constructorInvocation
-  Y0.c
-    kind: constructorInvocation
-  b0
-    kind: functionInvocation
-  f0
-    kind: functionInvocation
-  f1
-    kind: functionInvocation
-  f2
-    kind: localVariable
-''');
-    }
   }
 
   Future<void> test_withClause_mixin() async {

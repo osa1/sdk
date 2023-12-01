@@ -44,6 +44,8 @@ main() {
     defineReflectiveTests(MacroTypesTest_fromBytes);
     defineReflectiveTests(MacroDeclarationsTest_keepLinking);
     defineReflectiveTests(MacroDeclarationsTest_fromBytes);
+    defineReflectiveTests(MacroDefinitionTest_keepLinking);
+    defineReflectiveTests(MacroDefinitionTest_fromBytes);
     defineReflectiveTests(MacroElementsTest_keepLinking);
     defineReflectiveTests(MacroElementsTest_fromBytes);
     defineReflectiveTests(MacroApplicationOrderTest);
@@ -1528,57 +1530,7 @@ augment class A {
 
 abstract class MacroDeclarationsTest extends MacroElementsBaseTest {
   test_addClass_addMethod_addMethod() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'dart:async';
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class AddClassB implements ClassTypesMacro {
-  const AddClassB();
-
-  FutureOr<void> buildTypesForClass(clazz, builder) async {
-    final identifier = await builder.resolveIdentifier(
-      Uri.parse('package:test/a.dart'),
-      'AddMethodFoo',
-    );
-    builder.declareType(
-      'MyClass',
-      DeclarationCode.fromParts([
-        '@',
-        identifier,
-        '()\nclass B {}\n',
-      ]),
-    );
-  }
-}
-
-macro class AddMethodFoo implements ClassDeclarationsMacro {
-  const AddMethodFoo();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    final identifier = await builder.resolveIdentifier(
-      Uri.parse('package:test/a.dart'),
-      'AddMethodBar',
-    );
-    builder.declareInType(
-      DeclarationCode.fromParts([
-        '  @',
-        identifier,
-        '()\n  void foo() {}',
-      ]),
-    );
-  }
-}
-
-macro class AddMethodBar implements MethodDeclarationsMacro {
-  const AddMethodBar();
-
-  buildDeclarationsForMethod(method, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  void bar() {}'),
-    );
-  }
-}
-''');
+    _addSingleMacro('addClass_addMethod_addMethod.dart');
 
     var library = await buildLibrary(r'''
 import 'a.dart';
@@ -1695,24 +1647,10 @@ augment class B {
   }
 
   test_class_constructor_add_fieldFormalParameter() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  A.named(this.f);'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  A.named(this.f);')
 class A {
   final int f;
 }
@@ -1725,15 +1663,15 @@ class A {
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @66
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         fields
-          final f @51
+          final f @82
             reference: self::@class::A::@field::f
             type: int
         accessors
@@ -1777,24 +1715,10 @@ augment class A {
   }
 
   test_class_constructor_add_named() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  A.named(int a);'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  A.named(int a);')
 class A {}
 ''');
 
@@ -1805,11 +1729,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @65
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -1844,24 +1768,10 @@ augment class A {
   }
 
   test_class_constructor_add_unnamed() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  A(int a);'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  A(int a);')
 class A {}
 ''');
 
@@ -1872,11 +1782,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @59
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -1909,24 +1819,10 @@ augment class A {
   }
 
   test_class_field_add() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  int foo = 0;'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  int foo = 0;')
 class A {}
 ''');
 
@@ -1938,11 +1834,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @62
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -1989,24 +1885,10 @@ augment class A {
   }
 
   test_class_getter_add() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  int get foo => 0;'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  int get foo => 0;')
 class A {}
 ''');
 
@@ -2018,11 +1900,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @67
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -2061,24 +1943,10 @@ augment class A {
   }
 
   test_class_method_add() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  int foo(double a) => 0;'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  int foo(double a) => 0;')
 class A {}
 ''');
 
@@ -2090,11 +1958,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @73
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -2130,24 +1998,10 @@ augment class A {
   }
 
   test_class_setter_add() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInType(
-      DeclarationCode.fromString('  set foo(int a) {}'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInType('  set foo(int a) {}')
 class A {}
 ''');
 
@@ -2159,11 +2013,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @67
         reference: self::@class::A
         augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
         augmented
@@ -2205,24 +2059,10 @@ augment class A {
   }
 
   test_unit_variable_add() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassDeclarationsMacro {
-  const MyMacro();
-
-  buildDeclarationsForClass(clazz, builder) async {
-    builder.declareInLibrary(
-      DeclarationCode.fromString('final x = 42;'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareInLibrary('final x = 42;')
 class A {}
 ''');
 
@@ -2235,11 +2075,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @64
         reference: self::@class::A
   augmentationImports
     package:test/test.macro.dart
@@ -2281,6 +2121,84 @@ class MacroDeclarationsTest_keepLinking extends MacroDeclarationsTest {
   bool get keepLinkingLibraries => true;
 }
 
+abstract class MacroDefinitionTest extends MacroElementsBaseTest {
+  test_class_addConstructor_augmentConstructor() async {
+    _addSingleMacro('class_addConstructor_augmentConstructor.dart');
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+
+@AddConstructor()
+class A {}
+''');
+
+    configuration
+      ..withMetadata = false
+      ..withReferences = true;
+    checkElementText(library, r'''
+library
+  reference: self
+  imports
+    package:test/a.dart
+  definingUnit
+    reference: self
+    classes
+      class A @42
+        reference: self::@class::A
+        augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+        augmented
+          constructors
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::named
+  augmentationImports
+    package:test/test.macro.dart
+      reference: self::@augmentation::package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+
+augment class A {
+  @prefix0.AugmentConstructor()
+  A.named();
+  augment A.named() { print(42); }
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+      definingUnit
+        reference: self::@augmentation::package:test/test.macro.dart
+        classes
+          augment class A @86
+            reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+            augmentationTarget: self::@class::A
+            constructors
+              named @126
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
+                periodOffset: 125
+                nameEnd: 131
+                augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::named
+              augment named @147
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::named
+                periodOffset: 146
+                nameEnd: 152
+                augmentationTarget: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
+''');
+  }
+}
+
+@reflectiveTest
+class MacroDefinitionTest_fromBytes extends MacroDefinitionTest {
+  @override
+  bool get keepLinkingLibraries => false;
+}
+
+@reflectiveTest
+class MacroDefinitionTest_keepLinking extends MacroDefinitionTest {
+  @override
+  bool get keepLinkingLibraries => true;
+}
+
 abstract class MacroElementsBaseTest extends ElementsBaseTest {
   @override
   Future<void> setUp() async {
@@ -2295,6 +2213,12 @@ abstract class MacroElementsBaseTest extends ElementsBaseTest {
       '$testPackageLibPath/append.dart',
       _getMacroCode('append.dart'),
     );
+  }
+
+  /// Adds `a.dart` with the content from `single/` directory.
+  void _addSingleMacro(String fileName) {
+    final code = _getMacroCode('single/$fileName');
+    newFile('$testPackageLibPath/a.dart', code);
   }
 
   /// Verifies the code of the macro generated augmentation.
@@ -5658,26 +5582,10 @@ abstract class MacroTypesTest extends MacroElementsBaseTest {
   }
 
   test_application_newInstance_withoutPrefix() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'dart:async';
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassTypesMacro {
-  const MyMacro();
-
-  FutureOr<void> buildTypesForClass(clazz, builder) {
-    builder.declareType(
-      'MyClass',
-      DeclarationCode.fromString('class MyClass {}'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro()
+@DeclareType('A', 'class MyClass {}')
 class A {}
 ''');
 
@@ -5689,11 +5597,11 @@ class A {}
 library
   reference: self
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     reference: self
     classes
-      class A @35
+      class A @67
         reference: self::@class::A
   augmentationImports
     package:test/test.macro.dart
@@ -5713,26 +5621,10 @@ class MyClass {}
   }
 
   test_application_newInstance_withoutPrefix_namedConstructor() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'dart:async';
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassTypesMacro {
-  const MyMacro.named();
-
-  FutureOr<void> buildTypesForClass(clazz, builder) {
-    builder.declareType(
-      'MyClass',
-      DeclarationCode.fromString('class MyClass {}'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart';
+import 'append.dart';
 
-@MyMacro.named()
+@DeclareType.named('A', 'class MyClass {}')
 class A {}
 ''');
 
@@ -5740,10 +5632,10 @@ class A {}
     checkElementText(library, r'''
 library
   imports
-    package:test/a.dart
+    package:test/append.dart
   definingUnit
     classes
-      class A @41
+      class A @73
         constructors
           synthetic @-1
   augmentationImports
@@ -5763,25 +5655,10 @@ class MyClass {}
   }
 
   test_application_newInstance_withPrefix() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassTypesMacro {
-  const MyMacro();
-
-  buildTypesForClass(clazz, builder) {
-    builder.declareType(
-      'MyClass',
-      DeclarationCode.fromString('class MyClass {}'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart' as prefix;
+import 'append.dart' as prefix;
 
-@prefix.MyMacro()
+@prefix.DeclareType('A', 'class MyClass {}')
 class A {}
 ''');
 
@@ -5789,10 +5666,10 @@ class A {}
     checkElementText(library, r'''
 library
   imports
-    package:test/a.dart as prefix @19
+    package:test/append.dart as prefix @24
   definingUnit
     classes
-      class A @52
+      class A @84
         constructors
           synthetic @-1
   augmentationImports
@@ -5812,25 +5689,10 @@ class MyClass {}
   }
 
   test_application_newInstance_withPrefix_namedConstructor() async {
-    newFile('$testPackageLibPath/a.dart', r'''
-import 'package:_fe_analyzer_shared/src/macros/api.dart';
-
-macro class MyMacro implements ClassTypesMacro {
-  const MyMacro.named();
-
-  buildTypesForClass(clazz, builder) {
-    builder.declareType(
-      'MyClass',
-      DeclarationCode.fromString('class MyClass {}'),
-    );
-  }
-}
-''');
-
     var library = await buildLibrary(r'''
-import 'a.dart' as prefix;
+import 'append.dart' as prefix;
 
-@prefix.MyMacro.named()
+@prefix.DeclareType.named('A', 'class MyClass {}')
 class A {}
 ''');
 
@@ -5838,10 +5700,10 @@ class A {}
     checkElementText(library, r'''
 library
   imports
-    package:test/a.dart as prefix @19
+    package:test/append.dart as prefix @24
   definingUnit
     classes
-      class A @58
+      class A @90
         constructors
           synthetic @-1
   augmentationImports
@@ -5872,13 +5734,12 @@ class MyClass {}
     }
 
     const macroCode = r'''
-import 'dart:async';
 import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
 macro class MyMacro implements ClassTypesMacro {
   const MyMacro();
 
-  FutureOr<void> buildTypesForClass(clazz, builder) {
+  buildTypesForClass(clazz, builder) async {
     builder.declareType(
       'MyClass',
       DeclarationCode.fromString('class MyClass {}'),
@@ -6059,7 +5920,7 @@ import 'a.dart';
 macro class MyMacro implements ClassTypesMacro {
   const MyMacro();
 
-  FutureOr<void> buildTypesForClass(clazz, ClassTypeBuilder builder) async {
+  buildTypesForClass(clazz, ClassTypeBuilder builder) async {
     final identifier = await builder.resolveIdentifier(
       Uri.parse('package:test/a.dart'),
       'A',
@@ -6388,13 +6249,12 @@ elementFactory
     useEmptyByteStore();
 
     newFile('$testPackageLibPath/a.dart', r'''
-import 'dart:async';
 import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
 macro class AddClassA implements ClassTypesMacro {
   const AddClassA();
 
-  FutureOr<void> buildTypesForClass(clazz, builder) async {
+  buildTypesForClass(clazz, builder) async {
     final identifier = await builder.resolveIdentifier(
       Uri.parse('package:test/a.dart'),
       'AddClassB',
@@ -6413,7 +6273,7 @@ macro class AddClassA implements ClassTypesMacro {
 macro class AddClassB implements ClassTypesMacro {
   const AddClassB();
 
-  FutureOr<void> buildTypesForClass(clazz, builder) async {
+  buildTypesForClass(clazz, builder) async {
     builder.declareType(
       'B',
       DeclarationCode.fromString('class B {}\n'),
@@ -6473,7 +6333,6 @@ files
       id: file_0
       kind: library_0
         libraryImports
-          library_11 dart:async
           library_3 package:macro/api.dart
           library_9 dart:core synthetic
         cycle_0
@@ -6546,7 +6405,6 @@ files
       id: file_0
       kind: library_0
         libraryImports
-          library_11 dart:async
           library_3 package:macro/api.dart
           library_9 dart:core synthetic
         cycle_0
