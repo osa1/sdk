@@ -204,6 +204,8 @@ class Forwarder {
     final positionalArgsLocal = function.locals[2]; // ref _ListBase
     final namedArgsLocal = function.locals[3]; // ref _ListBase
 
+    final classIdLocal = function.addLocal(w.NumType.i32);
+
     // Continuation of this block calls `noSuchMethod` on the receiver.
     final noSuchMethodBlock = b.block();
 
@@ -213,9 +215,18 @@ class Forwarder {
         translator.dispatchTable.dynamicMethodSelectors(memberName);
     for (final selector in methodSelectors) {
       translator.functions.activateSelector(selector);
-      for (int classID in selector.classIds) {
-        final Reference target = selector.targets[classID]!;
+
+      // Map methods to classes that inherit them, to avoid generating
+      // duplicate blocks when a method is inherited by multiple classes.
+      final Map<Reference, Set<int>> targets = {};
+      for (final classTarget in selector.targets.entries) {
+        targets.putIfAbsent(classTarget.value, () => {}).add(classTarget.key);
+      }
+
+      for (final targetClasses in targets.entries) {
+        final Reference target = targetClasses.key;
         final Procedure targetMember = target.asMember as Procedure;
+        final Set<int> classIds = targetClasses.value;
         if (targetMember.isAbstract) {
           continue;
         }
@@ -224,9 +235,18 @@ class Forwarder {
 
         b.local_get(receiverLocal);
         b.struct_get(translator.topInfo.struct, FieldIndex.classId);
-        b.i32_const(classID);
-        b.i32_eq();
-        b.if_();
+        b.local_set(classIdLocal);
+
+        final classIdNoMatch = b.block();
+        final classIdMatch = b.block();
+        for (int classId in classIds) {
+          b.local_get(classIdLocal);
+          b.i32_const(classId);
+          b.i32_eq();
+          b.br_if(classIdMatch);
+        }
+        b.br(classIdNoMatch);
+        b.end(); // classIdMatch
 
         // Check number of type arguments. It needs to be 0 or match the
         // member's type parameters.
@@ -470,7 +490,7 @@ class Forwarder {
             translator.functions.getFunction(targetMember.typeCheckerReference);
         b.call(wasmFunction);
         b.return_();
-        b.end(); // class ID
+        b.end(); // classIdNoMatch
       }
     }
 
