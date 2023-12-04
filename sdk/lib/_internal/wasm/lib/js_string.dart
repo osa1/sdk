@@ -82,7 +82,7 @@ final class JSStringImpl implements String {
   @override
   String operator +(String other) {
     if (other is JSStringImpl) {
-      return JSStringImpl(_jsConcatenate(toExternRef, other.toExternRef));
+      return JSStringImpl(_jsConcat(toExternRef, other.toExternRef));
     }
 
     // TODO(joshualitt): Refactor `string_patch.dart` so we can directly
@@ -713,8 +713,7 @@ int _jsCharCodeAt(WasmExternRef? stringRef, int index) => js
         'WebAssembly.String.charCodeAt', stringRef, WasmI32.fromInt(index))
     .toIntUnsigned();
 
-WasmExternRef _jsConcatenate(WasmExternRef? s1, WasmExternRef? s2) =>
-    //TODO (omersa): This is renamed to 'concatenate' in the spec.
+WasmExternRef _jsConcat(WasmExternRef? s1, WasmExternRef? s2) =>
     js.JS<WasmExternRef>('WebAssembly.String.concat', s1, s2);
 
 @pragma("wasm:prefer-inline")
