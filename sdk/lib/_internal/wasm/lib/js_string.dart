@@ -48,7 +48,7 @@ final class JSStringImpl implements String {
     if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
       throw IndexError.withLength(index, length);
     }
-    return _jsCharCodeAt(toExternRef, index);
+    return _codeUnitAtUnchecked(toExternRef, index);
   }
 
   @pragma("wasm:prefer-inline")
