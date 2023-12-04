@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:collection';
-
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/context/packages.dart';
 import 'package:analyzer/src/generated/sdk.dart';
@@ -19,7 +17,20 @@ import 'package:analyzer/src/workspace/simple.dart';
 import 'package:analyzer/src/workspace/workspace.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart';
-import 'package:yaml/yaml.dart';
+
+/// Check if the given list of path components contains a package build
+/// generated directory, it would have the following path segments,
+/// '.dart_tool/build/generated'.
+bool _isPackageBuildGeneratedPath(List<String> pathComponents, int startIndex) {
+  if (pathComponents.length > startIndex + 2) {
+    if (pathComponents[startIndex] == file_paths.dotDartTool &&
+        pathComponents[startIndex + 1] == file_paths.packageBuild &&
+        pathComponents[startIndex + 2] == file_paths.packageBuildGenerated) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /// Instances of the class `PackageBuildFileUriResolver` resolve `file` URI's by
 /// first resolving file uri's in the expected way, and then by looking in the
@@ -38,9 +49,7 @@ class PackageBuildFileUriResolver extends ResourceUriResolver {
         var relative = pathContext.relative(path, from: package.root);
         var components = pathContext.split(relative);
         if (components.length > 4 &&
-            components[0] == '.dart_tool' &&
-            components[1] == 'build' &&
-            components[2] == 'generated' &&
+            _isPackageBuildGeneratedPath(components, 0) &&
             components[3] == package._name) {
           var canonicalPath = pathContext.joinAll([
             workspace.root,
@@ -147,26 +156,15 @@ class PackageBuildPackageUriResolver extends UriResolver {
 
 /// Information about a Pub workspace.
 class PubWorkspace extends SimpleWorkspace {
-  /// The name of the directory that is used to identify the root of the
-  /// workspace. Note, the presence of this file does not show package:build is
-  /// used. For that, the subdirectory [_dartToolBuildName] must exist.
-  /// A `pub` subdirectory will usually exist in non-package:build projects too.
-  static const String _dartToolRootName = '.dart_tool';
+  /// A Pub workspace can have just one package or multiple packages. The
+  /// single package in the workspace is the _rootPackage.
+  /// A Pub workspace contains a single package when both the pubspec.yaml and
+  /// a package_config.json files are present at the root.
+  late final PubWorkspacePackage _rootPackage;
 
-  /// The name of the subdirectory in [_dartToolRootName] that distinguishes
-  /// projects built with package:build.
-  static const String _dartToolBuildName = 'build';
-
-  static const String _generatedName = 'generated';
-
-  /// The singular package in this workspace.
-  ///
-  /// Each Pub workspace is itself one package.
-  late final PubWorkspacePackage _theOnlyPackage;
-
-  /// A map of paths to packages defined in a [PubWorkspace]. There can be a
-  /// single package or multiple packages.
-  final Map<String, PubWorkspacePackage> containedPackages = HashMap();
+  /// A map of paths to packages defined in a [PubWorkspace]. This map is
+  /// populated when there are multiple packages in a workspace.
+  final Map<Folder, PubWorkspacePackage> containedPackages = {};
 
   /// The associated pubspec file.
   final File _pubspecFile;
@@ -182,7 +180,7 @@ class PubWorkspace extends SimpleWorkspace {
     this._pubspecFile,
     this._pubspecContent,
   ) : super(provider, packages, root) {
-    _theOnlyPackage = PubWorkspacePackage(root, this, _pubspecFile);
+    _rootPackage = PubWorkspacePackage(root, this, _pubspecFile);
   }
 
   @override
@@ -210,7 +208,12 @@ class PubWorkspace extends SimpleWorkspace {
     }
     var context = provider.pathContext;
     var fullBuiltPath = context.normalize(context.join(
-        root, _dartToolRootName, 'build', 'generated', packageName, builtPath));
+        root,
+        file_paths.dotDartTool,
+        file_paths.packageBuild,
+        file_paths.packageBuildGenerated,
+        packageName,
+        builtPath));
     return provider.getFile(fullBuiltPath);
   }
 
@@ -262,49 +265,57 @@ class PubWorkspace extends SimpleWorkspace {
     }
   }
 
+  /// Find the [PubWorkspacePackage] that contains the given file path. The path
+  /// can be for a source file or a generated file. Generated files are located
+  /// in the '.dart_tool/build/generated' folder of the containing package.
   @override
   PubWorkspacePackage? findPackageFor(String filePath) {
-    var folder = provider.getFolder(filePath);
-    var folderPath = folder.path;
     var pathContext = provider.pathContext;
     // Must be in this workspace.
     if (!pathContext.isWithin(root, filePath)) {
       return null;
     }
 
-    var separator = pathContext.separator;
-    // Convert generated path to source path.
-    if (folderPath.contains('$separator$_dartToolBuildName$separator')) {
-      var segments = pathContext.split(folderPath);
-      var buildRootIndex = segments.indexOf(_dartToolRootName);
-      var generatedIndex = segments.indexOf(_generatedName);
-      var packageName = segments[buildRootIndex - 1];
-      // Roots are not the same, 'workspace/my/.dart_tool/build/generated/foo/lib/a.dart'
-      if (packageName != segments[generatedIndex + 1]) {
-        return null;
-      }
-      // '/workspace/my/.dart_tool/build/generated/my/lib/a.dart' =>
-      // '/workspace/my/lib/a.dart'
-      segments.removeRange(buildRootIndex, generatedIndex + 2);
-
-      folder = provider.getFolder(pathContext.joinAll(segments));
-      folderPath = folder.path;
-    }
-
-    for (var packageRoot in containedPackages.keys) {
-      if (pathContext.isWithin(packageRoot, folderPath)) {
-        return containedPackages[packageRoot];
+    // If given path is for a generated file, check to make sure it is in the
+    // generated directory and package name are the same.
+    // For eg. roots are not the same here.
+    // 'workspace/my/.dart_tool/build/generated/foo/lib/a.dart'
+    var segments = pathContext.split(filePath);
+    var buildRootIndex = segments.indexOf(file_paths.dotDartTool);
+    if (buildRootIndex != -1) {
+      if (_isPackageBuildGeneratedPath(segments, buildRootIndex)) {
+        var packageName = segments[buildRootIndex - 1];
+        if (packageName != segments[buildRootIndex + 3]) {
+          return null;
+        }
       }
     }
+
+    PubWorkspacePackage? result;
+    int resultPathLength = 0;
+    for (var package in containedPackages.entries) {
+      if (pathContext.isWithin(package.key.path, filePath)) {
+        var packagePathLength = package.key.path.length;
+        if (result == null || resultPathLength < packagePathLength) {
+          result = package.value;
+          resultPathLength = packagePathLength;
+        }
+      }
+    }
+    if (result != null) {
+      return result;
+    }
+
+    var folder = provider.getFile(filePath).parent;
     // Look for pubspec in folder and ancestors.
     for (var current in folder.withAncestors) {
       if (current.path == root) {
-        return _theOnlyPackage;
+        return _rootPackage;
       }
       var pubspec = current.getChildAssumingFile(file_paths.pubspecYaml);
       if (pubspec.exists) {
         var package = PubWorkspacePackage(current.path, this, pubspec);
-        containedPackages[current.path] = package;
+        containedPackages[current] = package;
         return package;
       }
     }
@@ -398,9 +409,9 @@ class PubWorkspace extends SimpleWorkspace {
 /// a given package in a [PubWorkspace].
 class PubWorkspacePackage extends WorkspacePackage {
   static const List<String> _generatedPathParts = [
-    '.dart_tool',
-    'build',
-    'generated'
+    file_paths.dotDartTool,
+    file_paths.packageBuild,
+    file_paths.packageBuildGenerated,
   ];
 
   @override
@@ -422,15 +433,9 @@ class PubWorkspacePackage extends WorkspacePackage {
 
   PubWorkspacePackage(this.root, this.workspace, File pubspecFile) {
     _pubspecContent = PubWorkspace._fileContentOrNull(pubspecFile);
-    try {
-      final yaml = loadYaml(_pubspecContent!) as YamlMap;
-      _name = yaml['name'] as String;
-      _generatedThisPath = workspace.provider.pathContext
-          .joinAll([root, ...PubWorkspacePackage._generatedPathParts, _name]);
-    } catch (_) {
-      _name = '';
-      _generatedThisPath = '';
-    }
+    _name = pubspec?.name?.value.text ?? '';
+    _generatedThisPath = workspace.provider.pathContext
+        .joinAll([root, ...PubWorkspacePackage._generatedPathParts, _name]);
   }
 
   /// Get the associated parsed [Pubspec], or `null` if there was an error in
@@ -451,14 +456,15 @@ class PubWorkspacePackage extends WorkspacePackage {
     var uri = source.uri;
 
     if (uri.isScheme('package')) {
+      // TODO(keertip): Check to see if we can use information from package
+      // config to find out if a file is in this package.
       var packageName = uri.pathSegments[0];
-      var segments = workspace.provider.pathContext.split(root);
-      return segments.last == packageName;
+      return _name == packageName;
     }
 
     if (uri.isScheme('file')) {
       var path = source.fullName;
-      if (path.contains(PubWorkspace._dartToolBuildName)) {
+      if (path.contains(file_paths.dotDartTool)) {
         return workspace.provider.pathContext
             .isWithin(_generatedThisPath, path);
       }

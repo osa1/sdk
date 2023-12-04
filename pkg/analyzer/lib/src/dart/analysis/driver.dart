@@ -88,7 +88,7 @@ import 'package:analyzer/src/utilities/uri_cache.dart';
 // TODO(scheglov): Clean up the list of implicitly analyzed files.
 class AnalysisDriver implements AnalysisDriverGeneric {
   /// The version of data format, should be incremented on every format change.
-  static const int DATA_VERSION = 320;
+  static const int DATA_VERSION = 322;
 
   /// The number of exception contexts allowed to write. Once this field is
   /// zero, we stop writing any new exception contexts in this process.
@@ -335,6 +335,12 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   AnalysisSessionImpl get currentSession {
     return libraryContext.elementFactory.analysisSession;
   }
+
+  /// Return a list of the names of all the plugins enabled in analysis options
+  /// in this driver.
+  List<String> get enabledPluginNames =>
+      // TODO(pq): get this value from a union of all the plugins enabled in the  `_analysisOptionsMap`
+      _analysisOptions.enabledPluginNames;
 
   /// Return the stream that produces [ExceptionResult]s.
   Stream<ExceptionResult> get exceptions => _exceptionController.stream;
@@ -1544,6 +1550,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
       uri: file.uri,
       isAugmentation: file.kind is AugmentationFileKind,
       isLibrary: file.kind is LibraryFileKind,
+      isMacroAugmentation: file.isMacroAugmentation,
       isPart: file.kind is PartFileKind,
       errors: errors,
     );
@@ -1790,6 +1797,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
       uri: file.uri,
       isAugmentation: file.kind is AugmentationFileKind,
       isLibrary: file.kind is LibraryFileKind,
+      isMacroAugmentation: file.isMacroAugmentation,
       isPart: file.kind is PartFileKind,
       errors: [
         AnalysisError.tmp(

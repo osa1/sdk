@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// TODO(jensj): Probably all `_createVariableGet(result)` needs their offset
+// "nulled out".
+
 import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analysis_result.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
@@ -2836,7 +2839,11 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       VariableDeclaration result, List<Statement> body,
       {required bool isSet}) {
     body.add(_createExpressionStatement(_createAdd(
-        _createVariableGet(result), receiverType, element,
+        // Don't make a mess of jumping around (and make scope building
+        // impossible).
+        _createVariableGet(result)..fileOffset = TreeNode.noOffset,
+        receiverType,
+        element,
         isSet: isSet)));
   }
 
@@ -2991,14 +2998,18 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         temp = _createVariable(
             value,
             typeSchemaEnvironment.iterableType(
-                typeMatches ? elementType : const DynamicType(),
-                libraryBuilder.nullable));
+                elementType, libraryBuilder.nullable));
         body.add(temp);
         value = _createNullCheckedVariableGet(temp);
       }
 
       Statement statement = _createExpressionStatement(_createAddAll(
-          _createVariableGet(result), receiverType, value, isSet));
+          // Don't make a mess of jumping around (and make scope building
+          // impossible).
+          _createVariableGet(result)..fileOffset = TreeNode.noOffset,
+          receiverType,
+          value,
+          isSet));
 
       if (element.isNullAware) {
         statement = _createIf(
@@ -3014,35 +3025,27 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         temp = _createVariable(
             value,
             typeSchemaEnvironment.iterableType(
-                typeMatches ? elementType : const DynamicType(),
-                libraryBuilder.nullable));
+                const DynamicType(), libraryBuilder.nullable));
         body.add(temp);
         value = _createNullCheckedVariableGet(temp);
       }
 
-      VariableDeclaration variable;
-      Statement loopBody;
-      if (!typeMatches) {
-        variable =
-            _createForInVariable(element.fileOffset, const DynamicType());
-        VariableDeclaration castedVar = _createVariable(
-            _createImplicitAs(element.expression.fileOffset,
-                _createVariableGet(variable), elementType),
-            elementType);
-        loopBody = _createBlock(<Statement>[
-          castedVar,
-          _createExpressionStatement(_createAdd(_createVariableGet(result),
-              receiverType, _createVariableGet(castedVar),
-              isSet: isSet))
-        ]);
-      } else {
-        variable = _createForInVariable(element.fileOffset, elementType);
-        loopBody = _createExpressionStatement(_createAdd(
-            _createVariableGet(result),
+      VariableDeclaration variable =
+          _createForInVariable(element.fileOffset, const DynamicType());
+      VariableDeclaration castedVar = _createVariable(
+          _createImplicitAs(element.expression.fileOffset,
+              _createVariableGet(variable), elementType),
+          elementType);
+      Statement loopBody = _createBlock(<Statement>[
+        castedVar,
+        _createExpressionStatement(_createAdd(
+            // Don't make a mess of jumping around (and make scope building
+            // impossible).
+            _createVariableGet(result)..fileOffset = TreeNode.noOffset,
             receiverType,
-            _createVariableGet(variable),
-            isSet: isSet));
-      }
+            _createVariableGet(castedVar),
+            isSet: isSet))
+      ]);
       Statement statement =
           _createForInStatement(element.fileOffset, variable, value, loopBody);
 
@@ -3183,8 +3186,12 @@ class InferenceVisitorImpl extends InferenceVisitorBase
 
   void _addNormalEntry(MapLiteralEntry entry, InterfaceType receiverType,
       VariableDeclaration result, List<Statement> body) {
-    body.add(_createExpressionStatement(_createIndexSet(entry.fileOffset,
-        _createVariableGet(result), receiverType, entry.key, entry.value)));
+    body.add(_createExpressionStatement(_createIndexSet(
+        entry.fileOffset,
+        _createVariableGet(result)..fileOffset = TreeNode.noOffset,
+        receiverType,
+        entry.key,
+        entry.value)));
   }
 
   void _translateIfEntry(
@@ -3341,15 +3348,17 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         temp = _createVariable(
             value,
             typeSchemaEnvironment.mapType(
-                typeMatches ? keyType : const DynamicType(),
-                typeMatches ? valueType : const DynamicType(),
-                libraryBuilder.nullable));
+                keyType, valueType, libraryBuilder.nullable));
         body.add(temp);
         value = _createNullCheckedVariableGet(temp);
       }
 
-      Statement statement = _createExpressionStatement(
-          _createMapAddAll(_createVariableGet(result), receiverType, value));
+      Statement statement = _createExpressionStatement(_createMapAddAll(
+          // Don't make a mess of jumping around (and make scope building
+          // impossible).
+          _createVariableGet(result)..fileOffset = TreeNode.noOffset,
+          receiverType,
+          value));
 
       if (entry.isNullAware) {
         statement = _createIf(
@@ -3364,10 +3373,8 @@ class InferenceVisitorImpl extends InferenceVisitorBase
       if (entry.isNullAware) {
         temp = _createVariable(
             value,
-            typeSchemaEnvironment.mapType(
-                typeMatches ? keyType : const DynamicType(),
-                typeMatches ? valueType : const DynamicType(),
-                libraryBuilder.nullable));
+            typeSchemaEnvironment.mapType(const DynamicType(),
+                const DynamicType(), libraryBuilder.nullable));
         body.add(temp);
         value = _createNullCheckedVariableGet(temp);
       }
@@ -9586,7 +9593,7 @@ class InferenceVisitorImpl extends InferenceVisitorBase
         caseIndex < node.cases.length - 1) {
       LabeledStatement switchLabel = node.parent as LabeledStatement;
       BreakStatement syntheticBreak = new BreakStatement(switchLabel)
-        ..fileOffset = node.fileOffset;
+        ..fileOffset = TreeNode.noOffset;
       if (body is Block) {
         body.statements.add(syntheticBreak);
         syntheticBreak.parent = body;

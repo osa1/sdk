@@ -413,6 +413,20 @@ class PubWorkspacePackageTest extends WorkspacePackageTest {
     expect(package.workspace, equals(workspace));
   }
 
+  test_findPackageFor_my_build_dir_file() {
+    var package = myWorkspace.findPackageFor(
+      convertPath('/workspace/build/lib/a.dart'),
+    );
+    expect(package, null);
+  }
+
+  test_findPackageFor_my_generated_file() {
+    var package = myWorkspace.findPackageFor(
+      convertPath('$myPackageGeneratedPath/my/a.dart'),
+    );
+    expect(package, myPackage);
+  }
+
   test_findPackageFor_my_generated_libFile() {
     var package = myWorkspace.findPackageFor(
       convertPath('$myPackageGeneratedPath/my/lib/a.dart'),
@@ -459,6 +473,13 @@ class PubWorkspacePackageTest extends WorkspacePackageTest {
     )!;
     expect(package.root, convertPath(myPackageRootPath));
     expect(package.workspace, myWorkspace);
+  }
+
+  test_findPackageFor_my_web_file() {
+    var package = myWorkspace.findPackageFor(
+      convertPath('$myPackageRootPath/web/a.dart'),
+    );
+    expect(package, myPackage);
   }
 
   test_findPackageFor_other() {
@@ -572,7 +593,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
 
     PubWorkspace workspace = _createWorkspace('/workspace/aaa/lib', []);
     expect(workspace, isNotNull);
-    expect(workspace.root, '/workspace/aaa');
+    expect(workspace.root, convertPath('/workspace/aaa'));
   }
 
   void test_find_hasBuild_hasPubspec_malformed_goToUp() {
@@ -584,7 +605,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
 
     PubWorkspace workspace = _createWorkspace('/workspace/aaa/lib', []);
     expect(workspace, isNotNull);
-    expect(workspace.root, '/workspace');
+    expect(workspace.root, convertPath('/workspace'));
   }
 
   void test_find_hasDartToolAndPubspec() {
@@ -644,7 +665,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
       Packages.empty,
       convertPath('/workspace'),
     );
-    expect(workspace!.root, '/workspace');
+    expect(workspace!.root, convertPath('/workspace'));
   }
 
   void test_find_hasMalformedPubspec() {
@@ -655,7 +676,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
       Packages.empty,
       convertPath('/workspace'),
     );
-    expect(workspace?.root, '/workspace');
+    expect(workspace?.root, convertPath('/workspace'));
   }
 
   void test_find_hasPubspec_noDartTool_goUp() {
@@ -669,7 +690,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
       Packages.empty,
       convertPath('/workspace/aaa/lib'),
     );
-    expect(workspace?.root, '/workspace');
+    expect(workspace?.root, convertPath('/workspace'));
   }
 
   void test_find_hasPubspecNoDartTool() {
@@ -679,7 +700,7 @@ class PubWorkspaceTest with ResourceProviderMixin {
       Packages.empty,
       convertPath('/workspace'),
     );
-    expect(workspace?.root, '/workspace');
+    expect(workspace?.root, convertPath('/workspace'));
   }
 
   void test_find_missingPubspec() {
