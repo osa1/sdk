@@ -446,7 +446,7 @@ final class JSStringImpl implements String {
     return index;
   }
 
-  // Dart2Wasm can't use JavaScript trim directly,
+  // dart2wasm can't use JavaScript trim directly,
   // because JavaScript does not trim
   // the NEXT LINE (NEL) character (0x85).
   @override
@@ -495,7 +495,7 @@ final class JSStringImpl implements String {
     return result.substring(startIndex);
   }
 
-  // Dart2Wasm can't use JavaScript trimRight directly because it does not trim
+  // dart2wasm can't use JavaScript trimRight directly because it does not trim
   // the NEXT LINE character (0x85).
   @override
   String trimRight() {
