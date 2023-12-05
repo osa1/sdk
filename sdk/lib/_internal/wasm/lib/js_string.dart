@@ -47,9 +47,7 @@ final class JSStringImpl implements String {
   @pragma("wasm:prefer-inline")
   int codeUnitAt(int index) {
     final length = this.length;
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
-      throw IndexError.withLength(index, length);
-    }
+    IndexErrorUtils.checkAssumePositiveLength(index, length);
     return _codeUnitAtUnchecked(index);
   }
 
@@ -61,18 +59,14 @@ final class JSStringImpl implements String {
   @override
   Iterable<Match> allMatches(String string, [int start = 0]) {
     final stringLength = string.length;
-    if (start < 0 || start > stringLength) {
-      throw RangeError.range(start, 0, stringLength);
-    }
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, stringLength);
     return StringAllMatchesIterable(string, this, start);
   }
 
   @override
   Match? matchAsPrefix(String string, [int start = 0]) {
     final stringLength = string.length;
-    if (start < 0 || start > stringLength) {
-      throw RangeError.range(start, 0, stringLength);
-    }
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, stringLength);
     final length = this.length;
     if (start + length > stringLength) return null;
     // TODO(lrn): See if this can be optimized.
@@ -232,7 +226,7 @@ final class JSStringImpl implements String {
 
   @override
   String replaceFirst(Pattern from, String to, [int startIndex = 0]) {
-    RangeError.checkValueInInterval(startIndex, 0, length, "startIndex");
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(startIndex, length);
     if (from is String) {
       int index = indexOf(from, startIndex);
       if (index < 0) return this;
@@ -253,7 +247,7 @@ final class JSStringImpl implements String {
   @override
   String replaceFirstMapped(Pattern from, String replace(Match match),
       [int startIndex = 0]) {
-    RangeError.checkValueInInterval(startIndex, 0, length, "startIndex");
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(startIndex, length);
     Iterator<Match> matches = from.allMatches(this, startIndex).iterator;
     if (!matches.moveNext()) return this;
     Match match = matches.current;
@@ -318,9 +312,7 @@ final class JSStringImpl implements String {
 
   @override
   bool startsWith(Pattern pattern, [int index = 0]) {
-    if (index < 0 || index > length) {
-      throw RangeError.range(index, 0, length);
-    }
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(index, length);
     if (pattern is String) {
       final patternLength = pattern.length;
       final endIndex = index + patternLength;
@@ -552,9 +544,7 @@ final class JSStringImpl implements String {
   @override
   int indexOf(Pattern pattern, [int start = 0]) {
     final length = this.length;
-    if (start < 0 || start > length) {
-      throw RangeError.range(start, 0, length);
-    }
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, length);
     if (pattern is JSStringImpl) {
       return _jsIndexOf(pattern.toExternRef, start);
     } else if (pattern is String) {
@@ -577,10 +567,11 @@ final class JSStringImpl implements String {
 
   @override
   int lastIndexOf(Pattern pattern, [int? start]) {
+    final length = this.length;
     if (start == null) {
       start = length;
-    } else if (start < 0 || start > this.length) {
-      throw RangeError.range(start, 0, this.length);
+    } else {
+      RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, length);
     }
     if (pattern is JSStringImpl) {
       if (start + pattern.length > length) {
@@ -602,9 +593,7 @@ final class JSStringImpl implements String {
   @override
   bool contains(Pattern other, [int startIndex = 0]) {
     final length = this.length;
-    if (startIndex < 0 || startIndex > length) {
-      throw RangeError.range(startIndex, 0, length);
-    }
+    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(startIndex, length);
     if (other is String) {
       return indexOf(other, startIndex) >= 0;
     } else if (other is js.JSSyntaxRegExp) {
@@ -630,9 +619,7 @@ final class JSStringImpl implements String {
   @pragma("wasm:prefer-inline")
   String operator [](int index) {
     final length = this.length;
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
-      throw IndexError.withLength(index, length);
-    }
+    IndexErrorUtils.checkAssumePositiveLength(index, length);
     return JSStringImpl(_jsFromCharCode(_codeUnitAtUnchecked(index)));
   }
 
