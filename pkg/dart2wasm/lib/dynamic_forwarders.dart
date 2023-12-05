@@ -218,15 +218,15 @@ class Forwarder {
 
       // Map methods to classes that inherit them, to avoid generating
       // duplicate blocks when a method is inherited by multiple classes.
-      final Map<Reference, Set<int>> targets = {};
+      final Map<Reference, List<int>> targets = {};
       for (final classTarget in selector.targets.entries) {
-        targets.putIfAbsent(classTarget.value, () => {}).add(classTarget.key);
+        targets.putIfAbsent(classTarget.value, () => []).add(classTarget.key);
       }
 
       for (final targetClasses in targets.entries) {
         final Reference target = targetClasses.key;
         final Procedure targetMember = target.asMember as Procedure;
-        final Set<int> classIds = targetClasses.value;
+        final List<int> classIds = targetClasses.value;
         if (targetMember.isAbstract) {
           continue;
         }
