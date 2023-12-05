@@ -239,12 +239,36 @@ class Forwarder {
 
         final classIdNoMatch = b.block();
         final classIdMatch = b.block();
-        for (int classId in classIds) {
-          b.local_get(classIdLocal);
-          b.i32_const(classId);
-          b.i32_eq();
-          b.br_if(classIdMatch);
+
+        classIds.sort();
+        final List<ClassIdRange> classIdRanges = [];
+        int i = 0;
+        while (i < classIds.length) {
+          final start = classIds[i];
+          while ((i < classIds.length - 1) &&
+              (classIds[i] + 1 == classIds[i + 1])) {
+            i += 1;
+          }
+          classIdRanges.add(ClassIdRange(start, classIds[i]));
+          i += 1;
         }
+
+        for (ClassIdRange classIdRange in classIdRanges) {
+          if (classIdRange.start == classIdRange.end) {
+            b.local_get(classIdLocal);
+            b.i32_const(classIdRange.start);
+            b.i32_eq();
+            b.br_if(classIdMatch);
+          } else {
+            b.local_get(classIdLocal);
+            b.i32_const(classIdRange.start);
+            b.i32_sub();
+            b.i32_const(classIdRange.end - classIdRange.start);
+            b.i32_le_u();
+            b.br_if(classIdMatch);
+          }
+        }
+
         b.br(classIdNoMatch);
         b.end(); // classIdMatch
 
@@ -848,4 +872,11 @@ void _makeEmptyGrowableList(
   b.i32_const(capacity);
   b.array_new_default(arrayType); // _data
   b.struct_new(info.struct);
+}
+
+class ClassIdRange {
+  final int start;
+  final int end; // inclusive
+
+  ClassIdRange(this.start, this.end);
 }
