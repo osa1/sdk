@@ -474,9 +474,7 @@ class JSArrayImpl implements List<JSAny?> {
   @override
   @pragma("wasm:prefer-inline")
   JSAny? operator [](int index) {
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
-      throw IndexError.withLength(index, length);
-    }
+    IndexErrorUtils.checkAssumePositiveLength(index, length);
     return _getUnchecked(index);
   }
 
@@ -490,9 +488,7 @@ class JSArrayImpl implements List<JSAny?> {
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, JSAny? value) {
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
-      throw IndexError.withLength(index, length);
-    }
+    IndexErrorUtils.checkAssumePositiveLength(index, length);
     _setUnchecked(index, value);
   }
 
