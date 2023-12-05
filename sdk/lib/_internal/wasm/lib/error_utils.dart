@@ -21,7 +21,7 @@ class RangeErrorUtils {
   /// comparison. Always inlined.
   @pragma("wasm:prefer-inline")
   static void checkValueBetweenZeroAndPositiveMax(int value, int maxValue) {
-    if (WasmI64.fromInt(maxValue).leU(WasmI64.fromInt(value))) {
+    if (WasmI64.fromInt(maxValue).ltU(WasmI64.fromInt(value))) {
       throw RangeError.range(value, 0, maxValue);
     }
   }
