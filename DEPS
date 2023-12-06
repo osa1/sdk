@@ -75,7 +75,7 @@ vars = {
   "jsshell_tag": "version:120.0",
 
   # https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/clang
-  "clang_version": "git_revision:b44399296a7fa4323ab32739df6dbcfc6068af8f",
+  "clang_version": "git_revision:b3a9e8f7c0afb00147ab6c6a6ad426de149420dd",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
   "gn_version": "git_revision:e4702d7409069c4f12d45ea7b7f0890717ca3f4b",
@@ -167,7 +167,7 @@ vars = {
   "package_config_rev": "33dd24659147bd7ed2fa87aeacc52d199be766b4",
   "path_rev": "18ec71f7dde21d8518702d77215fb0b2fa45e970",
   "pool_rev": "3c1bd422da311d95b65a04a5f28de2c0e8193692",
-  "protobuf_rev": "dcec2eda9db4e6728e900928aa2e46944ba4fa6f",
+  "protobuf_rev": "bb1977478458d070abbb4802ae73a1560233864d",
   "pub_rev": "1779628b386819675130f14326f1e8812901c48f", # disable rev_sdk_deps.dart
   "pub_semver_rev": "45721813dea1591a7689f93762afa358cbf260c7",
   "shelf_rev": "b3adc7c5264b448a77427c6aacd67eedfb16dce2",

@@ -9,11 +9,34 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
   @override
   buildDeclarationsForClass(clazz, builder) async {
-    await _declareInType(
-      builder: builder,
-      augmentMacroName: 'AugmentConstructor',
-      code: '  A.named();',
-    );
+    await _declareInType(builder, r'''
+  @{{package:test/a.dart@AugmentConstructor}}()
+  A.named();
+''');
+  }
+}
+
+/*macro*/ class AddField extends _AddMacroClass {
+  const AddField();
+
+  @override
+  buildDeclarationsForClass(clazz, builder) async {
+    await _declareInType(builder, r'''
+  @{{package:test/a.dart@AugmentField}}()
+  {{dart:core@int}} foo;
+''');
+  }
+}
+
+/*macro*/ class AddGetter extends _AddMacroClass {
+  const AddGetter();
+
+  @override
+  buildDeclarationsForClass(clazz, builder) async {
+    await _declareInType(builder, r'''
+  @{{package:test/a.dart@AugmentGetter}}()
+  external {{dart:core@int}} get foo;
+''');
   }
 }
 
@@ -22,11 +45,22 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
   @override
   buildDeclarationsForClass(clazz, builder) async {
-    await _declareInType(
-      builder: builder,
-      augmentMacroName: 'AugmentMethod',
-      code: '  external int foo();',
-    );
+    await _declareInType(builder, r'''
+  @{{package:test/a.dart@AugmentMethod}}()
+  external {{dart:core@int}} foo();
+''');
+  }
+}
+
+/*macro*/ class AddSetter extends _AddMacroClass {
+  const AddSetter();
+
+  @override
+  buildDeclarationsForClass(clazz, builder) async {
+    await _declareInType(builder, r'''
+  @{{package:test/a.dart@AugmentSetter}}()
+  external void set foo({{dart:core@int}} value);
+''');
   }
 }
 
@@ -37,6 +71,28 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
   buildDefinitionForConstructor(constructor, builder) {
     builder.augment(
       body: FunctionBodyCode.fromString('{ print(42); }'),
+    );
+  }
+}
+
+/*macro*/ class AugmentField implements FieldDefinitionMacro {
+  const AugmentField();
+
+  @override
+  buildDefinitionForField(constructor, builder) {
+    builder.augment(
+      initializer: ExpressionCode.fromString('42'),
+    );
+  }
+}
+
+/*macro*/ class AugmentGetter implements MethodDefinitionMacro {
+  const AugmentGetter();
+
+  @override
+  buildDefinitionForMethod(constructor, builder) {
+    builder.augment(
+      FunctionBodyCode.fromString('=> 42;'),
     );
   }
 }
@@ -52,26 +108,57 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
   }
 }
 
+/*macro*/ class AugmentSetter implements MethodDefinitionMacro {
+  const AugmentSetter();
+
+  @override
+  buildDefinitionForMethod(constructor, builder) {
+    builder.augment(
+      FunctionBodyCode.fromString('{ print(42); }'),
+    );
+  }
+}
+
 class _AddMacro {
   const _AddMacro();
 
-  Future<void> _declareInType({
-    required MemberDeclarationBuilder builder,
-    required String augmentMacroName,
-    required String code,
-  }) async {
-    // ignore: deprecated_member_use
-    final identifier = await builder.resolveIdentifier(
-      Uri.parse('package:test/a.dart'),
-      augmentMacroName,
-    );
-    builder.declareInType(
-      DeclarationCode.fromParts([
-        '  @',
-        identifier,
-        '()\n$code',
-      ]),
-    );
+  Future<void> _declareInType(
+    MemberDeclarationBuilder builder,
+    String withIdentifiers,
+  ) async {
+    final withoutEOL = withIdentifiers.trimRight();
+    final parts = await _resolveIdentifiers(builder, withoutEOL);
+    final code = DeclarationCode.fromParts(parts);
+    builder.declareInType(code);
+  }
+
+  /// Resolves top-level identifier references of form `{{uri@name}}`.
+  static Future<List<Object>> _resolveIdentifiers(
+    TypePhaseIntrospector introspector,
+    String withIdentifiers,
+  ) async {
+    final result = <Object>[];
+    var lastMatchEnd = 0;
+
+    void addStringPart(int end) {
+      final str = withIdentifiers.substring(lastMatchEnd, end);
+      result.add(str);
+    }
+
+    final pattern = RegExp(r'\{\{(.+)@(\w+)\}\}');
+    for (final match in pattern.allMatches(withIdentifiers)) {
+      addStringPart(match.start);
+      // ignore: deprecated_member_use
+      final identifier = await introspector.resolveIdentifier(
+        Uri.parse(match.group(1)!),
+        match.group(2)!,
+      );
+      result.add(identifier);
+      lastMatchEnd = match.end;
+    }
+
+    addStringPart(withIdentifiers.length);
+    return result;
   }
 }
 

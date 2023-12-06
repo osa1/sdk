@@ -1384,7 +1384,9 @@ class A {}
         ..withMetadata = false;
       checkElementText(library, expected);
     } else {
-      library.assertNoMacroErrors();
+      if (library.macroDiagnostics.isNotEmpty) {
+        failWithLibraryText(library);
+      }
 
       final x = library.topLevelElements
           .whereType<ConstTopLevelVariableElementImpl>()
@@ -1428,8 +1430,6 @@ class A {
 
     _assertMacroCode(library, r'''
 library augment 'test.dart';
-
-import 'package:test/test.dart' as prefix0;
 
 augment class A {
   void foo() {
@@ -2179,6 +2179,178 @@ augment class A {
 ''');
   }
 
+  test_class_addField_augmentField() async {
+    newFile(
+      '$testPackageLibPath/a.dart',
+      _getMacroCode('add_augment_declaration.dart'),
+    );
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+
+@AddField()
+class A {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false
+      ..withPropertyLinking = true
+      ..withReferences = true;
+    checkElementText(library, r'''
+library
+  reference: self
+  imports
+    package:test/a.dart
+  definingUnit
+    reference: self
+    classes
+      class A @36
+        reference: self::@class::A
+        augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+        augmented
+          fields
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@fieldAugmentation::foo
+          accessors
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
+  augmentationImports
+    package:test/test.macro.dart
+      reference: self::@augmentation::package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+import 'dart:core' as prefix1;
+
+augment class A {
+  @prefix0.AugmentField()
+  prefix1.int foo;
+  augment prefix1.int foo = 42;
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+        dart:core as prefix1 @93
+      definingUnit
+        reference: self::@augmentation::package:test/test.macro.dart
+        classes
+          augment class A @117
+            reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+            augmentationTarget: self::@class::A
+            fields
+              foo @161
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+                type: int
+                id: field_0
+                getter: getter_0
+                setter: setter_0
+                augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@fieldAugmentation::foo
+              augment foo @188
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@fieldAugmentation::foo
+                type: int
+                shouldUseTypeForInitializerInference: true
+                id: field_1
+                augmentationTarget: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+            accessors
+              synthetic get foo @-1
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
+                returnType: int
+                id: getter_0
+                variable: field_0
+              synthetic set foo= @-1
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
+                parameters
+                  requiredPositional _foo @-1
+                    type: int
+                returnType: void
+                id: setter_0
+                variable: field_0
+''');
+  }
+
+  test_class_addGetter_augmentGetter() async {
+    newFile(
+      '$testPackageLibPath/a.dart',
+      _getMacroCode('add_augment_declaration.dart'),
+    );
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+
+@AddGetter()
+class A {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false
+      ..withPropertyLinking = true
+      ..withReferences = true;
+    checkElementText(library, r'''
+library
+  reference: self
+  imports
+    package:test/a.dart
+  definingUnit
+    reference: self
+    classes
+      class A @37
+        reference: self::@class::A
+        augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+        augmented
+          fields
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+          accessors
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getterAugmentation::foo
+  augmentationImports
+    package:test/test.macro.dart
+      reference: self::@augmentation::package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+import 'dart:core' as prefix1;
+
+augment class A {
+  @prefix0.AugmentGetter()
+  external prefix1.int get foo;
+  augment prefix1.int get foo => 42;
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+        dart:core as prefix1 @93
+      definingUnit
+        reference: self::@augmentation::package:test/test.macro.dart
+        classes
+          augment class A @117
+            reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+            augmentationTarget: self::@class::A
+            fields
+              synthetic foo @-1
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+                type: int
+                id: field_0
+                getter: getter_0
+            accessors
+              external get foo @175
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
+                returnType: int
+                id: getter_0
+                variable: field_0
+                augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getterAugmentation::foo
+              augment get foo @206
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getterAugmentation::foo
+                returnType: int
+                id: getter_1
+                variable: field_0
+                augmentationTarget: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
+''');
+  }
+
   test_class_addMethod_augmentMethod() async {
     newFile(
       '$testPackageLibPath/a.dart',
@@ -2222,7 +2394,7 @@ import 'dart:core' as prefix1;
 
 augment class A {
   @prefix0.AugmentMethod()
-  external int foo();
+  external prefix1.int foo();
   augment prefix1.int foo() => 42;
 }
 ---
@@ -2236,14 +2408,101 @@ augment class A {
             reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
             augmentationTarget: self::@class::A
             methods
-              external foo @163
+              external foo @171
                 reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@method::foo
                 returnType: int
                 augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@methodAugmentation::foo
-              augment foo @192
+              augment foo @200
                 reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@methodAugmentation::foo
                 returnType: int
                 augmentationTarget: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@method::foo
+''');
+  }
+
+  test_class_addSetter_augmentSetter() async {
+    newFile(
+      '$testPackageLibPath/a.dart',
+      _getMacroCode('add_augment_declaration.dart'),
+    );
+
+    var library = await buildLibrary(r'''
+import 'a.dart';
+
+@AddSetter()
+class A {}
+''');
+
+    configuration
+      ..withConstructors = false
+      ..withMetadata = false
+      ..withPropertyLinking = true
+      ..withReferences = true;
+    checkElementText(library, r'''
+library
+  reference: self
+  imports
+    package:test/a.dart
+  definingUnit
+    reference: self
+    classes
+      class A @37
+        reference: self::@class::A
+        augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+        augmented
+          fields
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+          accessors
+            self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo
+  augmentationImports
+    package:test/test.macro.dart
+      reference: self::@augmentation::package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart' as prefix0;
+import 'dart:core' as prefix1;
+
+augment class A {
+  @prefix0.AugmentSetter()
+  external void set foo(prefix1.int value);
+  augment void set foo(prefix1.int value, ) { print(42); }
+}
+---
+      imports
+        package:test/a.dart as prefix0 @62
+        dart:core as prefix1 @93
+      definingUnit
+        reference: self::@augmentation::package:test/test.macro.dart
+        classes
+          augment class A @117
+            reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A
+            augmentationTarget: self::@class::A
+            fields
+              synthetic foo @-1
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@field::foo
+                type: int
+                id: field_0
+                setter: setter_0
+            accessors
+              external set foo= @168
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
+                parameters
+                  requiredPositional value @184
+                    type: int
+                returnType: void
+                id: setter_0
+                variable: field_0
+                augmentation: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo
+              augment set foo= @211
+                reference: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo
+                parameters
+                  requiredPositional value @227
+                    type: int
+                returnType: void
+                id: setter_1
+                variable: field_0
+                augmentationTarget: self::@augmentation::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
 ''');
   }
 }
@@ -2261,6 +2520,17 @@ class MacroDefinitionTest_keepLinking extends MacroDefinitionTest {
 }
 
 abstract class MacroElementsBaseTest extends ElementsBaseTest {
+  /// We decided that we want to fail, and want to print the library.
+  void failWithLibraryText(LibraryElementImpl library) {
+    final text = getLibraryText(
+      library: library,
+      configuration: configuration,
+    );
+    print('------------------------');
+    print('$text------------------------');
+    fail('The library text above should have details.');
+  }
+
   @override
   Future<void> setUp() async {
     super.setUp();
@@ -2309,7 +2579,9 @@ import 'introspect.dart';
 $code
 ''');
 
-    library.assertNoMacroErrors();
+    if (library.macroDiagnostics.isNotEmpty) {
+      failWithLibraryText(library);
+    }
 
     return library.topLevelElements
         .whereType<ConstTopLevelVariableElementImpl>()
@@ -3048,7 +3320,6 @@ class A {
 library augment 'test.dart';
 
 import 'dart:core' as prefix0;
-import 'package:test/test.dart' as prefix1;
 
 augment class A {
   prefix0.int get foo => this._foo;
@@ -5412,6 +5683,94 @@ class A
 ''');
   }
 
+  test_extension_getter() async {
+    await _assertIntrospectText(r'''
+extension A on int {
+  @Introspect()
+  int get foo => 0;
+}
+''', r'''
+foo
+  flags: hasBody isGetter
+  returnType: int
+''');
+  }
+
+  test_extension_getters() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+extension A on int {
+  int get foo => 0;
+}
+''', r'''
+extension A
+  onType: int
+  methods
+    foo
+      flags: hasBody isGetter
+      returnType: int
+''');
+  }
+
+  test_extension_metadata_identifier() async {
+    await _assertIntrospectText(r'''
+const a = 0;
+
+@Introspect(withMetadata: true)
+@a
+extension A on int {}
+''', r'''
+extension A
+  metadata
+    ConstructorMetadataAnnotation
+      type: Introspect
+    IdentifierMetadataAnnotation
+      identifier: a
+  onType: int
+''');
+  }
+
+  test_extension_method() async {
+    await _assertIntrospectText(r'''
+extension A on int {
+  @Introspect()
+  void foo() {}
+}
+''', r'''
+foo
+  flags: hasBody
+  returnType: void
+''');
+  }
+
+  test_extension_methods() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+extension A on int {
+  void foo() {}
+}
+''', r'''
+extension A
+  onType: int
+  methods
+    foo
+      flags: hasBody
+      returnType: void
+''');
+  }
+
+  test_extension_typeParameters() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+extension A<T> on int {}
+''', r'''
+extension A
+  typeParameters
+    T
+  onType: int
+''');
+  }
+
   test_functionTypeAnnotation_formalParameters_namedOptional_simpleFormalParameter() async {
     await _assertIntrospectText(r'''
 @Introspect()
@@ -5690,7 +6049,8 @@ class A
     var actual = await _getIntrospectText(code);
     if (actual != expected) {
       NodeTextExpectationsCollector.add(actual);
-      print(actual);
+      print('-------- Actual --------');
+      print('$actual------------------------');
     }
     expect(actual, expected);
   }
@@ -6638,10 +6998,6 @@ extension on LibraryElement {
     final collector = _MacroDiagnosticsCollector();
     accept(collector);
     return collector.diagnostics;
-  }
-
-  void assertNoMacroErrors() {
-    expect(macroDiagnostics, isEmpty);
   }
 }
 

@@ -61,6 +61,8 @@ class DeclarationBuilder {
         return fromNode.classDeclaration(node);
       case ast.ConstructorDeclarationImpl():
         return fromNode.constructorDeclaration(node);
+      case ast.ExtensionDeclarationImpl():
+        return fromNode.extensionDeclaration(node);
       case ast.MethodDeclarationImpl():
         return fromNode.methodDeclaration(node);
       case ast.MixinDeclarationImpl():
@@ -73,6 +75,15 @@ class DeclarationBuilder {
   }
 
   macro.ResolvedIdentifier resolveIdentifier(macro.Identifier identifier) {
+    if (identifier is _VoidIdentifierImpl) {
+      return macro.ResolvedIdentifier(
+        kind: macro.IdentifierKind.topLevelMember,
+        name: 'void',
+        uri: null,
+        staticScope: null,
+      );
+    }
+
     identifier as IdentifierImpl;
     final element = identifier.element;
     switch (element) {
@@ -88,7 +99,7 @@ class DeclarationBuilder {
           return macro.ResolvedIdentifier(
             kind: macro.IdentifierKind.instanceMember,
             name: element.name,
-            uri: element.source!.uri,
+            uri: null,
             staticScope: null,
           );
         }
@@ -349,10 +360,7 @@ class DeclarationBuilderFromElement {
       case VoidType():
         return macro.NamedTypeAnnotationImpl(
           id: macro.RemoteInstance.uniqueId,
-          identifier: macro.IdentifierImpl(
-            id: macro.RemoteInstance.uniqueId,
-            name: 'void',
-          ),
+          identifier: _VoidIdentifierImpl(),
           isNullable: false,
           typeArguments: const [],
         );
@@ -536,6 +544,12 @@ class DeclarationBuilderFromNode {
     );
   }
 
+  macro.ExtensionDeclarationImpl extensionDeclaration(
+    ast.ExtensionDeclarationImpl node,
+  ) {
+    return _introspectableExtensionDeclaration(node);
+  }
+
   macro.LibraryImpl library(Element element) {
     final library = element.library!;
 
@@ -639,6 +653,10 @@ class DeclarationBuilderFromNode {
         final parentElement = parentNode.declaredElement!;
         final typeElement = parentElement.augmentationTarget ?? parentElement;
         return _declaredIdentifier(parentNode.name, typeElement);
+      case ast.ExtensionDeclaration():
+        final parentElement = parentNode.declaredElement!;
+        final typeElement = parentElement.augmentationTarget ?? parentElement;
+        return _declaredIdentifier2(parentNode.name?.lexeme ?? '', typeElement);
       case ast.MixinDeclaration():
         final parentElement = parentNode.declaredElement!;
         final typeElement = parentElement.augmentationTarget ?? parentElement;
@@ -742,6 +760,22 @@ class DeclarationBuilderFromNode {
     );
   }
 
+  IntrospectableExtensionDeclarationImpl _introspectableExtensionDeclaration(
+    ast.ExtensionDeclarationImpl node,
+  ) {
+    final element = node.declaredElement!;
+
+    return IntrospectableExtensionDeclarationImpl._(
+      id: macro.RemoteInstance.uniqueId,
+      identifier: _declaredIdentifier2(node.name?.lexeme ?? '', element),
+      library: library(element),
+      metadata: _buildMetadata(element),
+      typeParameters: _typeParameters(node.typeParameters),
+      onType: _typeAnnotation(node.extendedType),
+      element: element,
+    );
+  }
+
   IntrospectableMixinDeclarationImpl _introspectableMixinDeclaration(
     ast.MixinDeclarationImpl node,
   ) {
@@ -826,6 +860,10 @@ class DeclarationBuilderFromNode {
   }
 
   macro.IdentifierImpl _namedTypeIdentifier(ast.NamedType node) {
+    if (node.importPrefix == null && node.name2.lexeme == 'void') {
+      return _namedTypeMap[node] ??= _VoidIdentifierImpl();
+    }
+
     return _namedTypeMap[node] ??= _NamedTypeIdentifierImpl(
       id: macro.RemoteInstance.uniqueId,
       name: node.name2.lexeme,
@@ -1003,6 +1041,22 @@ class IntrospectableClassDeclarationImpl
   });
 }
 
+class IntrospectableExtensionDeclarationImpl
+    extends macro.IntrospectableExtensionDeclarationImpl implements HasElement {
+  @override
+  final ExtensionElementImpl element;
+
+  IntrospectableExtensionDeclarationImpl._({
+    required super.id,
+    required super.identifier,
+    required super.library,
+    required super.metadata,
+    required super.typeParameters,
+    required super.onType,
+    required this.element,
+  });
+}
+
 class IntrospectableMixinDeclarationImpl
     extends macro.IntrospectableMixinDeclarationImpl implements HasElement {
   @override
@@ -1092,6 +1146,17 @@ class _NamedTypeIdentifierImpl extends IdentifierImpl {
 
   @override
   Element? get element => node.element;
+}
+
+class _VoidIdentifierImpl extends IdentifierImpl {
+  _VoidIdentifierImpl()
+      : super(
+          id: macro.RemoteInstance.uniqueId,
+          name: 'void',
+        );
+
+  @override
+  Element? get element => null;
 }
 
 extension<T> on T? {
