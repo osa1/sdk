@@ -2064,7 +2064,9 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         b.i32_const(offset);
         b.i32_add();
       }
-      b.call_indirect(selector.signature, translator.dispatchTable.wasmTable);
+      b.table_get(translator.dispatchTable.wasmTable);
+      b.ref_cast(w.RefType.def(selector.signature, nullable: false));
+      b.call_ref(selector.signature);
 
       translator.functions.activateSelector(selector);
     }
