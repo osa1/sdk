@@ -11,6 +11,7 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
         ClassDeclarationsMacro,
         ConstructorDeclarationsMacro,
         ExtensionDeclarationsMacro,
+        ExtensionTypeDeclarationsMacro,
         FieldDeclarationsMacro,
         MethodDeclarationsMacro,
         MixinDeclarationsMacro {
@@ -26,7 +27,7 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
   @override
   Future<void> buildDeclarationsForClass(
-    IntrospectableClassDeclaration declaration,
+    ClassDeclaration declaration,
     MemberDeclarationBuilder builder,
   ) async {
     await _write(builder, declaration, (printer) async {
@@ -43,11 +44,21 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
   @override
   FutureOr<void> buildDeclarationsForExtension(
-    IntrospectableExtensionDeclaration declaration,
+    ExtensionDeclaration declaration,
     MemberDeclarationBuilder builder,
   ) async {
     await _write(builder, declaration, (printer) async {
       await printer.writeExtensionDeclaration(declaration);
+    });
+  }
+
+  @override
+  FutureOr<void> buildDeclarationsForExtensionType(
+    ExtensionTypeDeclaration declaration,
+    MemberDeclarationBuilder builder,
+  ) async {
+    await _write(builder, declaration, (printer) async {
+      await printer.writeExtensionTypeDeclaration(declaration);
     });
   }
 
@@ -70,7 +81,7 @@ import 'package:_fe_analyzer_shared/src/macros/api.dart';
 
   @override
   Future<void> buildDeclarationsForMixin(
-    IntrospectableMixinDeclaration declaration,
+    MixinDeclaration declaration,
     MemberDeclarationBuilder builder,
   ) async {
     await _write(builder, declaration, (printer) async {
@@ -273,6 +284,22 @@ class _Printer {
     }
 
     sink.writelnWithIndent('extension ${e.identifier.name}');
+
+    await sink.withIndent(() async {
+      await _writeMetadata(e);
+
+      await _writeTypeParameters(e.typeParameters);
+      await _writeNamedTypeAnnotation('onType', e.onType);
+      await _writeTypeDeclarationMembers(e);
+    });
+  }
+
+  Future<void> writeExtensionTypeDeclaration(ExtensionTypeDeclaration e) async {
+    if (!shouldWriteDetailsFor(e)) {
+      return;
+    }
+
+    sink.writelnWithIndent('extension type ${e.identifier.name}');
 
     await sink.withIndent(() async {
       await _writeMetadata(e);
@@ -512,27 +539,25 @@ class _Printer {
   Future<void> _writeTypeDeclarationMembers(TypeDeclaration e) async {
     _enclosingDeclarationIdentifier = e.identifier;
 
-    if (e is IntrospectableType) {
-      final constructors = await introspector.constructorsOf(e);
-      await sink.writeElements(
-        'constructors',
-        constructors.where((element) {
-          return element.identifier.name.isNotEmpty || withUnnamedConstructor;
-        }),
-        writeConstructorDeclaration,
-      );
+    final constructors = await introspector.constructorsOf(e);
+    await sink.writeElements(
+      'constructors',
+      constructors.where((element) {
+        return element.identifier.name.isNotEmpty || withUnnamedConstructor;
+      }),
+      writeConstructorDeclaration,
+    );
 
-      await sink.writeElements(
-        'fields',
-        await introspector.fieldsOf(e),
-        writeField,
-      );
-      await sink.writeElements(
-        'methods',
-        await introspector.methodsOf(e),
-        writeMethodDeclaration,
-      );
-    }
+    await sink.writeElements(
+      'fields',
+      await introspector.fieldsOf(e),
+      writeField,
+    );
+    await sink.writeElements(
+      'methods',
+      await introspector.methodsOf(e),
+      writeMethodDeclaration,
+    );
 
     _enclosingDeclarationIdentifier = null;
   }

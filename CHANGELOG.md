@@ -16,6 +16,20 @@
 
 [#51896]: https://github.com/dart-lang/sdk/issues/51896
 
+#### `dart:js_interop`
+
+- **Breaking Change in the representation of JS types** [#52687][]: JS types
+  like `JSAny` were previously represented using a custom erasure of
+  `@staticInterop` types that were compiler-specific. They are now represented
+  as extension types where their representation types are compiler-specific.
+  This means that user-defined `@staticInterop` types that implemented `JSAny`
+  or `JSObject` can no longer do so and need to use
+  `JSObject.fromInteropObject`. Going forward, it's recommended to use extension
+  types to define interop APIs. Those extension types can still implement JS
+  types.
+
+[#52687]: https://github.com/dart-lang/sdk/issues/52687
+
 #### `dart:typed_data`
 
 - **BREAKING CHANGE** (https://github.com/dart-lang/sdk/issues/53218) The
@@ -62,6 +76,15 @@
   Dart classes. This information provides little value and keeping it imposes an
   unnecessary maintenance cost.
 
+#### Production JavaScript compiler (dart2js)
+
+- **Breaking Change** [#54201][]:
+  The `Invocation` that is passed to `noSuchMethod` will no longer have a
+  minified `memberName`, even when dart2js is invoked with `--minify`.
+  See [#54201][] for more details.
+
+[#54201]: https://github.com/dart-lang/sdk/issues/54201
+
 #### Linter
 
 - Removed the `iterable_contains_unrelated_type` and
@@ -70,6 +93,22 @@
   [`collection_methods_unrelated_type`][] lint.
 
 [`collection_methods_unrelated_type`]: https://dart.dev/lints/collection_methods_unrelated_type
+
+## 3.2.3 - 2023-12-06
+
+This is a patch release that:
+
+- Disallows final fields to be used in a constant context during analysis
+  (issue [#54232][]).
+- Upgrades Dart DevTools to version 2.28.4 (issue [#54213][])
+- Fixes new AOT snapshots in the SDK failing with SIGILL in ARM
+  environments that don't support the integer division
+  instructions or x86-64 environments that don't support
+  SSE4.1  (issue [#54215][]).
+
+[#54232]: https://github.com/dart-lang/sdk/issues/54232
+[#54213]: https://github.com/dart-lang/sdk/issues/54213
+[#54215]: https://github.com/dart-lang/sdk/issues/54215
 
 ## 3.2.2 - 2023-11-29
 
