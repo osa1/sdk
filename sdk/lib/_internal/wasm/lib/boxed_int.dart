@@ -103,17 +103,11 @@ final class _BoxedInt extends int {
 
   @pragma("wasm:prefer-inline")
   int operator <<(int shift) {
-    // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shl(shift);
-    }
-
     if (shift < 0) {
       throw ArgumentError(shift);
     }
 
-    // shift >= 64
-    return 0;
+    return value._shl(shift);
   }
 
   external bool operator <(num other);
