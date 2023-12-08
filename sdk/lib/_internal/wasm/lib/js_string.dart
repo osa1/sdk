@@ -326,7 +326,7 @@ final class JSStringImpl implements String {
   @override
   String substring(int start, [int? end]) {
     end ??= length;
-    RangeErrorUtils.checkValidRangePositiveLength(start, length, length);
+    RangeErrorUtils.checkValidRangePositiveLength(start, end, length);
     return JSStringImpl(_jsSubstring(toExternRef, start, end));
   }
 
