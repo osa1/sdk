@@ -306,8 +306,9 @@ final class JSStringImpl implements String {
 
   @override
   String replaceRange(int start, int? end, String replacement) {
-    final e = RangeError.checkValidRange(start, end, length);
-    return _replaceRange(start, e, replacement);
+    end ??= length;
+    RangeErrorUtils.checkValidRangePositiveLength(start, end, length);
+    return _replaceRange(start, end, replacement);
   }
 
   @override
@@ -324,7 +325,8 @@ final class JSStringImpl implements String {
 
   @override
   String substring(int start, [int? end]) {
-    end = RangeError.checkValidRange(start, end, length);
+    end ??= length;
+    RangeErrorUtils.checkValidRangePositiveLength(start, length, length);
     return JSStringImpl(_jsSubstring(toExternRef, start, end));
   }
 

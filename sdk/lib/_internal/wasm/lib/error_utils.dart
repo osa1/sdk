@@ -25,4 +25,18 @@ class RangeErrorUtils {
       throw RangeError.range(value, 0, maxValue);
     }
   }
+
+  /// Same as [RangeError.checkValidRange], but assumes that [length] is
+  /// positive and does less checks. Error reporting is also slightly
+  /// different: when both [start] and [end] are negative, this reports [end]
+  /// instead of [start]. Always inlined.
+  @pragma("wasm:prefer-inline")
+  static void checkValidRangePositiveLength(int start, int end, int length) {
+    if (WasmI64.fromInt(length).ltU(WasmI64.fromInt(end))) {
+      throw RangeError.range(end, 0, length);
+    }
+    if (WasmI64.fromInt(end).ltU(WasmI64.fromInt(start))) {
+      throw RangeError.range(start, 0, end);
+    }
+  }
 }
