@@ -903,6 +903,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
       element: element,
       typeArguments: typeArguments,
       nullabilitySuffix: nullabilitySuffix,
+      alias: alias,
     );
   }
 
@@ -1203,6 +1204,7 @@ class RecordTypeImpl extends TypeImpl implements RecordType {
       positionalFields: positionalFields,
       namedFields: namedFields,
       nullabilitySuffix: nullabilitySuffix,
+      alias: alias,
     );
   }
 
