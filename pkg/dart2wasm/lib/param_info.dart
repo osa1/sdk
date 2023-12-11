@@ -28,12 +28,12 @@ class ParameterInfo {
 
   int get paramCount => positional.length + named.length;
 
-  static Constant? defaultValue(VariableDeclaration param) {
+  static Constant _defaultValue(VariableDeclaration param) {
     Expression? initializer = param.initializer;
     if (initializer is ConstantExpression) {
       return initializer.constant;
     } else if (initializer == null) {
-      return null;
+      return NullConstant();
     } else {
       throw "Non-constant default value";
     }
@@ -52,11 +52,11 @@ class ParameterInfo {
       positional = List.generate(function.positionalParameters.length, (i) {
         // A required parameter has no default value.
         if (i < function.requiredParameterCount) return null;
-        return defaultValue(function.positionalParameters[i]);
+        return _defaultValue(function.positionalParameters[i]);
       });
       named = {
         for (VariableDeclaration param in function.namedParameters)
-          param.name!: defaultValue(param)
+          param.name!: _defaultValue(param)
       };
     } else {
       // A setter parameter has no default value.
@@ -70,11 +70,11 @@ class ParameterInfo {
     positional = List.generate(function.positionalParameters.length, (i) {
       // A required parameter has no default value.
       if (i < function.requiredParameterCount) return null;
-      return defaultValue(function.positionalParameters[i]);
+      return _defaultValue(function.positionalParameters[i]);
     });
     named = {
       for (VariableDeclaration param in function.namedParameters)
-        param.name!: defaultValue(param)
+        param.name!: _defaultValue(param)
     };
   }
 
