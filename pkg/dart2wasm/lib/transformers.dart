@@ -602,22 +602,26 @@ class _WasmTransformer extends Transformer {
         interfaceTarget: whereProc, functionType: whereProcType);
 
     // Finally call cast
-    DartType typeArgument;
-    if (functionNode.returnType is InterfaceType) {
-      typeArgument =
-          (functionNode.returnType as InterfaceType).typeArguments.single;
+    final DartType streamTypeArgument;
+    final DartType functionReturnType = functionNode.returnType;
+    if (functionReturnType is InterfaceType) {
+      if (functionReturnType.classNode == coreTypes.streamClass) {
+        streamTypeArgument = functionReturnType.typeArguments.single;
+      } else {
+        streamTypeArgument = functionReturnType;
+      }
     } else {
-      typeArgument = const DynamicType();
+      streamTypeArgument = const DynamicType();
     }
     Procedure castProc =
         coreTypes.index.getProcedure('dart:async', 'Stream', 'cast');
-    final returnStreamType = InterfaceType(
-        coreTypes.streamClass, typeArgument.nullability, [typeArgument]);
+    final returnStreamType = InterfaceType(coreTypes.streamClass,
+        streamTypeArgument.nullability, [streamTypeArgument]);
     final castProcType = FunctionType(
         [], returnStreamType, Nullability.nonNullable,
         requiredParameterCount: 1);
     final castToExpectedType = InstanceInvocation(InstanceAccessKind.Instance,
-        callWhere, Name('cast'), Arguments([], types: [typeArgument]),
+        callWhere, Name('cast'), Arguments([], types: [streamTypeArgument]),
         interfaceTarget: castProc, functionType: castProcType);
     return FunctionNode(
         Block([
