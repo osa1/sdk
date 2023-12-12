@@ -475,7 +475,7 @@ class JSArrayImpl<T extends JSAny?> implements List<T> {
 
   @pragma("wasm:prefer-inline")
   void _setUnchecked(int index, T value) => js.JS<void>('(a, i, v) => a[i] = v',
-      toExternRef, index.toJS.toExternRef, WasmI32.fromInt(index));
+      toExternRef, WasmI32.fromInt(index), value.toExternRef);
 
   @override
   @pragma("wasm:prefer-inline")
