@@ -95,7 +95,6 @@ class Translator with KernelNodes {
   final Set<Member> membersBeingGenerated = {};
   final Map<Reference, Closures> constructorClosures = {};
   final List<_FunctionGenerator> _pendingFunctions = [];
-  late final Procedure mainFunction;
   late final w.ModuleBuilder m;
   late final w.FunctionBuilder initFunction;
   late final w.ValueType voidMarker;
@@ -269,7 +268,7 @@ class Translator with KernelNodes {
   w.Module translate() {
     m = w.ModuleBuilder(watchPoints: options.watchPoints);
     voidMarker = w.RefType.def(w.StructType("void"), nullable: true);
-    mainFunction = _findMainMethod(libraries.first);
+    final Procedure mainFunction = _findMainMethod(libraries.first);
 
     // Collect imports and exports as the very first thing so the function types
     // for the imports can be places in singleton recursion groups.
@@ -287,7 +286,8 @@ class Translator with KernelNodes {
 
     dispatchTable.build();
 
-    m.exports.export("\$getMain", generateGetMain(mainFunction));
+    // m.exports.export("\$getMain", generateGetMain(mainFunction));
+    generateInvokeMain(mainFunction);
 
     functions.initialize();
     while (!functions.isWorkListEmpty()) {
@@ -410,14 +410,35 @@ class Translator with KernelNodes {
     }
   }
 
-  w.BaseFunction generateGetMain(Procedure mainFunction) {
-    final getMain = m.functions.define(m.types
-        .defineFunction(const [], const [w.RefType.any(nullable: true)]));
-    constants.instantiateConstant(getMain, getMain.body,
-        StaticTearOffConstant(mainFunction), getMain.type.outputs.single);
-    getMain.body.end();
+  void generateInvokeMain(Procedure mainFunction) {
+    final invokeMain = m.functions.define(m.types
+        .defineFunction(const [w.RefType.any(nullable: true)], const []));
+    final mainArgs = mainFunction.function.positionalParameters;
+    final b = invokeMain.body;
 
-    return getMain;
+    b.try_();
+    if (mainArgs.isNotEmpty) {
+      b.local_get(invokeMain.locals[0]);
+      b.ref_cast(translateType(mainArgs[0].type) as w.RefType);
+    }
+
+    if (mainArgs.length == 2) {
+      // Null as isolate value.
+      b.ref_null((translateType(mainArgs[1].type) as w.RefType).heapType);
+    }
+    b.call(functions.getFunction(mainFunction.reference));
+    b.drop();
+    b.catch_(exceptionTag);
+    // Print the exception and stack trace.
+    b.call(functions.getFunction(coreTypes.printProcedure.reference));
+    b.drop();
+    b.call(functions.getFunction(coreTypes.printProcedure.reference));
+    b.drop();
+    b.end(); // end try
+
+    b.end(); // end function
+
+    m.exports.export("\$invokeMain", invokeMain);
   }
 
   Class classForType(DartType type) {

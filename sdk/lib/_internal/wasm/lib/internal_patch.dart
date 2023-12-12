@@ -100,27 +100,6 @@ void _invokeCallback1(void Function(dynamic) callback, dynamic arg) {
   }
 }
 
-/// Used to invoke the `main` function from JS, printing any exceptions that
-/// escape.
-@pragma("wasm:export", "\$invokeMain")
-void _invokeMain(Function main, List<String> args) {
-  try {
-    if (main is void Function(List<String>, Null)) {
-      main(List.unmodifiable(args), null);
-    } else if (main is void Function(List<String>)) {
-      main(List.unmodifiable(args));
-    } else if (main is void Function()) {
-      main();
-    } else {
-      throw "Could not call main";
-    }
-  } catch (e, s) {
-    print(e);
-    print(s);
-    rethrow;
-  }
-}
-
 @pragma("wasm:export", "\$makeStringList")
 List<String> _makeStringList() => <String>[];
 
