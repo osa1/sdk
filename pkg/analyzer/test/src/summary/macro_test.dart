@@ -51,6 +51,7 @@ main() {
     defineReflectiveTests(MacroApplicationOrderTest_keepLinking);
     defineReflectiveTests(MacroApplicationOrderTest_fromBytes);
     defineReflectiveTests(MacroCodeGenerationTest);
+    defineReflectiveTests(MacroStaticTypeTest);
     defineReflectiveTests(MacroExampleTest);
     defineReflectiveTests(UpdateNodeTextExpectations);
   });
@@ -1014,6 +1015,291 @@ class MacroCodeGenerationTest extends MacroElementsBaseTest {
       '$testPackageLibPath/code_generation.dart',
       _getMacroCode('code_generation.dart'),
     );
+  }
+
+  test_inferOmittedType_fieldInstance_type() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  num? foo = 42;
+}
+
+class B extends A {
+  @AugmentForOmittedTypes()
+  var foo;
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class B {
+  augment prefix0.num? foo = 0;
+}
+''');
+  }
+
+  test_inferOmittedType_fieldStatic_type() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  static var foo;
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment static prefix0.dynamic foo = 0;
+}
+''');
+  }
+
+  test_inferOmittedType_function_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+@AugmentForOmittedTypes()
+foo() {}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment prefix0.dynamic foo() {}
+''');
+  }
+
+  test_inferOmittedType_functionType_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+@AugmentForOmittedTypes()
+void foo(Function() a) {}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment void foo(prefix0.dynamic Function() a, ) {}
+''');
+  }
+
+  test_inferOmittedType_getterInstance_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  int get foo => 0;
+}
+
+class B extends A {
+  @AugmentForOmittedTypes()
+  get foo => 0;
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class B {
+  augment prefix0.int get foo {}
+}
+''');
+  }
+
+  test_inferOmittedType_methodInstance_formalParameter() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  void foo(int a) {}
+}
+
+class B extends A {
+  @AugmentForOmittedTypes()
+  void foo(a) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class B {
+  augment void foo(prefix0.int a, ) {}
+}
+''');
+  }
+
+  test_inferOmittedType_methodInstance_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  int foo() => 0;
+}
+
+class B extends A {
+  @AugmentForOmittedTypes()
+  foo() {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class B {
+  augment prefix0.int foo() {}
+}
+''');
+  }
+
+  test_inferOmittedType_methodStatic_formalParameter() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  static void foo(a) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment static void foo(prefix0.dynamic a, ) {}
+}
+''');
+  }
+
+  test_inferOmittedType_methodStatic_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  static foo() {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment static prefix0.dynamic foo() {}
+}
+''');
+  }
+
+  test_inferOmittedType_setterInstance_formalParameter() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  void set foo(int a) {}
+}
+
+class B extends A {
+  @AugmentForOmittedTypes()
+  void set foo(a) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class B {
+  augment void set foo(prefix0.int a, ) {}
+}
+''');
+  }
+
+  test_inferOmittedType_setterInstance_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  set foo(int _) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment void set foo(prefix0.int _, ) {}
+}
+''');
+  }
+
+  test_inferOmittedType_setterStatic_formalParameter() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  static void set foo(a) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment static void set foo(prefix0.dynamic a, ) {}
+}
+''');
+  }
+
+  test_inferOmittedType_setterStatic_returnType() async {
+    var library = await buildLibrary(r'''
+import 'code_generation.dart';
+
+class A {
+  @AugmentForOmittedTypes()
+  static set foo(int _) {}
+}
+''');
+
+    _assertMacroCode(library, r'''
+library augment 'test.dart';
+
+import 'dart:core' as prefix0;
+
+augment class A {
+  augment static void set foo(prefix0.int _, ) {}
+}
+''');
   }
 
   test_resolveIdentifier_class_field_instance() async {
@@ -2152,7 +2438,7 @@ abstract class MacroElementsBaseTest extends ElementsBaseTest {
 
   /// Verifies the code of the macro generated augmentation.
   void _assertMacroCode(LibraryElementImpl library, String expected) {
-    final actual = library.augmentations.single.macroGenerated!.code;
+    final actual = _getMacroGeneratedCode(library);
     if (actual != expected) {
       print('-------- Actual --------');
       print('$actual------------------------');
@@ -2193,6 +2479,14 @@ $code
         .getChildAssumingFile('test/src/summary/macro/$relativePath')
         .readAsStringSync();
     return code.replaceAll('/*macro*/', 'macro');
+  }
+
+  String _getMacroGeneratedCode(LibraryElementImpl library) {
+    if (library.macroDiagnostics.isNotEmpty) {
+      failWithLibraryText(library);
+    }
+
+    return library.augmentations.single.macroGenerated!.code;
   }
 }
 
@@ -5742,6 +6036,112 @@ class A
 ''');
   }
 
+  test_unit_function() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+void foo() {}
+''', r'''
+foo
+  flags: hasBody
+  returnType: void
+''');
+  }
+
+  test_unit_function_flags_hasExternal() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+external void foo();
+''', r'''
+foo
+  flags: hasExternal
+  returnType: void
+''');
+  }
+
+  test_unit_function_metadata() async {
+    await _assertIntrospectText(r'''
+@Introspect(withMetadata: true)
+@a1
+@a2
+void foo() {}
+
+const a1 = 0;
+const a2 = 0;
+''', r'''
+foo
+  flags: hasBody
+  metadata
+    ConstructorMetadataAnnotation
+      type: Introspect
+    IdentifierMetadataAnnotation
+      identifier: a1
+    IdentifierMetadataAnnotation
+      identifier: a2
+  returnType: void
+''');
+  }
+
+  test_unit_function_namedParameters() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+void foo({required int a, String? b}) {}
+''', r'''
+foo
+  flags: hasBody
+  namedParameters
+    a
+      flags: isNamed isRequired
+      type: int
+    b
+      flags: isNamed
+      type: String?
+  returnType: void
+''');
+  }
+
+  test_unit_function_positionalParameters() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+void foo(int a, [String? b]) {}
+''', r'''
+foo
+  flags: hasBody
+  positionalParameters
+    a
+      flags: isRequired
+      type: int
+    b
+      type: String?
+  returnType: void
+''');
+  }
+
+  test_unit_getter() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+int get foo => 0;
+''', r'''
+foo
+  flags: hasBody isGetter
+  returnType: int
+''');
+  }
+
+  test_unit_setter() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+set foo(int value) {}
+''', r'''
+foo
+  flags: hasBody isSetter
+  positionalParameters
+    value
+      flags: isRequired
+      type: int
+  returnType: OmittedType
+''');
+  }
+
   /// Assert that the textual dump of the introspection information produced
   /// by `IntrospectTypesPhaseMacro` in [code], is the [expected].
   Future<void> _assertIntrospectText(
@@ -5755,6 +6155,195 @@ class A
       print('$actual------------------------');
     }
     expect(actual, expected);
+  }
+}
+
+@reflectiveTest
+class MacroStaticTypeTest extends MacroElementsBaseTest {
+  @override
+  bool get keepLinkingLibraries => true;
+
+  @override
+  Future<void> setUp() async {
+    await super.setUp();
+
+    newFile(
+      '$testPackageLibPath/static_type.dart',
+      _getMacroCode('static_type.dart'),
+    );
+  }
+
+  test_isExactly() async {
+    const testCases = {
+      ('double', 'double', true),
+      ('double', 'int', false),
+      ('int', 'double', false),
+      ('int', 'int', true),
+      ('int', 'void', false),
+      ('void', 'void', true),
+      // Object
+      ('Object?', 'Object?', true),
+      ('Object?', 'Object', false),
+      ('Object?', 'dynamic', false),
+      // InterfaceType, type arguments
+      ('List<int>', 'List<double>', false),
+      ('List<int>', 'List<int>', true),
+      // FunctionType
+      //   returnType
+      ('void Function()', 'void Function()', true),
+      ('void Function()', 'int Function()', false),
+      //   typeParameters
+      ('void Function<T>()', 'void Function<T>()', true),
+      ('void Function<T>()', 'void Function()', false),
+      //   positionalParameters
+      ('void Function(int a)', 'void Function(int a)', true),
+      ('void Function(int a)', 'void Function(double a)', false),
+      ('void Function([int a])', 'void Function([int a])', true),
+      // TODO(scheglov): enable when we can distinguish
+      // ('void Function([int a])', 'void Function(int a)', false),
+      //   namedParameters
+      ('void Function({int a})', 'void Function({int a})', true),
+      ('void Function({int a})', 'void Function({double a})', false),
+      (
+        'void Function({required int a})',
+        'void Function({required int a})',
+        true,
+      ),
+      ('void Function({int a})', 'void Function({required int a})', false),
+    };
+
+    for (final testCase in testCases) {
+      await disposeAnalysisContextCollection();
+      await _assertIsExactly(
+        firstTypeCode: testCase.$1,
+        secondTypeCode: testCase.$2,
+        isExactly: testCase.$3,
+      );
+    }
+  }
+
+  test_isExactly_enum_notSame() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'B',
+      isExactly: false,
+      additionalDeclarations: r'''
+enum A { v }
+enum B { v }
+''',
+    );
+  }
+
+  test_isExactly_enum_same() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'A',
+      isExactly: true,
+      additionalDeclarations: r'''
+enum A { v }
+''',
+    );
+  }
+
+  test_isExactly_extensionType_notSame() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'B',
+      isExactly: false,
+      additionalDeclarations: r'''
+extension type A(int it) {}
+extension type B(int it) {}
+''',
+    );
+  }
+
+  test_isExactly_extensionType_same() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'A',
+      isExactly: true,
+      additionalDeclarations: r'''
+extension type A(int it) {}
+''',
+    );
+  }
+
+  test_isExactly_mixin_notSame() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'B',
+      isExactly: false,
+      additionalDeclarations: r'''
+mixin A {}
+mixin B {}
+''',
+    );
+  }
+
+  test_isExactly_mixin_same() async {
+    await _assertIsExactly(
+      firstTypeCode: 'A',
+      secondTypeCode: 'A',
+      isExactly: true,
+      additionalDeclarations: r'''
+mixin A {}
+''',
+    );
+  }
+
+  test_isExactly_typeParameter_notSame() async {
+    final library = await buildLibrary('''
+import 'static_type.dart';
+
+class A {
+  @IsExactly()
+  void foo<T, U>(T a, U b) {}
+}
+''');
+
+    final generated = _getMacroGeneratedCode(library);
+    expect(generated, contains('void isExactly_false() {}'));
+  }
+
+  test_isExactly_typeParameter_same() async {
+    final library = await buildLibrary('''
+import 'static_type.dart';
+
+class A {
+  @IsExactly()
+  void foo<T>(T a, T b) {}
+}
+''');
+
+    final generated = _getMacroGeneratedCode(library);
+    expect(generated, contains('void isExactly_true() {}'));
+  }
+
+  Future<void> _assertIsExactly({
+    required String firstTypeCode,
+    required String secondTypeCode,
+    required bool isExactly,
+    String additionalDeclarations = '',
+  }) async {
+    final library = await buildLibrary('''
+import 'static_type.dart';
+
+$additionalDeclarations
+
+class A {
+  @IsExactly()
+  void foo($firstTypeCode a, $secondTypeCode b) {}
+}
+''');
+
+    final generated = _getMacroGeneratedCode(library);
+    final expected = 'void isExactly_$isExactly() {}';
+    if (!generated.contains(expected)) {
+      fail(
+        '`$firstTypeCode` isExactly `$secondTypeCode`'
+        ' expected to be `$isExactly`, but is not.\n',
+      );
+    }
   }
 }
 
