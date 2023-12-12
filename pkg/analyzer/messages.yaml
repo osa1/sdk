@@ -1171,6 +1171,7 @@ CompileTimeErrorCode:
   AWAIT_OF_EXTENSION_TYPE_NOT_FUTURE:
     problemMessage: "The 'await' expression can't be used for an expression with an extension type that is not a subtype of 'Future'."
     correctionMessage: Try removing the `await`, or updating the extension type to implement 'Future'.
+    hasPublishedDocs: true
     documentation: |-
       #### Description
 
@@ -5182,6 +5183,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER:
     problemMessage: "Extension type constructors can't declare super formal parameters."
     correctionMessage: Try removing the super formal parameter declaration.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5222,6 +5224,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_INVOCATION:
     problemMessage: Extension type constructors can't include super initializers.
     correctionMessage: Try removing the super constructor invocation.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5254,6 +5257,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_DECLARES_INSTANCE_FIELD:
     problemMessage: "Extension types can't declare instance fields."
     correctionMessage: Try replacing the field with a getter.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5297,6 +5301,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_DECLARES_MEMBER_OF_OBJECT:
     problemMessage: "Extension types can't declare members with the same name as a member declared by 'Object'."
     correctionMessage: Try specifying a different name for the member.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5336,6 +5341,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_IMPLEMENTS_DISALLOWED_TYPE:
     problemMessage: "Extension types can't implement '{0}'."
     correctionMessage: Try specifying a different type, or remove the type from the list.
+    hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the display string of the disallowed type
@@ -5364,6 +5370,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_IMPLEMENTS_ITSELF:
     problemMessage: "The extension type can't implement itself."
     correctionMessage: Try removing the superinterface that references this extension type.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5402,6 +5409,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_IMPLEMENTS_NOT_SUPERTYPE:
     problemMessage: "'{0}' is not a supertype of '{1}', the representation type."
     correctionMessage: Try specifying a different type, or remove the type from the list.
+    hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the implemented not extension type
@@ -5440,6 +5448,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_IMPLEMENTS_REPRESENTATION_NOT_SUPERTYPE:
     problemMessage: "'{0}', the representation type of '{1}', is not a supertype of '{2}', the representation type of '{3}'."
     correctionMessage: Try specifying a different type, or remove the type from the list.
+    hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the representation type of the implemented extension type
@@ -5488,6 +5497,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_INHERITED_MEMBER_CONFLICT:
     problemMessage: "The extension type '{0}' has more than one distinct member named '{1}' from implemented types."
     correctionMessage: Try redeclaring the corresponding member in this extension type.
+    hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the name of the extension type
@@ -5551,6 +5561,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_REPRESENTATION_DEPENDS_ON_ITSELF:
     problemMessage: "The extension type representation can't depend on itself."
     correctionMessage: Try specifying a different type.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5595,6 +5606,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_REPRESENTATION_TYPE_BOTTOM:
     problemMessage: "The representation type can't be a bottom type."
     correctionMessage: Try specifying a different type.
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -5623,6 +5635,7 @@ CompileTimeErrorCode:
   EXTENSION_TYPE_WITH_ABSTRACT_MEMBER:
     problemMessage: "'{0}' must have a method body because '{1}' is an extension type."
     correctionMessage: "Try adding a body to '{0}'."
+    hasPublishedDocs: true
     comment: |-
       Parameters:
       0: the name of the abstract method
@@ -11568,6 +11581,7 @@ CompileTimeErrorCode:
   NON_COVARIANT_TYPE_PARAMETER_POSITION_IN_REPRESENTATION_TYPE:
     problemMessage: "An extension type parameter can't be used in a non-covariant position of its representation type."
     correctionMessage: "Try removing the type parameters from function parameter types and type parameter bounds."
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -15751,6 +15765,7 @@ CompileTimeErrorCode:
       ```
   SUPER_IN_EXTENSION_TYPE:
     problemMessage: "The 'super' keyword can't be used in an extension type because an extension type doesn't have a superclass."
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -19817,6 +19832,141 @@ FfiCode:
         }
       }
       ```
+  NON_LEAF_CALL_MUST_NOT_TAKE_TYPED_DATA:
+    problemMessage: "FFI non-leaf calls can't take typed data arguments."
+    correctionMessage: Try changing the call to a leaf call.
+    comment: No parameters.
+    hasPublishedDocs: true
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when the value of the `isLeaf`
+      argument of `Pointer.asFunction`, `DynamicLibrary.lookupFunction`, or
+      `@Native` is `false` and the Dart function signature contains a typed
+      data parameter.
+
+      Typed data unwrapping is only supported on arguments for leaf FFI calls.
+
+      For more information about FFI, see [C interop using dart:ffi][ffi].
+
+      #### Example
+
+      The following code produces this diagnostic because the dart function
+      signature contains a typed data, but the `isLeaf` argument is `false`:
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Pointer<NativeFunction<Void Function(Pointer<Uint8>)>> p) {
+        [!p.asFunction<void Function(Uint8List)>()!];
+      }
+      ```
+
+      #### Common fixes
+
+      If the function has at least one typed data parameter, then add
+      the `isLeaf` argument:
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Pointer<NativeFunction<Void Function(Pointer<Uint8>)>> p) {
+        p.asFunction<void Function(Uint8List)>(isLeaf: true);
+      }
+      ```
+
+      If the function also uses `Handle`s, then it must be non-leaf. In That
+      case use `Pointer`s instead of typed data.
+  CALL_MUST_NOT_RETURN_TYPED_DATA:
+    problemMessage: "FFI calls can't return typed data."
+    correctionMessage: Try changing using `Pointer`s.
+    comment: No parameters.
+    hasPublishedDocs: true
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when the return type of
+      `Pointer.asFunction`, `DynamicLibrary.lookupFunction`, or
+      `@Native` is a typed data.
+
+      Typed data unwrapping is only supported on arguments for leaf FFI calls.
+
+      For more information about FFI, see [C interop using dart:ffi][ffi].
+
+      #### Example
+
+      The following code produces this diagnostic because the dart function
+      signature contains a typed data, but the `isLeaf` argument is `false`:
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Pointer<NativeFunction<Pointer<Uint8> Function()>> p) {
+        [!p.asFunction<Uint8List Function()>()!];
+      }
+      ```
+
+      #### Common fixes
+
+      Use the `Pointer` type instead:
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Pointer<NativeFunction<Pointer<Uint8> Function()>> p) {
+        p.asFunction<Pointer<Uint8> Function()>();
+      }
+      ```
+  CALLBACK_MUST_NOT_USE_TYPED_DATA:
+    problemMessage: "FFI callbacks can't take typed data arguments or return value."
+    correctionMessage: Try changing using `Pointer`s.
+    comment: No parameters.
+    hasPublishedDocs: true
+    documentation: |-
+      #### Description
+
+      The analyzer produces this diagnostic when an invocation of
+      `Pointer.fromFunction`, one of`NativeCallable`'s constructors has a
+      typed data argument or return value."
+
+      Typed data unwrapping is only supported on arguments for leaf FFI calls.
+
+      For more information about FFI, see [C interop using dart:ffi][ffi].
+
+      #### Example
+
+      The following code produces this diagnostic because the parameter type
+      of `g` is a typed data.
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Uint8List i) {}
+
+      void g() {
+        Pointer.fromFunction<Void Function(Pointer<Uint8>)>(f);
+      }
+      ```
+
+      #### Common fixes
+
+      Use the `Pointer` type instead:
+
+      ```dart
+      import 'dart:ffi';
+      import 'dart:typed_data';
+
+      void f(Pointer<Uint8> i) {}
+
+      void g() {
+        Pointer.fromFunction<Void Function(Pointer<Uint8>)>(f);
+      }
+      ```
   NON_NATIVE_FUNCTION_TYPE_ARGUMENT_TO_POINTER:
     problemMessage: "Can't invoke 'asFunction' because the function signature '{0}' for the pointer isn't a valid C function signature."
     correctionMessage: "Try changing the function argument in 'NativeFunction' to only use NativeTypes."
@@ -20696,7 +20846,7 @@ HintCode:
 ManifestWarningCode:
   CAMERA_PERMISSIONS_INCOMPATIBLE:
     problemMessage: Camera permissions make app incompatible for Chrome OS, consider adding optional features "android.hardware.camera" and "android.hardware.camera.autofocus".
-    correctionMessage: "Try adding `<uses-feature android:name=\"android.hardware.camera\"  android:required=\"false\">` `<uses-feature android:name=\"android.hardware.camera.autofocus\"  android:required=\"false\">`."
+    correctionMessage: 'Try adding `<uses-feature android:name="android.hardware.camera"  android:required="false">` `<uses-feature android:name="android.hardware.camera.autofocus"  android:required="false">`.'
     comment: |-
       A code indicating that the camera permissions is not supported on Chrome
       OS.
@@ -20705,14 +20855,14 @@ ManifestWarningCode:
     correctionMessage: Consider declaring the corresponding activity element with `resizableActivity="true"` attribute.
     comment: A code indicating that the activity is set to be non resizable.
   NO_TOUCHSCREEN_FEATURE:
-    problemMessage: "The default \"android.hardware.touchscreen\" needs to be optional for Chrome OS. "
-    correctionMessage: "Consider adding <uses-feature android:name=\"android.hardware.touchscreen\" android:required=\"false\" /> to the manifest."
+    problemMessage: 'The default "android.hardware.touchscreen" needs to be optional for Chrome OS. '
+    correctionMessage: 'Consider adding <uses-feature android:name="android.hardware.touchscreen" android:required="false" /> to the manifest.'
     comment: |-
       A code indicating that the touchscreen feature is not specified in the
       manifest.
   PERMISSION_IMPLIES_UNSUPPORTED_HARDWARE:
     problemMessage: "Permission makes app incompatible for Chrome OS, consider adding optional {0} feature tag, "
-    correctionMessage: " Try adding `<uses-feature android:name=\"{0}\"  android:required=\"false\">`."
+    correctionMessage: ' Try adding `<uses-feature android:name="{0}"  android:required="false">`.'
     comment: |-
       A code indicating that a specified permission is not supported on Chrome
       OS.
@@ -20725,7 +20875,7 @@ ManifestWarningCode:
     comment: A code indicating that the activity is locked to an orientation.
   UNSUPPORTED_CHROME_OS_FEATURE:
     problemMessage: "The feature {0} isn't supported on Chrome OS, consider making it optional."
-    correctionMessage: "Try changing to `android:required=\"false\"` for this feature."
+    correctionMessage: 'Try changing to `android:required="false"` for this feature.'
     comment: |-
       A code indicating that a specified feature is not supported on Chrome OS.
 
@@ -20733,7 +20883,7 @@ ManifestWarningCode:
       0: the name of the feature
   UNSUPPORTED_CHROME_OS_HARDWARE:
     problemMessage: "The feature {0} isn't supported on Chrome OS, consider making it optional."
-    correctionMessage: "Try adding `android:required=\"false\"` for this feature."
+    correctionMessage: 'Try adding `android:required="false"` for this feature.'
     comment: |-
       A code indicating that a specified hardware feature is not supported on
       Chrome OS.
@@ -21181,7 +21331,7 @@ PubspecWarningCode:
   ASSET_MISSING_PATH:
     problemMessage: "Asset map entry must contain a 'path' field."
     correctionMessage: "Try adding a 'path' field."
-    hasPublishedDocs: false
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -21260,7 +21410,7 @@ PubspecWarningCode:
   ASSET_NOT_STRING_OR_MAP:
     problemMessage: An asset value is required to be a file path (string) or map.
     correctionMessage: Try converting the value to be a string or map.
-    hasPublishedDocs: false
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -21309,7 +21459,7 @@ PubspecWarningCode:
   ASSET_PATH_NOT_STRING:
     problemMessage: Asset paths are required to be file paths (strings).
     correctionMessage: Try converting the value to be a string.
-    hasPublishedDocs: false
+    hasPublishedDocs: true
     comment: No parameters.
     documentation: |-
       #### Description
@@ -22906,18 +23056,18 @@ WarningCode:
       2: the name of the second missing argument
       3: the name of the third missing argument
   DOC_DIRECTIVE_MISSING_TWO_ARGUMENTS:
-   sharedName: DOC_DIRECTIVE_MISSING_ARGUMENT
-   problemMessage: "The '{0}' directive is missing a '{1}' and a '{2}' argument."
-   correctionMessage: "Try adding the missing arguments before the closing '}'."
-   hasPublishedDocs: false
-   comment: |-
-     Parameters:
-     0: the name of the doc directive
-     1: the name of the first missing argument
-     2: the name of the second missing argument
+    sharedName: DOC_DIRECTIVE_MISSING_ARGUMENT
+    problemMessage: "The '{0}' directive is missing a '{1}' and a '{2}' argument."
+    correctionMessage: "Try adding the missing arguments before the closing '}'."
+    hasPublishedDocs: false
+    comment: |-
+      Parameters:
+      0: the name of the doc directive
+      1: the name of the first missing argument
+      2: the name of the second missing argument
   DOC_DIRECTIVE_UNKNOWN:
     problemMessage: "Doc directive '{0}' is unknown."
-    correctionMessage: 'Try using one of the supported doc directives.'
+    correctionMessage: "Try using one of the supported doc directives."
     hasPublishedDocs: false
     comment: |-
       Parameters:
@@ -24905,6 +25055,7 @@ WarningCode:
   REDECLARE_ON_NON_REDECLARING_MEMBER:
     problemMessage: "The {0} doesn't redeclare a {0} declared in a superinterface."
     correctionMessage: Try updating this member to match a declaration in a superinterface, or removing the redeclare annotation.
+    hasPublishedDocs: true
     comment: |-
       An error code indicating the use of a redeclare annotation on a member that does not redeclare.
 
@@ -24976,7 +25127,7 @@ WarningCode:
       0: the rule name
       1: the SDK version in which the lint was removed
   REPLACED_LINT_USE:
-    problemMessage:  "'{0}' was replaced by '{2}' in Dart '{1}'."
+    problemMessage: "'{0}' was replaced by '{2}' in Dart '{1}'."
     correctionMessage: "Replace '{0}' with '{1}'."
     comment: |-
       An error code indicating use of a removed lint rule.

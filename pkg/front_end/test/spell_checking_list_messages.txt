@@ -98,6 +98,7 @@ part(s)
 patch(es)
 patterns
 placing
+pointer`s
 pragma
 preexisting
 pubspec.yaml
@@ -123,6 +124,7 @@ team
 tearoff
 this.namedconstructor
 this.x
+tojs
 trusttypes
 type3.#name
 u

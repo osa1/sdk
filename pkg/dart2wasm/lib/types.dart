@@ -68,7 +68,7 @@ class Types {
   late final w.ValueType typeArrayExpectedType =
       w.RefType.def(typeArrayArrayType, nullable: false);
 
-  /// Wasm value type of `List<_NamedParameter>`
+  /// Wasm value type of `WasmObjectArray<_NamedParameter>`
   late final w.ValueType namedParametersExpectedType = classAndFieldToType(
       translator.functionTypeClass, FieldIndex.functionTypeNamedParameters);
 
@@ -209,8 +209,12 @@ class Types {
     // class ID. If we ever change that logic, we will need to change this code.
     List<String> typeNames = [];
     for (ClassInfo classInfo in translator.classes) {
-      String className = classInfo.cls?.name ?? '';
-      typeNames.add(className);
+      Class? cls = classInfo.cls;
+      if (cls == null || cls.isAnonymousMixin) {
+        typeNames.add("");
+      } else {
+        typeNames.add(cls.name);
+      }
     }
     return typeNames;
   }
@@ -220,69 +224,84 @@ class Types {
   /// TODO(joshualitt): This implementation is just temporary. Eventually we
   /// should move to a data structure more closely resembling [typeRules].
   w.ValueType makeTypeRulesSupers(w.InstructionsBuilder b) {
-    w.ValueType expectedType =
-        translator.classInfo[translator.immutableListClass]!.nonNullableType;
-    DartType listIntType = InterfaceType(translator.immutableListClass,
-        Nullability.nonNullable, [translator.coreTypes.intNonNullableRawType]);
-    List<ListConstant> listIntConstant = [];
+    final wasmI32Type =
+        InterfaceType(translator.wasmI32Class, Nullability.nonNullable);
+
+    final supersOfClasses = <Constant>[];
     for (List<int> supers in typeRulesSupers) {
-      listIntConstant.add(ListConstant(
-          listIntType, supers.map((i) => IntConstant(i)).toList()));
+      supersOfClasses.add(translator.constants.makeIntArrayOf(
+          wasmI32Type, [for (final cid in supers) IntConstant(cid)]));
     }
-    DartType listListIntType = InterfaceType(
-        translator.immutableListClass, Nullability.nonNullable, [listIntType]);
-    translator.constants.instantiateConstant(
-        null, b, ListConstant(listListIntType, listIntConstant), expectedType);
-    return expectedType;
+
+    final arrayOfWasmI32Type = InterfaceType(
+        translator.wasmIntArrayClass, Nullability.nonNullable, [wasmI32Type]);
+    final typeRuleSupers =
+        translator.constants.makeArrayOf(arrayOfWasmI32Type, supersOfClasses);
+
+    final arrayOfArrayOfWasmI32Type = InterfaceType(
+        translator.wasmObjectArrayClass,
+        Nullability.nonNullable,
+        [arrayOfWasmI32Type]);
+
+    final typeRulesSupersType =
+        translator.translateStorageType(arrayOfArrayOfWasmI32Type).unpacked;
+    translator.constants
+        .instantiateConstant(null, b, typeRuleSupers, typeRulesSupersType);
+    return typeRulesSupersType;
   }
 
   /// Similar to the above, but provides the substitutions required for each
   /// supertype.
   /// TODO(joshualitt): Like [makeTypeRulesSupers], this is just temporary.
   w.ValueType makeTypeRulesSubstitutions(w.InstructionsBuilder b) {
-    w.ValueType expectedType =
-        translator.classInfo[translator.immutableListClass]!.nonNullableType;
-    DartType listTypeType = InterfaceType(
-        translator.immutableListClass,
+    final typeType =
+        InterfaceType(translator.typeClass, Nullability.nonNullable);
+    final arrayOfType = InterfaceType(
+        translator.wasmObjectArrayClass, Nullability.nonNullable, [typeType]);
+    final arrayOfArrayOfType = InterfaceType(translator.wasmObjectArrayClass,
+        Nullability.nonNullable, [arrayOfType]);
+    final arrayOfArrayOfArrayOfType = InterfaceType(
+        translator.wasmObjectArrayClass,
         Nullability.nonNullable,
-        [translator.typeClass.getThisType(coreTypes, Nullability.nonNullable)]);
-    DartType listListTypeType = InterfaceType(
-        translator.immutableListClass, Nullability.nonNullable, [listTypeType]);
-    DartType listListListTypeType = InterfaceType(translator.immutableListClass,
-        Nullability.nonNullable, [listListTypeType]);
-    List<ListConstant> substitutionsConstantL0 = [];
+        [arrayOfArrayOfType]);
+
+    final substitutionsConstantL0 = <Constant>[];
     for (List<List<DartType>> substitutionsL1 in typeRulesSubstitutions) {
-      List<ListConstant> substitutionsConstantL1 = [];
+      final substitutionsConstantL1 = <Constant>[];
       for (List<DartType> substitutionsL2 in substitutionsL1) {
-        substitutionsConstantL1.add(ListConstant(listTypeType,
-            substitutionsL2.map((t) => TypeLiteralConstant(t)).toList()));
+        substitutionsConstantL1.add(translator.constants.makeArrayOf(typeType,
+            [for (final t in substitutionsL2) TypeLiteralConstant(t)]));
       }
-      substitutionsConstantL0
-          .add(ListConstant(listListTypeType, substitutionsConstantL1));
+      substitutionsConstantL0.add(translator.constants
+          .makeArrayOf(arrayOfType, substitutionsConstantL1));
     }
+
+    final typeRulesSubstitutionsType =
+        translator.translateStorageType(arrayOfArrayOfArrayOfType).unpacked;
     translator.constants.instantiateConstant(
         null,
         b,
-        ListConstant(listListListTypeType, substitutionsConstantL0),
-        expectedType);
-    return expectedType;
+        translator.constants
+            .makeArrayOf(arrayOfArrayOfType, substitutionsConstantL0),
+        typeRulesSubstitutionsType);
+    return typeRulesSubstitutionsType;
   }
 
   /// Returns a list of string type names for pretty printing types.
   w.ValueType makeTypeNames(w.InstructionsBuilder b) {
-    w.ValueType expectedType =
-        translator.classInfo[translator.immutableListClass]!.nonNullableType;
-    List<StringConstant> listStringConstant = [];
-    for (String name in typeNames) {
-      listStringConstant.add(StringConstant(name));
-    }
-    DartType listStringType = InterfaceType(
-        translator.immutableListClass,
-        Nullability.nonNullable,
-        [translator.coreTypes.stringNonNullableRawType]);
-    translator.constants.instantiateConstant(null, b,
-        ListConstant(listStringType, listStringConstant), expectedType);
-    return expectedType;
+    final stringType =
+        translator.coreTypes.stringRawType(Nullability.nonNullable);
+    final arrayOfStringType = InterfaceType(
+        translator.wasmObjectArrayClass, Nullability.nonNullable, [stringType]);
+
+    final arrayOfStrings = translator.constants.makeArrayOf(
+        stringType, [for (final name in typeNames) StringConstant(name)]);
+
+    final typeNamesType =
+        translator.translateStorageType(arrayOfStringType).unpacked;
+    translator.constants
+        .instantiateConstant(null, b, arrayOfStrings, typeNamesType);
+    return typeNamesType;
   }
 
   /// Build a global array of byte values used to categorize runtime types.
@@ -501,27 +520,27 @@ class Types {
     b.i32_const(encodedNullability(type));
     b.i64_const(typeParameterOffset);
 
-    // List<_Type> typeParameterBounds
-    _makeTypeList(codeGen, type.typeParameters.map((p) => p.bound));
+    // WasmObjectArray<_Type> typeParameterBounds
+    _makeTypeArray(codeGen, type.typeParameters.map((p) => p.bound));
 
-    // List<_Type> typeParameterDefaults
-    _makeTypeList(codeGen, type.typeParameters.map((p) => p.defaultType));
+    // WasmObjectArray<_Type> typeParameterDefaults
+    _makeTypeArray(codeGen, type.typeParameters.map((p) => p.defaultType));
 
     // _Type returnType
     makeType(codeGen, type.returnType);
 
-    // List<_Type> positionalParameters
-    _makeTypeList(codeGen, type.positionalParameters);
+    // WasmObjectArray<_Type> positionalParameters
+    _makeTypeArray(codeGen, type.positionalParameters);
 
     // int requiredParameterCount
     b.i64_const(type.requiredParameterCount);
 
-    // List<_NamedParameter> namedParameters
+    // WasmObjectArray<_NamedParameter> namedParameters
     if (type.namedParameters.every((n) => _isTypeConstant(n.type))) {
       translator.constants.instantiateConstant(
           codeGen.function,
           b,
-          translator.constants.makeNamedParametersList(type),
+          translator.constants.makeNamedParametersArray(type),
           namedParametersExpectedType);
     } else {
       Class namedParameterClass = translator.namedParameterClass;
@@ -542,7 +561,7 @@ class Types {
                 ])));
       }
       w.ValueType namedParametersListType =
-          codeGen.makeListFromExpressions(expressions, namedParameterType);
+          codeGen.makeArrayFromExpressions(expressions, namedParameterType);
       translator.convertType(codeGen.function, namedParametersListType,
           namedParametersExpectedType);
     }

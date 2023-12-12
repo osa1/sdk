@@ -4900,6 +4900,29 @@ const MessageCode messageFfiAddressOfMustBeNative = const MessageCode(
         r"""Argument to 'Native.addressOf' must be annotated with @Native.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeFfiCallMustNotReturnTypedData =
+    messageFfiCallMustNotReturnTypedData;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageFfiCallMustNotReturnTypedData = const MessageCode(
+    "FfiCallMustNotReturnTypedData",
+    analyzerCodes: <String>["CALL_MUST_NOT_RETURN_TYPED_DATA"],
+    problemMessage: r"""FFI calls can't return typed data.""",
+    correctionMessage: r"""Try changing using `Pointer`s.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeFfiCallbackMustNotUseTypedData =
+    messageFfiCallbackMustNotUseTypedData;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageFfiCallbackMustNotUseTypedData = const MessageCode(
+    "FfiCallbackMustNotUseTypedData",
+    analyzerCodes: <String>["CALLBACK_MUST_NOT_USE_TYPED_DATA"],
+    problemMessage:
+        r"""FFI callbacks can't take typed data arguments or return value.""",
+    correctionMessage: r"""Try changing using `Pointer`s.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String string, String name)>
     templateFfiCompoundImplementsFinalizable =
     const Template<Message Function(String string, String name)>(
@@ -5268,6 +5291,17 @@ Message _withArgumentsFfiNativeUnexpectedNumberOfParametersWithReceiver(
           """Unexpected number of Native annotation parameters. Expected ${count} but has ${count2}. Native instance method annotation must have receiver as first argument.""",
       arguments: {'count': count, 'count2': count2});
 }
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeFfiNonLeafCallMustNotTakeTypedData =
+    messageFfiNonLeafCallMustNotTakeTypedData;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageFfiNonLeafCallMustNotTakeTypedData = const MessageCode(
+    "FfiNonLeafCallMustNotTakeTypedData",
+    analyzerCodes: <String>["NON_LEAF_CALL_MUST_NOT_TAKE_TYPED_DATA"],
+    problemMessage: r"""FFI non-leaf calls can't take typed data arguments.""",
+    correctionMessage: r"""Try changing the call to a leaf call.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<
@@ -5704,14 +5738,17 @@ Message _withArgumentsFieldNotPromotedBecauseNotFinal(
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Template<Message Function(String name, String string)>
-    templateFieldNotPromotedBecauseNotPrivate =
-    const Template<Message Function(String name, String string)>(
-        "FieldNotPromotedBecauseNotPrivate",
-        problemMessageTemplate:
-            r"""'#name' refers to a public field so it couldn't be promoted.""",
-        correctionMessageTemplate: r"""See #string""",
-        withArguments: _withArgumentsFieldNotPromotedBecauseNotPrivate);
+const Template<
+    Message Function(
+        String name,
+        String
+            string)> templateFieldNotPromotedBecauseNotPrivate = const Template<
+        Message Function(String name, String string)>(
+    "FieldNotPromotedBecauseNotPrivate",
+    problemMessageTemplate:
+        r"""'#name' refers to a public property so it couldn't be promoted.""",
+    correctionMessageTemplate: r"""See #string""",
+    withArguments: _withArgumentsFieldNotPromotedBecauseNotPrivate);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Message Function(String name, String string)>
@@ -5728,7 +5765,7 @@ Message _withArgumentsFieldNotPromotedBecauseNotPrivate(
   if (string.isEmpty) throw 'No string provided';
   return new Message(codeFieldNotPromotedBecauseNotPrivate,
       problemMessage:
-          """'${name}' refers to a public field so it couldn't be promoted.""",
+          """'${name}' refers to a public property so it couldn't be promoted.""",
       correctionMessage: """See ${string}""",
       arguments: {'name': name, 'string': string});
 }
@@ -8629,6 +8666,18 @@ const MessageCode messageJsInteropExternalMemberNotJSAnnotated = const MessageCo
         r"""Try removing the 'external' keyword or adding a JS interop annotation.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeJsInteropFunctionToJSTypeParameters =
+    messageJsInteropFunctionToJSTypeParameters;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageJsInteropFunctionToJSTypeParameters = const MessageCode(
+    "JsInteropFunctionToJSTypeParameters",
+    problemMessage:
+        r"""Functions converted via `toJS` cannot declare type parameters.""",
+    correctionMessage:
+        r"""Remove the declared type parameters from the function.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeJsInteropInvalidStaticClassMemberName =
     messageJsInteropInvalidStaticClassMemberName;
 
@@ -8831,21 +8880,6 @@ const MessageCode messageJsInteropOperatorsNotSupported = const MessageCode(
     problemMessage:
         r"""JS interop classes do not support operator methods, with the exception of '[]' and '[]=' using static interop.""",
     correctionMessage: r"""Try replacing this with a normal method.""");
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Code<Null>
-    codeJsInteropStaticInteropExternalMemberWithInvalidTypeParameters =
-    messageJsInteropStaticInteropExternalMemberWithInvalidTypeParameters;
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const MessageCode
-    messageJsInteropStaticInteropExternalMemberWithInvalidTypeParameters =
-    const MessageCode(
-        "JsInteropStaticInteropExternalMemberWithInvalidTypeParameters",
-        problemMessage:
-            r"""External static interop members can only use type parameters that extend either a static interop type or one of the 'dart:js_interop' types.""",
-        correctionMessage:
-            r"""Try adding a valid bound to the type parameters used in this member.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeJsInteropStaticInteropGenerativeConstructor =

@@ -73,6 +73,11 @@ class LibraryMacroApplier {
   final bool Function(Uri) isLibraryBeingLinked;
   final DeclarationBuilder declarationBuilder;
 
+  /// The callback to run declarations phase if the type.
+  /// We do it out-of-order when the type is introspected.
+  final Future<void> Function({required Element? targetElement})
+      runDeclarationsPhase;
+
   /// The reversed queue of macro applications to apply.
   ///
   /// We add classes before methods, and methods in the reverse order,
@@ -85,11 +90,17 @@ class LibraryMacroApplier {
   /// 3. source order
   final List<_MacroApplication> _applications = [];
 
-  /// The map from [InstanceElement] to the applications associated with it.
-  /// This includes applications on the class itself, and on the methods of
-  /// the class.
-  final Map<InstanceElement, List<_MacroApplication>> _interfaceApplications =
-      {};
+  /// The applications that currently run the declarations phase.
+  final List<_MacroApplication> _declarationsPhaseRunning = [];
+
+  /// The identifier of the next cycle error.
+  int _declarationsPhaseCycleIndex = 0;
+
+  /// Information about a found declarations phase introspection cycle.
+  /// We use it when receive diagnostics from the macro executor to report
+  /// a more specific diagnostic than the exception.
+  final Map<String, List<_MacroApplication>>
+      _declarationsPhaseCycleApplications = {};
 
   late final macro.TypePhaseIntrospector _typesPhaseIntrospector =
       _TypePhaseIntrospector(elementFactory, declarationBuilder);
@@ -99,12 +110,13 @@ class LibraryMacroApplier {
     required this.macroExecutor,
     required this.isLibraryBeingLinked,
     required this.declarationBuilder,
+    required this.runDeclarationsPhase,
   });
 
   Future<void> add({
     required LibraryElementImpl libraryElement,
     required LibraryOrAugmentationElementImpl container,
-    required ast.CompilationUnit unit,
+    required ast.CompilationUnitImpl unit,
   }) async {
     for (final declaration in unit.declarations.reversed) {
       switch (declaration) {
@@ -118,7 +130,6 @@ class LibraryMacroApplier {
             classNode: declaration,
             classDeclarationKind: macro.DeclarationKind.classType,
             classAnnotations: declaration.metadata,
-            declarationsPhaseInterface: declarationElement,
             members: declaration.members,
           );
         case ast.ClassTypeAliasImpl():
@@ -137,7 +148,6 @@ class LibraryMacroApplier {
             classNode: declaration,
             classDeclarationKind: macro.DeclarationKind.extension,
             classAnnotations: declaration.metadata,
-            declarationsPhaseInterface: null,
             members: declaration.members,
           );
         case ast.ExtensionTypeDeclarationImpl():
@@ -148,14 +158,18 @@ class LibraryMacroApplier {
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
-            classDeclarationKind: macro.DeclarationKind.extension,
+            classDeclarationKind: macro.DeclarationKind.extensionType,
             classAnnotations: declaration.metadata,
-            declarationsPhaseInterface: declarationElement,
             members: declaration.members,
           );
         case ast.FunctionDeclarationImpl():
-          // TODO(scheglov): implement it
-          break;
+          await _addAnnotations(
+            libraryElement: libraryElement,
+            container: container,
+            targetNode: declaration,
+            targetDeclarationKind: macro.DeclarationKind.function,
+            annotations: declaration.metadata,
+          );
         case ast.FunctionTypeAliasImpl():
           // TODO(scheglov): implement it
           break;
@@ -172,14 +186,11 @@ class LibraryMacroApplier {
             classNode: declaration,
             classDeclarationKind: macro.DeclarationKind.mixinType,
             classAnnotations: declaration.metadata,
-            declarationsPhaseInterface: declarationElement,
             members: declaration.members,
           );
         case ast.TopLevelVariableDeclarationImpl():
           // TODO(scheglov): implement it
           break;
-        default:
-          throw UnimplementedError('${declaration.runtimeType}');
       }
     }
   }
@@ -197,30 +208,46 @@ class LibraryMacroApplier {
           results,
           declarationBuilder.typeDeclarationOf,
           declarationBuilder.resolveIdentifier,
-          _inferOmittedType,
+          declarationBuilder.inferOmittedType,
         )
         .trim();
   }
 
   Future<List<macro.MacroExecutionResult>?> executeDeclarationsPhase({
     required LibraryElementImpl library,
+    required Element? targetElement,
   }) async {
+    if (targetElement != null) {
+      for (final running in _declarationsPhaseRunning.indexed) {
+        if (running.$2.target.element == targetElement) {
+          final id = 'DPI${_declarationsPhaseCycleIndex++}';
+          _declarationsPhaseCycleApplications[id] =
+              _declarationsPhaseRunning.skip(running.$1).toList();
+          throw StateError('[$id] Declarations phase introspection cycle.');
+        }
+      }
+    }
+
     final application = _nextForDeclarationsPhase(
       library: library,
+      targetElement: targetElement,
     );
     if (application == null) {
       return null;
     }
 
+    _declarationsPhaseRunning.add(application);
+
     final results = <macro.MacroExecutionResult>[];
 
     await _runWithCatchingExceptions(
       () async {
-        final declaration = _buildDeclaration(application.targetNode);
+        final declaration = _buildDeclaration(application.target.node);
 
         final introspector = _DeclarationPhaseIntrospector(
           elementFactory,
           declarationBuilder,
+          this,
           library.typeSystem,
         );
 
@@ -235,10 +262,11 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      targetElement: application.targetElement,
+      targetElement: application.target.element,
       annotationIndex: application.annotationIndex,
     );
 
+    _declarationsPhaseRunning.remove(application);
     return results;
   }
 
@@ -252,12 +280,13 @@ class LibraryMacroApplier {
 
     await _runWithCatchingExceptions(
       () async {
-        final declaration = _buildDeclaration(application.targetNode);
+        final declaration = _buildDeclaration(application.target.node);
 
         final introspector = _DefinitionPhaseIntrospector(
           elementFactory,
           declarationBuilder,
-          application.libraryElement.typeSystem,
+          this,
+          application.target.library.typeSystem,
         );
 
         final result = await macroExecutor.executeDefinitionsPhase(
@@ -271,7 +300,7 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      targetElement: application.targetElement,
+      targetElement: application.target.element,
       annotationIndex: application.annotationIndex,
     );
 
@@ -288,7 +317,7 @@ class LibraryMacroApplier {
 
     await _runWithCatchingExceptions(
       () async {
-        final declaration = _buildDeclaration(application.targetNode);
+        final declaration = _buildDeclaration(application.target.node);
 
         final result = await macroExecutor.executeTypesPhase(
           application.instance,
@@ -301,7 +330,7 @@ class LibraryMacroApplier {
           results.add(result);
         }
       },
-      targetElement: application.targetElement,
+      targetElement: application.target.element,
       annotationIndex: application.annotationIndex,
     );
 
@@ -311,7 +340,6 @@ class LibraryMacroApplier {
   Future<void> _addAnnotations({
     required LibraryElementImpl libraryElement,
     required LibraryOrAugmentationElementImpl container,
-    required InstanceElement? declarationsPhaseElement,
     required ast.Declaration targetNode,
     required macro.DeclarationKind targetDeclarationKind,
     required List<ast.Annotation> annotations,
@@ -321,7 +349,6 @@ class LibraryMacroApplier {
         await _addAnnotations(
           libraryElement: libraryElement,
           container: container,
-          declarationsPhaseElement: declarationsPhaseElement,
           targetNode: field,
           targetDeclarationKind: macro.DeclarationKind.field,
           annotations: annotations,
@@ -335,6 +362,12 @@ class LibraryMacroApplier {
     if (targetElement == null) {
       return;
     }
+
+    final macroTarget = _MacroTarget(
+      library: libraryElement,
+      node: targetNode,
+      element: targetElement,
+    );
 
     for (final (annotationIndex, annotation) in annotations.indexed) {
       final importedMacro = _importedMacro(
@@ -371,10 +404,7 @@ class LibraryMacroApplier {
       }).toSet();
 
       final application = _MacroApplication(
-        libraryElement: libraryElement,
-        declarationsPhaseElement: declarationsPhaseElement,
-        targetNode: targetNode,
-        targetElement: targetElement,
+        target: macroTarget,
         annotationIndex: annotationIndex,
         annotationNode: annotation,
         instance: instance,
@@ -382,12 +412,6 @@ class LibraryMacroApplier {
       );
 
       _applications.add(application);
-
-      // Record mapping for declarations phase dependencies.
-      if (declarationsPhaseElement != null) {
-        (_interfaceApplications[declarationsPhaseElement] ??= [])
-            .add(application);
-      }
     }
   }
 
@@ -398,7 +422,6 @@ class LibraryMacroApplier {
     required ast.Declaration classNode,
     required macro.DeclarationKind classDeclarationKind,
     required List<ast.Annotation> classAnnotations,
-    required InterfaceElement? declarationsPhaseInterface,
     required List<ast.ClassMember> members,
   }) async {
     await _addAnnotations(
@@ -406,7 +429,6 @@ class LibraryMacroApplier {
       container: container,
       targetNode: classNode,
       targetDeclarationKind: classDeclarationKind,
-      declarationsPhaseElement: declarationsPhaseInterface,
       annotations: classAnnotations,
     );
 
@@ -422,7 +444,6 @@ class LibraryMacroApplier {
         container: container,
         targetNode: member,
         targetDeclarationKind: memberDeclarationKind,
-        declarationsPhaseElement: declarationsPhaseInterface,
         annotations: member.metadata,
       );
     }
@@ -452,8 +473,44 @@ class LibraryMacroApplier {
       );
     }
 
+    bool addAsDeclarationsPhaseIntrospectionCycle(
+      macro.Diagnostic diagnostic,
+    ) {
+      final pattern = RegExp(r'\[(DPI\d+)\] ');
+      final match = pattern.firstMatch(diagnostic.message.message);
+      if (match == null) {
+        return false;
+      }
+
+      final id = match.group(1);
+      final applications = _declarationsPhaseCycleApplications[id];
+      if (applications == null) {
+        return false;
+      }
+
+      final components = applications.map((application) {
+        return DeclarationsIntrospectionCycleComponent(
+          element: application.target.element,
+          annotationIndex: application.annotationIndex,
+        );
+      }).toList();
+
+      // Report the cycle at the first element.
+      final firstElement = applications.first.target.element;
+      firstElement.addMacroDiagnostic(
+        DeclarationsIntrospectionCycleDiagnostic(
+          components: components,
+        ),
+      );
+      return true;
+    }
+
     for (final diagnostic in result.diagnostics) {
-      application.targetElement.addMacroDiagnostic(
+      if (addAsDeclarationsPhaseIntrospectionCycle(diagnostic)) {
+        continue;
+      }
+
+      application.target.element.addMacroDiagnostic(
         MacroDiagnostic(
           severity: diagnostic.severity,
           message: convertMessage(diagnostic.message),
@@ -466,28 +523,6 @@ class LibraryMacroApplier {
 
   macro.Declaration _buildDeclaration(ast.AstNode node) {
     return declarationBuilder.buildDeclaration(node);
-  }
-
-  bool _hasInterfaceDependenciesSatisfied(_MacroApplication application) {
-    final dependencyElements = _interfaceDependencies(
-      application.declarationsPhaseElement,
-    );
-    if (dependencyElements == null) {
-      return true;
-    }
-
-    for (final dependencyElement in dependencyElements) {
-      final applications = _interfaceApplications[dependencyElement];
-      if (applications != null) {
-        for (final dependencyApplication in applications) {
-          if (dependencyApplication.hasDeclarationsPhase) {
-            return false;
-          }
-        }
-      }
-    }
-
-    return true;
   }
 
   /// If [annotation] references a macro, invokes the right callback.
@@ -565,64 +600,22 @@ class LibraryMacroApplier {
     return null;
   }
 
-  macro.TypeAnnotation _inferOmittedType(
-    macro.OmittedTypeAnnotation omittedType,
-  ) {
-    throw UnimplementedError();
-  }
-
-  Set<InstanceElement>? _interfaceDependencies(InstanceElement? element) {
-    // TODO(scheglov): other elements
-    switch (element) {
-      case ExtensionElement():
-        // TODO(scheglov): implement
-        throw UnimplementedError();
-      case MixinElement():
-        final augmented = element.augmented;
-        switch (augmented) {
-          case null:
-            return const {};
-          default:
-            return [
-              ...augmented.superclassConstraints.map((e) => e.element),
-              ...augmented.interfaces.map((e) => e.element),
-            ].whereNotNull().toSet();
-        }
-      case InterfaceElement():
-        final augmented = element.augmented;
-        switch (augmented) {
-          case null:
-            return const {};
-          default:
-            return [
-              element.supertype?.element,
-              ...augmented.mixins.map((e) => e.element),
-              ...augmented.interfaces.map((e) => e.element),
-            ].whereNotNull().toSet();
-        }
-      default:
-        return null;
-    }
-  }
-
   _MacroApplication? _nextForDeclarationsPhase({
     required LibraryElementImpl library,
+    required Element? targetElement,
   }) {
     for (final application in _applications.reversed) {
-      if (!application.hasDeclarationsPhase) {
-        continue;
+      if (targetElement != null) {
+        final applicationElement = application.target.element;
+        if (applicationElement != targetElement &&
+            applicationElement.enclosingElement != targetElement) {
+          continue;
+        }
       }
-      if (application.libraryElement != library) {
-        continue;
+      if (application.phasesToExecute.remove(macro.Phase.declarations)) {
+        return application;
       }
-      if (!_hasInterfaceDependenciesSatisfied(application)) {
-        continue;
-      }
-      // The application has no dependencies to run.
-      application.removeDeclarationsPhase();
-      return application;
     }
-
     return null;
   }
 
@@ -796,11 +789,13 @@ class _ArgumentEvaluation {
 
 class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     implements macro.DeclarationPhaseIntrospector {
+  final LibraryMacroApplier applier;
   final TypeSystemImpl typeSystem;
 
   _DeclarationPhaseIntrospector(
     super.elementFactory,
     super.declarationBuilder,
+    this.applier,
     this.typeSystem,
   );
 
@@ -809,6 +804,8 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     covariant macro.TypeDeclaration type,
   ) async {
     final element = (type as HasElement).element;
+    await _runDeclarationsPhase(element);
+
     if (element case InterfaceElement(:final augmented?)) {
       return augmented.constructors
           .map((e) => e.declaration as ConstructorElementImpl)
@@ -823,6 +820,8 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     macro.TypeDeclaration type,
   ) async {
     final element = (type as HasElement).element;
+    await _runDeclarationsPhase(element);
+
     if (element case InstanceElement(:final augmented?)) {
       return augmented.fields
           .whereNot((e) => e.isSynthetic)
@@ -839,6 +838,8 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     macro.TypeDeclaration type,
   ) async {
     final element = (type as HasElement).element;
+    await _runDeclarationsPhase(element);
+
     if (element case InstanceElement(:final augmented?)) {
       return [
         ...augmented.accessors.whereNot((e) => e.isSynthetic),
@@ -853,9 +854,9 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   }
 
   @override
-  Future<macro.StaticType> resolve(macro.TypeAnnotationCode type) async {
-    var dartType = _resolve(type);
-    return _StaticTypeImpl(typeSystem, dartType);
+  Future<macro.StaticType> resolve(macro.TypeAnnotationCode typeCode) async {
+    final type = declarationBuilder.resolveType(typeCode);
+    return _StaticTypeImpl(typeSystem, type);
   }
 
   @override
@@ -878,26 +879,16 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     throw UnimplementedError();
   }
 
-  DartType _resolve(macro.TypeAnnotationCode type) {
-    // TODO(scheglov): write tests
-    if (type is macro.NamedTypeAnnotationCode) {
-      final identifier = type.name as IdentifierImpl;
-      final element = identifier.element;
-      if (element is ClassElementImpl) {
-        return element.instantiate(
-          typeArguments: type.typeArguments.map(_resolve).toList(),
-          nullabilitySuffix: type.isNullable
-              ? NullabilitySuffix.question
-              : NullabilitySuffix.none,
-        );
-      } else {
-        // TODO(scheglov): Implement other elements.
-        throw UnimplementedError('(${element.runtimeType}) $element');
-      }
-    } else {
-      // TODO(scheglov): Implement other types.
-      throw UnimplementedError('(${type.runtimeType}) $type');
+  Future<void> _runDeclarationsPhase(ElementImpl element) async {
+    // Don't run for the current element.
+    final current = applier._declarationsPhaseRunning.lastOrNull;
+    if (current?.target.element == element) {
+      return;
     }
+
+    await applier.runDeclarationsPhase(
+      targetElement: element,
+    );
   }
 }
 
@@ -906,6 +897,7 @@ class _DefinitionPhaseIntrospector extends _DeclarationPhaseIntrospector
   _DefinitionPhaseIntrospector(
     super.elementFactory,
     super.declarationBuilder,
+    super.applier,
     super.typeSystem,
   );
 
@@ -942,20 +934,14 @@ class _DefinitionPhaseIntrospector extends _DeclarationPhaseIntrospector
 }
 
 class _MacroApplication {
-  final LibraryElementImpl libraryElement;
-  final InstanceElement? declarationsPhaseElement;
-  final ast.AstNode targetNode;
-  final MacroTargetElement targetElement;
+  final _MacroTarget target;
   final int annotationIndex;
   final ast.Annotation annotationNode;
   final macro.MacroInstanceIdentifier instance;
   final Set<macro.Phase> phasesToExecute;
 
   _MacroApplication({
-    required this.libraryElement,
-    required this.declarationsPhaseElement,
-    required this.targetNode,
-    required this.targetElement,
+    required this.target,
     required this.annotationIndex,
     required this.annotationNode,
     required this.instance,
@@ -971,6 +957,18 @@ class _MacroApplication {
   }
 }
 
+class _MacroTarget {
+  final LibraryElementImpl library;
+  final ast.Declaration node;
+  final MacroTargetElement element;
+
+  _MacroTarget({
+    required this.library,
+    required this.node,
+    required this.element,
+  });
+}
+
 class _StaticTypeImpl implements macro.StaticType {
   final TypeSystemImpl typeSystem;
   final DartType type;
@@ -979,8 +977,8 @@ class _StaticTypeImpl implements macro.StaticType {
 
   @override
   Future<bool> isExactly(_StaticTypeImpl other) {
-    // TODO(scheglov): implement isExactly
-    throw UnimplementedError();
+    final result = type == other.type;
+    return Future.value(result);
   }
 
   @override

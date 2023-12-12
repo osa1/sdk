@@ -235,13 +235,8 @@ abstract class ContextResolutionTest
     var workspace = contextFor(file).contextRoot.workspace;
     expect(
         workspace,
-        isA<PubWorkspace>().having(
-            (e) => e.provider
-                .getFolder(e.root)
-                .getChild('.dart_tool/build/generated')
-                .exists,
-            'usesPackageBuild',
-            true));
+        isA<PubWorkspace>()
+            .having((e) => e.usesPackageBuild, 'usesPackageBuild', true));
   }
 
   void assertPubWorkspaceFor(File file) {
@@ -336,9 +331,6 @@ class PubPackageResolutionTest extends ContextResolutionTest {
         EnableString.inline_class,
         EnableString.macros,
       ];
-
-  @override
-  bool get isNullSafetyEnabled => true;
 
   /// The path that is not in [workspaceRootPath], contains external packages.
   String get packagesRootPath => '/packages';
