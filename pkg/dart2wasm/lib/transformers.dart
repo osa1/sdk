@@ -601,15 +601,16 @@ class _WasmTransformer extends Transformer {
         callAsyncMap, Name('where'), Arguments([whereFilter]),
         interfaceTarget: whereProc, functionType: whereProcType);
 
-    // Finally call cast
+    // Finally call cast.
+
+    // Stream element type is defined in language spec section 9. If the return
+    // type is `Stream<U>` then the element type is `U`. Otherwise it needs to
+    // be a supertype of `Object` and the element type is `dynamic`.
     final DartType streamTypeArgument;
     final DartType functionReturnType = functionNode.returnType;
-    if (functionReturnType is InterfaceType) {
-      if (functionReturnType.classNode == coreTypes.streamClass) {
-        streamTypeArgument = functionReturnType.typeArguments.single;
-      } else {
-        streamTypeArgument = functionReturnType;
-      }
+    if (functionReturnType is InterfaceType &&
+        functionReturnType.classNode == coreTypes.streamClass) {
+      streamTypeArgument = functionReturnType.typeArguments.single;
     } else {
       streamTypeArgument = const DynamicType();
     }
