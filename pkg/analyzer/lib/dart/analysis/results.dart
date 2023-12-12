@@ -95,6 +95,10 @@ abstract class FileResult implements SomeFileResult, AnalysisResult {
   /// When `true`, [isAugmentation] and [isPart] are `false`.
   bool get isLibrary;
 
+  /// Whether the file is a macro augmentation.
+  /// When `true`, [isAugmentation] is also `true`.
+  bool get isMacroAugmentation;
+
   /// Whether the file is a part.
   /// When `true`, [isAugmentation] and [isLibrary] are `false`.
   bool get isPart;
@@ -345,7 +349,7 @@ abstract class SomeUnitElementResult {}
 ///
 /// Clients may not extend, implement or mix-in this class.
 ///
-/// TODO(scheglov) Stop implementing [FileResult].
+// TODO(scheglov): Stop implementing [FileResult].
 abstract class UnitElementResult implements SomeUnitElementResult, FileResult {
   /// The element of the file.
   CompilationUnitElement get element;

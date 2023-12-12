@@ -12,6 +12,9 @@ import 'package:front_end/src/api_unstable/vm.dart'
         messageFfiLeafCallMustNotReturnHandle,
         messageFfiLeafCallMustNotTakeHandle,
         templateFfiTypeInvalid,
+        messageFfiCallbackMustNotUseTypedData,
+        messageFfiCallMustNotReturnTypedData,
+        messageFfiNonLeafCallMustNotTakeTypedData,
         templateFfiTypeMismatch;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart' show ClassHierarchy;
@@ -186,7 +189,6 @@ class FfiTransformer extends Transformer {
   final Class abiSpecificIntegerClass;
   final Class abiSpecificIntegerMappingClass;
   final Class varArgsClass;
-  final Class ffiNativeClass;
   final Class nativeFieldWrapperClass1Class;
   final Class ffiStructLayoutClass;
   final Field ffiStructLayoutTypesField;
@@ -279,6 +281,8 @@ class FfiTransformer extends Transformer {
   final Constructor nativeCallablePrivateListenerConstructor;
   final Field nativeCallablePortField;
   final Field nativeCallablePointerField;
+  final Procedure nativeAddressOf;
+  final Procedure nativePrivateAddressOf;
 
   late final InterfaceType nativeFieldWrapperClass1Type;
   late final InterfaceType voidType;
@@ -291,6 +295,9 @@ class FfiTransformer extends Transformer {
   /// Classes corresponding to [NativeType], indexed by [NativeType].
   final Map<NativeType, Class> nativeTypesClasses;
   final Map<Class, NativeType> classNativeTypes;
+
+  /// Typed data classes.
+  final Map<NativeType, Class> nativeTypesTypedDataClasses;
 
   Library? _currentLibrary;
   Library get currentLibrary => _currentLibrary!;
@@ -358,7 +365,6 @@ class FfiTransformer extends Transformer {
         abiSpecificIntegerMappingClass =
             index.getClass('dart:ffi', 'AbiSpecificIntegerMapping'),
         varArgsClass = index.getClass('dart:ffi', 'VarArgs'),
-        ffiNativeClass = index.getClass('dart:ffi', 'FfiNative'),
         nativeFieldWrapperClass1Class =
             index.getClass('dart:nativewrappers', 'NativeFieldWrapperClass1'),
         ffiStructLayoutClass = index.getClass('dart:ffi', '_FfiStructLayout'),
@@ -482,6 +488,21 @@ class FfiTransformer extends Transformer {
             MapEntry(nativeType, index.getClass('dart:ffi', name))),
         classNativeTypes = nativeTypeClassNames.map((nativeType, name) =>
             MapEntry(index.getClass('dart:ffi', name), nativeType)),
+        nativeTypesTypedDataClasses = {
+          for (final nativeType in nativeIntTypesFixedSize)
+            nativeType: index.getClass(
+              'dart:typed_data',
+              '${nativeTypeClassNames[nativeType]}List',
+            ),
+          NativeType.kFloat: index.getClass(
+            'dart:typed_data',
+            'Float32List',
+          ),
+          NativeType.kDouble: index.getClass(
+            'dart:typed_data',
+            'Float64List',
+          ),
+        },
         loadMethods = Map.fromIterable(optimizedTypes, value: (t) {
           final name = nativeTypeClassNames[t];
           return index.getTopLevelProcedure('dart:ffi', "_load$name");
@@ -546,7 +567,11 @@ class FfiTransformer extends Transformer {
         nativeCallablePortField =
             index.getField('dart:ffi', '_NativeCallableListener', '_port'),
         nativeCallablePointerField =
-            index.getField('dart:ffi', '_NativeCallableBase', '_pointer') {
+            index.getField('dart:ffi', '_NativeCallableBase', '_pointer'),
+        nativeAddressOf =
+            index.getMember('dart:ffi', 'Native', 'addressOf') as Procedure,
+        nativePrivateAddressOf =
+            index.getMember('dart:ffi', 'Native', '_addressOf') as Procedure {
     nativeFieldWrapperClass1Type = nativeFieldWrapperClass1Class.getThisType(
         coreTypes, Nullability.nonNullable);
     voidType = nativeTypesClasses[NativeType.kVoid]!
@@ -590,16 +615,23 @@ class FfiTransformer extends Transformer {
   /// [Bool]                               -> [bool]
   /// [Void]                               -> [void]
   /// [Pointer]<T>                         -> [Pointer]<T>
+  ///                                      -> `${T}List` (from dart:typed_data)
   /// T extends [Compound]                 -> T
   /// [Handle]                             -> [Object]
   /// [NativeFunction]<T1 Function(T2, T3) -> S1 Function(S2, S3)
   ///    where DartRepresentationOf(Tn) -> Sn
+  ///
+  /// If [dartType] is provided, it can be used to guide what Dart type is
+  /// expected. Currently, this is only used if [allowTypedData] is provided,
+  /// because `Pointer` is a one to many mapping in this case.
   DartType? convertNativeTypeToDartType(
     DartType nativeType, {
+    DartType? dartType,
     bool allowCompounds = false,
     bool allowHandle = false,
     bool allowInlineArray = false,
     bool allowVoid = false,
+    bool allowTypedData = false,
   }) {
     if (nativeType is! InterfaceType) {
       return null;
@@ -635,6 +667,20 @@ class FfiTransformer extends Transformer {
       return null;
     }
     if (nativeType_ == NativeType.kPointer) {
+      if (allowTypedData && dartType != null) {
+        final elementType = nativeType.typeArguments.single;
+        if (elementType is InterfaceType) {
+          final elementType_ = getType(elementType.classNode);
+          final typedDataClass = nativeTypesTypedDataClasses[elementType_];
+          if (typedDataClass != null) {
+            final typedDataType =
+                InterfaceType(typedDataClass, Nullability.nonNullable);
+            if (typedDataType == dartType) {
+              return dartType;
+            }
+          }
+        }
+      }
       return nativeType;
     }
     if (nativeIntTypesFixedSize.contains(nativeType_)) {
@@ -667,16 +713,31 @@ class FfiTransformer extends Transformer {
     }
     if (fun.typeParameters.isNotEmpty) return null;
 
-    final DartType? returnType = convertNativeTypeToDartType(fun.returnType,
-        allowCompounds: true, allowHandle: true, allowVoid: true);
+    final DartType? returnType = convertNativeTypeToDartType(
+      fun.returnType,
+      dartType: dartType is! FunctionType ? null : dartType.returnType,
+      allowCompounds: true,
+      allowHandle: true,
+      allowVoid: true,
+      allowTypedData: allowTypedData,
+    );
     if (returnType == null) return null;
     final argumentTypes = <DartType>[];
+    int i = 0;
     for (final paramDartType in flattenVarargs(fun).positionalParameters) {
       argumentTypes.add(
-        convertNativeTypeToDartType(paramDartType,
-                allowCompounds: true, allowHandle: true) ??
+        convertNativeTypeToDartType(
+              paramDartType,
+              dartType: dartType is! FunctionType
+                  ? null
+                  : dartType.positionalParameters.elementAtOrNull(i),
+              allowCompounds: true,
+              allowHandle: true,
+              allowTypedData: allowTypedData,
+            ) ??
             dummyDartType,
       );
+      i++;
     }
     if (argumentTypes.contains(dummyDartType)) return null;
     return FunctionType(argumentTypes, returnType, Nullability.legacy);
@@ -1160,17 +1221,29 @@ class FfiTransformer extends Transformer {
         ]))
       ..fileOffset = fileOffset;
 
-    if (dartSignature is FunctionType) {
-      final returnType = dartSignature.returnType;
-      if (returnType is InterfaceType) {
-        final clazz = returnType.classNode;
-        if (clazz.superclass == structClass || clazz.superclass == unionClass) {
-          return invokeCompoundConstructor(asFunctionInternalInvocation, clazz);
-        }
-      }
+    final possibleCompoundReturn = findCompoundReturnType(dartSignature);
+    if (possibleCompoundReturn != null) {
+      return invokeCompoundConstructor(
+          asFunctionInternalInvocation, possibleCompoundReturn);
     }
 
     return asFunctionInternalInvocation;
+  }
+
+  /// Returns the compound [Class] if a compound is returned, otherwise `null`.
+  Class? findCompoundReturnType(DartType dartSignature) {
+    if (dartSignature is! FunctionType) {
+      return null;
+    }
+    final returnType = dartSignature.returnType;
+    if (returnType is! InterfaceType) {
+      return null;
+    }
+    final clazz = returnType.classNode;
+    if (clazz.superclass == structClass || clazz.superclass == unionClass) {
+      return clazz;
+    }
+    return null;
   }
 
   /// Returns
@@ -1198,7 +1271,10 @@ class FfiTransformer extends Transformer {
   }
 
   void ensureLeafCallDoesNotUseHandles(
-      InterfaceType nativeType, bool isLeaf, TreeNode reportErrorOn) {
+    InterfaceType nativeType,
+    bool isLeaf, {
+    required TreeNode reportErrorOn,
+  }) {
     // Handles are only disallowed for leaf calls.
     if (isLeaf == false) {
       return;
@@ -1232,30 +1308,106 @@ class FfiTransformer extends Transformer {
     }
   }
 
+  void ensureOnlyLeafCallsUseTypedData(
+    DartType nativeType,
+    DartType dartType, {
+    required bool isLeaf,
+    required bool isCall,
+    required TreeNode reportErrorOn,
+  }) {
+    if (dartType is! FunctionType || nativeType is! FunctionType) {
+      return;
+    }
+
+    bool error = false;
+
+    final dartReturnType = dartType.returnType;
+    final nativeReturnType = nativeType.returnType;
+    if (dartReturnType is InterfaceType && nativeReturnType is InterfaceType) {
+      if (nativeTypesTypedDataClasses.values
+          .contains(dartReturnType.classNode)) {
+        final nativeIsPointer =
+            getType(nativeReturnType.classNode) == NativeType.kPointer;
+        if (nativeIsPointer) {
+          if (!isCall) {
+            // error callbacks
+            diagnosticReporter.report(messageFfiCallbackMustNotUseTypedData,
+                reportErrorOn.fileOffset, 1, reportErrorOn.location?.file);
+          } else {
+            // error return of call
+            diagnosticReporter.report(messageFfiCallMustNotReturnTypedData,
+                reportErrorOn.fileOffset, 1, reportErrorOn.location?.file);
+          }
+          error = true;
+        }
+      }
+    }
+    int i = 0;
+    nativeType = flattenVarargs(nativeType);
+    for (DartType dartParam in dartType.positionalParameters) {
+      final nativeParam = nativeType.positionalParameters[i];
+      i++;
+      if (dartParam is! InterfaceType || nativeParam is! InterfaceType) {
+        continue;
+      }
+      final nativeIsPointer =
+          getType(nativeParam.classNode) == NativeType.kPointer;
+      if (!nativeIsPointer) {
+        continue;
+      }
+      if (nativeTypesTypedDataClasses.values.contains(dartParam.classNode)) {
+        if (!isCall) {
+          // error callback
+          diagnosticReporter.report(messageFfiCallbackMustNotUseTypedData,
+              reportErrorOn.fileOffset, 1, reportErrorOn.location?.file);
+          error = true;
+        } else if (!isLeaf) {
+          // error not leaf
+          diagnosticReporter.report(messageFfiNonLeafCallMustNotTakeTypedData,
+              reportErrorOn.fileOffset, 1, reportErrorOn.location?.file);
+          error = true;
+        }
+      }
+    }
+
+    if (error) {
+      throw FfiStaticTypeError();
+    }
+  }
+
   void ensureNativeTypeToDartType(
     DartType nativeType,
     DartType dartType,
     TreeNode reportErrorOn, {
     bool allowHandle = false,
-    allowVoid = false,
+    bool allowVoid = false,
+    bool allowTypedData = false,
   }) {
     final DartType correspondingDartType = convertNativeTypeToDartType(
       nativeType,
+      dartType: dartType,
       allowCompounds: true,
       allowHandle: allowHandle,
       allowVoid: allowVoid,
+      allowTypedData: allowTypedData,
     )!;
     if (dartType == correspondingDartType) return;
     if (env.isSubtypeOf(correspondingDartType, dartType,
         SubtypeCheckMode.ignoringNullabilities)) {
       // If subtype, manually check the return type is not void.
-      if (dartType is! FunctionType || correspondingDartType is! FunctionType) {
-        return;
-      } else if ((dartType.returnType is VoidType) ==
-          (correspondingDartType.returnType is VoidType)) {
+      if (correspondingDartType is FunctionType) {
+        if (dartType is FunctionType) {
+          if ((dartType.returnType is VoidType) ==
+              (correspondingDartType.returnType is VoidType)) {
+            return;
+          }
+          // One of the return types is void, the other isn't, report error.
+        } else {
+          // One is a function type, the other isn't, report error.
+        }
+      } else {
         return;
       }
-      // One of the return types is void, the other isn't, report error.
     }
     diagnosticReporter.report(
         templateFfiTypeMismatch.withArguments(dartType, correspondingDartType,

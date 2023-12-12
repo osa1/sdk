@@ -8,7 +8,6 @@ import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/type.dart';
-import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/dart/element/type_visitor.dart';
 import 'package:analyzer/src/summary2/link.dart';
 import 'package:analyzer/src/utilities/extensions/collection.dart';
@@ -151,20 +150,16 @@ class _Node extends graph.Node<_Node> {
     final typeSystem = element.library.typeSystem;
 
     element.representation.type = type;
-    element.typeErasure = ExtensionTypeErasure().perform(type);
+    element.typeErasure = type.extensionTypeErasure;
 
-    var interfaces = node.implementsClause?.interfaces
+    final interfaces = node.implementsClause?.interfaces
         .map((e) => e.type)
         .whereType<InterfaceType>()
         .where(typeSystem.isValidExtensionTypeSuperinterface)
         .toFixedList();
-    if (interfaces == null || interfaces.isEmpty) {
-      final superInterface = typeSystem.isNonNullable(type)
-          ? typeSystem.objectNone
-          : typeSystem.objectQuestion;
-      interfaces = [superInterface];
+    if (interfaces != null) {
+      element.interfaces = interfaces;
     }
-    element.interfaces = interfaces;
 
     final primaryConstructor = element.constructors.first;
     final primaryFormalParameter = primaryConstructor.parameters.first;

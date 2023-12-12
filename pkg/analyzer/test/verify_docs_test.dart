@@ -25,6 +25,7 @@ class SnippetTester {
   final Folder docFolder;
   final String snippetDirPath;
   final String snippetPath;
+  final AnalysisContextCollection collection;
 
   final StringBuffer output = StringBuffer();
 
@@ -41,7 +42,9 @@ class SnippetTester {
   }
 
   SnippetTester._(
-      this.provider, this.docFolder, this.snippetDirPath, this.snippetPath);
+      this.provider, this.docFolder, this.snippetDirPath, this.snippetPath)
+      : collection = AnalysisContextCollection(
+            resourceProvider: provider, includedPaths: [snippetPath]);
 
   /// Return `true` if the given error is a diagnostic produced by a lint that
   /// is allowed to occur in documentation.
@@ -65,12 +68,12 @@ class SnippetTester {
       String line = lines[i];
       if (line == '```dart') {
         if (inCode) {
-          // TODO(brianwilkerson) Report this.
+          // TODO(brianwilkerson): Report this.
         }
         inCode = true;
       } else if (line == '```') {
         if (!inCode) {
-          // TODO(brianwilkerson) Report this.
+          // TODO(brianwilkerson): Report this.
         }
         await verifySnippet(file, codeLines.join('\n'));
         codeLines.clear();
@@ -100,10 +103,10 @@ class SnippetTester {
   }
 
   Future<void> verifySnippet(File file, String snippet) async {
-    // TODO(brianwilkerson) When the files outside of 'src' contain only public
+    // TODO(brianwilkerson): When the files outside of 'src' contain only public
     //  API, write code to compute the list of imports so that new public API
     //  will automatically be allowed.
-    String imports = '''
+    const String imports = '''
 import 'dart:math' as math;
 
 import 'package:analyzer/dart/analysis/analysis_context.dart';
@@ -127,17 +130,20 @@ $snippet
 ''',
         modificationStamp: 1);
     try {
-      AnalysisContextCollection collection = AnalysisContextCollection(
-          includedPaths: <String>[snippetDirPath], resourceProvider: provider);
       List<AnalysisContext> contexts = collection.contexts;
       if (contexts.length != 1) {
         fail('The snippets directory contains multiple analysis contexts.');
       }
-      var results = await contexts[0].currentSession.getErrors(snippetPath);
+      var context = contexts[0];
+      // Mark the snippet as changed since we reuse the same path
+      // for each snippet found.
+      context.changeFile(snippetPath);
+      await context.applyPendingFileChanges();
+      var results = await context.currentSession.getErrors(snippetPath);
       if (results is ErrorsResult) {
         Iterable<AnalysisError> errors = results.errors.where((error) {
           ErrorCode errorCode = error.errorCode;
-          // TODO(brianwilkerson)
+          // TODO(brianwilkerson): .
           return errorCode != WarningCode.UNUSED_IMPORT &&
               errorCode != HintCode.UNUSED_LOCAL_VARIABLE &&
               !isAllowedLint(error);

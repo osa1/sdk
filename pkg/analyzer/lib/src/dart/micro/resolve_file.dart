@@ -355,6 +355,7 @@ class FileResolver {
         lineInfo: file.lineInfo,
         isAugmentation: file.kind is AugmentationFileKind,
         isLibrary: file.kind is LibraryFileKind,
+        isMacroAugmentation: file.isMacroAugmentation,
         isPart: file.kind is PartFileKind,
         errors: errors,
       );
@@ -442,7 +443,7 @@ class FileResolver {
       performance: performance,
     );
 
-    // TODO(scheglov) Casts are unsafe.
+    // TODO(scheglov): Casts are unsafe.
     final kind = file.kind as LibraryFileKind;
     return kind.libraryCycle.apiSignature;
   }

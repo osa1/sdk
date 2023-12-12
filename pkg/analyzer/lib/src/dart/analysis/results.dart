@@ -52,6 +52,9 @@ class ErrorsResultImpl implements ErrorsResult {
   final bool isLibrary;
 
   @override
+  final bool isMacroAugmentation;
+
+  @override
   final bool isPart;
 
   @override
@@ -73,6 +76,7 @@ class ErrorsResultImpl implements ErrorsResult {
     required this.lineInfo,
     required this.isAugmentation,
     required this.isLibrary,
+    required this.isMacroAugmentation,
     required this.isPart,
     required this.errors,
   });
@@ -106,6 +110,11 @@ class FileResultImpl extends AnalysisResultImpl implements FileResult {
 
   @override
   File get file => fileState.resource;
+
+  @override
+  bool get isMacroAugmentation {
+    return fileState.isMacroAugmentation;
+  }
 
   @override
   String get path => fileState.path;
@@ -346,7 +355,7 @@ class UnitElementResultImpl extends FileResultImpl
 
 /// A visitor which locates the [AstNode] which declares [element].
 class _DeclarationByElementLocator extends UnifyingAstVisitor<void> {
-  // TODO: This visitor could be further optimized by special casing each static
+  // TODO(srawlins): This visitor could be further optimized by special casing each static
   // type of [element]. For example, for library-level elements (classes etc),
   // we can iterate over the compilation unit's declarations.
 

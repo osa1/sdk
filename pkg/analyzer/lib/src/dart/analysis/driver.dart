@@ -85,10 +85,10 @@ import 'package:analyzer/src/utilities/uri_cache.dart';
 /// results are "eventually consistent" with the file system by simply calling
 /// [changeFile] any time the contents of a file on the file system have changed.
 ///
-/// TODO(scheglov) Clean up the list of implicitly analyzed files.
+// TODO(scheglov): Clean up the list of implicitly analyzed files.
 class AnalysisDriver implements AnalysisDriverGeneric {
   /// The version of data format, should be incremented on every format change.
-  static const int DATA_VERSION = 317;
+  static const int DATA_VERSION = 324;
 
   /// The number of exception contexts allowed to write. Once this field is
   /// zero, we stop writing any new exception contexts in this process.
@@ -268,7 +268,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   bool _disposed = false;
 
   /// A map that associates files to corresponding analysis options.
-  /// todo(pq): his will replace the single [_analysisOptions] instance.
+  // TODO(pq): his will replace the single [_analysisOptions] instance.
   // ignore: unused_field
   final AnalysisOptionsMap? _analysisOptionsMap;
 
@@ -287,7 +287,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     this.macroSupport,
     this.ownedFiles,
     this.analysisContext,
-    // todo(pq): to replace analysis options instance
+    // TODO(pq): to replace analysis options instance
     AnalysisOptionsMap? analysisOptionsMap,
     FileContentCache? fileContentCache,
     UnlinkedUnitStore? unlinkedUnitStore,
@@ -328,13 +328,19 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   Set<String> get addedFiles => _fileTracker.addedFiles;
 
   /// Return the analysis options used to control analysis.
-  // TODO(pq) @Deprecated("Use 'getAnalysisOptionsForFile(file)' instead")
+  // TODO(pq): @Deprecated("Use 'getAnalysisOptionsForFile(file)' instead")
   AnalysisOptions get analysisOptions => _analysisOptions;
 
   /// Return the current analysis session.
   AnalysisSessionImpl get currentSession {
     return libraryContext.elementFactory.analysisSession;
   }
+
+  /// Return a list of the names of all the plugins enabled in analysis options
+  /// in this driver.
+  List<String> get enabledPluginNames =>
+      // TODO(pq): get this value from a union of all the plugins enabled in the  `_analysisOptionsMap`
+      _analysisOptions.enabledPluginNames;
 
   /// Return the stream that produces [ExceptionResult]s.
   Stream<ExceptionResult> get exceptions => _exceptionController.stream;
@@ -670,7 +676,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   }
 
   AnalysisOptions getAnalysisOptionsForFile(File file) =>
-      // TODO(pq) replace w/ _analysisOptionsMap?.getOptions(file)
+      // TODO(pq): replace w/ _analysisOptionsMap?.getOptions(file)
       _analysisOptions;
 
   /// Return the cached [ResolvedUnitResult] for the Dart file with the given
@@ -816,7 +822,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
         return UnspecifiedInvalidResult();
       case UriResolutionExternalLibrary(:final source):
         final uri = source.uri;
-        // TODO(scheglov) Check if the source is not for library.
+        // TODO(scheglov): Check if the source is not for library.
         var element = libraryContext.getLibraryElement(uri);
         return LibraryElementResultImpl(element);
     }
@@ -1265,16 +1271,13 @@ class AnalysisDriver implements AnalysisDriverGeneric {
       switch (fileChange.kind) {
         case _FileChangeKind.add:
           _fileTracker.addFile(path);
-          break;
         case _FileChangeKind.change:
           _fileTracker.changeFile(path);
-          break;
         case _FileChangeKind.remove:
           _fileTracker.removeFile(path);
-          // TODO(scheglov) We have to do this because we discard files.
+          // TODO(scheglov): We have to do this because we discard files.
           // But this is not right, we need to handle removing better.
           clearLibraryContext();
-          break;
       }
     }
     _pendingFileChanges.clear();
@@ -1547,6 +1550,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
       uri: file.uri,
       isAugmentation: file.kind is AugmentationFileKind,
       isLibrary: file.kind is LibraryFileKind,
+      isMacroAugmentation: file.isMacroAugmentation,
       isPart: file.kind is PartFileKind,
       errors: errors,
     );
@@ -1785,7 +1789,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// Return the empty analysis result with the error.
   AnalysisResult _newMissingDartLibraryResult(
       FileState file, String missingUri) {
-    // TODO(scheglov) Find a better way to report this.
+    // TODO(scheglov): Find a better way to report this.
     var errorsResult = ErrorsResultImpl(
       session: currentSession,
       file: file.resource,
@@ -1793,6 +1797,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
       uri: file.uri,
       isAugmentation: file.kind is AugmentationFileKind,
       isLibrary: file.kind is LibraryFileKind,
+      isMacroAugmentation: file.isMacroAugmentation,
       isPart: file.kind is PartFileKind,
       errors: [
         AnalysisError.tmp(
@@ -1829,7 +1834,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     final removedKeys = <String>{};
     _libraryContext?.remove(affected, removedKeys);
 
-    // TODO(scheglov) Eventually list of `LibraryOrAugmentationFileKind`.
+    // TODO(scheglov): Eventually list of `LibraryOrAugmentationFileKind`.
     for (final file in affected) {
       final kind = file.kind;
       if (kind is LibraryFileKind) {
@@ -2138,7 +2143,7 @@ class AnalysisDriverScheduler {
   /// Notify that there is a change to the [driver], it might need to
   /// perform some work.
   void notify(AnalysisDriverGeneric? driver) {
-    // TODO(brianwilkerson) Consider removing the parameter, given that it isn't
+    // TODO(brianwilkerson): Consider removing the parameter, given that it isn't
     //  referenced in the body.
     _hasWork.notify();
     _statusSupport.preTransitionToAnalyzing();

@@ -83,6 +83,7 @@ abstract class TypeAliasBuilder implements TypeDeclarationBuilder {
   /// not part of the generated AST.
   TypeBuilder? unaliasOnce(
       List<TypeBuilder>? typeArguments,
+      TypeAliasBuilder rootBuilder,
       Set<TypeAliasBuilder> currentTypeAliasBuilders,
       List<TypeBuilder>? unboundTypes,
       List<StructuralVariableBuilder>? unboundTypeVariables);
@@ -232,11 +233,11 @@ abstract class TypeAliasBuilderImpl extends TypeDeclarationBuilderImpl
     } else {
       currentTypeAliasBuilders = {};
     }
-    TypeBuilder? type = unaliasOnce(typeArguments, currentTypeAliasBuilders,
-        unboundTypes, unboundTypeVariables);
+    TypeBuilder? type = unaliasOnce(typeArguments, null,
+        currentTypeAliasBuilders, unboundTypes, unboundTypeVariables);
     while (type is NamedTypeBuilder && type.declaration is TypeAliasBuilder) {
       TypeAliasBuilder? declaration = type.declaration as TypeAliasBuilder;
-      type = declaration.unaliasOnce(type.typeArguments,
+      type = declaration.unaliasOnce(type.typeArguments, this,
           currentTypeAliasBuilders, unboundTypes, unboundTypeVariables);
     }
     if (usedTypeAliasBuilders != null &&
@@ -249,13 +250,15 @@ abstract class TypeAliasBuilderImpl extends TypeDeclarationBuilderImpl
   @override
   TypeBuilder? unaliasOnce(
       List<TypeBuilder>? typeArguments,
+      TypeAliasBuilder? rootBuilder,
       Set<TypeAliasBuilder> currentBuilders,
       List<TypeBuilder>? unboundTypes,
       List<StructuralVariableBuilder>? unboundTypeVariables) {
+    if (this == rootBuilder) {
+      // Cyclic type alias. The error is reported elsewhere.
+      return null;
+    }
     if (!currentBuilders.add(this)) {
-      // Cyclic type alias.
-      libraryBuilder.addProblem(templateCyclicTypedef.withArguments(this.name),
-          charOffset, noLength, fileUri);
       return null;
     }
     // TODO(johnniwinther): Handle/report type argument count mismatch. These
@@ -327,14 +330,14 @@ abstract class TypeAliasBuilderImpl extends TypeDeclarationBuilderImpl
         // There is no ultimate declaration, so unaliasing is a no-op.
         return _cachedUnaliasedDeclaration = this;
       }
-      if (builders.contains(current)) {
-        // Cyclic type alias.
-        currentAliasBuilder.libraryBuilder.addProblem(
-            templateCyclicTypedef.withArguments(this.name),
-            charOffset,
-            noLength,
-            fileUri);
-        // Ensure that it is not reported again.
+      if (current == this) {
+        // Cyclic type alias. The error is reported elsewhere.
+        thisType = const InvalidType();
+        return _cachedUnaliasedDeclaration = this;
+      } else if (!builders.add(current)) {
+        // This is a case of cyclic dependency that [this] leads to, but isn't
+        // itself an element of the cycle. The error is assumed to be reported
+        // elsewhere, during the analysis of the elements of the cycle.
         thisType = const InvalidType();
         return _cachedUnaliasedDeclaration = this;
       }

@@ -5,10 +5,15 @@
 import 'dart:_foreign_helper' as foreign_helper;
 import 'dart:_interceptors' show JavaScriptObject;
 import 'dart:_internal' show patch;
-import 'dart:_js_helper' show staticInteropGlobalContext;
+import 'dart:_js_helper' show createObjectLiteral, staticInteropGlobalContext;
 import 'dart:_js_types';
+import 'dart:js_interop';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
+
+@patch
+JSObjectRepType _createObjectLiteral() =>
+    createObjectLiteral<JSObjectRepType>();
 
 @patch
 @pragma('dart2js:prefer-inline')
@@ -109,12 +114,12 @@ extension ObjectToJSBoxedDartObject on Object {
   }
 }
 
-/// [JSPromise] -> [Future<JSAny?>].
+/// [JSPromise] -> [Future].
 @patch
-extension JSPromiseToFuture on JSPromise {
+extension JSPromiseToFuture<T extends JSAny?> on JSPromise<T> {
   @patch
   @pragma('dart2js:prefer-inline')
-  Future<JSAny?> get toDart => js_util.promiseToFuture<JSAny?>(this);
+  Future<T> get toDart => js_util.promiseToFuture<T>(this);
 }
 
 /// [JSArrayBuffer] <-> [ByteBuffer]
@@ -284,17 +289,22 @@ extension Float64ListToJSFloat64Array on Float64List {
 
 /// [JSArray] <-> [List]
 @patch
-extension JSArrayToList on JSArray {
+extension JSArrayToList<T extends JSAny?> on JSArray<T> {
   @patch
   @pragma('dart2js:prefer-inline')
-  List<JSAny?> get toDart => this as List<JSAny?>;
+  List<T> get toDart {
+    // Upcast `interceptors.JSArray<Object?>` first to a `List<Object?>` so that
+    // we only need one type promotion.
+    List<Object?> t = _jsArray;
+    return t is List<T> ? t : t.cast<T>();
+  }
 }
 
 @patch
-extension ListToJSArray on List<JSAny?> {
+extension ListToJSArray<T extends JSAny?> on List<T> {
   @patch
   @pragma('dart2js:prefer-inline')
-  JSArray get toJS => this as JSArray;
+  JSArray<T> get toJS => this as JSArray<T>;
 
   // TODO(srujzs): Should we do a check to make sure this List is a JSArray
   // under the hood and then potentially proxy? This applies for user lists. For
@@ -306,7 +316,7 @@ extension ListToJSArray on List<JSAny?> {
   // check.
   @patch
   @pragma('dart2js:prefer-inline')
-  JSArray get toJSProxyOrRef => this as JSArray;
+  JSArray<T> get toJSProxyOrRef => this as JSArray<T>;
 }
 
 /// [JSNumber] -> [double] or [int].

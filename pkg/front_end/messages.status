@@ -7,8 +7,6 @@
 
 AbstractClassConstructorTearOff/analyzerCode: Fail
 AbstractClassInstantiation/example: Fail
-AbstractExtensionField/analyzerCode: Fail
-AbstractExtensionField/example: Fail
 AbstractFieldConstructorInitializer/analyzerCode: Fail
 AbstractFieldInitializer/analyzerCode: Fail
 AbstractNotSync/example: Fail
@@ -73,6 +71,7 @@ CantUsePrefixAsExpression/part_wrapped_script: Fail # Importing file in the (now
 CantUsePrefixWithNullAware/part_wrapped_script: Fail # Importing file in the (now) part.
 CantUseSuperBoundedTypeForInstanceCreation/analyzerCode: Fail
 CantUseSuperBoundedTypeForInstanceCreation/example: Fail
+ClassImplementsDeferredClass/part_wrapped_script: Fail # Uses imports
 ClassInNullAwareReceiver/analyzerCode: Fail
 ColonInPlaceOfIn/example: Fail
 CompilingWithSoundNullSafety/analyzerCode: Fail
@@ -310,6 +309,7 @@ ExpressionNotMetadata/analyzerCode: Fail
 ExpressionNotMetadata/example: Fail
 ExtendingEnum/example: Fail
 ExtendingRestricted/example: Fail
+ExtendsDeferredClass/part_wrapped_script: Fail # Uses imports
 ExtendsDynamic/analyzerCode: Fail # Feature not yet in analyzer.
 ExtendsDynamic/example: Fail # Feature not yet enabled by default.
 ExtendsFunctionType/analyzerCode: Fail # Feature not yet in analyzer.
@@ -320,11 +320,10 @@ ExtendsNever/analyzerCode: Fail # Feature not yet in analyzer.
 ExtendsNever/example: Fail # Feature not yet enabled by default.
 ExtendsVoid/analyzerCode: Fail # Feature not yet in analyzer.
 ExtendsVoid/example: Fail # Feature not yet enabled by default.
-ExtensionDeclaresAbstractMember/example: Fail
-ExtensionDeclaresConstructor/example: Fail
-ExtensionDeclaresInstanceField/example: Fail
 ExtensionInNullAwareReceiver/analyzerCode: Fail
 ExtensionMemberConflictsWithObjectMember/analyzerCode: Fail
+ExtensionTypeImplementsDeferred/part_wrapped_script: Fail # Uses imports
+ExtensionTypeImplementsDeferred/script: Fail # Uses imports
 ExternalConstructorWithBody/part_wrapped_script1: Fail
 ExternalConstructorWithBody/script1: Fail
 ExternalConstructorWithFieldInitializers/example: Fail
@@ -630,6 +629,8 @@ JsInteropExternalMemberNotJSAnnotated/analyzerCode: Fail # Web compiler specific
 JsInteropExternalMemberNotJSAnnotated/example: Fail # Web compiler specific
 JsInteropFunctionToJSRequiresStaticType/analyzerCode: Fail # Web compiler specific
 JsInteropFunctionToJSRequiresStaticType/example: Fail # Web compiler specific
+JsInteropFunctionToJSTypeParameters/analyzerCode: Fail # Web compiler specific
+JsInteropFunctionToJSTypeParameters/example: Fail # Web compiler specific
 JsInteropInvalidStaticClassMemberName/analyzerCode: Fail
 JsInteropInvalidStaticClassMemberName/example: Fail
 JsInteropJSClassExtendsDartClass/analyzerCode: Fail # Web compiler specific
@@ -650,8 +651,6 @@ JsInteropOperatorCannotBeRenamed/analyzerCode: Fail # Web compiler specific
 JsInteropOperatorCannotBeRenamed/example: Fail # Web compiler specific
 JsInteropOperatorsNotSupported/analyzerCode: Fail # Web compiler specific
 JsInteropOperatorsNotSupported/example: Fail # Web compiler specific
-JsInteropStaticInteropExternalMemberWithInvalidTypeParameters/analyzerCode: Fail # Web compiler specific
-JsInteropStaticInteropExternalMemberWithInvalidTypeParameters/example: Fail # Web compiler specific
 JsInteropStaticInteropExternalTypeViolation/analyzerCode: Fail # Web compiler specific
 JsInteropStaticInteropExternalTypeViolation/example: Fail # Web compiler specific
 JsInteropStaticInteropGenerativeConstructor/analyzerCode: Fail # Web compiler specific
@@ -678,8 +677,6 @@ JsInteropStaticInteropTrustTypesUsedWithoutStaticInterop/analyzerCode: Fail # We
 JsInteropStaticInteropTrustTypesUsedWithoutStaticInterop/example: Fail # Web compiler specific
 JsInteropStaticInteropWithInstanceMembers/analyzerCode: Fail # Web compiler specific
 JsInteropStaticInteropWithInstanceMembers/example: Fail # Web compiler specific
-JsInteropStaticInteropWithInvalidJsTypesSupertype/analyzerCode: Fail # Web compiler specific
-JsInteropStaticInteropWithInvalidJsTypesSupertype/example: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/analyzerCode: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/example: Fail # Web compiler specific
 JsInteropStrictModeForbiddenLibrary/analyzerCode: Fail # Web compiler specific
@@ -731,7 +728,9 @@ MissingMain/example: Fail
 MissingPartOf/part_wrapped_script: Fail # Using 'part' in the (now) part.
 MissingPrefixInDeferredImport/example: Fail
 MixinDeclaresConstructor/example: Fail
+MixinDeferredMixin/part_wrapped_script: Fail # Uses imports
 MixinInferenceNoMatchingClass/example: Fail
+MixinSuperClassConstraintDeferredClass/part_wrapped_script: Fail # Uses imports
 ModifierOutOfOrder/part_wrapped_script1: Fail
 ModifierOutOfOrder/script1: Fail
 MultipleImplements/part_wrapped_script: Fail
@@ -931,6 +930,10 @@ RequiredNamedParameterHasDefaultValueError/analyzerCode: Fail
 RequiredNamedParameterHasDefaultValueError/example: Fail
 RequiredNamedParameterHasDefaultValueWarning/analyzerCode: Fail
 RequiredNamedParameterHasDefaultValueWarning/example: Fail
+ResourceIdentifiersMultiple/analyzerCode: Fail
+ResourceIdentifiersMultiple/example: Fail
+ResourceIdentifiersNotStatic/analyzerCode: Fail
+ResourceIdentifiersNotStatic/example: Fail
 RestPatternInMapPattern/analyzerCode: Fail
 RestPatternMoreThanOne/analyzerCode: Fail
 RethrowNotCatch/example: Fail

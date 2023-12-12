@@ -9,7 +9,6 @@ import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
 import 'package:analyzer/src/dart/resolver/variance.dart';
-import 'package:analyzer/src/generated/element_type_provider.dart';
 
 /// A class that builds a "display string" for [Element]s and [DartType]s.
 class ElementDisplayStringBuilder {
@@ -28,9 +27,7 @@ class ElementDisplayStringBuilder {
         _multiline = multiline;
 
   @override
-  String toString() {
-    return _buffer.toString();
-  }
+  String toString() => _buffer.toString();
 
   void writeAbstractElement(ElementImpl element) {
     _write(element.name ?? '<unnamed $runtimeType>');
@@ -89,7 +86,7 @@ class ElementDisplayStringBuilder {
     _write('dynamic');
   }
 
-  void writeEnumElement(EnumElementImpl element) {
+  void writeEnumElement(EnumElement element) {
     _write('enum ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
@@ -102,8 +99,10 @@ class ElementDisplayStringBuilder {
       _write('augment ');
     }
 
-    _writeType(element.returnType);
-    _write(' ');
+    if (element.kind != ElementKind.SETTER) {
+      _writeType(element.returnType);
+      _write(' ');
+    }
 
     _write(name);
 
@@ -122,7 +121,7 @@ class ElementDisplayStringBuilder {
     _writeDirectiveUri(element.uri);
   }
 
-  void writeExtensionElement(ExtensionElementImpl element) {
+  void writeExtensionElement(ExtensionElement element) {
     _write('extension ');
     _write(element.displayName);
     _writeTypeParameters(element.typeParameters);
@@ -195,7 +194,7 @@ class ElementDisplayStringBuilder {
     _writeTypesIfNotEmpty(' implements ', element.interfaces);
   }
 
-  void writeNeverType(NeverTypeImpl type) {
+  void writeNeverType(NeverType type) {
     _write('Never');
     _writeNullability(type.nullabilitySuffix);
   }
@@ -210,7 +209,7 @@ class ElementDisplayStringBuilder {
     _write(element.displayName);
   }
 
-  void writeRecordType(RecordTypeImpl type) {
+  void writeRecordType(RecordType type) {
     final positionalFields = type.positionalFields;
     final namedFields = type.namedFields;
     final fieldCount = positionalFields.length + namedFields.length;
@@ -531,8 +530,6 @@ class ElementDisplayStringBuilder {
       var newTypeParameter = TypeParameterElementImpl(name, -1);
       newTypeParameter.bound = typeParameter.bound;
       newTypeParameters.add(newTypeParameter);
-      ElementTypeProvider.current
-          .freshTypeParameterCreated(newTypeParameter, typeParameter);
     }
 
     return replaceTypeParameters(type as FunctionTypeImpl, newTypeParameters);

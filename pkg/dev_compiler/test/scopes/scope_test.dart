@@ -7,9 +7,11 @@ import 'dart:io' show Directory, Platform;
 import 'package:_fe_analyzer_shared/src/testing/features.dart';
 import 'package:_fe_analyzer_shared/src/testing/id.dart';
 import 'package:_fe_analyzer_shared/src/testing/id_testing.dart'
-    show DataInterpreter, runTests;
+    show DataInterpreter, ddcMarker, runTests;
+import 'package:front_end/src/api_prototype/experimental_flags.dart' as fe;
 import 'package:kernel/ast.dart';
 import 'package:kernel/dart_scope_calculator.dart';
+import 'package:kernel/src/printer.dart' show AstPrinter, AstTextStrategy;
 
 import '../id_testing_helper.dart';
 
@@ -20,7 +22,10 @@ Future<void> main(List<String> args) async {
       args: args,
       createUriForFileName: createUriForFileName,
       onFailure: onFailure,
-      runTest: runTestFor(const ScopeDataComputer(), [defaultDdcConfig]));
+      runTest: runTestFor(const ScopeDataComputer(), [
+        DdcTestConfig(ddcMarker, 'ddc',
+            experimentalFlags: {fe.ExperimentalFlag.inlineClass: true})
+      ]));
 }
 
 class Tags {
@@ -75,7 +80,13 @@ class ScopeDataExtractor extends DdcDataExtractor<Features> {
             features.add(Tags.isStatic);
           }
           for (var typeParameter in scope.typeParameters) {
-            features.addElement(Tags.typeParameter, typeParameter.name!);
+            var printer = AstPrinter(const AstTextStrategy(
+                useQualifiedTypeParameterNames: true,
+                useQualifiedTypeParameterNamesRecurseOnNamedLocalFunctions:
+                    true,
+                includeLibraryNamesInTypes: false));
+            printer.writeTypeParameterName(typeParameter);
+            features.addElement(Tags.typeParameter, printer.getText());
           }
           for (var variable in scope.definitions.keys) {
             features.addElement(Tags.variables, variable);

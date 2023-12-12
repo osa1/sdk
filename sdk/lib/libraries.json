@@ -239,6 +239,9 @@
           "_internal/wasm/lib/int_common_patch.dart"
         ]
       },
+      "_error_utils": {
+        "uri": "_internal/wasm/lib/error_utils.dart"
+      },
       "_http": {
         "uri": "_http/http.dart"
       },
@@ -253,6 +256,9 @@
       },
       "_js_helper": {
         "uri": "_internal/wasm/lib/js_helper.dart"
+      },
+      "_js_string_convert": {
+        "uri": "_internal/wasm/lib/js_string_convert.dart"
       },
       "_js_types": {
         "uri": "_internal/wasm/lib/js_types.dart"
@@ -392,7 +398,10 @@
       },
       "convert": {
         "uri": "convert/convert.dart",
-        "patches": "_internal/js_runtime/lib/convert_patch.dart"
+        "patches": [
+          "_internal/js_shared/lib/convert_utf_patch.dart",
+          "_internal/js_runtime/lib/convert_patch.dart"
+        ]
       },
       "core": {
         "uri": "core/core.dart",
@@ -563,7 +572,10 @@
       },
       "convert": {
         "uri": "convert/convert.dart",
-        "patches": "_internal/js_dev_runtime/patch/convert_patch.dart"
+        "patches": [
+          "_internal/js_shared/lib/convert_utf_patch.dart",
+          "_internal/js_dev_runtime/patch/convert_patch.dart"
+        ]
       },
       "core": {
         "uri": "core/core.dart",

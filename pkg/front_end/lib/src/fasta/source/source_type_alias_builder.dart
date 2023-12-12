@@ -9,17 +9,23 @@ import 'package:kernel/class_hierarchy.dart';
 
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
+import '../builder/formal_parameter_builder.dart';
 import '../builder/library_builder.dart';
 import '../builder/member_builder.dart';
 import '../builder/metadata_builder.dart';
 import '../builder/name_iterator.dart';
+import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
+import '../dill/dill_class_builder.dart';
+import '../dill/dill_extension_type_declaration_builder.dart';
+import '../dill/dill_type_alias_builder.dart';
 import '../fasta_codes.dart'
-    show noLength, templateCyclicTypedef, templateTypeArgumentMismatch;
+    show templateCyclicTypedef, templateTypeArgumentMismatch;
 import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/expression_generator_helper.dart';
 import '../kernel/kernel_helper.dart';
+import '../kernel/type_builder_computer.dart';
 import '../problems.dart' show unhandled;
 import '../scope.dart';
 import '../util/helpers.dart';
@@ -85,7 +91,158 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
 
   Typedef build() {
     buildThisType();
+    _checkCyclicTypedefDependency(type, this, {this});
+    if (typeVariables != null) {
+      for (TypeVariableBuilderBase typeVariable in typeVariables!) {
+        _checkCyclicTypedefDependency(typeVariable.bound, this, {this});
+      }
+    }
     return typedef;
+  }
+
+  bool _checkCyclicTypedefDependency(
+      TypeBuilder? typeBuilder,
+      TypeAliasBuilder rootTypeAliasBuilder,
+      Set<TypeAliasBuilder> seenTypeAliasBuilders) {
+    switch (typeBuilder) {
+      case NamedTypeBuilder(
+          :TypeDeclarationBuilder? declaration,
+          typeArguments: List<TypeBuilder>? arguments
+        ):
+        if (declaration is TypeAliasBuilder) {
+          bool declarationSeenFirstTime =
+              seenTypeAliasBuilders.add(declaration);
+          if (declaration == rootTypeAliasBuilder) {
+            libraryBuilder.addProblem(
+                templateCyclicTypedef.withArguments(this.name),
+                rootTypeAliasBuilder.charOffset,
+                rootTypeAliasBuilder.name.length,
+                fileUri);
+            return true;
+          } else {
+            if (declarationSeenFirstTime) {
+              if (_checkCyclicTypedefDependency(declaration.type,
+                  rootTypeAliasBuilder, seenTypeAliasBuilders.toSet())) {
+                return true;
+              }
+            }
+          }
+        }
+        if (arguments != null) {
+          for (TypeBuilder typeArgument in arguments) {
+            if (_checkCyclicTypedefDependency(typeArgument,
+                rootTypeAliasBuilder, seenTypeAliasBuilders.toSet())) {
+              return true;
+            }
+          }
+        } else if (declaration != null && declaration.typeVariablesCount > 0) {
+          List<TypeVariableBuilderBase>? typeParameters;
+          List<TypeParameter>? typeParametersFromKernel;
+          bool isFromKernel = false;
+          switch (declaration) {
+            case ClassBuilder():
+              typeParameters = declaration.typeVariables;
+              if (declaration is DillClassBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel = declaration.cls.typeParameters;
+              }
+            case TypeAliasBuilder():
+              typeParameters = declaration.typeVariables;
+              if (declaration is DillTypeAliasBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel = declaration.typedef.typeParameters;
+              }
+            case ExtensionTypeDeclarationBuilder():
+              typeParameters = declaration.typeParameters;
+              if (declaration is DillExtensionTypeDeclarationBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel =
+                    declaration.extensionTypeDeclaration.typeParameters;
+              }
+            case BuiltinTypeDeclarationBuilder():
+            case InvalidTypeDeclarationBuilder():
+            case OmittedTypeDeclarationBuilder():
+            case ExtensionBuilder():
+            case TypeVariableBuilderBase():
+          }
+          if (typeParameters != null) {
+            TypeBuilderComputer? typeBuilderComputer;
+            for (int i = 0; i < typeParameters.length; i++) {
+              TypeVariableBuilderBase typeParameter = typeParameters[i];
+              if (!isFromKernel) {
+                if (_checkCyclicTypedefDependency(typeParameter.defaultType!,
+                    rootTypeAliasBuilder, seenTypeAliasBuilders.toSet())) {
+                  return true;
+                }
+              } else if (typeParametersFromKernel != null) {
+                assert(
+                    typeParameters.length == typeParametersFromKernel.length);
+                typeBuilderComputer ??=
+                    new TypeBuilderComputer(libraryBuilder.loader);
+                if (_checkCyclicTypedefDependency(
+                    typeParametersFromKernel[i]
+                        .defaultType
+                        .accept(typeBuilderComputer),
+                    rootTypeAliasBuilder,
+                    seenTypeAliasBuilders.toSet())) {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      case FunctionTypeBuilder(
+          :List<StructuralVariableBuilder>? typeVariables,
+          :List<ParameterBuilder>? formals,
+          :TypeBuilder returnType
+        ):
+        if (_checkCyclicTypedefDependency(
+            returnType, rootTypeAliasBuilder, seenTypeAliasBuilders.toSet())) {
+          return true;
+        }
+        if (formals != null) {
+          for (ParameterBuilder formal in formals) {
+            if (_checkCyclicTypedefDependency(formal.type, rootTypeAliasBuilder,
+                seenTypeAliasBuilders.toSet())) {
+              return true;
+            }
+          }
+        }
+        if (typeVariables != null) {
+          for (StructuralVariableBuilder typeVariable in typeVariables) {
+            TypeBuilder? bound = typeVariable.bound;
+            if (_checkCyclicTypedefDependency(
+                bound, rootTypeAliasBuilder, seenTypeAliasBuilders.toSet())) {
+              return true;
+            }
+          }
+        }
+      case RecordTypeBuilder(
+          :List<RecordTypeFieldBuilder>? positionalFields,
+          :List<RecordTypeFieldBuilder>? namedFields
+        ):
+        if (positionalFields != null) {
+          for (RecordTypeFieldBuilder field in positionalFields) {
+            if (_checkCyclicTypedefDependency(field.type, rootTypeAliasBuilder,
+                seenTypeAliasBuilders.toSet())) {
+              return true;
+            }
+          }
+        }
+        if (namedFields != null) {
+          for (RecordTypeFieldBuilder field in namedFields) {
+            if (_checkCyclicTypedefDependency(field.type, rootTypeAliasBuilder,
+                seenTypeAliasBuilders.toSet())) {
+              return true;
+            }
+          }
+        }
+      case OmittedTypeBuilder():
+      case FixedTypeBuilder():
+      case InvalidTypeBuilder():
+      case null:
+    }
+    return false;
   }
 
   @override
@@ -93,8 +250,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
     if (thisType != null) {
       if (identical(thisType, pendingTypeAliasMarker)) {
         thisType = cyclicTypeAliasMarker;
-        libraryBuilder.addProblem(templateCyclicTypedef.withArguments(name),
-            charOffset, noLength, fileUri);
+        // Cyclic type alias. The error is reported elsewhere.
         return const InvalidType();
       } else if (identical(thisType, cyclicTypeAliasMarker)) {
         return const InvalidType();
@@ -214,12 +370,8 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       }
     }
     _tearOffDependencies?.forEach((Procedure tearOff, Member target) {
-      InterfaceType targetType = typedef.type as InterfaceType;
       delayedDefaultValueCloners.add(new DelayedDefaultValueCloner(
-          target,
-          tearOff,
-          new Map<TypeParameter, DartType>.fromIterables(
-              target.enclosingClass!.typeParameters, targetType.typeArguments),
+          target, tearOff,
           libraryBuilder: libraryBuilder));
     });
   }
@@ -248,8 +400,10 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       case ClassBuilder():
         if (targetType is InterfaceType &&
             typedef.typeParameters.isNotEmpty &&
-            !isProperRenameForClass(libraryBuilder.loader.typeEnvironment,
-                typedef, libraryBuilder.library)) {
+            !isProperRenameForTypeDeclaration(
+                libraryBuilder.loader.typeEnvironment,
+                typedef,
+                libraryBuilder.library)) {
           tearOffs = {};
           _tearOffDependencies = {};
           NameIterator<MemberBuilder> iterator =
@@ -292,7 +446,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
                   declarationConstructor: target,
                   // TODO(johnniwinther): Handle patched constructors.
                   implementationConstructor: target,
-                  enclosingClass: declaration.cls,
+                  enclosingTypeDeclaration: declaration.cls,
                   typeParameters: typedef.typeParameters,
                   typeArguments: targetType.typeArguments,
                   libraryBuilder: libraryBuilder);
@@ -301,7 +455,59 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
           }
         }
       case ExtensionTypeDeclarationBuilder():
-      // TODO(johnniwinther): Handle this case.
+        if (targetType is ExtensionType &&
+            typedef.typeParameters.isNotEmpty &&
+            !isProperRenameForTypeDeclaration(
+                libraryBuilder.loader.typeEnvironment,
+                typedef,
+                libraryBuilder.library)) {
+          tearOffs = {};
+          _tearOffDependencies = {};
+          NameIterator<MemberBuilder> iterator =
+              declaration.fullConstructorNameIterator();
+          while (iterator.moveNext()) {
+            String constructorName = iterator.name;
+            MemberBuilder builder = iterator.current;
+            Member? target = builder.invokeTarget;
+            if (target != null) {
+              if (target is Procedure && target.isRedirectingFactory) {
+                target = builder.readTarget!;
+              }
+              Name targetName =
+                  new Name(constructorName, declaration.libraryBuilder.library);
+              Reference? tearOffReference;
+              if (libraryBuilder.indexedLibrary != null) {
+                Name tearOffName = new Name(
+                    typedefTearOffName(name, constructorName),
+                    libraryBuilder.indexedLibrary!.library);
+                tearOffReference = libraryBuilder.indexedLibrary!
+                    .lookupGetterReference(tearOffName);
+              }
+
+              Procedure tearOff = tearOffs![targetName] =
+                  createTypedefTearOffProcedure(
+                      name,
+                      constructorName,
+                      libraryBuilder,
+                      target.fileUri,
+                      target.fileOffset,
+                      tearOffReference);
+              _tearOffDependencies![tearOff] = target;
+
+              buildTypedefTearOffProcedure(
+                  tearOff: tearOff,
+                  declarationConstructor: target,
+                  // TODO(johnniwinther): Handle patched constructors.
+                  implementationConstructor: target,
+                  enclosingTypeDeclaration:
+                      declaration.extensionTypeDeclaration,
+                  typeParameters: typedef.typeParameters,
+                  typeArguments: targetType.typeArguments,
+                  libraryBuilder: libraryBuilder);
+              f(tearOff);
+            }
+          }
+        }
       case TypeAliasBuilder():
       case NominalVariableBuilder():
       case StructuralVariableBuilder():

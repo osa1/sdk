@@ -601,6 +601,20 @@ const v = int;
     _assertHasPrimitiveEqualityTrue('v');
   }
 
+  test_identical_extensionType_types_recursive() async {
+    await assertNoErrorsInCode('''
+const c = identical(ExList<ExInt>, List<int>);
+
+extension type const ExInt(int value) implements int {}
+extension type const ExList<T>(List<T> value) implements List<T> {}
+''');
+    final result = _topLevelVar('c');
+    assertDartObjectText(result, r'''
+bool true
+  variable: self::@variable::c
+''');
+  }
+
   test_identical_typeLiteral_explicitTypeArgs_differentTypeArgs() async {
     await assertNoErrorsInCode('''
 class C<T> {}
@@ -2007,8 +2021,8 @@ class C<T> {
 
 const x = C<int>.();
 ''', [
-      // TODO(https://github.com/dart-lang/sdk/issues/50441): This should not be
-      // reported.
+      // TODO(kallentu): This should not be reported.
+      // https://github.com/dart-lang/sdk/issues/50441
       error(CompileTimeErrorCode.CLASS_INSTANTIATION_ACCESS_TO_UNKNOWN_MEMBER,
           45, 8),
       error(CompileTimeErrorCode.CONST_INITIALIZED_WITH_NON_CONSTANT_VALUE, 45,
@@ -2915,7 +2929,7 @@ class C {}
 ''');
     final result = _topLevelVar('a');
     assertDartObjectText(result, '''
-Type C*
+Type C
   variable: self::@variable::a
 ''');
   }

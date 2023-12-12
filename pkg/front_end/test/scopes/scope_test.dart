@@ -7,9 +7,11 @@ import 'dart:io' show Directory, Platform;
 import 'package:_fe_analyzer_shared/src/testing/id.dart' show ActualData, Id;
 import 'package:_fe_analyzer_shared/src/testing/id_testing.dart';
 import 'package:_fe_analyzer_shared/src/testing/features.dart';
+import 'package:front_end/src/api_prototype/experimental_flags.dart';
 import 'package:front_end/src/testing/id_testing_helper.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/dart_scope_calculator.dart';
+import 'package:kernel/src/printer.dart' show AstPrinter, AstTextStrategy;
 
 Future<void> main(List<String> args) async {
   Directory dataDir = new Directory.fromUri(Platform.script.resolve('data'));
@@ -17,7 +19,10 @@ Future<void> main(List<String> args) async {
       args: args,
       createUriForFileName: createUriForFileName,
       onFailure: onFailure,
-      runTest: runTestFor(const ScopeDataComputer(), [defaultCfeConfig]));
+      runTest: runTestFor(const ScopeDataComputer(), [
+        new CfeTestConfig(cfeMarker, 'cfe',
+            explicitExperimentalFlags: {ExperimentalFlag.inlineClass: true}),
+      ]));
 }
 
 class Tags {
@@ -60,29 +65,30 @@ class ScopeDataExtractor extends CfeDataExtractor<Features> {
     if (node is StaticGet && node.target.name.text == 'x') {
       Location? location = node.location;
       if (location != null) {
-        List<DartScope> scopes = DartScopeBuilder2.findScopeFromOffsetAndClass(
+        DartScope scope = DartScopeBuilder2.findScopeFromOffsetAndClass(
             library, location.file, cls, node.fileOffset);
-        if (scopes.isNotEmpty) {
-          // TODO(johnniwinther,jensj): Support more than one scope.
-          DartScope scope = scopes.first;
-          Features features = Features();
-          if (scope.cls != null) {
-            features[Tags.cls] = scope.cls!.name;
-          }
-          if (scope.member != null) {
-            features[Tags.member] = scope.member!.name.text;
-          }
-          if (scope.isStatic) {
-            features.add(Tags.isStatic);
-          }
-          for (TypeParameter typeParameter in scope.typeParameters) {
-            features.addElement(Tags.typeParameter, typeParameter.name!);
-          }
-          for (String variable in scope.definitions.keys) {
-            features.addElement(Tags.variables, variable);
-          }
-          return features;
+        Features features = Features();
+        if (scope.cls != null) {
+          features[Tags.cls] = scope.cls!.name;
         }
+        if (scope.member != null) {
+          features[Tags.member] = scope.member!.name.text;
+        }
+        if (scope.isStatic) {
+          features.add(Tags.isStatic);
+        }
+        for (TypeParameter typeParameter in scope.typeParameters) {
+          AstPrinter printer = new AstPrinter(const AstTextStrategy(
+              useQualifiedTypeParameterNames: true,
+              useQualifiedTypeParameterNamesRecurseOnNamedLocalFunctions: true,
+              includeLibraryNamesInTypes: false));
+          printer.writeTypeParameterName(typeParameter);
+          features.addElement(Tags.typeParameter, printer.getText());
+        }
+        for (String variable in scope.definitions.keys) {
+          features.addElement(Tags.variables, variable);
+        }
+        return features;
       }
     }
     return super.computeNodeValue(id, node);

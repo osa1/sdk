@@ -35,7 +35,7 @@ const _pubspecValidators = <PubspecValidator>[
 /// The [source] argument must be the source of the file being validated.
 /// The [provider] argument must provide access to the file-system.
 List<AnalysisError> validatePubspec({
-  // TODO(brianwilkerson) This method needs to take a `YamlDocument` rather
+  // TODO(brianwilkerson): This method needs to take a `YamlDocument` rather
   //  than the contents of the document so that it can validate an empty file.
   required YamlNode contents,
   required Source source,
@@ -89,6 +89,10 @@ final class PubspecField {
   /// The name of the sub-field (under `flutter`) whose value is a list of
   /// assets available to Flutter apps at runtime.
   static const String ASSETS_FIELD = 'assets';
+
+  /// The name of the sub-field (under `flutter / assets`) whose value is a path
+  /// to an asset available to Flutter apps at runtime.
+  static const String ASSET_PATH_FIELD = 'path';
 
   /// The name of the field whose value is a map of dependencies.
   static const String DEPENDENCIES_FIELD = 'dependencies';

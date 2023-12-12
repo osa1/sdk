@@ -868,6 +868,7 @@ class Compiler extends NamedEnum {
       case Compiler.dart2wasm:
         return const [
           Runtime.none,
+          Runtime.jsshell,
           Runtime.d8,
           Runtime.chrome,
           Runtime.firefox,
@@ -1122,6 +1123,9 @@ class System extends NamedEnum {
   }
 }
 
+// TODO(rnystrom): NnbdMode.legacy can be removed now that opted out code is no
+// longer supported. This entire enum and the notion of "NNBD modes" can be
+// removed once it's no longer possible to run programs in unsound weak mode.
 /// What level of non-nullability support should be applied to the test files.
 class NnbdMode extends NamedEnum {
   /// "Opted out" legacy mode with no NNBD features allowed.

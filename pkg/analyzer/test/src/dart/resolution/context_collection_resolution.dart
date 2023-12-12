@@ -273,7 +273,7 @@ abstract class ContextResolutionTest
 
   @override
   Future<ResolvedUnitResult> resolveFile(String path) async {
-    final file = getFile(path); // TODO(scheglov) migrate to File
+    final file = getFile(path); // TODO(scheglov): migrate to File
     var analysisContext = contextFor(fileForContextSelection ?? file);
     var session = analysisContext.currentSession;
     return await session.getResolvedUnit(path) as ResolvedUnitResult;
@@ -331,9 +331,6 @@ class PubPackageResolutionTest extends ContextResolutionTest {
         EnableString.inline_class,
         EnableString.macros,
       ];
-
-  @override
-  bool get isNullSafetyEnabled => true;
 
   /// The path that is not in [workspaceRootPath], contains external packages.
   String get packagesRootPath => '/packages';

@@ -80,4 +80,27 @@ linter:
     expect(diagnostic.range.end.line, equals(0));
     expect(diagnostic.range.end.character, equals(23));
   }
+
+  /// Ensure we get diagnostics for a project even if the workspace contains
+  /// another folder that does not exist.
+  Future<void> test_workspaceFolders_existsAndDoesNotExist() async {
+    final rootPath = projectFolderUri.toFilePath();
+    final existingFolderUri = Uri.file(pathContext.join(rootPath, 'exists'));
+    final existingFileUri =
+        Uri.file(pathContext.join(rootPath, 'exists', 'main.dart'));
+    final nonExistingFolderUri =
+        Uri.file(pathContext.join(rootPath, 'does_not_exist'));
+
+    newFolder(existingFolderUri.toFilePath());
+    newFile(existingFileUri.toFilePath(), 'NotAClass a;');
+
+    final diagnosticsFuture = waitForDiagnostics(existingFileUri);
+
+    await initialize(
+        workspaceFolders: [existingFolderUri, nonExistingFolderUri]);
+
+    final diagnostics = await diagnosticsFuture;
+    expect(diagnostics, hasLength(1));
+    expect(diagnostics!.single.code, 'undefined_class');
+  }
 }

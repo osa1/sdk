@@ -5,18 +5,18 @@
 import 'package:dart_service_protocol_shared/src/named_lookup.dart';
 import 'package:meta/meta.dart';
 
-/// Represents a client that connects to a service.
+/// Represents a client that is connected to a service.
 abstract class Client {
-  /// Called when this client is receiving [data] from [stream].
+  /// Sends [data] to the client on the provided [stream].
   ///
   /// This method should do any formatting needed on [data], then send it to
   /// the [Client].
-  void streamNotify(String stream, Map<String, Object?> data);
+  void streamNotify(String stream, Object data);
 
   /// Called if the connection to the client should be closed.
   Future<void> close();
 
-  /// Called when a request should be sent to this client.
+  /// Sends a request to the client.
   ///
   /// This method should forward [method] with [parameters] to the client.
   Future<dynamic> sendRequest({required String method, dynamic parameters});

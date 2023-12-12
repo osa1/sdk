@@ -40,6 +40,7 @@ class AugmentedClassDeclarationBuilder
     required this.declaration,
   }) {
     addFields(declaration.fields);
+    addConstructors(declaration.constructors);
     addAccessors(declaration.accessors);
     addMethods(declaration.methods);
   }
@@ -361,7 +362,7 @@ class LibraryBuilder {
   /// of interfaces declared in other libraries that, and we have not run yet
   /// declarations phase macro applications for them.
   Future<bool> executeMacroDeclarationsPhase({
-    required OperationPerformanceImpl performance,
+    required Element? targetElement,
   }) async {
     final macroApplier = linker.macroApplier;
     if (macroApplier == null) {
@@ -370,6 +371,7 @@ class LibraryBuilder {
 
     final results = await macroApplier.executeDeclarationsPhase(
       library: element,
+      targetElement: targetElement,
     );
 
     // No more applications to execute.
@@ -562,16 +564,16 @@ class LibraryBuilder {
   }
 
   void resolveConstructors() {
-    ConstructorInitializerResolver(linker, element).resolve();
+    ConstructorInitializerResolver(linker, this).resolve();
   }
 
   void resolveDefaultValues() {
-    DefaultValueResolver(linker, element).resolve();
+    DefaultValueResolver(linker, this).resolve();
   }
 
   void resolveMetadata() {
     for (var linkingUnit in units) {
-      var resolver = MetadataResolver(linker, element, linkingUnit.element);
+      var resolver = MetadataResolver(linker, linkingUnit.element, this);
       linkingUnit.node.accept(resolver);
     }
   }
@@ -733,7 +735,7 @@ class LibraryBuilder {
         final unitNode = importedFile.parse();
         final unitElement = CompilationUnitElementImpl(
           source: importedFile.source,
-          // TODO(scheglov) Remove this parameter.
+          // TODO(scheglov): Remove this parameter.
           librarySource: importedFile.source,
           lineInfo: unitNode.lineInfo,
         );
@@ -810,7 +812,7 @@ class LibraryBuilder {
           ..end = unlinked.endOffset
           ..shownNames = unlinked.names;
       } else {
-        // TODO(scheglov) Why no offsets?
+        // TODO(scheglov): Why no offsets?
         return HideElementCombinatorImpl()..hiddenNames = unlinked.names;
       }
     }).toFixedList();
@@ -1000,7 +1002,7 @@ class LibraryBuilder {
     required int nameOffset,
     required LibraryOrAugmentationElementImpl container,
   }) {
-    // TODO(scheglov) Make reference required.
+    // TODO(scheglov): Make reference required.
     final containerRef = container.reference!;
     final reference = containerRef.getChild('@prefix').getChild(name);
     final existing = reference.element;
@@ -1300,8 +1302,11 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement,
         continue;
       }
 
-      addGetter(classInfo, accessor, accessor.name,
+      var nonPromotabilityReason = addGetter(classInfo, accessor, accessor.name,
           isAbstract: accessor.isAbstract);
+      if (enabled && nonPromotabilityReason == null) {
+        _potentiallyPromotableFields.add(accessor.variable as FieldElementImpl);
+      }
     }
   }
 }

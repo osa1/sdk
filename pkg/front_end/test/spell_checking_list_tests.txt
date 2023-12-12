@@ -14,10 +14,16 @@ aaa
 aarhus
 abcompile
 ac
+aci
+acn
+acr
 adapter
 adaptor
 adopted
 advantages
+aei
+aen
+aer
 af
 albeit
 aligns
@@ -311,6 +317,7 @@ fisk
 five
 fl
 flame
+flipped
 floor
 fluctuate
 foo'bar'baz
@@ -360,6 +367,7 @@ hardcoding
 hardly
 hb
 hc
+helpfully
 hest
 heuristics
 hi
@@ -406,6 +414,7 @@ instrument
 instrumenter
 insufficient
 intdiv
+intel
 interactions
 interactive
 interchangeable
@@ -445,6 +454,7 @@ lints
 listening
 listing
 ln
+locating
 logd
 logs
 loo
@@ -453,6 +463,7 @@ loopback
 ma
 mac
 maker
+manual
 matters
 mds
 meaningless
@@ -478,6 +489,7 @@ misspelled
 mistake
 mistakes
 mixups
+ml
 mmethod
 mod
 modelled
@@ -546,6 +558,7 @@ party
 pause
 paused
 pays
+pb
 pc
 periodic
 periodically
@@ -583,6 +596,7 @@ protected
 proved
 proxy
 pseudocode
+pt
 pubspec
 pv
 px

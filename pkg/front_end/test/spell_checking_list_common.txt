@@ -1652,6 +1652,7 @@ invalidated
 invalidates
 invalidating
 invalidation
+invariance
 invariant
 invariantly
 inversion
@@ -2470,6 +2471,7 @@ receive
 receiver
 recent
 recently
+recognition
 recognize
 recognized
 recognizes
@@ -2734,6 +2736,7 @@ semantic
 semantics
 semi
 semicolon
+semicolons
 send
 sending
 sends

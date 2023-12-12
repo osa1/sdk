@@ -335,7 +335,10 @@ class KernelTarget extends TargetImplementation {
       loader.resolveParts();
 
       benchmarker?.enterPhase(BenchmarkPhases.outline_computeMacroDeclarations);
-      NeededPrecompilations? result = loader.computeMacroDeclarations();
+      NeededPrecompilations? result =
+          context.options.globalFeatures.macros.isEnabled
+              ? loader.computeMacroDeclarations()
+              : null;
 
       benchmarker
           ?.enterPhase(BenchmarkPhases.unknownComputeNeededPrecompilations);
@@ -1061,8 +1064,7 @@ class KernelTarget extends TargetImplementation {
       //..fileEndOffset = cls.fileOffset
       ..isNonNullableByDefault = cls.enclosingLibrary.isNonNullableByDefault;
     DelayedDefaultValueCloner delayedDefaultValueCloner =
-        new DelayedDefaultValueCloner(
-            superConstructor, constructor, substitutionMap,
+        new DelayedDefaultValueCloner(superConstructor, constructor,
             libraryBuilder: libraryBuilder);
 
     TypeDependency? typeDependency;

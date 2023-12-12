@@ -1654,10 +1654,12 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
           }
         } else if (member is SourceProcedureBuilder && member.isGetter) {
           if (member.isSynthetic) continue;
-          fieldPromotability.addGetter(classInfo, member, member.name,
+          PropertyNonPromotabilityReason? reason = fieldPromotability.addGetter(
+              classInfo, member, member.name,
               isAbstract: member.isAbstract);
-          individualPropertyReasons[member.procedure] =
-              PropertyNonPromotabilityReason.isNotField;
+          if (reason != null) {
+            individualPropertyReasons[member.procedure] = reason;
+          }
         }
       }
     }
@@ -1673,7 +1675,9 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             !member.isStatic &&
             member.isGetter) {
           individualPropertyReasons[member.procedure] =
-              PropertyNonPromotabilityReason.isNotField;
+              member.memberName.isPrivate
+                  ? PropertyNonPromotabilityReason.isNotField
+                  : PropertyNonPromotabilityReason.isNotPrivate;
         }
       }
     }
@@ -1694,7 +1698,9 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             !member.isStatic &&
             member.isGetter) {
           individualPropertyReasons[member.procedure] =
-              PropertyNonPromotabilityReason.isNotField;
+              member.memberName.isPrivate
+                  ? PropertyNonPromotabilityReason.isNotField
+                  : PropertyNonPromotabilityReason.isNotPrivate;
         }
       }
     }
@@ -5310,8 +5316,13 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
               inferred: pendingBoundsCheck.inferred, allowSuperBounded: true);
           break;
         case TypeUse.typedefAlias:
-        case TypeUse.superType:
-        case TypeUse.mixedInType:
+        case TypeUse.classExtendsType:
+        case TypeUse.classImplementsType:
+        // TODO(johnniwinther): Is this a correct handling wrt well-boundedness
+        //  for mixin on clause?
+        case TypeUse.mixinOnType:
+        case TypeUse.extensionTypeImplementsType:
+        case TypeUse.classWithType:
           checkBoundsInType(pendingBoundsCheck.type, typeEnvironment,
               pendingBoundsCheck.fileUri, pendingBoundsCheck.charOffset,
               inferred: pendingBoundsCheck.inferred, allowSuperBounded: false);

@@ -597,9 +597,9 @@ class LinterContextUnit {
   LinterContextUnit(this.content, this.unit);
 }
 
-/// TODO(scheglov) This class exists only because there are places in the
-/// analyzer and analysis server that instantiate [LinterContextUnit]. This
-/// should not happen, and should be fixed.
+// TODO(scheglov): This class exists only because there are places in the
+// analyzer and analysis server that instantiate [LinterContextUnit]. This
+// should not happen, and should be fixed.
 class LinterContextUnit2 implements LinterContextUnit {
   final FileState file;
 
@@ -662,7 +662,7 @@ class LinterOptions extends DriverOptions {
   final String? analysisOptions;
   LintFilter? filter;
 
-  // todo (pq): consider migrating to named params (but note Linter dep).
+  // TODO(pq): consider migrating to named params (but note Linter dep).
   LinterOptions({
     Iterable<LintRule>? enabledRules,
     this.analysisOptions,
@@ -874,6 +874,8 @@ class _ConstantAnalysisErrorListener extends AnalysisErrorListener {
         case CompileTimeErrorCode.CONST_WITH_NON_CONST:
         case CompileTimeErrorCode.CONST_WITH_NON_CONSTANT_ARGUMENT:
         case CompileTimeErrorCode.CONST_WITH_TYPE_PARAMETERS:
+        case CompileTimeErrorCode
+              .CONST_WITH_TYPE_PARAMETERS_CONSTRUCTOR_TEAROFF:
         case CompileTimeErrorCode.INVALID_CONSTANT:
         case CompileTimeErrorCode.MISSING_CONST_IN_LIST_LITERAL:
         case CompileTimeErrorCode.MISSING_CONST_IN_MAP_LITERAL:

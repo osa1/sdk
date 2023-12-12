@@ -4,6 +4,7 @@
 
 import 'package:front_end/src/api_unstable/vm.dart'
     show
+        messageFfiAddressOfMustBeNative,
         messageFfiCreateOfStructOrUnion,
         messageFfiExceptionalReturnNull,
         messageFfiExpectedConstant,
@@ -28,7 +29,9 @@ import 'package:kernel/type_algebra.dart'
 import 'package:kernel/type_environment.dart';
 
 import 'abi.dart' show wordSize;
+import 'definitions.dart' as definitions;
 import 'native_type_cfe.dart';
+import 'native.dart' as native;
 import 'common.dart'
     show
         FfiStaticTypeError,
@@ -40,6 +43,10 @@ import 'common.dart'
 import 'finalizable.dart';
 
 /// Checks and replaces calls to dart:ffi compound fields and methods.
+///
+/// To reliably lower calls to methods like `sizeOf` and `Native.addressOf`,
+/// this requires that the [definitions] and the [native] transformer already
+/// ran on the libraries to transform.
 void transformLibraries(
     Component component,
     CoreTypes coreTypes,
@@ -289,25 +296,57 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
             currentLibrary.nonNullable, [node.arguments.types[0]]);
         final DartType dartType = node.arguments.types[1];
 
-        ensureNativeTypeValid(nativeType, node);
-        ensureNativeTypeToDartType(nativeType, dartType, node);
         _ensureIsLeafIsConst(node);
         final isLeaf = getIsLeafBoolean(node) ?? false;
-        ensureLeafCallDoesNotUseHandles(nativeType, isLeaf, node);
-
+        ensureNativeTypeValid(nativeType, node);
+        ensureNativeTypeToDartType(
+          nativeType,
+          dartType,
+          node,
+          allowHandle: true, // Handle-specific errors emitted below.
+          allowTypedData: true, // TypedData-specific errors emitted below.
+        );
+        ensureLeafCallDoesNotUseHandles(
+          nativeType,
+          isLeaf,
+          reportErrorOn: node,
+        );
+        ensureOnlyLeafCallsUseTypedData(
+          node.arguments.types[0],
+          dartType,
+          isLeaf: isLeaf,
+          isCall: true,
+          reportErrorOn: node,
+        );
         return _replaceLookupFunction(node);
       } else if (target == asFunctionMethod) {
         final dartType = node.arguments.types[1];
         final InterfaceType nativeType = InterfaceType(nativeFunctionClass,
             Nullability.nonNullable, [node.arguments.types[0]]);
 
-        ensureNativeTypeValid(nativeType, node);
-        ensureNativeTypeToDartType(nativeType, dartType, node);
         _ensureIsLeafIsConst(node);
-
         final isLeaf = getIsLeafBoolean(node) ?? false;
-        ensureLeafCallDoesNotUseHandles(nativeType, isLeaf, node);
 
+        ensureNativeTypeValid(nativeType, node);
+        ensureNativeTypeToDartType(
+          nativeType,
+          dartType,
+          node,
+          allowHandle: true, // Handle-specific errors emitted below.
+          allowTypedData: true, // TypedData-specific errors emitted below.
+        );
+        ensureLeafCallDoesNotUseHandles(
+          nativeType,
+          isLeaf,
+          reportErrorOn: node,
+        );
+        ensureOnlyLeafCallsUseTypedData(
+          node.arguments.types[0],
+          dartType,
+          isLeaf: isLeaf,
+          isCall: true,
+          reportErrorOn: node,
+        );
         final DartType nativeSignature = nativeType.typeArguments[0];
 
         return buildAsFunctionInternal(
@@ -352,7 +391,7 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
             .where((c) =>
                 c.superclass == structClass || c.superclass == unionClass)
             .toList();
-        return _invokeCompoundConstructors(replacement, compoundClasses);
+        return invokeCompoundConstructors(replacement, compoundClasses);
       } else if (target == allocateMethod) {
         final DartType nativeType = node.arguments.types[0];
 
@@ -377,6 +416,8 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
               functionType: FunctionTypeInstantiator.instantiate(
                   allocateFunctionType, node.arguments.types));
         }
+      } else if (target == nativeAddressOf) {
+        return _replaceNativeAddressOf(node);
       }
     } on FfiStaticTypeError {
       // It's OK to swallow the exception because the diagnostics issued will
@@ -387,7 +428,7 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
     return node;
   }
 
-  Expression _invokeCompoundConstructors(
+  Expression invokeCompoundConstructors(
           Expression nestedExpression, List<Class> compoundClasses) =>
       compoundClasses
           .distinct()
@@ -654,7 +695,19 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
     }
 
     ensureNativeTypeValid(nativeType, node);
-    ensureNativeTypeToDartType(nativeType, dartType, node);
+    ensureNativeTypeToDartType(
+      nativeType,
+      dartType,
+      node,
+      allowTypedData: true, // TypedData-specific errors emitted below.
+    );
+    ensureOnlyLeafCallsUseTypedData(
+      node.arguments.types[0],
+      dartType,
+      isLeaf: false,
+      isCall: false,
+      reportErrorOn: node,
+    );
 
     final funcType = dartType as FunctionType;
 
@@ -748,7 +801,7 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
         .map((t) => t.classNode)
         .where((c) => c.superclass == structClass || c.superclass == unionClass)
         .toList();
-    return _invokeCompoundConstructors(replacement, compoundClasses);
+    return invokeCompoundConstructors(replacement, compoundClasses);
   }
 
   Expression _replaceGetRef(StaticInvocation node) {
@@ -1026,6 +1079,68 @@ mixin _FfiUseSiteTransformer on FfiTransformer {
       // Throw so we don't get another error about not replacing
       // `lookupFunction`, which will shadow the above error.
       throw FfiStaticTypeError();
+    }
+  }
+
+  /// Replaces calls to `Native.addressOf(x)` by looking up the `@Native`
+  /// annotation of `x` and rewriting the expression to use
+  /// `_addressOf(annotation)`, which is implemented in the VM.
+  ///
+  /// By implementing this in the VM, we can re-use the implementation used to
+  /// lookup addresses for `@Native` invocations. We could also replace the
+  /// call with an invocation to `Native._ffi_resolver_function` and wrap the
+  /// result in a `Pointer`. To support static linking of native functions in
+  /// the future, having the unresolved symbol in the assembly generated for
+  /// each call site in the VM will be necessary. So we're already doing this
+  /// in the VM today.
+  ///
+  /// The transformation works by looking up the resolved `@Native` annotation
+  /// left by the native transformer in a pragma. Looking for a `@Native`
+  /// annotation on the argument wouldn't work because it's removed by the
+  /// native transformer and because it requires context from the library to
+  /// resolve the asset id.
+  StaticInvocation _replaceNativeAddressOf(StaticInvocation node) {
+    final arg = node.arguments.positional.single;
+    final nativeType = node.arguments.types.single;
+
+    // `x` must be a method annotated with `@Native`, so referencing it makes
+    // it a tear-off.
+    if (arg case ConstantExpression(constant: StaticTearOffConstant method)) {
+      // The method must have the `vm:ffi:native` pragma added by the native
+      // transformer.
+      Constant? nativeAnnotation;
+      for (final annotation in method.target.annotations) {
+        if (annotation
+            case ConstantExpression(constant: final InstanceConstant c)) {
+          if (c.classNode == coreTypes.pragmaClass) {
+            final name = c.fieldValues[coreTypes.pragmaName.fieldReference];
+            if (name is StringConstant &&
+                name.value == native.FfiNativeTransformer.nativeMarker) {
+              nativeAnnotation =
+                  c.fieldValues[coreTypes.pragmaOptions.fieldReference]!;
+              break;
+            }
+          }
+        }
+      }
+
+      if (nativeAnnotation == null) {
+        diagnosticReporter.report(messageFfiAddressOfMustBeNative,
+            node.arguments.fileOffset, 1, node.location?.file);
+        return node;
+      }
+
+      ensureNativeTypeValid(nativeType, node);
+      ensureNativeTypeToDartType(nativeType, arg.type, node);
+
+      return StaticInvocation(
+        nativePrivateAddressOf,
+        Arguments([ConstantExpression(nativeAnnotation)], types: [nativeType]),
+      )..fileOffset = arg.fileOffset;
+    } else {
+      diagnosticReporter.report(messageFfiAddressOfMustBeNative, arg.fileOffset,
+          1, node.location?.file);
+      return node;
     }
   }
 }

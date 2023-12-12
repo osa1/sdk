@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:_fe_analyzer_shared/src/macros/api.dart' as macro;
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -139,6 +140,7 @@ class ClassElementLinkedData extends ElementLinkedData<ClassElementImpl> {
     element.metadata = reader._readAnnotationList(
       unitElement: unitElement,
     );
+    element.macroDiagnostics = reader.readMacroDiagnostics();
     _readTypeParameters(reader, element.typeParameters);
     element.supertype = reader._readOptionalInterfaceType();
     element.mixins = reader._readInterfaceTypeList();
@@ -205,11 +207,15 @@ class ConstructorElementLinkedData
     element.metadata = reader._readAnnotationList(
       unitElement: unitElement,
     );
+    element.macroDiagnostics = reader.readMacroDiagnostics();
     reader._addFormalParameters(element.parameters);
     _readFormalParameters(reader, element.parameters);
     element.superConstructor = reader.readElement() as ConstructorElement?;
     element.redirectedConstructor = reader.readElement() as ConstructorElement?;
     element.constantInitializers = reader._readNodeList();
+    element.augmentation = reader.readElement() as ConstructorElementImpl?;
+    element.augmentationTarget =
+        reader.readElement() as ConstructorElementImpl?;
     applyConstantOffsets?.perform();
   }
 }
@@ -424,6 +430,7 @@ class FieldElementLinkedData extends ElementLinkedData<FieldElementImpl> {
     element.metadata = reader._readAnnotationList(
       unitElement: unitElement,
     );
+    element.macroDiagnostics = reader.readMacroDiagnostics();
     element.type = reader.readRequiredType();
 
     final augmentationTarget = reader.readElement();
@@ -589,7 +596,7 @@ class LibraryElementLinkedData extends ElementLinkedData<LibraryElementImpl> {
 
     for (var import in element.augmentationImports) {
       import.metadata = reader._readAnnotationList(
-        // TODO(scheglov) Here and for parts, unit is not valid. Test and fix.
+        // TODO(scheglov): Here and for parts, unit is not valid. Test and fix.
         unitElement: unitElement,
       );
       final importedAugmentation = import.importedAugmentation;
@@ -647,7 +654,7 @@ class LibraryReader {
     _reader.offset = _offset;
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
 
-    // TODO(scheglov) https://github.com/dart-lang/sdk/issues/51855
+    // TODO(scheglov): https://github.com/dart-lang/sdk/issues/51855
     // This should not be needed.
     // But I have a suspicion that we attempt to read the library twice.
     _classMembersLengthsIndex = 0;
@@ -731,7 +738,7 @@ class LibraryReader {
 
     final augmentation = LibraryAugmentationElementImpl(
       augmentationTarget: augmentationTarget,
-      nameOffset: -1, // TODO(scheglov) implement, test
+      nameOffset: -1, // TODO(scheglov): implement, test
     );
     augmentation.definingCompilationUnit = definingUnit;
     augmentation.reference = definingUnit.reference!;
@@ -754,7 +761,7 @@ class LibraryReader {
       container: container,
     );
     return AugmentationImportElementImpl(
-      importKeywordOffset: -1, // TODO(scheglov) implement, test
+      importKeywordOffset: -1, // TODO(scheglov): implement, test
       uri: uri,
     );
   }
@@ -778,9 +785,6 @@ class LibraryReader {
     );
     element.setLinkedData(reference, linkedData);
     ClassElementFlags.read(_reader, element);
-    element.macroApplicationErrors = _reader.readTypedList(
-      () => MacroApplicationError(_reader),
-    );
 
     element.typeParameters = _readTypeParameters();
 
@@ -791,7 +795,7 @@ class LibraryReader {
         _readClassElementMembers(unitElement, element, reference);
       };
       if (_classMembersLengthsIndex >= _classMembersLengths.length) {
-        // TODO(scheglov) https://github.com/dart-lang/sdk/issues/51855
+        // TODO(scheglov): https://github.com/dart-lang/sdk/issues/51855
         throw StateError(
           '[libraryReference: $_reference]'
           '[classReference: $reference]'
@@ -883,7 +887,7 @@ class LibraryReader {
       final sourceUri = uriCache.parse(sourceUriStr);
       final source = sourceFactory.forUri2(sourceUri);
 
-      // TODO(scheglov) https://github.com/dart-lang/sdk/issues/49431
+      // TODO(scheglov): https://github.com/dart-lang/sdk/issues/49431
       final fixedSource = source ?? sourceFactory.forUri('dart:math')!;
 
       return DirectiveUriWithSourceImpl(
@@ -1235,7 +1239,7 @@ class LibraryReader {
     required LibraryOrAugmentationElementImpl container,
   }) {
     PrefixElementImpl buildElement(String name) {
-      // TODO(scheglov) Make reference required.
+      // TODO(scheglov): Make reference required.
       final containerRef = container.reference!;
       final reference = containerRef.getChild('@prefix').getChild(name);
       final existing = reference.element;
@@ -1400,7 +1404,7 @@ class LibraryReader {
     );
   }
 
-  /// TODO(scheglov) Deduplicate parameter reading implementation.
+  // TODO(scheglov): Deduplicate parameter reading implementation.
   List<ParameterElementImpl> _readParameters() {
     return _reader.readTypedList(() {
       var name = _reader.readStringReference();
@@ -1817,6 +1821,7 @@ class MethodElementLinkedData extends ElementLinkedData<MethodElementImpl> {
     element.metadata = reader._readAnnotationList(
       unitElement: unitElement,
     );
+    element.macroDiagnostics = reader.readMacroDiagnostics();
     _readTypeParameters(reader, element.typeParameters);
     _readFormalParameters(reader, element.parameters);
     element.returnType = reader.readRequiredType();
@@ -1846,6 +1851,7 @@ class MixinElementLinkedData extends ElementLinkedData<MixinElementImpl> {
     element.metadata = reader._readAnnotationList(
       unitElement: element.enclosingElement,
     );
+    element.macroDiagnostics = reader.readMacroDiagnostics();
     _readTypeParameters(reader, element.typeParameters);
     element.superclassConstraints = reader._readInterfaceTypeList();
     element.interfaces = reader._readInterfaceTypeList();
@@ -1982,6 +1988,10 @@ class ResolutionReader {
 
   List<T> readElementList<T extends Element>() {
     return _reader.readTypedListCast<T>(readElement);
+  }
+
+  List<AnalyzerMacroDiagnostic> readMacroDiagnostics() {
+    return readTypedList(_readMacroDiagnostic);
   }
 
   Map<K, V> readMap<K, V>({
@@ -2147,7 +2157,7 @@ class ResolutionReader {
     if (aliasElement is TypeAliasElement) {
       var aliasArguments = _readTypeList();
       if (type is DynamicType) {
-        // TODO(scheglov) add support for `dynamic` aliasing
+        // TODO(scheglov): add support for `dynamic` aliasing
         return type;
       } else if (type is FunctionType) {
         return FunctionTypeImpl(
@@ -2190,7 +2200,7 @@ class ResolutionReader {
           ),
         );
       } else if (type is VoidType) {
-        // TODO(scheglov) add support for `void` aliasing
+        // TODO(scheglov): add support for `void` aliasing
         return type;
       } else {
         throw UnimplementedError('${type.runtimeType}');
@@ -2240,7 +2250,7 @@ class ResolutionReader {
         element.hasImplicitType = hasImplicitType;
         element.typeParameters = typeParameters;
         element.parameters = _readFormalParameters(unitElement);
-        // TODO(scheglov) reuse for formal parameters
+        // TODO(scheglov): reuse for formal parameters
         _localElements.length -= typeParameters.length;
         if (unitElement != null) {
           element.metadata = _readAnnotationList(unitElement: unitElement);
@@ -2255,7 +2265,7 @@ class ResolutionReader {
         element.hasImplicitType = hasImplicitType;
         element.typeParameters = typeParameters;
         element.parameters = _readFormalParameters(unitElement);
-        // TODO(scheglov) reuse for formal parameters
+        // TODO(scheglov): reuse for formal parameters
         _localElements.length -= typeParameters.length;
         if (unitElement != null) {
           element.metadata = _readAnnotationList(unitElement: unitElement);
@@ -2265,9 +2275,9 @@ class ResolutionReader {
     });
   }
 
-  /// TODO(scheglov) Optimize for write/read of types without type parameters.
+  // TODO(scheglov): Optimize for write/read of types without type parameters.
   FunctionType _readFunctionType() {
-    // TODO(scheglov) reuse for formal parameters
+    // TODO(scheglov): reuse for formal parameters
     var typeParameters = _readTypeParameters(null);
     var returnType = readRequiredType();
     var formalParameters = _readFormalParameters(null);
@@ -2290,6 +2300,57 @@ class ResolutionReader {
 
   List<InterfaceType> _readInterfaceTypeList() {
     return readTypedList(_readInterfaceType);
+  }
+
+  AnalyzerMacroDiagnostic _readMacroDiagnostic() {
+    switch (readByte()) {
+      case 0x00:
+        return ArgumentMacroDiagnostic(
+          annotationIndex: readUInt30(),
+          argumentIndex: readUInt30(),
+          message: _reader.readStringUtf8(),
+        );
+      case 0x01:
+        return DeclarationsIntrospectionCycleDiagnostic(
+          components: readTypedList(() {
+            return DeclarationsIntrospectionCycleComponent(
+              element: readElement() as ElementImpl,
+              annotationIndex: readUInt30(),
+            );
+          }),
+        );
+      case 0x03:
+        return MacroDiagnostic(
+          severity: macro.Severity.values[readByte()],
+          message: _readMacroDiagnosticMessage(),
+          contextMessages: readTypedList(_readMacroDiagnosticMessage),
+        );
+      case final int tag:
+        throw UnimplementedError('tag: $tag');
+    }
+  }
+
+  MacroDiagnosticMessage _readMacroDiagnosticMessage() {
+    final message = _reader.readStringUtf8();
+    MacroDiagnosticTarget target;
+    switch (readByte()) {
+      case 0x00:
+        target = ApplicationMacroDiagnosticTarget(
+          annotationIndex: readUInt30(),
+        );
+      case 0x01:
+        final element = readElement();
+        target = ElementMacroDiagnosticTarget(
+          element: element as ElementImpl,
+        );
+      case final int tag:
+        throw UnimplementedError('tag: $tag');
+    }
+
+    return MacroDiagnosticMessage(
+      message: message,
+      target: target,
+    );
   }
 
   List<T> _readNodeList<T>() {

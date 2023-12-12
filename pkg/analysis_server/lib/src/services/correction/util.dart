@@ -179,8 +179,7 @@ List<SimpleIdentifier> findPrefixElementReferences(
 }
 
 // TODO(scheglov): replace with nodes once there will be
-/// [CompilationUnit.getComments].
-///
+// [CompilationUnit.getComments].
 /// Returns [SourceRange]s of all comments in [unit].
 List<SourceRange> getCommentRanges(CompilationUnit unit) {
   var ranges = <SourceRange>[];
@@ -1103,9 +1102,13 @@ class CorrectionUtils {
     } else if (node is IsExpression) {
       final expressionCode = getNodeText(node.expression);
       final typeCode = getNodeText(node.type);
+      final patternCode = switch (node.type.typeOrThrow) {
+        InterfaceType() => '$typeCode()',
+        _ => '$typeCode _',
+      };
       return ExpressionCasePattern(
         expressionCode: expressionCode,
-        patternCode: '$typeCode()',
+        patternCode: patternCode,
       );
     }
     return null;

@@ -26,8 +26,7 @@ import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/member.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
-import 'package:analyzer/src/dart/element/type_system.dart'
-    show ExtensionTypeErasure, TypeSystemImpl;
+import 'package:analyzer/src/dart/element/type_system.dart' show TypeSystemImpl;
 import 'package:analyzer/src/diagnostic/diagnostic.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/generated/engine.dart';
@@ -743,8 +742,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
     } else if (operatorType == TokenType.TILDE_SLASH) {
       return _dartObjectComputer.integerDivide(node, leftResult, rightResult);
     } else {
-      // TODO(https://github.com/dart-lang/sdk/issues/47061): Use a specific
-      // error code.
+      // TODO(srawlins): Use a specific error code.
+      // https://github.com/dart-lang/sdk/issues/47061
       return InvalidConstant.genericError(node);
     }
   }
@@ -927,8 +926,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
   @override
   Constant visitInstanceCreationExpression(InstanceCreationExpression node) {
     if (!node.isConst) {
-      // TODO(https://github.com/dart-lang/sdk/issues/47061): Use a specific
-      // error code.
+      // TODO(srawlins): Use a specific error code.
+      // https://github.com/dart-lang/sdk/issues/47061
       return InvalidConstant.genericError(node);
     }
     var constructor = node.constructorName.staticElement;
@@ -1096,8 +1095,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
 
   @override
   Constant visitNode(AstNode node) {
-    // TODO(https://github.com/dart-lang/sdk/issues/47061): Use a specific
-    // error code.
+    // TODO(srawlins): Use a specific error code.
+    // https://github.com/dart-lang/sdk/issues/47061
     return InvalidConstant.genericError(node);
   }
 
@@ -1164,8 +1163,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
     } else if (node.operator.type == TokenType.MINUS) {
       return _dartObjectComputer.negated(node, operand);
     } else {
-      // TODO(https://github.com/dart-lang/sdk/issues/47061): Use a specific
-      // error code.
+      // TODO(srawlins): Use a specific error code.
+      // https://github.com/dart-lang/sdk/issues/47061
       return InvalidConstant.genericError(node);
     }
   }
@@ -1656,7 +1655,7 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
   /// the [expression] is used to identify type parameter errors, and
   /// [identifier] to determine the constant of any [ExecutableElement]s.
   ///
-  /// TODO(kallentu): Revisit this method and clean it up a bit.
+  // TODO(kallentu): Revisit this method and clean it up a bit.
   Constant _getConstantValue({
     required AstNode errorNode,
     required Expression? expression,
@@ -1733,7 +1732,7 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
             typeArguments: variableElement.typeParameters
                 .map((t) => _typeProvider.dynamicType)
                 .toFixedList(),
-            nullabilitySuffix: NullabilitySuffix.star,
+            nullabilitySuffix: NullabilitySuffix.none,
           );
       return DartObjectImpl(
         typeSystem,
@@ -1752,7 +1751,7 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
             typeArguments: variableElement.typeParameters
                 .map((t) => t.bound ?? _typeProvider.dynamicType)
                 .toList(),
-            nullabilitySuffix: NullabilitySuffix.star,
+            nullabilitySuffix: NullabilitySuffix.none,
           );
       return DartObjectImpl(
         typeSystem,
@@ -1788,8 +1787,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
       return InvalidConstant.genericError(errorNode, isUnresolved: true);
     }
 
-    // TODO(https://github.com/dart-lang/sdk/issues/47061): Use a specific
-    // error code.
+    // TODO(srawlins): Use a specific error code.
+    // https://github.com/dart-lang/sdk/issues/47061
     return InvalidConstant.genericError(errorNode2);
   }
 
@@ -3140,7 +3139,7 @@ extension RuntimeExtensions on TypeSystemImpl {
     DartObjectImpl obj,
     DartType type,
   ) {
-    type = ExtensionTypeErasure().perform(type);
+    type = type.extensionTypeErasure;
     if (!isNonNullableByDefault) {
       type = toLegacyTypeIfOptOut(type);
     }

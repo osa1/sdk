@@ -40,7 +40,9 @@ class BaseTest {
 
   late Driver driver;
 
-  AnalysisOptions get analysisOptions => driver.analysisDriver!.analysisOptions;
+  AnalysisOptions get analysisOptions =>
+      driver.analysisDriver!.getAnalysisOptionsForFile(driver.resourceProvider
+          .getFile(path.normalize(path.absolute(emptyOptionsFile))));
 
   /// Normalize text with bullets.
   String bulletToDash(StringSink? item) => '$item'.replaceAll('•', '-');
@@ -328,7 +330,7 @@ flutter:
       expect(
           bulletToDash(outSink),
           contains(
-              "warning - The value of the 'asset' field is expected to be a list of relative file paths"));
+              "warning - The value of the 'assets' field is expected to be a list of relative file paths"));
       expect(exitCode, 0);
     });
   }

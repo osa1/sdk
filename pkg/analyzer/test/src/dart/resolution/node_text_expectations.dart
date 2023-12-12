@@ -10,6 +10,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/source/line_info.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
+import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:test/test.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
@@ -20,81 +21,91 @@ class NodeTextExpectationsCollector {
   /// This flag should be `false` during code review.
   static const updatingIsEnabled = false;
 
-  static const assertMethods = [
+  static final assertMethods = [
+    _AssertMethod(
+      className: 'AnalysisContextCollectionTest',
+      methodName: '_assertWorkspaceCollectionText',
+      argument: _ArgumentIndex(1),
+    ),
     _AssertMethod(
       className: 'ContextResolutionTest',
       methodName: 'assertDriverStateString',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
+    ),
+    _AssertMethod(
+      className: 'MacroArgumentsTest',
+      methodName: '_assertTypesPhaseArgumentsText',
+      argument: _ArgumentNamed('expected'),
     ),
     _AssertMethod(
       className: 'ElementsBaseTest',
       methodName: 'checkElementText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'FileResolutionTest',
       methodName: 'assertStateString',
-      argumentIndex: 0,
+      argument: _ArgumentIndex(0),
     ),
     _AssertMethod(
       className: 'IndexTest',
       methodName: 'assertElementIndexText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'InheritanceManager3Test_ExtensionType',
       methodName: 'assertInterfaceText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
-      className: 'MacroDeclarationsIntrospectTest',
+      className: 'MacroIntrospectElementTest',
       methodName: '_assertIntrospectText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
-      className: 'MacroTypesIntrospectTest',
+      className: 'MacroIntrospectNodeTest',
       methodName: '_assertIntrospectText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'MetadataResolutionTest',
       methodName: '_assertAnnotationValueText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'ParserDiagnosticsTest',
       methodName: 'assertParsedNodeText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'ResolutionTest',
       methodName: 'assertParsedNodeText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'ResolutionTest',
       methodName: 'assertDartObjectText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'ResolutionTest',
       methodName: 'assertResolvedNodeText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'SearchTest',
       methodName: 'assertDeclarationsText',
-      argumentIndex: 2,
+      argument: _ArgumentIndex(2),
     ),
     _AssertMethod(
       className: 'SearchTest',
       methodName: 'assertElementReferencesText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
     _AssertMethod(
       className: 'SearchTest',
       methodName: 'assertUnresolvedMemberReferencesText',
-      argumentIndex: 1,
+      argument: _ArgumentIndex(1),
     ),
   ];
 
@@ -146,8 +157,8 @@ class NodeTextExpectationsCollector {
           );
         }
 
-        final arguments = invocation.argumentList.arguments;
-        final argument = arguments[assertMethod.argumentIndex];
+        final argumentList = invocation.argumentList;
+        final argument = assertMethod.argument.get(argumentList);
         if (argument is! SimpleStringLiteral) {
           fail('Not a literal: ${argument.runtimeType}');
         }
@@ -185,15 +196,47 @@ class UpdateNodeTextExpectations {
   }
 }
 
+sealed class _Argument {
+  Expression get(ArgumentList argumentList);
+}
+
+final class _ArgumentIndex extends _Argument {
+  final int index;
+
+  _ArgumentIndex(this.index);
+
+  @override
+  Expression get(ArgumentList argumentList) {
+    return argumentList.arguments
+        .whereNotType<NamedExpression>()
+        .elementAt(index);
+  }
+}
+
+final class _ArgumentNamed extends _Argument {
+  final String name;
+
+  _ArgumentNamed(this.name);
+
+  @override
+  Expression get(ArgumentList argumentList) {
+    return argumentList.arguments
+        .whereType<NamedExpression>()
+        .where((argument) => argument.name.label.name == name)
+        .single
+        .expression;
+  }
+}
+
 class _AssertMethod {
   final String className;
   final String methodName;
-  final int argumentIndex;
+  final _Argument argument;
 
   const _AssertMethod({
     required this.className,
     required this.methodName,
-    required this.argumentIndex,
+    required this.argument,
   });
 
   String get stackTracePattern => '$className.$methodName';

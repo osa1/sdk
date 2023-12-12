@@ -6,10 +6,9 @@ import 'package:meta/meta.dart';
 
 import 'client.dart';
 
-/// Facilitates Stream behaviour between [Client]s.
+/// Manages state related to stream subscriptions made by [Client]s.
 abstract class StreamManager {
-  final _streamListeners =
-      <String, List<Client>>{}; // TODO should this be set of StreamClient?
+  final _streamListeners = <String, List<Client>>{};
   List<Client>? getListenersFor({required String stream}) =>
       _streamListeners[stream];
 
@@ -28,7 +27,7 @@ abstract class StreamManager {
   @mustCallSuper
   void postEvent(
     String stream,
-    Map<String, Object?> data, {
+    Object data, {
     Client? excludedClient,
   }) {
     final listeners = _streamListeners[stream] ?? const <Client>[];
@@ -38,7 +37,7 @@ abstract class StreamManager {
     }
   }
 
-  /// Called when a `client`  subscribes to a stream.
+  /// Subscribes a [client] to [stream].
   @mustCallSuper
   Future<void> streamListen(
     Client client,

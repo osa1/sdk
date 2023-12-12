@@ -51,6 +51,7 @@ import 'package:analyzer/src/services/lint.dart';
 import 'package:analyzer/src/task/strong/checker.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/utilities/extensions/version.dart';
+import 'package:analyzer/src/workspace/pub.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 
@@ -127,7 +128,7 @@ class LibraryAnalyzer {
     var errorListener = RecordingErrorListener();
 
     return performance.run('resolve', (performance) {
-      // TODO(scheglov) We don't need to do this for the whole unit.
+      // TODO(scheglov): We don't need to do this for the whole unit.
       parsedUnit.accept(
         ResolutionVisitor(
           unitElement: unitElement,
@@ -142,7 +143,7 @@ class LibraryAnalyzer {
         ),
       );
 
-      // TODO(scheglov) We don't need to do this for the whole unit.
+      // TODO(scheglov): We don't need to do this for the whole unit.
       parsedUnit.accept(ScopeResolverVisitor(
           _libraryElement, file.source, _typeProvider, errorListener,
           nameScope: _libraryElement.scope));
@@ -152,9 +153,14 @@ class LibraryAnalyzer {
       _testingData?.recordFlowAnalysisDataForTesting(
           file.uri, flowAnalysisHelper.dataForTesting!);
 
+      // TODO(pq): precache options in file state and fetch them from there
+      var analysisOptions = _libraryElement.context
+          .getAnalysisOptionsForFile(file.resource) as AnalysisOptionsImpl;
+
       var resolverVisitor = ResolverVisitor(_inheritance, _libraryElement,
           file.source, _typeProvider, errorListener,
           featureSet: _libraryElement.featureSet,
+          analysisOptions: analysisOptions,
           flowAnalysisHelper: flowAnalysisHelper);
 
       var nodeToResolve = node?.thisOrAncestorMatching((e) {
@@ -316,7 +322,7 @@ class LibraryAnalyzer {
     // before the list of diagnostics has been filtered.
     for (var file in _library.files) {
       final ignoreInfo = _fileToIgnoreInfo[file];
-      // TODO(scheglov) make it safer
+      // TODO(scheglov): make it safer
       if (ignoreInfo != null) {
         IgnoreValidator(
           _getErrorReporter(file),
@@ -398,8 +404,13 @@ class LibraryAnalyzer {
     //
     // Use the ErrorVerifier to compute errors.
     //
-    ErrorVerifier errorVerifier = ErrorVerifier(errorReporter, _libraryElement,
-        _typeProvider, _inheritance, _libraryVerificationContext);
+    ErrorVerifier errorVerifier = ErrorVerifier(
+        errorReporter,
+        _libraryElement,
+        _typeProvider,
+        _inheritance,
+        _libraryVerificationContext,
+        _analysisOptions);
     unit.accept(errorVerifier);
 
     // Verify constraints on FFI uses. The CFE enforces these constraints as
@@ -485,7 +496,9 @@ class LibraryAnalyzer {
     // Find code that uses features from an SDK version that does not satisfy
     // the SDK constraints specified in analysis options.
     //
-    var sdkVersionConstraint = _analysisOptions.sdkVersionConstraint;
+    var package = file.workspacePackage;
+    var sdkVersionConstraint =
+        (package is PubWorkspacePackage) ? package.sdkVersionConstraint : null;
     if (sdkVersionConstraint != null) {
       SdkConstraintVerifier verifier = SdkConstraintVerifier(
         errorReporter,
@@ -565,7 +578,7 @@ class LibraryAnalyzer {
     String content = file.content;
     var unit = file.parse(errorListener);
 
-    // TODO(scheglov) Store [IgnoreInfo] as unlinked data.
+    // TODO(scheglov): Store [IgnoreInfo] as unlinked data.
     _fileToLineInfo[file] = unit.lineInfo;
     _fileToIgnoreInfo[file] = IgnoreInfo.forDart(unit, content);
 
@@ -591,61 +604,61 @@ class LibraryAnalyzer {
   }
 
   void _resolveAugmentationImportDirective({
-    required AugmentationImportDirectiveImpl directive,
+    required AugmentationImportDirectiveImpl? directive,
     required AugmentationImportElementImpl element,
     required AugmentationImportState state,
     required ErrorReporter errorReporter,
     required Set<AugmentationFileKind> seenAugmentations,
     required Map<FileState, CompilationUnitImpl> units,
   }) {
-    directive.element = element;
+    directive?.element = element;
+
+    void reportOnDirective(ErrorCode errorCode, List<Object>? arguments) {
+      if (directive != null) {
+        errorReporter.reportErrorForNode(errorCode, directive.uri, arguments);
+      }
+    }
 
     final AugmentationFileKind? importedAugmentationKind;
     if (state is AugmentationImportWithFile) {
       importedAugmentationKind = state.importedAugmentation;
       if (!state.importedFile.exists) {
-        final errorCode = isGeneratedSource(state.importedSource)
-            ? CompileTimeErrorCode.URI_HAS_NOT_BEEN_GENERATED
-            : CompileTimeErrorCode.URI_DOES_NOT_EXIST;
-        errorReporter.reportErrorForNode(
-          errorCode,
-          directive.uri,
+        reportOnDirective(
+          isGeneratedSource(state.importedSource)
+              ? CompileTimeErrorCode.URI_HAS_NOT_BEEN_GENERATED
+              : CompileTimeErrorCode.URI_DOES_NOT_EXIST,
           [state.importedFile.uriStr],
         );
         return;
       } else if (importedAugmentationKind == null) {
-        errorReporter.reportErrorForNode(
+        reportOnDirective(
           CompileTimeErrorCode.IMPORT_OF_NOT_AUGMENTATION,
-          directive.uri,
           [state.importedFile.uriStr],
         );
         return;
       } else if (!seenAugmentations.add(importedAugmentationKind)) {
-        errorReporter.reportErrorForNode(
+        reportOnDirective(
           CompileTimeErrorCode.DUPLICATE_AUGMENTATION_IMPORT,
-          directive.uri,
           [state.importedFile.uriStr],
         );
         return;
       }
     } else if (state is AugmentationImportWithUri) {
-      errorReporter.reportErrorForNode(
+      reportOnDirective(
         CompileTimeErrorCode.URI_DOES_NOT_EXIST,
-        directive.uri,
         [state.uri.relativeUriStr],
       );
       return;
     } else if (state is AugmentationImportWithUriStr) {
-      errorReporter.reportErrorForNode(
+      reportOnDirective(
         CompileTimeErrorCode.INVALID_URI,
-        directive.uri,
         [state.uri.relativeUriStr],
       );
       return;
     } else {
-      errorReporter.reportErrorForNode(
+      reportOnDirective(
         CompileTimeErrorCode.URI_WITH_INTERPOLATION,
-        directive.uri,
+        null,
       );
       return;
     }
@@ -746,6 +759,23 @@ class LibraryAnalyzer {
         }
       }
     }
+
+    // The macro augmentation does not have an explicit `import` directive.
+    // So, we look into the file augmentation imports.
+    final macroImport = containerKind.augmentationImports.lastOrNull;
+    if (macroImport is AugmentationImportWithFile) {
+      final importedFile = macroImport.importedFile;
+      if (importedFile.isMacroAugmentation) {
+        _resolveAugmentationImportDirective(
+          directive: null,
+          element: _libraryElement.augmentationImports.last,
+          state: macroImport,
+          errorReporter: containerErrorReporter,
+          seenAugmentations: seenAugmentations,
+          units: units,
+        );
+      }
+    }
   }
 
   void _resolveFile(FileState file, CompilationUnitImpl unit) {
@@ -781,9 +811,15 @@ class LibraryAnalyzer {
     _testingData?.recordFlowAnalysisDataForTesting(
         file.uri, flowAnalysisHelper.dataForTesting!);
 
+    // TODO(pq): precache options in file state and fetch them from there
+    var analysisOptions = _libraryElement.context
+        .getAnalysisOptionsForFile(file.resource) as AnalysisOptionsImpl;
+
     unit.accept(ResolverVisitor(
         _inheritance, _libraryElement, source, _typeProvider, errorListener,
-        featureSet: unit.featureSet, flowAnalysisHelper: flowAnalysisHelper));
+        analysisOptions: analysisOptions,
+        featureSet: unit.featureSet,
+        flowAnalysisHelper: flowAnalysisHelper));
   }
 
   void _resolveLibraryAugmentationDirective({

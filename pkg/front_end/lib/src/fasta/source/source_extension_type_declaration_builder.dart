@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:front_end/src/fasta/builder/record_type_builder.dart';
-import 'package:front_end/src/fasta/kernel/body_builder_context.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
@@ -20,10 +18,16 @@ import '../builder/library_builder.dart';
 import '../builder/member_builder.dart';
 import '../builder/metadata_builder.dart';
 import '../builder/name_iterator.dart';
+import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
+import '../dill/dill_class_builder.dart';
+import '../dill/dill_extension_type_declaration_builder.dart';
+import '../dill/dill_type_alias_builder.dart';
+import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/type_algorithms.dart';
+import '../kernel/type_builder_computer.dart';
 import '../messages.dart';
 import '../problems.dart';
 import '../scope.dart';
@@ -39,7 +43,10 @@ import 'source_member_builder.dart';
 
 class SourceExtensionTypeDeclarationBuilder
     extends ExtensionTypeDeclarationBuilderImpl
-    with SourceDeclarationBuilderMixin, ClassDeclarationMixin
+    with
+        SourceDeclarationBuilderMixin,
+        ClassDeclarationMixin,
+        SourceTypedDeclarationBuilderMixin
     implements
         Comparable<SourceExtensionTypeDeclarationBuilder>,
         ClassDeclaration {
@@ -47,7 +54,6 @@ class SourceExtensionTypeDeclarationBuilder
   final List<ConstructorReferenceBuilder>? constructorReferences;
 
   final ExtensionTypeDeclaration _extensionTypeDeclaration;
-  bool _builtRepresentationTypeAndName = false;
 
   SourceExtensionTypeDeclarationBuilder? _origin;
   SourceExtensionTypeDeclarationBuilder? patchForTesting;
@@ -137,8 +143,8 @@ class SourceExtensionTypeDeclarationBuilder
             typeBuilder.declaration is TypeAliasBuilder
                 ? typeBuilder.declaration as TypeAliasBuilder
                 : null;
-        DartType interface =
-            typeBuilder.build(libraryBuilder, TypeUse.superType);
+        DartType interface = typeBuilder.build(
+            libraryBuilder, TypeUse.extensionTypeImplementsType);
         Message? errorMessage;
         List<LocatedMessage>? errorContext;
 
@@ -255,25 +261,12 @@ class SourceExtensionTypeDeclarationBuilder
       }
     }
 
-    buildRepresentationTypeAndName();
-    buildInternal(coreLibrary, addMembersToLibrary: addMembersToLibrary);
-
-    return _extensionTypeDeclaration;
-  }
-
-  @override
-  void buildRepresentationTypeAndName() {
-    // We cut the potential infinite recursion here. The cyclic dependencies
-    // should be reported elsewhere.
-    if (_builtRepresentationTypeAndName) return;
-    _builtRepresentationTypeAndName = true;
-
     DartType representationType;
     String representationName;
     if (representationFieldBuilder != null) {
       TypeBuilder typeBuilder = representationFieldBuilder!.type;
       if (typeBuilder.isExplicit) {
-        if (_checkRepresentationDependency(typeBuilder, {this}, {})) {
+        if (_checkRepresentationDependency(typeBuilder, this, {this}, {})) {
           representationType = const InvalidType();
         } else {
           representationType =
@@ -312,10 +305,15 @@ class SourceExtensionTypeDeclarationBuilder
     }
     _extensionTypeDeclaration.declaredRepresentationType = representationType;
     _extensionTypeDeclaration.representationName = representationName;
+    buildInternal(coreLibrary, addMembersToLibrary: addMembersToLibrary);
+    checkConstructorStaticConflict();
+
+    return _extensionTypeDeclaration;
   }
 
   bool _checkRepresentationDependency(
       TypeBuilder? typeBuilder,
+      ExtensionTypeDeclarationBuilder rootExtensionTypeDeclaration,
       Set<ExtensionTypeDeclarationBuilder> seenExtensionTypeDeclarations,
       Set<TypeAliasBuilder> usedTypeAliasBuilders) {
     TypeBuilder? unaliased = typeBuilder?.unalias(
@@ -329,7 +327,9 @@ class SourceExtensionTypeDeclarationBuilder
           typeArguments: List<TypeBuilder>? arguments
         ):
         if (declaration is ExtensionTypeDeclarationBuilder) {
-          if (!seenExtensionTypeDeclarations.add(declaration)) {
+          bool declarationSeenFirstTime =
+              seenExtensionTypeDeclarations.add(declaration);
+          if (declaration == rootExtensionTypeDeclaration) {
             List<LocatedMessage> context = [];
             for (ExtensionTypeDeclarationBuilder extensionTypeDeclarationBuilder
                 in seenExtensionTypeDeclarations) {
@@ -356,9 +356,10 @@ class SourceExtensionTypeDeclarationBuilder
           } else {
             TypeBuilder? representationTypeBuilder =
                 declaration.declaredRepresentationTypeBuilder;
-            if (representationTypeBuilder != null) {
+            if (declarationSeenFirstTime && representationTypeBuilder != null) {
               if (_checkRepresentationDependency(
                   representationTypeBuilder,
+                  rootExtensionTypeDeclaration,
                   seenExtensionTypeDeclarations.toSet(),
                   usedTypeAliasBuilders.toSet())) {
                 return true;
@@ -370,9 +371,69 @@ class SourceExtensionTypeDeclarationBuilder
           for (TypeBuilder typeArgument in arguments) {
             if (_checkRepresentationDependency(
                 typeArgument,
+                rootExtensionTypeDeclaration,
                 seenExtensionTypeDeclarations.toSet(),
                 usedTypeAliasBuilders.toSet())) {
               return true;
+            }
+          }
+        } else if (declaration != null && declaration.typeVariablesCount > 0) {
+          List<TypeVariableBuilderBase>? typeParameters;
+          List<TypeParameter>? typeParametersFromKernel;
+          bool isFromKernel = false;
+          switch (declaration) {
+            case ClassBuilder():
+              typeParameters = declaration.typeVariables;
+              if (declaration is DillClassBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel = declaration.cls.typeParameters;
+              }
+            case TypeAliasBuilder():
+              typeParameters = declaration.typeVariables;
+              if (declaration is DillTypeAliasBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel = declaration.typedef.typeParameters;
+              }
+            case ExtensionTypeDeclarationBuilder():
+              typeParameters = declaration.typeParameters;
+              if (declaration is DillExtensionTypeDeclarationBuilder) {
+                isFromKernel = true;
+                typeParametersFromKernel =
+                    declaration.extensionTypeDeclaration.typeParameters;
+              }
+            case BuiltinTypeDeclarationBuilder():
+            case InvalidTypeDeclarationBuilder():
+            case OmittedTypeDeclarationBuilder():
+            case ExtensionBuilder():
+            case TypeVariableBuilderBase():
+          }
+          if (typeParameters != null) {
+            TypeBuilderComputer? typeBuilderComputer;
+            for (int i = 0; i < typeParameters.length; i++) {
+              TypeVariableBuilderBase typeParameter = typeParameters[i];
+              if (!isFromKernel) {
+                if (_checkRepresentationDependency(
+                    typeParameter.defaultType!,
+                    rootExtensionTypeDeclaration,
+                    seenExtensionTypeDeclarations.toSet(),
+                    usedTypeAliasBuilders.toSet())) {
+                  return true;
+                }
+              } else if (typeParametersFromKernel != null) {
+                assert(
+                    typeParameters.length == typeParametersFromKernel.length);
+                typeBuilderComputer ??=
+                    new TypeBuilderComputer(libraryBuilder.loader);
+                if (_checkRepresentationDependency(
+                    typeParametersFromKernel[i]
+                        .defaultType
+                        .accept(typeBuilderComputer),
+                    rootExtensionTypeDeclaration,
+                    seenExtensionTypeDeclarations.toSet(),
+                    usedTypeAliasBuilders.toSet())) {
+                  return true;
+                }
+              }
             }
           }
         }
@@ -383,6 +444,7 @@ class SourceExtensionTypeDeclarationBuilder
         ):
         if (_checkRepresentationDependency(
             returnType,
+            rootExtensionTypeDeclaration,
             seenExtensionTypeDeclarations.toSet(),
             usedTypeAliasBuilders.toSet())) {
           return true;
@@ -391,6 +453,7 @@ class SourceExtensionTypeDeclarationBuilder
           for (ParameterBuilder formal in formals) {
             if (_checkRepresentationDependency(
                 formal.type,
+                rootExtensionTypeDeclaration,
                 seenExtensionTypeDeclarations.toSet(),
                 usedTypeAliasBuilders.toSet())) {
               return true;
@@ -402,6 +465,7 @@ class SourceExtensionTypeDeclarationBuilder
             TypeBuilder? bound = typeVariable.bound;
             if (_checkRepresentationDependency(
                 bound,
+                rootExtensionTypeDeclaration,
                 seenExtensionTypeDeclarations.toSet(),
                 usedTypeAliasBuilders.toSet())) {
               return true;
@@ -416,6 +480,7 @@ class SourceExtensionTypeDeclarationBuilder
           for (RecordTypeFieldBuilder field in positionalFields) {
             if (_checkRepresentationDependency(
                 field.type,
+                rootExtensionTypeDeclaration,
                 seenExtensionTypeDeclarations.toSet(),
                 usedTypeAliasBuilders.toSet())) {
               return true;
@@ -426,6 +491,7 @@ class SourceExtensionTypeDeclarationBuilder
           for (RecordTypeFieldBuilder field in namedFields) {
             if (_checkRepresentationDependency(
                 field.type,
+                rootExtensionTypeDeclaration,
                 seenExtensionTypeDeclarations.toSet(),
                 usedTypeAliasBuilders.toSet())) {
               return true;
@@ -448,8 +514,8 @@ class SourceExtensionTypeDeclarationBuilder
       Set<TypeDeclarationBuilder> implemented = {};
       for (int i = 0; i < interfaceBuilders!.length; ++i) {
         TypeBuilder typeBuilder = interfaceBuilders![i];
-        DartType interface =
-            typeBuilder.build(libraryBuilder, TypeUse.superType);
+        DartType interface = typeBuilder.build(
+            libraryBuilder, TypeUse.extensionTypeImplementsType);
         if (interface is InterfaceType) {
           if (!hierarchyBuilder.types.isSubtypeOf(declaredRepresentationType,
               interface, SubtypeCheckMode.withNullabilities)) {

@@ -14,7 +14,7 @@ part of 'core_patch.dart';
 @pragma("wasm:prefer-inline")
 _Type _literal<T>() => unsafeCast(T);
 
-extension _IndexWasmArrayOfTypes on WasmObjectArray<_Type> {
+extension on WasmObjectArray<_Type> {
   @pragma("wasm:prefer-inline")
   _Type operator [](int index) => read(index);
 
@@ -26,10 +26,87 @@ extension _IndexWasmArrayOfTypes on WasmObjectArray<_Type> {
 
   @pragma("wasm:prefer-inline")
   bool get isNotEmpty => length != 0;
+
+  @pragma("wasm:prefer-inline")
+  WasmObjectArray<_Type> map(_Type Function(_Type) fun) {
+    if (isEmpty) return const WasmObjectArray<_Type>.literal(<_Type>[]);
+    final mapped = WasmObjectArray<_Type>(length, fun(this[0]));
+    for (int i = 1; i < length; ++i) {
+      mapped[i] = fun(this[i]);
+    }
+    return mapped;
+  }
 }
 
-// TODO(joshualitt): Once we have RTI fully working, we'd like to explore
-// implementing [isSubtype] using inheritance.
+extension on WasmObjectArray<_NamedParameter> {
+  @pragma("wasm:prefer-inline")
+  _NamedParameter operator [](int index) => read(index);
+
+  @pragma("wasm:prefer-inline")
+  void operator []=(int index, _NamedParameter value) => write(index, value);
+
+  @pragma("wasm:prefer-inline")
+  bool get isEmpty => length == 0;
+
+  @pragma("wasm:prefer-inline")
+  bool get isNotEmpty => length != 0;
+
+  @pragma("wasm:prefer-inline")
+  WasmObjectArray<_NamedParameter> map(
+      _NamedParameter Function(_NamedParameter) fun) {
+    if (isEmpty)
+      return const WasmObjectArray<_NamedParameter>.literal(
+          <_NamedParameter>[]);
+    final mapped = WasmObjectArray<_NamedParameter>(length, this[0]);
+    for (int i = 0; i < length; ++i) {
+      mapped[i] = fun(this[i]);
+    }
+    return mapped;
+  }
+}
+
+extension on WasmObjectArray<String> {
+  @pragma("wasm:prefer-inline")
+  String operator [](int index) => read(index);
+}
+
+extension on WasmObjectArray<WasmIntArray<WasmI32>> {
+  @pragma("wasm:prefer-inline")
+  WasmIntArray<WasmI32> operator [](int index) => read(index);
+}
+
+extension on WasmObjectArray<WasmObjectArray<_Type>> {
+  @pragma("wasm:prefer-inline")
+  WasmObjectArray<_Type> operator [](int index) => read(index);
+}
+
+extension on WasmObjectArray<WasmObjectArray<WasmObjectArray<_Type>>> {
+  @pragma("wasm:prefer-inline")
+  WasmObjectArray<WasmObjectArray<_Type>> operator [](int index) => read(index);
+}
+
+// TODO: Remove any occurence of `List`s in this file.
+extension on List<_Type> {
+  @pragma("wasm:prefer-inline")
+  WasmObjectArray<_Type> toWasmArray() {
+    if (isEmpty) return const WasmObjectArray<_Type>.literal(<_Type>[]);
+    final result = WasmObjectArray<_Type>(length, this[0]);
+    for (int i = 1; i < length; ++i) {
+      result[i] = this[i];
+    }
+    return result;
+  }
+}
+
+// Direct getter to bypass the covariance check and the bounds check when
+// indexing into a Dart list. This makes the indexing more efficient and avoids
+// performing type checks while performing type checks.
+extension _BypassListIndexingChecks<T> on List<T> {
+  @pragma("wasm:prefer-inline")
+  T _getUnchecked(int index) =>
+      unsafeCast(unsafeCast<_ListBase<T>>(this)._data.read(index));
+}
+
 // TODO(joshualitt): We can cache the result of [_FutureOrType.asFuture].
 abstract class _Type implements Type {
   final bool isDeclaredNullable;
@@ -59,6 +136,9 @@ abstract class _Type implements Type {
   _Type get asNullable => isDeclaredNullable ? this : _asNullable;
 
   _Type get _asNullable;
+
+  /// Check whether the given object is of this type.
+  bool _checkInstance(Object o);
 }
 
 @pragma("wasm:entry-point")
@@ -69,6 +149,9 @@ class _BottomType extends _Type {
 
   @override
   _Type get _asNullable => _literal<Null>();
+
+  @override
+  bool _checkInstance(Object o) => false;
 
   @override
   String toString() => isDeclaredNullable ? 'Null' : 'Never';
@@ -91,6 +174,9 @@ class _TopType extends _Type {
   // Only called if Object
   @override
   _Type get _asNullable => _literal<Object?>();
+
+  @override
+  bool _checkInstance(Object o) => true;
 
   @override
   String toString() {
@@ -124,6 +210,10 @@ class _InterfaceTypeParameterType extends _Type {
       throw 'Type parameter should have been substituted already.';
 
   @override
+  bool _checkInstance(Object o) =>
+      throw 'Type parameter should have been substituted already.';
+
+  @override
   String toString() => 'T$environmentIndex';
 }
 
@@ -139,6 +229,10 @@ class _FunctionTypeParameterType extends _Type {
 
   @override
   _Type get _asNullable => _FunctionTypeParameterType(true, index);
+
+  @override
+  bool _checkInstance(Object o) =>
+      throw 'Instance check should not reach function type parameter.';
 
   @override
   bool operator ==(Object o) {
@@ -176,6 +270,11 @@ class _FutureOrType extends _Type {
   @override
   _Type get _asNullable =>
       _TypeUniverse.createNormalizedFutureOrType(true, typeArgument);
+
+  @override
+  bool _checkInstance(Object o) {
+    return typeArgument._checkInstance(o) || asFuture._checkInstance(o);
+  }
 
   @override
   bool operator ==(Object o) {
@@ -217,6 +316,15 @@ class _InterfaceType extends _Type {
 
   @override
   _Type get _asNullable => _InterfaceType(classId, true, typeArguments);
+
+  @override
+  bool _checkInstance(Object o) {
+    // We don't need to check whether the object is of interface type, since
+    // non-interface class IDs ([Object], closures, records) will be rejected by
+    // the interface type subtype check.
+    return _typeUniverse.isInterfaceSubtypeInner(
+        ClassID.getID(o), Object._getTypeArguments(o), null, this, null);
+  }
 
   @override
   bool operator ==(Object o) {
@@ -305,6 +413,9 @@ class _AbstractFunctionType extends _Type {
   _Type get _asNullable => _literal<Function?>();
 
   @override
+  bool _checkInstance(Object o) => ClassID.getID(o) == ClassID.cid_Closure;
+
+  @override
   String toString() {
     return isDeclaredNullable ? 'Function?' : 'Function';
   }
@@ -318,12 +429,12 @@ class _FunctionType extends _Type {
   // an `i64` in every function type object for this. Consider alternative
   // representations that don't have this overhead in the common case.
   final int typeParameterOffset;
-  final List<_Type> typeParameterBounds;
-  final List<_Type> typeParameterDefaults;
+  final WasmObjectArray<_Type> typeParameterBounds;
+  final WasmObjectArray<_Type> typeParameterDefaults;
   final _Type returnType;
-  final List<_Type> positionalParameters;
+  final WasmObjectArray<_Type> positionalParameters;
   final int requiredParameterCount;
-  final List<_NamedParameter> namedParameters;
+  final WasmObjectArray<_NamedParameter> namedParameters;
 
   @pragma("wasm:entry-point")
   const _FunctionType(
@@ -347,6 +458,13 @@ class _FunctionType extends _Type {
       namedParameters,
       true);
 
+  @override
+  bool _checkInstance(Object o) {
+    if (ClassID.getID(o) != ClassID.cid_Closure) return false;
+    return _typeUniverse.isFunctionSubtype(
+        _getFunctionRuntimeType(unsafeCast(o)), null, this, null);
+  }
+
   bool operator ==(Object o) {
     if (ClassID.getID(o) != ClassID.cidFunctionType) return false;
     _FunctionType other = unsafeCast<_FunctionType>(o);
@@ -361,7 +479,9 @@ class _FunctionType extends _Type {
     if (requiredParameterCount != other.requiredParameterCount) return false;
     if (namedParameters.length != other.namedParameters.length) return false;
     for (int i = 0; i < typeParameterBounds.length; i++) {
-      if (typeParameterBounds[i] != other.typeParameterBounds[i]) return false;
+      if (typeParameterBounds[i] != other.typeParameterBounds[i]) {
+        return false;
+      }
     }
     for (int i = 0; i < positionalParameters.length; i++) {
       if (positionalParameters[i] != other.positionalParameters[i]) {
@@ -369,7 +489,9 @@ class _FunctionType extends _Type {
       }
     }
     for (int i = 0; i < namedParameters.length; i++) {
-      if (namedParameters[i] != other.namedParameters[i]) return false;
+      if (namedParameters[i] != other.namedParameters[i]) {
+        return false;
+      }
     }
     return true;
   }
@@ -441,6 +563,11 @@ class _AbstractRecordType extends _Type {
   _Type get _asNullable => _literal<Record?>();
 
   @override
+  bool _checkInstance(Object o) {
+    return _isRecordInstance(o);
+  }
+
+  @override
   String toString() {
     return isDeclaredNullable ? 'Record?' : 'Record';
   }
@@ -458,6 +585,11 @@ class _RecordType extends _Type {
   _Type get _asNullable => _RecordType(names, fieldTypes, true);
 
   @override
+  bool _checkInstance(Object o) {
+    return _typeUniverse.isSubtype(_getActualRuntimeType(o), null, this, null);
+  }
+
+  @override
   String toString() {
     StringBuffer buffer = StringBuffer('(');
 
@@ -465,7 +597,7 @@ class _RecordType extends _Type {
     final int numNames = names.length;
 
     for (int i = 0; i < numPositionals; i += 1) {
-      buffer.write(fieldTypes[i]);
+      buffer.write(fieldTypes._getUnchecked(i));
       if (i != fieldTypes.length - 1) {
         buffer.write(', ');
       }
@@ -474,8 +606,8 @@ class _RecordType extends _Type {
     if (names.isNotEmpty) {
       buffer.write('{');
       for (int i = 0; i < numNames; i += 1) {
-        final String fieldName = names[i];
-        final _Type fieldType = fieldTypes[numPositionals + i];
+        final String fieldName = names._getUnchecked(i);
+        final _Type fieldType = fieldTypes._getUnchecked(numPositionals + i);
         buffer.write(fieldType);
         buffer.write(' ');
         buffer.write(fieldName);
@@ -503,7 +635,8 @@ class _RecordType extends _Type {
     }
 
     for (int fieldIdx = 0; fieldIdx < fieldTypes.length; fieldIdx += 1) {
-      if (fieldTypes[fieldIdx] != other.fieldTypes[fieldIdx]) {
+      if (fieldTypes._getUnchecked(fieldIdx) !=
+          other.fieldTypes._getUnchecked(fieldIdx)) {
         return false;
       }
     }
@@ -517,9 +650,10 @@ class _RecordType extends _Type {
       identical(names, other.names);
 }
 
-external List<List<int>> _getTypeRulesSupers();
-external List<List<List<_Type>>> _getTypeRulesSubstitutions();
-external List<String> _getTypeNames();
+external WasmObjectArray<WasmIntArray<WasmI32>> _getTypeRulesSupers();
+external WasmObjectArray<WasmObjectArray<WasmObjectArray<_Type>>>
+    _getTypeRulesSubstitutions();
+external WasmObjectArray<String> _getTypeNames();
 
 /// Type parameter environment used while comparing function types.
 ///
@@ -568,11 +702,12 @@ class _Environment {
 
 class _TypeUniverse {
   /// 'Map' of classId to the transitive set of super classes it implements.
-  final List<List<int>> typeRulesSupers;
+  final WasmObjectArray<WasmIntArray<WasmI32>> typeRulesSupers;
 
   /// 'Map' of classId, and super offset(from [typeRulesSupers]) to a list of
   /// type substitutions.
-  final List<List<List<_Type>>> typeRulesSubstitutions;
+  final WasmObjectArray<WasmObjectArray<WasmObjectArray<_Type>>>
+      typeRulesSubstitutions;
 
   const _TypeUniverse._(this.typeRulesSupers, this.typeRulesSubstitutions);
 
@@ -581,7 +716,8 @@ class _TypeUniverse {
   }
 
   static _Type substituteInterfaceTypeParameter(
-      _InterfaceTypeParameterType typeParameter, List<_Type> substitutions) {
+      _InterfaceTypeParameterType typeParameter,
+      WasmObjectArray<_Type> substitutions) {
     // If the type parameter is non-nullable, or the substitution type is
     // nullable, then just return the substitution type. Otherwise, we return
     // [type] as nullable.
@@ -594,7 +730,7 @@ class _TypeUniverse {
 
   static _Type substituteFunctionTypeParameter(
       _FunctionTypeParameterType typeParameter,
-      List<_Type> substitutions,
+      WasmObjectArray<_Type> substitutions,
       _FunctionType? rootFunction) {
     if (rootFunction != null &&
         typeParameter.index >= rootFunction.typeParameterOffset) {
@@ -609,7 +745,7 @@ class _TypeUniverse {
 
   @pragma("wasm:entry-point")
   static _FunctionType substituteFunctionTypeArgument(
-      _FunctionType functionType, List<_Type> substitutions) {
+      _FunctionType functionType, WasmObjectArray<_Type> substitutions) {
     return substituteTypeArgument(functionType, substitutions, functionType)
         .as<_FunctionType>();
   }
@@ -622,8 +758,8 @@ class _TypeUniverse {
   /// are being substituted, or `null` when inside a nested function type that
   /// is guaranteed not to contain any type parameter types that are to be
   /// substituted.
-  static _Type substituteTypeArgument(
-      _Type type, List<_Type> substitutions, _FunctionType? rootFunction) {
+  static _Type substituteTypeArgument(_Type type,
+      WasmObjectArray<_Type> substitutions, _FunctionType? rootFunction) {
     if (type.isBottom || type.isTop) {
       return type;
     } else if (type.isFutureOr) {
@@ -660,34 +796,45 @@ class _TypeUniverse {
         // type parameter types as referring to the root function.
         rootFunction = null;
       }
+
+      final WasmObjectArray<_Type> bounds;
+      if (isRoot) {
+        bounds = const WasmObjectArray<_Type>.literal(<_Type>[]);
+      } else {
+        bounds = functionType.typeParameterBounds.map((_Type type) =>
+            substituteTypeArgument(type, substitutions, rootFunction));
+      }
+
+      final WasmObjectArray<_Type> defaults;
+      if (isRoot) {
+        defaults = const WasmObjectArray<_Type>.literal(<_Type>[]);
+      } else {
+        defaults = functionType.typeParameterDefaults.map((_Type type) =>
+            substituteTypeArgument(type, substitutions, rootFunction));
+      }
+
+      final WasmObjectArray<_Type> positionals =
+          functionType.positionalParameters.map((_Type type) =>
+              substituteTypeArgument(type, substitutions, rootFunction));
+
+      final WasmObjectArray<_NamedParameter> named = functionType
+          .namedParameters
+          .map((_NamedParameter named) => _NamedParameter(
+              named.name,
+              substituteTypeArgument(named.type, substitutions, rootFunction),
+              named.isRequired));
+
+      final returnType = substituteTypeArgument(
+          functionType.returnType, substitutions, rootFunction);
+
       return _FunctionType(
           functionType.typeParameterOffset,
-          isRoot
-              ? const []
-              : functionType.typeParameterBounds
-                  .map((type) =>
-                      substituteTypeArgument(type, substitutions, rootFunction))
-                  .toList(),
-          isRoot
-              ? const []
-              : functionType.typeParameterDefaults
-                  .map((type) =>
-                      substituteTypeArgument(type, substitutions, rootFunction))
-                  .toList(),
-          substituteTypeArgument(
-              functionType.returnType, substitutions, rootFunction),
-          functionType.positionalParameters
-              .map((type) =>
-                  substituteTypeArgument(type, substitutions, rootFunction))
-              .toList(),
+          bounds,
+          defaults,
+          returnType,
+          positionals,
           functionType.requiredParameterCount,
-          functionType.namedParameters
-              .map((named) => _NamedParameter(
-                  named.name,
-                  substituteTypeArgument(
-                      named.type, substitutions, rootFunction),
-                  named.isRequired))
-              .toList(),
+          named,
           functionType.isDeclaredNullable);
     } else if (type.isFunctionTypeParameterType) {
       return substituteFunctionTypeParameter(
@@ -730,38 +877,46 @@ class _TypeUniverse {
 
   bool isInterfaceSubtype(_InterfaceType s, _Environment? sEnv,
       _InterfaceType t, _Environment? tEnv) {
-    int sId = s.classId;
+    return isInterfaceSubtypeInner(s.classId, s.typeArguments, sEnv, t, tEnv);
+  }
+
+  bool isInterfaceSubtypeInner(int sId, WasmObjectArray<_Type> sTypeArguments,
+      _Environment? sEnv, _InterfaceType t, _Environment? tEnv) {
     int tId = t.classId;
 
     // If we have the same class, simply compare type arguments.
     if (sId == tId) {
       return areTypeArgumentsSubtypes(
-          s.typeArguments, sEnv, t.typeArguments, tEnv);
+          sTypeArguments, sEnv, t.typeArguments, tEnv);
     }
 
     // Otherwise, check if [s] is a subtype of [t], and if it is then compare
     // [s]'s type substitutions with [t]'s type arguments.
-    List<int> sSupers = typeRulesSupers[sId];
-    if (sSupers.isEmpty) return false;
-    int sSuperIndexOfT = sSupers.indexOf(tId);
+    final WasmIntArray<WasmI32> sSupers = typeRulesSupers[sId];
+    if (sSupers.length == 0) return false;
+    int sSuperIndexOfT = -1;
+    for (int i = 0; i < sSupers.length; i++) {
+      if (sSupers.readUnsigned(i) == tId) {
+        sSuperIndexOfT = i;
+        break;
+      }
+    }
     if (sSuperIndexOfT == -1) return false;
     assert(sSuperIndexOfT < typeRulesSubstitutions[sId].length);
 
     // Return early if we don't have to check type arguments.
-    WasmObjectArray<_Type> sTypeArguments = s.typeArguments;
-    List<_Type> substitutions = typeRulesSubstitutions[sId][sSuperIndexOfT];
+    WasmObjectArray<_Type> substitutions =
+        typeRulesSubstitutions[sId][sSuperIndexOfT];
     if (substitutions.isEmpty && sTypeArguments.isEmpty) {
       return true;
     }
 
     // If we have empty type arguments then create a list of dynamic type
     // arguments.
-    // TODO(askesc): Use Wasm arrays more widely to avoid creating a
-    // temporary list here.
-    List<_Type> typeArgumentsForSubstitution =
+    WasmObjectArray<_Type> typeArgumentsForSubstitution =
         substitutions.isNotEmpty && sTypeArguments.isEmpty
-            ? List.filled(substitutions.length, _literal<dynamic>())
-            : List.generate(sTypeArguments.length, (i) => sTypeArguments[i]);
+            ? WasmObjectArray<_Type>(substitutions.length, _literal<dynamic>())
+            : sTypeArguments;
 
     // Finally substitute arguments. We must do this upfront so we can normalize
     // the type.
@@ -805,8 +960,8 @@ class _TypeUniverse {
 
     // Check [s] has enough required and optional positional arguments to
     // potentially be a valid subtype of [t].
-    List<_Type> sPositional = s.positionalParameters;
-    List<_Type> tPositional = t.positionalParameters;
+    WasmObjectArray<_Type> sPositional = s.positionalParameters;
+    WasmObjectArray<_Type> tPositional = t.positionalParameters;
     int sPositionalLength = sPositional.length;
     int tPositionalLength = tPositional.length;
     if (sPositionalLength < tPositionalLength) {
@@ -825,8 +980,8 @@ class _TypeUniverse {
 
     // Check that [t]'s named arguments are subtypes of [s]'s named arguments.
     // This logic assumes the named arguments are stored in sorted order.
-    List<_NamedParameter> sNamed = s.namedParameters;
-    List<_NamedParameter> tNamed = t.namedParameters;
+    WasmObjectArray<_NamedParameter> sNamed = s.namedParameters;
+    WasmObjectArray<_NamedParameter> tNamed = t.namedParameters;
     int sNamedLength = sNamed.length;
     int tNamedLength = tNamed.length;
     int sIndex = 0;
@@ -871,8 +1026,8 @@ class _TypeUniverse {
 
     final int numFields = s.fieldTypes.length;
     for (int fieldIdx = 0; fieldIdx < numFields; fieldIdx += 1) {
-      if (!isSubtype(
-          s.fieldTypes[fieldIdx], sEnv, t.fieldTypes[fieldIdx], tEnv)) {
+      if (!isSubtype(s.fieldTypes._getUnchecked(fieldIdx), sEnv,
+          t.fieldTypes._getUnchecked(fieldIdx), tEnv)) {
         return false;
       }
     }
@@ -994,14 +1149,52 @@ class _TypeUniverse {
 _TypeUniverse _typeUniverse = _TypeUniverse.create();
 
 @pragma("wasm:entry-point")
-bool _isSubtype(Object? s, _Type t) {
-  return _typeUniverse.isSubtype(
-      _getActualRuntimeTypeNullable(s), null, t, null);
+@pragma("wasm:prefer-inline")
+bool _isSubtype(Object? o, _Type t) {
+  // With this function being inlined, Binaryen is often able to optimize parts
+  // of it away, for instance:
+  // - Omit the null check when the operand is known to be non-null.
+  // - Substitute a constant result for the null check when the nullability of
+  //   the type is known.
+  // - Devirtualize the [_checkInstance] call when the category of the type is
+  //   known.
+  if (o == null) return t.isDeclaredNullable;
+  return t._checkInstance(o);
 }
 
 @pragma("wasm:entry-point")
+@pragma("wasm:prefer-inline")
 bool _isTypeSubtype(_Type s, _Type t) {
   return _typeUniverse.isSubtype(s, null, t, null);
+}
+
+@pragma("wasm:entry-point")
+bool _verifyOptimizedTypeCheck(
+    bool result, Object? o, _Type t, String? location) {
+  _Type s = _getActualRuntimeTypeNullable(o);
+  bool reference = _isTypeSubtype(s, t);
+  if (result != reference) {
+    throw _TypeCheckVerificationError(s, t, result, reference, location);
+  }
+  return result;
+}
+
+class _TypeCheckVerificationError extends Error {
+  final _Type left;
+  final _Type right;
+  final bool optimized;
+  final bool reference;
+  final String? location;
+
+  _TypeCheckVerificationError(
+      this.left, this.right, this.optimized, this.reference, this.location);
+
+  String toString() {
+    String locationString = location != null ? " at $location" : "";
+    return "Type check verification error$locationString\n"
+        "Checking $left <: $right\n"
+        "Optimized result $optimized, reference result $reference\n";
+  }
 }
 
 /// Checks that argument lists have expected number of arguments for the
@@ -1017,7 +1210,10 @@ bool _checkClosureShape(_FunctionType functionType, List<_Type> typeArguments,
     List<Object?> positionalArguments, List<dynamic> namedArguments) {
   // Check type args, add default types to the type list if its empty
   if (typeArguments.isEmpty) {
-    typeArguments.addAll(functionType.typeParameterDefaults);
+    final defaults = functionType.typeParameterDefaults;
+    for (int i = 0; i < defaults.length; ++i) {
+      typeArguments.add(defaults[i]);
+    }
   } else if (typeArguments.length !=
       functionType.typeParameterDefaults.length) {
     return false;
@@ -1044,7 +1240,8 @@ bool _checkClosureShape(_FunctionType functionType, List<_Type> typeArguments,
       continue;
     }
 
-    String argName = _symbolToString(namedArguments[namedArgIdx * 2] as Symbol);
+    String argName = _symbolToString(
+        namedArguments._getUnchecked(namedArgIdx * 2) as Symbol);
 
     final cmp = argName.compareTo(param.name);
 
@@ -1086,10 +1283,11 @@ void _checkClosureType(_FunctionType functionType, List<_Type> typeArguments,
   assert(functionType.typeParameterBounds.length == typeArguments.length);
 
   if (!typeArguments.isEmpty) {
-    for (int i = 0; i < typeArguments.length; i += 1) {
-      final typeArgument = typeArguments[i];
+    final typesAsArray = typeArguments.toWasmArray();
+    for (int i = 0; i < typesAsArray.length; i += 1) {
+      final typeArgument = typesAsArray[i];
       final paramBound = _TypeUniverse.substituteTypeArgument(
-          functionType.typeParameterBounds[i], typeArguments, functionType);
+          functionType.typeParameterBounds[i], typesAsArray, functionType);
       if (!_typeUniverse.isSubtype(typeArgument, null, paramBound, null)) {
         final stackTrace = StackTrace.current;
         final typeError = _TypeError.fromMessageAndStackTrace(
@@ -1101,12 +1299,12 @@ void _checkClosureType(_FunctionType functionType, List<_Type> typeArguments,
     }
 
     functionType = _TypeUniverse.substituteFunctionTypeArgument(
-        functionType, typeArguments);
+        functionType, typesAsArray);
   }
 
   // Check positional arguments
   for (int i = 0; i < positionalArguments.length; i += 1) {
-    final Object? arg = positionalArguments[i];
+    final Object? arg = positionalArguments._getUnchecked(i);
     final _Type paramTy = functionType.positionalParameters[i];
     if (!_isSubtype(arg, paramTy)) {
       // TODO(50991): Positional parameter names not available in runtime
@@ -1120,10 +1318,10 @@ void _checkClosureType(_FunctionType functionType, List<_Type> typeArguments,
   int namedParamIdx = 0;
   int namedArgIdx = 0;
   while (namedArgIdx * 2 < namedArguments.length) {
-    final String argName =
-        _symbolToString(namedArguments[namedArgIdx * 2] as Symbol);
+    final String argName = _symbolToString(
+        namedArguments._getUnchecked(namedArgIdx * 2) as Symbol);
     if (argName == functionType.namedParameters[namedParamIdx].name) {
-      final arg = namedArguments[namedArgIdx * 2 + 1];
+      final arg = namedArguments._getUnchecked(namedArgIdx * 2 + 1);
       final paramTy = functionType.namedParameters[namedParamIdx].type;
       if (!_isSubtype(arg, paramTy)) {
         _TypeError._throwArgumentTypeCheckError(
@@ -1150,3 +1348,7 @@ external _Type _getMasqueradedRuntimeType(Object object);
 @pragma("wasm:prefer-inline")
 _Type _getMasqueradedRuntimeTypeNullable(Object? object) =>
     object == null ? _literal<Null>() : _getMasqueradedRuntimeType(object);
+
+external _FunctionType _getFunctionRuntimeType(Function f);
+
+external bool _isRecordInstance(Object o);

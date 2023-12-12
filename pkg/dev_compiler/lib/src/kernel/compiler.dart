@@ -1877,8 +1877,8 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   js_ast.Expression _emitClassFieldSignature(Field field, Class fromClass) {
-    var type = _typeFromClass(field.type, field.enclosingClass!, fromClass);
-    var fieldType = field.type;
+    var fieldType = _typeFromClass(field.type, field.enclosingClass!, fromClass)
+        .extensionTypeErasure;
     var uri = fieldType is InterfaceType
         ? _cacheUri(jsLibraryDebuggerName(fieldType.classNode.enclosingLibrary))
         : null;
@@ -1887,9 +1887,9 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     return uri == null
         ? js('{type: #, isConst: #, isFinal: #}',
-            [_emitType(type), isConst, isFinal])
+            [_emitType(fieldType), isConst, isFinal])
         : js('{type: #, isConst: #, isFinal: #, libraryUri: #}',
-            [_emitType(type), isConst, isFinal, uri]);
+            [_emitType(fieldType), isConst, isFinal, uri]);
   }
 
   DartType _memberRuntimeType(Member member, Class fromClass) {
@@ -5434,7 +5434,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// members at runtime.
   bool _shouldCallObjectMemberHelper(Expression e) {
     if (isNullable(e)) return true;
-    var type = e.getStaticType(_staticTypeContext);
+    var type = e.getStaticType(_staticTypeContext).extensionTypeErasure;
     if (type is RecordType || type is FunctionType) return false;
     if (type is InterfaceType) {
       // TODO(nshahan): This could be expanded to any classes where we know all
@@ -5460,7 +5460,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// This is a simple approach and not an exhaustive search.
   bool _triviallyConstNoInterop(Expression? e) {
     if (e is ConstantExpression) {
-      var type = e.constant.getType(_staticTypeContext);
+      var type = e.constant.getType(_staticTypeContext).extensionTypeErasure;
       if (type is InterfaceType) return !usesJSInterop(type.classNode);
     } else if (e is StaticGet && e.target.isConst) {
       var target = e.target;

@@ -66,6 +66,8 @@ import 'convert_into_block_body_test.dart' as convert_into_block_body;
 import 'convert_into_expression_body_test.dart' as convert_into_expression_body;
 import 'convert_into_is_not_test.dart' as convert_into_is_not;
 import 'convert_quotes_test.dart' as convert_quotes;
+import 'convert_to_block_function_body_test.dart'
+    as convert_to_block_function_body;
 import 'convert_to_boolean_expression_test.dart'
     as convert_to_boolean_expression;
 import 'convert_to_cascade_test.dart' as convert_to_cascade;
@@ -193,7 +195,6 @@ import 'remove_print_test.dart' as remove_print;
 import 'remove_question_mark_test.dart' as remove_question_mark;
 import 'remove_required_test.dart' as remove_required;
 import 'remove_returned_value_test.dart' as remove_returned_value;
-import 'remove_set_literal_test.dart' as remove_set_literal;
 import 'remove_this_expression_test.dart' as remove_this_expression;
 import 'remove_type_annotation_test.dart' as remove_type_annotation;
 import 'remove_type_arguments_test.dart' as remove_type_arguments;
@@ -279,7 +280,6 @@ import 'use_eq_eq_null_test.dart' as use_eq_eq_null;
 import 'use_is_not_empty_test.dart' as use_is_not_empty;
 import 'use_not_eq_null_test.dart' as use_not_eq_null;
 import 'use_rethrow_test.dart' as use_rethrow;
-import 'wrap_in_future_test.dart' as wrap_in_future;
 import 'wrap_in_text_test.dart' as wrap_in_text;
 import 'wrap_in_unawaited_test.dart' as wrap_in_unawaited;
 
@@ -337,6 +337,7 @@ void main() {
     convert_into_expression_body.main();
     convert_into_is_not.main();
     convert_quotes.main();
+    convert_to_block_function_body.main();
     convert_to_boolean_expression.main();
     convert_to_cascade.main();
     convert_to_constant_pattern.main();
@@ -447,7 +448,6 @@ void main() {
     remove_question_mark.main();
     remove_required.main();
     remove_returned_value.main();
-    remove_set_literal.main();
     remove_this_expression.main();
     remove_type_annotation.main();
     remove_type_arguments.main();
@@ -522,7 +522,6 @@ void main() {
     use_is_not_empty.main();
     use_not_eq_null.main();
     use_rethrow.main();
-    wrap_in_future.main();
     wrap_in_text.main();
     wrap_in_unawaited.main();
   }, name: 'fix');

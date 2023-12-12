@@ -65,6 +65,8 @@ mixin KernelNodes {
 
   // dart:core runtime type classes
   late final Class typeClass = index.getClass("dart:core", "_Type");
+  late final InterfaceType typeType =
+      InterfaceType(typeClass, Nullability.nonNullable);
   late final Class abstractFunctionTypeClass =
       index.getClass("dart:core", "_AbstractFunctionType");
   late final Class functionTypeClass =
@@ -79,6 +81,14 @@ mixin KernelNodes {
       index.getClass("dart:core", "_InterfaceTypeParameterType");
   late final Class namedParameterClass =
       index.getClass("dart:core", "_NamedParameter");
+  late final Field namedParameterNameField =
+      index.getField("dart:core", "_NamedParameter", "name");
+  late final Field namedParameterTypeField =
+      index.getField("dart:core", "_NamedParameter", "type");
+  late final Field namedParameterIsRequiredField =
+      index.getField("dart:core", "_NamedParameter", "isRequired");
+  late final InterfaceType namedParameterType =
+      InterfaceType(namedParameterClass, Nullability.nonNullable);
   late final Class bottomTypeClass = index.getClass("dart:core", "_BottomType");
   late final Class topTypeClass = index.getClass("dart:core", "_TopType");
   late final Class stackTraceClass = index.getClass("dart:core", "StackTrace");
@@ -143,6 +153,10 @@ mixin KernelNodes {
       index.getClass("dart:_wasm", "WasmObjectArray");
   late final Field wasmObjectArrayValueField =
       index.getField("dart:_wasm", "WasmObjectArray", "_value");
+  late final Class wasmIntArrayClass =
+      index.getClass("dart:_wasm", "WasmIntArray");
+  late final Field wasmIntArrayValueField =
+      index.getField("dart:_wasm", "WasmIntArray", "_value");
 
   // dart:_internal procedures
   late final Procedure loadLibrary =
@@ -249,6 +263,8 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:core", "_isSubtype");
   late final Procedure isTypeSubtype =
       index.getTopLevelProcedure("dart:core", "_isTypeSubtype");
+  late final Procedure verifyOptimizedTypeCheck =
+      index.getTopLevelProcedure("dart:core", "_verifyOptimizedTypeCheck");
   late final Procedure checkClosureShape =
       index.getTopLevelProcedure("dart:core", "_checkClosureShape");
   late final Procedure checkClosureType =

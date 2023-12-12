@@ -556,19 +556,8 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
             _tearOffTypeParameters!,
             libraryBuilder));
       }
-      Map<TypeParameter, DartType> substitutionMap;
-      if (function.typeParameters.length == typeArguments.length) {
-        substitutionMap = new Map<TypeParameter, DartType>.fromIterables(
-            function.typeParameters, typeArguments);
-      } else {
-        // Error case: Substitute type parameters with `dynamic`.
-        substitutionMap = new Map<TypeParameter, DartType>.fromIterables(
-            function.typeParameters,
-            new List<DartType>.generate(function.typeParameters.length,
-                (int index) => const DynamicType()));
-      }
       delayedDefaultValueCloners.add(new DelayedDefaultValueCloner(
-          target!, _procedure, substitutionMap,
+          target!, _procedure,
           libraryBuilder: libraryBuilder, identicalSignatures: false));
     }
     if (isConst && isPatch) {
@@ -808,8 +797,13 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
 
     // Redirection to generative enum constructors is forbidden and is reported
     // as an error elsewhere.
+    Builder? redirectionTargetParent = redirectionTarget.target?.parent;
+    bool redirectingTargetParentIsEnum = redirectionTargetParent is ClassBuilder
+        ? redirectionTargetParent.isEnum
+        : false;
     if (!((classBuilder?.cls.isEnum ?? false) &&
-        (redirectionTarget.target?.isConstructor ?? false))) {
+        (redirectionTarget.target?.isConstructor ?? false) &&
+        redirectingTargetParentIsEnum)) {
       // Check whether [redirecteeType] <: [factoryType].
       if (!typeEnvironment.isSubtypeOf(
           redirecteeType,

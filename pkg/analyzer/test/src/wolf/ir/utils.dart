@@ -10,6 +10,12 @@ import 'package:checks/checks.dart';
 import 'package:checks/context.dart';
 import 'package:meta/meta.dart' as meta;
 
+void dumpInstructions(BaseIRContainer ir) {
+  for (var i = 0; i < ir.endAddress; i++) {
+    print('$i: ${ir.instructionToString(i)}');
+  }
+}
+
 /// Event listener for [astToIR] that records the range of IR instructions
 /// associated with each AST node.
 ///
@@ -82,6 +88,11 @@ class Instruction {
   final int address;
 
   Instruction(this.ir, this.address);
+
+  Opcode get opcode => ir.opcodeAt(address);
+
+  @override
+  String toString() => '$address: ${ir.instructionToString(address)}';
 }
 
 /// Reference to a range of instructions in a [CodedIRContainer].
@@ -123,15 +134,19 @@ class TestFunctionType {
 /// To construct a sequence of IR instructions, see [TestIRWriter].
 class TestIRContainer extends BaseIRContainer {
   final Map<int, String> _addressToLabel;
+  final List<String?> _allocNames;
   final List<TestFunctionType> _functionTypes;
   final Map<String, int> _labelToAddress;
 
   TestIRContainer(TestIRWriter super.writer)
       : _addressToLabel = writer._addressToLabel,
+        _allocNames = writer._allocNames,
         _functionTypes = writer._functionTypes,
         _labelToAddress = writer._labelToAddress;
 
   String? addressToLabel(int address) => _addressToLabel[address];
+
+  String? allocIndexToName(int index) => _allocNames[index];
 
   @override
   int countParameters(TypeRef type) =>
@@ -147,11 +162,35 @@ class TestIRContainer extends BaseIRContainer {
 /// than generate them from a Dart AST.
 class TestIRWriter extends RawIRWriter {
   final _addressToLabel = <int, String>{};
+  final _allocNames = <String?>[];
+  final _callDescriptorTable = <String>[];
+  final _callDescriptorToRef = <String, CallDescriptorRef>{};
   final _functionTypes = <TestFunctionType>[];
   final _labelToAddress = <String, int>{};
   final _literalTable = <Object?>[];
   final _literalToRef = <Object?, LiteralRef>{};
   final _parameterCountToFunctionTypeMap = <int, TypeRef>{};
+
+  @override
+  void alloc(int count) {
+    var instructionLabel = _addressToLabel[nextInstructionAddress];
+    if (count == 1) {
+      _allocNames.add(instructionLabel);
+    } else {
+      for (var i = 0; i < count; i++) {
+        _allocNames
+            .add(instructionLabel == null ? null : '$instructionLabel$i');
+      }
+    }
+    super.alloc(count);
+  }
+
+  CallDescriptorRef encodeCallDescriptor(String name) =>
+      _callDescriptorToRef.putIfAbsent(name, () {
+        var encoding = CallDescriptorRef(_callDescriptorTable.length);
+        _callDescriptorTable.add(name);
+        return encoding;
+      });
 
   TypeRef encodeFunctionType({required int parameterCount}) =>
       _parameterCountToFunctionTypeMap.putIfAbsent(parameterCount, () {
@@ -211,8 +250,23 @@ extension SubjectAstNodes on Subject<AstNodes> {
 /// Testing methods for [Instruction].
 extension SubjectInstruction on Subject<Instruction> {
   @meta.useResult
-  Subject<Opcode> get opcode => has(
-      (instruction) => instruction.ir.opcodeAt(instruction.address), 'opcode');
+  Subject<Opcode> get opcode =>
+      has((instruction) => instruction.opcode, 'opcode');
+}
+
+/// Testing methods for `Iterable<Instruction>`.
+extension SubjectInstructionIterable on Subject<Iterable<Instruction>> {
+  void hasLength(int expectedLength) => context.expect(
+      () => ['has length $expectedLength'],
+      (instructions) => instructions.length == expectedLength
+          ? null
+          : Rejection(which: ['does not have length $expectedLength']));
+
+  @meta.useResult
+  Subject<Iterable<Instruction>> withOpcode(Opcode opcode) => context.nest(
+      () => ['contains instructions matching ${opcode.describe()}'],
+      (instructions) =>
+          Extracted.value(instructions.where((i) => i.opcode == opcode)));
 }
 
 /// Testing methods for [InstructionRange].

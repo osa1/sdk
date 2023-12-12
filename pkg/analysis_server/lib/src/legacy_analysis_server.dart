@@ -34,11 +34,8 @@ import 'package:analysis_server/src/handler/legacy/analytics_enable.dart';
 import 'package:analysis_server/src/handler/legacy/analytics_is_enabled.dart';
 import 'package:analysis_server/src/handler/legacy/analytics_send_event.dart';
 import 'package:analysis_server/src/handler/legacy/analytics_send_timing.dart';
-import 'package:analysis_server/src/handler/legacy/completion_get_suggestion_details.dart';
 import 'package:analysis_server/src/handler/legacy/completion_get_suggestion_details2.dart';
-import 'package:analysis_server/src/handler/legacy/completion_get_suggestions.dart';
 import 'package:analysis_server/src/handler/legacy/completion_get_suggestions2.dart';
-import 'package:analysis_server/src/handler/legacy/completion_set_subscriptions.dart';
 import 'package:analysis_server/src/handler/legacy/diagnostic_get_diagnostics.dart';
 import 'package:analysis_server/src/handler/legacy/diagnostic_get_server_port.dart';
 import 'package:analysis_server/src/handler/legacy/edit_bulk_fixes.dart';
@@ -198,13 +195,9 @@ class LegacyAnalysisServer extends AnalysisServer {
     ANALYTICS_REQUEST_SEND_EVENT: AnalyticsSendEventHandler.new,
     ANALYTICS_REQUEST_SEND_TIMING: AnalyticsSendTimingHandler.new,
     //
-    COMPLETION_REQUEST_GET_SUGGESTION_DETAILS:
-        CompletionGetSuggestionDetailsHandler.new,
     COMPLETION_REQUEST_GET_SUGGESTION_DETAILS2:
         CompletionGetSuggestionDetails2Handler.new,
-    COMPLETION_REQUEST_GET_SUGGESTIONS: CompletionGetSuggestionsHandler.new,
     COMPLETION_REQUEST_GET_SUGGESTIONS2: CompletionGetSuggestions2Handler.new,
-    COMPLETION_REQUEST_SET_SUBSCRIPTIONS: CompletionSetSubscriptionsHandler.new,
     //
     DIAGNOSTIC_REQUEST_GET_DIAGNOSTICS: DiagnosticGetDiagnosticsHandler.new,
     DIAGNOSTIC_REQUEST_GET_SERVER_PORT: DiagnosticGetServerPortHandler.new,
@@ -736,13 +729,13 @@ class LegacyAnalysisServer extends AnalysisServer {
   /// Implementation for `analysis.setAnalysisRoots`.
   ///
   // TODO(scheglov): implement complete projects/contexts semantics.
-  ///
-  /// The current implementation is intentionally simplified and expected
-  /// that only folders are given each given folder corresponds to the exactly
-  /// one context.
-  ///
-  /// So, we can start working in parallel on adding services and improving
-  /// projects/contexts support.
+  //
+  // The current implementation is intentionally simplified and expected
+  // that only folders are given each given folder corresponds to the exactly
+  // one context.
+  //
+  // So, we can start working in parallel on adding services and improving
+  // projects/contexts support.
   Future<void> setAnalysisRoots(String requestId, List<String> includedPaths,
       List<String> excludedPaths) async {
     final completer = analysisContextRebuildCompleter = Completer();
@@ -1114,12 +1107,12 @@ class ServerContextManagerCallbacks
   /// computer, we want it to run before spending time of sending notifications.
   ///
   // TODO(scheglov): Consider replacing this with full priority based scheduler.
-  ///
+  //
   // TODO(scheglov): Alternatively, if code completion work in a way that does
-  /// not produce (at first) fully resolved unit, but only part of it - a single
-  /// method, or a top-level declaration, we would not have this problem - the
-  /// completion computer would be the only consumer of the partial analysis
-  /// result.
+  // not produce (at first) fully resolved unit, but only part of it - a single
+  // method, or a top-level declaration, we would not have this problem - the
+  // completion computer would be the only consumer of the partial analysis
+  // result.
   void _runDelayed(Function() f) {
     Future(f);
   }

@@ -8,6 +8,7 @@ import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/field_name_non_promotability_info.dart';
 import 'package:analyzer/src/summary2/export.dart';
+import 'package:analyzer/src/summary2/macro_application_error.dart';
 import 'package:analyzer/src/task/inference_error.dart';
 import 'package:collection/collection.dart';
 import 'package:test/test.dart';
@@ -41,6 +42,7 @@ String getLibraryText({
 
 class ElementTextConfiguration {
   bool Function(Object) filter;
+  void Function(String message)? macroDiagnosticMessageValidator;
   bool withAllSupertypes = false;
   bool withAugmentedWithoutAugmentation = false;
   bool withCodeRanges = false;
@@ -122,7 +124,7 @@ class _ElementWriter {
       sink: _sink,
       elementPrinter: _elementPrinter,
       configuration: ResolvedNodeTextConfiguration()
-        // TODO(scheglov) https://github.com/dart-lang/sdk/issues/49101
+        // TODO(scheglov): https://github.com/dart-lang/sdk/issues/49101
         ..withParameterElements = false,
       withOffsets: true,
     );
@@ -183,7 +185,7 @@ class _ElementWriter {
   }
 
   void _writeAugmented(InstanceElementImpl e) {
-    // TODO(scheglov) enable for other types
+    // TODO(scheglov): enable for other types
     if (!(e is ClassElementImpl || e is MixinElementImpl)) {
       return;
     }
@@ -211,6 +213,9 @@ class _ElementWriter {
     }
 
     void writeConstructors() {
+      if (!configuration.withConstructors) {
+        return;
+      }
       if (augmented is AugmentedInterfaceElementImpl) {
         final sorted = augmented.constructors.sortedBy((e) => e.name);
         expect(sorted, isNotEmpty);
@@ -248,7 +253,7 @@ class _ElementWriter {
           writeAccessors();
           writeMethods();
       }
-      // TODO(scheglov) Add other types and properties
+      // TODO(scheglov): Add other types and properties
     });
   }
 
@@ -355,6 +360,9 @@ class _ElementWriter {
       }
 
       _writeNonSyntheticElement(e);
+      _writeMacroDiagnostics(e);
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
     });
 
     expect(e.isAsynchronous, isFalse);
@@ -472,6 +480,7 @@ class _ElementWriter {
       _writeCodeRange(e);
       _writeTypeParameterElements(e.typeParameters);
       _writeType('extendedType', e.extendedType);
+      _writeMacroDiagnostics(e);
     });
 
     _sink.withIndent(() {
@@ -542,6 +551,7 @@ class _ElementWriter {
       _writeTypeParameterElements(e.typeParameters);
       _writeParameterElements(e.parameters);
       _writeReturnType(e.returnType);
+      _writeMacroDiagnostics(e);
       _writeAugmentationTarget(e);
       _writeAugmentation(e);
     });
@@ -619,6 +629,7 @@ class _ElementWriter {
       _writeSinceSdkVersion(e);
       _writeCodeRange(e);
       _writeTypeParameterElements(e.typeParameters);
+      _writeMacroDiagnostics(e);
       _writeAugmentationTarget(e);
       _writeAugmentation(e);
 
@@ -726,6 +737,121 @@ class _ElementWriter {
         _writeAugmentationImportElement);
   }
 
+  void _writeMacroDiagnostics(Element e) {
+    void writeMessage(MacroDiagnosticMessage object) {
+      // Write the message.
+      final validator = configuration.macroDiagnosticMessageValidator;
+      if (validator != null) {
+        validator(object.message);
+      } else {
+        final message = object.message;
+        const stackTraceText = 'Stack trace:';
+        final stackTraceIndex = message.indexOf(stackTraceText);
+        if (stackTraceIndex >= 0) {
+          final end = stackTraceIndex + stackTraceText.length;
+          final withoutStackTrace = message.substring(0, end);
+          _sink.writelnWithIndent('message:\n$withoutStackTrace <cut>');
+        } else {
+          _sink.writelnWithIndent('message: $message');
+        }
+      }
+      // Write the target.
+      final target = object.target;
+      switch (target) {
+        case ApplicationMacroDiagnosticTarget():
+          _sink.writelnWithIndent('target: ApplicationMacroDiagnosticTarget');
+          _sink.withIndent(() {
+            _sink.writelnWithIndent(
+              'annotationIndex: ${target.annotationIndex}',
+            );
+          });
+        case ElementMacroDiagnosticTarget():
+          _sink.writelnWithIndent('target: ElementMacroDiagnosticTarget');
+          _sink.withIndent(() {
+            _elementPrinter.writeNamedElement('element', target.element);
+          });
+      }
+    }
+
+    if (e case final MacroTargetElement macroTarget) {
+      _sink.writeElements(
+        'macroDiagnostics',
+        macroTarget.macroDiagnostics,
+        (diagnostic) {
+          switch (diagnostic) {
+            case ArgumentMacroDiagnostic():
+              _sink.writelnWithIndent('ArgumentMacroDiagnostic');
+              _sink.withIndent(() {
+                _sink.writelnWithIndent(
+                  'annotationIndex: ${diagnostic.annotationIndex}',
+                );
+                _sink.writelnWithIndent(
+                  'argumentIndex: ${diagnostic.argumentIndex}',
+                );
+                _sink.writelnWithIndent('message: ${diagnostic.message}');
+              });
+            case DeclarationsIntrospectionCycleDiagnostic():
+              _sink.writelnWithIndent(
+                'DeclarationsIntrospectionCycleDiagnostic',
+              );
+              _sink.writeElements(
+                'components',
+                diagnostic.components,
+                (component) {
+                  _sink.writelnWithIndent(
+                    'DeclarationsIntrospectionCycleComponent',
+                  );
+                  _sink.withIndent(() {
+                    _elementPrinter.writeNamedElement(
+                      'element',
+                      component.element,
+                    );
+                    _sink.writelnWithIndent(
+                      'annotationIndex: ${component.annotationIndex}',
+                    );
+                  });
+                },
+              );
+            case ExceptionMacroDiagnostic():
+              _sink.writelnWithIndent('ExceptionMacroDiagnostic');
+              _sink.withIndent(() {
+                _sink.writelnWithIndent(
+                  'annotationIndex: ${diagnostic.annotationIndex}',
+                );
+                _sink.writelnWithIndent(
+                  'message: ${diagnostic.message}',
+                );
+                _sink.writelnWithIndent(
+                  'stackTrace:\n${diagnostic.stackTrace}',
+                );
+              });
+            case MacroDiagnostic():
+              _sink.writelnWithIndent('MacroDiagnostic');
+              _sink.withIndent(() {
+                _sink.writelnWithIndent('message: MacroDiagnosticMessage');
+                _sink.withIndent(() {
+                  writeMessage(diagnostic.message);
+                });
+                _sink.writeElements(
+                  'contextMessages',
+                  diagnostic.contextMessages,
+                  (message) {
+                    _sink.writelnWithIndent('MacroDiagnosticMessage');
+                    _sink.withIndent(() {
+                      writeMessage(message);
+                    });
+                  },
+                );
+                _sink.writelnWithIndent(
+                  'severity: ${diagnostic.severity.name}',
+                );
+              });
+          }
+        },
+      );
+    }
+  }
+
   void _writeMetadata(Element element) {
     if (configuration.withMetadata) {
       var annotations = element.metadata;
@@ -765,18 +891,9 @@ class _ElementWriter {
       _writeParameterElements(e.parameters);
       _writeReturnType(e.returnType);
       _writeNonSyntheticElement(e);
-
-      if (e.isAugmentation) {
-        _elementPrinter.writeNamedElement(
-          'augmentationTarget',
-          e.augmentationTarget,
-        );
-      }
-
-      final augmentation = e.augmentation;
-      if (augmentation != null) {
-        _elementPrinter.writeNamedElement('augmentation', augmentation);
-      }
+      _writeMacroDiagnostics(e);
+      _writeAugmentationTarget(e);
+      _writeAugmentation(e);
     });
 
     if (e.isSynthetic && e.enclosingElement is EnumElementImpl) {
@@ -973,6 +1090,7 @@ class _ElementWriter {
       _writeReturnType(e.returnType);
       _writeNonSyntheticElement(e);
       writeLinking();
+      _writeMacroDiagnostics(e);
       _writeAugmentationTarget(e);
       _writeAugmentation(e);
     });
@@ -1043,6 +1161,7 @@ class _ElementWriter {
       _writeConstantInitializer(e);
       _writeNonSyntheticElement(e);
       writeLinking();
+      _writeMacroDiagnostics(e);
       _writeAugmentationTarget(e);
       _writeAugmentation(e);
     });

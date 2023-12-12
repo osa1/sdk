@@ -45,7 +45,6 @@ void main() {
     defineReflectiveTests(CompletionDocumentationResolutionTest);
     defineReflectiveTests(DartSnippetCompletionTest);
     defineReflectiveTests(FlutterSnippetCompletionTest);
-    defineReflectiveTests(FlutterSnippetCompletionWithoutNullSafetyTest);
   });
 }
 
@@ -86,7 +85,6 @@ class CompletionDocumentationResolutionTest extends AbstractCompletionTest {
   }
 
   Future<void> initializeServer() async {
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -648,7 +646,6 @@ class A {}
 A^
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(
       initialize,
       {
@@ -697,7 +694,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(
       initialize,
       {
@@ -1213,7 +1209,6 @@ class _MyWidgetState extends State<MyWidget> {
 ''';
 
     setCompletionItemSnippetSupport();
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(initialize, {'completeFunctionCalls': true});
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -1263,7 +1258,6 @@ final a = Stri^
     }
 
     setCompletionItemSnippetSupport();
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(initialize, {'completeFunctionCalls': true});
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -2132,7 +2126,6 @@ void f() {
       ].join('\n'),
     );
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -2164,7 +2157,6 @@ void f() {
       ].join('\n'),
     );
 
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(initialize, {'maxCompletionItems': 200});
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -2312,7 +2304,6 @@ void f() {
       ].join('\n'),
     );
 
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(initialize, {'maxCompletionItems': 10});
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -2351,7 +2342,6 @@ void f() {
     );
 
     setCompletionItemSnippetSupport();
-    final initialAnalysis = waitForAnalysisComplete();
     await provideConfig(initialize, {'maxCompletionItems': 10});
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -2634,7 +2624,6 @@ void f() { }
     }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -2860,7 +2849,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -2966,7 +2954,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3007,7 +2994,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3039,7 +3025,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3085,7 +3070,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3167,7 +3151,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3210,7 +3193,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3312,7 +3294,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3348,7 +3329,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3447,7 +3427,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3497,7 +3476,6 @@ void f() {
 ''';
     final code = TestCode.parse(content);
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize(
       initializationOptions: {
         ...?defaultInitializationOptions,
@@ -3526,7 +3504,6 @@ void f() {
 ''';
     final code = TestCode.parse(content);
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize(
       initializationOptions: {
         ...?defaultInitializationOptions,
@@ -3553,7 +3530,6 @@ void f() {
     final otherFileUri = pathContext.toUri(otherFilePath);
 
     final mainFileCode = TestCode.parse('MyOtherClass^');
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     await openFile(mainFileUri, mainFileCode.code);
     await initialAnalysis;
@@ -3593,7 +3569,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3667,7 +3642,6 @@ class BaseImpl extends Base {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3788,7 +3762,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     // applyEdit is supported in setUp, but explicitly disable the suggestions.
     await initialize(
       initializationOptions: {
@@ -3823,7 +3796,6 @@ void f() {
 }
 ''';
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     final code = TestCode.parse(content);
     await openFile(mainFileUri, code.code);
@@ -3876,7 +3848,6 @@ void f() {
     String expectedContent,
   ) async {
     final code = TestCode.parse(content);
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     await openFile(fileUri, code.code);
     await initialAnalysis;
@@ -3990,7 +3961,6 @@ void f() {
 ''';
     final code = TestCode.parse(content);
 
-    final initialAnalysis = waitForAnalysisComplete();
     await initialize();
     await openFile(mainFileUri, code.code);
     await initialAnalysis;
@@ -4650,20 +4620,6 @@ stle^
     final snippetItems = res.where((c) => c.kind == CompletionItemKind.Snippet);
     expect(snippetItems, hasLength(0));
   }
-}
-
-@reflectiveTest
-class FlutterSnippetCompletionWithoutNullSafetyTest
-    extends FlutterSnippetCompletionTest {
-  @override
-  String get expectedImports => '''
-import 'package:flutter/widgets.dart';''';
-
-  @override
-  String get expectedWidgetConstructorParams => '({Key key}) : super(key: key)';
-
-  @override
-  String get testPackageLanguageVersion => '2.9';
 }
 
 abstract class SnippetCompletionTest extends AbstractLspAnalysisServerTest

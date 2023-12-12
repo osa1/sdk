@@ -14,9 +14,9 @@ import 'package:front_end/src/api_unstable/dart2js.dart' as fe;
 import '../compiler_api.dart' as api;
 import 'commandline_options.dart';
 import 'common/ram_usage.dart';
+import 'compiler.dart' as defaultCompiler show Compiler;
 import 'io/mapped_file.dart';
 import 'options.dart' show CompilerOptions, Dart2JSStage, FeatureOptions;
-import 'compiler.dart' as defaultCompiler show Compiler;
 import 'source_file_provider.dart';
 import 'util/command_line.dart';
 import 'util/util.dart' show stackTraceFilePrefix;
@@ -751,17 +751,15 @@ Future<api.CompilationResult> compile(List<String> argv,
       case Dart2JSStage.cfe:
       case Dart2JSStage.allFromDill:
       case Dart2JSStage.cfeFromDill:
-      case Dart2JSStage.closedWorld:
         final sourceCharCount =
             _formatCharacterCount(inputProvider.sourceBytesFromDill);
         inputName = 'input bytes ($sourceCharCount characters source)';
         inputSize = inputProvider.bytesRead;
         summary = 'Dart file $input ';
         break;
+      case Dart2JSStage.closedWorld:
       case Dart2JSStage.deferredLoadIds:
-        final sourceCharCount =
-            _formatCharacterCount(inputProvider.sourceBytesFromDill);
-        inputName = 'input bytes ($sourceCharCount characters source)';
+        inputName = 'input bytes';
         inputSize = inputProvider.bytesRead;
         summary = 'Dart file $input ';
         break;
@@ -833,12 +831,11 @@ Future<api.CompilationResult> compile(List<String> argv,
         processName = 'Serialized';
         outputName = 'bytes data';
         outputSize = outputProvider.totalDataWritten;
-        String output = fe.relativizeUri(Uri.base, out!, Platform.isWindows);
         String dataOutput = fe.relativizeUri(
             Uri.base,
             compilerOptions.dataOutputUriForStage(compilerOptions.stage),
             Platform.isWindows);
-        summary += 'serialized to dill and data: ${output} and ${dataOutput}.';
+        summary += 'serialized to data: ${dataOutput}.';
         break;
       case Dart2JSStage.deferredLoadIds:
         processName = 'Serialized';
@@ -985,7 +982,8 @@ Usage: dart compile js [arguments] <dart entry point>
      -O2          Safe production-oriented optimizations (like minification).
      -O3          Potentially unsafe optimizations (see -h -v for details).
      -O4          More agressive unsafe optimizations (see -h -v for details).
-  ''');
+'''
+      .trim());
 }
 
 void verboseHelp() {

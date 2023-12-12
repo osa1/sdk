@@ -56,7 +56,7 @@ class Linker {
 
   final Map<ElementImpl, ast.AstNode> elementNodes = Map.identity();
 
-  late InheritanceManager3 inheritance; // TODO(scheglov) cache it
+  late InheritanceManager3 inheritance; // TODO(scheglov): cache it
 
   late Uint8List resolutionBytes;
 
@@ -136,6 +136,7 @@ class Linker {
       macroExecutor: macroExecutor,
       isLibraryBeingLinked: (uri) => builders.containsKey(uri),
       declarationBuilder: macroDeclarationBuilder,
+      runDeclarationsPhase: _executeMacroDeclarationsPhase,
     );
 
     for (final library in builders.values) {
@@ -167,16 +168,7 @@ class Linker {
       'executeMacroDeclarationsPhase',
       (performance) async {
         await _executeMacroDeclarationsPhase(
-          performance: performance,
-        );
-      },
-    );
-
-    await performance.runAsync(
-      'executeMacroDefinitionsPhase',
-      (performance) async {
-        await _executeMacroDefinitionsPhase(
-          performance: performance,
+          targetElement: null,
         );
       },
     );
@@ -191,6 +183,17 @@ class Linker {
     _resolveConstantInitializers();
     _resolveDefaultValues();
     _resolveMetadata();
+
+    // TODO(scheglov): verify if any resolutions should happen after
+    await performance.runAsync(
+      'executeMacroDefinitionsPhase',
+      (performance) async {
+        await _executeMacroDefinitionsPhase(
+          performance: performance,
+        );
+      },
+    );
+
     _collectMixinSuperInvokedNames();
     _buildElementNameUnions();
     _detachNodes();
@@ -316,13 +319,13 @@ class Linker {
   }
 
   Future<void> _executeMacroDeclarationsPhase({
-    required OperationPerformanceImpl performance,
+    required Element? targetElement,
   }) async {
     while (true) {
       var hasProgress = false;
       for (final library in builders.values) {
         hasProgress |= await library.executeMacroDeclarationsPhase(
-          performance: performance,
+          targetElement: targetElement,
         );
       }
       if (!hasProgress) {

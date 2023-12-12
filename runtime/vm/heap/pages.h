@@ -227,6 +227,7 @@ class PageSpace {
   void VisitObjects(ObjectVisitor* visitor) const;
   void VisitObjectsNoImagePages(ObjectVisitor* visitor) const;
   void VisitObjectsImagePages(ObjectVisitor* visitor) const;
+  void VisitObjectsUnsafe(ObjectVisitor* visitor) const;
   void VisitObjectPointers(ObjectPointerVisitor* visitor) const;
 
   void VisitRememberedCards(ObjectPointerVisitor* visitor) const;
@@ -344,6 +345,8 @@ class PageSpace {
 
   bool IsObjectFromImagePages(ObjectPtr object);
 
+  GCMarker* marker() const { return marker_; }
+
  private:
   // Ids for time and data records in Heap::GCStats.
   enum {
@@ -404,6 +407,7 @@ class PageSpace {
   void FreePages(Page* pages);
 
   void CollectGarbageHelper(Thread* thread, bool compact, bool finalize);
+  void SweepNew();
   void SweepLarge();
   void Sweep(bool exclusive);
   void ConcurrentSweep(IsolateGroup* isolate_group);
@@ -488,6 +492,7 @@ class PageSpace {
   friend class ConcurrentSweeperTask;
   friend class GCCompactor;
   friend class CompactorTask;
+  friend void DumpStackFrame(intptr_t frame_index, uword pc, uword fp);
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(PageSpace);
 };

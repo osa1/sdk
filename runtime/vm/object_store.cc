@@ -543,6 +543,15 @@ void ObjectStore::LazyInitFfiMembers() {
     ASSERT(!function.IsNull());
     handle_native_finalizer_message_function_.store(function.ptr());
 
+    cls = ffi_lib.LookupClass(Symbols::FfiNative());
+    ASSERT(!cls.IsNull());
+    error = cls.EnsureIsFinalized(thread);
+    ASSERT(error.IsNull());
+    function =
+        cls.LookupStaticFunctionAllowPrivate(Symbols::_ffi_resolver_function());
+    ASSERT(!function.IsNull());
+    ffi_resolver_function_.store(function.ptr());
+
     cls = ffi_lib.LookupClass(Symbols::VarArgs());
     ASSERT(!cls.IsNull());
     varargs_class_.store(cls.ptr());

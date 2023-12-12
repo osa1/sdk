@@ -32,7 +32,6 @@ import 'package:analysis_server/src/services/correction/dart/add_null_check.dart
 import 'package:analysis_server/src/services/correction/dart/add_override.dart';
 import 'package:analysis_server/src/services/correction/dart/add_redeclare.dart';
 import 'package:analysis_server/src/services/correction/dart/add_reopen.dart';
-import 'package:analysis_server/src/services/correction/dart/add_required.dart';
 import 'package:analysis_server/src/services/correction/dart/add_required_keyword.dart';
 import 'package:analysis_server/src/services/correction/dart/add_return_null.dart';
 import 'package:analysis_server/src/services/correction/dart/add_return_type.dart';
@@ -158,7 +157,6 @@ import 'package:analysis_server/src/services/correction/dart/remove_print.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_question_mark.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_required.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_returned_value.dart';
-import 'package:analysis_server/src/services/correction/dart/remove_set_literal.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_this_expression.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_to_list.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_type_annotation.dart';
@@ -230,7 +228,6 @@ import 'package:analysis_server/src/services/correction/dart/use_eq_eq_null.dart
 import 'package:analysis_server/src/services/correction/dart/use_is_not_empty.dart';
 import 'package:analysis_server/src/services/correction/dart/use_not_eq_null.dart';
 import 'package:analysis_server/src/services/correction/dart/use_rethrow.dart';
-import 'package:analysis_server/src/services/correction/dart/wrap_in_future.dart';
 import 'package:analysis_server/src/services/correction/dart/wrap_in_text.dart';
 import 'package:analysis_server/src/services/correction/dart/wrap_in_unawaited.dart';
 import 'package:analysis_server/src/services/correction/fix.dart';
@@ -436,9 +433,6 @@ class FixProcessor extends BaseProcessor {
     LintNames.always_put_required_named_parameters_first: [
       MakeRequiredNamedParametersFirst.new,
     ],
-    LintNames.always_require_non_null_named_parameters: [
-      AddRequired.new,
-    ],
     LintNames.always_specify_types: [
       AddTypeAnnotation.bulkFixable,
     ],
@@ -490,11 +484,6 @@ class FixProcessor extends BaseProcessor {
     ],
     LintNames.avoid_return_types_on_setters: [
       RemoveTypeAnnotation.other,
-    ],
-    LintNames.avoid_returning_null_for_future: [
-      // TODO(brianwilkerson): Consider applying in bulk.
-      AddAsync.new,
-      WrapInFuture.new,
     ],
     LintNames.avoid_returning_null_for_void: [
       RemoveReturnedValue.new,
@@ -1058,7 +1047,7 @@ class FixProcessor extends BaseProcessor {
       CreateMixin.new,
     ],
     CompileTimeErrorCode.CONCRETE_CLASS_WITH_ABSTRACT_MEMBER: [
-      ConvertIntoBlockBody.new,
+      ConvertIntoBlockBody.missingBody,
       CreateNoSuchMethod.new,
       MakeClassAbstract.new,
     ],
@@ -1088,7 +1077,7 @@ class FixProcessor extends BaseProcessor {
       ReplaceEmptyMapPattern.empty,
     ],
     CompileTimeErrorCode.ENUM_WITH_ABSTRACT_MEMBER: [
-      ConvertIntoBlockBody.new,
+      ConvertIntoBlockBody.missingBody,
     ],
     CompileTimeErrorCode.EXTENDS_DISALLOWED_CLASS: [
       RemoveNameFromDeclarationClause.new,
@@ -1460,9 +1449,6 @@ class FixProcessor extends BaseProcessor {
     FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_WITH: [
       RemoveNameFromDeclarationClause.new,
     ],
-    HintCode.CAN_BE_NULL_AFTER_NULL_AWARE: [
-      ReplaceWithNullAware.inChain,
-    ],
     HintCode.DEPRECATED_COLON_FOR_DEFAULT_VALUE: [
       ReplaceColonWithEquals.new,
     ],
@@ -1507,7 +1493,7 @@ class FixProcessor extends BaseProcessor {
       AddTypeAnnotation.new,
     ],
     ParserErrorCode.MISSING_FUNCTION_BODY: [
-      ConvertIntoBlockBody.new,
+      ConvertIntoBlockBody.missingBody,
     ],
     ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR: [
       RemoveConstructor.new,
@@ -1708,7 +1694,7 @@ class FixProcessor extends BaseProcessor {
       RemoveQuestionMark.new,
     ],
     WarningCode.UNNECESSARY_SET_LITERAL: [
-      RemoveSetLiteral.new,
+      ConvertIntoBlockBody.setLiteral,
     ],
     WarningCode.UNNECESSARY_TYPE_CHECK_FALSE: [
       RemoveComparison.typeCheck,

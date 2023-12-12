@@ -51,6 +51,7 @@ allocate
 allocator
 altered
 ambiguities
+amd
 analogous
 analogy
 analyzes
@@ -68,6 +69,7 @@ apparently
 applicable
 approximation
 arbiter
+arch
 architectures
 area
 arg
@@ -148,6 +150,7 @@ bindings
 binds
 bj
 bk
+bla
 blend
 blindly
 blob
@@ -211,6 +214,7 @@ casts
 categorized
 ce
 ceil
+certainly
 cfe
 ch
 chaining
@@ -243,8 +247,11 @@ cli
 client's
 clil
 clock
+closurizing
 cls
 cm
+cmdline
+cmdlines
 cn
 cnt
 co
@@ -330,6 +337,8 @@ counted
 counters
 covariances
 coverage
+cp
+cpu
 cr
 creator
 creators
@@ -349,6 +358,7 @@ customized
 cut
 cuts
 cwd
+cyc
 cyclical
 cyclically
 d
@@ -358,12 +368,14 @@ dangerous
 dangling
 danrubel
 daringfireball
+dartaotruntime
 dartbug
 dartdoc
 dartfix
 dartino
 dartlang
 dashes
+davidmorgan
 dc
 ddc
 ddfea
@@ -420,6 +432,7 @@ dev
 developed
 device
 dictates
+dies
 diff
 differs
 difficult
@@ -467,6 +480,8 @@ dquote
 drawn
 ds
 dsdk
+dso
+dsos
 dst
 dummy
 dupdate
@@ -564,6 +579,7 @@ extenders
 extracted
 extracts
 extras
+exuberant
 f
 faced
 factor
@@ -612,6 +628,7 @@ fo
 foo
 foobar
 footer
+forceable
 forcefully
 forcibly
 forcing
@@ -667,6 +684,7 @@ gotos
 gradually
 granted
 graphs
+great
 grouper
 growability
 growth
@@ -720,10 +738,12 @@ hvar
 i
 i'll
 i'm
+i've
 ic
 id
 ide
 ideal
+identification
 identifies
 identifying
 ideographic
@@ -765,6 +785,7 @@ inequality
 inequivalence
 inequivalences
 inequivalent
+inevitably
 inferable
 influence
 influences
@@ -788,6 +809,7 @@ instanceof
 instantiable
 instantiator
 integrate
+intel
 intends
 intention
 intentionally
@@ -843,6 +865,7 @@ job
 johnniwinther
 js
 json
+jumping
 jumps
 juxtaposition
 juxtapositions
@@ -938,6 +961,7 @@ macro
 macros
 maintaining
 malbounded
+man
 manage
 mangled
 manipulating
@@ -960,6 +984,7 @@ me
 meanings
 meeting
 merely
+mess
 meta
 metadata's
 metadatum
@@ -987,6 +1012,7 @@ moretop
 moves
 msdn
 msg
+mtc
 murmur
 mus
 mvar
@@ -995,6 +1021,9 @@ na
 nagle's
 nameless
 namer
+nano
+nanosecond
+native\$
 natively
 nativewrappers
 nbsp
@@ -1021,6 +1050,7 @@ nonetheless
 nonexistent
 nonimplementation
 nonzero
+noretcomp
 norm
 normalization
 notifier
@@ -1033,6 +1063,7 @@ nt
 nth
 nullabilities
 nullary
+nulled
 nullification
 nullify
 nullness
@@ -1121,6 +1152,7 @@ pedantic
 per
 percentages
 perf
+perfetto
 permanently
 permit
 permits
@@ -1129,6 +1161,8 @@ pertinent
 physically
 pi
 picking
+pid
+pids
 pieces
 pipe
 pkg
@@ -1186,10 +1220,12 @@ proc
 proceeds
 processes
 processor
+processors
 producers
 product
 productions
 profile
+profiled
 progresses
 prohibited
 promo
@@ -1210,6 +1246,8 @@ provider
 provisional
 prune
 ps
+pt
+ptr
 pulled
 pure
 puts
@@ -1369,6 +1407,7 @@ rhs
 ri
 right's
 rightmost
+ring
 risk
 rn
 rnystrom
@@ -1396,6 +1435,7 @@ sandboxed
 sanitize
 sanitized
 sanitizing
+saves
 saw
 say
 saying
@@ -1461,6 +1501,7 @@ sides
 sigmund
 signaling
 significant
+sigusr
 silenceable
 silenced
 simplifier
@@ -1617,6 +1658,7 @@ tagger
 tagging
 tags
 tailor
+tails
 taking
 talk
 talks
@@ -1625,6 +1667,7 @@ tarjan
 tarjan's
 tb
 tcp
+tcsetattr
 team
 tearoff
 tearoffable
@@ -1650,6 +1693,8 @@ therein
 thereof
 they'll
 thought
+thread
+thresh
 ti
 tick
 ticker
@@ -1659,6 +1704,8 @@ tighter
 tiki
 tilde
 till
+timer
+timestamp
 timings
 tiny
 tj
@@ -1718,6 +1765,7 @@ unawaited
 unbound
 uncached
 uncategorized
+uncertainty
 uncomment
 uncommon
 unconditional
@@ -1829,6 +1877,7 @@ violating
 visit*
 visitors
 visits
+visualize
 vm's
 vn
 vs
@@ -1880,6 +1929,7 @@ wrt
 wtf
 www
 x
+x$y
 xb
 xbb
 xbf
