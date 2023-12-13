@@ -33,7 +33,7 @@ class _WasmTransformer extends Transformer {
   final Library _coreLibrary;
   final InterfaceType _nonNullableTypeType;
   final Class _wasmBaseClass;
-  final Class _wasmObjectArrayClass;
+  final Class _wasmArrayClass;
   final List<_AsyncStarFrame> _asyncStarFrames = [];
   bool _enclosingIsAsyncStar = false;
   late final controllerNullableObjectType = InterfaceType(
@@ -59,8 +59,7 @@ class _WasmTransformer extends Transformer {
             .getClass('dart:core', '_Type')
             .getThisType(coreTypes, Nullability.nonNullable),
         _wasmBaseClass = coreTypes.index.getClass('dart:_wasm', '_WasmBase'),
-        _wasmObjectArrayClass =
-            coreTypes.index.getClass('dart:_wasm', 'WasmObjectArray'),
+        _wasmArrayClass = coreTypes.index.getClass('dart:_wasm', 'WasmArray'),
         _coreLibrary = coreTypes.index.getLibrary('dart:core'),
         _listFactorySpecializer = ListFactorySpecializer(coreTypes);
 
@@ -125,8 +124,8 @@ class _WasmTransformer extends Transformer {
           ProcedureKind.Getter,
           FunctionNode(
             null,
-            returnType: InterfaceType(_wasmObjectArrayClass,
-                Nullability.nonNullable, [_nonNullableTypeType]),
+            returnType: InterfaceType(_wasmArrayClass, Nullability.nonNullable,
+                [_nonNullableTypeType]),
           ),
           isExternal: true,
           isSynthetic: true,
@@ -601,23 +600,28 @@ class _WasmTransformer extends Transformer {
         callAsyncMap, Name('where'), Arguments([whereFilter]),
         interfaceTarget: whereProc, functionType: whereProcType);
 
-    // Finally call cast
-    DartType typeArgument;
-    if (functionNode.returnType is InterfaceType) {
-      typeArgument =
-          (functionNode.returnType as InterfaceType).typeArguments.single;
+    // Finally call cast.
+
+    // Stream element type is defined in language spec section 9. If the return
+    // type is `Stream<U>` then the element type is `U`. Otherwise it needs to
+    // be a supertype of `Object` and the element type is `dynamic`.
+    final DartType streamTypeArgument;
+    final DartType functionReturnType = functionNode.returnType;
+    if (functionReturnType is InterfaceType &&
+        functionReturnType.classNode == coreTypes.streamClass) {
+      streamTypeArgument = functionReturnType.typeArguments.single;
     } else {
-      typeArgument = const DynamicType();
+      streamTypeArgument = const DynamicType();
     }
     Procedure castProc =
         coreTypes.index.getProcedure('dart:async', 'Stream', 'cast');
-    final returnStreamType = InterfaceType(
-        coreTypes.streamClass, typeArgument.nullability, [typeArgument]);
+    final returnStreamType = InterfaceType(coreTypes.streamClass,
+        streamTypeArgument.nullability, [streamTypeArgument]);
     final castProcType = FunctionType(
         [], returnStreamType, Nullability.nonNullable,
         requiredParameterCount: 1);
     final castToExpectedType = InstanceInvocation(InstanceAccessKind.Instance,
-        callWhere, Name('cast'), Arguments([], types: [typeArgument]),
+        callWhere, Name('cast'), Arguments([], types: [streamTypeArgument]),
         interfaceTarget: castProc, functionType: castProcType);
     return FunctionNode(
         Block([
