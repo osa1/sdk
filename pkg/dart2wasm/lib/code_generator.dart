@@ -2064,13 +2064,15 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _polymorphicSpecialization(selector, receiverVar);
     } else {
       b.comment("Instance $kind of '${selector.name}'");
+      b.global_get(translator.dispatchTable.dispatchTableGlobal);
       b.local_get(receiverVar);
       b.struct_get(translator.topInfo.struct, FieldIndex.classId);
       if (offset != 0) {
         b.i32_const(offset);
         b.i32_add();
       }
-      b.table_get(translator.dispatchTable.wasmTable);
+      // b.table_get(translator.dispatchTable.wasmTable);
+      b.array_get(translator.dispatchTable.tableArrayType);
       b.ref_cast(w.RefType.def(selector.signature, nullable: false));
       b.call_ref(selector.signature);
 

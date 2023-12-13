@@ -253,6 +253,9 @@ class DispatchTable {
   /// The Wasm table for the dispatch table.
   late final w.TableBuilder wasmTable;
 
+  late final w.GlobalBuilder dispatchTableGlobal;
+  late final w.ArrayType tableArrayType;
+
   w.ModuleBuilder get m => translator.m;
 
   DispatchTable(this.translator)
@@ -477,6 +480,12 @@ class DispatchTable {
     }
 
     wasmTable = m.tables.define(w.RefType.func(nullable: true), _table.length);
+
+    tableArrayType = m.types.defineArray("Dispatch table",
+        elementType:
+            w.FieldType(w.RefType.func(nullable: true), mutable: false));
+    dispatchTableGlobal = m.globals
+        .define(w.GlobalType(w.RefType(tableArrayType, nullable: false)));
   }
 
   void output() {
@@ -489,5 +498,24 @@ class DispatchTable {
         }
       }
     }
+
+    final b = dispatchTableGlobal.initializer;
+    const funcType = w.RefType.func(nullable: true);
+    for (int i = 0; i < _table.length; i++) {
+      Reference? target = _table[i];
+      if (target == null) {
+        b.ref_null(funcType.heapType);
+      } else {
+        w.BaseFunction? fun = translator.functions.getExistingFunction(target);
+        if (fun == null) {
+          b.ref_null(funcType.heapType);
+        } else {
+          b.ref_func(fun);
+        }
+      }
+    }
+    b.array_new_fixed(tableArrayType, _table.length);
+    b.end();
+    dispatchTableGlobal.forceBuild();
   }
 }
