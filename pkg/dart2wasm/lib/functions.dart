@@ -162,13 +162,22 @@ class FunctionCollector {
     Member member = target.asMember;
     final ftype = member.accept1(_FunctionTypeGenerator(translator), target);
 
-    if (target.isInitializerReference) {
-      return action(ftype, '${member} initializer');
-    } else if (target.isConstructorBodyReference) {
-      return action(ftype, '${member} constructor body');
+    String memberName = member.toString();
+    if (memberName.endsWith('.')) {
+      memberName = memberName.substring(0, memberName.length - 1);
     }
 
-    return action(ftype, "${target.asMember}");
+    if (target.isInitializerReference) {
+      return action(ftype, 'new $memberName (initializer)');
+    } else if (target.isConstructorBodyReference) {
+      return action(ftype, 'new $memberName (constructor body)');
+    }
+
+    if (member is Procedure && member.isFactory) {
+      memberName = 'new $memberName';
+    }
+
+    return action(ftype, memberName);
   }
 
   void activateSelector(SelectorInfo selector) {
