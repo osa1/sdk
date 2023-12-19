@@ -602,7 +602,7 @@ class _WasmTransformer extends Transformer {
 
     // Finally call cast.
 
-    final DartType streamTypeArgument = functionNode.futureValueType!;
+    final DartType streamTypeArgument = functionNode.emittedValueType!;
     Procedure castProc =
         coreTypes.index.getProcedure('dart:async', 'Stream', 'cast');
     final returnStreamType = InterfaceType(coreTypes.streamClass,
