@@ -8,7 +8,7 @@
 String? get pageSettings => "a";
 
 void main() async {
-  while (pageSettings?.length != 5) {
+  while (pageSettings?.length != 1) {
     await null;
   }
 }
