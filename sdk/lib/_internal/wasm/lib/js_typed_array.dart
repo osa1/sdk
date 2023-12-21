@@ -613,8 +613,8 @@ mixin _IntListMixin implements List<int> {
       // types. Check that either both of the arrays are `BigInt`s (signed or
       // unsigned), or none of them are.
       final sourceBigInt = source.elementSizeInBytes == 8;
-      final destBigInt = elementSizeInBytes == 8;
-      if (!(sourceBigInt ^ destBigInt)) {
+      final targetBigInt = elementSizeInBytes == 8;
+      if (!(sourceBigInt ^ targetBigInt)) {
         final length = end - start;
         final sourceArray = source.toJSArrayExternRef(skipCount, length);
         final targetArray = toJSArrayExternRef(start, length);
