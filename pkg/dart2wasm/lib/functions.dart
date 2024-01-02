@@ -171,13 +171,11 @@ class FunctionCollector {
       return action(ftype, 'new $memberName (initializer)');
     } else if (target.isConstructorBodyReference) {
       return action(ftype, 'new $memberName (constructor body)');
+    } else if (member is Procedure && member.isFactory) {
+      return action(ftype, 'new $memberName');
+    } else {
+      return action(ftype, memberName);
     }
-
-    if (member is Procedure && member.isFactory) {
-      memberName = 'new $memberName';
-    }
-
-    return action(ftype, memberName);
   }
 
   void activateSelector(SelectorInfo selector) {
