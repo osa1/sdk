@@ -45,7 +45,14 @@ class ExtensionTypeErasure extends ReplacementVisitor {
   @override
   DartType? visitInterfaceType(covariant InterfaceTypeImpl type) {
     if (type.representationType case final representationType?) {
-      return representationType.accept(this) ?? representationType;
+      final erased = representationType.accept(this) ?? representationType;
+      erased as TypeImpl;
+      // If the extension type is nullable, apply it to the erased.
+      if (type.nullabilitySuffix == NullabilitySuffix.question) {
+        return erased.withNullability(NullabilitySuffix.question);
+      }
+      // Use the erased as is, still might be nullable.
+      return erased;
     }
 
     return super.visitInterfaceType(type);
@@ -878,6 +885,9 @@ class TypeSystemImpl implements TypeSystem {
       }
       if (element is ClassElement && element.isSealed) {
         return true;
+      }
+      if (element is ExtensionTypeElement) {
+        return isAlwaysExhaustive(type.extensionTypeErasure);
       }
       if (type.isDartAsyncFutureOr) {
         return isAlwaysExhaustive(type.typeArguments[0]);

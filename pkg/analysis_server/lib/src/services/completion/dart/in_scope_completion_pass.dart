@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analysis_server/src/services/completion/dart/candidate_suggestion.dart';
 import 'package:analysis_server/src/services/completion/dart/completion_state.dart';
 import 'package:analysis_server/src/services/completion/dart/declaration_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/keyword_helper.dart';
@@ -9,6 +10,7 @@ import 'package:analysis_server/src/services/completion/dart/label_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_collector.dart';
 import 'package:analysis_server/src/services/completion/dart/visibility_tracker.dart';
 import 'package:analysis_server/src/utilities/extensions/ast.dart';
+import 'package:analysis_server/src/utilities/flutter.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
@@ -16,6 +18,7 @@ import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/ast/token.dart';
 
@@ -179,31 +182,94 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitArgumentList(ArgumentList node) {
-    if (offset >= node.leftParenthesis.end &&
-        offset <= node.rightParenthesis.offset) {
-      var (:before, after: _) = node.argumentsBeforeAndAfterOffset(offset);
-      if (before != null) {
-        _handledPossibleClosure(before);
-        _forExpression(before, mustBeNonVoid: true);
-        return;
-      }
-      // collector.completionLocation = 'ArgumentList_${context}_named';
+    if (offset <= node.leftParenthesis.offset) {
+      node.parent?.accept(this);
+    } else if (offset <= node.rightParenthesis.offset) {
+      // TODO(brianwilkerson): Consider moving most of this method (and some of
+      //  `visitNamedExpression`) into an `ArgumentListHelper`.
       var parent = node.parent;
       if (parent == null) {
         return;
       }
-      var element = switch (parent) {
-        InstanceCreationExpression invocation =>
-          invocation.constructorName.staticElement,
-        MethodInvocation invocation => invocation.methodName.staticElement,
-        FunctionExpressionInvocation invocation => invocation.staticElement,
-        _ => null,
-      };
-      if (element is ExecutableElement) {
-        // Only suggest expression keywords if at least one of the parameters is
-        // a positional parameter.
-        if (element.parameters.any((element) => element.isPositional)) {
+      // Compute the index of the positional argument that the user might be
+      // trying to complete.
+      var arguments = node.arguments;
+      var (:before, :after) = node.argumentsBeforeAndAfterOffset(offset);
+      var argumentIndex = 0;
+      if (before != null) {
+        if (_handledPossibleClosure(before)) {
+          _forExpression(before, mustBeNonVoid: true);
+          return;
+        }
+        argumentIndex = arguments.indexOf(before);
+        if (offset > before.end) {
+          argumentIndex = argumentIndex + 1;
+        }
+      }
+      // collector.completionLocation = 'ArgumentList_${context}_named';
+      var (:positionalArgumentCount, :usedNames) =
+          node.argumentContext(argumentIndex);
+
+      var element = node.invokedElement;
+      var parameters = element.getParameters();
+      if (parameters != null) {
+        var positionalParameterCount = 0;
+        var availableNamedParameters = <ParameterElement>[];
+        for (int i = 0; i < parameters.length; i++) {
+          var parameter = parameters[i];
+          if (parameter.isNamed) {
+            if (!usedNames.contains(parameter.name)) {
+              availableNamedParameters.add(parameter);
+            }
+          } else {
+            positionalParameterCount++;
+          }
+        }
+        // Only suggest expression keywords if it's possible that the user is
+        // completing a positional argument.
+        if (positionalArgumentCount < positionalParameterCount) {
           _forExpression(parent, mustBeNonVoid: true);
+        }
+        // Suggest the names of all named parameters that are not already in the
+        // argument list.
+        var appendComma = false;
+        if (after != null) {
+          var possibleComma = after.beginToken.previous;
+          if (after.isSynthetic) {
+            // TODO(brianwilkerson): [argumentsBeforeAndAfterOffset] should
+            //  probably be updated so that it doesn't return a synthetic token
+            //  as the following argument, but treats it like the offset is
+            //  inside the synthetic argument.
+            possibleComma = after.endToken.next;
+          }
+          if (possibleComma != null && possibleComma.type == TokenType.COMMA) {
+            if (possibleComma.isSynthetic) {
+              if (after is NamedExpression ||
+                  before is! SimpleIdentifier ||
+                  offset > before.end) {
+                appendComma = true;
+              }
+            } else if (offset >= possibleComma.end) {
+              appendComma = true;
+            }
+          } else {
+            appendComma = true;
+          }
+        } else if (parent is InstanceCreationExpression &&
+            Flutter.isWidgetCreation(parent)) {
+          appendComma = true;
+        }
+        int? replacementLength;
+        if (offset == before?.offset) {
+          replacementLength = 0;
+          appendComma = false;
+        }
+        for (var parameter in availableNamedParameters) {
+          collector.addSuggestion(NamedArgumentSuggestion(
+              parameter: parameter,
+              appendColon: true,
+              appendComma: appendComma,
+              replacementLength: replacementLength));
         }
       } else if (parent is Expression) {
         _forExpression(parent, mustBeNonVoid: true);
@@ -449,16 +515,46 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         collector.completionLocation = 'ConstructorDeclaration_initializer';
         _forConstructorInitializer(node, null);
       }
+    } else if (type == TokenType.EQ) {
+      var constructorElement = node.declaredElement;
+      if (constructorElement == null) {
+        return;
+      }
+      var libraryElement = state.libraryElement;
+      declarationHelper(mustBeConstant: constructorElement.isConst)
+          .addPosibleRedirectionsInLibrary(constructorElement, libraryElement);
     }
   }
 
   @override
   void visitConstructorFieldInitializer(ConstructorFieldInitializer node) {
-    collector.completionLocation = 'ConstructorDeclaration_initializer';
+    var constructor = node.parent;
+    if (constructor is! ConstructorDeclaration) {
+      return;
+    }
     if (offset <= node.equals.offset) {
-      var constructor = node.parent as ConstructorDeclaration;
+      collector.completionLocation = 'ConstructorDeclaration_initializer';
       _forConstructorInitializer(constructor, node);
     } else {
+      if (node.fieldName.isSynthetic && node.equals.isSynthetic) {
+        var expression = node.expression;
+        if (expression is PropertyAccess &&
+            expression.target is ThisExpression) {
+          if (expression.operator.isSynthetic) {
+            // The parser recovers from `this` by treating it as a property
+            // access on the right side of a field initializer. The user appears
+            // to be attempting to complete an initializer.
+            collector.completionLocation = 'ConstructorDeclaration_initializer';
+            _forConstructorInitializer(constructor, node);
+          } else {
+            // The parser recovers from `this.` by treating it as a property
+            // access on the right side of a field initializer. The user appears
+            // to be attempting to complete the name of a constructor.
+            _forRedirectingConstructorInvocation(constructor);
+          }
+          return;
+        }
+      }
       _forExpression(node, mustBeNonVoid: true);
     }
   }
@@ -1234,7 +1330,32 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitNamedExpression(NamedExpression node) {
-    if (offset >= node.name.end) {
+    if (offset <= node.name.label.end) {
+      var argumentList = node.parent;
+      if (argumentList is! ArgumentList) {
+        return;
+      }
+      var element = argumentList.invokedElement;
+      if (element is ExecutableElement) {
+        var (positionalArgumentCount: _, :usedNames) =
+            argumentList.argumentContext(-1);
+        usedNames.remove(node.name.label.name);
+
+        var appendColon = node.name.colon.isSynthetic;
+        var parameters = element.parameters;
+        for (int i = 0; i < parameters.length; i++) {
+          var parameter = parameters[i];
+          if (parameter.isNamed) {
+            if (!usedNames.contains(parameter.name)) {
+              collector.addSuggestion(NamedArgumentSuggestion(
+                  parameter: parameter,
+                  appendColon: appendColon,
+                  appendComma: false));
+            }
+          }
+        }
+      }
+    } else if (offset >= node.name.colon.end) {
       _forExpression(node, mustBeNonVoid: node.parent is ArgumentList);
     }
   }
@@ -1344,9 +1465,20 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitPropertyAccess(PropertyAccess node) {
-    // suggestions before '.' but not after
     if (offset <= node.operator.offset) {
+      // We will only get here if the target is a `SimpleIdentifier`, in which
+      // case the user is attempting to complete that identifier.
       _forExpression(node);
+    } else {
+      if (node.target is ThisExpression &&
+          node.parent is ConstructorFieldInitializer) {
+        // The parser recovers from `this` by treating it as a property access
+        // on the right side of a field initializer. The user appears to be
+        // attempting to complete an initializer.
+        node.parent?.accept(this);
+        return;
+      }
+      // TODO(brianwilkerson): Suggest the members on the type of the target.
     }
   }
 
@@ -1366,9 +1498,23 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   @override
   void visitRedirectingConstructorInvocation(
       RedirectingConstructorInvocation node) {
-    collector.completionLocation = 'ConstructorDeclaration_initializer';
-    keywordHelper.addConstructorInitializerKeywords(
-        node.parent as ConstructorDeclaration, node);
+    var constructor = node.parent;
+    if (constructor is! ConstructorDeclaration) {
+      return;
+    }
+    if (offset <= node.thisKeyword.end && node.argumentList.isFullySynthetic) {
+      collector.completionLocation = 'ConstructorDeclaration_initializer';
+      keywordHelper.addConstructorInitializerKeywords(constructor, node);
+      return;
+    }
+    var period = node.period;
+    // TODO(brianwilkerson): If the period is `null` we might want to complete
+    //  the argument list after `this`.
+    if (period != null &&
+        offset >= period.end &&
+        offset <= node.argumentList.offset) {
+      _forRedirectingConstructorInvocation(constructor);
+    }
   }
 
   @override
@@ -1486,9 +1632,32 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitSuperConstructorInvocation(SuperConstructorInvocation node) {
-    collector.completionLocation = 'ConstructorDeclaration_initializer';
-    keywordHelper.addConstructorInitializerKeywords(
-        node.parent as ConstructorDeclaration, node);
+    var constructor = node.parent;
+    if (constructor is! ConstructorDeclaration) {
+      return;
+    }
+    if (offset <= node.superKeyword.end && node.argumentList.isFullySynthetic) {
+      collector.completionLocation = 'ConstructorDeclaration_initializer';
+      keywordHelper.addConstructorInitializerKeywords(constructor, node);
+      return;
+    }
+    var period = node.period;
+    // TODO(brianwilkerson): If the period is `null` we might want to complete
+    //  the argument list after `super`.
+    if (period != null &&
+        offset >= period.end &&
+        offset <= node.argumentList.offset) {
+      var container = constructor.parent;
+      var superType = switch (container) {
+        ClassDeclaration() => container.declaredElement?.supertype,
+        EnumDeclaration() => container.declaredElement?.supertype,
+        _ => null,
+      };
+      if (superType != null) {
+        declarationHelper(mustBeConstant: constructor.constKeyword != null)
+            .addConstructorNamesForType(type: superType);
+      }
+    }
   }
 
   @override
@@ -2099,6 +2268,22 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         .addLexicalDeclarations(node);
   }
 
+  void _forRedirectingConstructorInvocation(
+      ConstructorDeclaration constructor) {
+    var constructorName = constructor.name?.lexeme;
+    var container = constructor.parent;
+    var thisType = switch (container) {
+      ClassDeclaration() => container.declaredElement?.thisType,
+      EnumDeclaration() => container.declaredElement?.thisType,
+      ExtensionTypeDeclaration() => container.declaredElement?.thisType,
+      _ => null,
+    };
+    if (thisType != null) {
+      declarationHelper(mustBeConstant: constructor.constKeyword != null)
+          .addConstructorNamesForType(type: thisType, exclude: constructorName);
+    }
+  }
+
   /// Add the suggestions that are appropriate when the selection is at the
   /// beginning of a statement. The [node] provides context to determine which
   /// keywords to include.
@@ -2434,13 +2619,68 @@ extension on ClassMember {
 }
 
 extension on ArgumentList {
-  /// Return a record whose fields are the arguments in this argument list
+  /// The element being invoked by the expression containing this argument list,
+  /// or `null` if the element is not known.
+  Element? get invokedElement {
+    switch (parent) {
+      case Annotation invocation:
+        return invocation.element;
+      case EnumConstantArguments invocation:
+        var grandParent = invocation.parent;
+        if (grandParent is EnumConstantDeclaration) {
+          return grandParent.constructorElement;
+        }
+      case FunctionExpressionInvocation invocation:
+        var element = invocation.staticElement;
+        if (element == null) {
+          var function = invocation.function.unParenthesized;
+          if (function is SimpleIdentifier) {
+            return function.staticElement;
+          }
+        }
+        return element;
+      case InstanceCreationExpression invocation:
+        return invocation.constructorName.staticElement;
+      case MethodInvocation invocation:
+        return invocation.methodName.staticElement;
+      case SuperConstructorInvocation invocation:
+        return invocation.staticElement;
+      case RedirectingConstructorInvocation invocation:
+        return invocation.staticElement;
+    }
+    return null;
+  }
+
+  /// Returns a record whose fields indicate the number of positional arguments
+  /// before the argument at the [argumentIndex], and the names of named
+  /// parameters that are already in use.
+  ({int positionalArgumentCount, Set<String> usedNames}) argumentContext(
+      int argumentIndex) {
+    var positionalArgumentCount = 0;
+    var usedNames = <String>{};
+    for (var i = 0; i < arguments.length; i++) {
+      var argument = arguments[i];
+      if (argument is NamedExpression) {
+        usedNames.add(argument.name.label.name);
+      } else if (i < argumentIndex) {
+        positionalArgumentCount++;
+      }
+    }
+    return (
+      positionalArgumentCount: positionalArgumentCount,
+      usedNames: usedNames
+    );
+  }
+
+  /// Returns a record whose fields are the arguments in this argument list
   /// that are lexically immediately before and after the given [offset].
   ({Expression? before, Expression? after}) argumentsBeforeAndAfterOffset(
       int offset) {
     Expression? previous;
     for (var argument in arguments) {
       if (offset < argument.offset) {
+        return (before: previous, after: argument);
+      } else if (offset == argument.offset && offset == previous?.end) {
         return (before: previous, after: argument);
       }
       previous = argument;
@@ -2480,6 +2720,28 @@ extension on CompilationUnit {
       previous = member;
     }
     return (before: previous, after: null);
+  }
+}
+
+extension on Element? {
+  /// Returns the parameters associated with this element, or `null` if this
+  /// element doesn't have any parameters associated with it.
+  ///
+  /// If this element is an executable element (method or function), then return
+  /// the method / function's parameters. If this element is a variable and the
+  /// variable's type is a function type, then return the parameters from the
+  /// function type.
+  List<ParameterElement>? getParameters() {
+    var self = this;
+    if (self is ExecutableElement) {
+      return self.parameters;
+    } else if (self is VariableElement) {
+      final type = self.type;
+      if (type is FunctionType) {
+        return type.parameters;
+      }
+    }
+    return null;
   }
 }
 

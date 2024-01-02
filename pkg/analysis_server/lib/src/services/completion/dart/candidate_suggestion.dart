@@ -40,8 +40,12 @@ final class ConstructorSuggestion extends ImportableSuggestion {
   /// The element on which the suggestion is based.
   final ConstructorElement element;
 
+  /// Whether the class name is already, implicitly or explicitly, at the call
+  /// site. That is, whether we are completing after a period.
+  final bool hasClassName;
+
   /// Initialize a newly created candidate suggestion to suggest the [element].
-  ConstructorSuggestion(super.importData, this.element);
+  ConstructorSuggestion(super.importData, this.element, this.hasClassName);
 
   @override
   String get completion => '$completionPrefix${element.displayName}';
@@ -313,6 +317,32 @@ final class MixinSuggestion extends ImportableSuggestion {
   String get completion => '$completionPrefix${element.name}';
 }
 
+/// Suggest the name of a named parameter in the argument list of an invocation.
+final class NamedArgumentSuggestion extends CandidateSuggestion {
+  /// The parameter whose name is to be suggested.
+  final ParameterElement parameter;
+
+  /// Whether a colon should be appended after the name.
+  final bool appendColon;
+
+  /// Whether a comma should be appended after the suggestion.
+  final bool appendComma;
+
+  /// The number of characters that should be replaced, or `null` if the default
+  /// doesn't need to be overridden.
+  final int? replacementLength;
+
+  NamedArgumentSuggestion(
+      {required this.parameter,
+      required this.appendColon,
+      required this.appendComma,
+      this.replacementLength});
+
+  @override
+  String get completion =>
+      '${parameter.name}${appendColon ? ': ' : ''}${appendComma ? ',' : ''}';
+}
+
 /// The information about a candidate suggestion based on a getter or setter.
 final class NameSuggestion extends CandidateSuggestion {
   /// The name being suggested.
@@ -451,7 +481,8 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
         libraryUriStr = null;
       case ConstructorSuggestion():
         libraryUriStr = suggestion.libraryUriStr;
-        suggestConstructor(suggestion.element, prefix: suggestion.prefix);
+        suggestConstructor(suggestion.element,
+            hasClassName: suggestion.hasClassName, prefix: suggestion.prefix);
         libraryUriStr = null;
       case EnumSuggestion():
         libraryUriStr = suggestion.libraryUriStr;
@@ -511,6 +542,11 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
         libraryUriStr = suggestion.libraryUriStr;
         suggestInterface(suggestion.element, prefix: suggestion.prefix);
         libraryUriStr = null;
+      case NamedArgumentSuggestion():
+        suggestNamedArgument(suggestion.parameter,
+            appendColon: suggestion.appendColon,
+            appendComma: suggestion.appendComma,
+            replacementLength: suggestion.replacementLength);
       case NameSuggestion():
         suggestName(suggestion.name);
       case PropertyAccessSuggestion():

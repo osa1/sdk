@@ -55,7 +55,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "ea5e476b3af94f74f6996e4b4319bf03f9248c1c",
+  "co19_rev": "89ec72cfbf8de66ce8190433d6bcdfdaf3599e23",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "f048a4a853e3062056d39c3db100acdde42f16d6",
@@ -99,7 +99,7 @@ vars = {
   "boringssl_gen_rev": "a468ba9fec3f59edf46a7db98caaca893e1e4d96",
   "boringssl_rev": "74646566e93de7551bfdfc5f49de7462f13d1d05",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
-  "devtools_rev": "c7aa1df42178b054901c36bb1b8ea25b5542be8c",
+  "devtools_rev": "071405a237dab931ea10be728ec188aa2d55111f",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -141,7 +141,7 @@ vars = {
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
   "dart_style_rev": "8b1f24a8475a0116757172cd9acca4acbf87d973", # disable rev_sdk_deps.dart
-  "dartdoc_rev": "f05afb4e95767825e52b99dc84eae6eda08a7d8f", # https://github.com/dart-lang/dartdoc/issues/3562
+  "dartdoc_rev": "3ce64a3d7da6702a4342bdfd0723b750fddeb35a", # https://github.com/dart-lang/dartdoc/issues/3562
   "ecosystem_rev": "ce707fbb45e54cd2b353f33d3849f4b10a262850",
   "ffi_rev": "c926657618443ff4821411ede01684096b503f84",
   "file_rev": "cd3a9324f6483f313ba1f0f3ff382ea4e6982ef2",

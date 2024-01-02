@@ -8,6 +8,7 @@ import 'dart:collection';
 import 'dart:convert' show jsonEncode;
 
 import 'package:_fe_analyzer_shared/src/field_promotability.dart';
+import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis_operations.dart';
 import 'package:_fe_analyzer_shared/src/parser/formal_parameter_kind.dart';
 import 'package:_fe_analyzer_shared/src/scanner/token.dart' show Token;
 import 'package:_fe_analyzer_shared/src/util/resolve_relative_uri.dart'
@@ -3494,14 +3495,16 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       List<FormalParameterBuilder>? formals,
       NullabilityBuilder nullabilityBuilder,
       Uri fileUri,
-      int charOffset) {
+      int charOffset,
+      {required bool hasFunctionFormalParameterSyntax}) {
     FunctionTypeBuilder builder = new FunctionTypeBuilderImpl(
         returnType,
         structuralVariableBuilders,
         formals,
         nullabilityBuilder,
         fileUri,
-        charOffset);
+        charOffset,
+        hasFunctionFormalParameterSyntax: hasFunctionFormalParameterSyntax);
     checkStructuralVariables(structuralVariableBuilders, null);
     if (structuralVariableBuilders != null) {
       for (StructuralVariableBuilder builder in structuralVariableBuilders) {
@@ -4108,17 +4111,6 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       }
     }
 
-    String getName(
-        /* TypeParameterType | StructuralParameterType */ DartType type) {
-      assert(type is TypeParameterType || type is StructuralParameterType);
-      if (type is TypeParameterType) {
-        return type.parameter.name!;
-      } else {
-        type as StructuralParameterType;
-        return type.parameter.name!;
-      }
-    }
-
     Nullability computeNullabilityFromBound(
         /* TypeParameterType | StructuralParameterType */ DartType type) {
       assert(type is TypeParameterType || type is StructuralParameterType);
@@ -4169,14 +4161,9 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             if (getDeclaredNullability(next) == marker) {
               setDeclaredNullability(next, Nullability.undetermined);
               if (isDirectDependency) {
+                // The dependency error is reported elsewhere.
                 setBoundAndDefaultType(
                     current, const InvalidType(), const InvalidType());
-                addProblem(
-                    templateCycleInTypeVariables.withArguments(
-                        getName(next), getName(current)),
-                    pendingNullability.charOffset,
-                    getName(next).length,
-                    pendingNullability.fileUri);
               }
               next = null;
             }
@@ -4207,14 +4194,9 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
             if (getDeclaredNullability(next) == marker) {
               setDeclaredNullability(next, Nullability.undetermined);
               if (isDirectDependency) {
+                // The dependency error is reported elsewhere.
                 setBoundAndDefaultType(
                     current, const InvalidType(), const InvalidType());
-                addProblem(
-                    templateCycleInTypeVariables.withArguments(
-                        getName(next), getName(current)),
-                    pendingNullability.charOffset,
-                    getName(next).length,
-                    pendingNullability.fileUri);
               }
               next = null;
             }
@@ -5132,6 +5114,11 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       if (declaration is SourceFieldBuilder) {
         declaration.checkTypes(this, typeEnvironment);
       } else if (declaration is SourceProcedureBuilder) {
+        List<TypeVariableBuilderBase>? typeVariables =
+            declaration.typeVariables;
+        if (typeVariables != null && typeVariables.isNotEmpty) {
+          checkTypeVariableDependencies(typeVariables);
+        }
         declaration.checkTypes(this, typeEnvironment);
         if (declaration.isGetter) {
           Builder? setterDeclaration =
@@ -5142,13 +5129,32 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
           }
         }
       } else if (declaration is SourceClassBuilder) {
+        List<TypeVariableBuilderBase>? typeVariables =
+            declaration.typeVariables;
+        if (typeVariables != null && typeVariables.isNotEmpty) {
+          checkTypeVariableDependencies(typeVariables);
+        }
         declaration.checkTypesInOutline(typeEnvironment);
       } else if (declaration is SourceExtensionBuilder) {
+        List<TypeVariableBuilderBase>? typeVariables =
+            declaration.typeParameters;
+        if (typeVariables != null && typeVariables.isNotEmpty) {
+          checkTypeVariableDependencies(typeVariables);
+        }
         declaration.checkTypesInOutline(typeEnvironment);
       } else if (declaration is SourceExtensionTypeDeclarationBuilder) {
+        List<TypeVariableBuilderBase>? typeVariables =
+            declaration.typeParameters;
+        if (typeVariables != null && typeVariables.isNotEmpty) {
+          checkTypeVariableDependencies(typeVariables);
+        }
         declaration.checkTypesInOutline(typeEnvironment);
       } else if (declaration is SourceTypeAliasBuilder) {
-        // Do nothing.
+        List<TypeVariableBuilderBase>? typeVariables =
+            declaration.typeVariables;
+        if (typeVariables != null && typeVariables.isNotEmpty) {
+          checkTypeVariableDependencies(typeVariables);
+        }
       } else {
         assert(
             declaration is! TypeDeclarationBuilder ||
@@ -5157,6 +5163,54 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       }
     }
     checkPendingBoundsChecks(typeEnvironment);
+  }
+
+  void checkTypeVariableDependencies(
+      List<TypeVariableBuilderBase> typeVariables) {
+    Map<TypeVariableBuilderBase, TypeVariableTraversalState>
+        typeVariablesTraversalState =
+        <TypeVariableBuilderBase, TypeVariableTraversalState>{};
+    for (TypeVariableBuilderBase typeVariable in typeVariables) {
+      if ((typeVariablesTraversalState[typeVariable] ??=
+              TypeVariableTraversalState.unvisited) ==
+          TypeVariableTraversalState.unvisited) {
+        TypeVariableCyclicDependency? dependency =
+            typeVariable.findCyclicDependency(
+                typeVariablesTraversalState: typeVariablesTraversalState);
+        if (dependency != null) {
+          Message message;
+          if (dependency.viaTypeVariables != null) {
+            message = templateCycleInTypeVariables.withArguments(
+                dependency.typeVariableBoundOfItself.name,
+                dependency.viaTypeVariables!.map((v) => v.name).join("', '"));
+          } else {
+            message = templateDirectCycleInTypeVariables
+                .withArguments(dependency.typeVariableBoundOfItself.name);
+          }
+          addProblem(
+              message,
+              dependency.typeVariableBoundOfItself.charOffset,
+              dependency.typeVariableBoundOfItself.name.length,
+              dependency.typeVariableBoundOfItself.fileUri);
+
+          typeVariable.bound = new NamedTypeBuilderImpl(
+              new SyntheticTypeName(typeVariable.name, typeVariable.charOffset),
+              const NullabilityBuilder.omitted(),
+              fileUri: typeVariable.fileUri,
+              charOffset: typeVariable.charOffset,
+              instanceTypeVariableAccess:
+                  InstanceTypeVariableAccessState.Unexpected)
+            ..bind(
+                this,
+                new InvalidTypeDeclarationBuilder(
+                    typeVariable.name,
+                    message.withLocation(
+                        dependency.typeVariableBoundOfItself.fileUri ?? fileUri,
+                        dependency.typeVariableBoundOfItself.charOffset,
+                        dependency.typeVariableBoundOfItself.name.length)));
+        }
+      }
+    }
   }
 
   void computeShowHideElements(ClassMembersBuilder membersBuilder) {

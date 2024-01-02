@@ -5,7 +5,6 @@
 import 'package:analysis_server/src/protocol_server.dart';
 import 'package:analysis_server/src/provisional/completion/completion_core.dart';
 import 'package:analysis_server/src/provisional/completion/dart/completion_dart.dart';
-import 'package:analysis_server/src/services/completion/dart/arglist_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/candidate_suggestion.dart';
 import 'package:analysis_server/src/services/completion/dart/closure_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/completion_state.dart';
@@ -19,7 +18,6 @@ import 'package:analysis_server/src/services/completion/dart/named_constructor_c
 import 'package:analysis_server/src/services/completion/dart/not_imported_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/override_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/record_literal_contributor.dart';
-import 'package:analysis_server/src/services/completion/dart/redirecting_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/static_member_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_builder.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_collector.dart';
@@ -131,7 +129,6 @@ class DartCompletionManager {
     var builder =
         SuggestionBuilder(request, useFilter: useFilter, listener: listener);
     var contributors = <DartCompletionContributor>[
-      ArgListContributor(request, builder),
       ClosureContributor(request, builder),
       EnumConstantConstructorContributor(request, builder),
       ExtensionMemberContributor(request, builder),
@@ -140,7 +137,6 @@ class DartCompletionManager {
       NamedConstructorContributor(request, builder),
       if (enableOverrideContributor) OverrideContributor(request, builder),
       RecordLiteralContributor(request, builder),
-      RedirectingContributor(request, builder),
       StaticMemberContributor(request, builder),
       TypeMemberContributor(request, builder),
       if (enableUriContributor) UriContributor(request, builder),

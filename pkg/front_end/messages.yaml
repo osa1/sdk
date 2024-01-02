@@ -4624,14 +4624,14 @@ NonSimpleBoundViaReference:
 
 CycleInTypeVariables:
   problemMessage: "Type '#name' is a bound of itself via '#string'."
-  correctionMessage: "Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle."
+  correctionMessage: "Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle."
   analyzerCode: TYPE_PARAMETER_SUPERTYPE_OF_ITS_BOUND
   script:
     - "foo<A extends B, B extends A>() {}"
 
 DirectCycleInTypeVariables:
   problemMessage: "Type '#name' can't use itself as a bound."
-  correctionMessage: "Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle."
+  correctionMessage: "Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle."
   analyzerCode: TYPE_PARAMETER_SUPERTYPE_OF_ITS_BOUND
   script:
     - "foo<A extends A>() {}"
@@ -5904,8 +5904,8 @@ JsInteropOperatorCannotBeRenamed:
   correctionMessage: "Remove the annotation or remove the value inside the annotation."
 
 JsInteropOperatorsNotSupported:
-  problemMessage: "JS interop classes do not support operator methods, with the exception of '[]' and '[]=' using static interop."
-  correctionMessage: "Try replacing this with a normal method."
+  problemMessage: "JS interop types do not support overloading external operator methods, with the exception of '[]' and '[]=' using static interop."
+  correctionMessage: "Try making this class a static interop type instead."
 
 JsInteropNonStaticWithStaticInteropSupertype:
   problemMessage: "Class '#name' does not have an `@staticInterop` annotation, but has supertype '#name2', which does."
@@ -6138,6 +6138,12 @@ NeverReachableSwitchExpressionError:
 
 NeverReachableSwitchStatementError:
   problemMessage: "`null` encountered as case in a switch statement with a non-nullable type."
+
+UnsoundSwitchExpressionError:
+  problemMessage: "None of the patterns in the switch expression the matched input value. See https://github.com/dart-lang/language/issues/3488 for details."
+
+UnsoundSwitchStatementError:
+  problemMessage: "None of the patterns in the exhaustive switch statement the matched input value. See https://github.com/dart-lang/language/issues/3488 for details."
 
 NeverValueError:
   problemMessage: "`null` encountered as the result from expression with type `Never`."
@@ -7484,6 +7490,20 @@ ExtensionTypeConstructorWithSuperFormalParameter:
   script: |
     extension type A(int foo) { A.named(this.foo, super.bar); }
   analyzerCode: EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER
+
+ExtensionTypePrimaryConstructorWithInitializingFormal:
+  problemMessage: "Primary constructors in extension types can't use initializing formals."
+  correctionMessage: "Try removing `this.` from the formal parameter."
+  experiments: inline-class
+  script: |
+    extension type A(int this.foo) { }
+
+ExtensionTypePrimaryConstructorFunctionFormalParameterSyntax:
+  problemMessage: "Primary constructors in extension types can't use function formal parameter syntax."
+  correctionMessage: "Try rewriting with an explicit function type, like `int Function() f`."
+  experiments: inline-class
+  script: |
+    extension type A(int foo()) { }
 
 ExtensionTypeRepresentationTypeBottom:
   problemMessage: "The representation type can't be a bottom type."

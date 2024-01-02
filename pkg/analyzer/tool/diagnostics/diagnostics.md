@@ -14059,6 +14059,172 @@ Replace the value with a string:
 name: example
 {% endprettify %}
 
+### native_field_invalid_type
+
+_'{0}' is an unsupported type for native fields. Native fields only support
+pointers, arrays or numeric and compound types._
+
+#### Description
+
+The analyzer produces this diagnostic when an `@Native`-annotated field
+has a type not supported for native fields.
+
+Native fields support pointers, arrays, numeric types and subtypes of
+`Compound` (i.e., structs or unions). Other subtypes of `NativeType`,
+such as `Handle` or `NativeFunction` are not allowed as native fields.
+
+Native functions should be used with external functions instead of
+external fields.
+
+Handles are unsupported because there is no way to transparently load and
+store Dart objects into pointers.
+
+For more information about FFI, see [C interop using dart:ffi][ffi].
+
+#### Example
+
+The following code produces this diagnostic because the field `free` uses
+an unsupported native type, `NativeFunction`:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+@Native<NativeFunction<Void Function()>>()
+external void Function() [!free!];
+{% endprettify %}
+
+#### Common fixes
+
+If you meant to bind to an existing native function with a
+`NativeFunction` field, use `@Native` methods instead:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+@Native<Void Function(Pointer<Void>)>()
+external void free(Pointer<Void> ptr);
+{% endprettify %}
+
+To bind to a field storing a function pointer in C, use a pointer type
+for the Dart field:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+@Native()
+external Pointer<NativeFunction<Void Function(Pointer<Void>)>> free;
+{% endprettify %}
+
+### native_field_missing_type
+
+_The native type of this field could not be inferred and must be specified in
+the annotation._
+
+#### Description
+
+The analyzer produces this diagnostic when an `@Native`-annotated field
+requires a type hint on the annotation to infer the native type.
+
+Dart types like `int` and `double` have multiple possible native
+representations. Since the native type needs to be known at compile time
+to generate the correct load and stores when accessing the field, an
+explicit type must be given.
+
+#### Example
+
+The following code produces this diagnostic because the field `f` has
+the type `int` (for which multiple native representations exist), but no
+explicit type parameter on the `Native` annotation:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+@Native()
+external int [!f!];
+{% endprettify %}
+
+#### Common fixes
+
+To fix this diagnostic, find out the correct native representation from
+the native declaration of the field. Then, add the corresponding type to
+the annotation. For instance, if `f` was declared as an `uint8_t` in C,
+the Dart field should be declared as:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+@Native<Uint8>()
+external int f;
+{% endprettify %}
+
+For more information about FFI, see [C interop using dart:ffi][ffi].
+
+### native_field_not_static
+
+_Native fields must be static._
+
+#### Description
+
+The analyzer produces this diagnostic when an instance field in a class
+has been annotated with `@Native`.
+Native fields refer to global variables in C, C++ or other native
+languages, whereas instance fields in Dart are specific to an instance of
+that class. Hence, native fields must be static.
+
+For more information about FFI, see [C interop using dart:ffi][ffi].
+
+#### Example
+
+The following code produces this diagnostic because the field `f` in the
+class `C` is `@Native`, but not `static`:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+class C {
+  @Native<Int>()
+  external int [!f!];
+}
+{% endprettify %}
+
+#### Common fixes
+
+Either make the field static:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+class C {
+  @Native<Int>()
+  external static int f;
+}
+{% endprettify %}
+
+Or move it out of a class, in which case no explicit `static` modifier is
+required:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+class C {
+}
+
+@Native<Int>()
+external int f;
+{% endprettify %}
+
+If you meant to annotate an instance field that should be part of a
+struct, omit the `@Native` annotation:
+
+{% prettify dart tag=pre+code %}
+import 'dart:ffi';
+
+final class C extends Struct {
+  @Int()
+  external int f;
+}
+{% endprettify %}
+
 ### new_with_undefined_constructor_default
 
 _The class '{0}' doesn't have an unnamed constructor._

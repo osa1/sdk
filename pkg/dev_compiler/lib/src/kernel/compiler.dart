@@ -588,6 +588,22 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
             [legacyJavaScriptObjectClassRef, interopRecipesArray]);
         moduleItems.add(jsInteropRules);
       }
+
+      // Annotates the type parameter variances for each interface.
+      var typeVariances = _typeRecipeGenerator.variances;
+      if (typeVariances.isNotEmpty) {
+        var addTypeParameterVariancesTemplate =
+            '#._Universe.#(#, JSON.parse(#))';
+        var addTypeParameterVariancesStatement =
+            js.call(addTypeParameterVariancesTemplate, [
+          emitLibraryName(rtiLibrary),
+          _emitMemberName('addTypeParameterVariances',
+              memberClass: universeClass),
+          runtimeCall('typeUniverse'),
+          js.string(jsonEncode(typeVariances), "'")
+        ]).toStatement();
+        moduleItems.add(addTypeParameterVariancesStatement);
+      }
     }
 
     // Visit directives (for exports)
@@ -3031,7 +3047,10 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// Arguments which are _directly_ wrapped at the site they are passed are
   /// unmodified.
   Expression _assertInterop(Expression f) {
-    var type = f.getStaticType(_staticTypeContext);
+    // Erasing any extension types here for legacy JS interop support but if
+    // using the new extension type interop the type system requires that
+    // `.toJS` was called.
+    var type = f.getStaticType(_staticTypeContext).extensionTypeErasure;
     if (type is FunctionType ||
         (type is InterfaceType && type.classNode == _coreTypes.functionClass)) {
       if (!isAllowInterop(f)) {
@@ -4157,7 +4176,8 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
       var returnType = _expectedReturnType(function, _coreTypes.iterableClass);
       var syncIterable = _emitInterfaceType(
-          InterfaceType(_syncIterableClass, Nullability.legacy, [returnType]),
+          InterfaceType(
+              _syncIterableClass, Nullability.nonNullable, [returnType]),
           emitNullability: false);
       return js.call('new #.new(#)', [syncIterable, gen]);
     }
@@ -4174,7 +4194,8 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
       var returnType = _expectedReturnType(function, _coreTypes.streamClass);
       var asyncStarImpl = _emitInterfaceType(
-          InterfaceType(_asyncStarImplClass, Nullability.legacy, [returnType]),
+          InterfaceType(
+              _asyncStarImplClass, Nullability.nonNullable, [returnType]),
           emitNullability: false);
       return js.call('new #.new(#).stream', [asyncStarImpl, gen]);
     }
@@ -5475,6 +5496,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     return false;
   }
 
+  // TODO(54463): Refactor and specialize this code for each type of 'get'.
   js_ast.Expression _emitPropertyGet(
       Expression receiver, Member? member, String memberName) {
     // TODO(jmesserly): should tearoff of `.call` on a function type be
@@ -5508,8 +5530,11 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       }
       // Otherwise generate this as a normal typed property get.
     } else if (member == null &&
-        // Records have no member node for the element getters so avoid emitting
-        // a dynamic get when the types are known statically.
+        // Null member usually means this is a dynamic get but Records also have
+        // no member node for the element getters so avoid emitting a dynamic
+        // get when the types are known statically.
+        // Accesses of extension type getters don't lead to this code path
+        // at all so only the test for RecordType is needed.
         receiver.getStaticType(_staticTypeContext) is! RecordType) {
       return runtimeCall('dload$_replSuffix(#, #)', [jsReceiver, jsName]);
     }
@@ -5747,9 +5772,17 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     var isCallingDynamicField = target is Member &&
         target.hasGetter &&
+        // Erasing extension types here doesn't make sense. If there is an
+        // extension type on dynamic or Function it will only be callable if it
+        // defines a call method which would be invoked statically.
         _isDynamicOrFunction(target.getterType);
     if (name == 'call') {
-      var receiverType = receiver.getStaticType(_staticTypeContext);
+      // Erasing the extension types here to support existing callable behaivor
+      // on the old style JS interop types that are callable. This should be
+      // safe as it is a compile time error to try to dynamically invoke a call
+      // method that is inherited from an extension type.
+      var receiverType =
+          receiver.getStaticType(_staticTypeContext).extensionTypeErasure;
       if (isCallingDynamicField || _isDynamicOrFunction(receiverType)) {
         return _emitDynamicInvoke(jsReceiver, null, args, arguments);
       } else if (_isDirectCallable(receiverType)) {
@@ -5775,7 +5808,22 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // TODO(jmesserly): remove when Kernel desugars this for us.
     // Handle `o.m(a)` where `o.m` is a getter returning a class with `call`.
     if (target is Field || target is Procedure && target.isAccessor) {
-      var fromType = target!.getterType;
+      // We must erase the extension type to find the `call` method.
+      // If the extension type has a runtime representation with a `call`:
+      //
+      // ```
+      // extension type Ext(C c) implements C {...}
+      // class C {
+      //   call() {...}
+      // }
+      // ```
+      //
+      // We can always erase eagerly becuase:
+      //  - Extension types that do not implment an interface that exposes a
+      //    `call` method will result in a static error at the call site.
+      //  - Calls to extension types that implement their own call method are
+      //    lowered by the CFE to top level static method calls.
+      var fromType = target!.getterType.extensionTypeErasure;
       if (fromType is InterfaceType) {
         var callName = _implicitCallTarget(fromType);
         if (callName != null) {
@@ -7016,7 +7064,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     var type = ctorClass.typeParameters.isEmpty
         ? _coreTypes.nonNullableRawType(ctorClass)
-        : InterfaceType(ctorClass, Nullability.legacy, args.types);
+        : InterfaceType(ctorClass, Nullability.nonNullable, args.types);
 
     if (isFromEnvironmentInvocation(_coreTypes, node)) {
       var value = _constants.evaluate(node);
@@ -7079,7 +7127,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     }
     identity ??= _typeRep.isPrimitive(typeArgs[0]);
     var c = identity ? _identityHashMapImplClass : _linkedHashMapImplClass;
-    return _emitClassRef(InterfaceType(c, Nullability.legacy, typeArgs));
+    return _emitClassRef(InterfaceType(c, Nullability.nonNullable, typeArgs));
   }
 
   js_ast.Expression _emitSetImplType(InterfaceType type, {bool? identity}) {
@@ -7089,7 +7137,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     }
     identity ??= _typeRep.isPrimitive(typeArgs[0]);
     var c = identity ? _identityHashSetImplClass : _linkedHashSetImplClass;
-    return _emitClassRef(InterfaceType(c, Nullability.legacy, typeArgs));
+    return _emitClassRef(InterfaceType(c, Nullability.nonNullable, typeArgs));
   }
 
   js_ast.Expression _emitObjectLiteral(Arguments node, Member ctor) {
@@ -7425,7 +7473,7 @@ class ProgramCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // TODO(markzipan): remove const check when we use front-end const eval
     if (!node.isConst) {
       var setType = _emitClassRef(InterfaceType(
-          _linkedHashSetClass, Nullability.legacy, [node.typeArgument]));
+          _linkedHashSetClass, Nullability.nonNullable, [node.typeArgument]));
       if (node.expressions.isEmpty) {
         return js.call('#.new()', [setType]);
       }

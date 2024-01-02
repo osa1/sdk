@@ -2239,7 +2239,7 @@ const Template<Message Function(String name, String string)>
         problemMessageTemplate:
             r"""Type '#name' is a bound of itself via '#string'.""",
         correctionMessageTemplate:
-            r"""Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle.""",
+            r"""Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle.""",
         withArguments: _withArgumentsCycleInTypeVariables);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
@@ -2258,7 +2258,7 @@ Message _withArgumentsCycleInTypeVariables(String name, String string) {
       problemMessage:
           """Type '${name}' is a bound of itself via '${string}'.""",
       correctionMessage:
-          """Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle.""",
+          """Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle.""",
       arguments: {'name': name, 'string': string});
 }
 
@@ -2580,7 +2580,7 @@ const Template<
         Message Function(String name)>("DirectCycleInTypeVariables",
     problemMessageTemplate: r"""Type '#name' can't use itself as a bound.""",
     correctionMessageTemplate:
-        r"""Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle.""",
+        r"""Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle.""",
     withArguments: _withArgumentsDirectCycleInTypeVariables);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
@@ -2595,7 +2595,7 @@ Message _withArgumentsDirectCycleInTypeVariables(String name) {
   return new Message(codeDirectCycleInTypeVariables,
       problemMessage: """Type '${name}' can't use itself as a bound.""",
       correctionMessage:
-          """Try breaking the cycle by removing at least on of the 'extends' clauses in the cycle.""",
+          """Try breaking the cycle by removing at least one of the 'extends' clauses in the cycle.""",
       arguments: {'name': name});
 }
 
@@ -4550,6 +4550,33 @@ const MessageCode messageExtensionTypeMemberOneOfContext = const MessageCode(
     severity: Severity.context,
     problemMessage:
         r"""This is one of the inherited extension type members.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null>
+    codeExtensionTypePrimaryConstructorFunctionFormalParameterSyntax =
+    messageExtensionTypePrimaryConstructorFunctionFormalParameterSyntax;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode
+    messageExtensionTypePrimaryConstructorFunctionFormalParameterSyntax =
+    const MessageCode(
+        "ExtensionTypePrimaryConstructorFunctionFormalParameterSyntax",
+        problemMessage:
+            r"""Primary constructors in extension types can't use function formal parameter syntax.""",
+        correctionMessage:
+            r"""Try rewriting with an explicit function type, like `int Function() f`.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeExtensionTypePrimaryConstructorWithInitializingFormal =
+    messageExtensionTypePrimaryConstructorWithInitializingFormal;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageExtensionTypePrimaryConstructorWithInitializingFormal =
+    const MessageCode("ExtensionTypePrimaryConstructorWithInitializingFormal",
+        problemMessage:
+            r"""Primary constructors in extension types can't use initializing formals.""",
+        correctionMessage:
+            r"""Try removing `this.` from the formal parameter.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeExtensionTypeRepresentationTypeBottom =
@@ -8989,8 +9016,9 @@ const Code<Null> codeJsInteropOperatorsNotSupported =
 const MessageCode messageJsInteropOperatorsNotSupported = const MessageCode(
     "JsInteropOperatorsNotSupported",
     problemMessage:
-        r"""JS interop classes do not support operator methods, with the exception of '[]' and '[]=' using static interop.""",
-    correctionMessage: r"""Try replacing this with a normal method.""");
+        r"""JS interop types do not support overloading external operator methods, with the exception of '[]' and '[]=' using static interop.""",
+    correctionMessage:
+        r"""Try making this class a static interop type instead.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeJsInteropStaticInteropGenerativeConstructor =
@@ -14624,6 +14652,26 @@ Message _withArgumentsUnresolvedPrefixInTypeAnnotation(
           """'${name}.${name2}' can't be used as a type because '${name}' isn't defined.""",
       arguments: {'name': name, 'name2': name2});
 }
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeUnsoundSwitchExpressionError =
+    messageUnsoundSwitchExpressionError;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageUnsoundSwitchExpressionError = const MessageCode(
+    "UnsoundSwitchExpressionError",
+    problemMessage:
+        r"""None of the patterns in the switch expression the matched input value. See https://github.com/dart-lang/language/issues/3488 for details.""");
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeUnsoundSwitchStatementError =
+    messageUnsoundSwitchStatementError;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageUnsoundSwitchStatementError = const MessageCode(
+    "UnsoundSwitchStatementError",
+    problemMessage:
+        r"""None of the patterns in the exhaustive switch statement the matched input value. See https://github.com/dart-lang/language/issues/3488 for details.""");
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String string)> templateUnspecified =
