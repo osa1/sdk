@@ -74,6 +74,7 @@ _AsyncSuspendState _newAsyncSuspendState(_AsyncResumeFun resume,
 @pragma("wasm:entry-point")
 _AsyncCompleter<T> _makeAsyncCompleter<T>() => _AsyncCompleter<T>();
 
+@pragma("wasm:entry-point")
 void _awaitHelper(_AsyncSuspendState suspendState, Object? operand) {
   if (operand is! Future) {
     operand = Future.value(operand);
