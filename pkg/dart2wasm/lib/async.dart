@@ -165,6 +165,8 @@ class _YieldFinder extends RecursiveVisitor {
   // transform the expression as expected.
   @override
   void visitAwaitExpression(AwaitExpression node) {
+    // Await expressions should've been converted to `VariableSet` statements
+    // by `_AwaitTransformer`.
     throw 'Unexpected await expression: $node (${node.location})';
   }
 
@@ -1395,7 +1397,14 @@ class AsyncCodeGenerator extends CodeGenerator {
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateTargetIndex);
 
     b.local_get(suspendStateLocal);
+    final DartType? runtimeType = node.runtimeCheckType;
+    if (runtimeType != null) {
+      types.makeType(this, runtimeType);
+    }
     wrap(node.operand, translator.topInfo.nullableType);
+    if (runtimeType != null) {
+      call(translator.awaitTypeCheck.reference);
+    }
     call(translator.awaitHelper.reference);
     b.return_();
 

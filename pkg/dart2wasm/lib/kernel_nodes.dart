@@ -119,6 +119,8 @@ mixin KernelNodes {
       index.getProcedure("dart:async", "_Completer", "completeError");
   late final Procedure awaitHelper =
       index.getTopLevelProcedure("dart:async", "_awaitHelper");
+  late final Procedure awaitTypeCheck =
+      index.getTopLevelProcedure("dart:async", "_awaitTypeCheck");
   late final Procedure newAsyncSuspendState =
       index.getTopLevelProcedure("dart:async", "_newAsyncSuspendState");
 

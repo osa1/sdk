@@ -75,13 +75,18 @@ _AsyncSuspendState _newAsyncSuspendState(_AsyncResumeFun resume,
 _AsyncCompleter<T> _makeAsyncCompleter<T>() => _AsyncCompleter<T>();
 
 @pragma("wasm:entry-point")
-void _awaitHelper(_AsyncSuspendState suspendState, Object? operand) {
-  if (operand is! Future) {
-    operand = Future.value(operand);
+void _awaitHelper(_AsyncSuspendState suspendState, Object? value) {
+  // TODO(omersa): Do w need this with `_awaitTypeCheck`?
+  if (value is! Future) {
+    value = Future.value(value);
   }
-  operand.then((value) {
+  value.then((value) {
     suspendState._resume.call(suspendState, value, null, null);
   }, onError: (exception, stackTrace) {
     suspendState._resume.call(suspendState, null, exception, stackTrace);
   });
 }
+
+@pragma("wasm:entry-point")
+void _awaitTypeCheck<T>(Object? value) =>
+    value is T ? value : _Future.value(value);
