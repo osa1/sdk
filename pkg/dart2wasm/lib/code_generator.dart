@@ -1784,43 +1784,46 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     // argument is `null`, because we don't have a `null` object in dart2wasm
     // to pass to the `==` function.
     if (node.name.text == '==') {
-      w.Label resultBlock = b.block(const [], [w.NumType.i32]);
-
-      w.Local receiverLocal = addLocal(receiverType);
-
-      visitThis(receiverType);
-      b.local_set(receiverLocal);
-
-      w.ValueType argumentType = targetFunctionType.inputs[1];
-      // `==` arguments are non-nullable.
-      assert(argumentType.nullable == false);
-      w.ValueType argumentNullableType = argumentType.withNullability(true);
-      w.Local argumentNullableLocal = addLocal(argumentNullableType);
-      w.Local argumentNonNullLocal = addLocal(argumentType);
-
       assert(node.arguments.positional.length == 1);
       assert(node.arguments.named.isEmpty);
-      wrap(node.arguments.positional[0], argumentNullableType);
-      b.local_tee(argumentNullableLocal);
+      if (dartTypeOf(node.arguments.positional[0]).isPotentiallyNullable) {
+        w.Label resultBlock = b.block(const [], [w.NumType.i32]);
 
-      w.Label argumentNullBlock = b.block([argumentNullableType], []);
-      b.br_on_null(argumentNullBlock);
-      b.local_set(argumentNonNullLocal);
+        w.Local receiverLocal = addLocal(receiverType);
+        visitThis(receiverType);
+        b.local_set(receiverLocal);
 
-      b.local_get(receiverLocal);
-      b.local_get(argumentNonNullLocal);
-      final resultType = translator.outputOrVoid(call(target));
-      // `super ==` should return bool.
-      assert(resultType == w.NumType.i32);
-      b.br(resultBlock);
+        w.ValueType argumentType = targetFunctionType.inputs[1];
+        // `==` arguments are non-nullable.
+        assert(argumentType.nullable == false);
+        w.ValueType argumentNullableType = argumentType.withNullability(true);
+        w.Local argumentNullableLocal = addLocal(argumentNullableType);
+        w.Local argumentNonNullLocal = addLocal(argumentType);
 
-      b.end(); // argumentNullBlock
+        assert(node.arguments.positional.length == 1);
+        assert(node.arguments.named.isEmpty);
+        wrap(node.arguments.positional[0], argumentNullableType);
+        b.local_tee(argumentNullableLocal);
 
-      b.i32_const(0); // false
-      b.br(resultBlock);
+        w.Label argumentNullBlock = b.block([argumentNullableType], []);
+        b.br_on_null(argumentNullBlock);
+        b.local_set(argumentNonNullLocal);
 
-      b.end(); // resultBlock
-      return w.NumType.i32;
+        b.local_get(receiverLocal);
+        b.local_get(argumentNonNullLocal);
+        final resultType = translator.outputOrVoid(call(target));
+        // `super ==` should return bool.
+        assert(resultType == w.NumType.i32);
+        b.br(resultBlock);
+
+        b.end(); // argumentNullBlock
+
+        b.i32_const(0); // false
+        b.br(resultBlock);
+
+        b.end(); // resultBlock
+        return w.NumType.i32;
+      }
     }
 
     visitThis(receiverType);
