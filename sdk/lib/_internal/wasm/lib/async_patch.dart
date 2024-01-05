@@ -87,5 +87,5 @@ void _awaitHelper(_AsyncSuspendState suspendState, Object? operand) {
 }
 
 @pragma("wasm:entry-point")
-void _awaitTypeCheck<T>(Object? value) =>
+Object? _awaitTypeCheck<T>(Object? value) =>
     value is T ? value : _Future.value(value);
