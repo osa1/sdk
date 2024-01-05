@@ -1810,15 +1810,17 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       b.local_get(receiverLocal);
       b.local_get(argumentNonNullLocal);
       final resultType = translator.outputOrVoid(call(target));
+      // `super ==` should return bool.
+      assert(resultType == w.NumType.i32);
       b.br(resultBlock);
 
       b.end(); // argumentNullBlock
 
-      b.i32_const(0);
+      b.i32_const(0); // false
       b.br(resultBlock);
 
       b.end(); // resultBlock
-      return resultType;
+      return w.NumType.i32;
     }
 
     visitThis(receiverType);
