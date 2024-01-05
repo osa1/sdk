@@ -1791,29 +1791,33 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       visitThis(receiverType);
       b.local_set(receiverLocal);
 
-      w.ValueType argumentType =
-          targetFunctionType.inputs[1].withNullability(true);
-      w.Local argumentLocal = addLocal(argumentType);
+      w.ValueType argumentType = targetFunctionType.inputs[1];
+      // `==` arguments are non-nullable.
+      assert(argumentType.nullable == false);
+      w.ValueType argumentNullableType = argumentType.withNullability(true);
+      w.Local argumentNullableLocal = addLocal(argumentNullableType);
+      w.Local argumentNonNullLocal = addLocal(argumentType);
 
       assert(node.arguments.positional.length == 1);
       assert(node.arguments.named.isEmpty);
-      wrap(node.arguments.positional[0], argumentType);
-      b.local_set(argumentLocal);
+      wrap(node.arguments.positional[0], argumentNullableType);
+      b.local_tee(argumentNullableLocal);
 
-      b.local_get(argumentLocal);
-      b.ref_is_null();
-      b.if_();
-      b.i32_const(0); // false
-      b.br(resultBlock);
-      b.end(); // end if
+      w.Label argumentNullBlock = b.block([argumentNullableType], []);
+      b.br_on_null(argumentNullBlock);
+      b.local_set(argumentNonNullLocal);
 
       b.local_get(receiverLocal);
-      b.local_get(argumentLocal);
-      b.ref_as_non_null();
+      b.local_get(argumentNonNullLocal);
       final resultType = translator.outputOrVoid(call(target));
       b.br(resultBlock);
 
-      b.end(); // nullBlock
+      b.end(); // argumentNullBlock
+
+      b.i32_const(0);
+      b.br(resultBlock);
+
+      b.end(); // resultBlock
       return resultType;
     }
 
