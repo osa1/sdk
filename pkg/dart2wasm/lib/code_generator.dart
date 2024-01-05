@@ -1791,7 +1791,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       visitThis(receiverType);
       b.local_set(receiverLocal);
 
-      w.ValueType argumentType = targetFunctionType.inputs[1].withNullability(true);
+      w.ValueType argumentType =
+          targetFunctionType.inputs[1].withNullability(true);
       w.Local argumentLocal = addLocal(argumentType);
 
       assert(node.arguments.positional.length == 1);
