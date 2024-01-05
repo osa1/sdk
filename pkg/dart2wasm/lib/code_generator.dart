@@ -1781,36 +1781,24 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     w.ValueType receiverType = targetFunctionType.inputs[0];
 
     // When calling `==` and the argument is potentially nullable, check if the
-    // argument is `null`, because we don't have a `null` object in dart2wasm
-    // to pass to the `==` function.
+    // argument is `null`.
     if (node.name.text == '==') {
       assert(node.arguments.positional.length == 1);
       assert(node.arguments.named.isEmpty);
-      if (dartTypeOf(node.arguments.positional[0]).isPotentiallyNullable) {
-        w.Label resultBlock = b.block(const [], [w.NumType.i32]);
-
-        w.Local receiverLocal = addLocal(receiverType);
-        visitThis(receiverType);
-        b.local_set(receiverLocal);
+      final argument = node.arguments.positional[0];
+      if (dartTypeOf(argument).isPotentiallyNullable) {
+        w.Label resultBlock = b.block(const [], const [w.NumType.i32]);
 
         w.ValueType argumentType = targetFunctionType.inputs[1];
         // `==` arguments are non-nullable.
         assert(argumentType.nullable == false);
-        w.ValueType argumentNullableType = argumentType.withNullability(true);
-        w.Local argumentNullableLocal = addLocal(argumentNullableType);
-        w.Local argumentNonNullLocal = addLocal(argumentType);
 
-        assert(node.arguments.positional.length == 1);
-        assert(node.arguments.named.isEmpty);
-        wrap(node.arguments.positional[0], argumentNullableType);
-        b.local_tee(argumentNullableLocal);
+        final argumentNullBlock = b.block(const [], const []);
 
-        w.Label argumentNullBlock = b.block([argumentNullableType], []);
+        visitThis(receiverType);
+        wrap(argument, argumentType.withNullability(true));
         b.br_on_null(argumentNullBlock);
-        b.local_set(argumentNonNullLocal);
 
-        b.local_get(receiverLocal);
-        b.local_get(argumentNonNullLocal);
         final resultType = translator.outputOrVoid(call(target));
         // `super ==` should return bool.
         assert(resultType == w.NumType.i32);
