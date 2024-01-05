@@ -2643,6 +2643,8 @@
             "corelib",
             "language",
             "lib",
+            "modular",
+            "standalone",
             "web"
           ],
           "shards": 8,
