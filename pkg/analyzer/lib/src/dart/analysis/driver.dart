@@ -87,7 +87,7 @@ import 'package:analyzer/src/utilities/uri_cache.dart';
 /// [changeFile] any time the contents of a file on the file system have changed.
 ///
 // TODO(scheglov): Clean up the list of implicitly analyzed files.
-class AnalysisDriver implements AnalysisDriverGeneric {
+class AnalysisDriver {
   /// The version of data format, should be incremented on every format change.
   static const int DATA_VERSION = 326;
 
@@ -176,7 +176,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   final _pendingFileChangesCompleters = <Completer<List<String>>>[];
 
   /// The mapping from the files for which analysis was requested using
-  /// [getResult] to the [Completer]s to report the result.
+  /// [getResolvedUnit] to the [Completer]s to report the result.
   final _requestedFiles = <String, List<Completer<SomeResolvedUnitResult>>>{};
 
   /// The mapping from the files for which analysis was requested using
@@ -349,7 +349,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// The current file system state.
   FileSystemState get fsState => _fsState;
 
-  @override
+  /// Return `true` if the driver has a file to analyze.
   bool get hasFilesToAnalyze {
     return hasPendingFileChanges ||
         _fileTracker.hasChangedFiles ||
@@ -390,7 +390,13 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// Return the list of files that the driver should try to analyze sooner.
   List<String> get priorityFiles => _priorityFiles.toList(growable: false);
 
-  @override
+  /// Set the list of files that the driver should try to analyze sooner.
+  ///
+  /// Every path in the list must be absolute and normalized.
+  ///
+  /// The driver will produce the results through the [results] stream. The
+  /// exact order in which results are produced is not defined, neither
+  /// between priority files, nor between priority and non-priority files.
   set priorityFiles(List<String> priorityPaths) {
     _priorityResults.keys
         .toSet()
@@ -414,7 +420,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// the analysis state transitions to "idle".
   ///
   /// [ResolvedUnitResult]s are produced for:
-  /// 1. Files requested using [getResult].
+  /// 1. Files requested using [getResolvedUnit].
   /// 2. Files passed to [addFile] which are also in [priorityFiles].
   ///
   /// [ErrorsResult]s are produced for:
@@ -430,8 +436,10 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// client does not change the state of the files.
   ///
   /// Results might be produced even for files that have never been added
-  /// using [addFile], for example when [getResult] was called for a file.
+  /// using [addFile], for example when [getResolvedUnit] was called for a file.
   Stream<Object> get results => _onResults;
+
+  AnalysisDriverScheduler get scheduler => _scheduler;
 
   /// Return the search support for the driver.
   Search get search => _search;
@@ -440,7 +448,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// from file paths.
   SourceFactory get sourceFactory => _sourceFactory;
 
-  @override
+  /// Return the priority of work that the driver needs to perform.
   AnalysisDriverPriority get workPriority {
     if (_disposeRequests.isNotEmpty) {
       return AnalysisDriverPriority.interactive;
@@ -502,7 +510,12 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     return AnalysisDriverPriority.nothing;
   }
 
-  @override
+  /// Add the file with the given [path] to the set of files that are explicitly
+  /// being analyzed.
+  ///
+  /// The [path] must be absolute and normalized.
+  ///
+  /// The results of analysis are eventually produced by the [results] stream.
   void addFile(String path) {
     _throwIfNotAbsolutePath(path);
     if (!_fsState.hasUri(path)) {
@@ -592,7 +605,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// transitions to "idle".
   ///
   /// Invocation of this method will not prevent a [Future] returned from
-  /// [getResult] from completing with a result, but the result is not
+  /// [getResolvedUnit] from completing with a result, but the result is not
   /// guaranteed to be consistent with the new current file state after this
   /// [changeFile] invocation.
   void changeFile(String path) {
@@ -632,7 +645,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     return _discoverAvailableFilesTask!.completer.future;
   }
 
-  @override
+  /// Notify the driver that the client is going to stop using it.
   Future<void> dispose2() async {
     final completer = Completer<void>();
     _disposed = true;
@@ -965,7 +978,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   /// it, which is consistent with the current file state (including new states
   /// of the files previously reported using [changeFile]), prior to the next
   /// time the analysis state transitions to "idle".
-  Future<SomeResolvedUnitResult> getResult(String path,
+  Future<SomeResolvedUnitResult> getResolvedUnit(String path,
       {bool sendCachedToStream = false}) {
     if (!_isAbsolutePath(path)) {
       return Future.value(
@@ -1055,7 +1068,7 @@ class AnalysisDriver implements AnalysisDriverGeneric {
     );
   }
 
-  @override
+  /// Perform a single chunk of work and produce [results].
   Future<void> performWork() async {
     _discoverDartCore();
     _discoverLibraries();
@@ -2007,41 +2020,6 @@ class AnalysisDriver implements AnalysisDriverGeneric {
   }
 }
 
-/// A generic schedulable interface via the AnalysisDriverScheduler. Currently
-/// only implemented by [AnalysisDriver] and the angular plugin, at least as
-/// a temporary measure until the official plugin API is ready (and a different
-/// scheduler is used)
-abstract class AnalysisDriverGeneric {
-  /// Return `true` if the driver has a file to analyze.
-  bool get hasFilesToAnalyze;
-
-  /// Set the list of files that the driver should try to analyze sooner.
-  ///
-  /// Every path in the list must be absolute and normalized.
-  ///
-  /// The driver will produce the results through the [results] stream. The
-  /// exact order in which results are produced is not defined, neither
-  /// between priority files, nor between priority and non-priority files.
-  set priorityFiles(List<String> priorityPaths);
-
-  /// Return the priority of work that the driver needs to perform.
-  AnalysisDriverPriority get workPriority;
-
-  /// Add the file with the given [path] to the set of files that are explicitly
-  /// being analyzed.
-  ///
-  /// The [path] must be absolute and normalized.
-  ///
-  /// The results of analysis are eventually produced by the [results] stream.
-  void addFile(String path);
-
-  /// Notify the driver that the client is going to stop using it.
-  Future<void> dispose2();
-
-  /// Perform a single chunk of work and produce [results].
-  Future<void> performWork();
-}
-
 /// Priorities of [AnalysisDriver] work. The farther a priority to the beginning
 /// of the list, the earlier the corresponding [AnalysisDriver] should be asked
 /// to perform work.
@@ -2082,7 +2060,7 @@ class AnalysisDriverScheduler {
   /// The object used to watch as analysis drivers are created and deleted.
   final DriverWatcher? driverWatcher;
 
-  final List<AnalysisDriverGeneric> _drivers = [];
+  final List<AnalysisDriver> _drivers = [];
   final Monitor _hasWork = Monitor();
   final StatusSupport _statusSupport = StatusSupport();
 
@@ -2104,7 +2082,7 @@ class AnalysisDriverScheduler {
 
   /// Return `true` if there is a driver with a file to analyze.
   bool get _hasFilesToAnalyze {
-    for (AnalysisDriverGeneric driver in _drivers) {
+    for (final driver in _drivers) {
       if (driver.hasFilesToAnalyze) {
         return true;
       }
@@ -2113,17 +2091,17 @@ class AnalysisDriverScheduler {
   }
 
   /// Add the given [driver] and schedule it to perform its work.
-  void add(AnalysisDriverGeneric driver) {
+  void add(AnalysisDriver driver) {
     _drivers.add(driver);
     _hasWork.notify();
-    if (driver is AnalysisDriver && driver.analysisContext != null) {
+    if (driver.analysisContext != null) {
       driverWatcher?.addedDriver(driver);
     }
   }
 
   /// Notify that there is a change to the [driver], it might need to
   /// perform some work.
-  void notify(AnalysisDriverGeneric? driver) {
+  void notify(AnalysisDriver? driver) {
     // TODO(brianwilkerson): Consider removing the parameter, given that it isn't
     //  referenced in the body.
     _hasWork.notify();
@@ -2132,10 +2110,8 @@ class AnalysisDriverScheduler {
 
   /// Remove the given [driver] from the scheduler, so that it will not be
   /// asked to perform any new work.
-  void remove(AnalysisDriverGeneric driver) {
-    if (driver is AnalysisDriver) {
-      driverWatcher?.removedDriver(driver);
-    }
+  void remove(AnalysisDriver driver) {
+    driverWatcher?.removedDriver(driver);
     _drivers.remove(driver);
     _hasWork.notify();
   }
@@ -2184,15 +2160,11 @@ class AnalysisDriverScheduler {
       await _hasWork.signal;
 
       for (final driver in _drivers.toList()) {
-        if (driver is AnalysisDriver) {
-          await driver._maybeDispose();
-        }
+        await driver._maybeDispose();
       }
 
       for (var driver in _drivers) {
-        if (driver is AnalysisDriver) {
-          driver._applyPendingFileChanges();
-        }
+        driver._applyPendingFileChanges();
       }
 
       // Transition to analyzing if there are files to analyze.
@@ -2202,9 +2174,9 @@ class AnalysisDriverScheduler {
       }
 
       // Find the driver with the highest priority.
-      late AnalysisDriverGeneric bestDriver;
+      late AnalysisDriver bestDriver;
       AnalysisDriverPriority bestPriority = AnalysisDriverPriority.nothing;
-      for (AnalysisDriverGeneric driver in _drivers) {
+      for (final driver in _drivers) {
         AnalysisDriverPriority priority = driver.workPriority;
         if (priority.index > bestPriority.index) {
           bestDriver = driver;
