@@ -1778,7 +1778,44 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         _lookupSuperTarget(node.interfaceTarget, setter: false).reference;
     w.FunctionType targetFunctionType =
         translator.functions.getFunctionType(target);
-    w.ValueType receiverType = targetFunctionType.inputs.first;
+    w.ValueType receiverType = targetFunctionType.inputs[0];
+
+    // When calling `==` and the argument is potentially nullable, check if the
+    // argument is `null`, because we don't have a `null` object in dart2wasm
+    // to pass to the `==` function.
+    if (node.name.text == '==') {
+      w.Label resultBlock = b.block(const [], [w.NumType.i32]);
+
+      w.Local receiverLocal = addLocal(receiverType);
+
+      visitThis(receiverType);
+      b.local_set(receiverLocal);
+
+      w.ValueType argumentType = targetFunctionType.inputs[1].withNullability(true);
+      w.Local argumentLocal = addLocal(argumentType);
+
+      assert(node.arguments.positional.length == 1);
+      assert(node.arguments.named.isEmpty);
+      wrap(node.arguments.positional[0], argumentType);
+      b.local_set(argumentLocal);
+
+      b.local_get(argumentLocal);
+      b.ref_is_null();
+      b.if_();
+      b.i32_const(0); // false
+      b.br(resultBlock);
+      b.end(); // end if
+
+      b.local_get(receiverLocal);
+      b.local_get(argumentLocal);
+      b.ref_as_non_null();
+      final resultType = translator.outputOrVoid(call(target));
+      b.br(resultBlock);
+
+      b.end(); // nullBlock
+      return resultType;
+    }
+
     visitThis(receiverType);
     _visitArguments(node.arguments, target, 1);
     return translator.outputOrVoid(call(target));
