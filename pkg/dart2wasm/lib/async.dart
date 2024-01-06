@@ -776,8 +776,6 @@ class AsyncCodeGenerator extends CodeGenerator {
     b.local_get(suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
-    // Non-null Dart field represented as nullable Wasm field.
-    b.ref_as_non_null();
     b.ref_null(translator.topInfo.struct);
     call(translator.completerComplete.reference);
     b.return_();
@@ -792,7 +790,6 @@ class AsyncCodeGenerator extends CodeGenerator {
       b.local_get(suspendStateLocal);
       b.struct_get(
           asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
-      b.ref_as_non_null();
       b.local_get(exceptionLocal);
       b.local_get(stackTraceLocal);
       call(translator.completerCompleteError.reference);
@@ -1207,8 +1204,6 @@ class AsyncCodeGenerator extends CodeGenerator {
       b.local_get(suspendStateLocal);
       b.struct_get(
           asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
-      // Non-null Dart field represented as nullable Wasm field.
-      b.ref_as_non_null();
       b.local_get(suspendStateLocal);
       b.struct_get(asyncSuspendStateInfo.struct,
           FieldIndex.asyncSuspendStateCurrentReturnValue);
@@ -1266,8 +1261,6 @@ class AsyncCodeGenerator extends CodeGenerator {
       b.local_get(suspendStateLocal);
       b.struct_get(
           asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
-      // Non-null Dart field represented as nullable Wasm field.
-      b.ref_as_non_null();
     }
 
     final value = node.expression;
@@ -1396,16 +1389,25 @@ class AsyncCodeGenerator extends CodeGenerator {
     b.struct_set(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateTargetIndex);
 
-    b.local_get(suspendStateLocal);
     final DartType? runtimeType = node.runtimeCheckType;
+    DartType? futureTypeParam = null;
     if (runtimeType != null) {
-      types.makeType(this, runtimeType);
+      final futureType = runtimeType as InterfaceType;
+      assert(futureType.classNode == translator.coreTypes.futureClass);
+      assert(futureType.typeArguments.length == 1);
+      futureTypeParam = futureType.typeArguments[0];
     }
+
+    if (futureTypeParam != null) {
+      types.makeType(this, futureTypeParam);
+    }
+    b.local_get(suspendStateLocal);
     wrap(node.operand, translator.topInfo.nullableType);
     if (runtimeType != null) {
-      call(translator.awaitTypeCheck.reference);
+      call(translator.awaitHelperWithTypeCheck.reference);
+    } else {
+      call(translator.awaitHelper.reference);
     }
-    call(translator.awaitHelper.reference);
     b.return_();
 
     // Generate resume label

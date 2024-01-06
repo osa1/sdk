@@ -77,7 +77,8 @@ _AsyncCompleter<T> _makeAsyncCompleter<T>() => _AsyncCompleter<T>();
 @pragma("wasm:entry-point")
 void _awaitHelper(_AsyncSuspendState suspendState, Object? operand) {
   if (operand is! Future) {
-    operand = Future.value(operand);
+    return scheduleMicrotask(
+        () => suspendState._resume.call(suspendState, operand, null, null));
   }
   operand.then((value) {
     suspendState._resume.call(suspendState, value, null, null);
@@ -87,5 +88,15 @@ void _awaitHelper(_AsyncSuspendState suspendState, Object? operand) {
 }
 
 @pragma("wasm:entry-point")
-Object? _awaitTypeCheck<T>(Object? value) =>
-    value is T ? value : _Future.value(value);
+void _awaitHelperWithTypeCheck<T>(
+    _AsyncSuspendState suspendState, Object? operand) {
+  if (operand is! Future<T>) {
+    return scheduleMicrotask(
+        () => suspendState._resume.call(suspendState, operand, null, null));
+  }
+  operand.then((Object? value) {
+    suspendState._resume.call(suspendState, value, null, null);
+  }, onError: (exception, stackTrace) {
+    suspendState._resume.call(suspendState, null, exception, stackTrace);
+  });
+}
