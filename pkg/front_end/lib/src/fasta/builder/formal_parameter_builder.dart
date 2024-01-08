@@ -285,8 +285,7 @@ class FormalParameterBuilder extends ModifierBuilderImpl
         bodyBuilder.performBacklogComputations(
             delayedActionPerformers: delayedActionPerformers,
             allowFurtherDelays: false);
-      } else if (kind != FormalParameterKind.requiredPositional &&
-          !isSuperInitializingFormal) {
+      } else if (kind.isOptional) {
         // As done by BodyBuilder.endFormalParameter.
         variable!.initializer = new NullLiteral()..parent = variable;
       }

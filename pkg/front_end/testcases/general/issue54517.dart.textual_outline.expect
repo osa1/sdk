@@ -1,0 +1,2 @@
+int test0({required int a}) => a;
+void main() {}
