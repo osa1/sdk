@@ -103,13 +103,11 @@ class ParameterInfo {
     for (String name in other.named.keys) {
       Constant? value = named[name];
       Constant? otherValue = other.named[name];
-      if (value == null) {
-        named[name] = otherValue;
-      } else if (otherValue != null) {
-        if (value != otherValue) {
-          // Default value differs between implementations.
-          named[name] = defaultValueSentinel;
-        }
+      if (value != otherValue) {
+        // Default value differs between implementations.
+        named[name] = defaultValueSentinel;
+      } else {
+        named[name] = value;
       }
     }
   }
