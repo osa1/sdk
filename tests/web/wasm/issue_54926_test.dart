@@ -22,7 +22,7 @@ void main() {
   var f1 = f<int>;
   var f2 = f<int>;
 
-  if (f1 != f2) {
+  if (identical(f1, f2) || f1 != f2) {
     throw '';
   }
 }
