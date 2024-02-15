@@ -1405,3 +1405,6 @@ _Type _getMasqueradedRuntimeTypeNullable(Object? object) =>
 external bool _isObjectClassId(int classId);
 external bool _isClosureClassId(int classId);
 external bool _isRecordClassId(int classId);
+
+@pragma("wasm:entry-point")
+bool _runtimeTypeEquals(_Type t1, _Type t2) => t1 == t2;
