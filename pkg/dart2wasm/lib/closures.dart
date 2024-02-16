@@ -78,6 +78,10 @@ class ClosureRepresentation {
       _instantiationTypeComparisonFunctionThunk!();
   w.BaseFunction Function()? _instantiationTypeComparisonFunctionThunk;
 
+  late final w.BaseFunction instantiationTypeHashFunction =
+      _instantiationTypeHashFunctionThunk!();
+  w.BaseFunction Function()? _instantiationTypeHashFunctionThunk;
+
   /// The signature of the function that instantiates this generic closure.
   w.FunctionType get instantiationFunctionType {
     assert(isGeneric);
@@ -216,6 +220,12 @@ class ClosureLayouter extends RecursiveVisitor {
     [w.NumType.i32], // bool
   );
 
+  late final w.FunctionType instantiationClosureTypeHashFunctionType =
+      m.types.defineFunction(
+    [w.RefType.def(instantiationContextBaseStruct, nullable: false)],
+    [w.NumType.i32], // hash
+  );
+
   // Base struct for closures.
   late final w.StructType closureBaseStruct = _makeClosureStruct(
       "#ClosureBase", _vtableBaseStructBare, translator.closureInfo.struct);
@@ -244,6 +254,12 @@ class ClosureLayouter extends RecursiveVisitor {
   w.BaseFunction _getInstantiationTypeComparisonFunction(int numTypes) =>
       _instantiationTypeComparisonFunctions.putIfAbsent(
           numTypes, () => _createInstantiationTypeComparisonFunction(numTypes));
+
+  final Map<int, w.BaseFunction> _instantiationTypeHashFunctions = {};
+
+  w.BaseFunction _getInstantiationTypeHashFunction(int numTypes) =>
+      _instantiationTypeHashFunctions.putIfAbsent(
+          numTypes, () => _createInstantiationTypeHashFunction(numTypes));
 
   w.StructType _makeClosureStruct(
       String name, w.StructType vtableStruct, w.StructType superType) {
@@ -482,6 +498,9 @@ class ClosureLayouter extends RecursiveVisitor {
 
       representation._instantiationTypeComparisonFunctionThunk =
           () => _getInstantiationTypeComparisonFunction(typeCount);
+
+      representation._instantiationTypeHashFunctionThunk =
+          () => _getInstantiationTypeHashFunction(typeCount);
     }
 
     return representation;
@@ -718,6 +737,41 @@ class ClosureLayouter extends RecursiveVisitor {
 
     b.i32_const(0); // false
     b.end(); // end of function
+    return function;
+  }
+
+  w.BaseFunction _createInstantiationTypeHashFunction(int numTypes) {
+    final function = m.functions.define(
+        instantiationClosureTypeComparisonFunctionType,
+        "#InstantiationTypeComparison-$numTypes");
+
+    final b = function.body;
+
+    final contextStructType = _getInstantiationContextBaseStruct(numTypes);
+    final contextRefType = w.RefType.def(contextStructType, nullable: false);
+
+    final thisContext = function.locals[0];
+    final thisContextLocal = function.addLocal(contextRefType);
+
+    b.local_get(thisContext);
+    b.ref_cast(contextRefType);
+    b.local_set(thisContextLocal);
+
+    // Same as `SystemHash.hashN` functions: combine first hash with
+    // `_hashSeed`.
+    translator.globals.readGlobal(b, translator.hashSeed);
+
+    for (int typeFieldIdx = 0; typeFieldIdx < numTypes; typeFieldIdx += 1) {
+      b.local_get(thisContextLocal);
+      b.struct_get(contextStructType, typeFieldIdx);
+      b.call(translator.functions
+          .getFunction(translator.runtimeTypeHashCode.reference));
+      b.call(translator.functions
+          .getFunction(translator.systemHashCombine.reference));
+    }
+
+    b.end();
+
     return function;
   }
 
