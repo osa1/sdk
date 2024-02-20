@@ -20,7 +20,6 @@ import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/type_provider.dart';
@@ -4839,11 +4838,15 @@ class ScopeResolverVisitor extends UnifyingAstVisitor<void> {
             });
           }
         }
-        _withDeclaredLocals(node, group.statements, () {
+        if (group.members.isEmpty) {
+          return;
+        }
+        var lastMember = group.members.last;
+        _withDeclaredLocals(lastMember, lastMember.statements, () {
           for (var variable in group.variables.values) {
             _define(variable);
           }
-          group.statements.accept(this);
+          lastMember.statements.accept(this);
         });
       }
     } finally {
