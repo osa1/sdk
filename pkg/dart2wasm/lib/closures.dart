@@ -174,9 +174,10 @@ class ClosureLayouter extends RecursiveVisitor {
   // For generic closures. The entries are:
   // 0: Dynamic call entry
   // 1: Instantiation type comparison function
-  // 2: Instantiation function
-  // 3-...: Entries for calling the closure
-  static const int vtableBaseIndexGeneric = 3;
+  // 2: Instantiation type hash function
+  // 3: Instantiation function
+  // 4-...: Entries for calling the closure
+  static const int vtableBaseIndexGeneric = 4;
 
   // Base struct for vtables without the dynamic call entry added. Referenced
   // by [closureBaseStruct] instead of the fully initialized version
@@ -206,6 +207,10 @@ class ClosureLayouter extends RecursiveVisitor {
       fields: vtableBaseStruct.fields.toList()
         ..add(w.FieldType(
             w.RefType.def(instantiationClosureTypeComparisonFunctionType,
+                nullable: false),
+            mutable: false))
+        ..add(w.FieldType(
+            w.RefType.def(instantiationClosureTypeHashFunctionType,
                 nullable: false),
             mutable: false)),
       superType: vtableBaseStruct);
