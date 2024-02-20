@@ -1651,6 +1651,62 @@ class Intrinsifier {
       return true;
     }
 
+    if (member.enclosingClass == translator.closureClass &&
+        name == "_isInstantiationClosure") {
+      assert(function.locals.length == 1);
+
+      b.local_get(function.locals[0]);
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureContext);
+      b.ref_test(w.RefType(
+          translator.closureLayouter.instantiationContextBaseStruct,
+          nullable: false));
+
+      return true;
+    }
+
+    if (member.enclosingClass == translator.closureClass &&
+        name == "_instantiatedClosure") {
+      assert(function.locals.length == 1);
+
+      b.local_get(function.locals[0]);
+      // instantiation.context
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureContext);
+      b.ref_cast(w.RefType(
+          translator.closureLayouter.instantiationContextBaseStruct,
+          nullable: false));
+      // instantiation.context.inner
+      b.struct_get(translator.closureLayouter.instantiationContextBaseStruct,
+          FieldIndex.instantiationContextInner);
+      // returns `ref _ClosureBase`.
+
+      return true;
+    }
+
+    if (member.enclosingClass == translator.closureClass &&
+        name == "_isInstanceTearOff") {
+      assert(function.locals.length == 1);
+
+      b.local_get(function.locals[0]);
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureContext);
+      b.ref_test(translator.topInfo.nonNullableType);
+
+      return true;
+    }
+
+    if (member.enclosingClass == translator.closureClass &&
+        name == "_instanceTearOffReceiver") {
+      assert(function.locals.length == 1);
+
+      b.local_get(function.locals[0]);
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureContext);
+
+      return true;
+    }
+
     if (member.enclosingClass == translator.coreTypes.functionClass &&
         name == "apply") {
       assert(function.type.inputs.length == 3);
