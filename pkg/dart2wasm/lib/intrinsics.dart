@@ -1685,6 +1685,25 @@ class Intrinsifier {
     }
 
     if (member.enclosingClass == translator.closureClass &&
+        name == "_instantiationClosureTypeHash") {
+      assert(function.locals.length == 1);
+
+      b.local_get(function.locals[0]);
+      b.local_get(function.locals[0]);
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureVtable);
+      b.ref_cast(w.RefType.def(
+          translator.closureLayouter.genericVtableBaseStruct,
+          nullable: false));
+      b.struct_get(translator.closureLayouter.genericVtableBaseStruct,
+          FieldIndex.vtableInstantiationTypeHashFunction);
+      b.call_ref(
+          translator.closureLayouter.instantiationClosureTypeHashFunctionType);
+
+      return true;
+    }
+
+    if (member.enclosingClass == translator.closureClass &&
         name == "_isInstanceTearOff") {
       assert(function.locals.length == 1);
 
@@ -1712,7 +1731,7 @@ class Intrinsifier {
       assert(function.type.inputs.length == 3);
 
       final closureLocal = function.locals[0]; // ref #ClosureBase
-      final posArgsNullableLocal = function.locals[1]; // ref null Object,
+      final posArgsNullableLocal = function.locals[1]; // ref null Object
       final namedArgsLocal = function.locals[2]; // ref null Object
 
       // Create empty type arguments array.
