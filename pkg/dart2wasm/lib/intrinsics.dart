@@ -1655,7 +1655,9 @@ class Intrinsifier {
         name == "_isInstantiationClosure") {
       assert(function.locals.length == 1);
 
-      b.local_get(function.locals[0]);
+      b.local_get(function.locals[0]); // ref _Closure
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureContext);
       b.ref_test(w.RefType(
@@ -1669,8 +1671,10 @@ class Intrinsifier {
         name == "_instantiatedClosure") {
       assert(function.locals.length == 1);
 
-      b.local_get(function.locals[0]);
+      b.local_get(function.locals[0]); // ref _Closure
       // instantiation.context
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureContext);
       b.ref_cast(w.RefType(
@@ -1688,15 +1692,27 @@ class Intrinsifier {
         name == "_instantiationClosureTypeHash") {
       assert(function.locals.length == 1);
 
-      b.local_get(function.locals[0]);
-      b.local_get(function.locals[0]);
+      // Instantiation context, to be passed to the hash function.
+      b.local_get(function.locals[0]); // ref _Closure
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
+      b.struct_get(translator.closureLayouter.closureBaseStruct,
+          FieldIndex.closureContext);
+      b.ref_cast(w.RefType(
+          translator.closureLayouter.instantiationContextBaseStruct,
+          nullable: false));
+
+      // Hash function.
+      b.local_get(function.locals[0]); // ref _Closure
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureVtable);
-      b.ref_cast(w.RefType.def(
-          translator.closureLayouter.genericVtableBaseStruct,
+      b.ref_cast(w.RefType(translator.closureLayouter.genericVtableBaseStruct,
           nullable: false));
       b.struct_get(translator.closureLayouter.genericVtableBaseStruct,
           FieldIndex.vtableInstantiationTypeHashFunction);
+
       b.call_ref(
           translator.closureLayouter.instantiationClosureTypeHashFunctionType);
 
@@ -1707,7 +1723,9 @@ class Intrinsifier {
         name == "_isInstanceTearOff") {
       assert(function.locals.length == 1);
 
-      b.local_get(function.locals[0]);
+      b.local_get(function.locals[0]); // ref _Closure
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureContext);
       b.ref_test(translator.topInfo.nonNullableType);
@@ -1719,9 +1737,12 @@ class Intrinsifier {
         name == "_instanceTearOffReceiver") {
       assert(function.locals.length == 1);
 
-      b.local_get(function.locals[0]);
+      b.local_get(function.locals[0]); // ref _Closure
+      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+          nullable: false));
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureContext);
+      b.ref_cast(translator.topInfo.nonNullableType);
 
       return true;
     }
