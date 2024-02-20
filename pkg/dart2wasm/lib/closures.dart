@@ -228,7 +228,7 @@ class ClosureLayouter extends RecursiveVisitor {
   late final w.FunctionType instantiationClosureTypeHashFunctionType =
       m.types.defineFunction(
     [w.RefType.def(instantiationContextBaseStruct, nullable: false)],
-    [w.NumType.i32], // hash
+    [w.NumType.i64], // hash
   );
 
   // Base struct for closures.
@@ -766,7 +766,8 @@ class ClosureLayouter extends RecursiveVisitor {
     // `_hashSeed`.
     translator.globals.readGlobal(b, translator.hashSeed);
 
-    for (int typeFieldIdx = 0; typeFieldIdx < numTypes; typeFieldIdx += 1) {
+    // Field 0 is the instantiated closure. Types start at 1.
+    for (int typeFieldIdx = 1; typeFieldIdx <= numTypes; typeFieldIdx += 1) {
       b.local_get(thisContextLocal);
       b.struct_get(contextStructType, typeFieldIdx);
       b.call(translator.functions
