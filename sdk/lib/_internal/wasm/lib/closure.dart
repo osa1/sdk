@@ -26,9 +26,19 @@ final class _Closure implements Function {
   @pragma("wasm:prefer-inline")
   external static _FunctionType _getClosureRuntimeType(_Closure closure);
 
-  // Simple hash code for now, we can optimize later
-  // @override
-  // int get hashCode => runtimeType.hashCode;
+  @override
+  int get hashCode {
+    if (_isInstantiationClosure) {
+      return Object.hash(_instantiatedClosure, _instantiationClosureTypeHash());
+    }
+
+    if (_isInstanceTearOff) {
+      return Object.hash(
+          _instanceTearOffReceiver, _getClosureRuntimeType(this));
+    }
+
+    return Object._objectHashCode(this); // identity hash
+  }
 
   // Support dynamic tear-off of `.call` on functions
   @pragma("wasm:entry-point")
@@ -44,8 +54,6 @@ final class _Closure implements Function {
 
   /// When the closure is an instantiation, get the instantiated closure.
   ///
-  /// Instantiated closure can be an instance tear-off or static closure.
-  ///
   /// Traps when the closure is not an instantiation.
   external _Closure? get _instantiatedClosure;
 
@@ -60,22 +68,8 @@ final class _Closure implements Function {
   /// Instance tear-offs will have receivers.
   external bool get _isInstanceTearOff;
 
-  /// When the closure is a tear-off, returns the receiver.
+  /// When the closure is an instance tear-off, returns the receiver.
   ///
-  /// Traps when the closure is not a tear-off.
+  /// Traps when the closure is not an instance tear-off.
   external Object? get _instanceTearOffReceiver;
-
-  @override
-  int get hashCode {
-    if (_isInstantiationClosure) {
-      return Object.hash(_instantiatedClosure, _instantiationClosureTypeHash());
-    }
-
-    if (_isInstanceTearOff) {
-      return Object.hash(
-          _instanceTearOffReceiver, _getClosureRuntimeType(this));
-    }
-
-    return Object._objectHashCode(this); // identity hash
-  }
 }
