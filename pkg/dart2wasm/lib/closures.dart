@@ -747,7 +747,7 @@ class ClosureLayouter extends RecursiveVisitor {
 
   w.BaseFunction _createInstantiationTypeHashFunction(int numTypes) {
     final function = m.functions.define(
-        instantiationClosureTypeComparisonFunctionType,
+        instantiationClosureTypeHashFunctionType,
         "#InstantiationTypeComparison-$numTypes");
 
     final b = function.body;
