@@ -3928,4 +3928,14 @@ extension MacroAssembler on w.InstructionsBuilder {
         FieldIndex.closureContext);
     ref_cast(translator.topInfo.nonNullableType);
   }
+
+  /// `[ref _Closure] -> [ref Any]
+  ///
+  /// Given a closure returns the vtable of the closure.
+  void emitGetClosureVtable(Translator translator) {
+    ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+        nullable: false));
+    struct_get(
+        translator.closureLayouter.closureBaseStruct, FieldIndex.closureVtable);
+  }
 }
