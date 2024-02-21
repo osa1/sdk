@@ -3786,7 +3786,7 @@ extension MacroAssembler on w.InstructionsBuilder {
   /// `[i32] -> [i32]`
   ///
   /// Consumes an `i32` for a class ID, leaves an `i32` as `bool` for whether
-  /// the class ID is in the given lsit of ranges.
+  /// the class ID is in the given list of ranges.
   void emitClassIdRangeCheck(List<Range> ranges) {
     if (ranges.isEmpty) {
       drop();
@@ -3857,40 +3857,6 @@ extension MacroAssembler on w.InstructionsBuilder {
         FieldIndex.instantiationContextInner);
   }
 
-  /// `[ref _Closure] -> [i64]`
-  ///
-  /// Given an instantiation closure returns the hash code of types captured by
-  /// the instantiation.
-  void emitInstantiationClosureTypeHash(Translator translator) {
-    final closureBaseLocal = addLocal(
-        w.RefType(translator.closureLayouter.closureBaseStruct,
-            nullable: false),
-        isParameter: false);
-
-    ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
-        nullable: false));
-    local_tee(closureBaseLocal);
-
-    struct_get(translator.closureLayouter.closureBaseStruct,
-        FieldIndex.closureContext);
-    ref_cast(w.RefType(
-        translator.closureLayouter.instantiationContextBaseStruct,
-        nullable: false));
-
-    // Hash function.
-    local_get(closureBaseLocal);
-    emitGetInstantiationContextInner(translator);
-    struct_get(
-        translator.closureLayouter.closureBaseStruct, FieldIndex.closureVtable);
-    ref_cast(w.RefType.def(translator.closureLayouter.genericVtableBaseStruct,
-        nullable: false));
-    struct_get(translator.closureLayouter.genericVtableBaseStruct,
-        FieldIndex.vtableInstantiationTypeHashFunction);
-
-    call_ref(
-        translator.closureLayouter.instantiationClosureTypeHashFunctionType);
-  }
-
   /// `[ref _Closure, ref _Closure] -> [i32]`
   ///
   ///
@@ -3935,6 +3901,40 @@ extension MacroAssembler on w.InstructionsBuilder {
 
     call_ref(translator
         .closureLayouter.instantiationClosureTypeComparisonFunctionType);
+  }
+
+  /// `[ref _Closure] -> [i64]`
+  ///
+  /// Given an instantiation closure returns the hash code of types captured by
+  /// the instantiation.
+  void emitInstantiationClosureTypeHash(Translator translator) {
+    final closureBaseLocal = addLocal(
+        w.RefType(translator.closureLayouter.closureBaseStruct,
+            nullable: false),
+        isParameter: false);
+
+    ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
+        nullable: false));
+    local_tee(closureBaseLocal);
+
+    struct_get(translator.closureLayouter.closureBaseStruct,
+        FieldIndex.closureContext);
+    ref_cast(w.RefType(
+        translator.closureLayouter.instantiationContextBaseStruct,
+        nullable: false));
+
+    // Hash function.
+    local_get(closureBaseLocal);
+    emitGetInstantiationContextInner(translator);
+    struct_get(
+        translator.closureLayouter.closureBaseStruct, FieldIndex.closureVtable);
+    ref_cast(w.RefType.def(translator.closureLayouter.genericVtableBaseStruct,
+        nullable: false));
+    struct_get(translator.closureLayouter.genericVtableBaseStruct,
+        FieldIndex.vtableInstantiationTypeHashFunction);
+
+    call_ref(
+        translator.closureLayouter.instantiationClosureTypeHashFunctionType);
   }
 
   /// `[ref #ClosureBase] -> [ref #InstantiationContextBase]`
