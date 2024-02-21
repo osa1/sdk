@@ -14,7 +14,7 @@ final class _Closure implements Function {
 
   @override
   bool operator ==(Object other) {
-    if (other is! Function) {
+    if (other is! _Closure) {
       return false;
     }
 
@@ -22,27 +22,25 @@ final class _Closure implements Function {
       return true;
     }
 
-    final otherClosure = unsafeCast<_Closure>(other);
-
     final thisIsInstantiation = _isInstantiationClosure;
-    final otherIsInstantiation = otherClosure._isInstantiationClosure;
+    final otherIsInstantiation = other._isInstantiationClosure;
 
     if (thisIsInstantiation && otherIsInstantiation) {
       final thisInstantiatedClosure = _instantiatedClosure;
-      final otherInstantiatedClosure = otherClosure._instantiatedClosure;
+      final otherInstantiatedClosure = other._instantiatedClosure;
       return thisInstantiatedClosure == otherInstantiatedClosure &&
-          _instantiationClosureTypeEquals(otherClosure);
+          _instantiationClosureTypeEquals(other);
     }
 
-    if (_vtable != otherClosure._vtable) {
+    if (_vtable != other._vtable) {
       return false;
     }
 
     final thisIsTearOff = _isInstanceTearOff;
-    final otherIsTearOff = otherClosure._isInstanceTearOff;
+    final otherIsTearOff = other._isInstanceTearOff;
 
     if (thisIsTearOff && otherIsTearOff) {
-      return _instanceTearOffReceiver == otherClosure._instanceTearOffReceiver;
+      return _instanceTearOffReceiver == other._instanceTearOffReceiver;
     }
 
     return false;
