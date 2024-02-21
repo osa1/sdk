@@ -3857,52 +3857,6 @@ extension MacroAssembler on w.InstructionsBuilder {
         FieldIndex.instantiationContextInner);
   }
 
-  /// `[ref _Closure, ref _Closure] -> [i32]`
-  ///
-  ///
-  /// Compares types of two instantiations on stack.
-  void emitInstantiationClosureTypeEqualityCheck(Translator translator) {
-    final w.StructType closureBaseStruct =
-        translator.closureLayouter.closureBaseStruct;
-
-    final w.RefType instantiationContextBase = w.RefType(
-        translator.closureLayouter.instantiationContextBaseStruct,
-        nullable: false);
-
-    final closureBaseLocal2 = addLocal(
-        w.RefType(closureBaseStruct, nullable: false),
-        isParameter: false);
-
-    ref_cast(w.RefType(closureBaseStruct, nullable: false));
-    local_set(closureBaseLocal2);
-
-    final closureBaseLocal1 = addLocal(
-        w.RefType(closureBaseStruct, nullable: false),
-        isParameter: false);
-
-    ref_cast(w.RefType(closureBaseStruct, nullable: false));
-    local_set(closureBaseLocal1);
-
-    local_get(closureBaseLocal1);
-    struct_get(closureBaseStruct, FieldIndex.closureContext);
-    ref_cast(instantiationContextBase);
-
-    local_get(closureBaseLocal2);
-    struct_get(closureBaseStruct, FieldIndex.closureContext);
-    ref_cast(instantiationContextBase);
-
-    local_get(closureBaseLocal1);
-    emitGetInstantiationContextInner(translator);
-    struct_get(closureBaseStruct, FieldIndex.closureVtable);
-    ref_cast(w.RefType.def(translator.closureLayouter.genericVtableBaseStruct,
-        nullable: false));
-    struct_get(translator.closureLayouter.genericVtableBaseStruct,
-        FieldIndex.vtableInstantiationTypeComparisonFunction);
-
-    call_ref(translator
-        .closureLayouter.instantiationClosureTypeComparisonFunctionType);
-  }
-
   /// `[ref _Closure] -> [i64]`
   ///
   /// Given an instantiation closure returns the hash code of types captured by
