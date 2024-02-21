@@ -3786,7 +3786,7 @@ extension MacroAssembler on w.InstructionsBuilder {
   /// `[i32] -> [i32]`
   ///
   /// Consumes an `i32` for a class ID, leaves an `i32` as `bool` for whether
-  /// the class ID is in the given lsit of ranges.
+  /// the class ID is in the given list of ranges.
   void emitClassIdRangeCheck(List<Range> ranges) {
     if (ranges.isEmpty) {
       drop();
