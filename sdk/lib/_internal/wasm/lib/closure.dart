@@ -24,10 +24,6 @@ final class _Closure implements Function {
 
     final otherClosure = unsafeCast<_Closure>(other);
 
-    if (_vtable != otherClosure._vtable) {
-      return false;
-    }
-
     final thisIsInstantiation = _isInstantiationClosure;
     final otherIsInstantiation = otherClosure._isInstantiationClosure;
 
@@ -36,6 +32,10 @@ final class _Closure implements Function {
       final otherInstantiatedClosure = otherClosure._instantiatedClosure;
       return thisInstantiatedClosure == otherInstantiatedClosure &&
           _instantiationClosureTypeEquals(otherClosure);
+    }
+
+    if (_vtable != otherClosure._vtable) {
+      return false;
     }
 
     final thisIsTearOff = _isInstanceTearOff;
