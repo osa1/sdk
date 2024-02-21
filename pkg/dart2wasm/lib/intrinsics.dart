@@ -1457,7 +1457,7 @@ class Intrinsifier {
       b.local_get(function.locals[0]); // ref _Closure
       b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
           nullable: false));
-      _getInstantiationContextInner(translator, b);
+      b.emitGetInstantiationContextInner(translator);
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureVtable);
       b.ref_cast(w.RefType.def(
@@ -1639,20 +1639,4 @@ class Intrinsifier {
 
     return false;
   }
-}
-
-/// Expects a `ref #ClosureBase` for an instantiation closure on stack. Pops
-/// the value and pushes the instantiated closure's (not instantiation's!)
-/// context.
-void _getInstantiationContextInner(
-    Translator translator, w.InstructionsBuilder b) {
-  // instantiation.context
-  b.struct_get(
-      translator.closureLayouter.closureBaseStruct, FieldIndex.closureContext);
-  b.ref_cast(w.RefType(
-      translator.closureLayouter.instantiationContextBaseStruct,
-      nullable: false));
-  // instantiation.context.inner
-  b.struct_get(translator.closureLayouter.instantiationContextBaseStruct,
-      FieldIndex.instantiationContextInner);
 }
