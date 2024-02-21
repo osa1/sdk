@@ -1450,43 +1450,9 @@ class Intrinsifier {
     if (member.enclosingClass == translator.closureClass &&
         name == "_instantiationClosureTypeEquals") {
       assert(function.locals.length == 2);
-
-      final fun1 = function.locals[0]; // ref _Closure
-      final fun2 = function.locals[1]; // ref _Closure
-
-      final instantiationContextBase = w.RefType(
-          translator.closureLayouter.instantiationContextBaseStruct,
-          nullable: false);
-
-      final w.StructType closureBaseStruct =
-          translator.closureLayouter.closureBaseStruct;
-
-      b.local_get(fun1);
-      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
-          nullable: false));
-      b.struct_get(closureBaseStruct, FieldIndex.closureContext);
-      b.ref_cast(instantiationContextBase);
-
-      b.local_get(fun2);
-      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
-          nullable: false));
-      b.struct_get(closureBaseStruct, FieldIndex.closureContext);
-      b.ref_cast(instantiationContextBase);
-
-      b.local_get(fun1);
-      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
-          nullable: false));
-      _getInstantiationContextInner(translator, b);
-      b.struct_get(closureBaseStruct, FieldIndex.closureVtable);
-      b.ref_cast(w.RefType.def(
-          translator.closureLayouter.genericVtableBaseStruct,
-          nullable: false));
-      b.struct_get(translator.closureLayouter.genericVtableBaseStruct,
-          FieldIndex.vtableInstantiationTypeComparisonFunction);
-
-      b.call_ref(translator
-          .closureLayouter.instantiationClosureTypeComparisonFunctionType);
-
+      b.local_get(function.locals[0]); // ref _Closure
+      b.local_get(function.locals[1]); // ref _Closure
+      b.emitInstantiationClosureTypeEqualityCheck(translator);
       return true;
     }
 
