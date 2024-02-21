@@ -1570,9 +1570,6 @@ class Intrinsifier {
       b.br_on_cast_fail(notInstantiationBlock,
           const w.RefType.struct(nullable: false), instantiationContextBase);
 
-      // Closures are instantiations. Compare inner function vtables to check
-      // that instantiations are for the same generic function.
-
       // Closures are instantiations of the same function, compare types.
       b.local_get(fun1);
       b.struct_get(closureBaseStruct, FieldIndex.closureContext);
