@@ -1457,9 +1457,8 @@ class Intrinsifier {
       b.local_get(function.locals[0]); // ref _Closure
       b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
           nullable: false));
-      b.emitGetInstantiationContextInner(translator);
-      b.struct_get(translator.closureLayouter.closureBaseStruct,
-          FieldIndex.closureVtable);
+      b.emitGetInstantiatedClosure(translator);
+      b.emitGetClosureVtable(translator);
       b.ref_cast(w.RefType.def(
           translator.closureLayouter.genericVtableBaseStruct,
           nullable: false));
@@ -1494,8 +1493,8 @@ class Intrinsifier {
 
       b.local_get(function.locals[0]);
       b.ref_cast(w.RefType(closureBaseStruct, nullable: false));
-      b.emitGetInstantiationContextInner(translator);
-      b.struct_get(closureBaseStruct, FieldIndex.closureVtable);
+      b.emitGetInstantiatedClosure(translator);
+      b.emitGetClosureVtable(translator);
       b.ref_cast(w.RefType.def(
           translator.closureLayouter.genericVtableBaseStruct,
           nullable: false));

@@ -3840,29 +3840,12 @@ extension MacroAssembler on w.InstructionsBuilder {
         nullable: false));
   }
 
-  /// `[ref _Closure] -> [ref _ClosureBase]`
+  /// `[ref _Closure] -> [ref #ClosureBase]`
   ///
   /// Given an instantiation closure returns the instantiated closure.
   void emitGetInstantiatedClosure(Translator translator) {
-    // instantiation.context
     ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
         nullable: false));
-    struct_get(translator.closureLayouter.closureBaseStruct,
-        FieldIndex.closureContext);
-    ref_cast(w.RefType(
-        translator.closureLayouter.instantiationContextBaseStruct,
-        nullable: false));
-    // instantiation.context.inner
-    struct_get(translator.closureLayouter.instantiationContextBaseStruct,
-        FieldIndex.instantiationContextInner);
-  }
-
-  /// `[ref #ClosureBase] -> [ref #InstantiationContextBase]`
-  ///
-  /// Given an instantiation closure returns the instantiated closure's
-  /// context.
-  void emitGetInstantiationContextInner(Translator translator) {
-    // instantiation.context
     struct_get(translator.closureLayouter.closureBaseStruct,
         FieldIndex.closureContext);
     ref_cast(w.RefType(
