@@ -1455,8 +1455,6 @@ class Intrinsifier {
 
       // Hash function.
       b.local_get(function.locals[0]); // ref _Closure
-      b.ref_cast(w.RefType(translator.closureLayouter.closureBaseStruct,
-          nullable: false));
       b.emitGetInstantiatedClosure(translator);
       b.emitGetClosureVtable(translator);
       b.ref_cast(w.RefType.def(
@@ -1492,7 +1490,6 @@ class Intrinsifier {
       b.ref_cast(instantiationContextBase);
 
       b.local_get(function.locals[0]);
-      b.ref_cast(w.RefType(closureBaseStruct, nullable: false));
       b.emitGetInstantiatedClosure(translator);
       b.emitGetClosureVtable(translator);
       b.ref_cast(w.RefType.def(
