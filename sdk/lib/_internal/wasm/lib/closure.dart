@@ -25,7 +25,11 @@ final class _Closure implements Function {
     final thisIsInstantiation = _isInstantiationClosure;
     final otherIsInstantiation = other._isInstantiationClosure;
 
-    if (thisIsInstantiation && otherIsInstantiation) {
+    if (thisIsInstantiation != otherIsInstantiation) {
+      return false;
+    }
+
+    if (thisIsInstantiation) {
       final thisInstantiatedClosure = _instantiatedClosure;
       final otherInstantiatedClosure = other._instantiatedClosure;
       return thisInstantiatedClosure == otherInstantiatedClosure &&
@@ -39,7 +43,11 @@ final class _Closure implements Function {
     final thisIsTearOff = _isInstanceTearOff;
     final otherIsTearOff = other._isInstanceTearOff;
 
-    if (thisIsTearOff && otherIsTearOff) {
+    if (thisIsTearOff != otherIsTearOff) {
+      return false;
+    }
+
+    if (thisIsTearOff) {
       return _instanceTearOffReceiver == other._instanceTearOffReceiver;
     }
 
