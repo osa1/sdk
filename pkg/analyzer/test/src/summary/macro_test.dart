@@ -2861,7 +2861,275 @@ augment class A {
 ''');
   }
 
-  test_codeOptimizer_constant_classField_constant() async {
+  test_codeOptimizer_class_constructor_optionalPositional_defaultValue() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  B([x = {{package:test/a.dart@a}}]);')
+class B {}
+''');
+
+    configuration
+      ..forCodeOptimizer()
+      ..withConstructors = true;
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  B([x = a]);
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            constructors
+              @81
+                parameters
+                  optionalPositional default x @84
+                    type: dynamic
+                    constantInitializer
+                      SimpleIdentifier
+                        token: a @88
+                        staticElement: package:test/a.dart::@getter::a
+                        staticType: int
+''');
+  }
+
+  test_codeOptimizer_class_method_optionalPositional_defaultValue() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  void foo([x = {{package:test/a.dart@a}}]) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  void foo([x = a]) {}
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            methods
+              foo @86
+                parameters
+                  optionalPositional default x @91
+                    type: dynamic
+                    constantInitializer
+                      SimpleIdentifier
+                        token: a @95
+                        staticElement: package:test/a.dart::@getter::a
+                        staticType: int
+                returnType: void
+''');
+  }
+
+  test_codeOptimizer_class_method_optionalPositional_metadata() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  void foo([@{{package:test/a.dart@a}} x]) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  void foo([@a x]) {}
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            methods
+              foo @86
+                parameters
+                  optionalPositional default x @94
+                    type: dynamic
+                    metadata
+                      Annotation
+                        atSign: @ @91
+                        name: SimpleIdentifier
+                          token: a @92
+                          staticElement: package:test/a.dart::@getter::a
+                          staticType: null
+                        element: package:test/a.dart::@getter::a
+                returnType: void
+''');
+  }
+
+  test_codeOptimizer_class_method_requiredPositional_metadata() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  void foo(@{{package:test/a.dart@a}} x) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  void foo(@a x) {}
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            methods
+              foo @86
+                parameters
+                  requiredPositional x @93
+                    type: dynamic
+                    metadata
+                      Annotation
+                        atSign: @ @90
+                        name: SimpleIdentifier
+                          token: a @91
+                          staticElement: package:test/a.dart::@getter::a
+                          staticType: null
+                        element: package:test/a.dart::@getter::a
+                returnType: void
+''');
+  }
+
+  test_codeOptimizer_class_setter_requiredPositional_metadata() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  set foo(@{{package:test/a.dart@a}} x) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  set foo(@a x) {}
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            fields
+              synthetic foo @-1
+                type: dynamic
+            accessors
+              set foo= @85
+                parameters
+                  requiredPositional x @92
+                    type: dynamic
+                    metadata
+                      Annotation
+                        atSign: @ @89
+                        name: SimpleIdentifier
+                          token: a @90
+                          staticElement: package:test/a.dart::@getter::a
+                          staticType: null
+                        element: package:test/a.dart::@getter::a
+                returnType: void
+''');
+  }
+
+  test_codeOptimizer_constant_class_field_const() async {
     newFile('$testPackageLibPath/a.dart', r'''
 const a = 0;
 ''');
@@ -2913,7 +3181,108 @@ augment class B {
 ''');
   }
 
-  test_codeOptimizer_constant_classField_namedType() async {
+  test_codeOptimizer_constant_class_field_final_hasConstConstructor() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  final x = {{package:test/a.dart@a}};')
+class B {
+  const B();
+}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  final x = a;
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            fields
+              final x @87
+                type: int
+                shouldUseTypeForInitializerInference: false
+                constantInitializer
+                  SimpleIdentifier
+                    token: a @91
+                    staticElement: package:test/a.dart::@getter::a
+                    staticType: int
+            accessors
+              synthetic get x @-1
+                returnType: int
+''');
+  }
+
+  test_codeOptimizer_constant_class_field_final_noConstConstructor() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInType('  final x = {{package:test/a.dart@a}};')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+augment class B {
+  final x = a;
+}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        classes
+          augment class B @75
+            augmentationTarget: self::@class::B
+            fields
+              final x @87
+                type: int
+                shouldUseTypeForInitializerInference: false
+            accessors
+              synthetic get x @-1
+                returnType: int
+''');
+  }
+
+  test_codeOptimizer_constant_class_field_namedType() async {
     newFile('$testPackageLibPath/a.dart', r'''
 class A<T> {}
 ''');
@@ -3720,6 +4089,52 @@ void foo() {}
 ''');
   }
 
+  test_codeOptimizer_metadata_unit_function_optionalPositional_defaultValue() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInLibrary('void foo([x = {{package:test/a.dart@a}}]) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+void foo([x = a]) {}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        functions
+          foo @66
+            parameters
+              optionalPositional default x @71
+                type: dynamic
+                constantInitializer
+                  SimpleIdentifier
+                    token: a @75
+                    staticElement: package:test/a.dart::@getter::a
+                    staticType: int
+            returnType: void
+''');
+  }
+
   test_codeOptimizer_metadata_unit_getter() async {
     newFile('$testPackageLibPath/a.dart', r'''
 class A {
@@ -3833,6 +4248,58 @@ set foo(int _) {}
             parameters
               requiredPositional _ @78
                 type: int
+            returnType: void
+''');
+  }
+
+  test_codeOptimizer_metadata_unit_setter_requiredPositional_metadata() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const a = 0;
+''');
+
+    var library = await buildLibrary(r'''
+import 'append.dart';
+import 'a.dart';
+
+@DeclareInLibrary('set foo(@{{package:test/a.dart@a}} x) {}')
+class B {}
+''');
+
+    configuration.forCodeOptimizer();
+    checkElementText(library, r'''
+library
+  imports
+    package:test/append.dart
+    package:test/a.dart
+  augmentationImports
+    package:test/test.macro.dart
+      macroGeneratedCode
+---
+library augment 'test.dart';
+
+import 'package:test/a.dart';
+
+set foo(@a x) {}
+---
+      imports
+        package:test/a.dart
+      definingUnit
+        topLevelVariables
+          synthetic static foo @-1
+            type: dynamic
+        accessors
+          static set foo= @65
+            parameters
+              requiredPositional x @72
+                type: dynamic
+                metadata
+                  Annotation
+                    atSign: @ @69
+                    name: SimpleIdentifier
+                      token: a @70
+                      staticElement: package:test/a.dart::@getter::a
+                      staticType: null
+                    element: package:test/a.dart::@getter::a
             returnType: void
 ''');
   }
@@ -6782,6 +7249,23 @@ class A
 ''');
   }
 
+  test_class_field_flag_hasConst() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+class A {
+  static const int foo = 0;
+}
+''');
+
+    await _assertIntrospectText('A', r'''
+class A
+  superclass: Object
+  fields
+    foo
+      flags: hasConst hasInitializer hasStatic
+      type: int
+''');
+  }
+
   test_class_field_flag_hasExternal() async {
     newFile('$testPackageLibPath/a.dart', r'''
 class A {
@@ -6811,7 +7295,7 @@ class A
   superclass: Object
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
 ''');
   }
@@ -6845,7 +7329,7 @@ class A
   superclass: Object
   fields
     foo
-      flags: hasStatic
+      flags: hasInitializer hasStatic
       type: int
 ''');
   }
@@ -6920,10 +7404,10 @@ class A
   superclass: Object
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
     bar
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
 ''');
   }
@@ -8029,7 +8513,7 @@ mixin A
     Object
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
 ''');
   }
@@ -8308,7 +8792,19 @@ final foo = 0;
 
     await _assertIntrospectText('foo', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
+  type: int
+''');
+  }
+
+  test_unit_variable_flags_hasConst_true() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+const foo = 0;
+''');
+
+    await _assertIntrospectText('foo', r'''
+foo
+  flags: hasConst hasInitializer
   type: int
 ''');
   }
@@ -8332,7 +8828,19 @@ var foo = 0;
 
     await _assertIntrospectText('foo', r'''
 foo
+  flags: hasInitializer
   type: int
+''');
+  }
+
+  test_unit_variable_flags_hasInitializer_false() async {
+    newFile('$testPackageLibPath/a.dart', r'''
+int? foo;
+''');
+
+    await _assertIntrospectText('foo', r'''
+foo
+  type: int?
 ''');
   }
 
@@ -8360,7 +8868,7 @@ const a2 = 0;
 
     await _assertIntrospectText('foo', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   metadata
     IdentifierMetadataAnnotation
       identifier: a1
@@ -8432,7 +8940,7 @@ class X {
 class X
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: OmittedType
         inferred: int
 ''');
@@ -8452,7 +8960,7 @@ class X
   superclass: A
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: OmittedType
         inferred: int
 ''');
@@ -8482,7 +8990,7 @@ class A {
 class A
   fields
     foo
-      flags: hasFinal hasStatic
+      flags: hasFinal hasInitializer hasStatic
       type: OmittedType
         inferred: int
 ''');
@@ -8754,7 +9262,7 @@ foo
 final foo = 0;
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: OmittedType
     inferred: int
 ''');
@@ -8894,10 +9402,10 @@ final int bar = 0;
 ''', r'''
 topLevelDeclarationsOf
   foo
-    flags: hasFinal
+    flags: hasFinal hasInitializer
     type: int
   bar
-    flags: hasFinal
+    flags: hasFinal hasInitializer
     type: int
 ''');
   }
@@ -9095,6 +9603,19 @@ class A {
 ''');
   }
 
+  test_class_field_flags_hasConst_true() async {
+    await _assertIntrospectText(r'''
+class X {
+  @Introspect()
+  static const int foo = 0;
+}
+''', r'''
+foo
+  flags: hasConst hasInitializer hasStatic
+  type: int
+''');
+  }
+
   test_class_field_flags_hasExternal() async {
     await _assertIntrospectText(r'''
 class X {
@@ -9116,6 +9637,7 @@ class X {
 }
 ''', r'''
 foo
+  flags: hasInitializer
   type: int
 ''');
   }
@@ -9128,8 +9650,20 @@ class X {
 }
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: int
+''');
+  }
+
+  test_class_field_flags_hasInitializer_false() async {
+    await _assertIntrospectText(r'''
+class X {
+  @Introspect()
+  int? foo;
+}
+''', r'''
+foo
+  type: int?
 ''');
   }
 
@@ -9154,7 +9688,7 @@ class X {
 }
 ''', r'''
 foo
-  flags: hasStatic
+  flags: hasInitializer hasStatic
   type: int
 ''');
   }
@@ -9167,6 +9701,7 @@ class X {
 }
 ''', r'''
 foo
+  flags: hasInitializer
   type: int
 ''');
   }
@@ -9179,7 +9714,7 @@ class X {
 }
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: OmittedType
 ''');
   }
@@ -9195,9 +9730,10 @@ class X {
 class X
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
     bar
+      flags: hasInitializer
       type: String
 ''');
   }
@@ -10528,9 +11064,10 @@ mixin X {
 mixin X
   fields
     foo
-      flags: hasFinal
+      flags: hasFinal hasInitializer
       type: int
     bar
+      flags: hasInitializer
       type: String
 ''');
   }
@@ -10768,6 +11305,17 @@ foo
 ''');
   }
 
+  test_unit_variable_flags_hasConst_true() async {
+    await _assertIntrospectText(r'''
+@Introspect()
+const foo = 0;
+''', r'''
+foo
+  flags: hasConst hasInitializer
+  type: OmittedType
+''');
+  }
+
   test_unit_variable_flags_hasExternal_true() async {
     await _assertIntrospectText(r'''
 @Introspect()
@@ -10785,6 +11333,7 @@ foo
 var foo = 0;
 ''', r'''
 foo
+  flags: hasInitializer
   type: OmittedType
 ''');
   }
@@ -10795,7 +11344,7 @@ foo
 final foo = 0;
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: OmittedType
 ''');
   }
@@ -10822,7 +11371,7 @@ const a1 = 0;
 const a2 = 0;
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   metadata
     ConstructorMetadataAnnotation
       type: Introspect
@@ -10840,7 +11389,7 @@ foo
 final num foo = 0;
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: num
 ''');
   }
@@ -10851,7 +11400,7 @@ foo
 final foo = 0;
 ''', r'''
 foo
-  flags: hasFinal
+  flags: hasFinal hasInitializer
   type: OmittedType
 ''');
   }
