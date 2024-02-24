@@ -8,6 +8,7 @@ import 'dart:_internal'
     show
         doubleToIntBits,
         ExpandIterable,
+        checkBounds,
         floatToIntBits,
         FollowedByIterable,
         intBitsToDouble,
@@ -61,7 +62,7 @@ void _offsetAlignmentCheck(int offset, int alignment) {
 
 @pragma("wasm:prefer-inline")
 void _indexCheck(int index, int length) {
-  if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+  if (checkBounds() && WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
     throw IndexError.withLength(index, length);
   }
 }

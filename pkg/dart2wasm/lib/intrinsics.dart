@@ -740,6 +740,9 @@ class Intrinsifier {
           return _changeListClassID(node, translator.fixedLengthListClass);
         case "makeFixedListUnmodifiable":
           return _changeListClassID(node, translator.immutableListClass);
+        case "checkBounds":
+          b.i32_const(translator.options.omitBoundsChecks ? 0 : 1);
+          return w.NumType.i32;
       }
     }
 

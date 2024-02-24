@@ -135,3 +135,10 @@ void _listAdd(List<dynamic> list, dynamic item) => list.add(item);
 
 String jsonEncode(String object) => JS<String>(
     "s => stringToDartString(JSON.stringify(stringFromDartString(s)))", object);
+
+/// Whether to check bounds in standard library list and typed data indexing
+/// functions.
+///
+/// Bounds checks are disabled with `--omit-bounds-checks`, which is implied by
+/// `-O4`.
+external bool checkBounds();

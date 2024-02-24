@@ -35,6 +35,7 @@ class TranslatorOptions {
   bool jsCompatibility = false;
   bool omitImplicitTypeChecks = false;
   bool omitExplicitTypeChecks = false;
+  bool omitBoundsChecks = false;
   bool polymorphicSpecialization = false;
   bool printKernel = false;
   bool printWasm = false;
