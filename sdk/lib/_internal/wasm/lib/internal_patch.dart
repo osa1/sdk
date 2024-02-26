@@ -145,7 +145,7 @@ String jsonEncode(String object) => JS<String>(
 ///
 /// Reads of this variable is evaluated before the TFA by the constant
 /// evaluator, and its value depends on `--omit-bounds-checks`.
-final bool _checkBounds = true;
+external bool get _checkBounds;
 
 /// Index check that can be disabled with `--omit-bounds-checks`.
 ///

@@ -18,7 +18,7 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
     implements VMConstantEvaluator {
   final bool _checkBounds;
 
-  final Field _dartInternalCheckBoundsField;
+  final Procedure _dartInternalCheckBoundsGetter;
 
   ConstantEvaluator(
       WasmCompilerOptions options,
@@ -28,8 +28,8 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
       ClassHierarchy classHierarchy,
       LibraryIndex libraryIndex)
       : _checkBounds = !options.translatorOptions.omitBoundsChecks,
-        _dartInternalCheckBoundsField =
-            libraryIndex.getTopLevelField("dart:_internal", "_checkBounds"),
+        _dartInternalCheckBoundsGetter = libraryIndex.getTopLevelProcedure(
+            "dart:_internal", "get:_checkBounds"),
         super(
           target.dartLibrarySupport,
           target.constantsBackend,
@@ -46,7 +46,7 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
   @override
   Constant visitStaticGet(StaticGet node) {
     final target = node.target;
-    if (target == _dartInternalCheckBoundsField) {
+    if (target == _dartInternalCheckBoundsGetter) {
       return canonicalize(BoolConstant(_checkBounds));
     }
 
@@ -59,5 +59,5 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
   // error if they are not).
   @override
   bool shouldEvaluateMember(Member node) =>
-      node == _dartInternalCheckBoundsField;
+      node == _dartInternalCheckBoundsGetter;
 }
