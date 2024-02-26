@@ -20,7 +20,6 @@ import 'package:front_end/src/api_unstable/vm.dart'
 
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
-import 'package:kernel/library_index.dart';
 import 'package:kernel/core_types.dart';
 import 'package:kernel/kernel.dart' show writeComponentToText;
 import 'package:kernel/verifier.dart';
