@@ -4,12 +4,12 @@
 
 import "dart:_internal"
     show
-        checkBounds,
         ClassID,
         CodeUnits,
         doubleToIntBits,
         EfficientLengthIterable,
         FixedLengthListMixin,
+        indexCheckWithName,
         intBitsToDouble,
         IterableElementError,
         jsonEncode,

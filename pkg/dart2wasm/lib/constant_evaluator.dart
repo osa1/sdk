@@ -29,7 +29,7 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
       LibraryIndex libraryIndex)
       : _checkBounds = !options.translatorOptions.omitBoundsChecks,
         _dartInternalCheckBoundsField =
-            libraryIndex.getTopLevelField("dart:_internal", "checkBounds"),
+            libraryIndex.getTopLevelField("dart:_internal", "_checkBounds"),
         super(
           target.dartLibrarySupport,
           target.constantsBackend,
