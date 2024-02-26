@@ -53,6 +53,10 @@ class ConstantEvaluator extends kernel.ConstantEvaluator
     return super.visitStaticGet(node);
   }
 
+  // TODO: We may want consider (similar to the VM) supporting a
+  // `wasm:const-evaluate` pragma that we recognize here, and then make sure
+  // functions with the pragma are evaluated before TFA (raise a compile-time
+  // error if they are not).
   @override
   bool shouldEvaluateMember(Member node) =>
       node == _dartInternalCheckBoundsField;
