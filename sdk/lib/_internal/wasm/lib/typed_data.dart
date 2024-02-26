@@ -6,7 +6,6 @@ library dart._typed_data;
 
 import 'dart:_internal'
     show
-        checkBounds,
         doubleToIntBits,
         ExpandIterable,
         floatToIntBits,
