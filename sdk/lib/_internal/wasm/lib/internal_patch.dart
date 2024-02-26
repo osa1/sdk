@@ -141,5 +141,4 @@ String jsonEncode(String object) => JS<String>(
 ///
 /// Bounds checks are disabled with `--omit-bounds-checks`, which is implied by
 /// `-O4`.
-@pragma("vm:platform-const")
-external final bool checkBounds;
+final bool checkBounds = true;

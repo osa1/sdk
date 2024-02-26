@@ -10,10 +10,11 @@ import 'package:vm/transformations/vm_constant_evaluator.dart';
 import 'package:dart2wasm/compiler_options.dart';
 import 'package:dart2wasm/target.dart';
 
-class ConstantEvaluator extends kernel.ConstantEvaluator implements VMConstantEvaluator {
+class ConstantEvaluator extends kernel.ConstantEvaluator
+    implements VMConstantEvaluator {
   final bool _checkBounds;
 
-  final Procedure _dartInternalCheckBoundsField;
+  final Field _dartInternalCheckBoundsField;
 
   ConstantEvaluator(
       WasmCompilerOptions options,
@@ -24,7 +25,7 @@ class ConstantEvaluator extends kernel.ConstantEvaluator implements VMConstantEv
       LibraryIndex libraryIndex)
       : _checkBounds = !options.translatorOptions.omitBoundsChecks,
         _dartInternalCheckBoundsField =
-            libraryIndex.getTopLevelProcedure("dart:_internal", "get:checkBounds"),
+            libraryIndex.getTopLevelField("dart:_internal", "checkBounds"),
         super(
           target.dartLibrarySupport,
           target.constantsBackend,
@@ -49,8 +50,6 @@ class ConstantEvaluator extends kernel.ConstantEvaluator implements VMConstantEv
   }
 
   @override
-  bool isPlatformConst(Member member) => false;
-
-  @override
-  bool get hasTargetOS => false;
+  bool shouldEvaluateMember(Member node) =>
+      node == _dartInternalCheckBoundsField;
 }
