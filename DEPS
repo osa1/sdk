@@ -57,7 +57,7 @@ vars = {
   "co19_rev": "867d139b3169fc131488e893ec1133dc98cc3aa0",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
-  "benchmarks_internal_rev": "175974d2b43dae39c380fc5f7f583a377cd3c11d",
+  "benchmarks_internal_rev": "a7c23b2422492dcc515d1ba4abe3609b50e2a139",
   "checkout_benchmarks_internal": False,
 
   # Checkout the flute benchmark only when benchmarking.
@@ -141,7 +141,7 @@ vars = {
   #   and land the review.
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
-  "dart_style_rev": "633b01cba68f4b42ddc2985c3d521c22149d5ce3", # disable rev_sdk_deps.dart
+  "dart_style_rev": "a6ad7693555a9add6f98ad6fd94de80d35c89415", # disable rev_sdk_deps.dart
   "dartdoc_rev": "7a9df65fbca600ecb3ada4b08002c8ab9ee4e987",
   "ecosystem_rev": "3e4f2866d49c2448e44f51112956a689a2e50cd6",
   "file_rev": "3aa06490bf34bddf04c7ea964a50c177a4ca0de7",

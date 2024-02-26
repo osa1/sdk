@@ -30,6 +30,8 @@ import 'package:vm/transformations/unreachable_code_elimination.dart'
     as unreachable_code_elimination;
 import 'package:vm/transformations/type_flow/transformer.dart' as globalTypeFlow
     show transformComponent;
+import 'package:vm/transformations/mixin_deduplication.dart'
+    as mixin_deduplication show transformComponent;
 
 import 'package:dart2wasm/compiler_options.dart' as compiler;
 import 'package:dart2wasm/constant_evaluator.dart';
@@ -142,6 +144,8 @@ Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
   if (options.dumpKernelBeforeTfa != null) {
     writeComponentToText(component, path: options.dumpKernelBeforeTfa!);
   }
+
+  mixin_deduplication.transformComponent(component);
 
   globalTypeFlow.transformComponent(target, coreTypes, component,
       treeShakeSignatures: true,
