@@ -71,14 +71,18 @@ class SimpleUnreachableCodeElimination extends RemovingTransformer {
           staticGet.accept1(this, cannotRemoveSentinel) as ConstantExpression;
       if (node is Field) {
         final initializer = node.initializer;
-        if (initializer != null) {
+        if (initializer == null) {
+          assert(node.isExternal);
+        } else {
           node.initializer = result
             ..fileOffset = initializer.fileOffset
             ..parent = node;
         }
       } else if (node is Procedure) {
         final body = node.function.body;
-        if (body != null) {
+        if (body == null) {
+          assert(node.isExternal);
+        } else {
           node.function.body = ReturnStatement(result)
             ..fileOffset = body.fileOffset
             ..parent = node.function;
