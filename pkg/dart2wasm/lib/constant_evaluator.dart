@@ -1,0 +1,56 @@
+import 'package:kernel/ast.dart';
+import 'package:kernel/type_environment.dart';
+import 'package:front_end/src/fasta/kernel/constant_evaluator.dart' as kernel;
+import 'package:kernel/library_index.dart';
+import 'package:kernel/core_types.dart';
+import 'package:kernel/class_hierarchy.dart';
+
+import 'package:vm/transformations/vm_constant_evaluator.dart';
+
+import 'package:dart2wasm/compiler_options.dart';
+import 'package:dart2wasm/target.dart';
+
+class ConstantEvaluator extends kernel.ConstantEvaluator implements VMConstantEvaluator {
+  final bool _checkBounds;
+
+  final Procedure _dartInternalCheckBoundsField;
+
+  ConstantEvaluator(
+      WasmCompilerOptions options,
+      WasmTarget target,
+      Component component,
+      CoreTypes coreTypes,
+      ClassHierarchy classHierarchy,
+      LibraryIndex libraryIndex)
+      : _checkBounds = !options.translatorOptions.omitBoundsChecks,
+        _dartInternalCheckBoundsField =
+            libraryIndex.getTopLevelProcedure("dart:_internal", "get:checkBounds"),
+        super(
+          target.dartLibrarySupport,
+          target.constantsBackend,
+          component,
+          options.environment,
+          TypeEnvironment(coreTypes, classHierarchy),
+          const kernel.SimpleErrorReporter(),
+          enableTripleShift: true,
+          enableAsserts: options.translatorOptions.enableAsserts,
+          errorOnUnevaluatedConstant: true,
+          evaluationMode: kernel.EvaluationMode.weak,
+        );
+
+  @override
+  Constant visitStaticGet(StaticGet node) {
+    final target = node.target;
+    if (target == _dartInternalCheckBoundsField) {
+      return canonicalize(BoolConstant(_checkBounds));
+    }
+
+    return super.visitStaticGet(node);
+  }
+
+  @override
+  bool isPlatformConst(Member member) => false;
+
+  @override
+  bool get hasTargetOS => false;
+}
