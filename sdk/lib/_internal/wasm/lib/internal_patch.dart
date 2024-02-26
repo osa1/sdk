@@ -141,4 +141,7 @@ String jsonEncode(String object) => JS<String>(
 ///
 /// Bounds checks are disabled with `--omit-bounds-checks`, which is implied by
 /// `-O4`.
+///
+/// Reads of this variable is evaluated before the TFA by the constant
+/// evaluator, and its value depends on `--omit-bounds-checks`.
 final bool checkBounds = true;
