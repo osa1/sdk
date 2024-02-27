@@ -676,7 +676,39 @@ class _WasmTransformer extends Transformer {
       ForInStatement awaitForIn = ForInStatement(
           awaitForVar!, yield.expression, yieldBody,
           isAsync: true);
-      return awaitForIn.accept<TreeNode>(this);
+
+      Statement transformed = awaitForIn.accept<TreeNode>(this) as Statement;
+
+      // Wrap with try-catch to call `add_error` before cancelling the stream.
+      final exceptionVar = VariableDeclaration(null, isSynthesized: true);
+
+      final Procedure controllerAddErrorProc = coreTypes.index
+          .getProcedure('dart:async', 'StreamController', 'addError');
+
+      final FunctionType controllerAddErrorType =
+          Substitution.fromInterfaceType(controllerNullableObjectType)
+                  .substituteType(controllerAddErrorProc.function
+                      .computeThisFunctionType(Nullability.nonNullable))
+              as FunctionType;
+
+      TryCatch tryCatch = TryCatch(
+        transformed,
+        [
+          Catch(
+            exceptionVar,
+            ExpressionStatement(InstanceInvocation(
+              InstanceAccessKind.Instance,
+              VariableGet(controller),
+              Name('addError'),
+              Arguments([VariableGet(exceptionVar)]),
+              interfaceTarget: controllerAddErrorProc,
+              functionType: controllerAddErrorType,
+            )),
+          )
+        ],
+      );
+
+      return tryCatch;
     } else {
       return yieldBody.accept<TreeNode>(this);
     }
