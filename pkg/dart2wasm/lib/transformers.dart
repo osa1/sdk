@@ -241,13 +241,47 @@ class _WasmTransformer extends Transformer {
 
     Block body = Block([variable, stmt.body])..fileOffset = stmt.fileOffset;
 
-    Statement forStatement = ForStatement(
-        const [],
-        isAsync
-            ? VariableSet(jumpSentinel, AwaitExpression(condition))
-            : condition,
-        const [],
-        body);
+    Statement forStatement;
+
+    if (isAsync) {
+      // Wrap await expression with try-catch to call `add_error` before
+      // cancelling the stream.
+      forStatement = ForStatement(
+          const [],
+          VariableSet(jumpSentinel, AwaitExpression(condition)),
+          const [],
+          body);
+
+      final exceptionVar = VariableDeclaration(null, isSynthesized: true);
+
+      final Procedure controllerAddErrorProc = coreTypes.index
+          .getProcedure('dart:async', 'StreamController', 'addError');
+
+      final FunctionType controllerAddErrorType =
+          Substitution.fromInterfaceType(controllerNullableObjectType)
+                  .substituteType(controllerAddErrorProc.function
+                      .computeThisFunctionType(Nullability.nonNullable))
+              as FunctionType;
+
+      forStatement = TryCatch(
+        forStatement,
+        [
+          Catch(
+            exceptionVar,
+            ExpressionStatement(InstanceInvocation(
+              InstanceAccessKind.Instance,
+              VariableGet(_asyncStarFrames.last.controller),
+              Name('addError'),
+              Arguments([VariableGet(exceptionVar)]),
+              interfaceTarget: controllerAddErrorProc,
+              functionType: controllerAddErrorType,
+            )),
+          )
+        ],
+      );
+    } else {
+      forStatement = ForStatement(const [], condition, const [], body);
+    }
 
     // Wrap the body with a try / finally to cancel the stream on breaking out
     // of the loop.
