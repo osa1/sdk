@@ -951,7 +951,6 @@ class Translator with KernelNodes {
     if (getPragma<bool>(member, "wasm:never-inline", true) == true) {
       return false;
     }
-    if (membersContainingInnerFunctions.contains(member)) return false;
     if (membersBeingGenerated.contains(member)) return false;
     if (target.isInitializerReference) return true;
     if (member is Field) return true;
