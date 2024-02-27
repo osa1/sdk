@@ -818,18 +818,12 @@ class ClosureLayouter extends RecursiveVisitor {
   @override
   void visitFunctionExpression(FunctionExpression node) {
     _visitFunctionNode(node.function);
-    if (currentMember != null) {
-      translator.membersContainingInnerFunctions.add(currentMember!);
-    }
     super.visitFunctionExpression(node);
   }
 
   @override
   void visitFunctionDeclaration(FunctionDeclaration node) {
     _visitFunctionNode(node.function);
-    if (currentMember != null) {
-      translator.membersContainingInnerFunctions.add(currentMember!);
-    }
     super.visitFunctionDeclaration(node);
   }
 
