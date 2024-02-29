@@ -374,7 +374,6 @@ class NameSection extends CustomSection {
       if (global.debugName != null) {
         globalNameSubsection.writeUnsigned(i);
         globalNameSubsection.writeName(global.debugName!);
-        print('$i: ${global.debugName!}');
       }
     }
     s.writeByte(1); // Function names subsection
