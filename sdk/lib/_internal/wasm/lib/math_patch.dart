@@ -248,7 +248,7 @@ class _SecureRandom implements Random {
 
   // Return count bytes of entropy as an integer; count <= 8.
   int _getBytes(int count) {
-    js.JS<void>('(array) => self.crypto.getRandomValues(array)',
+    js.JS<void>('(array) => crypto.getRandomValues(array)',
         _buffer.buffer.asUint8List());
     return _buffer.getUint64(0, Endian.little);
   }
