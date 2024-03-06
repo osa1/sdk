@@ -240,6 +240,7 @@ class _Random implements Random {
 class _SecureRandom implements Random {
   // Reused buffer for `_getBytes`.
   final _buffer = ByteData(8);
+  late final _bufferUint8List = _buffer.buffer.asUint8List();
 
   _SecureRandom() {
     // Throw early in constructor if entropy source is not hooked up.
@@ -248,8 +249,7 @@ class _SecureRandom implements Random {
 
   // Return count bytes of entropy as an integer; count <= 8.
   int _getBytes(int count) {
-    js.JS<void>('(array) => crypto.getRandomValues(array)',
-        _buffer.buffer.asUint8List());
+    js.JS<void>('(array) => crypto.getRandomValues(array)', _bufferUint8List);
     return _buffer.getUint64(0, Endian.little);
   }
 
