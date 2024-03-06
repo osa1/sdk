@@ -3,8 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show mix64, patch;
+import "dart:_js_helper" as js;
 
-import "dart:typed_data" show Uint32List;
+import "dart:typed_data";
 
 /// There are no parts of this patch library.
 
@@ -237,13 +238,20 @@ class _Random implements Random {
 }
 
 class _SecureRandom implements Random {
+  // Reused buffer for `_getBytes`.
+  final _buffer = ByteData(8);
+
   _SecureRandom() {
     // Throw early in constructor if entropy source is not hooked up.
     _getBytes(1);
   }
 
   // Return count bytes of entropy as a positive integer; count <= 8.
-  external static int _getBytes(int count);
+  int _getBytes(int count) {
+    js.JS<void>('(array) => self.crypto.getRandomValues(array)',
+        _buffer.buffer.asUint8List());
+    return _buffer.getInt64(0);
+  }
 
   int nextInt(int max) {
     RangeError.checkValueInInterval(
