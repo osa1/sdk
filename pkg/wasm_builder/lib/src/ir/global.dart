@@ -9,6 +9,8 @@ abstract class Global with Indexable implements Exportable {
   @override
   final FinalizableIndex finalizableIndex;
   final GlobalType type;
+
+  /// Name of the global in the names section.
   final String? debugName;
 
   Global(this.finalizableIndex, this.type, {this.debugName});
