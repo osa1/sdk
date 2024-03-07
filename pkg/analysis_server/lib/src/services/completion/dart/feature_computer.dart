@@ -199,7 +199,11 @@ class FeatureComputer {
     } else if (element is FieldElement && element.isEnumConstant) {
       return protocol.ElementKind.ENUM_CONSTANT;
     } else if (element is PropertyAccessorElement) {
-      element = element.variable;
+      var variable = element.variable2;
+      if (variable == null) {
+        return protocol.ElementKind.UNKNOWN;
+      }
+      element = variable;
     }
     var kind = element.kind;
     if (kind == ElementKind.CONSTRUCTOR) {
@@ -257,6 +261,15 @@ class FeatureComputer {
     }
   }
 
+  /// Convert a [distance] to a percentage value and return the percentage. If
+  /// the [distance] is negative, return `0.0`.
+  double distanceToPercent(int distance) {
+    if (distance < 0) {
+      return 0.0;
+    }
+    return math.pow(0.9, distance) as double;
+  }
+
   /// Return the value of the _element kind_ feature for the [element] when
   /// completing at the given [completionLocation]. If a [distance] is given it
   /// will be used to provide finer-grained relevance scores.
@@ -303,7 +316,7 @@ class FeatureComputer {
   double inheritanceDistanceFeature(
       InterfaceElement subclass, InterfaceElement superclass) {
     var distance = _inheritanceDistance(subclass, superclass, {});
-    return _distanceToPercent(distance);
+    return distanceToPercent(distance);
   }
 
   /// Return the value of the _is constant_ feature for the given [element].
@@ -314,11 +327,11 @@ class FeatureComputer {
       return 1.0;
     } else if (element is TopLevelVariableElement && element.isConst) {
       return 1.0;
-    } else if (element is PropertyAccessorElement &&
-        element.isSynthetic &&
-        element.variable.isStatic &&
-        element.variable.isConst) {
-      return 1.0;
+    } else if (element is PropertyAccessorElement && element.isSynthetic) {
+      var variable = element.variable2;
+      if (variable != null && variable.isStatic && variable.isConst) {
+        return 1.0;
+      }
     }
     return 0.0;
   }
@@ -368,14 +381,36 @@ class FeatureComputer {
     return range.upper;
   }
 
-  /// Return the distance between the [reference] and the referenced local
-  /// [variable], where the distance is defined to be the number of variable
-  /// declarations between the local variable and the reference.
-  int localVariableDistance(AstNode reference, LocalVariableElement variable) {
+  /// Return the distance between the [reference] and [variable].
+  ///
+  /// For [LocalVariableElement] the distance is the number of variable
+  /// declarations between [variable] and the reference.
+  ///
+  /// For [ParameterElement] the first one is considered to be "closer".
+  /// Plus we add any local variables declared on the path to [reference].
+  int localVariableDistance(AstNode reference, VariableElement variable) {
     var distance = 0;
     AstNode? node = reference;
     while (node != null) {
-      if (node is ForStatement || node is ForElement) {
+      if (node is FunctionExpression) {
+        if (node.parameters case var parameterList?) {
+          for (var parameter in parameterList.parameters) {
+            if (parameter.declaredElement == variable) {
+              return distance;
+            }
+            distance++;
+          }
+        }
+      } else if (node is MethodDeclaration) {
+        if (node.parameters case var parameterList?) {
+          for (var parameter in parameterList.parameters) {
+            if (parameter.declaredElement == variable) {
+              return distance;
+            }
+            distance++;
+          }
+        }
+      } else if (node is ForStatement || node is ForElement) {
         var loopParts = node is ForStatement
             ? node.forLoopParts
             : (node as ForElement).forLoopParts;
@@ -440,15 +475,6 @@ class FeatureComputer {
     return -1;
   }
 
-  /// Return the value of the _local variable distance_ feature for a local
-  /// variable whose declaration is separated from the completion location by
-  /// [distance] other variable declarations.
-  double localVariableDistanceFeature(
-      AstNode reference, LocalVariableElement variable) {
-    var distance = localVariableDistance(reference, variable);
-    return _distanceToPercent(distance);
-  }
-
   /// Return the value of the _starts with dollar_ feature.
   double startsWithDollarFeature(String name) {
     return name.startsWith('\$') ? -1.0 : 0.0;
@@ -460,15 +486,6 @@ class FeatureComputer {
       containingMethodName == null
           ? 0.0
           : (proposedMemberName == containingMethodName ? 1.0 : 0.0);
-
-  /// Convert a [distance] to a percentage value and return the percentage. If
-  /// the [distance] is negative, return `0.0`.
-  double _distanceToPercent(int distance) {
-    if (distance < 0) {
-      return 0.0;
-    }
-    return math.pow(0.9, distance) as double;
-  }
 
   /// Return the inheritance distance between the [subclass] and the
   /// [superclass]. The set of [visited] elements is used to guard against

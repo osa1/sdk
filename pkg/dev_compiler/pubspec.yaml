@@ -31,9 +31,11 @@ dev_dependencies:
   js: any
   lints: any
   modular_test: any
+  reload_test: any
   shelf: any
   sourcemap_testing: any
   stack_trace: any
   test: any
   testing: any
+  vm_service: any
   webkit_inspection_protocol: any

@@ -32,15 +32,28 @@
 
 [#53863]: https://github.com/dart-lang/sdk/issues/53863
 
+#### `dart:js_interop`
+
+- Fixes an issue with several comparison operators in `JSAnyOperatorExtension`
+  that were declared to return `JSBoolean` but really returned `bool`. This led
+  to runtime errors when trying to use the return values. Their return types are
+  now `bool` for convenience. See issues [#55024] for more details.
+
+[#55024]: https://github.com/dart-lang/sdk/issues/55024
+
 ### Tools
 
 #### Pub
 
-- Dependency resolution will now surface if a dependency is affected by a
-  security advisory, unless the advisory is listed under a
-  `ignored_advisories` section in the `pubspec.yaml` file.
-  To learn more about pub's support for security advisories,
-  visit [dart.dev/go/pub-security-advisories][pub-security-advisories].
+- Dependency resolution and `dart pub outdated` will now surface if a dependency
+  is affected by a security advisory, unless the advisory is listed under a
+  `ignored_advisories` section in the `pubspec.yaml` file. To learn more about
+  pub's support for security advisories, visit
+  [dart.dev/go/pub-security-advisories][pub-security-advisories].
+- New command `dart pub unpack` that downloads a package from pub.dev and
+  extracts it to a subfolder of the current directory.
+
+  This can be useful for inspecting the code, or playing with examples.
 
 [pub-security-advisories]: https://dart.dev/go/pub-security-advisories
 
@@ -105,6 +118,17 @@
   ```bash
   DART_VM_OPTIONS=--random_seed=42,--verbose_gc
   ```
+
+### Tools
+
+#### DevTools
+
+- Updated DevTools to version 2.33.0 from 2.31.1.
+  To learn more, check out the release notes for versions
+  [2.32.0][devtools-2-32-0] and [2.33.0][devtools-2-33-0].
+
+[devtools-2-32-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.32.0
+[devtools-2-33-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.33.0
 
 ## 3.3.0
 
@@ -339,6 +363,16 @@ for each element.
 
 [lints-3-0]: https://pub.dev/packages/lints/changelog#300
 
+#### DevTools
+
+- Updated DevTools to version 2.31.1 from 2.28.1.
+  To learn more, check out the release notes for versions
+  [2.29.0][devtools-2-29-0], [2.30.0][devtools-2-30-0],
+  and [2.31.0][devtools-2-31-0].
+
+[devtools-2-29-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.29.0
+[devtools-2-30-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.30.0
+[devtools-2-31-0]: https://docs.flutter.dev/tools/devtools/release-notes/release-notes-2.31.0
 
 #### Wasm compiler (dart2wasm)
 

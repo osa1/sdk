@@ -2725,11 +2725,6 @@ abstract final class ClassDeclaration implements NamedCompilationUnitMember {
   /// does not implement any interfaces.
   ImplementsClause? get implementsClause;
 
-  /// Return the 'inline' keyword, or `null` if the keyword was absent.
-  @Deprecated('Replaced with extension types')
-  @experimental
-  Token? get inlineKeyword;
-
   /// Return the 'interface' keyword, or `null` if the keyword was absent.
   Token? get interfaceKeyword;
 
@@ -2865,12 +2860,6 @@ final class ClassDeclarationImpl extends NamedCompilationUnitMemberImpl
         augmentKeyword ??
         mixinKeyword ??
         classKeyword;
-  }
-
-  @Deprecated('Replaced with extension types')
-  @override
-  Token? get inlineKeyword {
-    return null;
   }
 
   @override
@@ -4350,7 +4339,7 @@ final class ConstructorDeclarationImpl extends ClassMemberImpl
   @override
   Token get firstTokenAfterCommentAndMetadata {
     return Token.lexicallyFirst(
-            externalKeyword, constKeyword, factoryKeyword) ??
+            externalKeyword, constKeyword, factoryKeyword, augmentKeyword) ??
         _returnType.beginToken;
   }
 
@@ -8246,6 +8235,10 @@ sealed class FunctionBodyImpl extends AstNodeImpl implements FunctionBody {
 ///    functionSignature ::=
 ///        [Type]? ('get' | 'set')? name [FormalParameterList]
 abstract final class FunctionDeclaration implements NamedCompilationUnitMember {
+  /// The 'augment' keyword.
+  @experimental
+  Token? get augmentKeyword;
+
   @override
   ExecutableElement? get declaredElement;
 
@@ -8284,8 +8277,7 @@ abstract final class FunctionDeclaration implements NamedCompilationUnitMember {
 ///        [Type]? ('get' | 'set')? [SimpleIdentifier] [FormalParameterList]
 final class FunctionDeclarationImpl extends NamedCompilationUnitMemberImpl
     implements FunctionDeclaration {
-  /// The token representing the 'augment' keyword, or `null` if this is not an
-  /// function augmentation.
+  @override
   final Token? augmentKeyword;
 
   /// The token representing the 'external' keyword, or `null` if this is not an

@@ -355,7 +355,9 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         options = TypeAnalyzerOptions(
             nullSafetyEnabled: true,
             patternsEnabled:
-                definingLibrary.featureSet.isEnabled(Feature.patterns)) {
+                definingLibrary.featureSet.isEnabled(Feature.patterns),
+            inferenceUpdate3Enabled: definingLibrary.featureSet
+                .isEnabled(Feature.inference_update_3)) {
     nullableDereferenceVerifier = NullableDereferenceVerifier(
       typeSystem: typeSystem,
       errorReporter: errorReporter,
@@ -1655,7 +1657,10 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         node is SimpleIdentifier) {
       if (element is PropertyAccessorElement && element.isSetter) {
         if (element.isSynthetic) {
-          writeType = element.variable.type;
+          var variable = element.variable2;
+          if (variable != null) {
+            writeType = variable.type;
+          }
         } else {
           var parameters = element.parameters;
           if (parameters.length == 1) {
@@ -1829,7 +1834,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
   void visitAssignmentExpression(AssignmentExpression node,
       {DartType? contextType}) {
     checkUnreachableNode(node);
-    _assignmentExpressionResolver.resolve(node as AssignmentExpressionImpl);
+    _assignmentExpressionResolver.resolve(node as AssignmentExpressionImpl,
+        contextType: contextType);
     _insertImplicitCallReference(
         insertGenericFunctionInstantiation(node, contextType: contextType),
         contextType: contextType);
@@ -2036,7 +2042,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     }
     elseExpression = popRewrite()!;
 
-    typeAnalyzer.visitConditionalExpression(node as ConditionalExpressionImpl);
+    typeAnalyzer.visitConditionalExpression(node as ConditionalExpressionImpl,
+        contextType: contextType);
     if (flow != null) {
       flow.conditional_end(
           node, node.typeOrThrow, elseExpression, elseExpression.typeOrThrow);
@@ -5111,7 +5118,7 @@ class SwitchExhaustiveness {
     if (caseConstant != null) {
       var element = _referencedElement(caseConstant);
       if (element is PropertyAccessorElement) {
-        _enumConstants!.remove(element.variable);
+        _enumConstants!.remove(element.variable2);
       }
       if (caseConstant is NullLiteral) {
         _isNullEnumValueCovered = true;

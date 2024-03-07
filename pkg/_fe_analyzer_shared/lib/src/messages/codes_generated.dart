@@ -9606,6 +9606,33 @@ const MessageCode messageInvalidInsideUnaryPattern = const MessageCode(
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<Message Function(String string)>
+    templateInvalidMacroApplicationTarget =
+    const Template<Message Function(String string)>(
+  "InvalidMacroApplicationTarget",
+  problemMessageTemplate: r"""The macro can only be applied to #string.""",
+  withArguments: _withArgumentsInvalidMacroApplicationTarget,
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String string)> codeInvalidMacroApplicationTarget =
+    const Code<Message Function(String string)>(
+  "InvalidMacroApplicationTarget",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsInvalidMacroApplicationTarget(String string) {
+  if (string.isEmpty) throw 'No string provided';
+  return new Message(
+    codeInvalidMacroApplicationTarget,
+    problemMessage: """The macro can only be applied to ${string}.""",
+    arguments: {
+      'string': string,
+    },
+  );
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeInvalidNnbdDillLibrary = messageInvalidNnbdDillLibrary;
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
@@ -11425,6 +11452,41 @@ Message _withArgumentsMacroClassNotDeclaredMacro(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<Message Function(String name)>
+    templateMacroDefinitionApplicationSameLibraryCycle =
+    const Template<Message Function(String name)>(
+  "MacroDefinitionApplicationSameLibraryCycle",
+  problemMessageTemplate:
+      r"""The macro '#name' can't be applied in the same library cycle where it is defined.""",
+  correctionMessageTemplate:
+      r"""Try moving it to a different library that does not import the one where it is applied.""",
+  withArguments: _withArgumentsMacroDefinitionApplicationSameLibraryCycle,
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(String name)>
+    codeMacroDefinitionApplicationSameLibraryCycle =
+    const Code<Message Function(String name)>(
+  "MacroDefinitionApplicationSameLibraryCycle",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsMacroDefinitionApplicationSameLibraryCycle(String name) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(
+    codeMacroDefinitionApplicationSameLibraryCycle,
+    problemMessage:
+        """The macro '${name}' can't be applied in the same library cycle where it is defined.""",
+    correctionMessage:
+        """Try moving it to a different library that does not import the one where it is applied.""",
+    arguments: {
+      'name': name,
+    },
+  );
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeMainNotFunctionDeclaration =
     messageMainNotFunctionDeclaration;
 
@@ -12627,6 +12689,15 @@ Message _withArgumentsNoFormals(Token token) {
     },
   );
 }
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeNoMacroApplicationTarget = messageNoMacroApplicationTarget;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageNoMacroApplicationTarget = const MessageCode(
+  "NoMacroApplicationTarget",
+  problemMessage: r"""The macro can not be applied to this declaration.""",
+);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name)> templateNoSuchNamedParameter =

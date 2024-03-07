@@ -72,7 +72,7 @@ abstract class AugmentedInstanceDeclarationBuilder {
         if (existing != null) {
           existing.augmentation = element;
           element.augmentationTarget = existing;
-          element.variable = existing.variable;
+          element.variable2 = existing.variable2;
         }
       }
       accessors[name] = element;
@@ -141,6 +141,43 @@ class AugmentedMixinDeclarationBuilder
   }
 }
 
+class AugmentedTopVariablesBuilder {
+  final Map<String, TopLevelVariableElementImpl> variables = {};
+  final Map<String, PropertyAccessorElementImpl> accessors = {};
+
+  void addAccessor(PropertyAccessorElementImpl element) {
+    final name = element.name;
+    if (element.isAugmentation) {
+      final existing = accessors[name];
+      if (existing != null) {
+        existing.augmentation = element;
+        element.augmentationTarget = existing;
+        element.variable2 = existing.variable2;
+      }
+    }
+    accessors[name] = element;
+  }
+
+  void addVariable(TopLevelVariableElementImpl element) {
+    final name = element.name;
+    if (element.isAugmentation) {
+      final existing = variables[name];
+      if (existing != null) {
+        existing.augmentation = element;
+        element.augmentationTarget = existing;
+      }
+    }
+    variables[name] = element;
+
+    if (element.getter case var getter?) {
+      addAccessor(getter);
+    }
+    if (element.setter case var setter?) {
+      addAccessor(setter);
+    }
+  }
+}
+
 class DefiningLinkingUnit extends LinkingUnit {
   DefiningLinkingUnit({
     required super.reference,
@@ -175,6 +212,10 @@ class LibraryBuilder {
   /// The top-level elements that can be augmented.
   final Map<String, AugmentedInstanceDeclarationBuilder> _augmentedBuilders =
       {};
+
+  /// The top-level variables and accessors that can be augmented.
+  final AugmentedTopVariablesBuilder topVariables =
+      AugmentedTopVariablesBuilder();
 
   /// The top-level elements that can be augmented.
   final Map<String, ElementImpl> _augmentationTargets = {};
@@ -602,8 +643,6 @@ class LibraryBuilder {
       if (classElement.isMixinApplication) continue;
       if (classElement.isAugmentation) continue;
       if (classElement.augmented case var augmented?) {
-        // TODO(scheglov): https://github.com/dart-lang/sdk/issues/54967
-        augmented.constructors; // remove when fixed
         var hasConst = augmented.constructors.any((e) => e.isConst);
         if (hasConst) {
           withConstConstructors.add(classElement);
@@ -1410,7 +1449,8 @@ class _FieldPromotability extends FieldPromotability<InterfaceElement,
       var nonPromotabilityReason = addGetter(classInfo, accessor, accessor.name,
           isAbstract: accessor.isAbstract);
       if (enabled && nonPromotabilityReason == null) {
-        _potentiallyPromotableFields.add(accessor.variable as FieldElementImpl);
+        _potentiallyPromotableFields
+            .add(accessor.variable2 as FieldElementImpl);
       }
     }
   }

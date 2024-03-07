@@ -134,11 +134,9 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
 
     isNotBottom(objectNone);
     isNotBottom(objectQuestion);
-    isNotBottom(objectStar);
 
     isNotBottom(intNone);
     isNotBottom(intQuestion);
-    isNotBottom(intStar);
 
     T = typeParameter('T', bound: numNone);
     isNotBottom(typeParameterTypeNone(T));
@@ -155,53 +153,27 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
 
     isMoreBottom(neverNone, nullNone);
     isMoreBottom(neverNone, nullQuestion);
-    isMoreBottom(neverNone, nullStar);
 
     // MOREBOTTOM(T, Never) = false
     isNotMoreBottom(neverQuestion, neverNone);
 
     isNotMoreBottom(nullNone, neverNone);
     isNotMoreBottom(nullQuestion, neverNone);
-    isNotMoreBottom(nullStar, neverNone);
 
     // MOREBOTTOM(Null, T) = true
     isMoreBottom(nullNone, neverQuestion);
 
     isMoreBottom(nullNone, nullNone);
     isMoreBottom(nullNone, nullQuestion);
-    isMoreBottom(nullNone, nullStar);
 
     // MOREBOTTOM(T, Null) = false
     isNotMoreBottom(neverQuestion, nullNone);
 
     isNotMoreBottom(nullQuestion, nullNone);
-    isNotMoreBottom(nullStar, nullNone);
 
     // MOREBOTTOM(T?, S?) = MOREBOTTOM(T, S)
     isMoreBottom(neverQuestion, nullQuestion);
     isNotMoreBottom(nullQuestion, neverQuestion);
-
-    // MOREBOTTOM(T, S?) = true
-    isMoreBottom(nullStar, neverQuestion);
-
-    // MOREBOTTOM(T?, S) = false
-    isNotMoreBottom(neverQuestion, nullStar);
-
-    // MOREBOTTOM(T, S*) = true
-    isMoreBottom(
-      typeParameterTypeNone(
-        typeParameter('S', bound: neverNone),
-      ),
-      nullStar,
-    );
-
-    // MOREBOTTOM(T*, S) = false
-    isNotMoreBottom(
-      nullStar,
-      typeParameterTypeNone(
-        typeParameter('S', bound: neverNone),
-      ),
-    );
 
     // MOREBOTTOM(X&T, Y&S) = MOREBOTTOM(T, S)
     isMoreBottom(
@@ -255,65 +227,51 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
     isMoreTop(voidNone, invalidType);
     isMoreTop(voidNone, objectNone);
     isMoreTop(voidNone, objectQuestion);
-    isMoreTop(voidNone, objectStar);
     isMoreTop(voidNone, futureOrNone(objectNone));
     isMoreTop(voidNone, futureOrNone(objectQuestion));
-    isMoreTop(voidNone, futureOrNone(objectStar));
 
     // MORETOP(T, void) = false
     isNotMoreTop(dynamicType, voidNone);
     isNotMoreTop(invalidType, voidNone);
     isNotMoreTop(objectNone, voidNone);
     isNotMoreTop(objectQuestion, voidNone);
-    isNotMoreTop(objectStar, voidNone);
     isNotMoreTop(futureOrNone(objectNone), voidNone);
     isNotMoreTop(futureOrNone(objectQuestion), voidNone);
-    isNotMoreTop(futureOrNone(objectStar), voidNone);
 
     // MORETOP(dynamic, T) = true
     isMoreTop(dynamicType, dynamicType);
     isMoreTop(dynamicType, objectNone);
     isMoreTop(dynamicType, objectQuestion);
-    isMoreTop(dynamicType, objectStar);
     isMoreTop(dynamicType, futureOrNone(objectNone));
     isMoreTop(dynamicType, futureOrNone(objectQuestion));
-    isMoreTop(dynamicType, futureOrNone(objectStar));
 
     // MORETOP(invalidType, T) = true
     isMoreTop(invalidType, dynamicType);
     isMoreTop(invalidType, objectNone);
     isMoreTop(invalidType, objectQuestion);
-    isMoreTop(invalidType, objectStar);
     isMoreTop(invalidType, futureOrNone(objectNone));
     isMoreTop(invalidType, futureOrNone(objectQuestion));
-    isMoreTop(invalidType, futureOrNone(objectStar));
 
     // MORETOP(T, dynamic) = false
     isNotMoreTop(objectNone, dynamicType);
     isNotMoreTop(objectQuestion, dynamicType);
-    isNotMoreTop(objectStar, dynamicType);
     isNotMoreTop(futureOrNone(objectNone), dynamicType);
     isNotMoreTop(futureOrNone(objectQuestion), dynamicType);
-    isNotMoreTop(futureOrNone(objectStar), dynamicType);
 
     // MORETOP(T, invalidType) = false
     isNotMoreTop(objectNone, invalidType);
     isNotMoreTop(objectQuestion, invalidType);
-    isNotMoreTop(objectStar, invalidType);
     isNotMoreTop(futureOrNone(objectNone), invalidType);
     isNotMoreTop(futureOrNone(objectQuestion), invalidType);
-    isNotMoreTop(futureOrNone(objectStar), invalidType);
 
     // MORETOP(Object, T) = true
     isMoreTop(objectNone, objectNone);
     isMoreTop(objectNone, objectQuestion);
-    isMoreTop(objectNone, objectStar);
     isMoreTop(objectNone, futureOrNone(objectNone));
     isMoreTop(objectNone, futureOrQuestion(objectNone));
 
     // MORETOP(T, Object) = false
     isNotMoreTop(objectQuestion, objectNone);
-    isNotMoreTop(objectStar, objectNone);
     isNotMoreTop(futureOrNone(objectNone), objectNone);
     isNotMoreTop(futureOrQuestion(objectNone), objectNone);
 
@@ -366,35 +324,28 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
 
     isNotNull(objectNone);
     isNotNull(objectQuestion);
-    isNotNull(objectStar);
 
     isNotNull(intNone);
     isNotNull(intQuestion);
-    isNotNull(intStar);
 
     isNotNull(futureOrNone(nullNone));
     isNotNull(futureOrNone(nullQuestion));
-    isNotNull(futureOrNone(nullStar));
 
     isNotNull(futureOrQuestion(nullNone));
     isNotNull(futureOrQuestion(nullQuestion));
-    isNotNull(futureOrQuestion(nullStar));
   }
 
   test_isObject() {
     // OBJECT(Object) is true
     isObject(objectNone);
     isNotObject(objectQuestion);
-    isNotObject(objectStar);
 
     // OBJECT(FutureOr<T>) is OBJECT(T)
     isObject(futureOrNone(objectNone));
     isNotObject(futureOrNone(objectQuestion));
-    isNotObject(futureOrNone(objectStar));
 
     isNotObject(futureOrQuestion(objectNone));
     isNotObject(futureOrQuestion(objectQuestion));
-    isNotObject(futureOrQuestion(objectStar));
 
     // OBJECT(T) is false otherwise
     isNotObject(dynamicType);
@@ -412,11 +363,9 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
 
     isTop(futureOrQuestion(objectNone));
     isTop(futureOrQuestion(objectQuestion));
-    isTop(futureOrQuestion(objectStar));
 
     isNotTop(futureOrQuestion(intNone));
     isNotTop(futureOrQuestion(intQuestion));
-    isNotTop(futureOrQuestion(intStar));
 
     // TOP(dynamic) is true
     isTop(dynamicType);
@@ -433,14 +382,12 @@ class BoundsHelperPredicatesTest extends _BoundsTestBase {
 
     isNotTop(futureOrNone(objectNone));
     isTop(futureOrNone(objectQuestion));
-    isTop(futureOrNone(objectStar));
 
     // TOP(T) is false otherwise
     isNotTop(objectNone);
 
     isNotTop(intNone);
     isNotTop(intQuestion);
-    isNotTop(intStar);
 
     isNotTop(neverNone);
     isNotTop(neverQuestion);
@@ -480,12 +427,10 @@ class LowerBoundTest extends _BoundsTestBase {
     }
 
     check(neverNone, objectNone);
-    check(neverNone, objectStar);
     check(neverNone, objectQuestion);
 
     check(neverNone, intNone);
     check(neverNone, intQuestion);
-    check(neverNone, intStar);
 
     check(neverNone, listNone(intNone));
     check(neverNone, listQuestion(intNone));
@@ -499,7 +444,6 @@ class LowerBoundTest extends _BoundsTestBase {
       );
       check(T, intNone);
       check(T, intQuestion);
-      check(T, intStar);
     }
 
     {
@@ -509,7 +453,6 @@ class LowerBoundTest extends _BoundsTestBase {
       );
       check(T, intNone);
       check(T, intQuestion);
-      check(T, intStar);
     }
   }
 
@@ -924,7 +867,6 @@ class LowerBoundTest extends _BoundsTestBase {
 
     check(intNone);
     check(intQuestion);
-    check(intStar);
     check(listNone(intNone));
   }
 
@@ -1038,17 +980,14 @@ class LowerBoundTest extends _BoundsTestBase {
 
     checkNull(futureOrNone(nullNone));
     checkNull(futureOrNone(nullQuestion));
-    checkNull(futureOrNone(nullStar));
 
     checkNull(futureOrQuestion(nullNone));
     checkNull(futureOrQuestion(nullQuestion));
-    checkNull(futureOrQuestion(nullStar));
 
     checkNever(objectNone);
 
     checkNever(intNone);
     checkNull(intQuestion);
-    checkNull(intStar);
 
     checkNever(listNone(intNone));
     checkNull(listQuestion(intNone));
@@ -1069,7 +1008,7 @@ class LowerBoundTest extends _BoundsTestBase {
     }
 
     check(nullNone, nullQuestion);
-    check(nullNone, nullStar);
+    check(nullQuestion, nullQuestion);
   }
 
   test_object_any() {
@@ -1085,7 +1024,6 @@ class LowerBoundTest extends _BoundsTestBase {
 
     check(intNone, intNone);
     check(intQuestion, intNone);
-    check(intStar, intStar);
 
     check(futureOrNone(intNone), futureOrNone(intNone));
     check(futureOrQuestion(intNone), futureOrNone(intNone));
@@ -1256,7 +1194,6 @@ class LowerBoundTest extends _BoundsTestBase {
     check(voidNone, objectNone);
     check(voidNone, intNone);
     check(voidNone, intQuestion);
-    check(voidNone, intStar);
     check(voidNone, listNone(intNone));
     check(voidNone, futureOrNone(intNone));
     check(voidNone, neverNone);
@@ -1266,7 +1203,6 @@ class LowerBoundTest extends _BoundsTestBase {
     check(dynamicType, objectNone);
     check(dynamicType, intNone);
     check(dynamicType, intQuestion);
-    check(dynamicType, intStar);
     check(dynamicType, listNone(intNone));
     check(dynamicType, futureOrNone(intNone));
     check(dynamicType, neverNone);
@@ -1276,7 +1212,6 @@ class LowerBoundTest extends _BoundsTestBase {
     check(invalidType, objectNone);
     check(invalidType, intNone);
     check(invalidType, intQuestion);
-    check(invalidType, intStar);
     check(invalidType, listNone(intNone));
     check(invalidType, futureOrNone(intNone));
     check(invalidType, neverNone);
@@ -1286,22 +1221,11 @@ class LowerBoundTest extends _BoundsTestBase {
     check(objectQuestion, objectNone);
     check(objectQuestion, intNone);
     check(objectQuestion, intQuestion);
-    check(objectQuestion, intStar);
     check(objectQuestion, listNone(intNone));
     check(objectQuestion, futureOrNone(intNone));
     check(objectQuestion, neverNone);
     check(objectQuestion, functionTypeNone(returnType: voidNone));
     check(objectQuestion, typeOfString('(int, int)'));
-
-    check(objectStar, objectNone);
-    check(objectStar, intNone);
-    check(objectStar, intQuestion);
-    check(objectStar, intStar);
-    check(objectStar, listNone(intNone));
-    check(objectStar, futureOrNone(intNone));
-    check(objectStar, neverNone);
-    check(objectStar, functionTypeNone(returnType: voidNone));
-    check(objectStar, typeOfString('(int, int)'));
 
     check(futureOrNone(voidNone), intNone);
     check(futureOrQuestion(voidNone), intNone);
@@ -1316,49 +1240,38 @@ class LowerBoundTest extends _BoundsTestBase {
 
     check(voidNone, dynamicType);
     check(voidNone, invalidType);
-    check(voidNone, objectStar);
     check(voidNone, objectQuestion);
     check(voidNone, futureOrNone(voidNone));
     check(voidNone, futureOrNone(dynamicType));
     check(voidNone, futureOrNone(invalidType));
     check(voidNone, futureOrNone(objectQuestion));
-    check(voidNone, futureOrNone(objectStar));
 
-    check(dynamicType, objectStar);
     check(dynamicType, objectQuestion);
     check(dynamicType, futureOrNone(voidNone));
     check(dynamicType, futureOrNone(dynamicType));
     check(dynamicType, futureOrNone(objectQuestion));
-    check(dynamicType, futureOrNone(objectStar));
 
-    check(invalidType, objectStar);
     check(invalidType, objectQuestion);
     check(invalidType, futureOrNone(voidNone));
     check(invalidType, futureOrNone(dynamicType));
     check(invalidType, futureOrNone(objectQuestion));
-    check(invalidType, futureOrNone(objectStar));
 
     check(objectQuestion, futureOrQuestion(voidNone));
     check(objectQuestion, futureOrQuestion(dynamicType));
     check(objectQuestion, futureOrQuestion(invalidType));
     check(objectQuestion, futureOrQuestion(objectNone));
     check(objectQuestion, futureOrQuestion(objectQuestion));
-    check(objectQuestion, futureOrQuestion(objectStar));
 
     check(futureOrNone(voidNone), objectQuestion);
     check(futureOrNone(dynamicType), objectQuestion);
     check(futureOrNone(invalidType), objectQuestion);
     check(futureOrNone(objectQuestion), objectQuestion);
-    check(futureOrNone(objectStar), objectQuestion);
 
     check(futureOrNone(voidNone), futureOrNone(dynamicType));
     check(futureOrNone(voidNone), futureOrNone(invalidType));
     check(futureOrNone(voidNone), futureOrNone(objectQuestion));
-    check(futureOrNone(voidNone), futureOrNone(objectStar));
     check(futureOrNone(dynamicType), futureOrNone(objectQuestion));
-    check(futureOrNone(dynamicType), futureOrNone(objectStar));
     check(futureOrNone(invalidType), futureOrNone(objectQuestion));
-    check(futureOrNone(invalidType), futureOrNone(objectStar));
   }
 
   test_typeParameter() {
@@ -1637,7 +1550,6 @@ class UpperBound_FunctionTypes_Test extends _BoundsTestBase {
     check([intNone], [intNone], build([intNone]));
     check([intNone], [intQuestion], build([intNone]));
 
-    check([intNone], [intStar], build([intNone]));
     check([intNone], [doubleNone], build([neverNone]));
 
     check([intNone], [numNone], build([intNone]));
@@ -1785,7 +1697,6 @@ class UpperBound_FunctionTypes_Test extends _BoundsTestBase {
     check([intNone], [intNone], build([intNone]));
     check([intNone], [intQuestion], build([intNone]));
 
-    check([intNone], [intStar], build([intNone]));
     check([intNone], [doubleNone], build([neverNone]));
 
     check([intNone], [numNone], build([intNone]));
@@ -1829,7 +1740,6 @@ class UpperBound_FunctionTypes_Test extends _BoundsTestBase {
 
     check(intNone, intNone, intNone);
     check(intNone, intQuestion, intQuestion);
-    check(intNone, intStar, intStar);
 
     check(intNone, numNone, numNone);
     check(intQuestion, numNone, numQuestion);
@@ -1971,7 +1881,6 @@ class UpperBound_FunctionTypes_Test extends _BoundsTestBase {
 
     _checkLeastUpperBound(T1, intNone, objectNone);
     _checkLeastUpperBound(T1, intQuestion, objectQuestion);
-    _checkLeastUpperBound(T1, intStar, objectStar);
 
     _checkLeastUpperBound(
       T1,
@@ -2020,61 +1929,29 @@ class UpperBound_InterfaceTypes_Test extends _BoundsTestBase {
   void test_directSuperclass_nullability() {
     var aElement = class_(name: 'A');
     var aQuestion = interfaceTypeQuestion(aElement);
-    var aStar = interfaceTypeStar(aElement);
     var aNone = interfaceTypeNone(aElement);
 
-    var bElementStar = class_(name: 'B', superType: aStar);
     var bElementNone = class_(name: 'B', superType: aNone);
 
-    InterfaceType bTypeStarElement(NullabilitySuffix nullability) {
-      return interfaceType(
-        bElementStar,
-        nullabilitySuffix: nullability,
-      );
-    }
+    var bNoneQuestion = interfaceType(
+      bElementNone,
+      nullabilitySuffix: NullabilitySuffix.question,
+    );
 
-    InterfaceType bTypeNoneElement(NullabilitySuffix nullability) {
-      return interfaceType(
-        bElementNone,
-        nullabilitySuffix: nullability,
-      );
-    }
-
-    var bStarQuestion = bTypeStarElement(NullabilitySuffix.question);
-    var bStarStar = bTypeStarElement(NullabilitySuffix.star);
-    var bStarNone = bTypeStarElement(NullabilitySuffix.none);
-
-    var bNoneQuestion = bTypeNoneElement(NullabilitySuffix.question);
-    var bNoneStar = bTypeNoneElement(NullabilitySuffix.star);
-    var bNoneNone = bTypeNoneElement(NullabilitySuffix.none);
+    var bNoneNone = interfaceType(
+      bElementNone,
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
 
     void assertLUB(DartType type1, DartType type2, DartType expected) {
       expect(typeSystem.leastUpperBound(type1, type2), expected);
       expect(typeSystem.leastUpperBound(type2, type1), expected);
     }
 
-    assertLUB(bStarQuestion, aQuestion, aQuestion);
-    assertLUB(bStarQuestion, aStar, aQuestion);
-    assertLUB(bStarQuestion, aNone, aQuestion);
-
-    assertLUB(bStarStar, aQuestion, aQuestion);
-    assertLUB(bStarStar, aStar, aStar);
-    assertLUB(bStarStar, aNone, aStar);
-
-    assertLUB(bStarNone, aQuestion, aQuestion);
-    assertLUB(bStarNone, aStar, aStar);
-    assertLUB(bStarNone, aNone, aNone);
-
     assertLUB(bNoneQuestion, aQuestion, aQuestion);
-    assertLUB(bNoneQuestion, aStar, aQuestion);
     assertLUB(bNoneQuestion, aNone, aQuestion);
 
-    assertLUB(bNoneStar, aQuestion, aQuestion);
-    assertLUB(bNoneStar, aStar, aStar);
-    assertLUB(bNoneStar, aNone, aStar);
-
     assertLUB(bNoneNone, aQuestion, aQuestion);
-    assertLUB(bNoneNone, aStar, aStar);
     assertLUB(bNoneNone, aNone, aNone);
   }
 
@@ -2125,7 +2002,6 @@ class UpperBound_InterfaceTypes_Test extends _BoundsTestBase {
     var aElement = class_(name: 'A');
 
     var aQuestion = interfaceTypeQuestion(aElement);
-    var aStar = interfaceTypeStar(aElement);
     var aNone = interfaceTypeNone(aElement);
 
     void assertLUB(DartType type1, DartType type2, DartType expected) {
@@ -2134,15 +2010,9 @@ class UpperBound_InterfaceTypes_Test extends _BoundsTestBase {
     }
 
     assertLUB(aQuestion, aQuestion, aQuestion);
-    assertLUB(aQuestion, aStar, aQuestion);
     assertLUB(aQuestion, aNone, aQuestion);
 
-    assertLUB(aStar, aQuestion, aQuestion);
-    assertLUB(aStar, aStar, aStar);
-    assertLUB(aStar, aNone, aStar);
-
     assertLUB(aNone, aQuestion, aQuestion);
-    assertLUB(aNone, aStar, aStar);
     assertLUB(aNone, aNone, aNone);
   }
 
@@ -2233,58 +2103,28 @@ class UpperBound_InterfaceTypes_Test extends _BoundsTestBase {
   void test_sharedSuperclass1_nullability() {
     var aElement = class_(name: 'A');
     var aQuestion = interfaceTypeQuestion(aElement);
-    var aStar = interfaceTypeStar(aElement);
     var aNone = interfaceTypeNone(aElement);
 
     var bElementNone = class_(name: 'B', superType: aNone);
-    var bElementStar = class_(name: 'B', superType: aStar);
-
     var cElementNone = class_(name: 'C', superType: aNone);
-    var cElementStar = class_(name: 'C', superType: aStar);
 
-    InterfaceType bTypeElementNone(NullabilitySuffix nullability) {
-      return interfaceType(
-        bElementNone,
-        nullabilitySuffix: nullability,
-      );
-    }
+    var bNoneQuestion = interfaceType(
+      bElementNone,
+      nullabilitySuffix: NullabilitySuffix.question,
+    );
+    var bNoneNone = interfaceType(
+      bElementNone,
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
 
-    InterfaceType bTypeElementStar(NullabilitySuffix nullability) {
-      return interfaceType(
-        bElementStar,
-        nullabilitySuffix: nullability,
-      );
-    }
-
-    var bNoneQuestion = bTypeElementNone(NullabilitySuffix.question);
-    var bNoneStar = bTypeElementNone(NullabilitySuffix.star);
-    var bNoneNone = bTypeElementNone(NullabilitySuffix.none);
-
-    var bStarQuestion = bTypeElementStar(NullabilitySuffix.question);
-    var bStarStar = bTypeElementStar(NullabilitySuffix.star);
-    var bStarNone = bTypeElementStar(NullabilitySuffix.none);
-
-    InterfaceType cTypeElementNone(NullabilitySuffix nullability) {
-      return interfaceType(
-        cElementNone,
-        nullabilitySuffix: nullability,
-      );
-    }
-
-    InterfaceType cTypeElementStar(NullabilitySuffix nullability) {
-      return interfaceType(
-        cElementStar,
-        nullabilitySuffix: nullability,
-      );
-    }
-
-    var cNoneQuestion = cTypeElementNone(NullabilitySuffix.question);
-    var cNoneStar = cTypeElementNone(NullabilitySuffix.star);
-    var cNoneNone = cTypeElementNone(NullabilitySuffix.none);
-
-    var cStarQuestion = cTypeElementStar(NullabilitySuffix.question);
-    var cStarStar = cTypeElementStar(NullabilitySuffix.star);
-    var cStarNone = cTypeElementStar(NullabilitySuffix.none);
+    var cNoneQuestion = interfaceType(
+      cElementNone,
+      nullabilitySuffix: NullabilitySuffix.question,
+    );
+    var cNoneNone = interfaceType(
+      cElementNone,
+      nullabilitySuffix: NullabilitySuffix.none,
+    );
 
     void assertLUB(DartType type1, DartType type2, DartType expected) {
       expect(typeSystem.leastUpperBound(type1, type2), expected);
@@ -2292,46 +2132,10 @@ class UpperBound_InterfaceTypes_Test extends _BoundsTestBase {
     }
 
     assertLUB(bNoneQuestion, cNoneQuestion, aQuestion);
-    assertLUB(bNoneQuestion, cNoneStar, aQuestion);
     assertLUB(bNoneQuestion, cNoneNone, aQuestion);
-    assertLUB(bNoneQuestion, cStarQuestion, aQuestion);
-    assertLUB(bNoneQuestion, cStarStar, aQuestion);
-    assertLUB(bNoneQuestion, cStarNone, aQuestion);
-
-    assertLUB(bNoneStar, cNoneQuestion, aQuestion);
-    assertLUB(bNoneStar, cNoneStar, aStar);
-    assertLUB(bNoneStar, cNoneNone, aStar);
-    assertLUB(bNoneStar, cStarQuestion, aQuestion);
-    assertLUB(bNoneStar, cStarStar, aStar);
-    assertLUB(bNoneStar, cStarNone, aStar);
 
     assertLUB(bNoneNone, cNoneQuestion, aQuestion);
-    assertLUB(bNoneNone, cNoneStar, aStar);
     assertLUB(bNoneNone, cNoneNone, aNone);
-    assertLUB(bNoneNone, cStarQuestion, aQuestion);
-    assertLUB(bNoneNone, cStarStar, aStar);
-    assertLUB(bNoneNone, cStarNone, aNone);
-
-    assertLUB(bStarQuestion, cNoneQuestion, aQuestion);
-    assertLUB(bStarQuestion, cNoneStar, aQuestion);
-    assertLUB(bStarQuestion, cNoneNone, aQuestion);
-    assertLUB(bStarQuestion, cStarQuestion, aQuestion);
-    assertLUB(bStarQuestion, cStarStar, aQuestion);
-    assertLUB(bStarQuestion, cStarNone, aQuestion);
-
-    assertLUB(bStarStar, cNoneQuestion, aQuestion);
-    assertLUB(bStarStar, cNoneStar, aStar);
-    assertLUB(bStarStar, cNoneNone, aStar);
-    assertLUB(bStarStar, cStarQuestion, aQuestion);
-    assertLUB(bStarStar, cStarStar, aStar);
-    assertLUB(bStarStar, cStarNone, aStar);
-
-    assertLUB(bStarNone, cNoneQuestion, aQuestion);
-    assertLUB(bStarNone, cNoneStar, aStar);
-    assertLUB(bStarNone, cNoneNone, aNone);
-    assertLUB(bStarNone, cStarQuestion, aQuestion);
-    assertLUB(bStarNone, cStarStar, aStar);
-    assertLUB(bStarNone, cStarNone, aNone);
   }
 
   void test_sharedSuperclass2() {
@@ -2581,12 +2385,10 @@ class UpperBoundTest extends _BoundsTestBase {
     check(neverNone, invalidType);
 
     check(neverNone, objectNone);
-    check(neverNone, objectStar);
     check(neverNone, objectQuestion);
 
     check(neverNone, intNone);
     check(neverNone, intQuestion);
-    check(neverNone, intStar);
 
     check(neverNone, listNone(intNone));
     check(neverNone, listQuestion(intNone));
@@ -2609,7 +2411,6 @@ class UpperBoundTest extends _BoundsTestBase {
       );
       check(T, intNone);
       check(T, intQuestion);
-      check(T, intStar);
     }
 
     {
@@ -2619,7 +2420,6 @@ class UpperBoundTest extends _BoundsTestBase {
       );
       check(T, intNone);
       check(T, intQuestion);
-      check(T, intStar);
     }
   }
 
@@ -2886,7 +2686,6 @@ class UpperBoundTest extends _BoundsTestBase {
 
     check(intNone);
     check(intQuestion);
-    check(intStar);
     check(listNone(intNone));
   }
 
@@ -2934,15 +2733,9 @@ class UpperBoundTest extends _BoundsTestBase {
 
     check(nullNone, intNone, intQuestion);
     check(nullNone, intQuestion, intQuestion);
-    check(nullNone, intStar, intStar);
 
     check(nullQuestion, intNone, intQuestion);
     check(nullQuestion, intQuestion, intQuestion);
-    check(nullQuestion, intStar, intStar);
-
-    check(nullStar, intNone, intStar);
-    check(nullStar, intQuestion, intQuestion);
-    check(nullStar, intStar, intStar);
 
     check(nullNone, listNone(intNone), listQuestion(intNone));
     check(nullNone, listQuestion(intNone), listQuestion(intNone));
@@ -2976,7 +2769,7 @@ class UpperBoundTest extends _BoundsTestBase {
     }
 
     check(nullNone, nullQuestion);
-    check(nullNone, nullStar);
+    check(nullQuestion, nullQuestion);
   }
 
   test_object_any() {
@@ -2989,13 +2782,11 @@ class UpperBoundTest extends _BoundsTestBase {
 
     check(objectNone, intNone, objectNone);
     check(objectNone, intQuestion, objectQuestion);
-    check(objectNone, intStar, objectNone);
 
     check(objectNone, futureOrNone(intQuestion), objectQuestion);
 
     check(futureOrNone(objectNone), intNone, futureOrNone(objectNone));
     check(futureOrNone(objectNone), intQuestion, futureOrQuestion(objectNone));
-    check(futureOrNone(objectNone), intStar, futureOrNone(objectNone));
   }
 
   test_object_object() {
@@ -3043,7 +2834,6 @@ class UpperBoundTest extends _BoundsTestBase {
       check(T1, objectNone);
       check(T1, intNone);
       check(T1, intQuestion);
-      check(T1, intStar);
       check(T1, listNone(intNone));
       check(T1, futureOrNone(intNone));
       check(T1, functionTypeNone(returnType: voidNone));
@@ -3059,7 +2849,6 @@ class UpperBoundTest extends _BoundsTestBase {
     check2(dynamicType);
     check2(invalidType);
     check2(objectQuestion);
-    check2(objectStar);
 
     check2(futureOrNone(voidNone));
     check2(futureOrQuestion(voidNone));
@@ -3074,49 +2863,38 @@ class UpperBoundTest extends _BoundsTestBase {
 
     check(voidNone, dynamicType);
     check(voidNone, invalidType);
-    check(voidNone, objectStar);
     check(voidNone, objectQuestion);
     check(voidNone, futureOrNone(voidNone));
     check(voidNone, futureOrNone(dynamicType));
     check(voidNone, futureOrNone(invalidType));
     check(voidNone, futureOrNone(objectQuestion));
-    check(voidNone, futureOrNone(objectStar));
 
-    check(dynamicType, objectStar);
     check(dynamicType, objectQuestion);
     check(dynamicType, futureOrNone(voidNone));
     check(dynamicType, futureOrNone(dynamicType));
     check(dynamicType, futureOrNone(objectQuestion));
-    check(dynamicType, futureOrNone(objectStar));
 
-    check(invalidType, objectStar);
     check(invalidType, objectQuestion);
     check(invalidType, futureOrNone(voidNone));
     check(invalidType, futureOrNone(dynamicType));
     check(invalidType, futureOrNone(objectQuestion));
-    check(invalidType, futureOrNone(objectStar));
 
     check(objectQuestion, futureOrQuestion(voidNone));
     check(objectQuestion, futureOrQuestion(dynamicType));
     check(objectQuestion, futureOrQuestion(invalidType));
     check(objectQuestion, futureOrQuestion(objectNone));
     check(objectQuestion, futureOrQuestion(objectQuestion));
-    check(objectQuestion, futureOrQuestion(objectStar));
 
     check(futureOrNone(voidNone), objectQuestion);
     check(futureOrNone(dynamicType), objectQuestion);
     check(futureOrNone(invalidType), objectQuestion);
     check(futureOrNone(objectQuestion), objectQuestion);
-    check(futureOrNone(objectStar), objectQuestion);
 
     check(futureOrNone(voidNone), futureOrNone(dynamicType));
     check(futureOrNone(voidNone), futureOrNone(invalidType));
     check(futureOrNone(voidNone), futureOrNone(objectQuestion));
-    check(futureOrNone(voidNone), futureOrNone(objectStar));
     check(futureOrNone(dynamicType), futureOrNone(objectQuestion));
-    check(futureOrNone(dynamicType), futureOrNone(objectStar));
     check(futureOrNone(invalidType), futureOrNone(objectQuestion));
-    check(futureOrNone(invalidType), futureOrNone(objectStar));
   }
 
   test_typeParameter_bound() {
@@ -3419,7 +3197,7 @@ class UpperBoundTest extends _BoundsTestBase {
     var A = class_(name: 'A', typeParameters: [T]);
 
     // A<num>
-    var A_num = interfaceTypeStar(A, typeArguments: [numNone]);
+    var A_num = interfaceTypeNone(A, typeArguments: [numNone]);
 
     _checkLeastUpperBound(A_num, A_num, A_num);
   }

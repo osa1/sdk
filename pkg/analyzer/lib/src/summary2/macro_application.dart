@@ -466,27 +466,27 @@ class LibraryMacroApplier {
         continue;
       }
 
-      final arguments = await _runWithCatchingExceptions(
+      final instance = await _runWithCatchingExceptions(
         () async {
-          return _buildArguments(
+          final arguments = _buildArguments(
             annotationIndex: annotationIndex,
             constructor: constructorElement,
             node: importedMacro.arguments,
+          );
+
+          return await importedMacro.bundleExecutor.instantiate(
+            libraryUri: importedMacro.macroLibrary.source.uri,
+            className: importedMacro.macroClass.name,
+            constructorName: importedMacro.constructorName ?? '',
+            arguments: arguments,
           );
         },
         targetElement: targetElement,
         annotationIndex: annotationIndex,
       );
-      if (arguments == null) {
+      if (instance == null) {
         continue;
       }
-
-      final instance = await importedMacro.bundleExecutor.instantiate(
-        libraryUri: importedMacro.macroLibrary.source.uri,
-        className: importedMacro.macroClass.name,
-        constructorName: importedMacro.constructorName ?? '',
-        arguments: arguments,
-      );
 
       final phasesToExecute = macro.Phase.values.where((phase) {
         return instance.shouldExecute(targetDeclarationKind, phase);
@@ -1240,7 +1240,7 @@ class _TypePhaseIntrospector implements macro.TypePhaseIntrospector {
     final lookup = libraryElement.scope.lookup(name);
     var element = lookup.getter ?? lookup.setter;
     if (element is PropertyAccessorElement && element.isSynthetic) {
-      element = element.variable;
+      element = element.variable2;
     }
     if (element == null) {
       throw macro.MacroImplementationExceptionImpl(

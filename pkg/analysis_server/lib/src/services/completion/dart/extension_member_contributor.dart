@@ -34,6 +34,10 @@ class ExtensionMemberContributor extends DartCompletionContributor {
         return;
       }
 
+      if (request.target.isInClassLikeBody) {
+        return;
+      }
+
       var thisClassType = request.target.enclosingInterfaceElement?.thisType;
       if (thisClassType != null) {
         _addExtensionMembers(extensions, defaultKind, thisClassType);
@@ -82,13 +86,10 @@ class ExtensionMemberContributor extends DartCompletionContributor {
         // to ensure that we can return the suggestions from other providers.
         return;
       }
-      var containingNode = request.target.containingNode;
-      if (containingNode is PropertyAccess &&
-          containingNode.operator.lexeme == '?.') {
-        // After a null-safe operator we know that the member will only be
-        // invoked on a non-null value.
-        type = containingLibrary.typeSystem.promoteToNonNull(type);
-      }
+
+      // Ignore nullability, consistent with non-extension members.
+      type = containingLibrary.typeSystem.promoteToNonNull(type);
+
       _addExtensionMembers(extensions, defaultKind, type);
       expression.staticType;
     }

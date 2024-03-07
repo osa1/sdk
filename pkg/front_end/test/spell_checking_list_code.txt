@@ -180,6 +180,7 @@ bother
 boundarykey
 boundness
 boxed
+breach
 breadcrumbs
 brevity
 brianwilkerson
@@ -534,6 +535,7 @@ ef
 effects
 efficient
 efficiently
+ei
 eight
 eighth
 elected
@@ -588,6 +590,8 @@ examines
 exceeds
 exchange
 exchanging
+exe
+executables
 execute
 executor
 executors
@@ -948,6 +952,7 @@ lattice
 launch
 launched
 launcher
+launches
 launching
 layer
 layered
@@ -1245,6 +1250,7 @@ play
 player
 plugin
 plugins
+plural
 pm
 pn
 pointed
@@ -1269,6 +1275,7 @@ precompilation
 precompilations
 precompile
 precompiled
+precompiles
 precompiling
 precomputed
 preexisted
@@ -1514,6 +1521,7 @@ rpc
 rs
 rta
 runnable
+runtimes
 rvar
 s
 safer

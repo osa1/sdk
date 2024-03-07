@@ -62,11 +62,6 @@ mixin ElementsTypesMixin {
     return interfaceTypeQuestion(element);
   }
 
-  InterfaceType get intStar {
-    var element = typeProvider.intType.element;
-    return interfaceTypeStar(element);
-  }
-
   DartType get invalidType => InvalidTypeImpl.instance;
 
   NeverTypeImpl get neverNone => NeverTypeImpl.instance;
@@ -81,11 +76,6 @@ mixin ElementsTypesMixin {
   InterfaceTypeImpl get nullQuestion {
     var element = typeProvider.nullType.element;
     return interfaceTypeQuestion(element) as InterfaceTypeImpl;
-  }
-
-  InterfaceTypeImpl get nullStar {
-    var element = typeProvider.nullType.element;
-    return interfaceTypeStar(element) as InterfaceTypeImpl;
   }
 
   InterfaceType get numNone {
@@ -106,11 +96,6 @@ mixin ElementsTypesMixin {
   InterfaceType get objectQuestion {
     var element = typeProvider.objectType.element;
     return interfaceTypeQuestion(element);
-  }
-
-  InterfaceType get objectStar {
-    var element = typeProvider.objectType.element;
-    return interfaceTypeStar(element);
   }
 
   InterfaceType get recordNone {
@@ -297,11 +282,6 @@ mixin ElementsTypesMixin {
     ) as InterfaceTypeImpl;
   }
 
-  InterfaceType futureType(DartType T) {
-    var futureElement = typeProvider.futureElement;
-    return interfaceTypeStar(futureElement, typeArguments: [T]);
-  }
-
   InterfaceType interfaceType(
     InterfaceElement element, {
     List<DartType> typeArguments = const [],
@@ -330,16 +310,6 @@ mixin ElementsTypesMixin {
     return element.instantiate(
       typeArguments: typeArguments,
       nullabilitySuffix: NullabilitySuffix.question,
-    );
-  }
-
-  InterfaceType interfaceTypeStar(
-    InterfaceElement element, {
-    List<DartType> typeArguments = const [],
-  }) {
-    return element.instantiate(
-      typeArguments: typeArguments,
-      nullabilitySuffix: NullabilitySuffix.star,
     );
   }
 

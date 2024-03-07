@@ -9,7 +9,7 @@
 //
 // ```
 // $ tools/find_builders.dart ffi/regress_51504_test ffi/regress_51913_test
-// Cq-Include-Trybots: luci.dart.try:vm-kernel-linux-debug-x64,...
+// Cq-Include-Trybots: dart/try:vm-kernel-linux-debug-x64,...
 // ```
 
 import 'dart:convert';
@@ -33,7 +33,8 @@ Future<void> main(List<String> args) async {
     ..sort();
 
   final gerritTryList = builders.map((b) => '$b-try').join(',');
-  print('Cq-Include-Trybots: luci.dart.try:$gerritTryList');
+  print('Cq-Include-Trybots: dart-internal/g3.dart-internal.try:g3-cbuild-try');
+  print('Cq-Include-Trybots: dart/try:$gerritTryList');
 }
 
 Future<List<String>> _testGetConfigurations(String testName) async {
@@ -85,12 +86,7 @@ const _ciOnlyBuilders = {
   'vm-linux-release-arm64',
 };
 
-const _denyListedBuilders = {
-  // TODO(https://dartbug.com/51170): Reenable this.
-  'vm-aot-win-debug-x64c',
-  // TODO(https://dartbug.com/51170): Reenable this.
-  'vm-win-debug-x64c',
-};
+const _denyListedBuilders = <String>{};
 
 Stream<Map<String, dynamic>> _configurationDocuments() async* {
   String? nextPageToken;
@@ -131,6 +127,6 @@ A script to find all try jobs for a set of tests.
 
   Usage: tools/find_builders.dart [selector] [selector2] [...]
 
-Sample output: Cq-Include-Trybots: luci.dart.try:vm-kernel-linux-debug-x64,...
+Sample output: Cq-Include-Trybots: dart/try:vm-kernel-linux-debug-x64,...
 ''');
 }

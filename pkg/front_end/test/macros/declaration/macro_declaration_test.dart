@@ -44,6 +44,7 @@ class MacroTestConfig extends CfeTestConfig {
       CompilerOptions options, TestData testData) {
     TestMacroExecutor testExecutor =
         options.macroExecutor = new TestMacroExecutor();
+    options.skipMacros = true;
     testExecutor.registerExecutorFactory(() => testExecutor,
         {Uri.parse('package:precompiled_macro/precompiled_macro.dart')});
     return testExecutor;
@@ -348,10 +349,10 @@ class _MacroInstanceIdentifier implements MacroInstanceIdentifier {
   void serialize(Serializer serializer) => throw UnimplementedError();
 
   @override
-  bool shouldExecute(DeclarationKind declarationKind, Phase phase) => false;
+  bool shouldExecute(DeclarationKind declarationKind, Phase phase) => true;
 
   @override
-  bool supportsDeclarationKind(DeclarationKind declarationKind) => false;
+  bool supportsDeclarationKind(DeclarationKind declarationKind) => true;
 }
 
 class _MacroExecutionResult implements MacroExecutionResult {

@@ -70,6 +70,7 @@ import '../fasta/messages.dart' show getLocation;
 import '../fasta/problems.dart' show DebugAbort, unimplemented;
 import '../fasta/ticker.dart' show Ticker;
 import '../fasta/uri_translator.dart' show UriTranslator;
+import '../macros/macro_serializer.dart' show MacroSerializer;
 import 'nnbd_mode.dart';
 
 /// All options needed for the front end implementation.
@@ -207,6 +208,10 @@ class ProcessedOptions {
 
   /// The number of fatal diagnostics encountered so far.
   int fatalDiagnosticCount = 0;
+
+  MacroSerializer? _macroSerializer;
+  MacroSerializer get macroSerializer =>
+      _macroSerializer ??= _raw.macroSerializer ?? new MacroSerializer();
 
   /// Initializes a [ProcessedOptions] object wrapping the given [rawOptions].
   ProcessedOptions({CompilerOptions? options, List<Uri>? inputs, this.output})
@@ -855,6 +860,9 @@ class ProcessedOptions {
   SerializationMode get macroSerializationMode =>
       _raw.macroSerializationMode ??= SerializationMode.byteData;
 
+  /// The currently running precompilations.
+  Set<Uri> get runningPrecompilations => _raw.runningPrecompilations;
+
   CompilerOptions get rawOptionsForTesting => _raw;
 
   HooksForTesting? get hooksForTesting => _raw.hooksForTesting;
@@ -862,9 +870,10 @@ class ProcessedOptions {
   bool get showGeneratedMacroSourcesForTesting =>
       _raw.showGeneratedMacroSourcesForTesting;
 
-  /// Disposes macro executor if one is configured.
+  /// Disposes macro executor and serializer if configured.
   Future<void> dispose() async {
     await _raw.macroExecutor?.closeAndReset();
+    await macroSerializer.close();
   }
 }
 

@@ -725,9 +725,7 @@ class TypeConstraintGathererTest extends AbstractTypeSystemTest {
     }
 
     check(objectQuestion, dynamicType, 'Object? <: T <: _');
-    check(objectStar, dynamicType, 'Object? <: T <: _');
     check(voidNone, objectQuestion, 'Object? <: T <: _');
-    check(voidNone, objectStar, 'Object? <: T <: _');
   }
 
   /// If `P` is `FutureOr<P0>` the match holds under constraint set `C1 + C2`:
@@ -1244,7 +1242,6 @@ class TypeConstraintGathererTest extends AbstractTypeSystemTest {
 
     _checkNotMatch([T], intNone, stringQuestion, true);
     _checkNotMatch([T], intQuestion, stringQuestion, true);
-    _checkNotMatch([T], intStar, stringQuestion, true);
   }
 
   /// If `Q` is `dynamic`, `Object?`, or `void` then the match holds under

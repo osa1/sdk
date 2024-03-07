@@ -247,6 +247,21 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         // completing a positional argument.
         if (positionalArgumentCount < positionalParameterCount) {
           _forExpression(parent, mustBeNonVoid: true);
+          // This assumes that the positional parameters will always be first in
+          // the list of parameters.
+          var parameter = parameters[positionalArgumentCount];
+          var parameterType = parameter.type;
+          if (parameterType is FunctionType) {
+            Expression? argument;
+            if (argumentIndex < arguments.length) {
+              argument = arguments[argumentIndex];
+            }
+            var includeTrailingComma =
+                argument == null || !argument.isFollowedByComma;
+            collector.addSuggestion(ClosureSuggestion(
+                functionType: parameterType,
+                includeTrailingComma: includeTrailingComma));
+          }
         }
         // Suggest the names of all named parameters that are not already in the
         // argument list.
@@ -297,6 +312,14 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitAsExpression(AsExpression node) {
+    if (offset <= node.expression.end) {
+      declarationHelper(
+        mustBeNonVoid: true,
+        mustBeStatic: node.inStaticContext,
+      ).addLexicalDeclarations(node);
+      return;
+    }
+
     if (node.asOperator.coversOffset(offset)) {
       if (node.expression is ParenthesizedExpression) {
         // If the user has typed `as` after something that could be either a
@@ -311,6 +334,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       }
       return;
     }
+
     var type = node.type;
     if (type.isFullySynthetic || type.beginToken.coversOffset(offset)) {
       collector.completionLocation = 'AsExpression_type';
@@ -336,6 +360,8 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   void visitAssignmentExpression(AssignmentExpression node) {
     collector.completionLocation = 'AssignmentExpression_rightHandSide';
     _forExpression(node, mustBeNonVoid: true);
+    // TODO(brianwilkerson): Consider proposing a closure when the left-hand
+    //  side is a function-typed variable.
   }
 
   @override
@@ -767,7 +793,9 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     //  returning the expression as the completion node and moving the following
     //  conditions into the visit methods for the respective classes.
     var expression = node.expression;
-    if (expression is AssignmentExpression) {
+    if (expression is AsExpression) {
+      expression.accept(this);
+    } else if (expression is AssignmentExpression) {
       var leftHandSide = expression.leftHandSide;
       if (leftHandSide is SimpleIdentifier && offset <= leftHandSide.end) {
         _forStatement(node);
@@ -1409,6 +1437,12 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   void visitMethodInvocation(MethodInvocation node) {
     var operator = node.operator;
     if (operator == null) {
+      if (node.coversOffset(offset)) {
+        // TODO(keertip): Also check for more cases, RHS of assignment operator,
+        // a field in record literal, an operand to an operator.
+        var mustBeNonVoid = node.parent is ArgumentList;
+        _forExpression(node, mustBeNonVoid: mustBeNonVoid);
+      }
       return;
     }
     if ((node.isCascaded && offset == operator.offset + 1) ||
@@ -1495,11 +1529,35 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       }
     } else if (offset >= node.name.colon.end) {
       _forExpression(node, mustBeNonVoid: node.parent is ArgumentList);
+      var parameterType = node.staticParameterElement?.type;
+      if (parameterType is FunctionType) {
+        var includeTrailingComma = !node.isFollowedByComma;
+        collector.addSuggestion(ClosureSuggestion(
+          functionType: parameterType,
+          includeTrailingComma: includeTrailingComma,
+        ));
+      }
     }
   }
 
   @override
   void visitNamedType(NamedType node) {
+    var importPrefix = node.importPrefix;
+    var prefixElement = importPrefix?.element;
+
+    // `prefix.x^ print(0);` is recovered as `prefix.x print; (0);`.
+    if (prefixElement is PrefixElement) {
+      if (node.parent case VariableDeclarationList variableList) {
+        if (variableList.parent case VariableDeclarationStatement statement) {
+          if (statement.semicolon.isSynthetic) {
+            declarationHelper()
+                .addDeclarationsThroughImportPrefix(prefixElement);
+            return;
+          }
+        }
+      }
+    }
+
     _forTypeAnnotation(node);
   }
 
@@ -2167,6 +2225,13 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     if (equals != null && offset >= equals.end) {
       collector.completionLocation = 'VariableDeclaration_initializer';
       _forExpression(node, mustBeNonVoid: true);
+      var variableType = node.declaredElement?.type;
+      if (variableType is FunctionType) {
+        collector.addSuggestion(ClosureSuggestion(
+          functionType: variableType,
+          includeTrailingComma: false,
+        ));
+      }
     }
   }
 
@@ -3043,6 +3108,15 @@ extension on Element? {
   }
 }
 
+extension on Expression {
+  bool get isFollowedByComma {
+    var nextToken = endToken.next;
+    return nextToken != null &&
+        nextToken.type == TokenType.COMMA &&
+        !nextToken.isSynthetic;
+  }
+}
+
 extension on ExpressionStatement {
   /// Whether this statement consists of a single identifier.
   bool get isSingleIdentifier {
@@ -3121,7 +3195,7 @@ extension on GuardedPattern {
 extension on NodeList<PatternField> {
   /// Returns the names of the named fields in this list.
   Set<String> get fieldNames {
-    return map((field) => field.name?.name?.lexeme).nonNulls.toSet();
+    return map((field) => field.effectiveName).nonNulls.toSet();
   }
 }
 
