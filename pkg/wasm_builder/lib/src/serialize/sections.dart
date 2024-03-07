@@ -371,17 +371,21 @@ class NameSection extends CustomSection {
     globalNameSubsection.writeUnsigned(globalNameCount);
     for (int i = 0; i < globals.length; i++) {
       final global = globals[i];
-      if (global.debugName != null) {
+      final debugName = global.debugName;
+      if (debugName != null) {
         globalNameSubsection.writeUnsigned(i);
-        globalNameSubsection.writeName(global.debugName!);
+        globalNameSubsection.writeName(debugName);
       }
     }
+
     s.writeByte(1); // Function names subsection
     s.writeUnsigned(functionNameSubsection.data.length);
     s.writeData(functionNameSubsection);
+
     s.writeByte(4); // Type names subsection
     s.writeUnsigned(typeNameSubsection.data.length);
     s.writeData(typeNameSubsection);
+
     s.writeByte(7); // Global names subsection
     s.writeUnsigned(globalNameSubsection.data.length);
     s.writeData(globalNameSubsection);
