@@ -67,8 +67,7 @@ class Globals {
           for (w.FieldType field in heapType.fields) {
             _prepareDummyValue(field.type.unpacked);
           }
-          global = m.globals.define(w.GlobalType(type, mutable: false),
-              name: "dummy struct value");
+          global = m.globals.define(w.GlobalType(type, mutable: false));
           final ib = global.initializer;
           for (w.FieldType field in heapType.fields) {
             instantiateDummyValue(ib, field.type.unpacked);
@@ -76,14 +75,12 @@ class Globals {
           ib.struct_new(heapType);
           ib.end();
         } else if (heapType is w.ArrayType) {
-          global = m.globals.define(w.GlobalType(type, mutable: false),
-              name: "dummy array value");
+          global = m.globals.define(w.GlobalType(type, mutable: false));
           final ib = global.initializer;
           ib.array_new_fixed(heapType, 0);
           ib.end();
         } else if (heapType is w.FunctionType) {
-          global = m.globals.define(w.GlobalType(type, mutable: false),
-              name: "dummy function value");
+          global = m.globals.define(w.GlobalType(type, mutable: false));
           final ib = global.initializer;
           ib.ref_func(getDummyFunction(heapType));
           ib.end();
@@ -149,9 +146,8 @@ class Globals {
       if (init != null &&
           !(translator.constants.ensureConstant(init)?.isLazy ?? false)) {
         // Initialized to a constant
-        final global = m.globals.define(
-            w.GlobalType(type, mutable: !variable.isFinal),
-            name: '${variable.location}');
+        final global =
+            m.globals.define(w.GlobalType(type, mutable: !variable.isFinal));
         translator.constants
             .instantiateConstant(null, global.initializer, init, type);
         global.initializer.end();
@@ -168,8 +164,7 @@ class Globals {
           _globalInitializedFlag[variable] = flag;
         }
 
-        final global =
-            m.globals.define(w.GlobalType(type), name: '${variable.location}');
+        final global = m.globals.define(w.GlobalType(type));
         instantiateDummyValue(global.initializer, type);
         global.initializer.end();
 
