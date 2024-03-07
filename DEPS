@@ -121,7 +121,7 @@ vars = {
 
   "args_rev": "7dc7fe0430709229ccc87c3eaae729aeffe10c56",
   "async_rev": "6cdbc41631054870318ae28baea2c62cf2a91945",
-  "bazel_worker_rev": "372b8b514c7342465f58627a2418910f76120db9",
+  "bazel_worker_rev": "8619b92baa9959e55b9fc49d2afcd6dda2ec1c10",
   "benchmark_harness_rev": "c8a0c8b1883dc16c7558a43cee1c3f4f9a163418",
   "boolean_selector_rev": "be88351e521648d381b96350bfe62c34abacee6d",
   "browser_launcher_rev": "79562306c86e5c087359a31a60309c8d65a699d3",
@@ -181,7 +181,7 @@ vars = {
   "sync_http_rev": "b849559fedc7c5d19a68950f255b6edde6eec6ef",
   "tar_rev": "6150a0c88d9bd17e3e961593a9a7a9564866e8b4",
   "term_glyph_rev": "85a4aa6bf25cd6ecaa5c56a1b259b2d95264a439",
-  "test_rev": "525f77b2e0459f76b088ae65b71b2e948dd04224",
+  "test_rev": "7724aabe8cd40b376573330f5227a6ec0a47f28e",
   "test_descriptor_rev": "35f97afacb2b7fe627f6ed0bede722fd48980848",
   "test_process_rev": "7fe39afbb6c444f256c1ec0eef008edebcd44644",
   "test_reflective_loader_rev": "9862703a3d14848376c8efde271c88022fba91eb",
