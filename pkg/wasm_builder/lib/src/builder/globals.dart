@@ -19,11 +19,10 @@ class GlobalsBuilder with Builder<ir.Globals> {
   GlobalsBuilder(this._module);
 
   /// Defines a new global variable in this module.
-  GlobalBuilder define(ir.GlobalType type, {String? debugName}) {
-    final global = GlobalBuilder(_module, ir.FinalizableIndex(), type,
-        debugName: debugName);
+  GlobalBuilder define(ir.GlobalType type, [String? name]) {
+    final global = GlobalBuilder(_module, ir.FinalizableIndex(), type, name);
     _globalBuilders.add(global);
-    if (debugName != null) {
+    if (name != null) {
       _namedCount += 1;
     }
     return global;

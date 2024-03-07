@@ -11,12 +11,12 @@ abstract class Global with Indexable implements Exportable {
   final GlobalType type;
 
   /// Name of the global in the names section.
-  final String? debugName;
+  final String? globalName;
 
-  Global(this.finalizableIndex, this.type, {this.debugName});
+  Global(this.finalizableIndex, this.type, this.globalName);
 
   @override
-  String toString() => debugName ?? "$finalizableIndex";
+  String toString() => globalName ?? "$finalizableIndex";
 
   @override
   Export export(String name) => GlobalExport(name, this);
@@ -27,7 +27,7 @@ class DefinedGlobal extends Global implements Serializable {
   final Instructions initializer;
 
   DefinedGlobal(this.initializer, super.finalizableIndex, super.type,
-      {super.debugName});
+      [super.globalName]);
 
   @override
   void serialize(Serializer s) {
@@ -40,10 +40,12 @@ class DefinedGlobal extends Global implements Serializable {
 class ImportedGlobal extends Global implements Import {
   @override
   final String module;
+
   @override
   final String name;
 
-  ImportedGlobal(this.module, this.name, super.finalizableIndex, super.type);
+  ImportedGlobal(this.module, this.name, super.finalizableIndex, super.type,
+      [super.globalName]);
 
   @override
   void serialize(Serializer s) {

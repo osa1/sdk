@@ -370,11 +370,10 @@ class NameSection extends CustomSection {
     final globalNameSubsection = Serializer();
     globalNameSubsection.writeUnsigned(globalNameCount);
     for (int i = 0; i < globals.length; i++) {
-      final global = globals[i];
-      final debugName = global.debugName;
-      if (debugName != null) {
+      final globalName = globals[i].globalName;
+      if (globalName != null) {
         globalNameSubsection.writeUnsigned(i);
-        globalNameSubsection.writeName(debugName);
+        globalNameSubsection.writeName(globalName);
       }
     }
 
