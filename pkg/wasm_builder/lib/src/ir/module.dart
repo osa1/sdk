@@ -62,7 +62,7 @@ class Module implements Serializable {
       NameSection(functions.all, types.defined, globals.defined, watchPoints,
               functionNameCount: functions.namedCount,
               typeNameCount: types.namedCount,
-              globalNameCount: globals.defined.length)
+              globalNameCount: globals.namedCount)
           .serialize(s);
     }
   }
