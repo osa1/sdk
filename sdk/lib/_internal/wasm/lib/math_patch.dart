@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show mix64, patch;
+import "dart:_internal" show mix64, patch, unsafeCast;
+import "dart:_js_types" show JSUint8ArrayImpl;
 import "dart:js_interop";
 
 /// There are no parts of this patch library.
@@ -253,6 +254,9 @@ extension type _JSUint8Array(JSObject _) {
 }
 
 class _SecureRandom implements Random {
+  final JSUint8ArrayImpl _buffer = unsafeCast<JSUint8ArrayImpl>(
+      (_JSUint8Array.create(8) as JSUint8Array).toDart);
+
   _SecureRandom() {
     // Throw early in constructor if entropy source is not hooked up.
     _getBytes(1);
@@ -260,14 +264,15 @@ class _SecureRandom implements Random {
 
   // Return count bytes of entropy as an integer; count <= 8.
   int _getBytes(int count) {
-    final buffer = _JSUint8Array.create(count) as JSUint8Array;
-    _jsCrypto.getRandomValues(buffer);
+    final JSUint8ArrayImpl bufferView =
+        JSUint8ArrayImpl.view(_buffer.buffer, 0, count);
+
+    final JSUint8Array bufferViewJS = bufferView.toJS;
+    _jsCrypto.getRandomValues(bufferViewJS);
 
     int value = 0;
-    final dartBuffer = buffer.toDart;
-
     for (int i = 0; i < count; i += 1) {
-      value = (value << 8) | dartBuffer[i];
+      value = (value << 8) | bufferView[i];
     }
 
     return value;
