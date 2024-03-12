@@ -13,7 +13,6 @@ import 'package:analysis_server/src/services/completion/dart/feature_computer.da
 import 'package:analysis_server/src/services/completion/dart/in_scope_completion_pass.dart';
 import 'package:analysis_server/src/services/completion/dart/library_member_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/library_prefix_contributor.dart';
-import 'package:analysis_server/src/services/completion/dart/named_constructor_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/not_imported_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/record_literal_contributor.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_builder.dart';
@@ -129,7 +128,6 @@ class DartCompletionManager {
       ExtensionMemberContributor(request, builder),
       LibraryMemberContributor(request, builder),
       LibraryPrefixContributor(request, builder),
-      NamedConstructorContributor(request, builder),
       RecordLiteralContributor(request, builder),
       if (enableUriContributor) UriContributor(request, builder),
       VariableNameContributor(request, builder),
@@ -233,6 +231,7 @@ class DartCompletionManager {
         skipImports: skipImports,
         suggestOverrides: suggestOverrides);
     pass.computeSuggestions();
+    request.collectorLocationName = collector.completionLocation;
     builder.suggestFromCandidates(collector.suggestions);
   }
 }
@@ -287,6 +286,9 @@ class DartCompletionRequest {
 
   /// The compilation unit in which completion is being requested.
   final CompilationUnit unit;
+
+  /// The location name from [SuggestionCollector].
+  String? collectorLocationName;
 
   bool _aborted = false;
 

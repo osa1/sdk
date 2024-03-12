@@ -67,11 +67,25 @@ final class ConstructorSuggestion extends ImportableSuggestion {
   /// site. That is, whether we are completing after a period.
   final bool hasClassName;
 
+  /// Whether a tear-off should be suggested, not an invocation.
+  /// Mutually exclusive with [isRedirect].
+  final bool isTearOff;
+
+  /// Whether a redirect should be suggested, not an invocation.
+  /// Mutually exclusive with [isTearOff].
+  ///
+  /// When `true`, the unnamed constructor reference is `ClassName`.
+  /// OTOH, if [isTearOff] is `true`, we get `ClassName.new`.
+  final bool isRedirect;
+
   /// Initialize a newly created candidate suggestion to suggest the [element].
-  ConstructorSuggestion(
-      {required super.importData,
-      required this.element,
-      required this.hasClassName});
+  ConstructorSuggestion({
+    required super.importData,
+    required this.element,
+    required this.hasClassName,
+    required this.isTearOff,
+    required this.isRedirect,
+  }) : assert((isTearOff ? 1 : 0) | (isRedirect ? 1 : 0) < 2);
 
   @override
   String get completion => '$completionPrefix${element.displayName}';
@@ -427,15 +441,21 @@ final class OverrideSuggestion extends CandidateSuggestion {
   /// Whether `super` should be invoked in the body of the override.
   final bool shouldInvokeSuper;
 
-  /// The soruce range that should be replaced by the override.
+  /// If `true`, `@override` is already present, at least partially.
+  /// So, `@` is already present, and the override text does not need it.
+  final bool skipAt;
+
+  /// The source range that should be replaced by the override.
   final SourceRange replacementRange;
 
   /// Initialize a newly created candidate suggestion to suggest the [element] by
   /// inserting the [shouldInvokeSuper].
-  OverrideSuggestion(
-      {required this.element,
-      required this.shouldInvokeSuper,
-      required this.replacementRange});
+  OverrideSuggestion({
+    required this.element,
+    required this.shouldInvokeSuper,
+    required this.skipAt,
+    required this.replacementRange,
+  });
 
   @override
   // TODO(brianwilkerson): This needs to be replaced with code to compute the
@@ -593,8 +613,15 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
             includeTrailingComma: suggestion.includeTrailingComma);
       case ConstructorSuggestion():
         libraryUriStr = suggestion.libraryUriStr;
-        suggestConstructor(suggestion.element,
-            hasClassName: suggestion.hasClassName, prefix: suggestion.prefix);
+        suggestConstructor(
+          suggestion.element,
+          hasClassName: suggestion.hasClassName,
+          kind: suggestion.isRedirect || suggestion.isTearOff
+              ? CompletionSuggestionKind.IDENTIFIER
+              : CompletionSuggestionKind.INVOCATION,
+          tearOff: suggestion.isTearOff,
+          prefix: suggestion.prefix,
+        );
         libraryUriStr = null;
       case EnumSuggestion():
         libraryUriStr = suggestion.libraryUriStr;
@@ -672,8 +699,12 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
       case NameSuggestion():
         suggestName(suggestion.name);
       case OverrideSuggestion():
-        suggestOverride2(suggestion.element, suggestion.shouldInvokeSuper,
-            suggestion.replacementRange);
+        suggestOverride(
+          element: suggestion.element,
+          invokeSuper: suggestion.shouldInvokeSuper,
+          replacementRange: suggestion.replacementRange,
+          skipAt: suggestion.skipAt,
+        );
       case PropertyAccessSuggestion():
         var inheritanceDistance = 0.0;
         var referencingClass = suggestion.referencingClass;
