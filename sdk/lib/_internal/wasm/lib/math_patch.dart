@@ -268,9 +268,8 @@ class _SecureRandom implements Random {
     int value = 0;
     final dartBuffer = buffer.toDart;
 
-    // Little endian.
     for (int i = 0; i < count; i += 1) {
-      value |= dartBuffer[i] << (i * 8);
+      value = (value << 8) | dartBuffer[i];
     }
 
     return value;
@@ -280,7 +279,7 @@ class _SecureRandom implements Random {
     RangeError.checkValueInInterval(
         max, 1, _POW2_32, "max", "Must be positive and <= 2^32");
     final byteCount =
-        ((max - 1).bitLength + 7) >> 3; // divide number of bits by 8, round up
+        ((max - 1).bitLength + 7) >> 3; // Divide number of bits by 8, round up.
     if (byteCount == 0) {
       return 0; // Not random if max == 1.
     }
