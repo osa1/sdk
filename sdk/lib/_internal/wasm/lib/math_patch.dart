@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show mix64, patch;
+import "dart:_internal" show mix64, patch, unsafeCast;
 import "dart:_js_helper" as js;
-
+import "dart:js_interop";
 import "dart:typed_data";
 
 /// There are no parts of this patch library.
@@ -237,11 +237,24 @@ class _Random implements Random {
   }
 }
 
-class _SecureRandom implements Random {
-  // Reused buffer for `_getBytes`.
-  final _buffer = ByteData(8);
-  late final _bufferUint8List = _buffer.buffer.asUint8List();
+@JS('crypto')
+external _JSCrypto get _jsCryptoGetter;
 
+final _JSCrypto _jsCrypto = _jsCryptoGetter;
+
+extension type _JSCrypto._(JSObject _jsCrypto) implements JSObject {}
+
+extension _JSCryptoGetRandomValues on _JSCrypto {
+  @JS('getRandomValues')
+  external void getRandomValues(JSUint8Array array);
+}
+
+@JS('Uint8Array')
+extension type _JSUint8Array(JSObject _) {
+  external factory _JSUint8Array.create(int length);
+}
+
+class _SecureRandom implements Random {
   _SecureRandom() {
     // Throw early in constructor if entropy source is not hooked up.
     _getBytes(1);
@@ -249,14 +262,25 @@ class _SecureRandom implements Random {
 
   // Return count bytes of entropy as an integer; count <= 8.
   int _getBytes(int count) {
-    js.JS<void>('(array) => crypto.getRandomValues(array)', _bufferUint8List);
-    return _buffer.getUint64(0, Endian.little);
+    final buffer = _JSUint8Array.create(count) as JSUint8Array;
+    _jsCrypto.getRandomValues(buffer);
+
+    int value = 0;
+    final dartBuffer = buffer.toDart;
+
+    // Little endian.
+    for (int i = 0; i < count; i += 1) {
+      value |= dartBuffer[i] << (i * 8);
+    }
+
+    return value;
   }
 
   int nextInt(int max) {
     RangeError.checkValueInInterval(
         max, 1, _POW2_32, "max", "Must be positive and <= 2^32");
-    final byteCount = ((max - 1).bitLength + 7) >> 3;
+    final byteCount =
+        ((max - 1).bitLength + 7) >> 3; // divide number of bits by 8, round up
     if (byteCount == 0) {
       return 0; // Not random if max == 1.
     }
