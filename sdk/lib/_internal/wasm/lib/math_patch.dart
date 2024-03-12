@@ -2,10 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show mix64, patch, unsafeCast;
-import "dart:_js_helper" as js;
+import "dart:_internal" show mix64, patch;
 import "dart:js_interop";
-import "dart:typed_data";
 
 /// There are no parts of this patch library.
 
