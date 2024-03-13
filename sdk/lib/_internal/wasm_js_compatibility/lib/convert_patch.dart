@@ -8,7 +8,6 @@ import 'dart:_js_string_convert';
 import 'dart:_js_types';
 import 'dart:_wasm';
 import 'dart:js_interop';
-import 'dart:typed_data' show Uint8List, Uint16List;
 
 @JS('JSON')
 external _JSJson get _jsJsonGetter;
@@ -163,6 +162,3 @@ class _Utf8Decoder {
     return convertGeneral(codeUnits, start, maybeEnd, false);
   }
 }
-
-double _parseDouble(String source, int start, int end) =>
-    double.parse(source.substring(start, end));
