@@ -35,14 +35,14 @@ dynamic _parseJson(
 }
 
 Object? _convertJsonToDart(
-    JSAny? object, Function(Object? key, Object? value)? reviver) {
+    JSAny? object, Object? Function(Object? key, Object? value)? reviver) {
   // Similar to `dartify`, but `_convertJsonToDart`:
   //
   // - Only handles `Object`, `Array`, `string`, `number`, `boolean`, and `null`
   // - Calls `reviver` on array and map elements.
   // - Assumes the objects are not aliased.
 
-  WasmExternRef? ref = object.toExternRef;
+  final WasmExternRef? ref = object.toExternRef;
 
   if (ref.isNull) {
     return null;
@@ -55,12 +55,17 @@ Object? _convertJsonToDart(
 
     for (int keyIdx = 0; keyIdx < numKeys; keyIdx += 1) {
       final JSString key = keys[keyIdx];
+      final String keyString = key.toDart;
       final WasmExternRef? jsValueRef = js.getPropertyRaw(ref, key.toExternRef);
       final jsValue = js.JSValue(jsValueRef);
-      final dartValue = _convertJsonToDart(jsValue as JSAny, reviver) as JSAny;
-      dartMap[key.toDart] = dartValue;
+      Object? dartValue =
+          _convertJsonToDart(jsValue as JSAny, reviver) as JSAny;
 
-      // TODO: Reviver
+      if (reviver != null) {
+        dartValue = reviver(keyString, dartValue);
+      }
+
+      dartMap[keyString] = dartValue;
     }
 
     return dartMap;
@@ -72,10 +77,13 @@ Object? _convertJsonToDart(
 
     for (int i = 0; i < numElements; i += 1) {
       final elem = jsArray[i];
+      Object? dartValue = _convertJsonToDart(elem, reviver);
 
-      // TODO: call reviver
+      if (reviver != null) {
+        dartValue = reviver(i, dartValue);
+      }
 
-      dartList.add(_convertJsonToDart(elem, reviver));
+      dartList.add(dartValue);
     }
 
     return dartList;
