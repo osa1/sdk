@@ -48,15 +48,21 @@ Object? _convertJsonToDart(
   } else if (js.isJSSimpleObject(ref)) {
     final Map<String, Object?> dartMap = {};
 
-    final jsObject = unsafeCast<JSObject>(object);
-    final List<JSString> keys = jsObject.keys().toDart;
-    final numKeys = keys.length;
+    // JS array of JS strings.
+    final keyArrayRef = js.JS<WasmExternRef?>('(o) => Object.keys(o)', ref);
+
+    final numKeys =
+        js.JS<WasmI32>('(o) => o.length', keyArrayRef).toIntSigned();
 
     for (int keyIdx = 0; keyIdx < numKeys; keyIdx += 1) {
-      final JSString key = keys[keyIdx];
-      final String keyString = key.toDart;
-      final WasmExternRef? jsValueRef = js.getPropertyRaw(ref, key.toExternRef);
+      final JSStringImpl keyString = JSStringImpl(js.JS<WasmExternRef?>(
+          '(o, i) => o[i]', keyArrayRef, WasmI32.fromInt(keyIdx)));
+
+      final WasmExternRef? jsValueRef =
+          js.getPropertyRaw(ref, keyString.toExternRef);
+
       final jsValue = js.JSValue(jsValueRef);
+
       Object? dartValue =
           _convertJsonToDart(jsValue as JSAny, reviver) as JSAny;
 
