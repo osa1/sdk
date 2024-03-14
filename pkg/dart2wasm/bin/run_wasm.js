@@ -364,7 +364,7 @@ const main = async () => {
 
     const dart2wasm = await import(args[jsRuntimeArg]);
     function compile(filename) {
-        // Create a Wasm module from the binary wasm file.
+        // Create a Wasm module from the binary Wasm file.
         var bytes;
         if (isJSC) {
           bytes = readFile(filename, "binary");
@@ -373,7 +373,7 @@ const main = async () => {
         } else {
           bytes = readRelativeToScript(filename, "binary");
         }
-        return new WebAssembly.Module(bytes);
+        return WebAssembly.compile(bytes, { builtins: ['js-string'] });
     }
 
     function instantiate(filename, imports) {
