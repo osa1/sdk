@@ -363,6 +363,20 @@ const main = async () => {
     }
 
     const dart2wasm = await import(args[jsRuntimeArg]);
+
+    /// Returns whether `js-string` built-in is defined.
+    function detectImportedStrings() {
+        let bytes = [
+            0,   97,  115, 109, 1,   0,   0,  0,   1,   4,   1,   96,  0,
+            0,   2,   23,  1,   14,  119, 97, 115, 109, 58,  106, 115, 45,
+            115, 116, 114, 105, 110, 103, 4,  99,  97,  115, 116, 0,   0
+        ];
+        return !WebAssembly.validate(
+            new Uint8Array(bytes), {builtins: ['js-string']});
+    }
+
+    let jsStringBuiltInAvailable = detectImportedStrings();
+
     function compile(filename) {
         // Create a Wasm module from the binary Wasm file.
         var bytes;
@@ -373,7 +387,11 @@ const main = async () => {
         } else {
           bytes = readRelativeToScript(filename, "binary");
         }
-        return WebAssembly.compile(bytes, { builtins: ['js-string'] });
+        let builtins = [];
+        if (jsStringBuiltInAvailable) {
+            builtins.push("js-string");
+        }
+        return WebAssembly.compile(bytes, { builtins: builtins });
     }
 
     function instantiate(filename, imports) {
@@ -389,7 +407,24 @@ const main = async () => {
         // instantiate FFI module
         var ffiInstance = instantiate(args[ffiArg], {});
         // Make its exports available as imports under the 'ffi' module name
-        importObject.ffi = ffiInstance.exports;
+        importObject["ffi"] = ffiInstance.exports;
+    }
+
+    // Add js-string polyfill is needed.
+    if (!jsStringBuiltInAvailable) {
+        importObject["wasm:js-string"] = {
+            "charCodeAt": (s, i) => s.charCodeAt(i),
+            "compare": (s1, s2) => {
+                if (s1 < s2) return -1;
+                if (s1 > s2) return 1;
+                return 0;
+            },
+            "concat": (s1, s2) => s1 + s2,
+            "equals": (s1, s2) => s1 === s2,
+            "fromCharCode": (i) => String.fromCharCode(i),
+            "length": (s) => s.length,
+            "substring": (s, a, b) => s.substring(a, b),
+        };
     }
 
     // Instantiate the Dart module, importing from the global scope.
