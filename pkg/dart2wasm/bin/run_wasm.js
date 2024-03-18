@@ -397,14 +397,14 @@ const main = async () => {
     // Is an FFI module specified?
     if (args.length > 2) {
         // Instantiate FFI module.
-        var ffiInstance = await WebAssembly.instantiate(compile(args[ffiArg], false), {});
+        var ffiInstance = await WebAssembly.instantiate(await compile(args[ffiArg], false), {});
         // Make its exports available as imports under the 'ffi' module name.
         importObject.ffi = ffiInstance.exports;
     }
 
     // Instantiate the Dart module, importing from the global scope.
     var dartInstance = await dart2wasm.instantiate(
-        Promise.resolve(compile(args[wasmArg], detectImportedStrings())),
+        compile(args[wasmArg], detectImportedStrings()),
         Promise.resolve(importObject),
     );
 
