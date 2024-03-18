@@ -5,6 +5,7 @@
 import 'package:analysis_server/src/services/completion/dart/candidate_suggestion.dart';
 import 'package:analysis_server/src/services/completion/dart/completion_state.dart';
 import 'package:analysis_server/src/services/completion/dart/declaration_helper.dart';
+import 'package:analysis_server/src/services/completion/dart/identifier_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/keyword_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/label_helper.dart';
 import 'package:analysis_server/src/services/completion/dart/override_helper.dart';
@@ -48,6 +49,9 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   /// Whether suggestions for overrides should be produced.
   final bool suggestOverrides;
+
+  /// The helper used to suggest names at the declaration site.
+  IdentifierHelper? _identifierHelper;
 
   /// The helper used to suggest keywords.
   late final KeywordHelper keywordHelper = KeywordHelper(
@@ -149,6 +153,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     bool mustBeStatic = false,
     bool mustBeType = false,
     bool preferNonInvocation = false,
+    Set<AstNode> excludedNodes = const {},
   }) {
     var contextType = state.contextType;
     if (contextType is FunctionType) {
@@ -189,6 +194,23 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       mustBeType: mustBeType,
       preferNonInvocation: preferNonInvocation,
       skipImports: skipImports,
+      excludedNodes: excludedNodes,
+    );
+  }
+
+  /// Returns the helper used to suggest names at the declaration site.
+  IdentifierHelper identifierHelper({required bool includePrivateIdentifiers}) {
+    // Ensure that we aren't attempting to create multiple declaration helpers
+    // with inconsistent states.
+    assert(() {
+      var helper = _identifierHelper;
+      return helper == null ||
+          (helper.includePrivateIdentifiers == includePrivateIdentifiers);
+    }());
+    return _identifierHelper ??= IdentifierHelper(
+      collector: collector,
+      includePrivateIdentifiers: includePrivateIdentifiers,
+      state: state,
     );
   }
 
@@ -495,6 +517,33 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
+    // `class X { final String in^; }` is parsed as
+    // `final <NoType> String ; in^`, where `in` is dropped.
+    var dropped = state.request.target.droppedToken;
+    if (dropped != null && dropped.end == offset) {
+      if (dropped.type.isKeyword) {
+        for (var fieldDeclaration in node.members) {
+          if (fieldDeclaration is FieldDeclaration) {
+            var fields = fieldDeclaration.fields;
+            if (fields.type == null) {
+              if (fields.variables case [var field]) {
+                var shouldBeTypeName = field.name;
+                var semicolon = shouldBeTypeName.next;
+                if (semicolon != null &&
+                    semicolon.type == TokenType.SEMICOLON &&
+                    semicolon.next == dropped) {
+                  identifierHelper(
+                    includePrivateIdentifiers: false,
+                  ).addSuggestionsFromTypeName(shouldBeTypeName.lexeme);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     if (offset == node.offset) {
       _forCompilationUnitMemberBefore(node);
     } else if (offset < node.classKeyword.offset) {
@@ -504,7 +553,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     } else if (offset <= node.classKeyword.end) {
       keywordHelper.addKeyword(Keyword.CLASS);
     } else if (offset <= node.name.end) {
-      // TODO(brianwilkerson): Suggest a name for the class.
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
     } else if (offset <= node.leftBracket.offset) {
       keywordHelper.addClassDeclarationKeywords(node);
     } else if (offset >= node.leftBracket.end &&
@@ -784,7 +833,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       return;
     }
     if (offset <= node.name.end) {
-      // TODO(brianwilkerson): Suggest a name for the mixin.
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
       return;
     }
     if (offset <= node.leftBracket.offset) {
@@ -864,6 +913,16 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       }
     } else if (expression is IsExpression) {
       expression.accept(this);
+    } else if (expression is FunctionReference) {
+      if (offset > expression.end) {
+        var function = expression.function;
+        if (function is SimpleIdentifier) {
+          /// This might be the beginning of a local variable declatation
+          /// consisting of a type name with type arguments.
+          identifierHelper(includePrivateIdentifiers: false)
+              .addSuggestionsFromTypeName(function.name);
+        }
+      }
     } else if (expression is MethodInvocation) {
       if (offset <= expression.beginToken.end) {
         _forStatement(node);
@@ -876,9 +935,21 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         ).addLexicalDeclarations(node);
       } else if (offset <= expression.identifier.end) {
         // TODO(brianwilkerson): Suggest members of the identifier's type.
+      } else {
+        /// This might be the beginning of a local variable declatation
+        /// consisting of a prefixed type name.
+        identifierHelper(includePrivateIdentifiers: false)
+            .addSuggestionsFromTypeName(expression.identifier.name);
       }
-    } else if (expression is SimpleIdentifier && offset <= expression.end) {
-      _forStatement(node);
+    } else if (expression is SimpleIdentifier) {
+      if (offset <= expression.end) {
+        _forStatement(node);
+      } else {
+        /// This might be the beginning of a local variable declatation
+        /// consisting of a simple type name.
+        identifierHelper(includePrivateIdentifiers: false)
+            .addSuggestionsFromTypeName(expression.name);
+      }
     }
   }
 
@@ -913,8 +984,10 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       if (featureSet.isEnabled(Feature.inline_class)) {
         keywordHelper.addPseudoKeyword('type');
       }
-      // TODO(brianwilkerson): Suggest a name for the extension.
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
       return;
+    } else {
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
     }
     if (offset <= node.leftBracket.offset) {
       if (node.onKeyword.isSynthetic) {
@@ -940,6 +1013,8 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   void visitExtensionTypeDeclaration(ExtensionTypeDeclaration node) {
     if (offset == node.offset) {
       _forCompilationUnitMemberBefore(node);
+    } else if (offset <= node.name.end) {
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
     } else if (offset >= node.representation.end &&
         (offset <= node.leftBracket.offset || node.leftBracket.isSynthetic)) {
       keywordHelper.addKeyword(Keyword.IMPLEMENTS);
@@ -1053,9 +1128,23 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     }
     var parameters = node.parameters;
     var precedingParameter = parameters.elementBefore(offset);
-    if (precedingParameter != null && precedingParameter.isIncomplete) {
-      precedingParameter.accept(this);
-      return;
+    if (precedingParameter != null) {
+      if (precedingParameter.isIncomplete) {
+        precedingParameter.accept(this);
+        return;
+      }
+      if (precedingParameter is SimpleFormalParameter) {
+        if (precedingParameter.type == null &&
+            offset > precedingParameter.end) {
+          // The name might be a type and the user might be trying to type a
+          // name for the parameter.
+          var name = precedingParameter.name?.lexeme;
+          if (name != null) {
+            identifierHelper(includePrivateIdentifiers: false)
+                .addSuggestionsFromTypeName(name);
+          }
+        }
+      }
     }
 
     collector.completionLocation = 'FormalParameterList_parameter';
@@ -1541,7 +1630,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       return;
     }
     if (offset <= node.name.end) {
-      // TODO(brianwilkerson): Suggest a name for the mixin.
+      identifierHelper(includePrivateIdentifiers: false).addTopLevelName();
       return;
     }
     if (offset <= node.leftBracket.offset) {
@@ -1850,6 +1939,8 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
   ) {
     if (node.type.coversOffset(offset)) {
       _forTypeAnnotation(node);
+    } else if (node.name.coversOffset(offset)) {
+      identifierHelper(includePrivateIdentifiers: false).addVariable(node.type);
     }
   }
 
@@ -1915,12 +2006,23 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     }
 
     var fieldName = node.fieldName;
-    if (offset <= fieldName.end && node.fieldType.isFullySynthetic) {
-      if (fieldName.isSynthetic && hasIncompleteAnnotation()) {
-        _forAnnotation(node);
+    if (offset <= fieldName.end) {
+      var fieldType = node.fieldType;
+      if (fieldType.isFullySynthetic) {
+        if (fieldName.isSynthetic && hasIncompleteAnnotation()) {
+          _forAnnotation(node);
+        } else {
+          declarationHelper(mustBeType: true).addLexicalDeclarations(node);
+        }
       } else {
-        declarationHelper(mustBeType: true).addLexicalDeclarations(node);
+        identifierHelper(includePrivateIdentifiers: true)
+            .addVariable(fieldType);
       }
+    } else {
+      // The name might be a type and the user might be trying to type a name
+      // for the variable.
+      identifierHelper(includePrivateIdentifiers: true)
+          .addSuggestionsFromTypeName(fieldName.lexeme);
     }
   }
 
@@ -2184,7 +2286,17 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     }
     var variableDeclarationList = node.variables;
     var variables = variableDeclarationList.variables;
-    if (variables.isEmpty || offset > variables.first.beginToken.end) {
+    if (variables.isEmpty) {
+      return;
+    }
+    var firstVariable = variables.first;
+    if (offset > firstVariable.beginToken.end) {
+      if (variableDeclarationList.type == null) {
+        // The name might be a type and the user might be trying to type a name
+        // for the variable.
+        identifierHelper(includePrivateIdentifiers: true)
+            .addSuggestionsFromTypeName(firstVariable.name.lexeme);
+      }
       return;
     }
     if (node.externalKeyword == null) {
@@ -2248,7 +2360,10 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
           rightParenthesis != null &&
           rightParenthesis.type == TokenType.CLOSE_PAREN &&
           rightParenthesis.isSynthetic) {
-        _forTypeAnnotation(node);
+        _forTypeAnnotation(
+          node,
+          excludedNodes: {typeParameters},
+        );
         return;
       }
     }
@@ -2303,7 +2418,8 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     if (offset <= node.name.end) {
       var container = grandparent?.parent;
       var keyword = parent.keyword;
-      if (parent.type == null) {
+      var type = parent.type;
+      if (type == null) {
         if (keyword == null) {
           keywordHelper.addKeyword(Keyword.CONST);
           keywordHelper.addKeyword(Keyword.FINAL);
@@ -2312,6 +2428,11 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         if (keyword == null || keyword.keyword != Keyword.VAR) {
           _forTypeAnnotation(node);
         }
+      } else {
+        var canBePrivate = grandparent is FieldDeclaration ||
+            grandparent is TopLevelVariableDeclaration;
+        identifierHelper(includePrivateIdentifiers: canBePrivate)
+            .addVariable(type);
       }
       if (grandparent is FieldDeclaration) {
         if (grandparent.externalKeyword == null) {
@@ -2680,7 +2801,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         case IfStatement declaration:
           if (declaration.elseKeyword == null) {
             keywordHelper.addKeyword(Keyword.ELSE);
-            return true;
+            return false;
           }
         case TryStatement declaration:
           if (declaration.finallyBlock == null) {
@@ -2804,11 +2925,14 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
 
   /// Adds the suggestions that are appropriate when the selection is at the
   /// beginning of a type annotation.
-  void _forTypeAnnotation(AstNode node,
-      {bool mustBeExtensible = false,
-      bool mustBeImplementable = false,
-      bool mustBeMixable = false,
-      bool mustBeNonVoid = false}) {
+  void _forTypeAnnotation(
+    AstNode node, {
+    bool mustBeExtensible = false,
+    bool mustBeImplementable = false,
+    bool mustBeMixable = false,
+    bool mustBeNonVoid = false,
+    Set<AstNode> excludedNodes = const {},
+  }) {
     if (!(mustBeExtensible || mustBeImplementable || mustBeMixable)) {
       keywordHelper.addKeyword(Keyword.DYNAMIC);
       if (!mustBeNonVoid) {
@@ -2821,12 +2945,13 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       return;
     }
     declarationHelper(
-            mustBeExtensible: mustBeExtensible,
-            mustBeImplementable: mustBeImplementable,
-            mustBeMixable: mustBeMixable,
-            mustBeType: true,
-            mustBeNonVoid: mustBeNonVoid)
-        .addLexicalDeclarations(node);
+      mustBeExtensible: mustBeExtensible,
+      mustBeImplementable: mustBeImplementable,
+      mustBeMixable: mustBeMixable,
+      mustBeType: true,
+      mustBeNonVoid: mustBeNonVoid,
+      excludedNodes: excludedNodes,
+    ).addLexicalDeclarations(node);
   }
 
   /// Adds the suggestions that are appropriate when the selection is at the

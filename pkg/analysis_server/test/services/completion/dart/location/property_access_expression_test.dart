@@ -17,6 +17,7 @@ class PropertyAccessTest extends AbstractCompletionDriverTest
     with PropertyAccessTestCases {
   @failingTest
   Future<void> test_afterIdentifier_partial_if() async {
+    allowedIdentifiers = {'always', 'ifPresent'};
     await computeSuggestions('''
 enum E {
   always, ifPresent
@@ -25,7 +26,6 @@ void f() {
   E.if^;
 }
 ''');
-    allowedIdentifiers = {'always', 'ifPresent'};
     assertResponse(r'''
 replacement
   left: 2
@@ -55,7 +55,63 @@ suggestions
 ''');
   }
 
+  Future<void> test_afterIdentifier_beforeAwait() async {
+    await computeSuggestions('''
+void f(A a) async {
+  a.^
+  await a.foo();
+}
+
+class A {
+  void m01() {}
+}
+''');
+    assertResponse(r'''
+suggestions
+  m01
+    kind: methodInvocation
+''');
+  }
+
+  Future<void> test_afterIdentifier_beforeAwait_partial() async {
+    await computeSuggestions('''
+void f(A a) async {
+  a.m0^ 
+  await 0;
+}
+
+class A {
+  void m01() {}
+}
+''');
+    assertResponse(r'''
+replacement
+  left: 2
+suggestions
+  m01
+    kind: methodInvocation
+''');
+  }
+
   Future<void> test_afterIdentifier_beforeIdentifier_partial() async {
+    allowedIdentifiers = {'length'};
+    await computeSuggestions('''
+void f(String x) {
+  x.len^
+  foo();
+}
+''');
+    assertResponse(r'''
+replacement
+  left: 3
+suggestions
+  length
+    kind: getter
+''');
+  }
+
+  Future<void>
+      test_afterIdentifier_beforeIdentifier_partial_importPrefix() async {
     newFile('$testPackageLibPath/a.dart', r'''
 void v01() {}
 void g01() {}
