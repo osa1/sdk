@@ -397,7 +397,7 @@ const main = async () => {
     // Is an FFI module specified?
     if (args.length > 2) {
         // Instantiate FFI module.
-        var ffiInstance = new WebAssembly.Instance(compile(args[ffiArg], false), {});
+        var ffiInstance = WebAssembly.instantiate(compile(args[ffiArg], false), {});
         // Make its exports available as imports under the 'ffi' module name.
         importObject.ffi = ffiInstance.exports;
     }
