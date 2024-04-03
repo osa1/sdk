@@ -80,6 +80,8 @@
       "out/ReleaseX64/dart2wasm_platform.dill",
       "out/ReleaseX64/dart2wasm_js_compatibility_outline.dill",
       "out/ReleaseX64/dart2wasm_js_compatibility_platform.dill",
+      "out/ReleaseX64/dart2wasm_js_string_outline.dill",
+      "out/ReleaseX64/dart2wasm_js_string_platform.dill",
       "out/ReleaseX64/wasm/",
       "out/ReleaseX64/wasm-opt",
       "pkg/",
@@ -487,6 +489,16 @@
         "dart2wasm-options": [
           "-O0",
           "--js-compatibility"
+        ],
+        "host-asserts": true,
+        "timeout": 60
+      }
+    },
+    "dart2wasm-(linux|mac|win)-js-string-(d8|jsshell|jsc|chrome|firefox)": {
+      "options": {
+        "dart2wasm-options": [
+          "-O0",
+          "--js-string"
         ],
         "host-asserts": true,
         "timeout": 60

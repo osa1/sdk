@@ -325,7 +325,7 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
 
   @override
   ConstantInfo? visitStringConstant(StringConstant constant) {
-    if (translator.options.jsCompatibility) {
+    if (translator.options.jsCompatibility || translator.options.jsString) {
       ClassInfo info = translator.classInfo[translator.jsStringClass]!;
       return createConstant(constant, info.nonNullableType, (function, b) {
         b.i32_const(info.classId);

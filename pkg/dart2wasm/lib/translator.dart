@@ -33,6 +33,7 @@ class TranslatorOptions {
   bool importSharedMemory = false;
   bool inlining = true;
   bool jsCompatibility = false;
+  bool jsString = false;
   bool omitImplicitTypeChecks = false;
   bool omitExplicitTypeChecks = false;
   bool omitBoundsChecks = false;
@@ -187,11 +188,13 @@ class Translator with KernelNodes {
     boxedIntClass: boxedIntClass,
     boxedDoubleClass: boxedDoubleClass,
     boxedBoolClass: coreTypes.boolClass,
-    if (!options.jsCompatibility) ...{
+    if (!options.jsCompatibility && !options.jsString) ...{
       oneByteStringClass: stringBaseClass,
       twoByteStringClass: stringBaseClass
     },
-    if (options.jsCompatibility) ...{jsStringClass: jsStringClass},
+    if (options.jsCompatibility || options.jsString) ...{
+      jsStringClass: jsStringClass
+    },
   };
 
   /// Type for vtable entries for dynamic calls. These entries are used in
