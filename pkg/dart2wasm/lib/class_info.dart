@@ -82,7 +82,7 @@ class FieldIndex {
     check(translator.boxedBoolClass, "value", FieldIndex.boxValue);
     check(translator.boxedIntClass, "value", FieldIndex.boxValue);
     check(translator.boxedDoubleClass, "value", FieldIndex.boxValue);
-    if (!translator.options.jsCompatibility) {
+    if (!translator.options.jsCompatibility && !translator.options.jsString) {
       check(translator.oneByteStringClass, "_array", FieldIndex.stringArray);
       check(translator.twoByteStringClass, "_array", FieldIndex.stringArray);
     }
@@ -305,7 +305,8 @@ class ClassInfoCollector {
       ClassInfo superInfo = cls == translator.coreTypes.boolClass ||
               cls == translator.coreTypes.numClass
           ? topInfo
-          : (!translator.options.jsCompatibility &&
+          : (!(translator.options.jsCompatibility ||
+                          translator.options.jsString) &&
                       cls == translator.wasmStringBaseClass) ||
                   cls == translator.typeClass
               ? translator.classInfo[cls.implementedTypes.single.classNode]!
@@ -597,7 +598,7 @@ class ClassIdNumbering {
     final fixedOrder = <Class, int>{
       translator.coreTypes.boolClass: -10,
       translator.coreTypes.numClass: -9,
-      if (!translator.options.jsCompatibility)
+      if (!(translator.options.jsCompatibility || translator.options.jsString))
         translator.wasmStringBaseClass: -8,
       translator.jsStringClass: -7,
       translator.typeClass: -6,

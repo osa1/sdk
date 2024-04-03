@@ -79,6 +79,12 @@ while [ $# -gt 0 ]; do
       shift
       ;;
 
+    --js-string)
+      PLATFORM_FILENAME="dart2wasm_js_string_platform.dill"
+      DART2WASM_ARGS+=("--js-string")
+      shift
+      ;;
+
     -g | --name-section)
       BINARYEN_FLAGS+=("-g")
       shift

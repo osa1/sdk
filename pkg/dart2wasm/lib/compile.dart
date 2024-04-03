@@ -77,6 +77,8 @@ Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
   final wasm.Mode mode;
   if (options.translatorOptions.jsCompatibility) {
     mode = wasm.Mode.jsCompatibility;
+  } else if (options.translatorOptions.jsString) {
+    mode = wasm.Mode.jsString;
   } else {
     mode = wasm.Mode.regular;
   }
