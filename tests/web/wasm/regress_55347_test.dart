@@ -23,7 +23,7 @@ class MyOtherException implements Exception {
 }
 
 Future<String> asynchronouslyThrowException() async {
-  throw MyException('throwing an error!');
+  throw MyException('Throwing an error!');
 }
 
 Future<String?> test() async {
@@ -35,11 +35,11 @@ Future<String?> test() async {
   } on MyException {
     return 'Success';
   } catch (error) {
-    Expect.fail('Wrong exception casught');
+    Expect.fail('Wrong exception caught');
   }
   return null;
 }
 
 void main() async {
-  Expect.equals(await test(), Success);
+  Expect.equals(await test(), 'Success');
 }
