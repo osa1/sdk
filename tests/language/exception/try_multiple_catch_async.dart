@@ -2,6 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// Tests try-catch in `async`, with multiple `catch`/`on` blocks, where the
+// first type test in the `catch`/`on` blocks fail and the subsequent test
+// passes.
+//
+// This is a regression test for issue #55347.
+
 import 'package:expect/expect.dart';
 
 class MyException implements Exception {
