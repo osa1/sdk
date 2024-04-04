@@ -1123,8 +1123,10 @@ class AsyncCodeGenerator extends CodeGenerator {
 
     for (int catchIdx = 0; catchIdx < node.catches.length; catchIdx += 1) {
       final Catch catch_ = node.catches[catchIdx];
-      final Catch? nextCatch =
-          node.catches.length < catchIdx ? node.catches[catchIdx + 1] : null;
+
+      final Catch? nextCatch = catchIdx < node.catches.length - 1
+          ? node.catches[catchIdx + 1]
+          : null;
 
       _emitTargetLabel(innerTargets[catch_]!);
 
