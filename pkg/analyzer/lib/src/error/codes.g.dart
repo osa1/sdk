@@ -6740,6 +6740,7 @@ class WarningCode extends AnalyzerErrorCode {
     'INVALID_USE_OF_DO_NOT_SUBMIT_MEMBER',
     "Uses of '{0}' should not be submitted to source control.",
     correctionMessage: "Try removing the reference to '{0}'.",
+    hasPublishedDocs: true,
   );
 
   ///  Parameters:
@@ -6931,6 +6932,15 @@ class WarningCode extends AnalyzerErrorCode {
     'MUST_CALL_SUPER',
     "This method overrides a method annotated as '@mustCallSuper' in '{0}', "
         "but doesn't invoke the overridden method.",
+    hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the name of the argument
+  static const WarningCode NON_CONST_ARGUMENT_FOR_CONST_PARAMETER = WarningCode(
+    'NON_CONST_ARGUMENT_FOR_CONST_PARAMETER',
+    "Argument '{0}' must be a constant.",
+    correctionMessage: "Try replacing the argument with a constant.",
     hasPublishedDocs: true,
   );
 
