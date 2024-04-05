@@ -43,6 +43,7 @@ Future<String?> test() async {
   } catch (error) {
     Expect.fail('Wrong exception caught');
   }
+  Expect.fail('No exception caught');
   return null;
 }
 
