@@ -33,8 +33,7 @@ class String {
     // `String.fromCharCode.apply`.
     final charCodesLength = (end ?? length) - start;
     final typedArrayLength = charCodesLength * 2;
-    final JSUint32ArrayImpl list =
-        unsafeCast<JSUint32ArrayImpl>(Uint32List(typedArrayLength));
+    final JSUint32ArrayImpl list = JSUint32ArrayImpl(typedArrayLength);
     int index = 0; // index in `list`.
     end ??= start + charCodesLength;
     for (int i = start; i < end; i++) {
