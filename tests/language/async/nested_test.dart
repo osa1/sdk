@@ -19,7 +19,12 @@ Stream<String> test() async* {
   yield* expanded;
 }
 
-void main() async {
+void test() async {
   Expect.listEquals(
       ['before', 'a', 'after', 'before', 'b', 'after'], await test().toList());
+}
+
+void main() {
+  asyncStart();
+  test().then((_) => asyncEnd());
 }
