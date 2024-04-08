@@ -42,21 +42,39 @@ DartDevIsolate::DartDev_Result DartDevIsolate::DartDevRunner::result_ =
     DartDevIsolate::DartDev_Result_Unknown;
 char** DartDevIsolate::DartDevRunner::script_ = nullptr;
 char** DartDevIsolate::DartDevRunner::package_config_override_ = nullptr;
-bool* DartDevIsolate::DartDevRunner::force_no_sound_null_safety_ = nullptr;
 std::unique_ptr<char*[], void (*)(char*[])>
     DartDevIsolate::DartDevRunner::argv_ =
         std::unique_ptr<char*[], void (*)(char**)>(nullptr, [](char**) {});
 intptr_t DartDevIsolate::DartDevRunner::argc_ = 0;
 
 bool DartDevIsolate::ShouldParseCommand(const char* script_uri) {
-  // If script_uri is not a file path or of a known URI scheme, we can assume
-  // that this is a DartDev command.
-  return (!File::ExistsUri(nullptr, script_uri) &&
-          (strncmp(script_uri, "http://", 7) != 0) &&
-          (strncmp(script_uri, "https://", 8) != 0) &&
-          (strncmp(script_uri, "file://", 7) != 0) &&
-          (strncmp(script_uri, "package:", 8) != 0) &&
-          (strncmp(script_uri, "google3://", 10) != 0));
+  // If script_uri is a known DartDev command, we should not try to run it.
+  //
+  // Otherwise if script_uri is not a file path or of a known URI scheme, we
+  // assume this is a mistyped DartDev command.
+  //
+  // This should be kept in sync with the commands in
+  // `pkg/dartdev/lib/dartdev.dart`.
+  return (
+      (strcmp(script_uri, "analyze") == 0) ||
+      (strcmp(script_uri, "compilation-server") == 0) ||
+      (strcmp(script_uri, "build") == 0) ||
+      (strcmp(script_uri, "compile") == 0) ||
+      (strcmp(script_uri, "create") == 0) ||
+      (strcmp(script_uri, "devtools") == 0) ||
+      (strcmp(script_uri, "doc") == 0) || (strcmp(script_uri, "fix") == 0) ||
+      (strcmp(script_uri, "format") == 0) ||
+      (strcmp(script_uri, "info") == 0) || (strcmp(script_uri, "pub") == 0) ||
+      (strcmp(script_uri, "run") == 0) || (strcmp(script_uri, "test") == 0) ||
+      (strcmp(script_uri, "info") == 0) ||
+      (strcmp(script_uri, "language-server") == 0) ||
+      (strcmp(script_uri, "tooling-daemon") == 0) ||
+      (!File::ExistsUri(nullptr, script_uri) &&
+       (strncmp(script_uri, "http://", 7) != 0) &&
+       (strncmp(script_uri, "https://", 8) != 0) &&
+       (strncmp(script_uri, "file://", 7) != 0) &&
+       (strncmp(script_uri, "package:", 8) != 0) &&
+       (strncmp(script_uri, "google3://", 10) != 0)));
 }
 
 Utils::CStringUniquePtr DartDevIsolate::TryResolveArtifactPath(
@@ -90,13 +108,11 @@ void DartDevIsolate::DartDevRunner::Run(
     Dart_IsolateGroupCreateCallback create_isolate,
     char** packages_file,
     char** script,
-    bool* force_no_sound_null_safety,
     CommandLineOptions* dart_options) {
   create_isolate_ = create_isolate;
   dart_options_ = dart_options;
   package_config_override_ = packages_file;
   script_ = script;
-  force_no_sound_null_safety_ = force_no_sound_null_safety;
 
   // We've encountered an error during preliminary argument parsing so we'll
   // output the standard help message and exit with an error code.
@@ -157,8 +173,6 @@ void DartDevIsolate::DartDevRunner::DartDevResultCallback(
         *package_config_override_ = Utils::StrDup(item2->value.as_string);
       }
 
-      *force_no_sound_null_safety_ = item3->value.as_bool;
-
       ASSERT(GetArrayItem(message, 4)->type == Dart_CObject_kArray);
       Dart_CObject* args = GetArrayItem(message, 4);
       argc_ = args->value.as_array.length;
@@ -211,7 +225,6 @@ void DartDevIsolate::DartDevRunner::RunCallback(uword args) {
   Dart_IsolateFlags flags;
   Dart_IsolateFlagsInitialize(&flags);
   flags.enable_asserts = false;
-  flags.null_safety = true;
   flags.use_field_guards = true;
   flags.use_osr = true;
   flags.is_system_isolate = true;
@@ -287,10 +300,8 @@ DartDevIsolate::DartDev_Result DartDevIsolate::RunDartDev(
     Dart_IsolateGroupCreateCallback create_isolate,
     char** packages_file,
     char** script,
-    bool* force_no_sound_null_safety,
     CommandLineOptions* dart_options) {
-  runner_.Run(create_isolate, packages_file, script, force_no_sound_null_safety,
-              dart_options);
+  runner_.Run(create_isolate, packages_file, script, dart_options);
   return runner_.result();
 }
 

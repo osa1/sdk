@@ -106,7 +106,7 @@ constexpr bool FLAG_support_il_printer = false;
   R(dump_megamorphic_stats, false, bool, false,                                \
     "Dump megamorphic cache statistics")                                       \
   R(dump_symbol_stats, false, bool, false, "Dump symbol table statistics")     \
-  R(enable_asserts, false, bool, false, "Enable assert statements.")           \
+  P(enable_asserts, bool, false, "Enable assert statements.")                  \
   P(inline_alloc, bool, true, "Whether to use inline allocation fast paths.")  \
   R(null_assertions, false, bool, false,                                       \
     "Enable null assertions for parameters.")                                  \
@@ -250,8 +250,6 @@ constexpr bool FLAG_support_il_printer = false;
   P(verify_entry_points, bool, false,                                          \
     "Throw API error on invalid member access through native API. See "        \
     "entry_point_pragma.md")                                                   \
-  P(sound_null_safety, bool, true,                                             \
-    "Respect the nullability of types at runtime.")                            \
   C(branch_coverage, false, false, bool, false, "Enable branch coverage")
 
 #endif  // RUNTIME_VM_FLAG_LIST_H_
