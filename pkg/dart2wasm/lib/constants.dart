@@ -439,17 +439,33 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
 
     List<Constant> elements =
         (constant.fieldValues.values.single as ListConstant).entries;
-    bool lazy = false;
+    bool lazy = elements.length > maxArrayNewFixedLength;
     for (Constant element in elements) {
       lazy |= ensureConstant(element)?.isLazy ?? false;
     }
 
     return createConstant(constant, w.RefType.def(arrayType, nullable: false),
         lazy: lazy, (function, b) {
-      for (Constant element in elements) {
-        constants.instantiateConstant(function, b, element, elementType);
+      if (lazy) {
+        w.Local arrayLocal =
+            function!.addLocal(w.RefType.def(arrayType, nullable: false));
+        constants.instantiateConstant(function, b, elements[0], elementType);
+        b.i32_const(elements.length);
+        b.array_new(arrayType);
+        b.local_set(arrayLocal);
+        for (int i = 1; i < elements.length; i++) {
+          b.local_get(arrayLocal);
+          b.i32_const(i);
+          constants.instantiateConstant(function, b, elements[i], elementType);
+          b.array_set(arrayType);
+        }
+        b.local_get(arrayLocal);
+      } else {
+        for (Constant element in elements) {
+          constants.instantiateConstant(function, b, element, elementType);
+        }
+        b.array_new_fixed(arrayType, elements.length);
       }
-      b.array_new_fixed(arrayType, elements.length);
     });
   }
 
