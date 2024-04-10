@@ -2884,7 +2884,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     makeArrayFromExpressions(node.expressions,
         translator.coreTypes.objectRawType(Nullability.nullable));
-    return translator.outputOrVoid(call(translator.jsStringInterpolate.reference));
+    return translator
+        .outputOrVoid(call(translator.jsStringInterpolate.reference));
   }
 
   @override
