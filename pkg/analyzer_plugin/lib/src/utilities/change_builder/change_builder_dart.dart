@@ -3,7 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/analysis/code_style_options.dart';
-import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -555,19 +554,7 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
       write('covariant ');
     }
     if (isRequiredNamed) {
-      var library = dartFileEditBuilder.resolvedUnit.libraryElement;
-      if (library.featureSet.isEnabled(Feature.non_nullable)) {
-        write('required ');
-      } else {
-        var result = dartFileEditBuilder
-            .importLibraryElement(Uri.parse('package:meta/meta.dart'));
-        var prefix = result.prefix;
-        if (prefix != null) {
-          write('@$prefix.required ');
-        } else {
-          write('@required ');
-        }
-      }
+      write('required ');
     }
     if (type != null) {
       var hasType = writeType();
@@ -1425,86 +1412,12 @@ class DartFileEditBuilderImpl extends FileEditBuilderImpl
   List<Uri> get requiredImports => librariesToImport.keys.toList();
 
   @override
-  void addCaseClauseAtEndInsertion(
-    void Function(DartEditBuilder builder) buildEdit, {
-    required Token switchKeyword,
-    required Token rightParenthesis,
-    required Token leftBracket,
-    required Token rightBracket,
-  }) {
-    var blockStart = resolvedUnit.lineInfo.getLocation(leftBracket.offset);
-    var blockEnd = resolvedUnit.lineInfo.getLocation(rightBracket.offset);
-    var isBlockSingleLine = blockStart.lineNumber == blockEnd.lineNumber;
-    int offset;
-    if (isBlockSingleLine) {
-      offset = leftBracket.isSynthetic ? rightParenthesis.end : leftBracket.end;
-    } else {
-      offset = resolvedUnit.lineInfo.getOffsetOfLine(blockEnd.lineNumber - 1);
-    }
-
-    addInsertion(offset, (builder) {
-      if (leftBracket.isSynthetic) {
-        builder.write(' {');
-      }
-      if (isBlockSingleLine) {
-        builder.writeln();
-      }
-      buildEdit(builder);
-      if (isBlockSingleLine) {
-        builder.write(resolvedUnit.linePrefix(switchKeyword.offset));
-      }
-      if (rightBracket.isSynthetic) {
-        builder.write('}');
-      }
-    });
-  }
-
-  @override
-  void addFieldInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  ) =>
-      _addCompilationUnitMemberInsertion(
-        compilationUnitMember,
-        buildEdit,
-        lastMemberFilter: (member) => member is FieldDeclaration,
-      );
-
-  @override
-  void addGetterInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  ) =>
-      _addCompilationUnitMemberInsertion(
-        compilationUnitMember,
-        buildEdit,
-        lastMemberFilter: (member) =>
-            member is FieldDeclaration ||
-            member is ConstructorDeclaration ||
-            member is MethodDeclaration && member.isGetter,
-      );
-
-  @override
   void addInsertion(
           int offset, void Function(DartEditBuilder builder) buildEdit,
           {bool insertBeforeExisting = false}) =>
       super.addInsertion(
           offset, (builder) => buildEdit(builder as DartEditBuilder),
           insertBeforeExisting: insertBeforeExisting);
-
-  @override
-  void addMethodInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  ) =>
-      _addCompilationUnitMemberInsertion(
-        compilationUnitMember,
-        buildEdit,
-        lastMemberFilter: (member) =>
-            member is FieldDeclaration ||
-            member is ConstructorDeclaration ||
-            member is MethodDeclaration,
-      );
 
   @override
   void addReplacement(SourceRange range,
@@ -1703,6 +1616,100 @@ class DartFileEditBuilderImpl extends FileEditBuilderImpl
 
     return false;
   }
+
+  @override
+  void insertCaseClauseAtEnd(
+    void Function(DartEditBuilder builder) buildEdit, {
+    required Token switchKeyword,
+    required Token rightParenthesis,
+    required Token leftBracket,
+    required Token rightBracket,
+  }) {
+    var blockStart = resolvedUnit.lineInfo.getLocation(leftBracket.offset);
+    var blockEnd = resolvedUnit.lineInfo.getLocation(rightBracket.offset);
+    var isBlockSingleLine = blockStart.lineNumber == blockEnd.lineNumber;
+    int offset;
+    if (isBlockSingleLine) {
+      offset = leftBracket.isSynthetic ? rightParenthesis.end : leftBracket.end;
+    } else {
+      offset = resolvedUnit.lineInfo.getOffsetOfLine(blockEnd.lineNumber - 1);
+    }
+
+    addInsertion(offset, (builder) {
+      if (leftBracket.isSynthetic) {
+        builder.write(' {');
+      }
+      if (isBlockSingleLine) {
+        builder.writeln();
+      }
+      buildEdit(builder);
+      if (isBlockSingleLine) {
+        builder.write(resolvedUnit.linePrefix(switchKeyword.offset));
+      }
+      if (rightBracket.isSynthetic) {
+        builder.write('}');
+      }
+    });
+  }
+
+  @override
+  void insertConstructor(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  ) {
+    final sortConstructorsFirst = resolvedUnit.session.analysisContext
+        .getAnalysisOptionsForFile(resolvedUnit.file)
+        .codeStyleOptions
+        .sortConstructorsFirst;
+    var lastMemberFilter = sortConstructorsFirst
+        ? (member) => member is ConstructorDeclaration
+        : (member) =>
+            member is ConstructorDeclaration || member is FieldDeclaration;
+    _addCompilationUnitMemberInsertion(
+      compilationUnitMember,
+      buildEdit,
+      lastMemberFilter: lastMemberFilter,
+    );
+  }
+
+  @override
+  void insertField(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  ) =>
+      _addCompilationUnitMemberInsertion(
+        compilationUnitMember,
+        buildEdit,
+        lastMemberFilter: (member) => member is FieldDeclaration,
+      );
+
+  @override
+  void insertGetter(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  ) =>
+      _addCompilationUnitMemberInsertion(
+        compilationUnitMember,
+        buildEdit,
+        lastMemberFilter: (member) =>
+            member is FieldDeclaration ||
+            member is ConstructorDeclaration ||
+            member is MethodDeclaration && member.isGetter,
+      );
+
+  @override
+  void insertMethod(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  ) =>
+      _addCompilationUnitMemberInsertion(
+        compilationUnitMember,
+        buildEdit,
+        lastMemberFilter: (member) =>
+            member is FieldDeclaration ||
+            member is ConstructorDeclaration ||
+            member is MethodDeclaration,
+      );
 
   @override
   void replaceTypeWithFuture(
@@ -2342,10 +2349,33 @@ class _EnclosingElementFinder {
 /// like a class or mixin.
 class _InsertionPreparer {
   final CompilationUnitMember _declaration;
-  final LineInfo _lineInfo;
-  late final ClassMember? _targetMember;
 
-  _InsertionPreparer(this._declaration, this._lineInfo);
+  final LineInfo _lineInfo;
+
+  final List<ClassMember> _members;
+
+  late final bool _foundTargetMember;
+
+  factory _InsertionPreparer(
+      CompilationUnitMember declaration, LineInfo lineInfo) {
+    var members = declaration.members;
+    if (members == null) {
+      assert(
+        false,
+        'Unexpected CompilationUnitMember: "$declaration" is '
+        '"${declaration.runtimeType}"',
+      );
+      members = [];
+    }
+
+    return _InsertionPreparer._(declaration, lineInfo, members);
+  }
+
+  _InsertionPreparer._(
+    this._declaration,
+    this._lineInfo,
+    this._members,
+  );
 
   /// Returns the offset of where a new member should be inserted, as a new
   /// member of [_declaration].
@@ -2355,21 +2385,25 @@ class _InsertionPreparer {
   /// the beginning of [_declaration], just after it's opening brace.
   int? insertionLocation(
       {required bool Function(ClassMember existingMember) lastMemberFilter}) {
-    var members = _declaration.members;
-    if (members == null) {
-      assert(
-        false,
-        'Unexpected CompilationUnitMember: "$_declaration" is '
-        '"${_declaration.runtimeType}"',
-      );
-      return null;
-    }
-    var targetMember =
-        _targetMember = members.lastWhereOrNull(lastMemberFilter);
-    // After the last target member.
+    var targetMember = _members.lastWhereOrNull(lastMemberFilter);
+    _foundTargetMember = targetMember != null;
     if (targetMember != null) {
+      // After the last target member.
       return targetMember.end;
     }
+
+    final declaration = _declaration;
+    if (declaration is EnumDeclaration) {
+      // After the last enum value.
+      var semicolon = declaration.semicolon;
+      if (semicolon != null) {
+        return semicolon.end;
+      }
+
+      var lastConstant = declaration.constants.last;
+      return lastConstant.end;
+    }
+
     // At the beginning of the class.
     // TODO(srawlins): The left bracket location can be synthetic. If so, we
     // should perhaps write opening and closing brackets around the inserted
@@ -2387,11 +2421,24 @@ class _InsertionPreparer {
   /// This method can only be invoked after [insertionLocation], which first
   /// determines the target member that the insertion follows.
   void writePrefix(DartEditBuilder builder) {
-    if (_targetMember == null) {
+    var declaration = _declaration;
+    if (declaration is EnumDeclaration && declaration.semicolon == null) {
+      builder.write(';');
+    }
+
+    if (_foundTargetMember) {
+      // After the target member, write two newlines.
+      builder.writeln();
+      builder.writeln();
+      builder.writeIndent();
+    } else if (declaration is EnumDeclaration &&
+        declaration.constants.isNotEmpty) {
+      // After the last constant (and the semicolon), write two newlines.
+      builder.writeln();
       builder.writeln();
       builder.writeIndent();
     } else {
-      builder.writeln();
+      // After the opening brace, just write one newline.
       builder.writeln();
       builder.writeIndent();
     }
@@ -2403,12 +2450,23 @@ class _InsertionPreparer {
   /// This method can only be invoked after [insertionLocation], which first
   /// determines the target member that the insertion follows.
   void writeSuffix(DartEditBuilder builder) {
-    if (_targetMember == null && (_declaration.members?.isNotEmpty ?? false)) {
+    if (_foundTargetMember) {
+      return;
+    }
+
+    var declaration = _declaration;
+    if (declaration is EnumDeclaration && declaration.constants.isNotEmpty) {
+      return;
+    }
+
+    if (_members.isNotEmpty) {
       builder.writeln();
       return;
     }
 
-    var offsetLine = _lineInfo.getLocation(_declaration.offset).lineNumber;
+    var offsetLine = _lineInfo
+        .getLocation(_declaration.firstTokenAfterCommentAndMetadata.offset)
+        .lineNumber;
     var endLine = _lineInfo.getLocation(_declaration.end).lineNumber;
     var declarationIsSingleLine = endLine == offsetLine;
     if (declarationIsSingleLine) {
@@ -2496,6 +2554,7 @@ extension on CompilationUnitMember {
     var self = this;
     return switch (self) {
       ClassDeclaration() => self.leftBracket,
+      EnumDeclaration() => self.leftBracket,
       ExtensionDeclaration() => self.leftBracket,
       ExtensionTypeDeclaration() => self.leftBracket,
       MixinDeclaration() => self.leftBracket,
@@ -2509,6 +2568,8 @@ extension on CompilationUnitMember {
     var self = this;
     return switch (self) {
       ClassDeclaration() => self.members,
+      // Enum constants are handled separately; not considered members.
+      EnumDeclaration() => self.members,
       ExtensionDeclaration() => self.members,
       ExtensionTypeDeclaration() => self.members,
       MixinDeclaration() => self.members,

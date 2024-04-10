@@ -10,10 +10,12 @@ import 'package:analyzer/src/dart/ast/ast.dart' as ast;
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
+import 'package:analyzer/src/summary2/library_builder.dart';
 import 'package:analyzer/src/summary2/linked_element_factory.dart';
 import 'package:analyzer/src/summary2/macro.dart';
 import 'package:analyzer/src/summary2/macro_application_error.dart';
 import 'package:analyzer/src/summary2/macro_declarations.dart';
+import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:analyzer/src/utilities/extensions/object.dart';
 import 'package:collection/collection.dart';
@@ -77,21 +79,10 @@ class LibraryMacroApplier {
 
   /// The callback to run declarations phase if the type.
   /// We do it out-of-order when the type is introspected.
-  final Future<void> Function({required ElementImpl? targetElement})
-      runDeclarationsPhase;
-
-  /// The reversed queue of macro applications to apply.
-  ///
-  /// We add classes before methods, and methods in the reverse order,
-  /// classes in the reverse order, annotations in the direct order.
-  ///
-  /// We iterate from the end looking for the next application to apply.
-  /// This way we ensure two ordering rules:
-  /// 1. inner before outer
-  /// 2. right to left
-  /// 3. source order
-  final Map<LibraryElementImpl, List<_MacroApplication>> _libraryApplications =
-      Map.identity();
+  final Future<void> Function({
+    required ElementImpl? targetElement,
+    required OperationPerformanceImpl performance,
+  }) runDeclarationsPhase;
 
   /// The applications that currently run the declarations phase.
   final List<_MacroApplication> _declarationsPhaseRunning = [];
@@ -102,7 +93,11 @@ class LibraryMacroApplier {
       _elementToIntrospectionCycleException = {};
 
   late final macro.TypePhaseIntrospector _typesPhaseIntrospector =
-      _TypePhaseIntrospector(elementFactory, declarationBuilder);
+      _TypePhaseIntrospector(
+    elementFactory,
+    declarationBuilder,
+    OperationPerformanceImpl('<typesPhaseIntrospector>'),
+  );
 
   LibraryMacroApplier({
     required this.elementFactory,
@@ -113,7 +108,7 @@ class LibraryMacroApplier {
   });
 
   Future<void> add({
-    required LibraryElementImpl libraryElement,
+    required LibraryBuilder libraryBuilder,
     required LibraryOrAugmentationElementImpl container,
     required ast.CompilationUnitImpl unit,
   }) async {
@@ -121,10 +116,10 @@ class LibraryMacroApplier {
       switch (directive) {
         case ast.LibraryDirectiveImpl():
           await _addAnnotations(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetNode: directive,
-            targetNodeElement: libraryElement,
+            targetNodeElement: libraryBuilder.element,
             targetDeclarationKind: macro.DeclarationKind.library,
             annotations: directive.metadata,
           );
@@ -139,7 +134,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -151,7 +146,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -163,7 +158,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -173,7 +168,7 @@ class LibraryMacroApplier {
           );
           for (final constant in declaration.constants.reversed) {
             await _addAnnotations(
-              libraryElement: libraryElement,
+              libraryBuilder: libraryBuilder,
               container: container,
               targetNode: constant,
               targetNodeElement: constant.declaredElement,
@@ -185,7 +180,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -197,7 +192,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -207,7 +202,7 @@ class LibraryMacroApplier {
           );
         case ast.FunctionDeclarationImpl():
           await _addAnnotations(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetNode: declaration,
             targetNodeElement: declaration.declaredElement,
@@ -219,7 +214,7 @@ class LibraryMacroApplier {
           break;
         case ast.GenericTypeAliasImpl():
           await _addAnnotations(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetNode: declaration,
             targetNodeElement: declaration.declaredElement,
@@ -230,7 +225,7 @@ class LibraryMacroApplier {
           final element = declaration.declaredElement!;
           final declarationElement = element.augmented?.declaration ?? element;
           await _addClassLike(
-            libraryElement: libraryElement,
+            libraryBuilder: libraryBuilder,
             container: container,
             targetElement: declarationElement,
             classNode: declaration,
@@ -242,7 +237,7 @@ class LibraryMacroApplier {
           final variables = declaration.variables.variables;
           for (final variable in variables.reversed) {
             await _addAnnotations(
-              libraryElement: libraryElement,
+              libraryBuilder: libraryBuilder,
               container: container,
               targetNode: variable,
               targetNodeElement: variable.declaredElement,
@@ -273,8 +268,9 @@ class LibraryMacroApplier {
   }
 
   Future<List<macro.MacroExecutionResult>?> executeDeclarationsPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
     required ElementImpl? targetElement,
+    required OperationPerformanceImpl performance,
   }) async {
     if (targetElement != null) {
       for (var i = 0; i < _declarationsPhaseRunning.length; i++) {
@@ -299,7 +295,7 @@ class LibraryMacroApplier {
     }
 
     final application = _nextForDeclarationsPhase(
-      library: library,
+      libraryBuilder: libraryBuilder,
       targetElement: targetElement,
     );
     if (application == null) {
@@ -317,8 +313,9 @@ class LibraryMacroApplier {
         final introspector = _DeclarationPhaseIntrospector(
           elementFactory,
           declarationBuilder,
+          performance,
           this,
-          library.typeSystem,
+          libraryBuilder.element.typeSystem,
         );
 
         final result = await macroExecutor.executeDeclarationsPhase(
@@ -345,10 +342,11 @@ class LibraryMacroApplier {
   }
 
   Future<List<macro.MacroExecutionResult>?> executeDefinitionsPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
+    required OperationPerformanceImpl performance,
   }) async {
     final application = _nextForDefinitionsPhase(
-      library: library,
+      libraryBuilder: libraryBuilder,
     );
     if (application == null) {
       return null;
@@ -363,8 +361,9 @@ class LibraryMacroApplier {
         final introspector = _DefinitionPhaseIntrospector(
           elementFactory,
           declarationBuilder,
+          performance,
           this,
-          application.target.library.typeSystem,
+          application.target.library.element.typeSystem,
         );
 
         final result = await macroExecutor.executeDefinitionsPhase(
@@ -390,10 +389,10 @@ class LibraryMacroApplier {
   }
 
   Future<List<macro.MacroExecutionResult>?> executeTypesPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
   }) async {
     final application = _nextForTypesPhase(
-      library: library,
+      libraryBuilder: libraryBuilder,
     );
     if (application == null) {
       return null;
@@ -428,7 +427,7 @@ class LibraryMacroApplier {
   }
 
   Future<void> _addAnnotations({
-    required LibraryElementImpl libraryElement,
+    required LibraryBuilder libraryBuilder,
     required LibraryOrAugmentationElementImpl container,
     required ast.AstNode targetNode,
     required Element? targetNodeElement,
@@ -438,7 +437,7 @@ class LibraryMacroApplier {
     if (targetNode is ast.FieldDeclaration) {
       for (final field in targetNode.fields.variables) {
         await _addAnnotations(
-          libraryElement: libraryElement,
+          libraryBuilder: libraryBuilder,
           container: container,
           targetNode: field,
           targetNodeElement: field.declaredElement,
@@ -455,7 +454,7 @@ class LibraryMacroApplier {
     }
 
     final macroTarget = _MacroTarget(
-      library: libraryElement,
+      library: libraryBuilder,
       node: targetNode,
       element: targetElement,
     );
@@ -521,12 +520,12 @@ class LibraryMacroApplier {
         phasesToExecute: phasesToExecute,
       );
 
-      _libraryApplications.add(libraryElement, application);
+      libraryBuilder._applications.add(application);
     }
   }
 
   Future<void> _addClassLike({
-    required LibraryElementImpl libraryElement,
+    required LibraryBuilder libraryBuilder,
     required LibraryOrAugmentationElementImpl container,
     required MacroTargetElement targetElement,
     required ast.Declaration classNode,
@@ -535,7 +534,7 @@ class LibraryMacroApplier {
     required List<ast.ClassMember> members,
   }) async {
     await _addAnnotations(
-      libraryElement: libraryElement,
+      libraryBuilder: libraryBuilder,
       container: container,
       targetNode: classNode,
       targetNodeElement: classNode.declaredElement,
@@ -550,7 +549,7 @@ class LibraryMacroApplier {
         ast.MethodDeclaration() => macro.DeclarationKind.method,
       };
       await _addAnnotations(
-        libraryElement: libraryElement,
+        libraryBuilder: libraryBuilder,
         container: container,
         targetNode: member,
         targetNodeElement: member.declaredElement,
@@ -731,14 +730,10 @@ class LibraryMacroApplier {
   }
 
   _MacroApplication? _nextForDeclarationsPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
     required Element? targetElement,
   }) {
-    final applications = _libraryApplications[library];
-    if (applications == null) {
-      return null;
-    }
-
+    final applications = libraryBuilder._applications;
     for (var i = applications.length - 1; i >= 0; i--) {
       final application = applications[i];
       if (targetElement != null) {
@@ -757,18 +752,11 @@ class LibraryMacroApplier {
   }
 
   _MacroApplication? _nextForDefinitionsPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
   }) {
-    final applications = _libraryApplications[library];
-    if (applications == null) {
-      return null;
-    }
-
+    final applications = libraryBuilder._applications;
     for (var i = applications.length - 1; i >= 0; i--) {
       final application = applications[i];
-      if (!identical(application.target.library, library)) {
-        continue;
-      }
       if (application.phasesToExecute.remove(macro.Phase.definitions)) {
         return application;
       }
@@ -777,18 +765,11 @@ class LibraryMacroApplier {
   }
 
   _MacroApplication? _nextForTypesPhase({
-    required LibraryElementImpl library,
+    required LibraryBuilder libraryBuilder,
   }) {
-    final applications = _libraryApplications[library];
-    if (applications == null) {
-      return null;
-    }
-
+    final applications = libraryBuilder._applications;
     for (var i = applications.length - 1; i >= 0; i--) {
       final application = applications[i];
-      if (!identical(application.target.library, library)) {
-        continue;
-      }
       if (application.phasesToExecute.remove(macro.Phase.types)) {
         return application;
       }
@@ -890,6 +871,23 @@ class LibraryMacroApplier {
     }
     return null;
   }
+}
+
+/// This mixin is added to [LibraryBuilder] to make it a container with
+/// macro applications, but at the same time don't expose internals of
+/// [_MacroApplication].
+mixin MacroApplicationsContainer {
+  /// The reversed queue of macro applications to apply.
+  ///
+  /// We add classes before methods, and methods in the reverse order,
+  /// classes in the reverse order, annotations in the direct order.
+  ///
+  /// We iterate from the end looking for the next application to apply.
+  /// This way we ensure two ordering rules:
+  /// 1. inner before outer
+  /// 2. right to left
+  /// 3. source order
+  final List<_MacroApplication> _applications = [];
 }
 
 class _AnnotationMacro {
@@ -1037,6 +1035,7 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   _DeclarationPhaseIntrospector(
     super.elementFactory,
     super.declarationBuilder,
+    super.performance,
     this.applier,
     this.typeSystem,
   );
@@ -1045,6 +1044,8 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   Future<List<macro.ConstructorDeclaration>> constructorsOf(
     covariant macro.TypeDeclaration type,
   ) async {
+    performance.getDataInt('constructorsOf').increment();
+
     final element = (type as HasElement).element;
     await _runDeclarationsPhase(element);
 
@@ -1085,6 +1086,8 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   Future<List<macro.MethodDeclaration>> methodsOf(
     macro.TypeDeclaration type,
   ) async {
+    performance.getDataInt('methodsOf').increment();
+
     final element = (type as HasElement).element;
     await _runDeclarationsPhase(element);
 
@@ -1104,6 +1107,7 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
 
   @override
   Future<macro.StaticType> resolve(macro.TypeAnnotationCode typeCode) async {
+    performance.getDataInt('resolve').increment();
     final type = declarationBuilder.resolveType(typeCode);
     return _StaticTypeImpl(typeSystem, type);
   }
@@ -1112,6 +1116,7 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   Future<macro.TypeDeclaration> typeDeclarationOf(
     macro.Identifier identifier,
   ) async {
+    performance.getDataInt('typeDeclarationOf').increment();
     return declarationBuilder.typeDeclarationOf(identifier);
   }
 
@@ -1150,6 +1155,7 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     current?.lastIntrospectedElement = element;
     await applier.runDeclarationsPhase(
       targetElement: element,
+      performance: performance,
     );
 
     // We might have detected a cycle for this target element.
@@ -1166,6 +1172,7 @@ class _DefinitionPhaseIntrospector extends _DeclarationPhaseIntrospector
   _DefinitionPhaseIntrospector(
     super.elementFactory,
     super.declarationBuilder,
+    super.performance,
     super.applier,
     super.typeSystem,
   );
@@ -1232,7 +1239,7 @@ final class _MacroIntrospectionCycleException
 }
 
 class _MacroTarget {
-  final LibraryElementImpl library;
+  final LibraryBuilder library;
   final ast.AstNode node;
   final MacroTargetElement element;
 
@@ -1265,10 +1272,12 @@ class _StaticTypeImpl implements macro.StaticType {
 class _TypePhaseIntrospector implements macro.TypePhaseIntrospector {
   final LinkedElementFactory elementFactory;
   final DeclarationBuilder declarationBuilder;
+  final OperationPerformanceImpl performance;
 
   _TypePhaseIntrospector(
     this.elementFactory,
     this.declarationBuilder,
+    this.performance,
   );
 
   @override

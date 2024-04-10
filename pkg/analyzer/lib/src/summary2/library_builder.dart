@@ -199,7 +199,7 @@ class ImplicitEnumNodes {
   });
 }
 
-class LibraryBuilder {
+class LibraryBuilder with MacroApplicationsContainer {
   static const _enableMacroCodeOptimizer = false;
 
   final Linker linker;
@@ -419,6 +419,7 @@ class LibraryBuilder {
   /// declarations phase macro applications for them.
   Future<MacroDeclarationsPhaseStepResult> executeMacroDeclarationsPhase({
     required ElementImpl? targetElement,
+    required OperationPerformanceImpl performance,
   }) async {
     final macroApplier = linker.macroApplier;
     if (macroApplier == null) {
@@ -426,8 +427,9 @@ class LibraryBuilder {
     }
 
     final results = await macroApplier.executeDeclarationsPhase(
-      library: element,
+      libraryBuilder: this,
       targetElement: targetElement,
+      performance: performance,
     );
 
     // No more applications to execute.
@@ -458,8 +460,14 @@ class LibraryBuilder {
     }
 
     while (true) {
-      final results = await macroApplier.executeDefinitionsPhase(
-        library: element,
+      final results = await performance.runAsync(
+        'executeDefinitionsPhase',
+        (performance) async {
+          return await macroApplier.executeDefinitionsPhase(
+            libraryBuilder: this,
+            performance: performance,
+          );
+        },
       );
 
       // No more applications to execute.
@@ -467,7 +475,16 @@ class LibraryBuilder {
         return;
       }
 
-      await _addMacroResults(macroApplier, results, buildTypes: true);
+      await performance.runAsync(
+        'addMacroResults',
+        (performance) async {
+          await _addMacroResults(
+            macroApplier,
+            results,
+            buildTypes: true,
+          );
+        },
+      );
     }
   }
 
@@ -481,7 +498,7 @@ class LibraryBuilder {
 
     while (true) {
       final results = await macroApplier.executeTypesPhase(
-        library: element,
+        libraryBuilder: this,
       );
 
       // No more applications to execute.
@@ -497,7 +514,7 @@ class LibraryBuilder {
   Future<void> fillMacroApplier(LibraryMacroApplier macroApplier) async {
     for (final linkingUnit in units) {
       await macroApplier.add(
-        libraryElement: element,
+        libraryBuilder: this,
         container: element,
         unit: linkingUnit.node,
       );
@@ -844,7 +861,7 @@ class LibraryBuilder {
 
     // Append applications from the partial augmentation.
     await macroApplier.add(
-      libraryElement: element,
+      libraryBuilder: this,
       container: augmentation,
       unit: macroLinkingUnit.node,
     );
@@ -876,7 +893,7 @@ class LibraryBuilder {
 
         final augmentation = LibraryAugmentationElementImpl(
           augmentationTarget: augmentationTarget,
-          nameOffset: importedAugmentation.unlinked.libraryKeywordOffset,
+          nameOffset: importedAugmentation.unlinked.augmentKeywordOffset,
         );
         augmentation.definingCompilationUnit = unitElement;
         augmentation.reference = unitElement.reference!;

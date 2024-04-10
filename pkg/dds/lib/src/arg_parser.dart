@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// TODO(bkonyi): consider moving to lib/ once this package is no longer shipped
+// via pub.
+
 import 'package:args/args.dart';
 
 abstract class DartDevelopmentServiceOptions {
@@ -11,12 +14,29 @@ abstract class DartDevelopmentServiceOptions {
   static const disableServiceAuthCodesFlag = 'disable-service-auth-codes';
   static const serveDevToolsFlag = 'serve-devtools';
   static const enableServicePortFallbackFlag = 'enable-service-port-fallback';
+  static const cachedUserTagsOption = 'cached-user-tags';
+  static const google3WorkspaceRootOption = 'google3-workspace-root';
 
   static ArgParser createArgParser({
     int? usageLineLength,
+    bool verbose = false,
     bool includeHelp = false,
   }) {
-    final args = ArgParser(usageLineLength: usageLineLength)
+    final args = ArgParser(usageLineLength: usageLineLength);
+    populateArgParser(
+      argParser: args,
+      verbose: verbose,
+      includeHelp: includeHelp,
+    );
+    return args;
+  }
+
+  static void populateArgParser({
+    required ArgParser argParser,
+    bool verbose = false,
+    bool includeHelp = false,
+  }) {
+    argParser
       ..addOption(
         vmServiceUriOption,
         help: 'The VM service URI DDS will connect to.',
@@ -45,10 +65,21 @@ abstract class DartDevelopmentServiceOptions {
         enableServicePortFallbackFlag,
         help: 'Bind to a random port if DDS fails to bind to the provided '
             'port.',
+      )
+      ..addMultiOption(
+        cachedUserTagsOption,
+        help: 'A set of UserTag names used to determine which CPU samples are '
+            'cached by DDS.',
+        defaultsTo: <String>[],
+      )
+      ..addOption(
+        google3WorkspaceRootOption,
+        help: 'Sets the Google3 workspace root used for google3:// URI '
+            'resolution.',
+        hide: !verbose,
       );
     if (includeHelp) {
-      args.addFlag('help', negatable: false);
+      argParser.addFlag('help', negatable: false);
     }
-    return args;
   }
 }

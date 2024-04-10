@@ -53,13 +53,15 @@ abstract class DartEditBuilder implements EditBuilder {
       DartType? superclass,
       String? superclassGroupName});
 
-  /// Write the code for a constructor declaration in the class with the given
-  /// [className]. If [isConst] is `true`, then the constructor will be marked
-  /// as being a `const` constructor. If a [constructorName] is provided, then
-  /// the constructor will have the given name. If both a constructor name and
-  /// a [constructorNameGroupName] is provided, then the name of the constructor
+  /// Writes the code for a constructor declaration in the class with the given
+  /// [className].
+  ///
+  /// If [isConst] is `true`, then the constructor will be marked as being a
+  /// `const` constructor. If a [constructorName] is provided, then the
+  /// constructor will have the given name. If both a constructor name and a
+  /// [constructorNameGroupName] is provided, then the name of the constructor
   /// will be included in the linked edit group with that name. If a
-  /// [parameterWriter] is provided then it is used to write the constructor
+  /// [parameterWriter] is provided, then it is used to write the constructor
   /// parameters (enclosing parenthesis are written for you). Otherwise, if an
   /// [argumentList] is provided then the constructor will have parameters that
   /// match the given arguments. If no argument list is given, but a list of
@@ -323,50 +325,13 @@ abstract class DartFileEditBuilder implements FileEditBuilder {
   /// edits.
   List<Uri> get requiredImports;
 
-  /// Adds an insertion for a case clause at the end of a switch statement or
-  /// switch expression.
-  void addCaseClauseAtEndInsertion(
-    void Function(DartEditBuilder builder) buildEdit, {
-    required Token switchKeyword,
-    required Token rightParenthesis,
-    required Token leftBracket,
-    required Token rightBracket,
-  });
-
-  /// Adds an insertion for a field.
-  ///
-  /// The field is inserted after the last existing field, or at the beginning
-  /// of [compilationUnitMember], if it has no existing fields.
-  void addFieldInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  );
-
-  /// Adds an insertion for a getter.
-  ///
-  /// The getter is inserted after the last existing field, constructor, or
-  /// getter, or at the beginning of [compilationUnitMember], if it has none of
-  /// these.
-  void addGetterInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  );
-
   @override
+  // TODO(srawlins): Rename to `insert`.
   void addInsertion(
       int offset, void Function(DartEditBuilder builder) buildEdit);
 
-  /// Adds an insertion for a method.
-  ///
-  /// The method is inserted after the last existing field, constructor, or
-  /// method, or at the beginning of [compilationUnitMember], if it has none of
-  /// these.
-  void addMethodInsertion(
-    CompilationUnitMember compilationUnitMember,
-    void Function(DartEditBuilder builder) buildEdit,
-  );
-
   @override
+  // TODO(srawlins): Rename to `replace`.
   void addReplacement(
       SourceRange range, void Function(DartEditBuilder builder) buildEdit);
 
@@ -430,6 +395,55 @@ abstract class DartFileEditBuilder implements FileEditBuilder {
   /// Return `true` if the given library [uri] is already imported or will be
   /// imported by a scheduled edit.
   bool importsLibrary(Uri uri);
+
+  /// Adds an insertion for a case clause at the end of a switch statement or
+  /// switch expression.
+  void insertCaseClauseAtEnd(
+    void Function(DartEditBuilder builder) buildEdit, {
+    required Token switchKeyword,
+    required Token rightParenthesis,
+    required Token leftBracket,
+    required Token rightBracket,
+  });
+
+  /// Adds an insertion for a constructor.
+  ///
+  /// The constructor is inserted after the last existing field or constructor,
+  /// or if the `sort_constructors_first` lint rule is enabled, after the last
+  /// existing constructor.
+  void insertConstructor(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  );
+
+  /// Adds an insertion for a field.
+  ///
+  /// The field is inserted after the last existing field, or at the beginning
+  /// of [compilationUnitMember], if it has no existing fields.
+  void insertField(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  );
+
+  /// Adds an insertion for a getter.
+  ///
+  /// The getter is inserted after the last existing field, constructor, or
+  /// getter, or at the beginning of [compilationUnitMember], if it has none of
+  /// these.
+  void insertGetter(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  );
+
+  /// Adds an insertion for a method.
+  ///
+  /// The method is inserted after the last existing field, constructor, or
+  /// method, or at the beginning of [compilationUnitMember], if it has none of
+  /// these.
+  void insertMethod(
+    CompilationUnitMember compilationUnitMember,
+    void Function(DartEditBuilder builder) buildEdit,
+  );
 
   /// Optionally create an edit to replace the given [typeAnnotation] with the
   /// type `Future` (with the given type annotation as the type argument). The
