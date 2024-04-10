@@ -82,10 +82,6 @@ class FieldIndex {
     check(translator.boxedBoolClass, "value", FieldIndex.boxValue);
     check(translator.boxedIntClass, "value", FieldIndex.boxValue);
     check(translator.boxedDoubleClass, "value", FieldIndex.boxValue);
-    if (!translator.options.jsCompatibility && !translator.options.jsString) {
-      check(translator.oneByteStringClass, "_array", FieldIndex.stringArray);
-      check(translator.twoByteStringClass, "_array", FieldIndex.stringArray);
-    }
     check(translator.listBaseClass, "_length", FieldIndex.listLength);
     check(translator.listBaseClass, "_data", FieldIndex.listArray);
     check(translator.hashFieldBaseClass, "_index", FieldIndex.hashBaseIndex);
@@ -305,10 +301,7 @@ class ClassInfoCollector {
       ClassInfo superInfo = cls == translator.coreTypes.boolClass ||
               cls == translator.coreTypes.numClass
           ? topInfo
-          : (!(translator.options.jsCompatibility ||
-                          translator.options.jsString) &&
-                      cls == translator.wasmStringBaseClass) ||
-                  cls == translator.typeClass
+          : cls == translator.typeClass
               ? translator.classInfo[cls.implementedTypes.single.classNode]!
               : translator.classInfo[superclass]!;
 
@@ -596,10 +589,8 @@ class ClassIdNumbering {
     // we have to encode a class-id. Then we could reorder the subclasses
     // depending on usage count of the subclass trees.
     final fixedOrder = <Class, int>{
-      translator.coreTypes.boolClass: -10,
-      translator.coreTypes.numClass: -9,
-      if (!(translator.options.jsCompatibility || translator.options.jsString))
-        translator.wasmStringBaseClass: -8,
+      translator.coreTypes.boolClass: -9,
+      translator.coreTypes.numClass: -8,
       translator.jsStringClass: -7,
       translator.typeClass: -6,
       translator.listBaseClass: -5,

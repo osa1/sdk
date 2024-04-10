@@ -77,8 +77,6 @@ Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
   final wasm.Mode mode;
   if (options.translatorOptions.jsCompatibility) {
     mode = wasm.Mode.jsCompatibility;
-  } else if (options.translatorOptions.jsString) {
-    mode = wasm.Mode.jsString;
   } else {
     mode = wasm.Mode.regular;
   }
@@ -119,7 +117,6 @@ Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
     "dart:_internal",
     "dart:_js_helper",
     "dart:_js_types",
-    "dart:_string",
     "dart:_wasm",
     "dart:async",
     "dart:collection",

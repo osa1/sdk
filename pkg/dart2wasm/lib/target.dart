@@ -37,7 +37,6 @@ import 'transformers.dart' as wasmTrans;
 enum Mode {
   regular,
   jsCompatibility,
-  jsString,
 }
 
 class Dart2WasmConstantsBackend extends ConstantsBackend {
@@ -122,7 +121,6 @@ class WasmTarget extends Target {
     return switch (mode) {
       Mode.regular => 'wasm',
       Mode.jsCompatibility => 'wasm_js_compatibility',
-      Mode.jsString => 'wasm_js_string',
     };
   }
 
@@ -130,7 +128,6 @@ class WasmTarget extends Target {
     return switch (mode) {
       Mode.regular => 'dart2wasm_platform.dill',
       Mode.jsCompatibility => 'dart2wasm_js_compatibility_platform.dill',
-      Mode.jsString => 'dart2wasm_js_string_platform.dill',
     };
   }
 
@@ -154,7 +151,6 @@ class WasmTarget extends Target {
         'dart:js_util',
         'dart:nativewrappers',
         'dart:typed_data',
-        if (mode == Mode.regular) 'dart:_string',
       ];
 
   @override
@@ -167,7 +163,6 @@ class WasmTarget extends Target {
         'dart:js_interop_unsafe',
         'dart:js_util',
         'dart:typed_data',
-        if (mode == Mode.regular) 'dart:_string',
       ];
 
   @override
@@ -462,20 +457,8 @@ class WasmTarget extends Target {
 
   @override
   Class concreteStringLiteralClass(CoreTypes coreTypes, String value) {
-    // In JSCM all strings are JS strings.
-    if (mode == Mode.jsCompatibility || mode == Mode.jsString) {
-      return _jsString ??=
-          coreTypes.index.getClass("dart:_js_types", "JSStringImpl");
-    }
-    const int maxLatin1 = 0xff;
-    for (int i = 0; i < value.length; ++i) {
-      if (value.codeUnitAt(i) > maxLatin1) {
-        return _twoByteString ??=
-            coreTypes.index.getClass('dart:_string', 'TwoByteString');
-      }
-    }
-    return _oneByteString ??=
-        coreTypes.index.getClass('dart:_string', 'OneByteString');
+    return _jsString ??=
+        coreTypes.index.getClass("dart:_js_types", "JSStringImpl");
   }
 
   @override

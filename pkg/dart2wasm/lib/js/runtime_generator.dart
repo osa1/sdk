@@ -76,7 +76,7 @@ s: [
     }
     return '''
 $jsRuntimeBlobPart1
-${(mode == wasm_target.Mode.jsCompatibility || mode == wasm_target.Mode.jsString) ? jsRuntimeBlobPart2JSCM : jsRuntimeBlobPart2Regular}
+$jsRuntimeBlobPart2JSCM
 $jsRuntimeBlobPart3
 ${usedJSMethods.join(',\n')}
 $jsRuntimeBlobPart4

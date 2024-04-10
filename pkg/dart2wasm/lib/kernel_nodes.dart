@@ -39,14 +39,6 @@ mixin KernelNodes {
       index.getClass("dart:core", "_GrowableList");
   late final Class immutableListClass =
       index.getClass("dart:core", "_ImmutableList");
-  late final Class wasmStringBaseClass =
-      index.getClass("dart:_internal", "WasmStringBase");
-  late final Class stringBaseClass =
-      index.getClass("dart:_string", "StringBase");
-  late final Class oneByteStringClass =
-      index.getClass("dart:_string", "OneByteString");
-  late final Class twoByteStringClass =
-      index.getClass("dart:_string", "TwoByteString");
   late final Class invocationClass = index.getClass("dart:core", 'Invocation');
   late final Class noSuchMethodErrorClass =
       index.getClass("dart:core", "NoSuchMethodError");
@@ -208,10 +200,6 @@ mixin KernelNodes {
       index.getProcedure("dart:core", "Object", "_nullToString");
   late final Procedure nullNoSuchMethod =
       index.getProcedure("dart:core", "Object", "_nullNoSuchMethod");
-  late final Procedure stringEquals =
-      index.getProcedure("dart:_string", "StringBase", "_equals");
-  late final Procedure stringInterpolate =
-      index.getProcedure("dart:_string", "StringBase", "_interpolate");
   late final Procedure truncDiv =
       index.getProcedure("dart:core", "_BoxedInt", "_truncDiv");
   late final Procedure runtimeTypeEquals =

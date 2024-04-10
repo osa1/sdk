@@ -325,55 +325,11 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
 
   @override
   ConstantInfo? visitStringConstant(StringConstant constant) {
-    if (translator.options.jsCompatibility || translator.options.jsString) {
-      ClassInfo info = translator.classInfo[translator.jsStringClass]!;
-      return createConstant(constant, info.nonNullableType, (function, b) {
-        b.i32_const(info.classId);
-        b.i32_const(initialIdentityHash);
-        b.global_get(translator.getInternalizedStringGlobal(constant.value));
-        b.struct_new(info.struct);
-      });
-    }
-    bool isOneByte = constant.value.codeUnits.every((c) => c <= 255);
-    ClassInfo info = translator.classInfo[isOneByte
-        ? translator.oneByteStringClass
-        : translator.twoByteStringClass]!;
-    translator.functions.recordClassAllocation(info.classId);
-    w.RefType type = info.nonNullableType;
-    bool lazy = constant.value.length > maxArrayNewFixedLength;
-    return createConstant(constant, type, lazy: lazy, (function, b) {
-      w.ArrayType arrayType =
-          (info.struct.fields[FieldIndex.stringArray].type as w.RefType)
-              .heapType as w.ArrayType;
-
+    ClassInfo info = translator.classInfo[translator.jsStringClass]!;
+    return createConstant(constant, info.nonNullableType, (function, b) {
       b.i32_const(info.classId);
       b.i32_const(initialIdentityHash);
-      if (lazy) {
-        // Initialize string contents from passive data segment.
-        w.DataSegmentBuilder segment;
-        Uint8List bytes;
-        if (isOneByte) {
-          segment = constants.oneByteStringSegment ??= m.dataSegments.define();
-          bytes = Uint8List.fromList(constant.value.codeUnits);
-        } else {
-          assert(Endian.host == Endian.little);
-          segment = constants.twoByteStringSegment ??= m.dataSegments.define();
-          bytes = Uint16List.fromList(constant.value.codeUnits)
-              .buffer
-              .asUint8List();
-        }
-        int offset = segment.length;
-        segment.append(bytes);
-        b.i32_const(offset);
-        b.i32_const(constant.value.length);
-        b.array_new_data(arrayType, segment);
-      } else {
-        // Initialize string contents from i32 constants on the stack.
-        for (int charCode in constant.value.codeUnits) {
-          b.i32_const(charCode);
-        }
-        b.array_new_fixed(arrayType, constant.value.length);
-      }
+      b.global_get(translator.getInternalizedStringGlobal(constant.value));
       b.struct_new(info.struct);
     });
   }
