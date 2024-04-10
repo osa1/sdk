@@ -1,8 +1,7 @@
 import 'dart:_internal' show _AsyncCompleter, patch;
-
 import 'dart:_js_helper' show JS;
-
 import 'dart:_wasm';
+import 'dart:math' show max;
 
 part 'timer_patch.dart';
 

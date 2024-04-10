@@ -70,7 +70,7 @@ abstract class _Timer implements Timer {
   bool get isActive => _handle != null;
 
   _Timer(Duration duration)
-      : _milliseconds = duration.inMilliseconds,
+      : _milliseconds = max(0, duration.inMilliseconds),
         _tick = 0,
         _handle = null {
     _schedule();
