@@ -226,6 +226,7 @@ class ClassInfoCollector {
       translator.coreTypes.recordClass,
       translator.index.getClass("dart:core", "_Type"),
       translator.index.getClass("dart:core", "_ListBase"),
+      translator.index.getClass("dart:_js_types", "JSStringImpl"),
     };
     for (final name in const <String>[
       "ByteBuffer",
@@ -295,9 +296,9 @@ class ClassInfoCollector {
       }
 
       // In the Wasm type hierarchy, Object, bool and num sit directly below
-      // the Top type. The implementation classes WasmStringBase and _Type sit
-      // directly below the public classes they implement.
-      // All other classes sit below their superclass.
+      // the Top type. The implementation classes of _Type sit directly below
+      // the public classes they implement. All other classes sit below their
+      // superclass.
       ClassInfo superInfo = cls == translator.coreTypes.boolClass ||
               cls == translator.coreTypes.numClass
           ? topInfo
