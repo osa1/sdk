@@ -8,6 +8,8 @@ import 'dart:typed_data';
 import 'package:_fe_analyzer_shared/src/scanner/string_canonicalizer.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart'
     as shared;
+import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer_operations.dart'
+    as shared;
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -40,7 +42,6 @@ import 'package:analyzer/src/dart/element/type_provider.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/dart/resolver/scope.dart'
     show Namespace, NamespaceBuilder;
-import 'package:analyzer/src/dart/resolver/variance.dart';
 import 'package:analyzer/src/generated/engine.dart' show AnalysisContext;
 import 'package:analyzer/src/generated/sdk.dart' show DartSdk;
 import 'package:analyzer/src/generated/source.dart' show DartUriResolver;
@@ -2320,7 +2321,15 @@ abstract class ElementImpl implements Element {
 
   /// Return an identifier that uniquely identifies this element among the
   /// children of this element's parent.
-  String get identifier => name!;
+  String get identifier {
+    var identifier = name!;
+
+    if (_includeNameOffsetInIdentifier) {
+      identifier += "@$nameOffset";
+    }
+
+    return considerCanonicalizeString(identifier);
+  }
 
   bool get isNonFunctionTypeAliasesEnabled {
     return library!.featureSet.isEnabled(Feature.nonfunction_type_aliases);
@@ -2415,6 +2424,16 @@ abstract class ElementImpl implements Element {
   @override
   Source? get source {
     return enclosingElement?.source;
+  }
+
+  /// Whether to include the [nameOffset] in [identifier] to disambiguiate
+  /// elements that might otherwise have the same identifier.
+  bool get _includeNameOffsetInIdentifier {
+    var element = this;
+    if (element is AugmentableElement) {
+      return element.isAugmentation;
+    }
+    return false;
   }
 
   @override
@@ -3198,16 +3217,6 @@ class FunctionElementImpl extends ExecutableElementImpl
   ExecutableElement get declaration => this;
 
   @override
-  String get identifier {
-    String identifier = super.identifier;
-    Element? enclosing = enclosingElement;
-    if (enclosing is ExecutableElement || enclosing is VariableElement) {
-      identifier += "@$nameOffset";
-    }
-    return considerCanonicalizeString(identifier);
-  }
-
-  @override
   bool get isDartCoreIdentical {
     return isStatic && name == 'identical' && library.isDartCore;
   }
@@ -3219,6 +3228,13 @@ class FunctionElementImpl extends ExecutableElementImpl
 
   @override
   ElementKind get kind => ElementKind.FUNCTION;
+
+  @override
+  bool get _includeNameOffsetInIdentifier {
+    return super._includeNameOffsetInIdentifier ||
+        enclosingElement is ExecutableElement ||
+        enclosingElement is VariableElement;
+  }
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) => visitor.visitFunctionElement(this);
@@ -6760,6 +6776,9 @@ class TypeAliasElementImpl extends _ExistingElementImpl
     _aliasedType = rawType;
   }
 
+  /// The aliased type, might be `null` if not yet linked.
+  DartType? get aliasedTypeRaw => _aliasedType;
+
   @override
   String get displayName => name;
 
@@ -6950,7 +6969,7 @@ class TypeParameterElementImpl extends ElementImpl
 
   /// The value representing the variance modifier keyword, or `null` if
   /// there is no explicit variance modifier, meaning legacy covariance.
-  Variance? _variance;
+  shared.Variance? _variance;
 
   /// Initialize a newly created method element to have the given [name] and
   /// [offset].
@@ -6989,11 +7008,11 @@ class TypeParameterElementImpl extends ElementImpl
     return super.name!;
   }
 
-  Variance get variance {
-    return _variance ?? Variance.covariant;
+  shared.Variance get variance {
+    return _variance ?? shared.Variance.covariant;
   }
 
-  set variance(Variance? newVariance) => _variance = newVariance;
+  set variance(shared.Variance? newVariance) => _variance = newVariance;
 
   @override
   bool operator ==(Object other) {
@@ -7016,6 +7035,54 @@ class TypeParameterElementImpl extends ElementImpl
   @override
   void appendTo(ElementDisplayStringBuilder builder) {
     builder.writeTypeParameter(this);
+  }
+
+  /// Computes the variance of the [typeParameter] in the [type].
+  shared.Variance computeVarianceInType(DartType type) {
+    if (type is TypeParameterType) {
+      if (type.element == this) {
+        return shared.Variance.covariant;
+      } else {
+        return shared.Variance.unrelated;
+      }
+    } else if (type is InterfaceType) {
+      var result = shared.Variance.unrelated;
+      for (int i = 0; i < type.typeArguments.length; ++i) {
+        var argument = type.typeArguments[i];
+        var parameter = type.element.typeParameters[i];
+
+        // TODO(kallentu): : Clean up TypeParameterElementImpl casting once
+        // variance is added to the interface.
+        var parameterVariance =
+            (parameter as TypeParameterElementImpl).variance;
+        result = result
+            .meet(parameterVariance.combine(computeVarianceInType(argument)));
+      }
+      return result;
+    } else if (type is FunctionType) {
+      var result = computeVarianceInType(type.returnType);
+
+      for (var parameter in type.typeFormals) {
+        // If [parameter] is referenced in the bound at all, it makes the
+        // variance of [parameter] in the entire type invariant.  The invocation
+        // of [computeVariance] below is made to simply figure out if [variable]
+        // occurs in the bound.
+        var bound = parameter.bound;
+        if (bound != null && !computeVarianceInType(bound).isUnrelated) {
+          result = shared.Variance.invariant;
+        }
+      }
+
+      for (var parameter in type.parameters) {
+        result = result.meet(
+          shared.Variance.contravariant.combine(
+            computeVarianceInType(parameter.type),
+          ),
+        );
+      }
+      return result;
+    }
+    return shared.Variance.unrelated;
   }
 
   @override
