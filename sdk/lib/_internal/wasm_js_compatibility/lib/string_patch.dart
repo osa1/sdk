@@ -24,8 +24,7 @@ class String {
       if (end == start) return "";
     }
 
-    var actualEnd =
-        (end == null || end > length) ? length : end;
+    var actualEnd = (end == null || end > length) ? length : end;
 
     final charCodesLength = actualEnd - start;
     if (charCodesLength <= 0) return "";
