@@ -706,7 +706,7 @@ String _escapeReplacement(String replacement) {
   // patterns in the replacement string. Dart does not have that behavior, so
   // the replacement patterns need to be escaped.
   return JSStringImpl(js.JS<WasmExternRef>(r'(s) => s.replace(/\$/g, "$$$$")',
-      unsafeCast<JSStringImpl>(replacement).toExternRef));
+      replacement.toJS.toExternRef));
 }
 
 @pragma("wasm:export", "\$jsStringToJSStringImpl")
