@@ -3,40 +3,29 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show has63BitSmis, patch, unsafeCast;
+import "dart:_js_types" show JSStringImpl;
 import "dart:typed_data" show Int64List;
 
 @patch
 class int {
-  static int? _tryParseSmi(String str, int first, int last) {
-    assert(first <= last);
-    var ix = first;
-    var sign = 1;
-    var c = str.codeUnitAt(ix);
-    // Check for leading '+' or '-'.
-    if ((c == 0x2b) || (c == 0x2d)) {
-      ix++;
-      sign = 0x2c - c; // -1 for '-', +1 for '+'.
-      if (ix > last) {
-        return null; // Empty.
-      }
+  @patch
+  static int? tryParse(String sourceString, {int? radix}) {
+    final JSStringImpl source = unsafeCast<JSStringImpl>(sourceString);
+    if (source.isEmpty) return null;
+    if (radix == null || radix == 10) {
+      // Try parsing immediately, without trimming whitespace.
+      int? result = _tryParseSmi(source, 0, source.length - 1);
+      if (result != null) return result;
+    } else if (radix < 2 || radix > 36) {
+      throw RangeError("Radix $radix not in range 2..36");
     }
-    var smiLimit = has63BitSmis ? 18 : 9;
-    if ((last - ix) >= smiLimit) {
-      return null; // May not fit into a Smi.
-    }
-    var result = 0;
-    for (int i = ix; i <= last; i++) {
-      var c = 0x30 ^ str.codeUnitAt(i);
-      if (9 < c) {
-        return null;
-      }
-      result = 10 * result + c;
-    }
-    return sign * result;
+    return _parse(source, radix, _kNull);
   }
 
   @patch
-  static int parse(String source, {int? radix, int onError(String source)?}) {
+  static int parse(String sourceString,
+      {int? radix, int onError(String source)?}) {
+    final JSStringImpl source = unsafeCast<JSStringImpl>(sourceString);
     if (source == null) throw ArgumentError("The source must not be null");
     if (source.isEmpty) {
       return _handleFormatError(onError, source, 0, radix, null) as int;
@@ -53,7 +42,7 @@ class int {
   }
 
   static int? _parse(
-      String source, int? radix, int? Function(String)? onError) {
+      JSStringImpl source, int? radix, int? Function(String)? onError) {
     int end = source.lastNonWhitespace() + 1;
     if (end == 0) {
       return _handleFormatError(onError, source, source.length, radix, null);
@@ -90,17 +79,32 @@ class int {
     return _parseRadix(source, radix, start, end, sign, false, onError);
   }
 
-  @patch
-  static int? tryParse(String source, {int? radix}) {
-    if (source.isEmpty) return null;
-    if (radix == null || radix == 10) {
-      // Try parsing immediately, without trimming whitespace.
-      int? result = _tryParseSmi(source, 0, source.length - 1);
-      if (result != null) return result;
-    } else if (radix < 2 || radix > 36) {
-      throw RangeError("Radix $radix not in range 2..36");
+  static int? _tryParseSmi(JSStringImpl str, int first, int last) {
+    assert(first <= last);
+    var ix = first;
+    var sign = 1;
+    var c = str.codeUnitAt(ix);
+    // Check for leading '+' or '-'.
+    if ((c == 0x2b) || (c == 0x2d)) {
+      ix++;
+      sign = 0x2c - c; // -1 for '-', +1 for '+'.
+      if (ix > last) {
+        return null; // Empty.
+      }
     }
-    return _parse(source, radix, _kNull);
+    var smiLimit = has63BitSmis ? 18 : 9;
+    if ((last - ix) >= smiLimit) {
+      return null; // May not fit into a Smi.
+    }
+    var result = 0;
+    for (int i = ix; i <= last; i++) {
+      var c = 0x30 ^ str.codeUnitAt(i);
+      if (9 < c) {
+        return null;
+      }
+      result = 10 * result + c;
+    }
+    return sign * result;
   }
 
   static Null _kNull(_) => null;
