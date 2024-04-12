@@ -149,9 +149,9 @@
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
           "_internal/wasm_js_compatibility/lib/boxed_int_to_string.dart",
+          "_internal/wasm_js_compatibility/lib/int_patch.dart",
           "_internal/wasm_js_compatibility/lib/string_buffer_patch.dart",
-          "_internal/wasm_js_compatibility/lib/string_patch.dart",
-          "_internal/wasm_js_string/lib/int_patch.dart"
+          "_internal/wasm_js_compatibility/lib/string_patch.dart"
         ]
       },
       "typed_data": {
