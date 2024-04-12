@@ -138,17 +138,10 @@ class JSArrayImpl<T extends JSAny?> implements List<T> {
   Iterable<U> map<U>(U Function(T) f) => MappedListIterable<T, U>(this, f);
 
   @override
-  String join([String separator = ""]) {
-    WasmExternRef? result;
-    if (separator is JSStringImpl) {
-      result = js.JS<WasmExternRef?>(
-          '(a, s) => a.join(s)', toExternRef, separator.toExternRef);
-    } else {
-      result = js.JS<WasmExternRef?>(
-          '(a, s) => a.join(s)', toExternRef, separator.toJS.toExternRef);
-    }
-    return JSStringImpl(result);
-  }
+  String join([String separator = ""]) => JSStringImpl(js.JS<WasmExternRef?>(
+      '(a, s) => a.join(s)',
+      toExternRef,
+      unsafeCast<JSStringImpl>(separator).toExternRef));
 
   @override
   Iterable<T> take(int n) => SubListIterable<T>(this, 0, n);

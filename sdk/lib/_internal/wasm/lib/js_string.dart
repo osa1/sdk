@@ -31,12 +31,12 @@ final class JSStringImpl implements String {
   @pragma("wasm:entry-point")
   static String _interpolate(WasmArray<Object?> values) {
     final valuesLength = values.length;
-    final array = JSArrayImpl.fromLength(valuesLength);
+    final JSArrayImpl<JSAny?> array = JSArrayImpl.fromLength(valuesLength);
     for (int i = 0; i < valuesLength; i++) {
       final o = values[i];
       final s = o.toString();
       final jsString =
-          s is JSStringImpl ? js.JSValue.boxT<JSAny?>(s.toExternRef) : s.toJS;
+          js.JSValue.boxT<JSAny?>(unsafeCast<JSStringImpl>(s).toExternRef);
       array._setUnchecked(i, jsString);
     }
     return JSStringImpl(
@@ -79,16 +79,8 @@ final class JSStringImpl implements String {
   }
 
   @override
-  String operator +(String other) {
-    if (other is JSStringImpl) {
-      return JSStringImpl(
-          _jsStringConcatImport(toExternRef, other.toExternRef));
-    }
-
-    // TODO(joshualitt): Refactor `string_patch.dart` so we can directly
-    // allocate a string of the right size.
-    return js.jsStringToDartString(toExternRef) + other;
-  }
+  String operator +(String other) => JSStringImpl(_jsStringConcatImport(
+      toExternRef, unsafeCast<JSStringImpl>(other).toExternRef));
 
   @override
   bool endsWith(String other) {
@@ -121,14 +113,12 @@ final class JSStringImpl implements String {
           }
           return result.toString();
         }
-      } else if (from is JSStringImpl) {
+      } else {
         return JSStringImpl(js.JS<WasmExternRef?>(
             '(o, p, r) => o.split(p).join(r)',
             toExternRef,
-            from.toExternRef,
+            unsafeCast<JSStringImpl>(from).toExternRef,
             unsafeCast<JSStringImpl>(to).toExternRef));
-      } else {
-        return split(from).join(to);
       }
     } else if (from is js.JSSyntaxRegExp) {
       return _replaceJS(js.regExpGetGlobalNative(from), _escapeReplacement(to));
@@ -267,10 +257,8 @@ final class JSStringImpl implements String {
 
   @override
   List<String> split(Pattern pattern) {
-    if (pattern is JSStringImpl) {
-      return _jsSplit(pattern.toExternRef);
-    } else if (pattern is String) {
-      return _jsSplit(pattern.toJS.toExternRef);
+    if (pattern is String) {
+      return _jsSplit(unsafeCast<JSStringImpl>(pattern).toExternRef);
     } else if (pattern is js.JSSyntaxRegExp &&
         js.regExpCaptureCount(pattern) == 0) {
       final re = js.regExpGetNative(pattern);
@@ -542,10 +530,8 @@ final class JSStringImpl implements String {
   int indexOf(Pattern pattern, [int start = 0]) {
     final length = this.length;
     RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, length);
-    if (pattern is JSStringImpl) {
-      return _jsIndexOf(pattern.toExternRef, start);
-    } else if (pattern is String) {
-      return _jsIndexOf(pattern.toExternRef, start);
+    if (pattern is String) {
+      return _jsIndexOf(unsafeCast<JSStringImpl>(pattern).toExternRef, start);
     } else if (pattern is js.JSSyntaxRegExp) {
       Match? match = js.firstMatchAfter(pattern, this.toJS, start);
       return (match == null) ? -1 : match.start;
@@ -570,16 +556,12 @@ final class JSStringImpl implements String {
     } else {
       RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(start, length);
     }
-    if (pattern is JSStringImpl) {
+    if (pattern is String) {
       if (start + pattern.length > length) {
         start = length - pattern.length;
       }
-      return _jsLastIndexOf(pattern.toExternRef, start);
-    } else if (pattern is String) {
-      if (start + pattern.length > length) {
-        start = length - pattern.length;
-      }
-      return _jsLastIndexOf(pattern.toExternRef, start);
+      return _jsLastIndexOf(
+          unsafeCast<JSStringImpl>(pattern).toExternRef, start);
     }
     for (int i = start; i >= 0; i--) {
       if (pattern.matchAsPrefix(this, i) != null) return i;
@@ -626,45 +608,16 @@ final class JSStringImpl implements String {
       return true;
     }
 
-    if (other is JSStringImpl) {
-      return _jsEquals(toExternRef, other.toExternRef);
+    if (other is! String) {
+      return false;
     }
 
-    final length = this.length;
-    if (other is String && length == other.length) {
-      for (int i = 0; i < length; i++) {
-        if (_codeUnitAtUnchecked(i) != other.codeUnitAt(i)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    return false;
+    return _jsEquals(toExternRef, unsafeCast<JSStringImpl>(other).toExternRef);
   }
 
   @override
-  int compareTo(String other) {
-    if (other is JSStringImpl) {
-      return _jsCompare(toExternRef, other.toExternRef);
-    }
-    final otherLength = other.length;
-    final length = this.length;
-    final len = (length < otherLength) ? length : otherLength;
-    for (int i = 0; i < len; i++) {
-      int thisCodeUnit = _codeUnitAtUnchecked(i);
-      int otherCodeUnit = other.codeUnitAt(i);
-      if (thisCodeUnit < otherCodeUnit) {
-        return -1;
-      }
-      if (thisCodeUnit > otherCodeUnit) {
-        return 1;
-      }
-    }
-    if (length < otherLength) return -1;
-    if (length > otherLength) return 1;
-    return 0;
-  }
+  int compareTo(String other) =>
+      _jsCompare(toExternRef, unsafeCast<JSStringImpl>(other).toExternRef);
 
   @override
   String toString() => js.stringify(toExternRef);
