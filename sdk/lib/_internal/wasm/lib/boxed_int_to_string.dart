@@ -10,7 +10,12 @@ import 'dart:_wasm';
 @patch
 class _BoxedInt {
   @patch
-  String toRadixString(int radix) => _jsBigIntToString(this, radix);
+  String toRadixString(int radix) {
+    if (radix < 2 || 36 < radix) {
+      throw new RangeError.range(radix, 2, 36, "radix");
+    }
+    return _jsBigIntToString(this, radix);
+  }
 
   @patch
   String toString() => _jsBigIntToString(this, 10);
