@@ -583,9 +583,16 @@ final class JSStringImpl implements String {
   }
 
   /// This must be kept in sync with `StringBase.hashCode` in string_patch.dart.
-  /// TODO(joshualitt): Find some way to cache the hash code.
   @override
   int get hashCode {
+    int hash = getHash(this);
+    if (hash != 0) return hash;
+    hash = _computeHashCode();
+    setHash(this, hash);
+    return hash;
+  }
+
+  int _computeHashCode() {
     int hash = 0;
     final length = this.length;
     for (int i = 0; i < length; i++) {
