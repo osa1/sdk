@@ -281,13 +281,15 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   }
 
   @override
-  MaybeAugmentedClassElementMixin? get augmented {
+  MaybeAugmentedClassElementMixin get augmented {
     if (isAugmentation) {
-      return augmentationTarget?.augmented;
-    } else {
-      linkedData?.read(this);
-      return augmentedInternal;
+      if (augmentationTarget case final augmentationTarget?) {
+        return augmentationTarget.augmented;
+      }
     }
+
+    linkedData?.read(this);
+    return augmentedInternal;
   }
 
   @override
@@ -1120,9 +1122,8 @@ class ConstructorElementImpl extends ExecutableElementImpl
       return result as InterfaceType;
     }
 
-    final augmentedDeclaration = enclosingElement.augmented?.declaration;
-    result = augmentedDeclaration?.thisType;
-    result ??= InvalidTypeImpl.instance;
+    final augmentedDeclaration = enclosingElement.augmented.declaration;
+    result = augmentedDeclaration.thisType;
     return _returnType = result as InterfaceType;
   }
 
@@ -2695,13 +2696,15 @@ class EnumElementImpl extends InterfaceElementImpl
   EnumElementImpl(super.name, super.offset);
 
   @override
-  MaybeAugmentedEnumElementMixin? get augmented {
+  MaybeAugmentedEnumElementMixin get augmented {
     if (isAugmentation) {
-      return augmentationTarget?.augmented;
-    } else {
-      linkedData?.read(this);
-      return augmentedInternal;
+      if (augmentationTarget case final augmentationTarget?) {
+        return augmentationTarget.augmented;
+      }
     }
+
+    linkedData?.read(this);
+    return augmentedInternal;
   }
 
   List<FieldElementImpl> get constants {
@@ -2934,13 +2937,15 @@ class ExtensionElementImpl extends InstanceElementImpl
   ExtensionElementImpl(super.name, super.nameOffset);
 
   @override
-  MaybeAugmentedExtensionElementMixin? get augmented {
+  MaybeAugmentedExtensionElementMixin get augmented {
     if (isAugmentation) {
-      return augmentationTarget?.augmented;
-    } else {
-      linkedData?.read(this);
-      return augmentedInternal;
+      if (augmentationTarget case final augmentationTarget?) {
+        return augmentationTarget.augmented;
+      }
     }
+
+    linkedData?.read(this);
+    return augmentedInternal;
   }
 
   @override
@@ -3058,13 +3063,15 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
   ExtensionTypeElementImpl(super.name, super.nameOffset);
 
   @override
-  MaybeAugmentedExtensionTypeElementMixin? get augmented {
+  MaybeAugmentedExtensionTypeElementMixin get augmented {
     if (isAugmentation) {
-      return augmentationTarget?.augmented;
-    } else {
-      linkedData?.read(this);
-      return augmentedInternal;
+      if (augmentationTarget case final augmentationTarget?) {
+        return augmentationTarget.augmented;
+      }
     }
+
+    linkedData?.read(this);
+    return augmentedInternal;
   }
 
   @override
@@ -3485,9 +3492,6 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   /// The cached result of [allSupertypes].
   List<InterfaceType>? _allSupertypes;
 
-  /// The type defined by the class.
-  InterfaceType? _thisType;
-
   /// A flag indicating whether the types associated with the instance members
   /// of this class have been inferred.
   bool hasBeenInferred = false;
@@ -3519,7 +3523,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   InterfaceElementImpl? get augmentationTarget;
 
   @override
-  AugmentedInterfaceElement? get augmented;
+  AugmentedInterfaceElement get augmented;
 
   @override
   List<Element> get children => [
@@ -3617,21 +3621,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
 
   @override
   InterfaceType get thisType {
-    if (_thisType == null) {
-      List<DartType> typeArguments;
-      if (typeParameters.isNotEmpty) {
-        typeArguments = typeParameters.map<DartType>((t) {
-          return t.instantiate(nullabilitySuffix: NullabilitySuffix.none);
-        }).toFixedList();
-      } else {
-        typeArguments = const <DartType>[];
-      }
-      return _thisType = instantiate(
-        typeArguments: typeArguments,
-        nullabilitySuffix: NullabilitySuffix.none,
-      );
-    }
-    return _thisType!;
+    return augmented.thisType;
   }
 
   @override
@@ -4979,6 +4969,9 @@ mixin MaybeAugmentedExtensionElementMixin on MaybeAugmentedInstanceElementMixin
     implements AugmentedExtensionElement {
   @override
   ExtensionElementImpl get declaration;
+
+  @override
+  DartType get thisType => declaration.extendedType;
 }
 
 mixin MaybeAugmentedExtensionTypeElementMixin
@@ -5097,7 +5090,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
         return;
       }
       for (InterfaceType mixin in augmented.mixins.reversed) {
-        getter = mixin.element.augmented?.getGetter(name);
+        getter = mixin.element.augmented.getGetter(name);
         if (getter != null) {
           yield getter;
         }
@@ -5129,7 +5122,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
         return;
       }
       for (InterfaceType mixin in augmented.mixins.reversed) {
-        method = mixin.element.augmented?.getMethod(name);
+        method = mixin.element.augmented.getMethod(name);
         if (method != null) {
           yield method;
         }
@@ -5162,7 +5155,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
         return;
       }
       for (InterfaceType mixin in augmented.mixins.reversed) {
-        setter = mixin.element.augmented?.getSetter(name);
+        setter = mixin.element.augmented.getSetter(name);
         if (setter != null) {
           yield setter;
         }
@@ -5174,8 +5167,30 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
 
 mixin MaybeAugmentedInterfaceElementMixin on MaybeAugmentedInstanceElementMixin
     implements AugmentedInterfaceElement {
+  InterfaceType? _thisType;
+
   @override
   InterfaceElementImpl get declaration;
+
+  @override
+  InterfaceType get thisType {
+    if (_thisType == null) {
+      List<DartType> typeArguments;
+      final typeParameters = declaration.typeParameters;
+      if (typeParameters.isNotEmpty) {
+        typeArguments = typeParameters.map<DartType>((t) {
+          return t.instantiate(nullabilitySuffix: NullabilitySuffix.none);
+        }).toFixedList();
+      } else {
+        typeArguments = const <DartType>[];
+      }
+      return _thisType = declaration.instantiate(
+        typeArguments: typeArguments,
+        nullabilitySuffix: NullabilitySuffix.none,
+      );
+    }
+    return _thisType!;
+  }
 
   @override
   ConstructorElement? get unnamedConstructor {
@@ -5290,13 +5305,15 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   MixinElementImpl(super.name, super.offset);
 
   @override
-  MaybeAugmentedMixinElementMixin? get augmented {
+  MaybeAugmentedMixinElementMixin get augmented {
     if (isAugmentation) {
-      return augmentationTarget?.augmented;
-    } else {
-      linkedData?.read(this);
-      return augmentedInternal;
+      if (augmentationTarget case final augmentationTarget?) {
+        return augmentationTarget.augmented;
+      }
     }
+
+    linkedData?.read(this);
+    return augmentedInternal;
   }
 
   @override

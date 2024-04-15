@@ -3,7 +3,6 @@
 # BSD-style license that can be found in the LICENSE file.
 
 import("../executable_suffix.gni")
-import("../toolchain/rbe.gni")
 
 # This file defines templates for running and compiling Dart code during
 # Dart's build.
@@ -30,6 +29,11 @@ import("../toolchain/rbe.gni")
 # in a Dart checkout, this will be "//". In a client repo it might be
 # "//third_party/dart".
 _dart_root = get_path_info("../..", "abspath")
+_is_dart = _dart_root == get_path_info("//", "abspath")
+
+if (_is_dart) {
+  import("../toolchain/rbe.gni")
+}
 
 template("_compiled_action") {
   assert(defined(invoker.tool), "tool must be defined for $target_name")
@@ -85,8 +89,9 @@ template("_compiled_action") {
     # it will exit with a non-zero status when the target program does.
     args = [ "compiled_action" ]
 
-    if (use_rbe && (target_os == rbe_os ||
-                    (target_os == "android" && rbe_os == "linux")) &&
+    if (_is_dart && use_rbe &&
+        (target_os == rbe_os ||
+         (target_os == "android" && rbe_os == "linux")) &&
         target_cpu == rbe_cpu) {
       args += [
                 "/usr/bin/python3",
@@ -137,8 +142,9 @@ template("_prebuilt_tool_action") {
 
     args = [ "compiled_action" ]
 
-    if (use_rbe && (target_os == rbe_os ||
-                    (target_os == "android" && rbe_os == "linux")) &&
+    if (_is_dart && use_rbe &&
+        (target_os == rbe_os ||
+         (target_os == "android" && rbe_os == "linux")) &&
         target_cpu == rbe_cpu) {
       args += [
                 "/usr/bin/python3",

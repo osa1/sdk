@@ -32,7 +32,7 @@ extension ElementAnnotationExtensions on ElementAnnotation {
         }
       }
     } else if (element is ConstructorElement) {
-      interfaceElement = element.enclosingElement.augmented?.declaration;
+      interfaceElement = element.enclosingElement.augmented.declaration;
     }
     if (interfaceElement == null) {
       return const <TargetKind>{};
@@ -65,6 +65,14 @@ extension ElementAnnotationExtensions on ElementAnnotation {
 }
 
 extension ElementExtension on Element {
+  /// If this element is an augmentation, returns the declaration.
+  Element get augmentedDeclaration {
+    if (this case InstanceElement self) {
+      return self.augmented.declaration;
+    }
+    return this;
+  }
+
   /// Return `true` if this element, the enclosing class (if there is one), or
   /// the enclosing library, has been annotated with the `@doNotStore`
   /// annotation.
@@ -128,41 +136,9 @@ extension ExecutableElementExtensionQuestion on ExecutableElement? {
   }
 }
 
-extension InterfaceElementExtension on InterfaceElement {
-  /// The result of applying augmentations.
-  ///
-  /// The target must be a declaration, not an augmentation.
-  /// This getter will throw, if this is not the case.
-  AugmentedInterfaceElement get augmentedOfDeclaration {
-    if (isAugmentation) {
-      throw StateError(
-        'The target must be a declaration, not an augmentation.',
-      );
-    }
-    // This is safe because declarations always have it.
-    return augmented!;
-  }
-}
-
 extension InterfaceTypeExtension on InterfaceType {
   bool get isDartCoreObjectNone {
     return isDartCoreObject && nullabilitySuffix == NullabilitySuffix.none;
-  }
-}
-
-extension MixinElementExtension on MixinElement {
-  /// The result of applying augmentations.
-  ///
-  /// The target must be a declaration, not an augmentation.
-  /// This getter will throw, if this is not the case.
-  AugmentedMixinElement get augmentedOfDeclaration {
-    if (isAugmentation) {
-      throw StateError(
-        'The target must be a declaration, not an augmentation.',
-      );
-    }
-    // This is safe because declarations always have it.
-    return augmented!;
   }
 }
 

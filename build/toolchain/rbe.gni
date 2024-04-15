@@ -4,6 +4,8 @@
 
 # Defines the configuration of RBE.
 
+_dart_root = get_path_info("../..", "abspath")
+
 declare_args() {
   # Set to true to enable distributed compilation using RBE.
   use_rbe = false
@@ -22,7 +24,7 @@ declare_args() {
 
   rbe_exec_root = rebase_path("//", root_build_dir)
 
-  rbe_dir = rebase_path("//buildtools/reclient", root_build_dir)
+  rbe_dir = rebase_path(_dart_root + "/buildtools/reclient", root_build_dir)
 }
 
 declare_args() {

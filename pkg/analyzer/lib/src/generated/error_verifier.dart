@@ -24,6 +24,7 @@ import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/element/class_hierarchy.dart';
 import 'package:analyzer/src/dart/element/element.dart';
+import 'package:analyzer/src/dart/element/extensions.dart';
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart';
 import 'package:analyzer/src/dart/element/non_covariant_type_parameter_position.dart';
 import 'package:analyzer/src/dart/element/type.dart';
@@ -452,13 +453,9 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         element: element,
       );
 
-      final augmented = element.augmented;
-      if (augmented == null) {
-        return;
-      }
-
       _isInNativeClass = node.nativeClause != null;
 
+      final augmented = element.augmented;
       final declarationElement = augmented.declaration;
       _enclosingClass = declarationElement;
 
@@ -643,9 +640,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       var element = node.declaredElement as EnumElementImpl;
 
       final augmented = element.augmented;
-      if (augmented == null) {
-        return;
-      }
       _enclosingClass = element;
       _duplicateDefinitionVerifier.checkEnum(node);
 
@@ -730,10 +724,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     try {
       final element = node.declaredElement!;
       final augmented = element.augmented;
-      if (augmented == null) {
-        return;
-      }
-
       final declarationElement = augmented.declaration;
       _enclosingClass = declarationElement;
 
@@ -1059,9 +1049,10 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }
 
   @override
-  void visitLibraryDirective(LibraryDirective node) {
-    var element = node.element as LibraryElementImpl;
-    _reportMacroDiagnostics(element);
+  void visitLibraryDirective(covariant LibraryDirectiveImpl node) {
+    if (node.element case final element?) {
+      _reportMacroDiagnostics(element);
+    }
 
     super.visitLibraryDirective(node);
   }
@@ -1137,10 +1128,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       );
 
       final augmented = element.augmented;
-      if (augmented == null) {
-        return;
-      }
-
       final declarationElement = augmented.declaration;
       _enclosingClass = declarationElement;
 
@@ -3314,10 +3301,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   ) {
     if (container is InterfaceElementImpl) {
       var augmented = container.augmented;
-      if (augmented == null) {
-        return;
-      }
-
       for (var constructor in augmented.constructors) {
         if (constructor.isGenerative && !constructor.isSynthetic) {
           return;
@@ -5353,8 +5336,13 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     if (element == null || element is TypeParameterElement) {
       return;
     }
+
     var enclosingElement = element.enclosingElement;
-    if (identical(enclosingElement, _enclosingClass)) {
+    if (enclosingElement == null) {
+      return;
+    }
+
+    if (identical(enclosingElement.augmentedDeclaration, _enclosingClass)) {
       return;
     }
     if (enclosingElement is! InterfaceElement) {
