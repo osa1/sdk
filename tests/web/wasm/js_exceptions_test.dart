@@ -24,6 +24,8 @@ void main() async {
   await jsExceptionFinallyAsyncDirect();
   await jsExceptionFinallyPropagateAsync();
   await jsExceptionFinallyPropagateAsyncDirect();
+  await jsExceptionTypeTest1();
+  await jsExceptionTypeTest2();
 
   asyncEnd();
 }
@@ -146,4 +148,67 @@ Future<void> jsExceptionFinallyPropagateAsyncDirect() async {
     i += 1;
   }
   Expect.equals(i, 2);
+}
+
+Future<int> dummy() async => runtimeTrue() ? 1 : 2;
+
+// Catch JS exception and run type tests. Dummy `await` statements to generate
+// suspension points before and after every statement. Type test should succeed
+// in the same try-catch statement.
+Future<void> jsExceptionTypeTest1() async {
+  bool exceptionCaught = false;
+  bool errorCaught = false;
+  try {
+    await dummy();
+    if (runtimeTrue()) {
+      try {
+        await dummy();
+        throwJSException();
+        await dummy();
+      } on Exception catch (_) {
+        await dummy();
+        exceptionCaught = true;
+        await dummy();
+      } on Error catch (_) {
+        await dummy();
+        errorCaught = true;
+        await dummy();
+      }
+    }
+  } catch (_) {
+    await dummy();
+  }
+  Expect.equals(exceptionCaught, false);
+  Expect.equals(errorCaught, true);
+}
+
+// Similar to `jsExceptionTypeTest1`, but the type test should succeed in a
+// parent try-catch.
+Future<void> jsExceptionTypeTest2() async {
+  bool exceptionCaught = false;
+  bool errorCaught = false;
+  try {
+    await dummy();
+    if (runtimeTrue()) {
+      try {
+        await dummy();
+        throwJSException();
+        await dummy();
+      } on Exception catch (_) {
+        await dummy();
+        exceptionCaught = true;
+        await dummy();
+      }
+    }
+  } on Exception catch (_) {
+    await dummy();
+    exceptionCaught = true;
+    await dummy();
+  } on Error catch (_) {
+    await dummy();
+    errorCaught = true;
+    await dummy();
+  }
+  Expect.equals(exceptionCaught, false);
+  Expect.equals(errorCaught, true);
 }
