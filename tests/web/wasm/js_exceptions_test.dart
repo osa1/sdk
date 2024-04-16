@@ -72,6 +72,9 @@ Future<void> throwJSExceptionAsync() async {
   return throwJSException();
 }
 
+// A simple async function used to create suspension points.
+Future<int> yield_() async => runtimeTrue() ? 1 : throw '';
+
 // Catch a JS exception throw by `await` in `catch`.
 Future<void> jsExceptionCatchAsync() async {
   try {
@@ -150,8 +153,6 @@ Future<void> jsExceptionFinallyPropagateAsyncDirect() async {
   Expect.equals(i, 2);
 }
 
-Future<int> dummy() async => runtimeTrue() ? 1 : 2;
-
 // Catch JS exception and run type tests. Dummy `await` statements to generate
 // suspension points before and after every statement. Type test should succeed
 // in the same try-catch statement.
@@ -159,24 +160,24 @@ Future<void> jsExceptionTypeTest1() async {
   bool exceptionCaught = false;
   bool errorCaught = false;
   try {
-    await dummy();
+    await yield_();
     if (runtimeTrue()) {
       try {
-        await dummy();
+        await yield_();
         throwJSException();
-        await dummy();
+        await yield_();
       } on Exception catch (_) {
-        await dummy();
+        await yield_();
         exceptionCaught = true;
-        await dummy();
+        await yield_();
       } on Error catch (_) {
-        await dummy();
+        await yield_();
         errorCaught = true;
-        await dummy();
+        await yield_();
       }
     }
   } catch (_) {
-    await dummy();
+    await yield_();
   }
   Expect.equals(exceptionCaught, false);
   Expect.equals(errorCaught, true);
@@ -188,26 +189,26 @@ Future<void> jsExceptionTypeTest2() async {
   bool exceptionCaught = false;
   bool errorCaught = false;
   try {
-    await dummy();
+    await yield_();
     if (runtimeTrue()) {
       try {
-        await dummy();
+        await yield_();
         throwJSException();
-        await dummy();
+        await yield_();
       } on Exception catch (_) {
-        await dummy();
+        await yield_();
         exceptionCaught = true;
-        await dummy();
+        await yield_();
       }
     }
   } on Exception catch (_) {
-    await dummy();
+    await yield_();
     exceptionCaught = true;
-    await dummy();
+    await yield_();
   } on Error catch (_) {
-    await dummy();
+    await yield_();
     errorCaught = true;
-    await dummy();
+    await yield_();
   }
   Expect.equals(exceptionCaught, false);
   Expect.equals(errorCaught, true);
