@@ -5,19 +5,27 @@
 import 'dart:js_interop';
 import 'dart:_wasm';
 
+import 'package:async_helper/async_helper.dart';
 import 'package:expect/expect.dart';
 
 // Catch JS exceptions in try-catch and try-finally, in sync and async
 // functions. Also in `await`.
 void main() async {
+  asyncStart();
+
   defineThrowJSException();
 
   jsExceptionCatch();
   jsExceptionFinally();
-  jsExceptionCatchAsync();
-  jsExceptionFinallyAsync();
-  jsExceptionCatchAsyncDirect();
-  jsExceptionFinallyAsyncDirect();
+
+  await jsExceptionCatchAsync();
+  await jsExceptionFinallyAsync();
+  await jsExceptionCatchAsyncDirect();
+  await jsExceptionFinallyAsyncDirect();
+  await jsExceptionFinallyPropagateAsync();
+  await jsExceptionFinallyPropagateAsyncDirect();
+
+  asyncEnd();
 }
 
 @JS()
@@ -104,4 +112,38 @@ Future<void> jsExceptionFinallyAsyncDirect() async {
     }
   }
   Expect.fail("Exception not caught");
+}
+
+// Check that the finally blocks rethrow JS exceptions, when `await` throws.
+Future<void> jsExceptionFinallyPropagateAsync() async {
+  int i = 0;
+  try {
+    if (runtimeTrue()) {
+      try {
+        await throwJSExceptionAsync();
+      } finally {
+        i += 1;
+      }
+    }
+  } catch (e) {
+    i += 1;
+  }
+  Expect.equals(i, 2);
+}
+
+// Check that the finally blocks rethrow JS exceptions, when a function directly throws (no `await`).
+Future<void> jsExceptionFinallyPropagateAsyncDirect() async {
+  int i = 0;
+  try {
+    if (runtimeTrue()) {
+      try {
+        throwJSException();
+      } finally {
+        i += 1;
+      }
+    }
+  } catch (e) {
+    i += 1;
+  }
+  Expect.equals(i, 2);
 }
