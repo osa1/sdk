@@ -16,6 +16,8 @@ void main() async {
   jsExceptionFinally();
   jsExceptionCatchAsync();
   jsExceptionFinallyAsync();
+  jsExceptionCatchAsyncDirect();
+  jsExceptionFinallyAsyncDirect();
 }
 
 @JS()
@@ -75,6 +77,28 @@ Future<void> jsExceptionFinallyAsync() async {
   if (runtimeTrue()) {
     try {
       await throwJSExceptionAsync();
+    } finally {
+      return;
+    }
+  }
+  Expect.fail("Exception not caught");
+}
+
+// Catch a JS exception thrown without `await` in `catch`.
+Future<void> jsExceptionCatchAsyncDirect() async {
+  try {
+    throwJSException();
+  } catch (e) {
+    return;
+  }
+  Expect.fail("Exception not caught");
+}
+
+// Catch a JS exception thrown without `await` in `finally`.
+Future<void> jsExceptionFinallyAsyncDirect() async {
+  if (runtimeTrue()) {
+    try {
+      throwJSException();
     } finally {
       return;
     }
