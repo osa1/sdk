@@ -608,10 +608,10 @@ final class JSStringImpl implements String {
 
   @override
   int get hashCode {
-    int hash = getHash(this);
+    int hash = getIdentityHashField(this);
     if (hash != 0) return hash;
     hash = _computeHashCode();
-    setHash(this, hash);
+    setIdentityHashField(this, hash);
     return hash;
   }
 
