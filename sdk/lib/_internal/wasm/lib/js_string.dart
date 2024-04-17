@@ -482,18 +482,27 @@ final class JSStringImpl implements String {
   // the NEXT LINE character (0x85).
   @override
   String trimLeft() {
-    // Start by doing JS trim. Then check if it leaves a NEL at
-    // the beginning of the string.
+    // Start by doing JS trim. Then check if it leaves a NEL at the beginning
+    // of the string.
+    final length = this.length;
     int startIndex = 0;
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trimLeft()', toExternRef));
     final resultLength = result.length;
-    if (resultLength == 0) return result;
+    if (resultLength == 0) {
+      return length == 0 ? this : result;
+    }
+
+    // Check NEL.
     int firstCode = result._codeUnitAtUnchecked(0);
     if (firstCode == nelCodeUnit) {
       startIndex = _skipLeadingWhitespace(result, 1);
     }
-    if (startIndex == 0) return result;
+
+    if (startIndex == 0) {
+      return resultLength == length ? this : result;
+    }
+
     if (startIndex == resultLength) return "";
     return result.substring(startIndex);
   }
