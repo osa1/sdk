@@ -441,32 +441,40 @@ final class JSStringImpl implements String {
     return index;
   }
 
-  // dart2wasm can't use JavaScript trim directly,
-  // because JavaScript does not trim
-  // the NEXT LINE (NEL) character (0x85).
+  // dart2wasm can't use JavaScript trim directly, because JavaScript does not
+  // trim the NEXT LINE (NEL) character (0x85).
   @override
   String trim() {
-    // Start by doing JS trim. Then check if it leaves a NEL at
-    // either end of the string.
+    // Start by doing JS trim. Then check if it leaves a NEL at either end of
+    // the string.
+    final length = this.length;
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trim()', toExternRef));
     final resultLength = result.length;
-    if (resultLength == 0) return result;
-    int firstCode = result._codeUnitAtUnchecked(0);
+    if (resultLength == 0) {
+      return length == 0 ? this : result;
+    }
+
+    // Check NEL on the left.
+    final int firstCode = result._codeUnitAtUnchecked(0);
     int startIndex = 0;
     if (firstCode == nelCodeUnit) {
       startIndex = _skipLeadingWhitespace(result, 1);
       if (startIndex == resultLength) return "";
     }
 
+    // Check NEL on the right.
     int endIndex = resultLength;
     // We know that there is at least one character that is non-whitespace.
     // Therefore we don't need to verify that endIndex > startIndex.
-    int lastCode = result.codeUnitAt(endIndex - 1);
+    final int lastCode = result.codeUnitAt(endIndex - 1);
     if (lastCode == nelCodeUnit) {
       endIndex = _skipTrailingWhitespace(result, endIndex - 1);
     }
-    if (startIndex == 0 && endIndex == resultLength) return result;
+    if (startIndex == 0 && endIndex == resultLength) {
+      return length == resultLength ? this : result;
+    }
+
     return substring(startIndex, endIndex);
   }
 
