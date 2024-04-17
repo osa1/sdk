@@ -445,15 +445,15 @@ final class JSStringImpl implements String {
   // trim the NEXT LINE (NEL) character (0x85).
   @override
   String trim() {
+    final length = this.length;
+    if (length == 0) return this;
+
     // Start by doing JS trim. Then check if it leaves a NEL at either end of
     // the string.
-    final length = this.length;
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trim()', toExternRef));
     final resultLength = result.length;
-    if (resultLength == 0) {
-      return length == 0 ? this : result;
-    }
+    if (resultLength == 0) return result;
 
     // Check NEL on the left.
     final int firstCode = result._codeUnitAtUnchecked(0);
@@ -471,27 +471,28 @@ final class JSStringImpl implements String {
     if (lastCode == nelCodeUnit) {
       endIndex = _skipTrailingWhitespace(result, endIndex - 1);
     }
+
     if (startIndex == 0 && endIndex == resultLength) {
       return length == resultLength ? this : result;
     }
 
-    return substring(startIndex, endIndex);
+    return result.substring(startIndex, endIndex);
   }
 
   // dart2wasm can't use JavaScript trimLeft directly because it does not trim
-  // the NEXT LINE character (0x85).
+  // the NEXT LINE (NEL) character (0x85).
   @override
   String trimLeft() {
+    final length = this.length;
+    if (length == 0) return this;
+
     // Start by doing JS trim. Then check if it leaves a NEL at the beginning
     // of the string.
-    final length = this.length;
     int startIndex = 0;
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trimLeft()', toExternRef));
     final resultLength = result.length;
-    if (resultLength == 0) {
-      return length == 0 ? this : result;
-    }
+    if (resultLength == 0) return result;
 
     // Check NEL.
     int firstCode = result._codeUnitAtUnchecked(0);
@@ -508,22 +509,29 @@ final class JSStringImpl implements String {
   }
 
   // dart2wasm can't use JavaScript trimRight directly because it does not trim
-  // the NEXT LINE character (0x85).
+  // the NEXT LINE (NEL) character (0x85).
   @override
   String trimRight() {
+    final length = this.length;
+    if (length == 0) return this;
+
     // Start by doing JS trim. Then check if it leaves a NEL at the end of the
     // string.
     final result =
         JSStringImpl(js.JS<WasmExternRef?>('s => s.trimRight()', toExternRef));
     final resultLength = result.length;
+    if (resultLength == 0) return result;
+
     int endIndex = resultLength;
-    if (endIndex == 0) return result;
     int lastCode = result.codeUnitAt(endIndex - 1);
     if (lastCode == nelCodeUnit) {
       endIndex = _skipTrailingWhitespace(result, endIndex - 1);
     }
 
-    if (endIndex == resultLength) return result;
+    if (endIndex == resultLength) {
+      return resultLength == length ? this : result;
+    }
+
     if (endIndex == 0) return "";
     return result.substring(0, endIndex);
   }
