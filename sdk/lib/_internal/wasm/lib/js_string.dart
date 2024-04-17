@@ -542,7 +542,7 @@ final class JSStringImpl implements String {
   int _jsIndexOf(WasmExternRef? pattern, int start) => js
       .JS<WasmI32>('(s, p, i) => s.indexOf(p, i)', toExternRef, pattern,
           WasmI32.fromInt(start))
-      .toIntSigned();
+      .toIntUnsigned();
 
   @override
   int indexOf(Pattern pattern, [int start = 0]) {
@@ -566,7 +566,7 @@ final class JSStringImpl implements String {
   int _jsLastIndexOf(WasmExternRef? pattern, int start) => js
       .JS<WasmI32>('(s, p, i) => s.lastIndexOf(p, i)', toExternRef, pattern,
           WasmI32.fromInt(start))
-      .toIntSigned();
+      .toIntUnsigned();
 
   @override
   int lastIndexOf(Pattern pattern, [int? start]) {
