@@ -540,9 +540,9 @@ final class JSStringImpl implements String {
   Runes get runes => Runes(this);
 
   int _jsIndexOf(WasmExternRef? pattern, int start) => js
-      .JS<double>('(s, p, i) => s.indexOf(p, i)', toExternRef, pattern,
-          start.toDouble())
-      .toInt();
+      .JS<WasmI32>('(s, p, i) => s.indexOf(p, i)', toExternRef, pattern,
+          WasmI32.fromInt(start))
+      .toIntSigned();
 
   @override
   int indexOf(Pattern pattern, [int start = 0]) {
@@ -564,9 +564,9 @@ final class JSStringImpl implements String {
   }
 
   int _jsLastIndexOf(WasmExternRef? pattern, int start) => js
-      .JS<double>('(s, p, i) => s.lastIndexOf(p, i)', toExternRef, pattern,
-          start.toDouble())
-      .toInt();
+      .JS<WasmI32>('(s, p, i) => s.lastIndexOf(p, i)', toExternRef, pattern,
+          WasmI32.fromInt(start))
+      .toIntSigned();
 
   @override
   int lastIndexOf(Pattern pattern, [int? start]) {
@@ -680,7 +680,7 @@ final class JSStringImpl implements String {
   }
 
   @override
-  String toString() => js.stringify(toExternRef);
+  String toString() => this;
 
   int firstNonWhitespace() {
     final length = this.length;
