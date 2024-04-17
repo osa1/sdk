@@ -391,9 +391,6 @@ abstract final class String implements Comparable<String>, Pattern {
   ///
   ///     FEFF          ; BOM                ZERO WIDTH NO_BREAK SPACE
   /// ```
-  /// Some later versions of Unicode do not include U+0085 as a whitespace
-  /// character. Whether it is trimmed depends on the Unicode version
-  /// used by the system.
   String trim();
 
   /// The string without any leading whitespace.
