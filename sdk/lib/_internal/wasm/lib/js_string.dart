@@ -328,6 +328,7 @@ final class JSStringImpl implements String {
   String substring(int start, [int? end]) {
     end ??= length;
     RangeErrorUtils.checkValidRangePositiveLength(start, end, length);
+    if (start == end) return "";
     return JSStringImpl(_jsSubstring(toExternRef, start, end));
   }
 
@@ -504,7 +505,6 @@ final class JSStringImpl implements String {
       return resultLength == length ? this : result;
     }
 
-    if (startIndex == resultLength) return "";
     return result.substring(startIndex);
   }
 
@@ -532,7 +532,6 @@ final class JSStringImpl implements String {
       return resultLength == length ? this : result;
     }
 
-    if (endIndex == 0) return "";
     return result.substring(0, endIndex);
   }
 
