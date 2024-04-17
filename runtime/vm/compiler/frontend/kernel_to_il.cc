@@ -94,8 +94,7 @@ FlowGraphBuilder::FlowGraphBuilder(
       try_catch_block_(nullptr),
       try_finally_block_(nullptr),
       catch_block_(nullptr),
-      prepend_type_arguments_(Function::ZoneHandle(zone_)),
-      throw_new_null_assertion_(Function::ZoneHandle(zone_)) {
+      prepend_type_arguments_(Function::ZoneHandle(zone_)) {
   const auto& info = KernelProgramInfo::Handle(
       Z, parsed_function->function().KernelProgramInfo());
   H.InitFromKernelProgramInfo(info);
@@ -961,36 +960,17 @@ bool FlowGraphBuilder::IsRecognizedMethodForFlowGraph(
   const MethodRecognizer::Kind kind = function.recognized_kind();
 
   switch (kind) {
+#define TYPED_DATA_GET_INDEXED_CASES(clazz)                                    \
+  case MethodRecognizer::k##clazz##ArrayGetIndexed:                            \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::kExternal##clazz##ArrayGetIndexed:                    \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::k##clazz##ArrayViewGetIndexed:                        \
+    FALL_THROUGH;
+    DART_CLASS_LIST_TYPED_DATA(TYPED_DATA_GET_INDEXED_CASES)
+#undef TYPED_DATA_GET_INDEXED_CASES
     case MethodRecognizer::kObjectArrayGetIndexed:
     case MethodRecognizer::kGrowableArrayGetIndexed:
-    case MethodRecognizer::kInt8ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kInt16ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt16ArrayGetIndexed:
-    case MethodRecognizer::kUint16ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint16ArrayGetIndexed:
-    case MethodRecognizer::kInt32ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32ArrayGetIndexed:
-    case MethodRecognizer::kUint32ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint32ArrayGetIndexed:
-    case MethodRecognizer::kInt64ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt64ArrayGetIndexed:
-    case MethodRecognizer::kUint64ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32ArrayGetIndexed:
-    case MethodRecognizer::kFloat64ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kInt32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32x4ArrayGetIndexed:
     case MethodRecognizer::kRecord_fieldAt:
     case MethodRecognizer::kRecord_fieldNames:
     case MethodRecognizer::kRecord_numFields:
@@ -1215,36 +1195,17 @@ FlowGraph* FlowGraphBuilder::BuildGraphOfRecognizedMethod(
 
   const MethodRecognizer::Kind kind = function.recognized_kind();
   switch (kind) {
+#define TYPED_DATA_GET_INDEXED_CASES(clazz)                                    \
+  case MethodRecognizer::k##clazz##ArrayGetIndexed:                            \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::kExternal##clazz##ArrayGetIndexed:                    \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::k##clazz##ArrayViewGetIndexed:                        \
+    FALL_THROUGH;
+    DART_CLASS_LIST_TYPED_DATA(TYPED_DATA_GET_INDEXED_CASES)
+#undef TYPED_DATA_GET_INDEXED_CASES
     case MethodRecognizer::kObjectArrayGetIndexed:
-    case MethodRecognizer::kGrowableArrayGetIndexed:
-    case MethodRecognizer::kInt8ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kInt16ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt16ArrayGetIndexed:
-    case MethodRecognizer::kUint16ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint16ArrayGetIndexed:
-    case MethodRecognizer::kInt32ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32ArrayGetIndexed:
-    case MethodRecognizer::kUint32ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint32ArrayGetIndexed:
-    case MethodRecognizer::kInt64ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt64ArrayGetIndexed:
-    case MethodRecognizer::kUint64ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32ArrayGetIndexed:
-    case MethodRecognizer::kFloat64ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kInt32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32x4ArrayGetIndexed: {
+    case MethodRecognizer::kGrowableArrayGetIndexed: {
       ASSERT_EQUAL(function.NumParameters(), 2);
       intptr_t array_cid = MethodRecognizer::MethodKindToReceiverCid(kind);
       const Representation elem_rep =
@@ -2967,9 +2928,6 @@ Fragment FlowGraphBuilder::TestClosureFunctionNamedParameterRequired(
     const ClosureCallInfo& info,
     Fragment set,
     Fragment not_set) {
-  // Required named arguments only exist if null_safety is enabled.
-  if (!IG->use_strict_null_safety_checks()) return not_set;
-
   Fragment check_required;
   // We calculate the index to dereference in the parameter names array.
   check_required += LoadLocal(info.vars->current_param_index);
@@ -3141,10 +3099,6 @@ Fragment FlowGraphBuilder::BuildClosureCallNamedArgumentsCheck(
   // When no named arguments are provided, we just need to check for possible
   // required named arguments.
   if (info.descriptor.NamedCount() == 0) {
-    // No work to do if there are no possible required named parameters.
-    if (!IG->use_strict_null_safety_checks()) {
-      return Fragment();
-    }
     // If the below changes, we can no longer assume that flag slots existing
     // means there are required parameters.
     static_assert(compiler::target::kNumParameterFlags == 1,
@@ -4409,7 +4363,6 @@ FlowGraph* FlowGraphBuilder::BuildGraphOfFieldAccessor(
                               AssertAssignableInstr::kParameterCheck,
                               field.token_pos());
     }
-    body += BuildNullAssertions();
     if (field.is_late()) {
       if (is_method) {
         body += Drop();
@@ -5861,72 +5814,6 @@ void FlowGraphBuilder::SetCurrentTryCatchBlock(TryCatchBlock* try_catch_block) {
   try_catch_block_ = try_catch_block;
   SetCurrentTryIndex(try_catch_block == nullptr ? kInvalidTryIndex
                                                 : try_catch_block->try_index());
-}
-
-Fragment FlowGraphBuilder::NullAssertion(LocalVariable* variable) {
-  Fragment code;
-  if (!variable->static_type().NeedsNullAssertion()) {
-    return code;
-  }
-
-  TargetEntryInstr* then;
-  TargetEntryInstr* otherwise;
-
-  code += LoadLocal(variable);
-  code += NullConstant();
-  code += BranchIfEqual(&then, &otherwise);
-
-  const Script& script =
-      Script::Handle(Z, parsed_function_->function().script());
-  intptr_t line = -1;
-  intptr_t column = -1;
-  script.GetTokenLocation(variable->token_pos(), &line, &column);
-
-  // Build equivalent of `throw _AssertionError._throwNewNullAssertion(name)`
-  // expression. We build throw (even through _throwNewNullAssertion already
-  // throws) because call is not a valid last instruction for the block.
-  // Blocks can only terminate with explicit control flow instructions
-  // (Branch, Goto, Return or Throw).
-  Fragment null_code(then);
-  null_code += Constant(variable->name());
-  null_code += IntConstant(line);
-  null_code += IntConstant(column);
-  null_code += StaticCall(variable->token_pos(),
-                          ThrowNewNullAssertionFunction(), 3, ICData::kStatic);
-  null_code += ThrowException(TokenPosition::kNoSource);
-  null_code += Drop();
-
-  return Fragment(code.entry, otherwise);
-}
-
-Fragment FlowGraphBuilder::BuildNullAssertions() {
-  Fragment code;
-  if (IG->null_safety() || !IG->asserts() || !FLAG_null_assertions) {
-    return code;
-  }
-
-  const Function& dart_function = parsed_function_->function();
-  for (intptr_t i = dart_function.NumImplicitParameters(),
-                n = dart_function.NumParameters();
-       i < n; ++i) {
-    LocalVariable* variable = parsed_function_->ParameterVariable(i);
-    code += NullAssertion(variable);
-  }
-  return code;
-}
-
-const Function& FlowGraphBuilder::ThrowNewNullAssertionFunction() {
-  if (throw_new_null_assertion_.IsNull()) {
-    const Class& klass = Class::ZoneHandle(
-        Z, Library::LookupCoreClass(Symbols::AssertionError()));
-    ASSERT(!klass.IsNull());
-    const auto& error = klass.EnsureIsFinalized(H.thread());
-    ASSERT(error == Error::null());
-    throw_new_null_assertion_ = klass.LookupStaticFunctionAllowPrivate(
-        Symbols::ThrowNewNullAssertion());
-    ASSERT(!throw_new_null_assertion_.IsNull());
-  }
-  return throw_new_null_assertion_;
 }
 
 const Function& FlowGraphBuilder::PrependTypeArgumentsFunction() {

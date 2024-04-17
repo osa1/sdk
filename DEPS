@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "7faf6c725b88ca0a7296eadb3a6ccdf91665d86d",
+  "co19_rev": "bf076a98c58b59a8815f2db841c08d2b9616edfa",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "a7c23b2422492dcc515d1ba4abe3609b50e2a139",
@@ -71,7 +71,7 @@ vars = {
   # self-service update these by following the go/dart-engprod/browsers.md
   # instructions. d8, the V8 shell, is always checked out.
   "checkout_javascript_engines": False,
-  "d8_tag": "version:12.3.150",
+  "d8_tag": "version:12.5.216",
   "jsshell_tag": "version:122.0",
   "jsc_tag": "version:274355",
 
@@ -79,7 +79,7 @@ vars = {
   "clang_version": "git_revision:b1d2e8510b58893e58558ffdf3f8ba29c1e25e5a",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
-  "gn_version": "git_revision:a2e2717ea670249a34b0de4b3e54f268d320bdfa",
+  "gn_version": "git_revision:155c53952ec2dc324b0438ce5b9bd4a286577d25",
 
   "reclient_version": "git_revision:c7349324c93c6e0d85bc1e00b5d7526771006ea0",
   "download_reclient": True,
@@ -102,7 +102,7 @@ vars = {
   "boringssl_rev": "d24a38200fef19150eef00cad35b138936c08767",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "8be1bc8d6862a3fcf8f43917f6e0c783cac06d51",
+  "devtools_rev": "36e2f3edc13b9f582e04cf22e4bd00b6007b4f8c",
   "icu_rev": "81d656878ec611cb0b42d52c82e9dae93920d9ba",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -120,14 +120,14 @@ vars = {
   # EOL comment after a dependency to disable this and pin it at its current
   # revision.
 
-  "args_rev": "b2e2224a15e5d20c02c6c8ede9236fa03ac9c505",
+  "args_rev": "5c83bc9785d6c32ffe6824ba79fadcc51fbcd1c1",
   "async_rev": "47968047eb9888f74ca0691640821bd55b47e763",
   "bazel_worker_rev": "79d2ad13c83d5e0883136503d86ddf60fe665900",
   "benchmark_harness_rev": "d23112a0e6ea8101854bff608250c7ee1ea52a01",
   "boolean_selector_rev": "24635df68661bb44c1c13fb405562421e24298e5",
   "browser_launcher_rev": "c4b2c81aa9debcce3651eda1b68a9bc5d5adf400",
   "characters_rev": "7633a16a22c626e19ca750223237396315268a06",
-  "cli_util_rev": "12cd216263be587a648600b40017463341bccaf8",
+  "cli_util_rev": "e222c560d88d127bc5e991ca96be2b1e875f4f3e",
   "clock_rev": "a732a09149708ae0b986bec9931576d22818d158",
   "collection_rev": "fc616ff8fd7b732c07b2b19e31b6601e59900ccf",
   "convert_rev": "186ac2281f0436451b49e1bd8458ff791b42637d",
@@ -144,14 +144,14 @@ vars = {
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
   "dart_style_rev": "a6ad7693555a9add6f98ad6fd94de80d35c89415", # disable tools/rev_sdk_deps.dart
-  "dartdoc_rev": "28d0dabbcce6e19cb62daea2db7d5d3d87017dfa",
-  "ecosystem_rev": "de03da148fbf75de80ed280b44403dcda6ab629a",
+  "dartdoc_rev": "f339b094b123a18c88f277fd997a590a9431973c",
+  "ecosystem_rev": "9fabe464ea1d8408774de74d2ac759c1f90ae480",
   "file_rev": "f858c6fe9d1b0167b944aa62dd9b4321036b5238",
   "fixnum_rev": "dec16eb715f70f2fe0ed509da2e118354bea21d8",
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
   "glob_rev": "25ee2c20a3c7b93f4096036939a59e40916a3890",
   "html_rev": "5b99b43f71da0c6b0f962244c7f5dfa8ca970fef",
-  "http_rev": "caad9caf5f62fc966c8d1632e4958d60dd43a000",
+  "http_rev": "b7477b1e1bc5c8f850299b7abcc58d08ddea9e4a",
   "http_multi_server_rev": "6ce0a137aa20cc12b883a386bb7c0ae677cb3429",
   "http_parser_rev": "8ffcaec6fedfac5274cfa57e133d47d499bdabc0",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
@@ -163,17 +163,17 @@ vars = {
   "matcher_rev": "54c2798d9b75c6db5cdcc7acbf5b9ae215316ed5",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   "mime_rev": "0a32241c4fcd077a945949760b287677e4d7aff4",
-  "mockito_rev": "3ef744f8749864f2a036eba60c4203cc8f638949",
+  "mockito_rev": "81ecb88b631a9c1e677852a33ad916238dee0ef2",
   "native_rev": "71ada4b5c8001e6b8207ed40331d158e0912cd94", # mosum@ and dacoharkes@ are rolling breaking changes manually while the assets features are in experimental.
-  "package_config_rev": "486cc4b29fb361efd1f05cc7e07fb3be4132b139",
+  "package_config_rev": "854dc194131af8e2c16ef46ad210af9b2ef45fa9",
   "path_rev": "a7284b9917830c18618b26d396d0f0bffc92bb01",
   "pool_rev": "8055cbb290590e761e1149dfbf7c2283fdd88e4f",
   "protobuf_rev": "ccf104dbc36929c0f8708285d5f3a8fae206343e",
   "pub_rev": "f3b1199fcab37a197f2980bf6b28e421e7bce771", # disable tools/rev_sdk_deps.dart
   "pub_semver_rev": "7581029bf5346fd5a44b95f4686bba8de7598859",
-  "shelf_rev": "68cb8641c3181cc76006887a7e93b9d3a423f590",
-  "source_map_stack_trace_rev": "d03fd9b1cc11f2ad61ccc2e71bfd8d2558019a6d",
-  "source_maps_rev": "64d07fa98f4689f271c2c239d96d2c349b31662a",
+  "shelf_rev": "7352d1b7ac283df8eac36441d7569be8a36757f9",
+  "source_map_stack_trace_rev": "9ed8875f0933bf0d8e09694211cb9765147b27bb",
+  "source_maps_rev": "aedfc39235941a31070fe53149b5776ea29be44f",
   "source_span_rev": "45e11a3a0e4b14116911fffc21e2cdc95824e28f",
   "sse_rev": "1ab266ad570134294468225d1c2ffe86338005be",
   "stack_trace_rev": "c39ae6e955a76a2ff183288f051f4eee7a5e94d1",
@@ -191,7 +191,7 @@ vars = {
   "usage_rev": "09cab899c2759c2e1c84ab49098f58beab3c149f",
   "vector_math_rev": "43f2a77bb0be812b027a68a11792d563713b42a1",
   "watcher_rev": "1bd2f20d0d924c8422aa2b9afdb165bff4f053c0",
-  "web_rev": "3d1b4cbaaf7517cf4f86c8cf8ebe31c67040e08a",
+  "web_rev": "9d8c802d13b785b1a5b201c4a43605d640841c98",
   "web_socket_channel_rev": "ced3a37193f89d5ee95792f342eeb15d3d55d8c1",
   "webdev_rev": "7d0d2d46bf4249e73298ddafa4f323f8609d08da",
   "webdriver_rev": "c80e01e6ce121e55c31e33a31e5d3950023e6bc9",

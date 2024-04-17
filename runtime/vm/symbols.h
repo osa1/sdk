@@ -243,8 +243,8 @@ class ObjectPointerVisitor;
   V(SwitchExpr, ":switch_expr")                                                \
   V(Symbol, "Symbol")                                                          \
   V(ThrowNew, "_throwNew")                                                     \
+  V(ThrowNewSource, "_throwNewSource")                                         \
   V(ThrowNewInvocation, "_throwNewInvocation")                                 \
-  V(ThrowNewNullAssertion, "_throwNewNullAssertion")                           \
   V(TopLevel, "::")                                                            \
   V(TransferableTypedData, "TransferableTypedData")                            \
   V(TruncDivOperator, "~/")                                                    \

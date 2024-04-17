@@ -4,7 +4,6 @@
 
 import 'package:analysis_server/src/services/correction/dart/abstract_producer.dart';
 import 'package:analysis_server/src/services/correction/fix.dart';
-import 'package:analysis_server/src/utilities/flutter.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -32,7 +31,7 @@ class AddKeyToConstructors extends ResolvedCorrectionProducer {
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
-    var node = this.node;
+    final node = this.node;
     var parent = node.parent;
     if (node is ClassDeclaration) {
       await _computeClassDeclaration(builder, node);
@@ -161,7 +160,7 @@ class AddKeyToConstructors extends ResolvedCorrectionProducer {
 
   /// Return the type for the class `Key`.
   Future<DartType?> _getKeyType() async {
-    var keyClass = await sessionHelper.getClass(Flutter.widgetsUri, 'Key');
+    var keyClass = await sessionHelper.getFlutterClass('Key');
     if (keyClass == null) {
       return null;
     }
@@ -192,7 +191,7 @@ class AddKeyToConstructors extends ResolvedCorrectionProducer {
     }
     if (superParameters) {
       if (invocation != null && invocation.argumentList.arguments.isEmpty) {
-        final invocationIndex = initializers.indexOf(invocation);
+        var invocationIndex = initializers.indexOf(invocation);
         if (initializers.length == 1) {
           builder.addDeletion(
             range.endStart(

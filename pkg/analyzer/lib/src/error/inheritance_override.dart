@@ -41,7 +41,7 @@ class InheritanceOverrideVerifier {
     for (var declaration in unit.declarations) {
       _ClassVerifier verifier;
       if (declaration is ClassDeclaration) {
-        final element = declaration.declaredElement!;
+        var element = declaration.declaredElement!;
         if (element.isAugmentation) {
           continue;
         }
@@ -91,7 +91,7 @@ class InheritanceOverrideVerifier {
           withClause: declaration.withClause,
         );
       } else if (declaration is MixinDeclaration) {
-        final element = declaration.declaredElement!;
+        var element = declaration.declaredElement!;
         if (element.isAugmentation) {
           continue;
         }
@@ -124,13 +124,14 @@ class InheritanceOverrideVerifier {
   /// Returns [Element] members that are in the interface of the
   /// given class with `@mustBeOverridden`, but don't have implementations.
   static List<ExecutableElement> missingMustBeOverridden(
-      ClassDeclaration node) {
+      NamedCompilationUnitMember node) {
     return _missingMustBeOverridden[node.name] ?? const [];
   }
 
   /// Returns [ExecutableElement] members that are in the interface of the
   /// given class, but don't have concrete implementations.
-  static List<ExecutableElement> missingOverrides(ClassDeclaration node) {
+  static List<ExecutableElement> missingOverrides(
+      NamedCompilationUnitMember node) {
     return _missingOverrides[node.name] ?? const [];
   }
 }
@@ -422,7 +423,7 @@ class _ClassVerifier {
       return false;
     }
 
-    final typeElement = type.element;
+    var typeElement = type.element;
 
     final classElement = this.classElement;
     if (typeElement is ClassElement &&
@@ -555,7 +556,7 @@ class _ClassVerifier {
     path.add(element);
 
     // n-case
-    final supertype = element.supertype;
+    var supertype = element.supertype;
     if (supertype != null &&
         _checkForRecursiveInterfaceInheritance(supertype.element, path)) {
       return true;
@@ -885,13 +886,13 @@ class _ClassVerifier {
   /// Verify that [classElement] complies with all `@mustBeOverridden`-annotated
   /// members in all of its supertypes.
   void _verifyMustBeOverridden() {
-    final noSuchMethodDeclaration =
+    var noSuchMethodDeclaration =
         classElement.getMethod(FunctionElement.NO_SUCH_METHOD_METHOD_NAME);
     if (noSuchMethodDeclaration != null &&
         !noSuchMethodDeclaration.isAbstract) {
       return;
     }
-    final notOverridden = <ExecutableElement>[];
+    var notOverridden = <ExecutableElement>[];
     for (var supertype in classElement.allSupertypes) {
       // TODO(srawlins): This looping may be expensive. Since the vast majority
       // of classes will have zero elements annotated with `@mustBeOverridden`,
@@ -921,7 +922,7 @@ class _ClassVerifier {
         }
         if (accessor.hasMustBeOverridden ||
             (accessor.variable2?.hasMustBeOverridden ?? false)) {
-          final PropertyAccessorElement? accessorDeclaration;
+          PropertyAccessorElement? accessorDeclaration;
           if (accessor.isGetter) {
             accessorDeclaration = classElement.getGetter(accessor.name);
           } else if (accessor.isSetter) {
@@ -940,7 +941,7 @@ class _ClassVerifier {
     }
 
     _missingMustBeOverridden[classNameToken] = notOverridden.toList();
-    final namesForError = notOverridden
+    var namesForError = notOverridden
         .map((e) {
           var name = e.name;
           if (name.endsWith('=')) {

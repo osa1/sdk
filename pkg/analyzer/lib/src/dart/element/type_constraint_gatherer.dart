@@ -333,7 +333,7 @@ class TypeConstraintGatherer {
 
     // If `Q` is `Function` then the match holds under no constraints:
     //   If `P` is a function type.
-    if (Q_nullability == NullabilitySuffix.none && Q.isDartCoreFunction) {
+    if (_typeSystemOperations.isDartCoreFunction(Q)) {
       if (_typeSystemOperations.isFunctionType(P)) {
         return true;
       }
@@ -659,23 +659,23 @@ class TypeConstraintGatherer {
       return false;
     }
 
-    final positionalP = P.positionalFields;
-    final positionalQ = Q.positionalFields;
+    var positionalP = P.positionalFields;
+    var positionalQ = Q.positionalFields;
     if (positionalP.length != positionalQ.length) {
       return false;
     }
 
-    final namedP = P.namedFields;
-    final namedQ = Q.namedFields;
+    var namedP = P.namedFields;
+    var namedQ = Q.namedFields;
     if (namedP.length != namedQ.length) {
       return false;
     }
 
-    final rewind = _constraints.length;
+    var rewind = _constraints.length;
 
     for (var i = 0; i < positionalP.length; i++) {
-      final fieldP = positionalP[i];
-      final fieldQ = positionalQ[i];
+      var fieldP = positionalP[i];
+      var fieldQ = positionalQ[i];
       if (!trySubtypeMatch(fieldP.type, fieldQ.type, leftSchema,
           nodeForTesting: nodeForTesting)) {
         _constraints.length = rewind;
@@ -684,8 +684,8 @@ class TypeConstraintGatherer {
     }
 
     for (var i = 0; i < namedP.length; i++) {
-      final fieldP = namedP[i];
-      final fieldQ = namedQ[i];
+      var fieldP = namedP[i];
+      var fieldQ = namedQ[i];
       if (fieldP.name != fieldQ.name) {
         _constraints.length = rewind;
         return false;

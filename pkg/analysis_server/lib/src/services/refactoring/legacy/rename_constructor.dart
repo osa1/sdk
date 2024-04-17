@@ -10,16 +10,14 @@ import 'package:analysis_server/src/services/refactoring/legacy/refactoring.dart
 import 'package:analysis_server/src/services/refactoring/legacy/refactoring_internal.dart';
 import 'package:analysis_server/src/services/refactoring/legacy/rename.dart';
 import 'package:analysis_server/src/services/search/hierarchy.dart';
+import 'package:analysis_server/src/utilities/change_builder.dart';
 import 'package:analysis_server/src/utilities/selection.dart';
 import 'package:analysis_server/src/utilities/strings.dart';
-import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/generated/java_core.dart';
 import 'package:analyzer/src/generated/source.dart';
-import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
-import 'package:analyzer_plugin/utilities/change_builder/change_builder_dart.dart';
 import 'package:analyzer_plugin/utilities/range_factory.dart';
 
 /// A [Refactoring] for renaming [ConstructorElement]s.
@@ -100,37 +98,11 @@ class RenameConstructorRefactoringImpl extends RenameRefactoringImpl {
     }
   }
 
-  /// Adds an insertion of a constructor in [container].
-  Future<SourceEdit?> _addConstructorInsertion(
-    ResolvedUnitResult resolvedUnit,
-    NamedCompilationUnitMember container,
-    void Function(DartEditBuilder builder) buildEdit,
-  ) async {
-    var builder = ChangeBuilder(session: sessionHelper.session);
-    await builder.addDartFileEdit(resolvedUnit.path, (builder) {
-      builder.insertConstructor(container, buildEdit);
-    });
-    var fileEdit = builder.sourceChange.getFileEdit(resolvedUnit.path);
-    if (fileEdit == null) {
-      return null;
-    }
-    var edits = fileEdit.edits;
-    if (edits.isEmpty) {
-      return null;
-    }
-    assert(
-      edits.length == 1,
-      'Expected a single edit from addConstructorInsertion, but got '
-      '${edits.length}',
-    );
-    return edits.first;
-  }
-
   void _addDefaultConstructorToClass({
     required SourceReference reference,
     required ClassDeclaration classDeclaration,
   }) {
-    final className = classDeclaration.name.lexeme;
+    var className = classDeclaration.name.lexeme;
     _replaceInReferenceFile(
       reference: reference,
       range: range.endLength(classDeclaration.leftBracket, 0),
@@ -142,8 +114,8 @@ class RenameConstructorRefactoringImpl extends RenameRefactoringImpl {
     required SourceReference reference,
     required ConstructorDeclaration constructor,
   }) {
-    final initializers = constructor.initializers;
-    if (initializers.lastOrNull case final last?) {
+    var initializers = constructor.initializers;
+    if (initializers.lastOrNull case var last?) {
       _replaceInReferenceFile(
         reference: reference,
         range: range.endLength(last, 0),
@@ -222,21 +194,26 @@ class RenameConstructorRefactoringImpl extends RenameRefactoringImpl {
     }
 
     var node = result.node;
-
-    if (node is ClassDeclaration) {
-      var edit = await _addConstructorInsertion(resolvedUnit, node,
-          (builder) => builder.write('${classElement.name}.$newName();'));
-      if (edit == null) {
-        return;
-      }
-      doSourceChange_addElementEdit(change, classElement, edit);
-    } else if (node is EnumDeclaration) {
-      var edit = await _addConstructorInsertion(resolvedUnit, node,
-          (builder) => builder.write('const ${classElement.name}.$newName();'));
-      if (edit == null) {
-        return;
-      }
-      doSourceChange_addElementEdit(change, classElement, edit);
+    if (node is! NamedCompilationUnitMember) {
+      return;
     }
+    if (node is! ClassDeclaration && node is! EnumDeclaration) {
+      return;
+    }
+
+    var edit = await buildEditForInsertedConstructor(
+      node,
+      resolvedUnit: resolvedUnit,
+      session: sessionHelper.session,
+      (builder) => builder.writeConstructorDeclaration(
+        classElement.name,
+        constructorName: newName,
+        isConst: node is EnumDeclaration,
+      ),
+    );
+    if (edit == null) {
+      return;
+    }
+    doSourceChange_addElementEdit(change, classElement, edit);
   }
 }

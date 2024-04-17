@@ -6,6 +6,7 @@ import 'package:analysis_server/src/protocol_server.dart'
     show CompletionSuggestionKind;
 import 'package:analysis_server/src/services/completion/dart/candidate_suggestion.dart';
 import 'package:analysis_server/src/services/completion/dart/completion_manager.dart';
+import 'package:analysis_server/src/services/completion/dart/completion_state.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_collector.dart';
 import 'package:analysis_server/src/services/completion/dart/visibility_tracker.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -32,6 +33,9 @@ class DeclarationHelper {
 
   /// The suggestion collector to which suggestions will be added.
   final SuggestionCollector collector;
+
+  /// The state used to compute the candidate suggestions.
+  final CompletionState state;
 
   /// The offset of the completion location.
   final int offset;
@@ -106,6 +110,7 @@ class DeclarationHelper {
   DeclarationHelper({
     required this.request,
     required this.collector,
+    required this.state,
     required this.offset,
     required this.mustBeAssignable,
     required this.mustBeConstant,
@@ -140,7 +145,7 @@ class DeclarationHelper {
   void addConstructorNamesForElement({
     required InterfaceElement element,
   }) {
-    var constructors = element.augmented?.constructors ?? element.constructors;
+    var constructors = element.augmented.constructors;
     for (var constructor in constructors) {
       _suggestConstructor(
         constructor,
@@ -188,12 +193,16 @@ class DeclarationHelper {
 
       if (importElement.prefix case var importPrefix?) {
         if (importPrefix is DeferredImportElementPrefix) {
-          collector.addSuggestion(
-            LoadLibraryFunctionSuggestion(
-              kind: CompletionSuggestionKind.INVOCATION,
-              element: importedLibrary.loadLibraryFunction,
-            ),
-          );
+          var score = state.matcher.score(importedLibrary.displayName);
+          if (score != -1) {
+            collector.addSuggestion(
+              LoadLibraryFunctionSuggestion(
+                kind: CompletionSuggestionKind.INVOCATION,
+                element: importedLibrary.loadLibraryFunction,
+                score: score,
+              ),
+            );
+          }
         }
       }
     }
@@ -296,13 +305,16 @@ class DeclarationHelper {
       if (importedLibrary == null) {
         continue;
       }
-
-      collector.addSuggestion(
-        ImportPrefixSuggestion(
-          libraryElement: importedLibrary,
-          prefixElement: prefixElement,
-        ),
-      );
+      var score = state.matcher.score(prefixElement.displayName);
+      if (score != -1) {
+        collector.addSuggestion(
+          ImportPrefixSuggestion(
+            libraryElement: importedLibrary,
+            prefixElement: prefixElement,
+            score: score,
+          ),
+        );
+      }
     }
   }
 
@@ -423,8 +435,7 @@ class DeclarationHelper {
       for (var superParameter in superConstructor.parameters) {
         if (superParameter.isNamed &&
             !specified.contains(superParameter.name)) {
-          collector
-              .addSuggestion(SuperParameterSuggestion(element: superParameter));
+          _suggestSuperParameter(superParameter);
         }
       }
     } else if (node.isPositional) {
@@ -434,8 +445,7 @@ class DeclarationHelper {
           .toList();
       if (indexOfThis >= 0 && indexOfThis < superPositionalList.length) {
         var superPositional = superPositionalList[indexOfThis];
-        collector
-            .addSuggestion(SuperParameterSuggestion(element: superPositional));
+        _suggestSuperParameter(superPositional);
       }
     }
   }
@@ -445,11 +455,8 @@ class DeclarationHelper {
   void addPossibleRedirectionsInLibrary(
       ConstructorElement redirectingConstructor, LibraryElement library) {
     var classElement =
-        redirectingConstructor.enclosingElement.augmented?.declaration;
-    var classType = classElement?.thisType;
-    if (classType == null) {
-      return;
-    }
+        redirectingConstructor.enclosingElement.augmented.declaration;
+    var classType = classElement.thisType;
     var typeSystem = library.typeSystem;
     for (var unit in library.units) {
       for (var classElement in unit.classes) {
@@ -482,27 +489,30 @@ class DeclarationHelper {
       case EnumElement():
         var augmented = element.augmented;
         _addStaticMembers(
-            accessors: augmented?.accessors ?? element.accessors,
-            constructors: augmented?.constructors ?? element.constructors,
-            containingElement: element,
-            fields: augmented?.fields ?? element.fields,
-            methods: augmented?.methods ?? element.methods);
+          accessors: augmented.accessors,
+          constructors: augmented.constructors,
+          containingElement: element,
+          fields: augmented.fields,
+          methods: augmented.methods,
+        );
       case ExtensionElement():
         var augmented = element.augmented;
         _addStaticMembers(
-            accessors: augmented?.accessors ?? element.accessors,
-            constructors: const [],
-            containingElement: element,
-            fields: augmented?.fields ?? element.fields,
-            methods: augmented?.methods ?? element.methods);
+          accessors: augmented.accessors,
+          constructors: const [],
+          containingElement: element,
+          fields: augmented.fields,
+          methods: augmented.methods,
+        );
       case InterfaceElement():
         var augmented = element.augmented;
         _addStaticMembers(
-            accessors: augmented?.accessors ?? element.accessors,
-            constructors: augmented?.constructors ?? element.constructors,
-            containingElement: element,
-            fields: augmented?.fields ?? element.fields,
-            methods: augmented?.methods ?? element.methods);
+          accessors: augmented.accessors,
+          constructors: augmented.constructors,
+          containingElement: element,
+          fields: augmented.fields,
+          methods: augmented.methods,
+        );
     }
   }
 
@@ -644,14 +654,14 @@ class DeclarationHelper {
     required RecordType type,
     required Set<String> excludedFields,
   }) {
-    for (final (index, field) in type.positionalFields.indexed) {
+    for (var (index, field) in type.positionalFields.indexed) {
       _suggestRecordField(
         field: field,
         name: '\$${index + 1}',
       );
     }
 
-    for (final field in type.namedFields) {
+    for (var field in type.namedFields) {
       if (!excludedFields.contains(field.name)) {
         _suggestRecordField(
           field: field,
@@ -693,7 +703,11 @@ class DeclarationHelper {
           prefix: importElement.prefix?.element.name,
         );
         if (importedLibrary.isDartCore && mustBeType) {
-          collector.addSuggestion(NameSuggestion(name: 'Never'));
+          var name = 'Never';
+          var score = state.matcher.score(name);
+          if (score != -1) {
+            collector.addSuggestion(NameSuggestion(name: name, score: score));
+          }
         }
       }
     }
@@ -701,26 +715,35 @@ class DeclarationHelper {
 
   /// Adds a suggestion for the top-level [element].
   void _addImportedElement(Element element) {
-    var suggestion = switch (element) {
-      ClassElement() => ClassSuggestion(importData: null, element: element),
-      EnumElement() => EnumSuggestion(importData: null, element: element),
-      ExtensionElement() =>
-        ExtensionSuggestion(importData: null, element: element),
-      ExtensionTypeElement() =>
-        ExtensionTypeSuggestion(importData: null, element: element),
-      FunctionElement() => TopLevelFunctionSuggestion(
-          importData: null, element: element, kind: _executableSuggestionKind),
-      MixinElement() => MixinSuggestion(importData: null, element: element),
-      PropertyAccessorElement() =>
-        TopLevelPropertyAccessSuggestion(importData: null, element: element),
-      TopLevelVariableElement() =>
-        TopLevelVariableSuggestion(importData: null, element: element),
-      TypeAliasElement() =>
-        TypeAliasSuggestion(importData: null, element: element),
-      _ => null
-    };
-    if (suggestion != null) {
-      collector.addSuggestion(suggestion);
+    var score = state.matcher.score(element.displayName);
+    if (score != -1) {
+      var suggestion = switch (element) {
+        ClassElement() =>
+          ClassSuggestion(importData: null, element: element, score: score),
+        EnumElement() =>
+          EnumSuggestion(importData: null, element: element, score: score),
+        ExtensionElement() =>
+          ExtensionSuggestion(importData: null, element: element, score: score),
+        ExtensionTypeElement() => ExtensionTypeSuggestion(
+            importData: null, element: element, score: score),
+        FunctionElement() => TopLevelFunctionSuggestion(
+            importData: null,
+            element: element,
+            kind: _executableSuggestionKind,
+            score: score),
+        MixinElement() =>
+          MixinSuggestion(importData: null, element: element, score: score),
+        PropertyAccessorElement() => TopLevelPropertyAccessSuggestion(
+            importData: null, element: element, score: score),
+        TopLevelVariableElement() => TopLevelVariableSuggestion(
+            importData: null, element: element, score: score),
+        TypeAliasElement() =>
+          TypeAliasSuggestion(importData: null, element: element, score: score),
+        _ => null
+      };
+      if (suggestion != null) {
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -949,22 +972,19 @@ class DeclarationHelper {
   void _addMembersOfEnclosingInstance(InstanceElement element) {
     var augmented = element.augmented;
 
-    var accessors = augmented?.accessors ?? element.accessors;
-    for (var accessor in accessors) {
+    for (var accessor in augmented.accessors) {
       if (!accessor.isSynthetic && (!mustBeStatic || accessor.isStatic)) {
         _suggestProperty(accessor, element);
       }
     }
 
-    var fields = augmented?.fields ?? element.fields;
-    for (var field in fields) {
+    for (var field in augmented.fields) {
       if (!field.isSynthetic && (!mustBeStatic || field.isStatic)) {
         _suggestField(field, element);
       }
     }
 
-    var methods = augmented?.methods ?? element.methods;
-    for (var method in methods) {
+    for (var method in augmented.methods) {
       if (!mustBeStatic || method.isStatic) {
         _suggestMethod(method, element);
       }
@@ -1062,9 +1082,16 @@ class DeclarationHelper {
               (containingElement is EnumElement && field.name == 'values')) &&
           field.isVisibleIn(request.libraryElement)) {
         if (field.isEnumConstant) {
-          var suggestion = EnumConstantSuggestion(
-              importData: null, element: field, includeEnumName: false);
-          collector.addSuggestion(suggestion);
+          var enumElement = field.enclosingElement;
+          var score = state.matcher.score('${enumElement.name}.${field.name}');
+          if (score != -1) {
+            var suggestion = EnumConstantSuggestion(
+                importData: null,
+                element: field,
+                includeEnumName: false,
+                score: score);
+            collector.addSuggestion(suggestion);
+          }
         } else {
           _suggestField(field, containingElement);
         }
@@ -1212,16 +1239,18 @@ class DeclarationHelper {
         return;
       }
       if (!mustBeConstant && !excludeTypeNames) {
-        var suggestion =
-            ClassSuggestion(importData: importData, element: element);
-        collector.addSuggestion(suggestion);
+        var score = state.matcher.score(element.displayName);
+        if (score != -1) {
+          var suggestion = ClassSuggestion(
+              importData: importData, element: element, score: score);
+          collector.addSuggestion(suggestion);
+        }
       }
       if (!mustBeType) {
-        if (element.augmented case var augmented?) {
-          _suggestStaticFields(augmented.fields, importData);
-          _suggestConstructors(augmented.constructors, importData,
-              allowNonFactory: !element.isAbstract);
-        }
+        var augmented = element.augmented;
+        _suggestStaticFields(augmented.fields, importData);
+        _suggestConstructors(augmented.constructors, importData,
+            allowNonFactory: !element.isAbstract);
       }
     }
   }
@@ -1242,17 +1271,23 @@ class DeclarationHelper {
       return;
     }
 
-    var isTearOff = preferNonInvocation || (mustBeConstant && !element.isConst);
+    // TODO(keertip): Compute the completion string.
+    var score = state.matcher.score(element.displayName);
+    if (score != -1) {
+      var isTearOff =
+          preferNonInvocation || (mustBeConstant && !element.isConst);
 
-    var suggestion = ConstructorSuggestion(
-      importData: importData,
-      element: element,
-      hasClassName: hasClassName,
-      isTearOff: isTearOff,
-      isRedirect: isConstructorRedirect,
-      suggestUnnamedAsNew: suggestUnnamedAsNew || isTearOff,
-    );
-    collector.addSuggestion(suggestion);
+      var suggestion = ConstructorSuggestion(
+        importData: importData,
+        element: element,
+        hasClassName: hasClassName,
+        isTearOff: isTearOff,
+        isRedirect: isConstructorRedirect,
+        suggestUnnamedAsNew: suggestUnnamedAsNew || isTearOff,
+        score: score,
+      );
+      collector.addSuggestion(suggestion);
+    }
   }
 
   /// Adds a suggestion for each of the [constructors].
@@ -1282,14 +1317,18 @@ class DeclarationHelper {
       if (mustBeExtendable || mustBeImplementable || mustBeMixable) {
         return;
       }
-      var suggestion = EnumSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = EnumSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
+
       if (!mustBeType) {
-        if (element.augmented case var augmented?) {
-          _suggestStaticFields(augmented.fields, importData);
-          _suggestConstructors(augmented.constructors, importData,
-              allowNonFactory: false);
-        }
+        var augmented = element.augmented;
+        _suggestStaticFields(augmented.fields, importData);
+        _suggestConstructors(augmented.constructors, importData,
+            allowNonFactory: false);
       }
     }
   }
@@ -1301,13 +1340,15 @@ class DeclarationHelper {
       if (mustBeExtendable || mustBeImplementable || mustBeMixable) {
         return;
       }
-      var suggestion =
-          ExtensionSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = ExtensionSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
       if (!mustBeType) {
-        if (element.augmented case var augmented?) {
-          _suggestStaticFields(augmented.fields, importData);
-        }
+        var augmented = element.augmented;
+        _suggestStaticFields(augmented.fields, importData);
       }
     }
   }
@@ -1320,14 +1361,16 @@ class DeclarationHelper {
       if (mustBeExtendable || mustBeImplementable || mustBeMixable) {
         return;
       }
-      var suggestion =
-          ExtensionTypeSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = ExtensionTypeSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
       if (!mustBeType) {
-        if (element.augmented case var augmented?) {
-          _suggestStaticFields(augmented.fields, importData);
-          _suggestConstructors(augmented.constructors, importData);
-        }
+        var augmented = element.augmented;
+        _suggestStaticFields(augmented.fields, importData);
+        _suggestConstructors(augmented.constructors, importData);
       }
     }
   }
@@ -1340,11 +1383,15 @@ class DeclarationHelper {
           (mustBeConstant && !element.isConst)) {
         return;
       }
-      var suggestion = FieldSuggestion(
-          element: element,
-          referencingClass:
-              (containingElement is ClassElement) ? containingElement : null);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = FieldSuggestion(
+            element: element,
+            score: score,
+            referencingClass:
+                (containingElement is ClassElement) ? containingElement : null);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1356,15 +1403,18 @@ class DeclarationHelper {
           (mustBeNonVoid && element.returnType is VoidType)) {
         return;
       }
-      var suggestion = LocalFunctionSuggestion(
-          kind: _executableSuggestionKind, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = LocalFunctionSuggestion(
+            kind: _executableSuggestionKind, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
   /// Adds a suggestion for the method `call` defined on the class `Function`.
   void _suggestFunctionCall() {
-    collector.addSuggestion(FunctionCall());
+    collector.addSuggestion(FunctionCall(score: 0));
   }
 
   /// Adds a suggestion for the method represented by the [element] contained
@@ -1381,12 +1431,16 @@ class DeclarationHelper {
           (mustBeNonVoid && element.returnType is VoidType)) {
         return;
       }
-      var suggestion = MethodSuggestion(
-          kind: _executableSuggestionKind,
-          element: element,
-          referencingClass:
-              (containingElement is ClassElement) ? containingElement : null);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = MethodSuggestion(
+            kind: _executableSuggestionKind,
+            element: element,
+            score: score,
+            referencingClass:
+                (containingElement is ClassElement) ? containingElement : null);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1399,13 +1453,15 @@ class DeclarationHelper {
               !element.isImplementableIn(request.libraryElement))) {
         return;
       }
-      var suggestion =
-          MixinSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = MixinSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
       if (!mustBeType) {
-        if (element.augmented case var augmented?) {
-          _suggestStaticFields(augmented.fields, importData);
-        }
+        var augmented = element.augmented;
+        _suggestStaticFields(augmented.fields, importData);
       }
     }
   }
@@ -1416,11 +1472,15 @@ class DeclarationHelper {
       if (mustBeConstant || _isUnused(element.name)) {
         return;
       }
-      var suggestion = FormalParameterSuggestion(
-        element: element,
-        distance: _variableDistance++,
-      );
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = FormalParameterSuggestion(
+          element: element,
+          distance: _variableDistance++,
+          score: score,
+        );
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1441,18 +1501,26 @@ class DeclarationHelper {
           (mustBeNonVoid && element.returnType is VoidType)) {
         return;
       }
-      var suggestion = PropertyAccessSuggestion(
-          element: element,
-          referencingClass:
-              (containingElement is ClassElement) ? containingElement : null);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = PropertyAccessSuggestion(
+            element: element,
+            score: score,
+            referencingClass:
+                (containingElement is ClassElement) ? containingElement : null);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
   /// Adds a suggestion for the record type [field] with the given [name].
   void _suggestRecordField(
       {required RecordTypeField field, required String name}) {
-    collector.addSuggestion(RecordFieldSuggestion(field: field, name: name));
+    var score = state.matcher.score(name);
+    if (score != -1) {
+      collector.addSuggestion(
+          RecordFieldSuggestion(field: field, name: name, score: score));
+    }
   }
 
   /// Adds a suggestion for the enum constant represented by the [element].
@@ -1463,18 +1531,26 @@ class DeclarationHelper {
         (mustBeConstant && !element.isConst)) {
       return;
     }
-    final contextType = request.contextType;
+    var contextType = request.contextType;
     if (contextType != null &&
         request.libraryElement.typeSystem
             .isSubtypeOf(element.type, contextType)) {
       if (element.isEnumConstant) {
-        var suggestion =
-            EnumConstantSuggestion(importData: importData, element: element);
-        collector.addSuggestion(suggestion);
+        var enumElement = element.enclosingElement;
+        var score = state.matcher
+            .score('${enumElement.displayName}.${element.displayName}');
+        if (score != -1) {
+          var suggestion = EnumConstantSuggestion(
+              importData: importData, element: element, score: score);
+          collector.addSuggestion(suggestion);
+        }
       } else {
-        var suggestion =
-            StaticFieldSuggestion(importData: importData, element: element);
-        collector.addSuggestion(suggestion);
+        var score = state.matcher.score(element.displayName);
+        if (score != -1) {
+          var suggestion = StaticFieldSuggestion(
+              importData: importData, element: element, score: score);
+          collector.addSuggestion(suggestion);
+        }
       }
     }
   }
@@ -1485,6 +1561,15 @@ class DeclarationHelper {
       if (field.isVisibleIn(request.libraryElement)) {
         _suggestStaticField(field, importData);
       }
+    }
+  }
+
+  /// Adds a suggestion for a parameter that is in the super constructor.
+  void _suggestSuperParameter(ParameterElement element) {
+    var score = state.matcher.score(element.displayName);
+    if (score != -1) {
+      collector.addSuggestion(
+          SuperParameterSuggestion(element: element, score: score));
     }
   }
 
@@ -1499,11 +1584,15 @@ class DeclarationHelper {
           mustBeType) {
         return;
       }
-      var suggestion = TopLevelFunctionSuggestion(
-          importData: importData,
-          element: element,
-          kind: _executableSuggestionKind);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = TopLevelFunctionSuggestion(
+            importData: importData,
+            element: element,
+            score: score,
+            kind: _executableSuggestionKind);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1520,9 +1609,12 @@ class DeclarationHelper {
           mustBeType) {
         return;
       }
-      var suggestion = TopLevelPropertyAccessSuggestion(
-          importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = TopLevelPropertyAccessSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1536,9 +1628,12 @@ class DeclarationHelper {
           mustBeType) {
         return;
       }
-      var suggestion =
-          TopLevelVariableSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = TopLevelVariableSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1546,9 +1641,12 @@ class DeclarationHelper {
   /// [prefix] is the prefix by which the element is imported.
   void _suggestTypeAlias(TypeAliasElement element, ImportData? importData) {
     if (visibilityTracker.isVisible(element)) {
-      var suggestion =
-          TypeAliasSuggestion(importData: importData, element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = TypeAliasSuggestion(
+            importData: importData, element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
       if (!mustBeType) {
         _addConstructorsForAliasedElement(element, importData);
       }
@@ -1558,8 +1656,12 @@ class DeclarationHelper {
   /// Adds a suggestion for the type parameter represented by the [element].
   void _suggestTypeParameter(TypeParameterElement element) {
     if (visibilityTracker.isVisible(element)) {
-      var suggestion = TypeParameterSuggestion(element: element);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion =
+            TypeParameterSuggestion(element: element, score: score);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 
@@ -1576,9 +1678,12 @@ class DeclarationHelper {
       if (mustBeConstant && !element.isConst) {
         return;
       }
-      var suggestion = LocalVariableSuggestion(
-          element: element, distance: _variableDistance++);
-      collector.addSuggestion(suggestion);
+      var score = state.matcher.score(element.displayName);
+      if (score != -1) {
+        var suggestion = LocalVariableSuggestion(
+            element: element, distance: _variableDistance++, score: score);
+        collector.addSuggestion(suggestion);
+      }
     }
   }
 

@@ -1119,14 +1119,6 @@ enum class TypeEquality {
   kInSubtypeTest = 2,
 };
 
-// The NNBDMode reflects the opted-in status of libraries.
-// Note that the weak or strong checking mode is not reflected in NNBDMode.
-enum class NNBDMode {
-  // Status of the library:
-  kLegacyLib = 0,   // Library is legacy.
-  kOptedInLib = 1,  // Library is opted-in.
-};
-
 // The NNBDCompiledMode reflects the mode in which constants of the library were
 // compiled by CFE.
 enum class NNBDCompiledMode {
@@ -1270,9 +1262,6 @@ class Class : public Object {
   // The mixin for this class if one exists. Otherwise, returns a raw pointer
   // to this class.
   ClassPtr Mixin() const;
-
-  // The NNBD mode of the library declaring this class.
-  NNBDMode nnbd_mode() const;
 
   bool IsInFullSnapshot() const;
 
@@ -1692,8 +1681,6 @@ class Class : public Object {
 
   InstancePtr InsertCanonicalConstant(Zone* zone,
                                       const Instance& constant) const;
-
-  bool RequireCanonicalTypeErasureOfConstants(Zone* zone) const;
 
   static intptr_t InstanceSize() {
     return RoundedAllocationSize(sizeof(UntaggedClass));
@@ -3072,11 +3059,6 @@ class Function : public Object {
   KernelProgramInfoPtr KernelProgramInfo() const;
 #endif
   ObjectPtr RawOwner() const { return untag()->owner(); }
-
-  // The NNBD mode of the library declaring this function.
-  // TODO(alexmarkov): nnbd_mode() doesn't work for mixins.
-  // It should be either removed or fixed.
-  NNBDMode nnbd_mode() const { return Class::Handle(Owner()).nnbd_mode(); }
 
   RegExpPtr regexp() const;
   intptr_t string_specialization_cid() const;
@@ -5256,26 +5238,6 @@ class Library : public Object {
   void set_is_in_fullsnapshot(bool value) const {
     set_flags(
         UntaggedLibrary::InFullSnapshotBit::update(value, untag()->flags_));
-  }
-
-  bool is_nnbd() const {
-    return UntaggedLibrary::NnbdBit::decode(untag()->flags_);
-  }
-  void set_is_nnbd(bool value) const {
-    set_flags(UntaggedLibrary::NnbdBit::update(value, untag()->flags_));
-  }
-
-  NNBDMode nnbd_mode() const {
-    return is_nnbd() ? NNBDMode::kOptedInLib : NNBDMode::kLegacyLib;
-  }
-
-  NNBDCompiledMode nnbd_compiled_mode() const {
-    return static_cast<NNBDCompiledMode>(
-        UntaggedLibrary::NnbdCompiledModeBits::decode(untag()->flags_));
-  }
-  void set_nnbd_compiled_mode(NNBDCompiledMode value) const {
-    set_flags(UntaggedLibrary::NnbdCompiledModeBits::update(
-        static_cast<uint8_t>(value), untag()->flags_));
   }
 
   StringPtr PrivateName(const String& name) const;
@@ -8609,11 +8571,6 @@ class TypeArguments : public Instance {
     return IsDynamicTypes(true, 0, len);
   }
 
-  // Return true if this vector contains a non-nullable type.
-  bool RequireConstCanonicalTypeErasure(Zone* zone,
-                                        intptr_t from_index,
-                                        intptr_t len) const;
-
   TypeArgumentsPtr Prepend(Zone* zone,
                            const TypeArguments& other,
                            intptr_t other_length,
@@ -9061,7 +9018,6 @@ class AbstractType : public Instance {
       const Instance& other,
       TypeEquality kind,
       FunctionTypeMapping* function_type_equivalence = nullptr) const;
-  virtual bool RequireConstCanonicalTypeErasure(Zone* zone) const;
 
   // Instantiate this type using the given type argument vectors.
   //
@@ -9234,10 +9190,6 @@ class AbstractType : public Instance {
   // Returns unmodified type if this type is not a 'FutureOr' type.
   AbstractTypePtr UnwrapFutureOr() const;
 
-  // Returns true if parameter of this type might need a
-  // null assertion (if null assertions are enabled).
-  bool NeedsNullAssertion() const;
-
   // Returns true if catching this type will catch all exceptions.
   // Exception objects are guaranteed to be non-nullable, so
   // non-nullable Object is also a catch-all type.
@@ -9361,7 +9313,6 @@ class Type : public AbstractType {
       const Instance& other,
       TypeEquality kind,
       FunctionTypeMapping* function_type_equivalence = nullptr) const;
-  virtual bool RequireConstCanonicalTypeErasure(Zone* zone) const;
 
   // Return true if this type can be used as the declaration type of cls after
   // canonicalization (passed-in cls must match type_class()).
@@ -9504,7 +9455,6 @@ class FunctionType : public AbstractType {
       const Instance& other,
       TypeEquality kind,
       FunctionTypeMapping* function_type_equivalence = nullptr) const;
-  virtual bool RequireConstCanonicalTypeErasure(Zone* zone) const;
 
   virtual AbstractTypePtr InstantiateFrom(
       const TypeArguments& instantiator_type_arguments,
@@ -9807,9 +9757,6 @@ class TypeParameter : public AbstractType {
       const Instance& other,
       TypeEquality kind,
       FunctionTypeMapping* function_type_equivalence = nullptr) const;
-  virtual bool RequireConstCanonicalTypeErasure(Zone* zone) const {
-    return IsNonNullable();
-  }
   virtual AbstractTypePtr InstantiateFrom(
       const TypeArguments& instantiator_type_arguments,
       const TypeArguments& function_type_arguments,
@@ -11325,7 +11272,6 @@ class RecordType : public AbstractType {
       const Instance& other,
       TypeEquality kind,
       FunctionTypeMapping* function_type_equivalence = nullptr) const;
-  virtual bool RequireConstCanonicalTypeErasure(Zone* zone) const;
 
   virtual AbstractTypePtr InstantiateFrom(
       const TypeArguments& instantiator_type_arguments,

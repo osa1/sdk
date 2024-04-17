@@ -7,6 +7,7 @@ import 'package:analysis_server/src/services/correction/change_workspace.dart';
 import 'package:analysis_server/src/services/correction/fix.dart';
 import 'package:analysis_server/src/services/correction/fix_internal.dart';
 import 'package:analyzer/error/error.dart';
+import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/error/lint_codes.dart';
 import 'package:analyzer/src/services/available_declarations.dart';
@@ -99,9 +100,10 @@ abstract class BulkFixProcessorTest extends AbstractSingleUnitTest {
   }
 
   /// Computes fixes for the pubspecs in the given contexts.
-  Future<void> assertFixPubspec(String original, String expected) async {
+  Future<void> assertFixPubspec(String original, String expected,
+      {File? file}) async {
     var tracker = DeclarationsTracker(MemoryByteStore(), resourceProvider);
-    var analysisContext = contextFor(testFile);
+    var analysisContext = contextFor(file ?? testFile);
     tracker.addContext(analysisContext);
     var processor =
         BulkFixProcessor(TestInstrumentationService(), await workspace);
@@ -318,7 +320,7 @@ abstract class FixProcessorTest extends BaseFixProcessorTest {
         allowFixAllFixes: allowFixAllFixes);
     change = fix.change;
 
-    // apply to "file"
+    // Apply to file.
     var fileEdits = change.edits;
     expect(fileEdits, hasLength(1));
 

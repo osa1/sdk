@@ -17,7 +17,6 @@ import 'package:analyzer/dart/ast/precedence.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/listener.dart';
-import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/source/source.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
@@ -213,10 +212,10 @@ String getElementQualifiedName(Element element) {
     return '${element.enclosingElement!.displayName}.${element.displayName}';
   } else if (kind == ElementKind.LIBRARY) {
     // Libraries may not have names, so use a path relative to the context root.
-    final session = element.session!;
-    final pathContext = session.resourceProvider.pathContext;
-    final rootPath = session.analysisContext.contextRoot.root.path;
-    final library = element as LibraryElement;
+    var session = element.session!;
+    var pathContext = session.resourceProvider.pathContext;
+    var rootPath = session.analysisContext.contextRoot.root.path;
+    var library = element as LibraryElement;
 
     return pathContext.relative(library.source.fullName, from: rootPath);
   } else {
@@ -690,12 +689,12 @@ final class CorrectionUtils {
     AstNode node, {
     bool withLeadingComments = false,
   }) {
-    final firstToken = withLeadingComments
+    var firstToken = withLeadingComments
         ? node.beginToken.precedingComments ?? node.beginToken
         : node.beginToken;
-    final offset = firstToken.offset;
-    final end = node.endToken.end;
-    final length = end - offset;
+    var offset = firstToken.offset;
+    var end = node.endToken.end;
+    var length = end - offset;
     return getText(offset, length);
   }
 
@@ -719,15 +718,15 @@ final class CorrectionUtils {
   /// Splits [text] into lines, and removes one level of indent from each line.
   /// Lines that don't start with indentation are left as is.
   String indentLeft(String text) {
-    final buffer = StringBuffer();
-    final indent = oneIndent;
-    final eol = endOfLine;
-    final lines = text.split(eol);
-    for (final line in lines) {
+    var buffer = StringBuffer();
+    var indent = oneIndent;
+    var eol = endOfLine;
+    var lines = text.split(eol);
+    for (var line in lines) {
       if (buffer.isNotEmpty) {
         buffer.write(eol);
       }
-      final String updatedLine;
+      String updatedLine;
       if (line.startsWith(indent)) {
         updatedLine = line.substring(indent.length);
       } else {
@@ -740,11 +739,11 @@ final class CorrectionUtils {
 
   /// Adds [level] indents to each line.
   String indentRight(String text, {int level = 1}) {
-    final buffer = StringBuffer();
-    final indent = _oneIndent * level;
-    final eol = endOfLine;
-    final lines = text.split(eol);
-    for (final line in lines) {
+    var buffer = StringBuffer();
+    var indent = _oneIndent * level;
+    var eol = endOfLine;
+    var lines = text.split(eol);
+    for (var line in lines) {
       if (buffer.isNotEmpty) {
         buffer.write(eol);
       }
@@ -782,87 +781,6 @@ final class CorrectionUtils {
   /// expression.
   String invertCondition(Expression expression) =>
       _invertCondition0(expression)._source;
-
-  InsertionLocation prepareEnumNewConstructorLocation(
-    EnumDeclaration enumDeclaration,
-  ) {
-    var targetMember = enumDeclaration.members
-        .where((e) => e is FieldDeclaration || e is ConstructorDeclaration)
-        .lastOrNull;
-    if (targetMember != null) {
-      return InsertionLocation(
-        prefix: endOfLine + endOfLine + oneIndent,
-        offset: targetMember.end,
-        suffix: '',
-      );
-    }
-
-    var semicolon = enumDeclaration.semicolon;
-    if (semicolon != null) {
-      return InsertionLocation(
-        prefix: endOfLine + endOfLine + oneIndent,
-        offset: semicolon.end,
-        suffix: '',
-      );
-    }
-
-    var lastConstant = enumDeclaration.constants.last;
-    return InsertionLocation(
-      prefix: ';$endOfLine$endOfLine$oneIndent',
-      offset: lastConstant.end,
-      suffix: '',
-    );
-  }
-
-  InsertionLocation? prepareNewClassMemberLocation(
-      CompilationUnitMember declaration,
-      bool Function(ClassMember existingMember) shouldSkip) {
-    // Find the last target member.
-    ClassMember? targetMember;
-    var members = _getMembers(declaration);
-    if (members == null) {
-      return null;
-    }
-    for (var member in members) {
-      if (shouldSkip(member)) {
-        targetMember = member;
-      } else {
-        break;
-      }
-    }
-    // After the last target member.
-    if (targetMember != null) {
-      return InsertionLocation(
-        prefix: endOfLine + endOfLine + oneIndent,
-        offset: targetMember.end,
-        suffix: '',
-      );
-    }
-    // At the beginning of the class.
-    var suffix = members.isNotEmpty || _isClassWithEmptyBody(declaration)
-        ? endOfLine
-        : '';
-    return InsertionLocation(
-      prefix: endOfLine + oneIndent,
-      offset: _getLeftBracket(declaration)!.end,
-      suffix: suffix,
-    );
-  }
-
-  InsertionLocation? prepareNewConstructorLocation(
-      AnalysisSession session, ClassDeclaration classDeclaration, File file) {
-    final sortConstructorsFirst = session.analysisContext
-        .getAnalysisOptionsForFile(file)
-        .codeStyleOptions
-        .sortConstructorsFirst;
-    // If sort_constructors_first is enabled, don't skip over the fields.
-    final shouldSkip = sortConstructorsFirst
-        ? (member) => member is ConstructorDeclaration
-        : (member) =>
-            member is FieldDeclaration || member is ConstructorDeclaration;
-
-    return prepareNewClassMemberLocation(classDeclaration, shouldSkip);
-  }
 
   /// Returns the source with indentation changed from [oldIndent] to
   /// [newIndent], keeping indentation of lines relative to each other.
@@ -964,7 +882,7 @@ final class CorrectionUtils {
 
   /// Returns a description of the place in which to insert a new directive or a
   /// top-level declaration at the top of the file.
-  InsertionLocation _getInsertionLocationTop() {
+  _InsertionLocation _getInsertionLocationTop() {
     // skip leading line comments
     var offset = 0;
     var insertEmptyLineBefore = false;
@@ -1009,50 +927,11 @@ final class CorrectionUtils {
     if (insertLine.trim().isNotEmpty) {
       insertEmptyLineAfter = true;
     }
-    return InsertionLocation(
+    return _InsertionLocation(
       prefix: insertEmptyLineBefore ? endOfLine : '',
       offset: offset,
       suffix: insertEmptyLineAfter ? endOfLine : '',
     );
-  }
-
-  Token? _getLeftBracket(CompilationUnitMember declaration) {
-    if (declaration is ClassDeclaration) {
-      return declaration.leftBracket;
-    } else if (declaration is ExtensionDeclaration) {
-      return declaration.leftBracket;
-    } else if (declaration is MixinDeclaration) {
-      return declaration.leftBracket;
-    } else if (declaration is ExtensionTypeDeclaration) {
-      return declaration.leftBracket;
-    }
-    return null;
-  }
-
-  List<ClassMember>? _getMembers(CompilationUnitMember declaration) {
-    if (declaration is ClassDeclaration) {
-      return declaration.members;
-    } else if (declaration is ExtensionDeclaration) {
-      return declaration.members;
-    } else if (declaration is MixinDeclaration) {
-      return declaration.members;
-    } else if (declaration is ExtensionTypeDeclaration) {
-      return declaration.members;
-    }
-    return null;
-  }
-
-  Token? _getRightBracket(CompilationUnitMember declaration) {
-    if (declaration is ClassDeclaration) {
-      return declaration.rightBracket;
-    } else if (declaration is ExtensionDeclaration) {
-      return declaration.rightBracket;
-    } else if (declaration is MixinDeclaration) {
-      return declaration.rightBracket;
-    } else if (declaration is ExtensionTypeDeclaration) {
-      return declaration.rightBracket;
-    }
-    return null;
   }
 
   /// @return the [InvertedCondition] for the given logical expression.
@@ -1123,13 +1002,6 @@ final class CorrectionUtils {
     return _InvertedCondition._simple(getNodeText(expression));
   }
 
-  /// Return `true` if the given class, mixin, enum or extension [declaration]
-  /// has open '{' and close '}' on the same line, e.g. `class X {}`.
-  bool _isClassWithEmptyBody(CompilationUnitMember declaration) {
-    return getLineThis(_getLeftBracket(declaration)!.offset) ==
-        getLineThis(_getRightBracket(declaration)!.offset);
-  }
-
   /// Returns whether [range] contains only whitespace or comments.
   bool _isJustWhitespaceOrComment(SourceRange range) {
     var trimmedText = getRangeText(range).trim();
@@ -1181,19 +1053,6 @@ final class CorrectionUtils {
     }
     return 0;
   }
-}
-
-/// Describes where to insert new text.
-class InsertionLocation {
-  final String prefix;
-  final int offset;
-  final String suffix;
-
-  InsertionLocation({
-    required this.prefix,
-    required this.offset,
-    required this.suffix,
-  });
 }
 
 /// Utilities to work with [Token]s.
@@ -1277,6 +1136,19 @@ class _ImportDirectiveInfo {
   _ImportDirectiveInfo(this.uri, this.offset, this.end);
 }
 
+/// Describes where to insert new text.
+class _InsertionLocation {
+  final String prefix;
+  final int offset;
+  final String suffix;
+
+  _InsertionLocation({
+    required this.prefix,
+    required this.offset,
+    required this.suffix,
+  });
+}
+
 /// A container with a source and its precedence.
 class _InvertedCondition {
   final int _precedence;
@@ -1320,7 +1192,7 @@ class _LocalElementsCollector extends RecursiveAstVisitor<void> {
 
   @override
   void visitVariableDeclaration(VariableDeclaration node) {
-    final element = node.declaredElement;
+    var element = node.declaredElement;
     if (element is LocalVariableElement) {
       elements.add(element);
     }

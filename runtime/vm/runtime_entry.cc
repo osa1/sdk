@@ -1204,10 +1204,8 @@ DEFINE_RUNTIME_ENTRY(TypeCheck, 7) {
   }
 #endif  // defined(TARGET_ARCH_IA32)
 
-  // These are guaranteed on the calling side.
+  // This is guaranteed on the calling side.
   ASSERT(!dst_type.IsDynamicType());
-  ASSERT(!src_instance.IsNull() ||
-         isolate->group()->use_strict_null_safety_checks());
 
   const bool is_instance_of = src_instance.IsAssignableTo(
       dst_type, instantiator_type_arguments, function_type_arguments);
@@ -1476,11 +1474,13 @@ DEFINE_RUNTIME_ENTRY(Throw, 1) {
   Exceptions::Throw(thread, exception);
 }
 
-DEFINE_RUNTIME_ENTRY(ReThrow, 2) {
+DEFINE_RUNTIME_ENTRY(ReThrow, 3) {
   const Instance& exception = Instance::CheckedHandle(zone, arguments.ArgAt(0));
   const Instance& stacktrace =
       Instance::CheckedHandle(zone, arguments.ArgAt(1));
-  Exceptions::ReThrow(thread, exception, stacktrace);
+  const Smi& bypass_debugger = Smi::CheckedHandle(zone, arguments.ArgAt(2));
+  Exceptions::ReThrow(thread, exception, stacktrace,
+                      bypass_debugger.Value() != 0);
 }
 
 // Patches static call in optimized code with the target's entry point.
