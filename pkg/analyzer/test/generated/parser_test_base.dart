@@ -395,8 +395,11 @@ class FastaParserTestCase
     ErrorReporter errorReporter = ErrorReporter(listener, source);
     AstBuilder astBuilder = AstBuilder(errorReporter, source.uri, true,
         featureSet!, LineInfo.fromContent(content));
-    fasta.Parser parser = fasta.Parser(astBuilder,
-        allowPatterns: featureSet!.isEnabled(Feature.patterns));
+    fasta.Parser parser = fasta.Parser(
+      astBuilder,
+      allowPatterns: featureSet!.isEnabled(Feature.patterns),
+      enableFeatureMacros: featureSet!.isEnabled(Feature.macros),
+    );
     astBuilder.parser = parser;
     astBuilder.allowNativeClause = allowNativeClause;
     parser.parseUnit(_fastaTokens);
@@ -776,7 +779,7 @@ class ParserProxy extends analyzer.Parser {
 
   ClassMember? parseClassMemberOrNull(String className) {
     return _run('ClassOrMixinBody', () {
-      final builder = astBuilder.createFakeClassDeclarationBuilder(className);
+      var builder = astBuilder.createFakeClassDeclarationBuilder(className);
       // TODO(danrubel): disambiguate between class and mixin
       currentToken = fastaParser.parseClassMember(currentToken, className);
       //currentToken = fastaParser.parseMixinMember(currentToken);

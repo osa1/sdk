@@ -5124,29 +5124,31 @@ bool Class::InjectCIDFields() const {
   Smi& value = Smi::Handle(zone);
   String& field_name = String::Handle(zone);
 
+  // clang-format off
   static const struct {
     const char* const field_name;
     const intptr_t cid;
   } cid_fields[] = {
 #define CLASS_LIST_WITH_NULL(V)                                                \
-  V(Null)                                                                      \
-  CLASS_LIST_NO_OBJECT(V)
-#define ADD_SET_FIELD(clazz) {"cid" #clazz, k##clazz##Cid},
-      CLASS_LIST_WITH_NULL(ADD_SET_FIELD)
+    V(Null)                                                                    \
+    CLASS_LIST_NO_OBJECT(V)
+#define ADD_SET_FIELD(clazz)                                                   \
+    {"cid" #clazz, k##clazz##Cid},
+    CLASS_LIST_WITH_NULL(ADD_SET_FIELD)
 #undef ADD_SET_FIELD
 #undef CLASS_LIST_WITH_NULL
 #define ADD_SET_FIELD(clazz)                                                   \
-  {"cid" #clazz, kTypedData##clazz##Cid},                                      \
-      {"cid" #clazz "View", kTypedData##clazz##ViewCid},                       \
-      {"cidExternal" #clazz, kExternalTypedData##clazz##Cid},                  \
-      {"cidUnmodifiable" #clazz "View",                                        \
-       kUnmodifiableTypedData##clazz##ViewCid},
-          CLASS_LIST_TYPED_DATA(ADD_SET_FIELD)
+    {"cid" #clazz, kTypedData##clazz##Cid},                                    \
+    {"cid" #clazz "View", kTypedData##clazz##ViewCid},                         \
+    {"cidExternal" #clazz, kExternalTypedData##clazz##Cid},                    \
+    {"cidUnmodifiable" #clazz "View", kUnmodifiableTypedData##clazz##ViewCid}, \
+    CLASS_LIST_TYPED_DATA(ADD_SET_FIELD)
 #undef ADD_SET_FIELD
-      // Used in const hashing to determine whether we're dealing with a
-      // user-defined const. See lib/_internal/vm/lib/compact_hash.dart.
-      {"numPredefinedCids", kNumPredefinedCids},
+    // Used in const hashing to determine whether we're dealing with a
+    // user-defined const. See lib/_internal/vm/lib/compact_hash.dart.
+    {"numPredefinedCids", kNumPredefinedCids},
   };
+  // clang-format on
 
   const AbstractType& field_type = Type::Handle(zone, Type::IntType());
   for (size_t i = 0; i < ARRAY_SIZE(cid_fields); i++) {
@@ -9146,34 +9148,15 @@ bool Function::RecognizedKindForceOptimize() const {
     // arrays, which requires optimization for payload extraction.
     case MethodRecognizer::kObjectArrayGetIndexed:
     case MethodRecognizer::kGrowableArrayGetIndexed:
-    case MethodRecognizer::kInt8ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kInt16ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt16ArrayGetIndexed:
-    case MethodRecognizer::kUint16ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint16ArrayGetIndexed:
-    case MethodRecognizer::kInt32ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32ArrayGetIndexed:
-    case MethodRecognizer::kUint32ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint32ArrayGetIndexed:
-    case MethodRecognizer::kInt64ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt64ArrayGetIndexed:
-    case MethodRecognizer::kUint64ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32ArrayGetIndexed:
-    case MethodRecognizer::kFloat64ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kInt32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32x4ArrayGetIndexed:
+#define TYPED_DATA_GET_INDEXED_CASES(clazz)                                    \
+  case MethodRecognizer::k##clazz##ArrayGetIndexed:                            \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::kExternal##clazz##ArrayGetIndexed:                    \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::k##clazz##ArrayViewGetIndexed:                        \
+    FALL_THROUGH;
+      DART_CLASS_LIST_TYPED_DATA(TYPED_DATA_GET_INDEXED_CASES)
+#undef TYPED_DATA_GET_INDEXED_CASES
     case MethodRecognizer::kCopyRangeFromUint8ListToOneByteString:
     case MethodRecognizer::kFinalizerBase_getIsolateFinalizers:
     case MethodRecognizer::kFinalizerBase_setIsolate:
@@ -25617,7 +25600,7 @@ const intptr_t
         16,  // kTypedDataFloat32x4ArrayCid.
         16,  // kTypedDataInt32x4ArrayCid.
         16,  // kTypedDataFloat64x2ArrayCid,
-};
+    };
 
 bool TypedData::CanonicalizeEquals(const Instance& other) const {
   if (this->ptr() == other.ptr()) {

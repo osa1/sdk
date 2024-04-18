@@ -71,7 +71,7 @@ vars = {
   # self-service update these by following the go/dart-engprod/browsers.md
   # instructions. d8, the V8 shell, is always checked out.
   "checkout_javascript_engines": False,
-  "d8_tag": "version:12.3.150",
+  "d8_tag": "version:12.5.216",
   "jsshell_tag": "version:122.0",
   "jsc_tag": "version:274355",
 
@@ -79,7 +79,7 @@ vars = {
   "clang_version": "git_revision:b1d2e8510b58893e58558ffdf3f8ba29c1e25e5a",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
-  "gn_version": "git_revision:a2e2717ea670249a34b0de4b3e54f268d320bdfa",
+  "gn_version": "git_revision:155c53952ec2dc324b0438ce5b9bd4a286577d25",
 
   "reclient_version": "git_revision:c7349324c93c6e0d85bc1e00b5d7526771006ea0",
   "download_reclient": True,
@@ -151,7 +151,7 @@ vars = {
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
   "glob_rev": "25ee2c20a3c7b93f4096036939a59e40916a3890",
   "html_rev": "5b99b43f71da0c6b0f962244c7f5dfa8ca970fef",
-  "http_rev": "b7477b1e1bc5c8f850299b7abcc58d08ddea9e4a",
+  "http_rev": "34d7087ed2361dbe68faae6af8e7874fb805311d",
   "http_multi_server_rev": "6ce0a137aa20cc12b883a386bb7c0ae677cb3429",
   "http_parser_rev": "8ffcaec6fedfac5274cfa57e133d47d499bdabc0",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
