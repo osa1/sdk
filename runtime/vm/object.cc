@@ -3088,10 +3088,6 @@ ClassPtr Class::Mixin() const {
   return ptr();
 }
 
-NNBDMode Class::nnbd_mode() const {
-  return Library::Handle(library()).nnbd_mode();
-}
-
 bool Class::IsInFullSnapshot() const {
   NoSafepointScope no_safepoint;
   return UntaggedLibrary::InFullSnapshotBit::decode(
@@ -5128,29 +5124,31 @@ bool Class::InjectCIDFields() const {
   Smi& value = Smi::Handle(zone);
   String& field_name = String::Handle(zone);
 
+  // clang-format off
   static const struct {
     const char* const field_name;
     const intptr_t cid;
   } cid_fields[] = {
 #define CLASS_LIST_WITH_NULL(V)                                                \
-  V(Null)                                                                      \
-  CLASS_LIST_NO_OBJECT(V)
-#define ADD_SET_FIELD(clazz) {"cid" #clazz, k##clazz##Cid},
-      CLASS_LIST_WITH_NULL(ADD_SET_FIELD)
+    V(Null)                                                                    \
+    CLASS_LIST_NO_OBJECT(V)
+#define ADD_SET_FIELD(clazz)                                                   \
+    {"cid" #clazz, k##clazz##Cid},
+    CLASS_LIST_WITH_NULL(ADD_SET_FIELD)
 #undef ADD_SET_FIELD
 #undef CLASS_LIST_WITH_NULL
 #define ADD_SET_FIELD(clazz)                                                   \
-  {"cid" #clazz, kTypedData##clazz##Cid},                                      \
-      {"cid" #clazz "View", kTypedData##clazz##ViewCid},                       \
-      {"cidExternal" #clazz, kExternalTypedData##clazz##Cid},                  \
-      {"cidUnmodifiable" #clazz "View",                                        \
-       kUnmodifiableTypedData##clazz##ViewCid},
-          CLASS_LIST_TYPED_DATA(ADD_SET_FIELD)
+    {"cid" #clazz, kTypedData##clazz##Cid},                                    \
+    {"cid" #clazz "View", kTypedData##clazz##ViewCid},                         \
+    {"cidExternal" #clazz, kExternalTypedData##clazz##Cid},                    \
+    {"cidUnmodifiable" #clazz "View", kUnmodifiableTypedData##clazz##ViewCid}, \
+    CLASS_LIST_TYPED_DATA(ADD_SET_FIELD)
 #undef ADD_SET_FIELD
-      // Used in const hashing to determine whether we're dealing with a
-      // user-defined const. See lib/_internal/vm/lib/compact_hash.dart.
-      {"numPredefinedCids", kNumPredefinedCids},
+    // Used in const hashing to determine whether we're dealing with a
+    // user-defined const. See lib/_internal/vm/lib/compact_hash.dart.
+    {"numPredefinedCids", kNumPredefinedCids},
   };
+  // clang-format on
 
   const AbstractType& field_type = Type::Handle(zone, Type::IntType());
   for (size_t i = 0; i < ARRAY_SIZE(cid_fields); i++) {
@@ -6744,10 +6742,9 @@ void TypeParameters::Print(Thread* thread,
     }
     if (FLAG_show_internal_names || !AllDynamicBounds()) {
       type = BoundAt(i);
-      // Do not print default bound or non-nullable Object bound in weak mode.
-      if (!type.IsNull() &&
-          (FLAG_show_internal_names || !type.IsObjectType() ||
-           (thread->isolate_group()->null_safety() && type.IsNonNullable()))) {
+      // Do not print default bound.
+      if (!type.IsNull() && (FLAG_show_internal_names || !type.IsObjectType() ||
+                             type.IsNonNullable())) {
         printer->AddString(" extends ");
         type.PrintName(name_visibility, printer);
         if (FLAG_show_internal_names && !AllDynamicDefaults()) {
@@ -9151,34 +9148,15 @@ bool Function::RecognizedKindForceOptimize() const {
     // arrays, which requires optimization for payload extraction.
     case MethodRecognizer::kObjectArrayGetIndexed:
     case MethodRecognizer::kGrowableArrayGetIndexed:
-    case MethodRecognizer::kInt8ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ArrayGetIndexed:
-    case MethodRecognizer::kUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kExternalUint8ClampedArrayGetIndexed:
-    case MethodRecognizer::kInt16ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt16ArrayGetIndexed:
-    case MethodRecognizer::kUint16ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint16ArrayGetIndexed:
-    case MethodRecognizer::kInt32ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32ArrayGetIndexed:
-    case MethodRecognizer::kUint32ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint32ArrayGetIndexed:
-    case MethodRecognizer::kInt64ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt64ArrayGetIndexed:
-    case MethodRecognizer::kUint64ArrayGetIndexed:
-    case MethodRecognizer::kExternalUint64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32ArrayGetIndexed:
-    case MethodRecognizer::kFloat64ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64ArrayGetIndexed:
-    case MethodRecognizer::kFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat32x4ArrayGetIndexed:
-    case MethodRecognizer::kFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kExternalFloat64x2ArrayGetIndexed:
-    case MethodRecognizer::kInt32x4ArrayGetIndexed:
-    case MethodRecognizer::kExternalInt32x4ArrayGetIndexed:
+#define TYPED_DATA_GET_INDEXED_CASES(clazz)                                    \
+  case MethodRecognizer::k##clazz##ArrayGetIndexed:                            \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::kExternal##clazz##ArrayGetIndexed:                    \
+    FALL_THROUGH;                                                              \
+  case MethodRecognizer::k##clazz##ArrayViewGetIndexed:                        \
+    FALL_THROUGH;
+      DART_CLASS_LIST_TYPED_DATA(TYPED_DATA_GET_INDEXED_CASES)
+#undef TYPED_DATA_GET_INDEXED_CASES
     case MethodRecognizer::kCopyRangeFromUint8ListToOneByteString:
     case MethodRecognizer::kFinalizerBase_getIsolateFinalizers:
     case MethodRecognizer::kFinalizerBase_setIsolate:
@@ -10594,12 +10572,7 @@ FunctionPtr Function::ImplicitClosureFunction() const {
   // Set closure function's result type.
   AbstractType& result_type = AbstractType::Handle(zone);
   if (IsConstructor()) {
-    const Nullability result_nullability =
-        (nnbd_mode() == NNBDMode::kOptedInLib) ? Nullability::kNonNullable
-                                               : Nullability::kLegacy;
     result_type = cls.DeclarationType();
-    result_type =
-        Type::Cast(result_type).ToNullability(result_nullability, Heap::kOld);
   } else {
     result_type = this->result_type();
   }
@@ -10661,18 +10634,15 @@ FunctionPtr Function::ImplicitClosureFunction() const {
   closure_function.InheritKernelOffsetFrom(*this);
 
   if (!is_static() && !IsConstructor()) {
-    // Change covariant parameter types to either Object? for an opted-in
-    // implicit closure or to Object* for a legacy implicit closure.
+    // Change covariant parameter types to Object?.
     BitVector is_covariant(zone, NumParameters());
     BitVector is_generic_covariant_impl(zone, NumParameters());
     kernel::ReadParameterCovariance(*this, &is_covariant,
                                     &is_generic_covariant_impl);
 
-    Type& object_type = Type::Handle(zone, Type::ObjectType());
     ObjectStore* object_store = IsolateGroup::Current()->object_store();
-    object_type = nnbd_mode() == NNBDMode::kOptedInLib
-                      ? object_store->nullable_object_type()
-                      : object_store->legacy_object_type();
+    const auto& object_type =
+        Type::Handle(zone, object_store->nullable_object_type());
     ASSERT(object_type.IsCanonical());
     for (intptr_t i = kClosure; i < num_params; ++i) {
       const intptr_t original_param_index = num_implicit_params - kClosure + i;
@@ -14336,7 +14306,6 @@ LibraryPtr Library::NewLibraryHelper(const String& url, bool import_core_lib) {
   result.set_ffi_native_resolver(nullptr);
   result.set_flags(0);
   result.set_is_in_fullsnapshot(false);
-  result.set_is_nnbd(false);
   // This logic is also in the DAP debug adapter in DDS to avoid needing
   // to call setLibraryDebuggable for every library for every isolate.
   // If these defaults change, the same should be done there in
@@ -21114,11 +21083,6 @@ bool AbstractType::IsStrictlyNonNullable() const {
   Thread* thread = Thread::Current();
   Zone* zone = thread->zone();
 
-  // In weak mode null can be assigned to any type.
-  if (!thread->isolate_group()->null_safety()) {
-    return false;
-  }
-
   if (IsTypeParameter()) {
     const auto& bound =
         AbstractType::Handle(zone, TypeParameter::Cast(*this).bound());
@@ -25636,7 +25600,7 @@ const intptr_t
         16,  // kTypedDataFloat32x4ArrayCid.
         16,  // kTypedDataInt32x4ArrayCid.
         16,  // kTypedDataFloat64x2ArrayCid,
-};
+    };
 
 bool TypedData::CanonicalizeEquals(const Instance& other) const {
   if (this->ptr() == other.ptr()) {

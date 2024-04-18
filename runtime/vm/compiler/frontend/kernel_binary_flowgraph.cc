@@ -4277,7 +4277,7 @@ Fragment StreamingFlowGraphBuilder::BuildRecordFieldGet(TokenPosition* p,
 
 Fragment StreamingFlowGraphBuilder::BuildFunctionExpression() {
   const intptr_t offset = ReaderOffset() - 1;  // Include the tag.
-  ReadPosition();  // read position.
+  ReadPosition();                              // read position.
   return BuildFunctionNode(offset);
 }
 
@@ -5122,22 +5122,6 @@ Fragment StreamingFlowGraphBuilder::BuildOptimizedSwitchPrelude(
     JoinEntryInstr* join) {
   const TokenPosition pos = helper->position();
   Fragment instructions;
-
-  if (!IG->null_safety()) {
-    // Without sound null safety we need to check that the switch variable is
-    // not null. If it is null, we go to [join] which is either the default
-    // case or the exit of the switch statement.
-    TargetEntryInstr* null_entry;
-    TargetEntryInstr* non_null_entry;
-
-    instructions += LoadLocal(scopes()->switch_variable);
-    instructions += BranchIfNull(&null_entry, &non_null_entry);
-
-    Fragment null_instructions(null_entry);
-    null_instructions += Goto(join);
-
-    instructions = Fragment(instructions.entry, non_null_entry);
-  }
 
   if (helper->is_enum_switch()) {
     // For an enum switch, we need to load the enum index from the switch

@@ -172,7 +172,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
       // Check and report cycles.
       // Factory cycles are reported in elsewhere in
       // [ErrorVerifier._checkForRecursiveFactoryRedirect].
-      final element = node.declaredElement;
+      var element = node.declaredElement;
       if (element is ConstructorElementImpl &&
           !element.isCycleFree &&
           !element.isFactory) {
@@ -256,7 +256,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
   @override
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
     if (node.isConst) {
-      NamedType namedType = node.constructorName.type;
+      var namedType = node.constructorName.type;
       _checkForConstWithTypeParameters(
           namedType, CompileTimeErrorCode.CONST_WITH_TYPE_PARAMETERS);
 
@@ -299,13 +299,13 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     super.visitListLiteral(node);
     if (node.isConst) {
       var nodeType = node.staticType as InterfaceType;
-      DartType elementType = nodeType.typeArguments[0];
+      var elementType = nodeType.typeArguments[0];
       var verifier = _ConstLiteralVerifier(
         this,
         errorCode: CompileTimeErrorCode.NON_CONSTANT_LIST_ELEMENT,
         listElementType: elementType,
       );
-      for (CollectionElement element in node.elements) {
+      for (var element in node.elements) {
         verifier.verify(element);
       }
     }
@@ -315,7 +315,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
   void visitMapPattern(MapPattern node) {
     node.typeArguments?.accept(this);
 
-    final featureSet = _currentLibrary.featureSet;
+    var featureSet = _currentLibrary.featureSet;
     var uniqueKeys = HashMap<DartObjectImpl, Expression>(
       hashCode: (_) => 0,
       equals: (a, b) {
@@ -368,6 +368,20 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
   }
 
   @override
+  void visitRecordLiteral(RecordLiteral node) {
+    super.visitRecordLiteral(node);
+
+    if (node.isConst) {
+      for (var field in node.fields) {
+        _evaluateAndReportError(
+          field,
+          CompileTimeErrorCode.NON_CONSTANT_RECORD_FIELD,
+        );
+      }
+    }
+  }
+
+  @override
   void visitRelationalPattern(RelationalPattern node) {
     super.visitRelationalPattern(node);
 
@@ -403,7 +417,6 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         var nodeType = node.staticType as InterfaceType;
         var keyType = nodeType.typeArguments[0];
         var valueType = nodeType.typeArguments[1];
-        bool reportEqualKeys = true;
         var config = _MapVerifierConfig(
           keyType: keyType,
           valueType: valueType,
@@ -413,16 +426,12 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
           errorCode: CompileTimeErrorCode.NON_CONSTANT_MAP_ELEMENT,
           mapConfig: config,
         );
-        for (CollectionElement entry in node.elements) {
+        for (var entry in node.elements) {
           verifier.verify(entry);
         }
-        if (reportEqualKeys) {
-          for (var duplicateEntry in config.duplicateKeys.entries) {
-            _errorReporter.reportError(_diagnosticFactory.equalKeysInConstMap(
-                _errorReporter.source,
-                duplicateEntry.key,
-                duplicateEntry.value));
-          }
+        for (var duplicateEntry in config.duplicateKeys.entries) {
+          _errorReporter.reportError(_diagnosticFactory.equalKeysInConstMap(
+              _errorReporter.source, duplicateEntry.key, duplicateEntry.value));
         }
       }
     }
@@ -515,15 +524,15 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         if (constantType.isDartCoreInt && valueType.isDartCoreDouble) {
           return true;
         }
-        final valueTypeGreatest = PatternGreatestClosureHelper(
+        var valueTypeGreatest = PatternGreatestClosureHelper(
           topType: _typeSystem.objectQuestion,
           bottomType: NeverTypeImpl.instance,
         ).eliminateToGreatest(valueType);
         return _typeSystem.isSubtypeOf(constantType, valueTypeGreatest);
       } else if (valueType is TypeParameterTypeImpl) {
-        final bound = valueType.promotedBound ?? valueType.element.bound;
+        var bound = valueType.promotedBound ?? valueType.element.bound;
         if (bound != null && !hasTypeParameterReference(bound)) {
-          final lowestBound =
+          var lowestBound =
               valueType.nullabilitySuffix == NullabilitySuffix.question
                   ? _typeSystem.makeNullable(bound)
                   : bound;
@@ -689,6 +698,10 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
             errorCode,
             CompileTimeErrorCode
                 .NON_CONSTANT_LIST_ELEMENT_FROM_DEFERRED_LIBRARY) ||
+        identical(
+            errorCode,
+            CompileTimeErrorCode
+                .NON_CONSTANT_RECORD_FIELD_FROM_DEFERRED_LIBRARY) ||
         identical(
             errorCode,
             CompileTimeErrorCode
@@ -867,14 +880,14 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     required bool mustBeExhaustive,
     required bool isSwitchExpression,
   }) {
-    final scrutineeType = scrutinee.typeOrThrow;
-    final scrutineeTypeEx = _exhaustivenessCache.getStaticType(scrutineeType);
+    var scrutineeType = scrutinee.typeOrThrow;
+    var scrutineeTypeEx = _exhaustivenessCache.getStaticType(scrutineeType);
 
-    final caseNodesWithSpace = <AstNode>[];
-    final caseSpaces = <Space>[];
+    var caseNodesWithSpace = <AstNode>[];
+    var caseSpaces = <Space>[];
     var hasDefault = false;
 
-    final patternConverter = PatternConverter(
+    var patternConverter = PatternConverter(
       languageVersion: _currentLibrary.languageVersion.effective,
       featureSet: _currentLibrary.featureSet,
       cache: _exhaustivenessCache,
@@ -884,7 +897,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     patternConverter.hasInvalidType = scrutineeType is InvalidType;
 
     // Build spaces for cases.
-    for (final caseNode in caseNodes) {
+    for (var caseNode in caseNodes) {
       GuardedPattern? guardedPattern;
       if (caseNode is SwitchCase) {
         // Should not happen, ignore.
@@ -911,16 +924,16 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     final exhaustivenessDataForTesting = this.exhaustivenessDataForTesting;
 
     // Compute and report errors.
-    final errors = patternConverter.hasInvalidType
+    var errors = patternConverter.hasInvalidType
         ? const <ExhaustivenessError>[]
         : reportErrors(_exhaustivenessCache, scrutineeTypeEx, caseSpaces,
             computeUnreachable: true);
 
-    final reportNonExhaustive = mustBeExhaustive && !hasDefault;
-    for (final error in errors) {
+    var reportNonExhaustive = mustBeExhaustive && !hasDefault;
+    for (var error in errors) {
       if (error is UnreachableCaseError) {
-        final caseNode = caseNodesWithSpace[error.index];
-        final Token errorToken;
+        var caseNode = caseNodesWithSpace[error.index];
+        Token errorToken;
         if (caseNode is SwitchExpressionCase) {
           errorToken = caseNode.arrow;
         } else if (caseNode is SwitchPatternCase) {
@@ -959,7 +972,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
     // Record data for testing.
     if (exhaustivenessDataForTesting != null) {
       for (var i = 0; i < caseSpaces.length; i++) {
-        final caseNode = caseNodesWithSpace[i];
+        var caseNode = caseNodesWithSpace[i];
         exhaustivenessDataForTesting.caseSpaces[caseNode] = caseSpaces[i];
       }
       exhaustivenessDataForTesting.switchScrutineeType[node] = scrutineeTypeEx;
@@ -985,7 +998,7 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
         return;
       }
 
-      final featureSet = _currentLibrary.featureSet;
+      var featureSet = _currentLibrary.featureSet;
       if (!featureSet.isEnabled(Feature.patterns)) {
         var expressionType = expressionValue.type;
         if (!expressionValue.hasPrimitiveEquality(featureSet)) {
@@ -1020,10 +1033,10 @@ class ConstantVerifier extends RecursiveAstVisitor<void> {
             Map<ConstantPattern, DartObjectImpl> constantPatternValues)
         f,
   ) {
-    final previousMapKeyValues = _mapPatternKeyValues;
-    final previousConstantPatternValues = _constantPatternValues;
-    final mapKeyValues = _mapPatternKeyValues = {};
-    final constantValues = _constantPatternValues = {};
+    var previousMapKeyValues = _mapPatternKeyValues;
+    var previousConstantPatternValues = _constantPatternValues;
+    var mapKeyValues = _mapPatternKeyValues = {};
+    var constantValues = _constantPatternValues = {};
     f(mapKeyValues, constantValues);
     _mapPatternKeyValues = previousMapKeyValues;
     _constantPatternValues = previousConstantPatternValues;
@@ -1131,7 +1144,7 @@ class _ConstLiteralVerifier {
     );
   }
 
-  /// Return `true` if the [node] is a potential constant.
+  /// Returns whether the [node] is a potential constant.
   bool _reportNotPotentialConstants(AstNode node) {
     var notPotentiallyConstants = getNotPotentiallyConstants(
       node,
@@ -1210,7 +1223,7 @@ class _ConstLiteralVerifier {
     }
 
     if (listValue != null) {
-      final featureSet = verifier._currentLibrary.featureSet;
+      var featureSet = verifier._currentLibrary.featureSet;
       if (!listValue.every((e) => e.hasPrimitiveEquality(featureSet))) {
         verifier._errorReporter.atNode(
           element,
@@ -1261,7 +1274,7 @@ class _ConstLiteralVerifier {
         );
       }
 
-      final featureSet = verifier._currentLibrary.featureSet;
+      var featureSet = verifier._currentLibrary.featureSet;
       if (!keyValue.hasPrimitiveEquality(featureSet)) {
         verifier._errorReporter.atNode(
           keyExpression,
@@ -1336,7 +1349,7 @@ class _ConstLiteralVerifier {
       return false;
     }
 
-    final featureSet = verifier._currentLibrary.featureSet;
+    var featureSet = verifier._currentLibrary.featureSet;
     if (!value.hasPrimitiveEquality(featureSet)) {
       verifier._errorReporter.atNode(
         expression,

@@ -18,6 +18,8 @@ import 'avoid_empty_else_test.dart' as avoid_empty_else;
 import 'avoid_equals_and_hash_code_on_mutable_classes_test.dart'
     as avoid_equals_and_hash_code_on_mutable_classes;
 import 'avoid_escaping_inner_quotes_test.dart' as avoid_escaping_inner_quotes;
+import 'avoid_field_initializers_in_non_const_classes_test.dart'
+    as avoid_field_initializers_in_non_const_classes;
 import 'avoid_final_parameters_test.dart' as avoid_final_parameters;
 import 'avoid_function_literals_in_foreach_calls_test.dart'
     as avoid_function_literals_in_foreach_calls;
@@ -196,6 +198,8 @@ import 'type_init_formals_test.dart' as type_init_formals;
 import 'type_literal_in_constant_pattern_test.dart'
     as type_literal_in_constant_pattern;
 import 'unawaited_futures_test.dart' as unawaited_futures;
+import 'unintended_html_in_doc_comment_test.dart'
+    as unintended_html_in_doc_comment;
 import 'unnecessary_await_in_return_test.dart' as unnecessary_await_in_return;
 import 'unnecessary_brace_in_string_interps_test.dart'
     as unnecessary_brace_in_string_interps;
@@ -274,6 +278,7 @@ void main() {
   avoid_empty_else.main();
   avoid_equals_and_hash_code_on_mutable_classes.main();
   avoid_escaping_inner_quotes.main();
+  avoid_field_initializers_in_non_const_classes.main();
   avoid_final_parameters.main();
   avoid_function_literals_in_foreach_calls.main();
   avoid_init_to_null.main();
@@ -405,6 +410,7 @@ void main() {
   type_init_formals.main();
   type_literal_in_constant_pattern.main();
   unawaited_futures.main();
+  unintended_html_in_doc_comment.main();
   unnecessary_await_in_return.main();
   unnecessary_brace_in_string_interps.main();
   unnecessary_breaks.main();

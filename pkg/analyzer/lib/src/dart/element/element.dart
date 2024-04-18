@@ -237,10 +237,10 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   /// then these subtypes are all subtypes that are possible.
   List<InterfaceType>? get allSubtypes {
     if (isFinal) {
-      final result = <InterfaceType>[];
-      for (final element in library.topLevelElements) {
+      var result = <InterfaceType>[];
+      for (var element in library.topLevelElements) {
         if (element is InterfaceElement && element != this) {
-          final elementThis = element.thisType;
+          var elementThis = element.thisType;
           if (elementThis.asInstanceOf(this) != null) {
             result.add(elementThis);
           }
@@ -250,13 +250,13 @@ class ClassElementImpl extends ClassOrMixinElementImpl
     }
 
     if (isSealed) {
-      final result = <InterfaceType>[];
-      for (final element in library.topLevelElements) {
+      var result = <InterfaceType>[];
+      for (var element in library.topLevelElements) {
         if (element is! InterfaceElement || identical(element, this)) {
           continue;
         }
 
-        final elementThis = element.thisType;
+        var elementThis = element.thisType;
         if (elementThis.asInstanceOf(this) == null) {
           continue;
         }
@@ -283,7 +283,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl
   @override
   MaybeAugmentedClassElementMixin get augmented {
     if (isAugmentation) {
-      if (augmentationTarget case final augmentationTarget?) {
+      if (augmentationTarget case var augmentationTarget?) {
         return augmentationTarget.augmented;
       }
     }
@@ -310,11 +310,11 @@ class ClassElementImpl extends ClassOrMixinElementImpl
 
   @override
   bool get hasNonFinalField {
-    final classesToVisit = <InterfaceElement>[];
-    final visitedClasses = <InterfaceElement>{};
+    var classesToVisit = <InterfaceElement>[];
+    var visitedClasses = <InterfaceElement>{};
     classesToVisit.add(this);
     while (classesToVisit.isNotEmpty) {
-      final currentElement = classesToVisit.removeAt(0);
+      var currentElement = classesToVisit.removeAt(0);
       if (visitedClasses.add(currentElement)) {
         // check fields
         for (FieldElement field in currentElement.fields) {
@@ -330,7 +330,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl
           classesToVisit.add(mixinType.element);
         }
         // check super
-        final supertype = currentElement.supertype;
+        var supertype = currentElement.supertype;
         if (supertype != null) {
           classesToVisit.add(supertype.element);
         }
@@ -543,7 +543,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl
     // Assign to break a possible infinite recursion during computing.
     _constructors = const <ConstructorElementImpl>[];
 
-    final superType = supertype;
+    var superType = supertype;
     if (superType == null) {
       // Shouldn't ever happen, since the only classes with no supertype are
       // Object and mixins, and they aren't a mixin application. But for
@@ -553,9 +553,9 @@ class ClassElementImpl extends ClassOrMixinElementImpl
       return;
     }
 
-    final superElement = superType.element as ClassElementImpl;
+    var superElement = superType.element as ClassElementImpl;
 
-    final constructorsToForward = superElement.constructors
+    var constructorsToForward = superElement.constructors
         .where((constructor) => constructor.isAccessibleIn(library))
         .where((constructor) => !constructor.isFactory);
 
@@ -613,7 +613,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl
               parameterKind: superParameter.parameterKind,
             )..constantInitializer = constVariable.constantInitializer;
             if (superParameter.isNamed) {
-              final reference = implicitReference
+              var reference = implicitReference
                   .getChild('@parameter')
                   .getChild(implicitParameter.name);
               implicitParameter.reference = reference;
@@ -798,7 +798,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   /// Set the enums contained in this compilation unit to the given [enums].
   set enums(List<EnumElementImpl> enums) {
-    for (final element in enums) {
+    for (var element in enums) {
       element.enclosingElement = this;
     }
     _enums = enums;
@@ -824,7 +824,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   }
 
   set extensionTypes(List<ExtensionTypeElementImpl> elements) {
-    for (final element in elements) {
+    for (var element in elements) {
       element.enclosingElement = this;
     }
     _extensionTypes = elements;
@@ -917,7 +917,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   @override
   ClassElement? getClass(String className) {
-    for (final class_ in classes) {
+    for (var class_ in classes) {
       if (class_.name == className) {
         return class_;
       }
@@ -927,7 +927,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   @override
   EnumElement? getEnum(String name) {
-    for (final element in enums) {
+    for (var element in enums) {
       if (element.name == name) {
         return element;
       }
@@ -939,7 +939,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// [name], or `null` if this compilation unit does not define a mixin with
   /// the given name.
   MixinElement? getMixin(String name) {
-    for (final mixin in mixins) {
+    for (var mixin in mixins) {
       if (mixin.name == name) {
         return mixin;
       }
@@ -1046,7 +1046,7 @@ class ConstructorElementImpl extends ExecutableElementImpl
   @override
   String get displayName {
     var className = enclosingElement.name;
-    var name = this.name;
+    final name = this.name;
     if (name.isNotEmpty) {
       return '$className.$name';
     } else {
@@ -1061,7 +1061,7 @@ class ConstructorElementImpl extends ExecutableElementImpl
   @override
   bool get hasLiteral {
     if (super.hasLiteral) return true;
-    var enclosingElement = this.enclosingElement;
+    final enclosingElement = this.enclosingElement;
     if (enclosingElement is! ExtensionTypeElement) return false;
     return this == enclosingElement.primaryConstructor &&
         enclosingElement.hasLiteral;
@@ -1122,7 +1122,7 @@ class ConstructorElementImpl extends ExecutableElementImpl
       return result as InterfaceType;
     }
 
-    final augmentedDeclaration = enclosingElement.augmented.declaration;
+    var augmentedDeclaration = enclosingElement.augmented.declaration;
     result = augmentedDeclaration.thisType;
     return _returnType = result as InterfaceType;
   }
@@ -2410,7 +2410,7 @@ abstract class ElementImpl implements Element {
   Version? get sinceSdkVersion {
     if (!hasModifier(Modifier.HAS_SINCE_SDK_VERSION_COMPUTED)) {
       setModifier(Modifier.HAS_SINCE_SDK_VERSION_COMPUTED, true);
-      final result = SinceSdkVersionComputer().compute(this);
+      var result = SinceSdkVersionComputer().compute(this);
       if (result != null) {
         _sinceSdkVersion[this] = result;
         setModifier(Modifier.HAS_SINCE_SDK_VERSION_VALUE, true);
@@ -2698,7 +2698,7 @@ class EnumElementImpl extends InterfaceElementImpl
   @override
   MaybeAugmentedEnumElementMixin get augmented {
     if (isAugmentation) {
-      if (augmentationTarget case final augmentationTarget?) {
+      if (augmentationTarget case var augmentationTarget?) {
         return augmentationTarget.augmented;
       }
     }
@@ -2928,9 +2928,6 @@ class ExtensionElementImpl extends InstanceElementImpl
   late MaybeAugmentedExtensionElementMixin augmentedInternal =
       NotAugmentedExtensionElementImpl(this);
 
-  /// The type being extended.
-  DartType? _extendedType;
-
   /// Initialize a newly created extension element to have the given [name] at
   /// the given [offset] in the file that contains the declaration of this
   /// element.
@@ -2939,7 +2936,7 @@ class ExtensionElementImpl extends InstanceElementImpl
   @override
   MaybeAugmentedExtensionElementMixin get augmented {
     if (isAugmentation) {
-      if (augmentationTarget case final augmentationTarget?) {
+      if (augmentationTarget case var augmentationTarget?) {
         return augmentationTarget.augmented;
       }
     }
@@ -2962,12 +2959,7 @@ class ExtensionElementImpl extends InstanceElementImpl
 
   @override
   DartType get extendedType {
-    linkedData?.read(this);
-    return _extendedType!;
-  }
-
-  set extendedType(DartType extendedType) {
-    _extendedType = extendedType;
+    return augmented.extendedType;
   }
 
   @override
@@ -3065,7 +3057,7 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
   @override
   MaybeAugmentedExtensionTypeElementMixin get augmented {
     if (isAugmentation) {
-      if (augmentationTarget case final augmentationTarget?) {
+      if (augmentationTarget case var augmentationTarget?) {
         return augmentationTarget.augmented;
       }
     }
@@ -3678,11 +3670,11 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     if (typeArguments.isEmpty) {
       switch (nullabilitySuffix) {
         case NullabilitySuffix.none:
-          if (_nonNullableInstance case final instance?) {
+          if (_nonNullableInstance case var instance?) {
             return instance;
           }
         case NullabilitySuffix.question:
-          if (_nullableInstance case final instance?) {
+          if (_nullableInstance case var instance?) {
             return instance;
           }
         case NullabilitySuffix.star:
@@ -3691,7 +3683,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
       }
     }
 
-    final result = InterfaceTypeImpl(
+    var result = InterfaceTypeImpl(
       element: this,
       typeArguments: typeArguments,
       nullabilitySuffix: nullabilitySuffix,
@@ -3843,7 +3835,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   /// Object contains a definition of the getter it will occur last.
   Iterable<PropertyAccessorElement> _implementationsOfGetter(
       String getterName) sync* {
-    final visitedClasses = <InterfaceElement>{};
+    var visitedClasses = <InterfaceElement>{};
     InterfaceElement? classElement = this;
     while (classElement != null && visitedClasses.add(classElement)) {
       var getter = classElement.getGetter(getterName);
@@ -3872,7 +3864,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   /// this class contains a definition of the method it will occur first, if
   /// Object contains a definition of the method it will occur last.
   Iterable<MethodElement> _implementationsOfMethod(String methodName) sync* {
-    final visitedClasses = <InterfaceElement>{};
+    var visitedClasses = <InterfaceElement>{};
     InterfaceElement? classElement = this;
     while (classElement != null && visitedClasses.add(classElement)) {
       var method = classElement.getMethod(methodName);
@@ -3902,7 +3894,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   /// Object contains a definition of the setter it will occur last.
   Iterable<PropertyAccessorElement> _implementationsOfSetter(
       String setterName) sync* {
-    final visitedClasses = <InterfaceElement>{};
+    var visitedClasses = <InterfaceElement>{};
     InterfaceElement? classElement = this;
     while (classElement != null && visitedClasses.add(classElement)) {
       var setter = classElement.getSetter(setterName);
@@ -4373,9 +4365,9 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   List<PartElementImpl> get parts => _parts;
 
   set parts(List<PartElementImpl> parts) {
-    for (final part in parts) {
+    for (var part in parts) {
       part.enclosingElement = this;
-      final uri = part.uri;
+      var uri = part.uri;
       if (uri is DirectiveUriWithUnitImpl) {
         uri.unit.enclosingElement = this;
       }
@@ -4454,8 +4446,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   @override
   ClassElement? getClass(String name) {
-    for (final unitElement in units) {
-      final element = unitElement.getClass(name);
+    for (var unitElement in units) {
+      var element = unitElement.getClass(name);
       if (element != null) {
         return element;
       }
@@ -4464,8 +4456,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   EnumElement? getEnum(String name) {
-    for (final unitElement in units) {
-      final element = unitElement.getEnum(name);
+    for (var unitElement in units) {
+      var element = unitElement.getEnum(name);
       if (element != null) {
         return element;
       }
@@ -4474,8 +4466,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   MixinElement? getMixin(String name) {
-    for (final unitElement in units) {
-      final element = unitElement.getMixin(name);
+    for (var unitElement in units) {
+      var element = unitElement.getMixin(name);
       if (element != null) {
         return element;
       }
@@ -4486,8 +4478,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   /// Return `true` if [reference] comes only from deprecated exports.
   bool isFromDeprecatedExport(ExportedReference reference) {
     if (reference is ExportedReferenceExported) {
-      for (final location in reference.locations) {
-        final export = location.exportOf(this);
+      for (var location in reference.locations) {
+        var export = location.exportOf(this);
         if (!export.hasDeprecated) {
           return false;
         }
@@ -4529,8 +4521,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
     }
 
     if (prefix == null && name.startsWith(r'_$')) {
-      for (final augmentation in augmentationImports) {
-        final uri = augmentation.uri;
+      for (var augmentation in augmentationImports) {
+        var uri = augmentation.uri;
         if (uri is DirectiveUriWithSource &&
             uri is! DirectiveUriWithAugmentation &&
             file_paths.isGenerated(uri.relativeUriString)) {
@@ -4538,7 +4530,7 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
         }
       }
       for (var partElement in parts) {
-        final uri = partElement.uri;
+        var uri = partElement.uri;
         if (uri is DirectiveUriWithSource &&
             uri is! DirectiveUriWithUnit &&
             file_paths.isGenerated(uri.relativeUriString)) {
@@ -4588,14 +4580,14 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   List<LibraryAugmentationElementImpl> _computeAugmentations() {
-    final result = <LibraryAugmentationElementImpl>[];
+    var result = <LibraryAugmentationElementImpl>[];
 
     void visitAugmentations(LibraryOrAugmentationElementImpl container) {
       if (container is LibraryAugmentationElementImpl) {
         result.add(container);
       }
-      for (final import in container.augmentationImports) {
-        final augmentation = import.importedAugmentation;
+      for (var import in container.augmentationImports) {
+        var augmentation = import.importedAugmentation;
         if (augmentation != null) {
           visitAugmentations(augmentation);
         }
@@ -4782,7 +4774,7 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   }
 
   set augmentationImports(List<AugmentationImportElementImpl> imports) {
-    for (final importElement in imports) {
+    for (var importElement in imports) {
       importElement.enclosingElement = this;
       importElement.importedAugmentation?.enclosingElement = this;
     }
@@ -4838,7 +4830,7 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   /// Set the specifications of all of the exports defined in this library to
   /// the given list of [exports].
   set libraryExports(List<LibraryExportElementImpl> exports) {
-    for (final exportElement in exports) {
+    for (var exportElement in exports) {
       exportElement.enclosingElement = this;
     }
     _libraryExports = exports;
@@ -4850,7 +4842,7 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   /// Set the specifications of all of the imports defined in this library to
   /// the given list of [imports].
   set libraryImports(List<LibraryImportElementImpl> imports) {
-    for (final importElement in imports) {
+    for (var importElement in imports) {
       importElement.enclosingElement = this;
     }
     _libraryImports = imports;
@@ -4883,7 +4875,7 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   static List<PrefixElementImpl> buildPrefixesFromImports(
       List<LibraryImportElementImpl> imports) {
     var prefixes = HashSet<PrefixElementImpl>();
-    for (final import in imports) {
+    for (var import in imports) {
       var prefix = import.prefix;
       if (prefix != null) {
         prefixes.add(prefix.element);
@@ -4968,10 +4960,13 @@ mixin MaybeAugmentedEnumElementMixin on MaybeAugmentedInterfaceElementMixin
 mixin MaybeAugmentedExtensionElementMixin on MaybeAugmentedInstanceElementMixin
     implements AugmentedExtensionElement {
   @override
+  DartType extendedType = InvalidTypeImpl.instance;
+
+  @override
   ExtensionElementImpl get declaration;
 
   @override
-  DartType get thisType => declaration.extendedType;
+  DartType get thisType => extendedType;
 }
 
 mixin MaybeAugmentedExtensionTypeElementMixin
@@ -4996,9 +4991,9 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
 
   @override
   FieldElement? getField(String name) {
-    final length = fields.length;
+    var length = fields.length;
     for (var i = 0; i < length; i++) {
-      final field = fields[i];
+      var field = fields[i];
       if (field.name == name) {
         return field;
       }
@@ -5008,9 +5003,9 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
 
   @override
   PropertyAccessorElement? getGetter(String name) {
-    final length = accessors.length;
+    var length = accessors.length;
     for (var i = 0; i < length; i++) {
-      final accessor = accessors[i];
+      var accessor = accessors[i];
       if (accessor.isGetter && accessor.name == name) {
         return accessor;
       }
@@ -5020,9 +5015,9 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
 
   @override
   MethodElement? getMethod(String name) {
-    final length = methods.length;
+    var length = methods.length;
     for (var i = 0; i < length; i++) {
-      final method = methods[i];
+      var method = methods[i];
       if (method.name == name) {
         return method;
       }
@@ -5079,7 +5074,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
   /// Object contains a definition of the getter it will occur last.
   Iterable<PropertyAccessorElement> _implementationsOfGetter(
       String name) sync* {
-    final visitedClasses = <AugmentedInstanceElement>{};
+    var visitedClasses = <AugmentedInstanceElement>{};
     AugmentedInstanceElement? augmented = this;
     while (augmented != null && visitedClasses.add(augmented)) {
       var getter = augmented.getGetter(name);
@@ -5111,7 +5106,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
   /// this class contains a definition of the method it will occur first, if
   /// Object contains a definition of the method it will occur last.
   Iterable<MethodElement> _implementationsOfMethod(String name) sync* {
-    final visitedClasses = <AugmentedInstanceElement>{};
+    var visitedClasses = <AugmentedInstanceElement>{};
     AugmentedInstanceElement? augmented = this;
     while (augmented != null && visitedClasses.add(augmented)) {
       var method = augmented.getMethod(name);
@@ -5144,7 +5139,7 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
   /// Object contains a definition of the setter it will occur last.
   Iterable<PropertyAccessorElement> _implementationsOfSetter(
       String name) sync* {
-    final visitedClasses = <AugmentedInstanceElement>{};
+    var visitedClasses = <AugmentedInstanceElement>{};
     AugmentedInstanceElement? augmented = this;
     while (augmented != null && visitedClasses.add(augmented)) {
       var setter = augmented.getSetter(name);
@@ -5176,7 +5171,7 @@ mixin MaybeAugmentedInterfaceElementMixin on MaybeAugmentedInstanceElementMixin
   InterfaceType get thisType {
     if (_thisType == null) {
       List<DartType> typeArguments;
-      final typeParameters = declaration.typeParameters;
+      var typeParameters = declaration.typeParameters;
       if (typeParameters.isNotEmpty) {
         typeArguments = typeParameters.map<DartType>((t) {
           return t.instantiate(nullabilitySuffix: NullabilitySuffix.none);
@@ -5307,7 +5302,7 @@ class MixinElementImpl extends ClassOrMixinElementImpl
   @override
   MaybeAugmentedMixinElementMixin get augmented {
     if (isAugmentation) {
-      if (augmentationTarget case final augmentationTarget?) {
+      if (augmentationTarget case var augmentationTarget?) {
         return augmentationTarget.augmented;
       }
     }
@@ -5796,6 +5791,13 @@ class NotAugmentedClassElementImpl extends NotAugmentedInterfaceElementImpl
 
   @override
   ClassElementImpl get declaration => element;
+
+  @override
+  AugmentedClassElementImpl toAugmented() {
+    var augmented = AugmentedClassElementImpl(declaration);
+    declaration.augmentedInternal = augmented;
+    return augmented;
+  }
 }
 
 class NotAugmentedEnumElementImpl extends NotAugmentedInterfaceElementImpl
@@ -5807,6 +5809,13 @@ class NotAugmentedEnumElementImpl extends NotAugmentedInterfaceElementImpl
 
   @override
   EnumElementImpl get declaration => element;
+
+  @override
+  AugmentedEnumElementImpl toAugmented() {
+    var augmented = AugmentedEnumElementImpl(declaration);
+    declaration.augmentedInternal = augmented;
+    return augmented;
+  }
 }
 
 class NotAugmentedExtensionElementImpl extends NotAugmentedInstanceElementImpl
@@ -5818,6 +5827,14 @@ class NotAugmentedExtensionElementImpl extends NotAugmentedInstanceElementImpl
 
   @override
   ExtensionElementImpl get declaration => element;
+
+  @override
+  AugmentedExtensionElementImpl toAugmented() {
+    var augmented = AugmentedExtensionElementImpl(declaration);
+    augmented.extendedType = extendedType;
+    declaration.augmentedInternal = augmented;
+    return augmented;
+  }
 }
 
 class NotAugmentedExtensionTypeElementImpl
@@ -5830,6 +5847,13 @@ class NotAugmentedExtensionTypeElementImpl
 
   @override
   ExtensionTypeElementImpl get declaration => element;
+
+  @override
+  AugmentedExtensionTypeElementImpl toAugmented() {
+    var augmented = AugmentedExtensionTypeElementImpl(declaration);
+    declaration.augmentedInternal = augmented;
+    return augmented;
+  }
 }
 
 abstract class NotAugmentedInstanceElementImpl
@@ -5855,6 +5879,9 @@ abstract class NotAugmentedInstanceElementImpl
   List<MethodElement> get methods {
     return element.methods;
   }
+
+  /// Returns the empty augmented version, without members.
+  AugmentedInstanceElementImpl toAugmented();
 }
 
 abstract class NotAugmentedInterfaceElementImpl
@@ -5905,6 +5932,13 @@ class NotAugmentedMixinElementImpl extends NotAugmentedInterfaceElementImpl
   @override
   List<InterfaceType> get superclassConstraints {
     return element.superclassConstraints;
+  }
+
+  @override
+  AugmentedMixinElementImpl toAugmented() {
+    var augmented = AugmentedMixinElementImpl(declaration);
+    declaration.augmentedInternal = augmented;
+    return augmented;
   }
 }
 
@@ -6592,11 +6626,11 @@ abstract class PropertyInducingElementImpl
     // Reset cached types of synthetic getters and setters.
     // TODO(scheglov): Consider not caching these types.
     if (!isSynthetic) {
-      var getter = this.getter;
+      final getter = this.getter;
       if (getter is PropertyAccessorElementImpl_ImplicitGetter) {
         getter._type = null;
       }
-      var setter = this.setter;
+      final setter = this.setter;
       if (setter is PropertyAccessorElementImpl_ImplicitSetter) {
         setter._type = null;
       }
@@ -6824,7 +6858,7 @@ class TypeAliasElementImpl extends _ExistingElementImpl
           !library.typeSystem.isSubtypeOf(aliasedBound, bound)) {
         return false;
       }
-      final typeArgument = typeArguments[i];
+      var typeArgument = typeArguments[i];
       if (typeArgument is TypeParameterType &&
           typeParameters[i] != typeArgument.element) {
         return false;
@@ -6864,7 +6898,7 @@ class TypeAliasElementImpl extends _ExistingElementImpl
 
   /// Instantiates this type alias with its type parameters as arguments.
   DartType get rawType {
-    final List<DartType> typeArguments;
+    List<DartType> typeArguments;
     if (typeParameters.isNotEmpty) {
       typeArguments = typeParameters.map<DartType>((t) {
         return t.instantiate(
@@ -7130,7 +7164,7 @@ mixin TypeParameterizedElementMixin on ElementImpl
   }
 
   set typeParameters(List<TypeParameterElement> typeParameters) {
-    for (final typeParameter in typeParameters) {
+    for (var typeParameter in typeParameters) {
       (typeParameter as TypeParameterElementImpl).enclosingElement = this;
     }
     _typeParameters = typeParameters;

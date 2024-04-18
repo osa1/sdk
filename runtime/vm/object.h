@@ -288,7 +288,9 @@ extern "C" void DFLRT_ExitSafepoint(NativeArguments __unusable_);
     ASSERT(ptr() != null());                                                   \
     return const_cast<Untagged##object*>(ptr()->untag());                      \
   }                                                                            \
-  static intptr_t NextFieldOffset() { return -kWordSize; }                     \
+  static intptr_t NextFieldOffset() {                                          \
+    return -kWordSize;                                                         \
+  }                                                                            \
   SNAPSHOT_SUPPORT(rettype)                                                    \
   friend class Object;                                                         \
   friend class StackFrame;                                                     \
@@ -1051,7 +1053,9 @@ class Object {
   }
 #else
 #define PRECOMPILER_WSR_FIELD_DECLARATION(Type, Name)                          \
-  Type##Ptr Name() const { return untag()->Name(); }                           \
+  Type##Ptr Name() const {                                                     \
+    return untag()->Name();                                                    \
+  }                                                                            \
   void set_##Name(const Type& value) const;
 #endif
 
@@ -1117,14 +1121,6 @@ enum class TypeEquality {
   kCanonical = 0,
   kSyntactical = 1,
   kInSubtypeTest = 2,
-};
-
-// The NNBDMode reflects the opted-in status of libraries.
-// Note that the weak or strong checking mode is not reflected in NNBDMode.
-enum class NNBDMode {
-  // Status of the library:
-  kLegacyLib = 0,   // Library is legacy.
-  kOptedInLib = 1,  // Library is opted-in.
 };
 
 // The NNBDCompiledMode reflects the mode in which constants of the library were
@@ -1270,9 +1266,6 @@ class Class : public Object {
   // The mixin for this class if one exists. Otherwise, returns a raw pointer
   // to this class.
   ClassPtr Mixin() const;
-
-  // The NNBD mode of the library declaring this class.
-  NNBDMode nnbd_mode() const;
 
   bool IsInFullSnapshot() const;
 
@@ -1589,9 +1582,7 @@ class Class : public Object {
   }
 
   // Check if this class represents the 'Record' class.
-  bool IsRecordClass() const {
-    return id() == kRecordCid;
-  }
+  bool IsRecordClass() const { return id() == kRecordCid; }
 
   static bool IsInFullSnapshot(ClassPtr cls) {
     NoSafepointScope no_safepoint;
@@ -3071,11 +3062,6 @@ class Function : public Object {
 #endif
   ObjectPtr RawOwner() const { return untag()->owner(); }
 
-  // The NNBD mode of the library declaring this function.
-  // TODO(alexmarkov): nnbd_mode() doesn't work for mixins.
-  // It should be either removed or fixed.
-  NNBDMode nnbd_mode() const { return Class::Handle(Owner()).nnbd_mode(); }
-
   RegExpPtr regexp() const;
   intptr_t string_specialization_cid() const;
   bool is_sticky_specialization() const;
@@ -3189,9 +3175,7 @@ class Function : public Object {
 
   static intptr_t code_offset() { return OFFSET_OF(UntaggedFunction, code_); }
 
-  uword entry_point() const {
-    return EntryPointOf(ptr());
-  }
+  uword entry_point() const { return EntryPointOf(ptr()); }
   static uword EntryPointOf(const FunctionPtr function) {
     return function->untag()->entry_point_;
   }
@@ -3465,9 +3449,7 @@ class Function : public Object {
 
 #if !defined(PRODUCT) &&                                                       \
     (defined(DART_PRECOMPILER) || defined(DART_PRECOMPILED_RUNTIME))
-  int32_t line() const {
-    return untag()->token_pos_.Serialize();
-  }
+  int32_t line() const { return untag()->token_pos_.Serialize(); }
 
   void set_line(int32_t line) const {
     StoreNonPointer(&untag()->token_pos_, TokenPosition::Deserialize(line));
@@ -4700,9 +4682,7 @@ class Field : public Object {
 
   const char* GuardedPropertiesAsCString() const;
 
-  bool is_unboxed() const {
-    return UnboxedBit::decode(kind_bits());
-  }
+  bool is_unboxed() const { return UnboxedBit::decode(kind_bits()); }
 
   // Field unboxing decisions are based either on static types (JIT) or
   // inferred types (AOT). See the callers of this function.
@@ -5254,26 +5234,6 @@ class Library : public Object {
   void set_is_in_fullsnapshot(bool value) const {
     set_flags(
         UntaggedLibrary::InFullSnapshotBit::update(value, untag()->flags_));
-  }
-
-  bool is_nnbd() const {
-    return UntaggedLibrary::NnbdBit::decode(untag()->flags_);
-  }
-  void set_is_nnbd(bool value) const {
-    set_flags(UntaggedLibrary::NnbdBit::update(value, untag()->flags_));
-  }
-
-  NNBDMode nnbd_mode() const {
-    return is_nnbd() ? NNBDMode::kOptedInLib : NNBDMode::kLegacyLib;
-  }
-
-  NNBDCompiledMode nnbd_compiled_mode() const {
-    return static_cast<NNBDCompiledMode>(
-        UntaggedLibrary::NnbdCompiledModeBits::decode(untag()->flags_));
-  }
-  void set_nnbd_compiled_mode(NNBDCompiledMode value) const {
-    set_flags(UntaggedLibrary::NnbdCompiledModeBits::update(
-        static_cast<uint8_t>(value), untag()->flags_));
   }
 
   StringPtr PrivateName(const String& name) const;
@@ -12624,15 +12584,11 @@ class SuspendState : public Instance {
 
   intptr_t frame_size() const { return untag()->frame_size_; }
 
-  InstancePtr function_data() const {
-    return untag()->function_data();
-  }
+  InstancePtr function_data() const { return untag()->function_data(); }
 
   ClosurePtr then_callback() const { return untag()->then_callback(); }
 
-  ClosurePtr error_callback() const {
-    return untag()->error_callback();
-  }
+  ClosurePtr error_callback() const { return untag()->error_callback(); }
 
   // Returns Code object corresponding to the suspended function.
   CodePtr GetCodeObject() const;

@@ -73,7 +73,8 @@ class Program {
                                                  intptr_t buffer_length,
                                                  const char** error = nullptr);
   static std::unique_ptr<Program> ReadFromTypedData(
-      const ExternalTypedData& typed_data, const char** error = nullptr);
+      const ExternalTypedData& typed_data,
+      const char** error = nullptr);
 
   bool is_single_program() { return single_program_; }
   NameIndex main_method() { return main_method_reference_; }
@@ -89,7 +90,6 @@ class Program {
   intptr_t constant_table_offset() { return constant_table_offset_; }
   intptr_t component_index_offset() { return component_index_offset_; }
   intptr_t library_count() { return library_count_; }
-  NNBDCompiledMode compilation_mode() const { return compilation_mode_; }
 
   // The data of the kernel file (single or multiple encoded components).
   const TypedDataBase& binary() { return *binary_; }
@@ -99,7 +99,6 @@ class Program {
 
   bool single_program_;
   NameIndex main_method_reference_;  // Procedure.
-  NNBDCompiledMode compilation_mode_;
   intptr_t library_count_;
 
   // The offset from the start of the binary to the start of the source table.

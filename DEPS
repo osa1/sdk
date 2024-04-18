@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "7faf6c725b88ca0a7296eadb3a6ccdf91665d86d",
+  "co19_rev": "bf076a98c58b59a8815f2db841c08d2b9616edfa",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "a7c23b2422492dcc515d1ba4abe3609b50e2a139",
@@ -71,7 +71,7 @@ vars = {
   # self-service update these by following the go/dart-engprod/browsers.md
   # instructions. d8, the V8 shell, is always checked out.
   "checkout_javascript_engines": False,
-  "d8_tag": "version:12.3.150",
+  "d8_tag": "version:12.5.216",
   "jsshell_tag": "version:122.0",
   "jsc_tag": "version:274355",
 
@@ -79,7 +79,7 @@ vars = {
   "clang_version": "git_revision:b1d2e8510b58893e58558ffdf3f8ba29c1e25e5a",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
-  "gn_version": "git_revision:a2e2717ea670249a34b0de4b3e54f268d320bdfa",
+  "gn_version": "git_revision:155c53952ec2dc324b0438ce5b9bd4a286577d25",
 
   "reclient_version": "git_revision:c7349324c93c6e0d85bc1e00b5d7526771006ea0",
   "download_reclient": True,
@@ -144,14 +144,14 @@ vars = {
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
   "dart_style_rev": "a6ad7693555a9add6f98ad6fd94de80d35c89415", # disable tools/rev_sdk_deps.dart
-  "dartdoc_rev": "ba77660df8ab4988b50b8021f2a2a615ac54a5bb",
-  "ecosystem_rev": "95fed184e5093d2e566161147a1dddbd56fef9a0",
+  "dartdoc_rev": "f339b094b123a18c88f277fd997a590a9431973c",
+  "ecosystem_rev": "9fabe464ea1d8408774de74d2ac759c1f90ae480",
   "file_rev": "f858c6fe9d1b0167b944aa62dd9b4321036b5238",
   "fixnum_rev": "dec16eb715f70f2fe0ed509da2e118354bea21d8",
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
   "glob_rev": "25ee2c20a3c7b93f4096036939a59e40916a3890",
   "html_rev": "5b99b43f71da0c6b0f962244c7f5dfa8ca970fef",
-  "http_rev": "b7477b1e1bc5c8f850299b7abcc58d08ddea9e4a",
+  "http_rev": "34d7087ed2361dbe68faae6af8e7874fb805311d",
   "http_multi_server_rev": "6ce0a137aa20cc12b883a386bb7c0ae677cb3429",
   "http_parser_rev": "8ffcaec6fedfac5274cfa57e133d47d499bdabc0",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
@@ -191,7 +191,7 @@ vars = {
   "usage_rev": "09cab899c2759c2e1c84ab49098f58beab3c149f",
   "vector_math_rev": "43f2a77bb0be812b027a68a11792d563713b42a1",
   "watcher_rev": "1bd2f20d0d924c8422aa2b9afdb165bff4f053c0",
-  "web_rev": "3d1b4cbaaf7517cf4f86c8cf8ebe31c67040e08a",
+  "web_rev": "9d8c802d13b785b1a5b201c4a43605d640841c98",
   "web_socket_channel_rev": "ced3a37193f89d5ee95792f342eeb15d3d55d8c1",
   "webdev_rev": "7d0d2d46bf4249e73298ddafa4f323f8609d08da",
   "webdriver_rev": "c80e01e6ce121e55c31e33a31e5d3950023e6bc9",

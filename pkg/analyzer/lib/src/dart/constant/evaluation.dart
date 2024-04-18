@@ -186,7 +186,7 @@ class ConstantEvaluationEngine {
           constant.source,
         );
         var constantVisitor = ConstantVisitor(this, library, errorReporter);
-        final result = evaluateAndFormatErrorsInConstructorCall(
+        var result = evaluateAndFormatErrorsInConstructorCall(
             library,
             constNode,
             element.returnType.typeArguments,
@@ -359,16 +359,16 @@ class ConstantEvaluationEngine {
     // If we found an evaluation exception, report a context message linking to
     // where the exception was found.
     if (result.isRuntimeException) {
-      final formattedMessage =
+      var formattedMessage =
           formatList(result.errorCode.problemMessage, result.arguments);
-      final contextMessage = DiagnosticMessageImpl(
+      var contextMessage = DiagnosticMessageImpl(
         filePath: library.source.fullName,
         length: result.length,
         message: "The exception is '$formattedMessage' and occurs here.",
         offset: result.offset,
         url: null,
       );
-      final errorNode = configuration.errorNode(node);
+      var errorNode = configuration.errorNode(node);
       result = InvalidConstant.forEntity(
           errorNode, CompileTimeErrorCode.CONST_EVAL_THROWS_EXCEPTION,
           contextMessages: [...result.contextMessages, contextMessage]);
@@ -827,7 +827,7 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
       }
     }
 
-    final constructorElement = node.constructorName.staticElement?.declaration
+    var constructorElement = node.constructorName.staticElement?.declaration
         .ifTypeOrNull<ConstructorElementImpl>();
     if (constructorElement == null) {
       return InvalidConstant.forEntity(
@@ -1721,8 +1721,8 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
         switch (evaluationResult) {
           case null:
             // The constant value isn't computed yet, or there is an error while
-            // computing. We will mark it and determine whether or not to continue
-            // the evaluation upstream.
+            // computing. We will mark it and determine whether or not to
+            // continue the evaluation upstream.
             return InvalidConstant.genericError(errorNode, isUnresolved: true);
           case DartObjectImpl():
             if (identifier == null) {
@@ -1856,6 +1856,9 @@ class ConstantVisitor extends UnifyingAstVisitor<Constant> {
             return CompileTimeErrorCode
                 .NON_CONSTANT_MAP_VALUE_FROM_DEFERRED_LIBRARY;
           }
+        } else if (current is RecordLiteral) {
+          return CompileTimeErrorCode
+              .NON_CONSTANT_RECORD_FIELD_FROM_DEFERRED_LIBRARY;
         } else if (current is SetOrMapLiteral) {
           return CompileTimeErrorCode.SET_ELEMENT_FROM_DEFERRED_LIBRARY;
         } else if (current is SpreadElement) {
@@ -2516,9 +2519,9 @@ class _InstanceCreationEvaluator {
       return error;
     }
 
-    var definingType = this.definingType;
-    if (definingType.element case final ExtensionTypeElement element) {
-      final representation = _fieldMap[element.representation.name];
+    final definingType = this.definingType;
+    if (definingType.element case ExtensionTypeElement element) {
+      var representation = _fieldMap[element.representation.name];
       if (representation != null) {
         return representation;
       }

@@ -825,7 +825,7 @@ void StubCodeCompiler::GenerateCallStaticFunctionStub() {
   // Setup space on stack for return value.
   __ pushq(Immediate(0));
   __ CallRuntime(kPatchStaticCallRuntimeEntry, 0);
-  __ popq(CODE_REG);  // Get Code object result.
+  __ popq(CODE_REG);       // Get Code object result.
   __ popq(ARGS_DESC_REG);  // Restore arguments descriptor array.
   // Remove the stub frame as we are about to jump to the dart function.
   __ LeaveStubFrame();
@@ -852,7 +852,7 @@ void StubCodeCompiler::GenerateFixCallersTargetStub() {
   // Setup space on stack for return value.
   __ pushq(Immediate(0));
   __ CallRuntime(kFixCallersTargetRuntimeEntry, 0);
-  __ popq(CODE_REG);  // Get Code object.
+  __ popq(CODE_REG);       // Get Code object.
   __ popq(ARGS_DESC_REG);  // Restore arguments descriptor array.
   __ movq(RAX, FieldAddress(CODE_REG, target::Code::entry_point_offset()));
   __ LeaveStubFrame();
@@ -1096,6 +1096,8 @@ static void GenerateDeoptimizationSequence(Assembler* assembler,
   if (kind == kLazyDeoptFromReturn) {
     __ pushq(RBX);  // Preserve result, it will be GC-d here.
   } else if (kind == kLazyDeoptFromThrow) {
+    // Preserve CODE_REG for one more runtime call.
+    __ pushq(CODE_REG);
     __ pushq(RBX);  // Preserve exception.
     __ pushq(RDX);  // Preserve stacktrace.
   }
@@ -1110,6 +1112,7 @@ static void GenerateDeoptimizationSequence(Assembler* assembler,
   } else if (kind == kLazyDeoptFromThrow) {
     __ popq(RDX);  // Restore stacktrace.
     __ popq(RAX);  // Restore exception.
+    __ popq(CODE_REG);
   }
   __ LeaveStubFrame();
 
@@ -1117,6 +1120,18 @@ static void GenerateDeoptimizationSequence(Assembler* assembler,
   __ addq(RSP, RBX);  // Remove materialization arguments.
   __ pushq(RCX);      // Push return address.
   // The caller is responsible for emitting the return instruction.
+
+  if (kind == kLazyDeoptFromThrow) {
+    // Unoptimized frame is now ready to accept the exception. Rethrow it to
+    // find the right handler.
+    __ EnterStubFrame();
+    __ pushq(Immediate(target::ToRawSmi(0)));  // Space for the result.
+    __ pushq(RAX);                             // Exception
+    __ pushq(RDX);                             // Stacktrace
+    __ pushq(Immediate(target::ToRawSmi(1)));  // Bypass debugger.
+    __ CallRuntime(kReThrowRuntimeEntry, 3);
+    __ LeaveStubFrame();
+  }
 }
 
 // RAX: result, must be preserved
@@ -1158,9 +1173,9 @@ void StubCodeCompiler::GenerateDeoptimizeStub() {
 //   RDI - arguments descriptor size
 static void GenerateNoSuchMethodDispatcherBody(Assembler* assembler,
                                                Register receiver_reg) {
-  __ pushq(Immediate(0));  // Setup space on stack for result.
-  __ pushq(receiver_reg);  // Receiver.
-  __ pushq(IC_DATA_REG);   // ICData/MegamorphicCache.
+  __ pushq(Immediate(0));   // Setup space on stack for result.
+  __ pushq(receiver_reg);   // Receiver.
+  __ pushq(IC_DATA_REG);    // ICData/MegamorphicCache.
   __ pushq(ARGS_DESC_REG);  // Arguments descriptor array.
 
   // Adjust arguments count.
@@ -1932,14 +1947,13 @@ static void GenerateWriteBarrierStubHelper(Assembler* assembler, bool cards) {
     __ ret();
   }
 
-
   if (cards) {
     Label remember_card_slow;
 
     // Get card table.
     __ Bind(&remember_card);
-    __ movq(TMP, RDX);                              // Object.
-    __ andq(TMP, Immediate(target::kPageMask));     // Page.
+    __ movq(TMP, RDX);                           // Object.
+    __ andq(TMP, Immediate(target::kPageMask));  // Page.
     __ cmpq(Address(TMP, target::Page::card_table_offset()), Immediate(0));
     __ j(EQUAL, &remember_card_slow, Assembler::kNearJump);
 
@@ -2540,8 +2554,8 @@ void StubCodeCompiler::GenerateNArgsCheckInlineCacheStub(
     __ pushq(R8);   // Preserve entry point.
   }
   __ pushq(ARGS_DESC_REG);  // Preserve arguments descriptor array.
-  __ pushq(RBX);           // Preserve IC data object.
-  __ pushq(Immediate(0));  // Result slot.
+  __ pushq(RBX);            // Preserve IC data object.
+  __ pushq(Immediate(0));   // Result slot.
   // Push call arguments.
   for (intptr_t i = 0; i < num_args; i++) {
     __ movq(RCX, Address(RAX, -target::kWordSize * i));
@@ -2553,8 +2567,8 @@ void StubCodeCompiler::GenerateNArgsCheckInlineCacheStub(
   for (intptr_t i = 0; i < num_args + 1; i++) {
     __ popq(RAX);
   }
-  __ popq(FUNCTION_REG);  // Pop returned function object into RAX.
-  __ popq(RBX);  // Restore IC data array.
+  __ popq(FUNCTION_REG);   // Pop returned function object into RAX.
+  __ popq(RBX);            // Restore IC data array.
   __ popq(ARGS_DESC_REG);  // Restore arguments descriptor array.
   if (save_entry_point) {
     __ popq(R8);      // Restore entry point.
@@ -3145,10 +3159,10 @@ void StubCodeCompiler::GenerateOptimizeFunctionStub() {
   __ movq(CODE_REG, Address(THR, target::Thread::optimize_stub_offset()));
   __ EnterStubFrame();
   __ pushq(ARGS_DESC_REG);  // Preserve args descriptor.
-  __ pushq(Immediate(0));  // Result slot.
-  __ pushq(RDI);           // Arg0: function to optimize
+  __ pushq(Immediate(0));   // Result slot.
+  __ pushq(RDI);            // Arg0: function to optimize
   __ CallRuntime(kOptimizeInvokedFunctionRuntimeEntry, 1);
-  __ popq(RAX);  // Discard argument.
+  __ popq(RAX);            // Discard argument.
   __ popq(FUNCTION_REG);   // Get Function object.
   __ popq(ARGS_DESC_REG);  // Restore argument descriptor.
   __ LeaveStubFrame();
