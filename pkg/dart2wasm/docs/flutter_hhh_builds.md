@@ -165,9 +165,9 @@ avoids the need to keep the two in sync.
 ## Building a Flutter app (e.g. Wonderous)
 
 ```
-<path-to-flutter-app> % flutter                             \
-        --local-engine-src=<path-to-flutter-engine-src>     \
-        --local-web-sdk=wasm_release                        \
+<path-to-flutter-app> % flutter                                  \
+        --local-engine-src-path=<path-to-flutter-engine-src>     \
+        --local-web-sdk=wasm_release                             \
         build web --wasm
 ```
 
