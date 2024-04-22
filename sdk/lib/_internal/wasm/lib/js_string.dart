@@ -633,7 +633,6 @@ final class JSStringImpl implements String {
   @override
   @pragma("wasm:prefer-inline")
   String operator [](int index) {
-    final length = this.length;
     IndexErrorUtils.checkAssumePositiveLength(index, length);
     return JSStringImpl(_jsFromCharCode(_codeUnitAtUnchecked(index)));
   }
@@ -656,7 +655,7 @@ final class JSStringImpl implements String {
       _jsCompare(toExternRef, unsafeCast<JSStringImpl>(other).toExternRef);
 
   @override
-  String toString() => js.stringify(toExternRef);
+  String toString() => this;
 
   int firstNonWhitespace() {
     final length = this.length;

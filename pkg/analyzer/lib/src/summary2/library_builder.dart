@@ -18,6 +18,7 @@ import 'package:analyzer/src/dart/element/field_name_non_promotability_info.dart
     as element_model;
 import 'package:analyzer/src/dart/resolver/scope.dart';
 import 'package:analyzer/src/dart/scanner/scanner.dart';
+import 'package:analyzer/src/summary2/augmentation.dart';
 import 'package:analyzer/src/summary2/combinator.dart';
 import 'package:analyzer/src/summary2/constructor_initializer_resolver.dart';
 import 'package:analyzer/src/summary2/default_value_resolver.dart';
@@ -37,187 +38,6 @@ import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:analyzer/src/utilities/extensions/object.dart';
 import 'package:macros/src/executor.dart' as macro;
 
-class AugmentedClassDeclarationBuilder
-    extends AugmentedInstanceDeclarationBuilder {
-  final ClassElementImpl declaration;
-
-  AugmentedClassDeclarationBuilder({
-    required this.declaration,
-  }) {
-    addFields(declaration.fields);
-    addConstructors(declaration.constructors);
-    addAccessors(declaration.accessors);
-    addMethods(declaration.methods);
-  }
-
-  void augment(ClassElementImpl element) {
-    addFields(element.fields);
-    addConstructors(element.constructors);
-    addAccessors(element.accessors);
-    addMethods(element.methods);
-  }
-}
-
-class AugmentedEnumDeclarationBuilder
-    extends AugmentedInstanceDeclarationBuilder {
-  final EnumElementImpl declaration;
-
-  AugmentedEnumDeclarationBuilder({
-    required this.declaration,
-  }) {
-    addFields(declaration.fields);
-    addConstructors(declaration.constructors);
-    addAccessors(declaration.accessors);
-    addMethods(declaration.methods);
-  }
-
-  void augment(EnumElementImpl element) {
-    addFields(element.fields);
-    addConstructors(element.constructors);
-    addAccessors(element.accessors);
-    addMethods(element.methods);
-  }
-}
-
-class AugmentedExtensionDeclarationBuilder
-    extends AugmentedInstanceDeclarationBuilder {
-  final ExtensionElementImpl declaration;
-
-  AugmentedExtensionDeclarationBuilder({
-    required this.declaration,
-  }) {
-    addFields(declaration.fields);
-    addAccessors(declaration.accessors);
-    addMethods(declaration.methods);
-  }
-
-  void augment(ExtensionElementImpl element) {
-    addFields(element.fields);
-    addAccessors(element.accessors);
-    addMethods(element.methods);
-  }
-}
-
-abstract class AugmentedInstanceDeclarationBuilder {
-  final Map<String, FieldElementImpl> fields = {};
-  final Map<String, ConstructorElementImpl> constructors = {};
-  final Map<String, PropertyAccessorElementImpl> accessors = {};
-  final Map<String, MethodElementImpl> methods = {};
-
-  void addAccessors(List<PropertyAccessorElementImpl> elements) {
-    for (var element in elements) {
-      var name = element.name;
-      if (element.isAugmentation) {
-        var existing = accessors[name];
-        if (existing != null) {
-          existing.augmentation = element;
-          element.augmentationTarget = existing;
-          element.variable2 = existing.variable2;
-        }
-      }
-      accessors[name] = element;
-    }
-  }
-
-  void addConstructors(List<ConstructorElementImpl> elements) {
-    for (var element in elements) {
-      var name = element.name;
-      if (element.isAugmentation) {
-        var existing = constructors[name];
-        if (existing != null) {
-          existing.augmentation = element;
-          element.augmentationTarget = existing;
-        }
-      }
-      constructors[name] = element;
-    }
-  }
-
-  void addFields(List<FieldElementImpl> elements) {
-    for (var element in elements) {
-      var name = element.name;
-      if (element.isAugmentation) {
-        var existing = fields[name];
-        if (existing != null) {
-          existing.augmentation = element;
-          element.augmentationTarget = existing;
-        }
-      }
-      fields[name] = element;
-    }
-  }
-
-  void addMethods(List<MethodElementImpl> elements) {
-    for (var element in elements) {
-      var name = element.name;
-      if (element.isAugmentation) {
-        var existing = methods[name];
-        if (existing != null) {
-          existing.augmentation = element;
-          element.augmentationTarget = existing;
-        }
-      }
-      methods[name] = element;
-    }
-  }
-}
-
-class AugmentedMixinDeclarationBuilder
-    extends AugmentedInstanceDeclarationBuilder {
-  final MixinElementImpl declaration;
-
-  AugmentedMixinDeclarationBuilder({
-    required this.declaration,
-  }) {
-    addFields(declaration.fields);
-    addAccessors(declaration.accessors);
-    addMethods(declaration.methods);
-  }
-
-  void augment(MixinElementImpl element) {
-    addFields(element.fields);
-    addAccessors(element.accessors);
-    addMethods(element.methods);
-  }
-}
-
-class AugmentedTopVariablesBuilder {
-  final Map<String, TopLevelVariableElementImpl> variables = {};
-  final Map<String, PropertyAccessorElementImpl> accessors = {};
-
-  void addAccessor(PropertyAccessorElementImpl element) {
-    var name = element.name;
-    if (element.isAugmentation) {
-      var existing = accessors[name];
-      if (existing != null) {
-        existing.augmentation = element;
-        element.augmentationTarget = existing;
-        element.variable2 = existing.variable2;
-      }
-    }
-    accessors[name] = element;
-  }
-
-  void addVariable(TopLevelVariableElementImpl element) {
-    var name = element.name;
-    if (element.isAugmentation) {
-      var existing = variables[name];
-      if (existing != null) {
-        existing.augmentation = element;
-        element.augmentationTarget = existing;
-      }
-    }
-    variables[name] = element;
-
-    if (element.getter case var getter?) {
-      addAccessor(getter);
-    }
-    if (element.setter case var setter?) {
-      addAccessor(setter);
-    }
-  }
-}
-
 class DefiningLinkingUnit extends LinkingUnit {
   DefiningLinkingUnit({
     required super.reference,
@@ -230,12 +50,18 @@ class DefiningLinkingUnit extends LinkingUnit {
 class ImplicitEnumNodes {
   final EnumElementImpl element;
   final ast.NamedTypeImpl valuesTypeNode;
-  final ConstFieldElementImpl valuesField;
+  final ast.VariableDeclarationImpl valuesNode;
+  final ConstFieldElementImpl valuesElement;
+  final Set<String> valuesNames;
+  ast.ListLiteralImpl valuesInitializer;
 
   ImplicitEnumNodes({
     required this.element,
     required this.valuesTypeNode,
-    required this.valuesField,
+    required this.valuesNode,
+    required this.valuesElement,
+    required this.valuesNames,
+    required this.valuesInitializer,
   });
 }
 
@@ -249,7 +75,8 @@ class LibraryBuilder with MacroApplicationsContainer {
   final LibraryElementImpl element;
   final List<LinkingUnit> units;
 
-  final List<ImplicitEnumNodes> implicitEnumNodes = [];
+  final Map<EnumElementImpl, ImplicitEnumNodes> implicitEnumNodes =
+      Map.identity();
 
   /// The top-level elements that can be augmented.
   final Map<String, AugmentedInstanceDeclarationBuilder> _augmentedBuilders =
@@ -399,7 +226,7 @@ class LibraryBuilder with MacroApplicationsContainer {
 
   void buildEnumChildren() {
     var typeProvider = element.typeProvider;
-    for (var enum_ in implicitEnumNodes) {
+    for (var enum_ in implicitEnumNodes.values) {
       enum_.element.supertype =
           typeProvider.enumType ?? typeProvider.objectType;
       var valuesType = typeProvider.listType(
@@ -409,7 +236,7 @@ class LibraryBuilder with MacroApplicationsContainer {
         ),
       );
       enum_.valuesTypeNode.type = valuesType;
-      enum_.valuesField.type = valuesType;
+      enum_.valuesElement.type = valuesType;
     }
   }
 
