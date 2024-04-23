@@ -179,6 +179,7 @@ const List<ErrorCode> errorCodeValues = [
   CompileTimeErrorCode.ENUM_CONSTANT_SAME_NAME_AS_ENCLOSING,
   CompileTimeErrorCode.ENUM_INSTANTIATED_TO_BOUNDS_IS_NOT_WELL_BOUNDED,
   CompileTimeErrorCode.ENUM_MIXIN_WITH_INSTANCE_VARIABLE,
+  CompileTimeErrorCode.ENUM_WITHOUT_CONSTANTS,
   CompileTimeErrorCode.ENUM_WITH_ABSTRACT_MEMBER,
   CompileTimeErrorCode.ENUM_WITH_NAME_VALUES,
   CompileTimeErrorCode.EQUAL_ELEMENTS_IN_CONST_SET,
@@ -1031,7 +1032,6 @@ const List<ErrorCode> errorCodeValues = [
   WarningCode.INVALID_REQUIRED_OPTIONAL_POSITIONAL_PARAM,
   WarningCode.INVALID_REQUIRED_POSITIONAL_PARAM,
   WarningCode.INVALID_SEALED_ANNOTATION,
-  WarningCode.INVALID_USE_OF_DO_NOT_SUBMIT_MEMBER,
   WarningCode.INVALID_USE_OF_INTERNAL_MEMBER,
   WarningCode.INVALID_USE_OF_PROTECTED_MEMBER,
   WarningCode.INVALID_USE_OF_VISIBLE_FOR_OVERRIDING_MEMBER,
@@ -1103,4 +1103,5 @@ const List<ErrorCode> errorCodeValues = [
   WarningCode.UNUSED_RESULT,
   WarningCode.UNUSED_RESULT_WITH_MESSAGE,
   WarningCode.UNUSED_SHOWN_NAME,
+  WarningCode.invalid_use_of_do_not_submit_member,
 ];
