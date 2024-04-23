@@ -168,7 +168,7 @@ abstract final class WeakReference<T extends Object> {
 ///     // *and* closes connection if the user forgets to.
 ///     final connection = DBConnection.connect();
 ///     final wrapper = Database._fromConnection(connection);
-///     // Call finalizer callback when `wrapper` is no longer reachable.
+///     // Calls finalizer callback when `wrapper` is no longer reachable.
 ///     _finalizer.attach(wrapper, connection, detach: wrapper);
 ///     return wrapper;
 ///   }
@@ -236,9 +236,11 @@ abstract final class Finalizer<T> {
   /// The callback may be called at most once per active attachment,
   /// ones which have not been detached by calling [Finalizer.detach].
   ///
-  /// The [detach] value is not used by the finalizer. If a non-`null` [detach]
-  /// value is provided, the same (identical) value can be passed to
-  /// [Finalizer.detach] to remove the attachment.
+  /// The [detach] value is only used by the finalizer to identify the current
+  /// attachment. If a non-`null` [detach] value is provided, the same
+  /// (identical) value can be passed to [Finalizer.detach] to remove the
+  /// attachment. If no (non-`null`) value is provided, the attachment cannot
+  /// be removed again.
   ///
   /// The [value] and [detach] arguments do not count towards those
   /// objects being accessible to the program.
@@ -258,7 +260,7 @@ abstract final class Finalizer<T> {
   ///     // *and* closes connection if the user forgets to.
   ///     final connection = DBConnection.connect();
   ///     final wrapper = Database._fromConnection();
-  ///     // Call finalizer callback when `wrapper` is no longer reachable.
+  ///     // Calls finalizer callback when `wrapper` is no longer reachable.
   ///     _finalizer.attach(wrapper, connection, detach: wrapper);
   ///     return wrapper;
   ///   }
