@@ -280,7 +280,7 @@ final class JSStringImpl implements String {
           continue;
         }
         int end = matchStart;
-        result.add(_substringUnchecked(start, end));
+        result.add(substring(start, end));
         start = matchEnd;
       }
       if (start < this.length || length > 0) {
