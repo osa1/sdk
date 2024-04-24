@@ -30,4 +30,4 @@ D8="$SDK_DIR/third_party/d8/linux/x64/d8"
 RUN_WASM="$SDK_DIR/pkg/dart2wasm/bin/run_wasm.js"
 
 # We locate the JS runtime based on the input wasm file.
-exec "$D8" "$RUN_WASM" -- "$(realpath -- "${1%.*}.mjs")" "$1" -- "${@:2}"
+exec "$D8" --experimental-wasm-imported-strings "$RUN_WASM" -- "$(realpath -- "${1%.*}.mjs")" "$1" -- "${@:2}"

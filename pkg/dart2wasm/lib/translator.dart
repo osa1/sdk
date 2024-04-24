@@ -187,11 +187,7 @@ class Translator with KernelNodes {
     boxedIntClass: boxedIntClass,
     boxedDoubleClass: boxedDoubleClass,
     boxedBoolClass: coreTypes.boolClass,
-    if (!options.jsCompatibility) ...{
-      oneByteStringClass: stringBaseClass,
-      twoByteStringClass: stringBaseClass
-    },
-    if (options.jsCompatibility) ...{jsStringClass: jsStringClass},
+    jsStringClass: jsStringClass
   };
 
   /// Type for vtable entries for dynamic calls. These entries are used in

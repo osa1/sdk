@@ -1106,9 +1106,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         b.ref_null(w.HeapType.none);
       }
       final Location? location = node.location;
-      final stringClass = translator.options.jsCompatibility
-          ? translator.jsStringClass
-          : translator.stringBaseClass;
+      final stringClass = translator.jsStringClass;
       final w.RefType stringRefType =
           translator.classInfo[stringClass]!.nullableType;
       if (location != null) {
@@ -2872,9 +2870,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     makeArrayFromExpressions(node.expressions,
         translator.coreTypes.objectRawType(Nullability.nullable));
-    return translator.outputOrVoid(call(translator.options.jsCompatibility
-        ? translator.jsStringInterpolate.reference
-        : translator.stringInterpolate.reference));
+    return translator
+        .outputOrVoid(call(translator.jsStringInterpolate.reference));
   }
 
   @override
@@ -3777,9 +3774,7 @@ class SwitchInfo {
           .classInfo[translator.coreTypes.stringClass]!.repr.nonNullableType;
       nullableType = translator
           .classInfo[translator.coreTypes.stringClass]!.repr.nullableType;
-      compare = () => codeGen.call(translator.options.jsCompatibility
-          ? translator.jsStringEquals.reference
-          : translator.stringEquals.reference);
+      compare = () => codeGen.call(translator.jsStringEquals.reference);
     } else {
       // Object switch
       nonNullableType = translator.topInfo.nonNullableType;

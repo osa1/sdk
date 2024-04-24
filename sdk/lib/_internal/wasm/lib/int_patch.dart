@@ -3,11 +3,12 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show has63BitSmis, patch, unsafeCast;
+import "dart:_js_types" show JSStringImpl;
 import "dart:typed_data" show Int64List;
 
 @patch
 class int {
-  static int? _tryParseSmi(String str, int first, int last) {
+  static int? _tryParseSmi(JSStringImpl str, int first, int last) {
     assert(first <= last);
     var ix = first;
     var sign = 1;
@@ -36,7 +37,9 @@ class int {
   }
 
   @patch
-  static int parse(String source, {int? radix, int onError(String source)?}) {
+  static int parse(String sourceString,
+      {int? radix, int onError(String source)?}) {
+    final JSStringImpl source = unsafeCast<JSStringImpl>(sourceString);
     if (source == null) throw ArgumentError("The source must not be null");
     if (source.isEmpty) {
       return _handleFormatError(onError, source, 0, radix, null) as int;
@@ -53,7 +56,7 @@ class int {
   }
 
   static int? _parse(
-      String source, int? radix, int? Function(String)? onError) {
+      JSStringImpl source, int? radix, int? Function(String)? onError) {
     int end = source.lastNonWhitespace() + 1;
     if (end == 0) {
       return _handleFormatError(onError, source, source.length, radix, null);
@@ -91,7 +94,8 @@ class int {
   }
 
   @patch
-  static int? tryParse(String source, {int? radix}) {
+  static int? tryParse(String sourceString, {int? radix}) {
+    final JSStringImpl source = unsafeCast<JSStringImpl>(sourceString);
     if (source.isEmpty) return null;
     if (radix == null || radix == 10) {
       // Try parsing immediately, without trimming whitespace.
