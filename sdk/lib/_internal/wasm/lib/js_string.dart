@@ -87,7 +87,7 @@ final class JSStringImpl implements String {
     final otherLength = other.length;
     final length = this.length;
     if (otherLength > length) return false;
-    return other == substring(length - otherLength);
+    return other == _substringUnchecked(length - otherLength, length);
   }
 
   String _replaceJS(js.JSNativeRegExp jsRegExp, String replacement) =>
@@ -126,11 +126,11 @@ final class JSStringImpl implements String {
       int startIndex = 0;
       StringBuffer result = StringBuffer();
       for (Match match in from.allMatches(this)) {
-        result.write(substring(startIndex, match.start));
+        result.write(_substringUnchecked(startIndex, match.start));
         result.write(to);
         startIndex = match.end;
       }
-      result.write(substring(startIndex));
+      result.write(_substringUnchecked(startIndex, length));
       return result.toString();
     }
   }
@@ -162,7 +162,7 @@ final class JSStringImpl implements String {
             code = codeUnitAt(i + 1);
             if ((code & ~0x3FF) == 0xDC00) {
               // Matching trailing surrogate.
-              buffer.write(onNonMatch(substring(i, i + 2)));
+              buffer.write(onNonMatch(_substringUnchecked(i, i + 2)));
               i += 2;
               continue;
             }
@@ -182,27 +182,27 @@ final class JSStringImpl implements String {
         if (position == -1) {
           break;
         }
-        buffer.write(onNonMatch(substring(startIndex, position)));
+        buffer.write(onNonMatch(_substringUnchecked(startIndex, position)));
         buffer.write(onMatch(StringMatch(position, this, from)));
         startIndex = position + patternLength;
       }
-      buffer.write(onNonMatch(substring(startIndex)));
+      buffer.write(onNonMatch(_substringUnchecked(startIndex, length)));
       return buffer.toString();
     }
     StringBuffer buffer = StringBuffer();
     int startIndex = 0;
     for (Match match in from.allMatches(this)) {
-      buffer.write(onNonMatch(substring(startIndex, match.start)));
+      buffer.write(onNonMatch(_substringUnchecked(startIndex, match.start)));
       buffer.write(onMatch(match));
       startIndex = match.end;
     }
-    buffer.write(onNonMatch(substring(startIndex)));
+    buffer.write(onNonMatch(_substringUnchecked(startIndex, length)));
     return buffer.toString();
   }
 
-  String _replaceRange(int start, int end, String replacement) {
-    String prefix = substring(0, start);
-    String suffix = substring(end);
+  String _replaceRangeUnchecked(int start, int end, String replacement) {
+    String prefix = _substringUnchecked(0, start);
+    String suffix = _substringUnchecked(end, length);
     return "$prefix$replacement$suffix";
   }
 
@@ -212,7 +212,7 @@ final class JSStringImpl implements String {
     if (match == null) return this;
     final start = match.start;
     final end = match.end;
-    return _replaceRange(start, end, replacement);
+    return _replaceRangeUnchecked(start, end, replacement);
   }
 
   @override
@@ -222,7 +222,7 @@ final class JSStringImpl implements String {
       int index = indexOf(from, startIndex);
       if (index < 0) return this;
       int end = index + from.length;
-      return _replaceRange(index, end, to);
+      return _replaceRangeUnchecked(index, end, to);
     }
     if (from is js.JSSyntaxRegExp) {
       return startIndex == 0
@@ -280,14 +280,14 @@ final class JSStringImpl implements String {
           continue;
         }
         int end = matchStart;
-        result.add(substring(start, end));
+        result.add(_substringUnchecked(start, end));
         start = matchEnd;
       }
       if (start < this.length || length > 0) {
         // An empty match at the end of the string does not cause a "" at the
         // end.  A non-empty match ending at the end of the string does add a
         // "".
-        result.add(substring(start));
+        result.add(_substringUnchecked(start, this.length));
       }
       return result;
     }
@@ -297,7 +297,7 @@ final class JSStringImpl implements String {
   String replaceRange(int start, int? end, String replacement) {
     end ??= length;
     RangeErrorUtils.checkValidRangePositiveLength(start, end, length);
-    return _replaceRange(start, end, replacement);
+    return _replaceRangeUnchecked(start, end, replacement);
   }
 
   @override
@@ -307,7 +307,7 @@ final class JSStringImpl implements String {
       final patternLength = pattern.length;
       final endIndex = index + patternLength;
       if (endIndex > length) return false;
-      return pattern == substring(index, endIndex);
+      return pattern == _substringUnchecked(index, endIndex);
     }
     return pattern.matchAsPrefix(this, index) != null;
   }
@@ -316,8 +316,12 @@ final class JSStringImpl implements String {
   String substring(int start, [int? end]) {
     end ??= length;
     RangeErrorUtils.checkValidRangePositiveLength(start, end, length);
-    return JSStringImpl(_jsSubstring(toExternRef, start, end));
+    return _substringUnchecked(start, end);
   }
+
+  @pragma("wasm:prefer-inline")
+  String _substringUnchecked(int start, int end) =>
+      JSStringImpl(_jsSubstring(toExternRef, start, end));
 
   @override
   String toLowerCase() {
@@ -464,7 +468,7 @@ final class JSStringImpl implements String {
       return length == resultLength ? this : result;
     }
 
-    return result.substring(startIndex, endIndex);
+    return result._substringUnchecked(startIndex, endIndex);
   }
 
   // dart2wasm can't use JavaScript trimLeft directly because it does not trim
@@ -492,7 +496,7 @@ final class JSStringImpl implements String {
       return resultLength == length ? this : result;
     }
 
-    return result.substring(startIndex);
+    return result._substringUnchecked(startIndex, length);
   }
 
   // dart2wasm can't use JavaScript trimRight directly because it does not trim
@@ -519,7 +523,7 @@ final class JSStringImpl implements String {
       return resultLength == length ? this : result;
     }
 
-    return result.substring(0, endIndex);
+    return result._substringUnchecked(0, endIndex);
   }
 
   @override
@@ -605,9 +609,11 @@ final class JSStringImpl implements String {
     if (other is String) {
       return indexOf(other, startIndex) >= 0;
     } else if (other is js.JSSyntaxRegExp) {
-      return other.hasMatch(substring(startIndex));
+      return other.hasMatch(startIndex == 0 ? this : substring(startIndex));
     } else {
-      return other.allMatches(substring(startIndex)).isNotEmpty;
+      return other
+          .allMatches(startIndex == 0 ? this : substring(startIndex))
+          .isNotEmpty;
     }
   }
 
