@@ -17,10 +17,10 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   late final w.Local suspendStateLocal;
 
   @override
-  w.Local get pendingExceptionLocal => function.locals[2];
+  w.Local get pendingExceptionLocal => function.locals[1];
 
   @override
-  w.Local get pendingStackTraceLocal => function.locals[3];
+  w.Local get pendingStackTraceLocal => function.locals[2];
 
   late final ClassInfo suspendStateInfo =
       translator.classInfo[translator.suspendStateClass]!;
