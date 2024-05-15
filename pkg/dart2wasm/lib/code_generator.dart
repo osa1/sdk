@@ -17,6 +17,7 @@ import 'intrinsics.dart';
 import 'param_info.dart';
 import 'records.dart';
 import 'reference_extensions.dart';
+import 'state_machine.dart';
 import 'sync_star.dart';
 import 'translator.dart';
 import 'types.dart';
