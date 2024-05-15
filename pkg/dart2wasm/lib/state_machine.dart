@@ -857,8 +857,8 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       setVariable(catch_.exception!, () {
         getSuspendStateCurrentException();
         // Type test already passed, convert the exception.
-        b.ref_cast(
-            translator.translateType(catch_.exception!.type) as w.RefType);
+        translator.convertType(function, translator.topInfo.nullableType,
+            translator.translateType(catch_.exception!.type));
       });
       setVariable(catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
 
