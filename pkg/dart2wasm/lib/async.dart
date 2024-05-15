@@ -40,7 +40,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
       }
     }
 
-    _exceptionHandlers = _ExceptionHandlerStack(this);
+    exceptionHandlers = ExceptionHandlerStack(this);
 
     // Wasm function containing the body of the `async` function
     // (`_AyncResumeFun`).
@@ -182,7 +182,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Initial state
     final StateTarget initialTarget = targets.first;
-    _emitTargetLabel(initialTarget);
+    emitTargetLabel(initialTarget);
 
     // Clone context on first execution.
     b.restoreSuspendStateContext(
@@ -197,7 +197,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     visitStatement(functionNode.body!);
 
     // Final state: return.
-    _emitTargetLabel(targets.last);
+    emitTargetLabel(targets.last);
     b.local_get(suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
@@ -310,7 +310,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.return_();
 
     // Generate resume label
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
 
     b.restoreSuspendStateContext(
         suspendStateLocal,
@@ -325,7 +325,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.local_get(pendingExceptionLocal);
     b.br_on_null(exceptionBlock);
 
-    _exceptionHandlers.forEachFinalizer((finalizer, last) {
+    exceptionHandlers.forEachFinalizer((finalizer, last) {
       finalizer.setContinuationRethrow(() {
         b.local_get(pendingExceptionLocal);
         b.ref_as_non_null();
@@ -338,7 +338,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.throw_(translator.exceptionTag);
     b.end(); // exceptionBlock
 
-    _setVariable(awaitValueVar, () {
+    setVariable(awaitValueVar, () {
       b.local_get(awaitValueLocal);
       translator.convertType(
           function, awaitValueLocal.type, translateType(awaitValueVar.type));

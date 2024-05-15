@@ -184,7 +184,7 @@ class YieldFinder extends RecursiveVisitor {
   }
 }
 
-class _ExceptionHandlerStack {
+class ExceptionHandlerStack {
   /// Current exception handler stack. A CFG block generated when this is not
   /// empty should have a Wasm `try` instruction wrapping the block.
   ///
@@ -204,7 +204,7 @@ class _ExceptionHandlerStack {
 
   final StateMachineCodeGenerator codeGen;
 
-  _ExceptionHandlerStack(this.codeGen);
+  ExceptionHandlerStack(this.codeGen);
 
   void pushTryCatch(TryCatch node) {
     final catcher = Catcher.fromTryCatch(
@@ -380,13 +380,13 @@ class Catcher extends _ExceptionHandler {
 
   void setException(void Function() pushException) {
     for (final exceptionVar in _exceptionVars) {
-      codeGen._setVariable(exceptionVar, pushException);
+      codeGen.setVariable(exceptionVar, pushException);
     }
   }
 
   void setStackTrace(void Function() pushStackTrace) {
     for (final stackTraceVar in _stackTraceVars) {
-      codeGen._setVariable(stackTraceVar, pushStackTrace);
+      codeGen.setVariable(stackTraceVar, pushStackTrace);
     }
   }
 }
@@ -418,28 +418,28 @@ class Finalizer extends _ExceptionHandler {
   bool get canHandleJSExceptions => true;
 
   void setContinuationFallthrough() {
-    codeGen._setVariable(_continuationVar, () {
+    codeGen.setVariable(_continuationVar, () {
       codeGen.b.i64_const(continuationFallthrough);
     });
   }
 
   void setContinuationReturn() {
-    codeGen._setVariable(_continuationVar, () {
+    codeGen.setVariable(_continuationVar, () {
       codeGen.b.i64_const(continuationReturn);
     });
   }
 
   void setContinuationRethrow(
       void Function() pushException, void Function() pushStackTrace) {
-    codeGen._setVariable(_continuationVar, () {
+    codeGen.setVariable(_continuationVar, () {
       codeGen.b.i64_const(continuationRethrow);
     });
-    codeGen._setVariable(_exceptionVar, pushException);
-    codeGen._setVariable(_stackTraceVar, pushStackTrace);
+    codeGen.setVariable(_exceptionVar, pushException);
+    codeGen.setVariable(_stackTraceVar, pushStackTrace);
   }
 
   void setContinuationJump(int index) {
-    codeGen._setVariable(_continuationVar, () {
+    codeGen.setVariable(_continuationVar, () {
       codeGen.b.i64_const(index + continuationJump);
     });
   }
@@ -493,12 +493,12 @@ class IndirectLabelTarget implements LabelTarget {
 
   @override
   void jump(StateMachineCodeGenerator codeGen) {
-    final currentFinalizerDepth = codeGen._exceptionHandlers.numFinalizers;
+    final currentFinalizerDepth = codeGen.exceptionHandlers.numFinalizers;
     final finalizersToRun = currentFinalizerDepth - finalizerDepth;
 
     // Control flow overridden by a `break`, reset finalizer continuations.
     var i = finalizersToRun;
-    codeGen._exceptionHandlers.forEachFinalizer((finalizer, last) {
+    codeGen.exceptionHandlers.forEachFinalizer((finalizer, last) {
       if (i <= 0) {
         // Finalizer won't be run by the `break`, reset continuation.
         finalizer.setContinuationFallthrough();
@@ -515,7 +515,7 @@ class IndirectLabelTarget implements LabelTarget {
     if (finalizersToRun == 0) {
       codeGen.jumpToTarget(stateTarget);
     } else {
-      codeGen.jumpToTarget(codeGen._exceptionHandlers.nextFinalizer!.target);
+      codeGen.jumpToTarget(codeGen.exceptionHandlers.nextFinalizer!.target);
     }
   }
 }
@@ -554,7 +554,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   /// Exception handlers wrapping the current CFG block. Used to generate Wasm
   /// `try` and `catch` blocks around the CFG blocks.
-  late final _ExceptionHandlerStack _exceptionHandlers;
+  late final ExceptionHandlerStack exceptionHandlers;
 
   /// Maps jump targets to their CFG targets. Used when jumping to a CFG block
   /// on `break`. Keys are [LabeledStatement]s or [SwitchCase]s.
@@ -602,16 +602,16 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
   w.Local get pendingExceptionLocal => function.locals[2];
   w.Local get pendingStackTraceLocal => function.locals[3];
 
-  void _emitTargetLabel(StateTarget target) {
+  void emitTargetLabel(StateTarget target) {
     currentTargetIndex++;
     assert(
         target.index == currentTargetIndex,
         'target.index = ${target.index}, '
         'currentTargetIndex = $currentTargetIndex, '
         'target.node.location = ${target.node.location}');
-    _exceptionHandlers.terminateTryBlocks();
+    exceptionHandlers.terminateTryBlocks();
     b.end();
-    _exceptionHandlers.generateTryBlocks(b);
+    exceptionHandlers.generateTryBlocks(b);
   }
 
   void jumpToTarget(StateTarget target,
@@ -636,7 +636,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     StateTarget? inner = innerTargets[node];
     if (inner == null) return super.visitDoStatement(node);
 
-    _emitTargetLabel(inner);
+    emitTargetLabel(inner);
     allocateContext(node);
     visitStatement(node.body);
     jumpToTarget(inner, condition: node.condition);
@@ -652,14 +652,14 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     for (VariableDeclaration variable in node.variables) {
       visitStatement(variable);
     }
-    _emitTargetLabel(inner);
+    emitTargetLabel(inner);
     jumpToTarget(after, condition: node.condition, negated: true);
     visitStatement(node.body);
 
     emitForStatementUpdate(node);
 
     jumpToTarget(inner);
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
   }
 
   @override
@@ -672,10 +672,10 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     visitStatement(node.then);
     if (node.otherwise != null) {
       jumpToTarget(after);
-      _emitTargetLabel(inner!);
+      emitTargetLabel(inner!);
       visitStatement(node.otherwise!);
     }
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
   }
 
   @override
@@ -689,10 +689,10 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       b.end();
     } else {
       labelTargets[node] =
-          IndirectLabelTarget(_exceptionHandlers.numFinalizers, after);
+          IndirectLabelTarget(exceptionHandlers.numFinalizers, after);
       visitStatement(node.body);
       labelTargets.remove(node);
-      _emitTargetLabel(after);
+      emitTargetLabel(after);
     }
   }
 
@@ -776,12 +776,12 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Add jump infos
     for (final SwitchCase case_ in node.cases) {
       labelTargets[case_] = IndirectLabelTarget(
-          _exceptionHandlers.numFinalizers, innerTargets[case_]!);
+          exceptionHandlers.numFinalizers, innerTargets[case_]!);
     }
 
     // Emit case bodies
     for (SwitchCase c in node.cases) {
-      _emitTargetLabel(innerTargets[c]!);
+      emitTargetLabel(innerTargets[c]!);
       visitStatement(c.body);
       jumpToTarget(after);
     }
@@ -791,7 +791,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       labelTargets.remove(case_);
     }
 
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
   }
 
   @override
@@ -815,12 +815,12 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       }
     }
 
-    _exceptionHandlers.pushTryCatch(node);
-    _exceptionHandlers.generateTryBlocks(b);
+    exceptionHandlers.pushTryCatch(node);
+    exceptionHandlers.generateTryBlocks(b);
     visitStatement(node.body);
     jumpToTarget(after);
-    _exceptionHandlers.terminateTryBlocks();
-    _exceptionHandlers.pop();
+    exceptionHandlers.terminateTryBlocks();
+    exceptionHandlers.pop();
 
     void emitCatchBlock(Catch catch_, Catch? nextCatch, bool emitGuard) {
       if (emitGuard) {
@@ -843,7 +843,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
           b.ref_as_non_null();
           // TODO (omersa): When there is a finalizer we can jump to it
           // directly, instead of via throw/catch. Would that be faster?
-          _exceptionHandlers.forEachFinalizer(
+          exceptionHandlers.forEachFinalizer(
               (finalizer, last) => finalizer.setContinuationRethrow(
                     () => _getVariableBoxed(catch_.exception!),
                     () => _getVariable(catch_.stackTrace!),
@@ -854,14 +854,13 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       }
 
       // Set exception and stack trace variables.
-      _setVariable(catch_.exception!, () {
+      setVariable(catch_.exception!, () {
         getSuspendStateCurrentException();
         // Type test already passed, convert the exception.
         b.ref_cast(
             translator.translateType(catch_.exception!.type) as w.RefType);
       });
-      _setVariable(
-          catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
+      setVariable(catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
 
       catchVariableStack
           .add(CatchVariables(catch_.exception!, catch_.stackTrace!));
@@ -881,7 +880,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
           ? node.catches[nextCatchIdx]
           : null;
 
-      _emitTargetLabel(innerTargets[catch_]!);
+      emitTargetLabel(innerTargets[catch_]!);
 
       final bool shouldEmitGuard =
           catch_.guard != translator.coreTypes.objectNonNullableRawType;
@@ -901,7 +900,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     b.ref_as_non_null();
     b.throw_(translator.exceptionTag);
 
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
   }
 
   @override
@@ -912,20 +911,20 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     final StateTarget fallthroughContinuationTarget = afterTargets[node]!;
 
     // Body
-    final finalizer = _exceptionHandlers.pushTryFinally(node);
-    _exceptionHandlers.generateTryBlocks(b);
+    final finalizer = exceptionHandlers.pushTryFinally(node);
+    exceptionHandlers.generateTryBlocks(b);
     visitStatement(node.body);
 
     // Set continuation of the finalizer.
     finalizer.setContinuationFallthrough();
 
     jumpToTarget(finalizerTarget);
-    _exceptionHandlers.terminateTryBlocks();
-    _exceptionHandlers.pop();
+    exceptionHandlers.terminateTryBlocks();
+    exceptionHandlers.pop();
 
     // Finalizer
     {
-      _emitTargetLabel(finalizerTarget);
+      emitTargetLabel(finalizerTarget);
       visitStatement(node.finalizer);
 
       // Check continuation.
@@ -967,7 +966,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       b.br(masterLoop);
     }
 
-    _emitTargetLabel(fallthroughContinuationTarget);
+    emitTargetLabel(fallthroughContinuationTarget);
   }
 
   @override
@@ -977,11 +976,11 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     StateTarget after = afterTargets[node]!;
 
     allocateContext(node);
-    _emitTargetLabel(inner);
+    emitTargetLabel(inner);
     jumpToTarget(after, condition: node.condition, negated: true);
     visitStatement(node.body);
     jumpToTarget(inner);
-    _emitTargetLabel(after);
+    emitTargetLabel(after);
   }
 
   @override
@@ -992,7 +991,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   @override
   void visitReturnStatement(ReturnStatement node) {
-    final Finalizer? firstFinalizer = _exceptionHandlers.nextFinalizer;
+    final Finalizer? firstFinalizer = exceptionHandlers.nextFinalizer;
     final value = node.expression;
 
     if (firstFinalizer == null) {
@@ -1021,7 +1020,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     // Update continuation variables of finalizers. Last finalizer returns
     // the value.
-    _exceptionHandlers.forEachFinalizer((finalizer, last) {
+    exceptionHandlers.forEachFinalizer((finalizer, last) {
       if (last) {
         finalizer.setContinuationReturn();
       } else {
@@ -1044,7 +1043,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     call(translator.stackTraceCurrent.reference);
     b.local_set(stackTraceLocal);
 
-    _exceptionHandlers.forEachFinalizer((finalizer, last) {
+    exceptionHandlers.forEachFinalizer((finalizer, last) {
       finalizer.setContinuationRethrow(() => b.local_get(exceptionLocal),
           () => b.local_get(stackTraceLocal));
     });
@@ -1064,7 +1063,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
   w.ValueType visitRethrow(Rethrow node, w.ValueType expectedType) {
     final catchVars = catchVariableStack.last;
 
-    _exceptionHandlers.forEachFinalizer((finalizer, last) {
+    exceptionHandlers.forEachFinalizer((finalizer, last) {
       finalizer.setContinuationRethrow(
         () => _getVariableBoxed(catchVars.exception),
         () => _getVariable(catchVars.stackTrace),
@@ -1082,7 +1081,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     return expectedType;
   }
 
-  void _setVariable(VariableDeclaration variable, void Function() pushValue) {
+  void setVariable(VariableDeclaration variable, void Function() pushValue) {
     final w.Local? local = locals[variable];
     final Capture? capture = closures.captures[variable];
     if (capture != null) {
