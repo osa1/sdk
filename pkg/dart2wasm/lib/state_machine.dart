@@ -14,14 +14,14 @@ import 'sync_star.dart' show StateTarget, StateTargetPlacement;
 /// target indices to all control flow targets of these.
 ///
 /// Target indices are assigned in program order.
-class _YieldFinder extends RecursiveVisitor {
+class YieldFinder extends RecursiveVisitor {
   final List<StateTarget> targets = [];
   final bool enableAsserts;
 
   // The number of `await` statements seen so far.
   int yieldCount = 0;
 
-  _YieldFinder(this.enableAsserts);
+  YieldFinder(this.enableAsserts);
 
   List<StateTarget> find(FunctionNode function) {
     // Initial state
@@ -298,7 +298,8 @@ class _ExceptionHandlerStack {
         // Set the untyped "current exception" variable. Catch blocks will do the
         // type tests as necessary using this variable and set their exception
         // and stack trace locals.
-        codeGen.setSuspendStateCurrentException(() => codeGen.b.local_get(exceptionLocal));
+        codeGen.setSuspendStateCurrentException(
+            () => codeGen.b.local_get(exceptionLocal));
         codeGen.setSuspendStateCurrentStackTrace(
             () => codeGen.b.local_get(stackTraceLocal));
 
@@ -856,9 +857,11 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       _setVariable(catch_.exception!, () {
         getSuspendStateCurrentException();
         // Type test already passed, convert the exception.
-        b.ref_cast(translator.translateType(catch_.exception!.type) as w.RefType);
+        b.ref_cast(
+            translator.translateType(catch_.exception!.type) as w.RefType);
       });
-      _setVariable(catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
+      _setVariable(
+          catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
 
       catchVariableStack
           .add(CatchVariables(catch_.exception!, catch_.stackTrace!));
@@ -1022,8 +1025,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       if (last) {
         finalizer.setContinuationReturn();
       } else {
-        finalizer
-            .setContinuationJump(finalizer.parentFinalizer!.target.index);
+        finalizer.setContinuationJump(finalizer.parentFinalizer!.target.index);
       }
     });
 
