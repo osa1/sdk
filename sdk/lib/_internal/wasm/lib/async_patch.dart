@@ -31,7 +31,7 @@ class _AsyncSuspendState {
 
   // CFG target index for the next resumption.
   @pragma("wasm:entry-point")
-  WasmI32 _targetIndex;
+  WasmI32 _targetIndex = WasmI32.fromInt(0);
 
   // The completer. The inner function calls `_completer.complete` or
   // `_completer.onError` on completion.
@@ -41,25 +41,21 @@ class _AsyncSuspendState {
   // When a called function throws this stores the thrown exception. Used when
   // performing type tests in catch blocks.
   @pragma("wasm:entry-point")
-  Object? _currentException;
+  Object? _currentException = null;
 
   // When a called function throws this stores the stack trace.
   @pragma("wasm:entry-point")
-  StackTrace? _currentExceptionStackTrace;
+  StackTrace? _currentExceptionStackTrace = null;
 
   // When running finalizers and the continuation is "return", the value to
   // return after the last finalizer.
   //
   // Used in finalizer blocks.
   @pragma("wasm:entry-point")
-  Object? _currentReturnValue;
+  Object? _currentReturnValue = null;
 
   @pragma("wasm:entry-point")
-  _AsyncSuspendState(this._resume, this._context, this._completer)
-      : _targetIndex = WasmI32.fromInt(0),
-        _currentException = null,
-        _currentExceptionStackTrace = null,
-        _currentReturnValue = null;
+  _AsyncSuspendState(this._resume, this._context, this._completer);
 }
 
 // Note: [_AsyncCompleter] is taken as an argument to be able to pass the type

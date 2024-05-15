@@ -16,6 +16,12 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   // Locals containing special values.
   late final w.Local suspendStateLocal;
 
+  @override
+  w.Local get pendingExceptionLocal => function.locals[2];
+
+  @override
+  w.Local get pendingStackTraceLocal => function.locals[3];
+
   late final ClassInfo suspendStateInfo =
       translator.classInfo[translator.suspendStateClass]!;
 
@@ -41,9 +47,48 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   }
 
   @override
+  void setSuspendStateCurrentException(void Function() emitValue) {
+    b.local_get(suspendStateLocal);
+    emitValue();
+    b.struct_set(
+        suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
+  }
+
+  @override
+  void getSuspendStateCurrentException() {
+    b.local_get(suspendStateLocal);
+    b.struct_get(
+        suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
+  }
+
+  @override
+  void setSuspendStateCurrentStackTrace(void Function() emitValue) {
+    b.local_get(suspendStateLocal);
+    emitValue();
+    b.struct_set(suspendStateInfo.struct,
+        FieldIndex.suspendStateCurrentExceptionStackTrace);
+  }
+
+  @override
+  void getSuspendStateCurrentStackTrace() {
+    b.local_get(suspendStateLocal);
+    b.struct_get(suspendStateInfo.struct,
+        FieldIndex.suspendStateCurrentExceptionStackTrace);
+  }
+
+  @override
+  void setSuspendStateCurrentReturnValue(void Function() emitValue) {}
+
+  @override
+  void getSuspendStateCurrentReturnValue() {}
+
+  @override
+  void completeAsync(void Function() emitValue) {}
+
+  @override
   void generateBodies(FunctionNode functionNode) {
     // Number and categorize CFG targets.
-    _YieldFinder(this).find(functionNode);
+    YieldFinder(translator.options.enableAsserts).find(functionNode);
     for (final target in targets) {
       switch (target.placement) {
         case StateTargetPlacement.Inner:
@@ -107,8 +152,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
     // Parameters passed from [_SyncStarIterator.moveNext].
     suspendStateLocal = function.locals[0];
-    pendingExceptionLocal = function.locals[1];
-    pendingStackTraceLocal = function.locals[2];
 
     // Set up locals for contexts and `this`.
     thisLocal = null;
