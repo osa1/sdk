@@ -32,21 +32,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
       translator.classInfo[translator.syncStarIteratorClass]!;
 
   @override
-  void generate() {
-    closures = Closures(translator, member);
-    setupParametersAndContexts(member.reference);
-    generateBodies(member.function!);
-  }
-
-  @override
-  w.BaseFunction generateLambda(Lambda lambda, Closures closures) {
-    this.closures = closures;
-    setupLambdaParametersAndContexts(lambda);
-    generateBodies(lambda.functionNode);
-    return function;
-  }
-
-  @override
   void setSuspendStateCurrentException(void Function() emitValue) {
     b.local_get(suspendStateLocal);
     emitValue();
@@ -88,7 +73,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   @override
   void generateBodies(FunctionNode functionNode) {
     // Number and categorize CFG targets.
-    YieldFinder(translator.options.enableAsserts).find(functionNode);
+    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
     for (final target in targets) {
       switch (target.placement) {
         case StateTargetPlacement.Inner:
@@ -99,6 +84,8 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
           break;
       }
     }
+
+    exceptionHandlers = ExceptionHandlerStack(this);
 
     // Wasm function containing the body of the `sync*` function.
     final resumeFun = m.functions.define(
