@@ -259,8 +259,17 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
       w.Label exceptionCheck = b.block();
       b.local_get(pendingExceptionLocal);
       b.br_on_null(exceptionCheck);
+
+      exceptionHandlers.forEachFinalizer((finalizer, last) {
+        finalizer.setContinuationRethrow(() {
+          b.local_get(pendingExceptionLocal);
+          b.ref_as_non_null();
+        }, () => b.local_get(pendingStackTraceLocal));
+      });
+
       b.local_get(pendingStackTraceLocal);
       b.ref_as_non_null();
+
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
     }
