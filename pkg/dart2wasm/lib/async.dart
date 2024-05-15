@@ -5,11 +5,9 @@
 import 'package:kernel/ast.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
-import 'state_machine.dart';
-import 'class_info.dart';
 import 'closures.dart';
 import 'code_generator.dart';
-import 'sync_star.dart' show StateTarget, StateTargetPlacement;
+import 'state_machine.dart';
 
 class AsyncCodeGenerator extends StateMachineCodeGenerator {
   AsyncCodeGenerator(super.translator, super.function, super.reference);
@@ -397,5 +395,10 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
     emitValue();
     call(translator.completerComplete.reference);
+  }
+
+  @override
+  void emitReturn() {
+    b.return_();
   }
 }

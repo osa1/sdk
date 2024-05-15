@@ -5,10 +5,36 @@
 import 'package:kernel/ast.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
-import 'class_info.dart';
 import 'closures.dart';
 import 'code_generator.dart';
-import 'sync_star.dart' show StateTarget, StateTargetPlacement;
+
+/// Placement of a control flow graph target within a statement. This
+/// distinction is necessary since some statements need to have two targets
+/// associated with them.
+///
+/// The meanings of the variants are:
+///
+///  - [Inner]: Loop entry of a [DoStatement], condition of a [ForStatement] or
+///             [WhileStatement], the `else` branch of an [IfStatement], or the
+///             initial entry target for a function body.
+///  - [After]: After a statement, the resumption point of a [YieldStatement],
+///             or the final state (iterator done) of a function body.
+enum StateTargetPlacement { Inner, After }
+
+/// Representation of target in the `sync*` control flow graph.
+class StateTarget {
+  int index;
+  TreeNode node;
+  StateTargetPlacement placement;
+
+  StateTarget(this.index, this.node, this.placement);
+
+  @override
+  String toString() {
+    String place = placement == StateTargetPlacement.Inner ? "in" : "after";
+    return "$index: $place $node";
+  }
+}
 
 /// Identify which statements contain `await` or `yield` statements, and assign
 /// target indices to all control flow targets of these.
@@ -598,6 +624,8 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   void completeAsync(void Function() emitValue);
 
+  void emitReturn();
+
   // Note: These two locals are only available in "inner" functions.
   w.Local get pendingExceptionLocal => function.locals[2];
   w.Local get pendingStackTraceLocal => function.locals[3];
@@ -943,7 +971,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       b.i32_eq();
       b.if_();
       completeAsync(() => getSuspendStateCurrentReturnValue());
-      b.return_();
+      emitReturn();
       b.end();
 
       // Rethrow
@@ -1002,7 +1030,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
           wrap(value, translator.topInfo.nullableType);
         }
       });
-      b.return_();
+      emitReturn();
       return;
     }
 
