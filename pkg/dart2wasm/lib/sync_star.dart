@@ -172,7 +172,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     emitReturn();
     b.end(); // masterLoop
 
-    b.end();
+    b.end(); // inner function
   }
 
   @override
