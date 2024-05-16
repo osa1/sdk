@@ -13,20 +13,14 @@ import 'state_machine.dart';
 class AsyncCodeGenerator extends StateMachineCodeGenerator {
   AsyncCodeGenerator(super.translator, super.function, super.reference);
 
-  /// The local in the inner function for the async state, with type
-  /// `ref _AsyncSuspendState`.
-  late final w.Local suspendStateLocal;
-
-  /// The local in the inner function for the value of the last awaited future,
-  /// with type `ref null #Top`.
-  late final w.Local awaitValueLocal;
-
   late final ClassInfo asyncSuspendStateInfo =
       translator.classInfo[translator.asyncSuspendStateClass]!;
 
-  // Note: These two locals are only available in "inner" functions.
-  w.Local get pendingExceptionLocal => function.locals[2];
-  w.Local get pendingStackTraceLocal => function.locals[3];
+  // Note: These locals are only available in "inner" functions.
+  w.Local get _suspendStateLocal => function.locals[0];
+  w.Local get _awaitValueLocal => function.locals[1];
+  w.Local get _pendingExceptionLocal => function.locals[2];
+  w.Local get _pendingStackTraceLocal => function.locals[3];
 
   @override
   w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
@@ -110,9 +104,6 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     // function of the `async`, which is to contain the body.
     function = resumeFun;
 
-    suspendStateLocal = function.locals[0]; // ref _AsyncSuspendState
-    awaitValueLocal = function.locals[1]; // ref null #Top
-
     // Set up locals for contexts and `this`.
     thisLocal = null;
     Context? localContext = context;
@@ -136,7 +127,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Read target index from the suspend state.
     targetIndexLocal = addLocal(w.NumType.i32);
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateTargetIndex);
     b.local_set(targetIndexLocal);
@@ -159,7 +150,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Clone context on first execution.
     b.restoreSuspendStateContext(
-        suspendStateLocal,
+        _suspendStateLocal,
         asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateContext,
         closures,
@@ -171,7 +162,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Final state: return.
     emitTargetLabel(targets.last);
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
     b.ref_null(translator.topInfo.struct);
@@ -185,7 +176,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     final exceptionLocal = addLocal(translator.topInfo.nonNullableType);
 
     void callCompleteError() {
-      b.local_get(suspendStateLocal);
+      b.local_get(_suspendStateLocal);
       b.struct_get(
           asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
       b.local_get(exceptionLocal);
@@ -248,7 +239,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     // Store context.
     if (context != null) {
       assert(!context.isEmpty);
-      b.local_get(suspendStateLocal);
+      b.local_get(_suspendStateLocal);
       b.local_get(context.currentLocal);
       b.struct_set(
           asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateContext);
@@ -256,7 +247,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Set state target to label after await.
     final StateTarget after = afterTargets[node.parent]!;
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.i32_const(after.index);
     b.struct_set(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateTargetIndex);
@@ -273,7 +264,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     if (futureTypeParam != null) {
       types.makeType(this, futureTypeParam);
     }
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     wrap(node.operand, translator.topInfo.nullableType);
     if (runtimeType != null) {
       call(translator.awaitHelperWithTypeCheck.reference);
@@ -286,7 +277,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     emitTargetLabel(after);
 
     b.restoreSuspendStateContext(
-        suspendStateLocal,
+        _suspendStateLocal,
         asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateContext,
         closures,
@@ -295,32 +286,32 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
     // Handle exceptions
     final exceptionBlock = b.block();
-    b.local_get(pendingExceptionLocal);
+    b.local_get(_pendingExceptionLocal);
     b.br_on_null(exceptionBlock);
 
     exceptionHandlers.forEachFinalizer((finalizer, last) {
       finalizer.setContinuationRethrow(() {
-        b.local_get(pendingExceptionLocal);
+        b.local_get(_pendingExceptionLocal);
         b.ref_as_non_null();
-      }, () => b.local_get(pendingStackTraceLocal));
+      }, () => b.local_get(_pendingStackTraceLocal));
     });
 
-    b.local_get(pendingStackTraceLocal);
+    b.local_get(_pendingStackTraceLocal);
     b.ref_as_non_null();
 
     b.throw_(translator.exceptionTag);
     b.end(); // exceptionBlock
 
     setVariable(awaitValueVar, () {
-      b.local_get(awaitValueLocal);
+      b.local_get(_awaitValueLocal);
       translator.convertType(
-          function, awaitValueLocal.type, translateType(awaitValueVar.type));
+          function, _awaitValueLocal.type, translateType(awaitValueVar.type));
     });
   }
 
   @override
   void setSuspendStateCurrentException(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     emitValue();
     b.struct_set(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentException);
@@ -328,14 +319,14 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentException() {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentException);
   }
 
   @override
   void setSuspendStateCurrentStackTrace(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     emitValue();
     b.struct_set(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
@@ -343,14 +334,14 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentStackTrace() {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
   }
 
   @override
   void setSuspendStateCurrentReturnValue(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     emitValue();
     b.struct_set(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentReturnValue);
@@ -358,14 +349,14 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentReturnValue() {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(asyncSuspendStateInfo.struct,
         FieldIndex.asyncSuspendStateCurrentReturnValue);
   }
 
   @override
   void completeAsync(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
     emitValue();

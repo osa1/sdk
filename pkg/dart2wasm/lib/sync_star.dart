@@ -13,15 +13,6 @@ import 'state_machine.dart';
 class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   SyncStarCodeGenerator(super.translator, super.function, super.reference);
 
-  // Locals containing special values.
-  late final w.Local suspendStateLocal;
-
-  @override
-  w.Local get pendingExceptionLocal => function.locals[1];
-
-  @override
-  w.Local get pendingStackTraceLocal => function.locals[2];
-
   late final ClassInfo suspendStateInfo =
       translator.classInfo[translator.suspendStateClass]!;
 
@@ -31,9 +22,14 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   late final ClassInfo syncStarIteratorInfo =
       translator.classInfo[translator.syncStarIteratorClass]!;
 
+  // Note: These locals are only available in "inner" functions.
+  w.Local get _suspendStateLocal => function.locals[0];
+  w.Local get _pendingExceptionLocal => function.locals[1];
+  w.Local get _pendingStackTraceLocal => function.locals[2];
+
   @override
   void setSuspendStateCurrentException(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     emitValue();
     b.struct_set(
         suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
@@ -41,14 +37,14 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentException() {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(
         suspendStateInfo.struct, FieldIndex.suspendStateCurrentException);
   }
 
   @override
   void setSuspendStateCurrentStackTrace(void Function() emitValue) {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     emitValue();
     b.struct_set(suspendStateInfo.struct,
         FieldIndex.suspendStateCurrentExceptionStackTrace);
@@ -56,7 +52,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentStackTrace() {
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(suspendStateInfo.struct,
         FieldIndex.suspendStateCurrentExceptionStackTrace);
   }
@@ -111,9 +107,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     // function of the `sync*`, which is to contain the body.
     function = resumeFun;
 
-    // Parameters passed from [_SyncStarIterator.moveNext].
-    suspendStateLocal = function.locals[0];
-
     // Set up locals for contexts and `this`.
     thisLocal = null;
     Context? localContext = context;
@@ -137,7 +130,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
     // Read target index from the suspend state.
     targetIndexLocal = addLocal(w.NumType.i32);
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
     b.local_set(targetIndexLocal);
 
@@ -155,7 +148,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     emitTargetLabel(initialTarget);
 
     // Clone context on first execution.
-    b.restoreSuspendStateContext(suspendStateLocal, suspendStateInfo.struct,
+    b.restoreSuspendStateContext(_suspendStateLocal, suspendStateInfo.struct,
         FieldIndex.suspendStateContext, closures, context, thisLocal,
         cloneContextFor: functionNode);
 
@@ -172,7 +165,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   @override
   void emitReturn() {
     // Set state target to final state.
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.i32_const(targets.last.index);
     b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
 
@@ -187,7 +180,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
     // Evaluate operand and store it to `_current` for `yield` or
     // `_yieldStarIterable` for `yield*`.
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.struct_get(suspendStateInfo.struct, FieldIndex.suspendStateIterator);
     wrap(node.expression, translator.topInfo.nullableType);
     if (node.isYieldStar) {
@@ -211,13 +204,13 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     // Store context.
     if (context != null) {
       assert(!context.isEmpty);
-      b.local_get(suspendStateLocal);
+      b.local_get(_suspendStateLocal);
       b.local_get(context.currentLocal);
       b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateContext);
     }
 
     // Set state target to label after yield.
-    b.local_get(suspendStateLocal);
+    b.local_get(_suspendStateLocal);
     b.i32_const(after.index);
     b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
 
@@ -231,24 +224,24 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     // For `yield*`, check for pending exception.
     if (node.isYieldStar) {
       w.Label exceptionCheck = b.block();
-      b.local_get(pendingExceptionLocal);
+      b.local_get(_pendingExceptionLocal);
       b.br_on_null(exceptionCheck);
 
       exceptionHandlers.forEachFinalizer((finalizer, last) {
         finalizer.setContinuationRethrow(() {
-          b.local_get(pendingExceptionLocal);
+          b.local_get(_pendingExceptionLocal);
           b.ref_as_non_null();
-        }, () => b.local_get(pendingStackTraceLocal));
+        }, () => b.local_get(_pendingStackTraceLocal));
       });
 
-      b.local_get(pendingStackTraceLocal);
+      b.local_get(_pendingStackTraceLocal);
       b.ref_as_non_null();
 
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
     }
 
-    b.restoreSuspendStateContext(suspendStateLocal, suspendStateInfo.struct,
+    b.restoreSuspendStateContext(_suspendStateLocal, suspendStateInfo.struct,
         FieldIndex.suspendStateContext, closures, context, thisLocal);
   }
 }
