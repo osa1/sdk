@@ -222,6 +222,9 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     // Resume.
     emitTargetLabel(after);
 
+    b.restoreSuspendStateContext(_suspendStateLocal, suspendStateInfo.struct,
+        FieldIndex.suspendStateContext, closures, context, thisLocal);
+
     // For `yield*`, check for pending exception.
     if (node.isYieldStar) {
       w.Label exceptionCheck = b.block();
@@ -241,8 +244,5 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
       b.throw_(translator.exceptionTag);
       b.end(); // exceptionCheck
     }
-
-    b.restoreSuspendStateContext(_suspendStateLocal, suspendStateInfo.struct,
-        FieldIndex.suspendStateContext, closures, context, thisLocal);
   }
 }
