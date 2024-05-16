@@ -24,54 +24,28 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
   late final ClassInfo asyncSuspendStateInfo =
       translator.classInfo[translator.asyncSuspendStateClass]!;
 
+  // Note: These two locals are only available in "inner" functions.
+  w.Local get pendingExceptionLocal => function.locals[2];
+  w.Local get pendingStackTraceLocal => function.locals[3];
+
   @override
-  void generateBodies(FunctionNode functionNode) {
-    // Number and categorize CFG targets.
-    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
-    for (final target in targets) {
-      switch (target.placement) {
-        case StateTargetPlacement.Inner:
-          innerTargets[target.node] = target;
-          break;
-        case StateTargetPlacement.After:
-          afterTargets[target.node] = target;
-          break;
-      }
-    }
+  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
+      m.functions.define(
+          m.types.defineFunction([
+            asyncSuspendStateInfo.nonNullableType, // _AsyncSuspendState
+            translator.topInfo.nullableType, // Object?, await value
+            translator.topInfo.nullableType, // Object?, error value
+            translator.stackTraceInfo.repr
+                .nullableType // StackTrace?, error stack trace
+          ], [
+            // Inner function does not return a value, but it's Dart type is
+            // `void Function(...)` and all Dart functions return a value, so we
+            // add a return type.
+            translator.topInfo.nullableType
+          ]),
+          "${function.functionName} inner");
 
-    exceptionHandlers = ExceptionHandlerStack(this);
-
-    // Wasm function containing the body of the `async` function
-    // (`_AyncResumeFun`).
-    final resumeFun = m.functions.define(
-        m.types.defineFunction([
-          asyncSuspendStateInfo.nonNullableType, // _AsyncSuspendState
-          translator.topInfo.nullableType, // Object?, await value
-          translator.topInfo.nullableType, // Object?, error value
-          translator.stackTraceInfo.repr
-              .nullableType // StackTrace?, error stack trace
-        ], [
-          // Inner function does not return a value, but it's Dart type is
-          // `void Function(...)` and all Dart functions return a value, so we
-          // add a return type.
-          translator.topInfo.nullableType
-        ]),
-        "${function.functionName} inner");
-
-    Context? context = closures.contexts[functionNode];
-    if (context != null && context.isEmpty) context = context.parent;
-
-    _generateOuter(functionNode, context, resumeFun);
-
-    // Forget about the outer function locals containing the type arguments,
-    // so accesses to the type arguments in the inner function will fetch them
-    // from the context.
-    typeLocals.clear();
-
-    _generateInner(functionNode, context, resumeFun);
-  }
-
-  void _generateOuter(
+  void generateOuter(
       FunctionNode functionNode, Context? context, w.BaseFunction resumeFun) {
     // Outer (wrapper) function creates async state, calls the inner function
     // (which runs until first suspension point, i.e. `await`), and returns the
@@ -128,7 +102,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.end();
   }
 
-  void _generateInner(FunctionNode functionNode, Context? context,
+  void generateInner(FunctionNode functionNode, Context? context,
       w.FunctionBuilder resumeFun) {
     // void Function(_AsyncSuspendState, Object?)
 

@@ -71,47 +71,20 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   void completeAsync(void Function() emitValue) {}
 
   @override
-  void generateBodies(FunctionNode functionNode) {
-    // Number and categorize CFG targets.
-    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
-    for (final target in targets) {
-      switch (target.placement) {
-        case StateTargetPlacement.Inner:
-          innerTargets[target.node] = target;
-          break;
-        case StateTargetPlacement.After:
-          afterTargets[target.node] = target;
-          break;
-      }
-    }
+  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
+      m.functions.define(
+          m.types.defineFunction([
+            suspendStateInfo.nonNullableType, // _SuspendState
+            translator.topInfo.nullableType, // Object?, error value
+            translator.stackTraceInfo.repr
+                .nullableType // StackTrace?, error stack trace
+          ], const [
+            w.NumType.i32
+          ]),
+          "${function.functionName} inner");
 
-    exceptionHandlers = ExceptionHandlerStack(this);
-
-    // Wasm function containing the body of the `sync*` function.
-    final resumeFun = m.functions.define(
-        m.types.defineFunction([
-          suspendStateInfo.nonNullableType,
-          translator.topInfo.nullableType,
-          translator.stackTraceInfo.repr.nullableType
-        ], const [
-          w.NumType.i32
-        ]),
-        "${function.functionName} inner");
-
-    Context? context = closures.contexts[functionNode];
-    if (context != null && context.isEmpty) context = context.parent;
-
-    _generateOuter(functionNode, context, resumeFun);
-
-    // Forget about the outer function locals containing the type arguments,
-    // so accesses to the type arguments in the inner function will fetch them
-    // from the context.
-    typeLocals.clear();
-
-    _generateInner(functionNode, context, resumeFun);
-  }
-
-  void _generateOuter(
+  @override
+  void generateOuter(
       FunctionNode functionNode, Context? context, w.BaseFunction resumeFun) {
     // Instantiate a [_SyncStarIterable] containing the context and resume
     // function for this `sync*` function.
@@ -131,7 +104,8 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     b.end();
   }
 
-  void _generateInner(FunctionNode functionNode, Context? context,
+  @override
+  void generateInner(FunctionNode functionNode, Context? context,
       w.FunctionBuilder resumeFun) {
     // Set the current Wasm function for the code generator to the inner
     // function of the `sync*`, which is to contain the body.

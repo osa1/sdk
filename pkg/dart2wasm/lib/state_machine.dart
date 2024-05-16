@@ -608,7 +608,36 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     return function;
   }
 
-  void generateBodies(FunctionNode functionNode);
+  void generateBodies(FunctionNode functionNode) {
+    // Number and categorize CFG targets.
+    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
+    for (final target in targets) {
+      switch (target.placement) {
+        case StateTargetPlacement.Inner:
+          innerTargets[target.node] = target;
+          break;
+        case StateTargetPlacement.After:
+          afterTargets[target.node] = target;
+          break;
+      }
+    }
+
+    exceptionHandlers = ExceptionHandlerStack(this);
+
+    final resumeFun = defineBodyFunction(functionNode);
+
+    Context? context = closures.contexts[functionNode];
+    if (context != null && context.isEmpty) context = context.parent;
+
+    generateOuter(functionNode, context, resumeFun);
+
+    // Forget about the outer function locals containing the type arguments,
+    // so accesses to the type arguments in the inner function will fetch them
+    // from the context.
+    typeLocals.clear();
+
+    generateInner(functionNode, context, resumeFun);
+  }
 
   void setSuspendStateCurrentException(void Function() emitValue);
 
@@ -626,9 +655,13 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   void emitReturn();
 
-  // Note: These two locals are only available in "inner" functions.
-  w.Local get pendingExceptionLocal => function.locals[2];
-  w.Local get pendingStackTraceLocal => function.locals[3];
+  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode);
+
+  void generateOuter(
+      FunctionNode functionNode, Context? context, w.BaseFunction resumeFun);
+
+  void generateInner(
+      FunctionNode functionNode, Context? context, w.FunctionBuilder resumeFun);
 
   void emitTargetLabel(StateTarget target) {
     currentTargetIndex++;
