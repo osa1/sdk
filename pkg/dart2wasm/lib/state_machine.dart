@@ -17,15 +17,17 @@ import 'code_generator.dart';
 ///  - [Inner]: Loop entry of a [DoStatement], condition of a [ForStatement] or
 ///             [WhileStatement], the `else` branch of an [IfStatement], or the
 ///             initial entry target for a function body.
-///  - [After]: After a statement, the resumption point of a [YieldStatement],
-///             or the final state (iterator done) of a function body.
+///
+///  - [After]: After a statement, the resumption point of a suspension point
+///             ([YieldStatement] or [AwaitExpression]), or the final state
+///             (iterator done) of a function body.
 enum StateTargetPlacement { Inner, After }
 
 /// Representation of target in the `sync*` control flow graph.
 class StateTarget {
-  int index;
-  TreeNode node;
-  StateTargetPlacement placement;
+  final int index;
+  final TreeNode node;
+  final StateTargetPlacement placement;
 
   StateTarget(this.index, this.node, this.placement);
 
@@ -556,6 +558,11 @@ class CatchVariables {
   CatchVariables(this.exception, this.stackTrace);
 }
 
+/// A [CodeGenerator] that compiles the function to a state machine based on
+/// the suspension points in the function (`await` expressions and `yield`
+/// statements).
+///
+/// This is used to compile `async` and `sync*` functions.
 abstract class StateMachineCodeGenerator extends CodeGenerator {
   StateMachineCodeGenerator(super.translator, super.function, super.reference);
 
@@ -1142,6 +1149,8 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     return expectedType;
   }
 
+  /// Similar to the [VariableSet] visitor, but the value is pushed to the
+  /// stack by the callback [pushValue].
   void setVariable(VariableDeclaration variable, void Function() pushValue) {
     final w.Local? local = locals[variable];
     final Capture? capture = closures.captures[variable];
