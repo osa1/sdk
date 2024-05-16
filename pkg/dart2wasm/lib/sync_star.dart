@@ -238,6 +238,10 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
         }, () => b.local_get(_pendingStackTraceLocal));
       });
 
+      b.local_get(_suspendStateLocal);
+      b.i32_const(targets.last.index);
+      b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
+
       b.local_get(_pendingStackTraceLocal);
       b.ref_as_non_null();
 
