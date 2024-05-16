@@ -39,6 +39,65 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
           ]),
           "${function.functionName} inner");
 
+  @override
+  void setSuspendStateCurrentException(void Function() emitValue) {
+    b.local_get(_suspendStateLocal);
+    emitValue();
+    b.struct_set(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentException);
+  }
+
+  @override
+  void getSuspendStateCurrentException() {
+    b.local_get(_suspendStateLocal);
+    b.struct_get(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentException);
+  }
+
+  @override
+  void setSuspendStateCurrentStackTrace(void Function() emitValue) {
+    b.local_get(_suspendStateLocal);
+    emitValue();
+    b.struct_set(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
+  }
+
+  @override
+  void getSuspendStateCurrentStackTrace() {
+    b.local_get(_suspendStateLocal);
+    b.struct_get(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
+  }
+
+  @override
+  void setSuspendStateCurrentReturnValue(void Function() emitValue) {
+    b.local_get(_suspendStateLocal);
+    emitValue();
+    b.struct_set(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentReturnValue);
+  }
+
+  @override
+  void getSuspendStateCurrentReturnValue() {
+    b.local_get(_suspendStateLocal);
+    b.struct_get(asyncSuspendStateInfo.struct,
+        FieldIndex.asyncSuspendStateCurrentReturnValue);
+  }
+
+  @override
+  void completeAsync(void Function() emitValue) {
+    b.local_get(_suspendStateLocal);
+    b.struct_get(
+        asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
+    emitValue();
+    call(translator.completerComplete.reference);
+  }
+
+  @override
+  void emitReturn() {
+    b.return_();
+  }
+
   void generateOuter(
       FunctionNode functionNode, Context? context, w.BaseFunction resumeFun) {
     // Outer (wrapper) function creates async state, calls the inner function
@@ -98,7 +157,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
   void generateInner(FunctionNode functionNode, Context? context,
       w.FunctionBuilder resumeFun) {
-    // void Function(_AsyncSuspendState, Object?)
+    // void Function(_AsyncSuspendState, Object?, Object?, StackTrace?)
 
     // Set the current Wasm function for the code generator to the inner
     // function of the `async`, which is to contain the body.
@@ -307,64 +366,5 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
       translator.convertType(
           function, _awaitValueLocal.type, translateType(awaitValueVar.type));
     });
-  }
-
-  @override
-  void setSuspendStateCurrentException(void Function() emitValue) {
-    b.local_get(_suspendStateLocal);
-    emitValue();
-    b.struct_set(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentException);
-  }
-
-  @override
-  void getSuspendStateCurrentException() {
-    b.local_get(_suspendStateLocal);
-    b.struct_get(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentException);
-  }
-
-  @override
-  void setSuspendStateCurrentStackTrace(void Function() emitValue) {
-    b.local_get(_suspendStateLocal);
-    emitValue();
-    b.struct_set(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
-  }
-
-  @override
-  void getSuspendStateCurrentStackTrace() {
-    b.local_get(_suspendStateLocal);
-    b.struct_get(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentExceptionStackTrace);
-  }
-
-  @override
-  void setSuspendStateCurrentReturnValue(void Function() emitValue) {
-    b.local_get(_suspendStateLocal);
-    emitValue();
-    b.struct_set(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentReturnValue);
-  }
-
-  @override
-  void getSuspendStateCurrentReturnValue() {
-    b.local_get(_suspendStateLocal);
-    b.struct_get(asyncSuspendStateInfo.struct,
-        FieldIndex.asyncSuspendStateCurrentReturnValue);
-  }
-
-  @override
-  void completeAsync(void Function() emitValue) {
-    b.local_get(_suspendStateLocal);
-    b.struct_get(
-        asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
-    emitValue();
-    call(translator.completerComplete.reference);
-  }
-
-  @override
-  void emitReturn() {
-    b.return_();
   }
 }

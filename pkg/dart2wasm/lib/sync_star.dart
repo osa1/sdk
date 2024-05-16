@@ -28,6 +28,20 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   w.Local get _pendingStackTraceLocal => function.locals[2];
 
   @override
+  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
+      m.functions.define(
+          m.types.defineFunction([
+            suspendStateInfo.nonNullableType, // _SuspendState
+            translator.topInfo.nullableType, // Object?, error value
+            translator.stackTraceInfo.repr
+                .nullableType // StackTrace?, error stack trace
+          ], const [
+            // bool for whether the generator has more to do
+            w.NumType.i32
+          ]),
+          "${function.functionName} inner");
+
+  @override
   void setSuspendStateCurrentException(void Function() emitValue) {
     b.local_get(_suspendStateLocal);
     emitValue();
@@ -67,17 +81,16 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   void completeAsync(void Function() emitValue) {}
 
   @override
-  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
-      m.functions.define(
-          m.types.defineFunction([
-            suspendStateInfo.nonNullableType, // _SuspendState
-            translator.topInfo.nullableType, // Object?, error value
-            translator.stackTraceInfo.repr
-                .nullableType // StackTrace?, error stack trace
-          ], const [
-            w.NumType.i32
-          ]),
-          "${function.functionName} inner");
+  void emitReturn() {
+    // Set state target to final state.
+    b.local_get(_suspendStateLocal);
+    b.i32_const(targets.last.index);
+    b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
+
+    // Return `false`.
+    b.i32_const(0);
+    b.return_();
+  }
 
   @override
   void generateOuter(
@@ -160,18 +173,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     b.end(); // masterLoop
 
     b.end();
-  }
-
-  @override
-  void emitReturn() {
-    // Set state target to final state.
-    b.local_get(_suspendStateLocal);
-    b.i32_const(targets.last.index);
-    b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
-
-    // Return `false`.
-    b.i32_const(0);
-    b.return_();
   }
 
   @override
