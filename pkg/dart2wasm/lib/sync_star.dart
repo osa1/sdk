@@ -29,7 +29,7 @@ class SyncStarCodeGenerator extends CodeGenerator {
   SyncStarCodeGenerator(super.translator, super.function, super.reference);
 
   /// Targets of the CFG, indexed by target index.
-  final List<StateTarget> targets = [];
+  late final List<StateTarget> targets;
 
   // Targets categorized by placement and indexed by node.
   final Map<TreeNode, StateTarget> innerTargets = {};
@@ -61,20 +61,20 @@ class SyncStarCodeGenerator extends CodeGenerator {
   void generate() {
     closures = Closures(translator, member);
     setupParametersAndContexts(member.reference);
-    generateBodies(member.function!);
+    _generateBodies(member.function!);
   }
 
   @override
   w.BaseFunction generateLambda(Lambda lambda, Closures closures) {
     this.closures = closures;
     setupLambdaParametersAndContexts(lambda);
-    generateBodies(lambda.functionNode);
+    _generateBodies(lambda.functionNode);
     return function;
   }
 
-  void generateBodies(FunctionNode functionNode) {
+  void _generateBodies(FunctionNode functionNode) {
     // Number and categorize CFG targets.
-    YieldFinder(translator.options.enableAsserts).find(functionNode);
+    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
     for (final target in targets) {
       switch (target.placement) {
         case StateTargetPlacement.Inner:
