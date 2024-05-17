@@ -631,19 +631,10 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     exceptionHandlers = _ExceptionHandlerStack(this);
 
-    final resumeFun = defineBodyFunction(functionNode);
-
     Context? context = closures.contexts[functionNode];
     if (context != null && context.isEmpty) context = context.parent;
 
-    generateOuter(functionNode, context, resumeFun);
-
-    // Forget about the outer function locals containing the type arguments,
-    // so accesses to the type arguments in the inner function will fetch them
-    // from the context.
-    typeLocals.clear();
-
-    generateInner(functionNode, context, resumeFun);
+    generateFunctions(functionNode, context);
   }
 
   /// Store the exception value emitted by [emitValue] in suspension state.
@@ -675,13 +666,23 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
   /// iteration by returning `false`.
   void emitReturn(void Function() emitValue);
 
-  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode);
-
-  void generateOuter(
-      FunctionNode functionNode, Context? context, w.BaseFunction resumeFun);
-
-  void generateInner(
-      FunctionNode functionNode, Context? context, w.FunctionBuilder resumeFun);
+  /// Generate the outer and inner functions.
+  ///
+  /// - Outer function: the `async` or `sync*` function.
+  ///
+  ///   In case of `async` this function should return a future.
+  ///
+  ///   In case of `sync*`, this function should return an iterable.
+  ///
+  ///   Note that when generating the outer function we can't use the
+  ///   [StateMachineCodeGenerator] methods, as the outer functions are not the
+  ///   state machines used to implement suspension and resumption.
+  ///
+  /// - Inner function: the function that will be called for resumption.
+  ///
+  ///   [StateMachineCodeGenerator] methods (visitors etc.) are for generating
+  ///   this function.
+  void generateFunctions(FunctionNode functionNode, Context? context);
 
   void emitTargetLabel(StateTarget target) {
     currentTargetIndex++;

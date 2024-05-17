@@ -94,7 +94,21 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.return_();
   }
 
-  void generateOuter(
+  @override
+  void generateFunctions(FunctionNode functionNode, Context? context) {
+    final resumeFun = defineBodyFunction(functionNode);
+
+    _generateOuter(functionNode, context, resumeFun);
+
+    // Forget about the outer function locals containing the type arguments,
+    // so accesses to the type arguments in the inner function will fetch them
+    // from the context.
+    typeLocals.clear();
+
+    _generateInner(functionNode, context, resumeFun);
+  }
+
+  void _generateOuter(
       FunctionNode functionNode, Context? context, w.BaseFunction resumeFun) {
     // Outer (wrapper) function creates async state, calls the inner function
     // (which runs until first suspension point, i.e. `await`), and returns the
@@ -149,7 +163,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.end();
   }
 
-  void generateInner(FunctionNode functionNode, Context? context,
+  void _generateInner(FunctionNode functionNode, Context? context,
       w.FunctionBuilder resumeFun) {
     // void Function(_AsyncSuspendState, Object?, Object?, StackTrace?)
 
