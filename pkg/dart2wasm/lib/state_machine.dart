@@ -21,19 +21,19 @@ import 'code_generator.dart';
 ///  - [After]: After a statement, the resumption point of a suspension point
 ///             ([YieldStatement] or [AwaitExpression]), or the final state
 ///             (iterator done) of a function body.
-enum StateTargetPlacement { Inner, After }
+enum _StateTargetPlacement { Inner, After }
 
 /// Representation of target in the `sync*` control flow graph.
 class StateTarget {
   final int index;
   final TreeNode node;
-  final StateTargetPlacement placement;
+  final _StateTargetPlacement placement;
 
   StateTarget(this.index, this.node, this.placement);
 
   @override
   String toString() {
-    String place = placement == StateTargetPlacement.Inner ? "in" : "after";
+    String place = placement == _StateTargetPlacement.Inner ? "in" : "after";
     return "$index: $place $node";
   }
 }
@@ -42,22 +42,22 @@ class StateTarget {
 /// target indices to all control flow targets of these.
 ///
 /// Target indices are assigned in program order.
-class YieldFinder extends RecursiveVisitor {
+class _YieldFinder extends RecursiveVisitor {
   final List<StateTarget> targets = [];
   final bool enableAsserts;
 
   // The number of `await` statements seen so far.
   int yieldCount = 0;
 
-  YieldFinder(this.enableAsserts);
+  _YieldFinder(this.enableAsserts);
 
   List<StateTarget> find(FunctionNode function) {
     // Initial state
-    addTarget(function.body!, StateTargetPlacement.Inner);
+    addTarget(function.body!, _StateTargetPlacement.Inner);
     assert(function.body is Block || function.body is ReturnStatement);
     recurse(function.body!);
     // Final state
-    addTarget(function.body!, StateTargetPlacement.After);
+    addTarget(function.body!, _StateTargetPlacement.After);
     return targets;
   }
 
@@ -72,7 +72,7 @@ class YieldFinder extends RecursiveVisitor {
     }
   }
 
-  void addTarget(TreeNode node, StateTargetPlacement placement) {
+  void addTarget(TreeNode node, _StateTargetPlacement placement) {
     targets.add(StateTarget(targets.length, node, placement));
   }
 
@@ -85,40 +85,40 @@ class YieldFinder extends RecursiveVisitor {
 
   @override
   void visitDoStatement(DoStatement node) {
-    addTarget(node, StateTargetPlacement.Inner);
+    addTarget(node, _StateTargetPlacement.Inner);
     recurse(node.body);
   }
 
   @override
   void visitForStatement(ForStatement node) {
-    addTarget(node, StateTargetPlacement.Inner);
+    addTarget(node, _StateTargetPlacement.Inner);
     recurse(node.body);
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
   void visitIfStatement(IfStatement node) {
     recurse(node.then);
     if (node.otherwise != null) {
-      addTarget(node, StateTargetPlacement.Inner);
+      addTarget(node, _StateTargetPlacement.Inner);
       recurse(node.otherwise!);
     }
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
   void visitLabeledStatement(LabeledStatement node) {
     recurse(node.body);
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
   void visitSwitchStatement(SwitchStatement node) {
     for (SwitchCase c in node.cases) {
-      addTarget(c, StateTargetPlacement.Inner);
+      addTarget(c, _StateTargetPlacement.Inner);
       recurse(c.body);
     }
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
@@ -129,9 +129,9 @@ class YieldFinder extends RecursiveVisitor {
     // continuations, which we don't need in the CFG implementation.
     yieldCount += 1;
     recurse(node.body);
-    addTarget(node, StateTargetPlacement.Inner);
+    addTarget(node, _StateTargetPlacement.Inner);
     recurse(node.finalizer);
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
@@ -141,23 +141,23 @@ class YieldFinder extends RecursiveVisitor {
     yieldCount += 1;
     recurse(node.body);
     for (Catch c in node.catches) {
-      addTarget(c, StateTargetPlacement.Inner);
+      addTarget(c, _StateTargetPlacement.Inner);
       recurse(c.body);
     }
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
   void visitWhileStatement(WhileStatement node) {
-    addTarget(node, StateTargetPlacement.Inner);
+    addTarget(node, _StateTargetPlacement.Inner);
     recurse(node.body);
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   @override
   void visitYieldStatement(YieldStatement node) {
     yieldCount++;
-    addTarget(node, StateTargetPlacement.After);
+    addTarget(node, _StateTargetPlacement.After);
   }
 
   // Handle awaits. After the await transformation await can only appear in a
@@ -166,7 +166,7 @@ class YieldFinder extends RecursiveVisitor {
   void visitVariableSet(VariableSet node) {
     if (node.value is AwaitExpression) {
       yieldCount++;
-      addTarget(node, StateTargetPlacement.After);
+      addTarget(node, _StateTargetPlacement.After);
     } else {
       super.visitVariableSet(node);
     }
@@ -176,7 +176,7 @@ class YieldFinder extends RecursiveVisitor {
   void visitExpressionStatement(ExpressionStatement node) {
     if (node.expression is AwaitExpression) {
       yieldCount++;
-      addTarget(node, StateTargetPlacement.After);
+      addTarget(node, _StateTargetPlacement.After);
     } else {
       super.visitExpressionStatement(node);
     }
@@ -212,7 +212,7 @@ class YieldFinder extends RecursiveVisitor {
   }
 }
 
-class ExceptionHandlerStack {
+class _ExceptionHandlerStack {
   /// Current exception handler stack. A CFG block generated when this is not
   /// empty should have a Wasm `try` instruction wrapping the block.
   ///
@@ -232,17 +232,17 @@ class ExceptionHandlerStack {
 
   final StateMachineCodeGenerator codeGen;
 
-  ExceptionHandlerStack(this.codeGen);
+  _ExceptionHandlerStack(this.codeGen);
 
   void pushTryCatch(TryCatch node) {
-    final catcher = Catcher.fromTryCatch(
+    final catcher = _Catcher.fromTryCatch(
         codeGen, node, codeGen.innerTargets[node.catches.first]!);
     _handlers.add(catcher);
   }
 
-  Finalizer pushTryFinally(TryFinally node) {
+  _Finalizer pushTryFinally(TryFinally node) {
     final finalizer =
-        Finalizer(codeGen, node, nextFinalizer, codeGen.innerTargets[node]!);
+        _Finalizer(codeGen, node, nextFinalizer, codeGen.innerTargets[node]!);
     _handlers.add(finalizer);
     return finalizer;
   }
@@ -258,16 +258,16 @@ class ExceptionHandlerStack {
   int get numFinalizers {
     int i = 0;
     for (final handler in _handlers) {
-      if (handler is Finalizer) {
+      if (handler is _Finalizer) {
         i += 1;
       }
     }
     return i;
   }
 
-  Finalizer? get nextFinalizer {
+  _Finalizer? get nextFinalizer {
     for (final handler in _handlers.reversed) {
-      if (handler is Finalizer) {
+      if (handler is _Finalizer) {
         return handler;
       }
     }
@@ -275,10 +275,10 @@ class ExceptionHandlerStack {
   }
 
   void forEachFinalizer(
-      void Function(Finalizer finalizer, bool lastFinalizer) f) {
-    Finalizer? finalizer = nextFinalizer;
+      void Function(_Finalizer finalizer, bool lastFinalizer) f) {
+    _Finalizer? finalizer = nextFinalizer;
     while (finalizer != null) {
-      Finalizer? next = finalizer.parentFinalizer;
+      _Finalizer? next = finalizer.parentFinalizer;
       f(finalizer, next == null);
       finalizer = next;
     }
@@ -316,7 +316,7 @@ class ExceptionHandlerStack {
         // (or `catch_all`) as "rethrow".
         for (int i = 0; i < nCoveredHandlers; i += 1) {
           final handler = _handlers[nextHandlerIdx - i];
-          if (handler is Finalizer) {
+          if (handler is _Finalizer) {
             handler.setContinuationRethrow(
                 () => codeGen.b.local_get(exceptionLocal),
                 () => codeGen.b.local_get(stackTraceLocal));
@@ -388,13 +388,13 @@ abstract class _ExceptionHandler {
   bool get canHandleJSExceptions;
 }
 
-class Catcher extends _ExceptionHandler {
+class _Catcher extends _ExceptionHandler {
   final List<VariableDeclaration> _exceptionVars = [];
   final List<VariableDeclaration> _stackTraceVars = [];
   final StateMachineCodeGenerator codeGen;
   bool _canHandleJSExceptions = false;
 
-  Catcher.fromTryCatch(this.codeGen, TryCatch node, super.target) {
+  _Catcher.fromTryCatch(this.codeGen, TryCatch node, super.target) {
     for (Catch catch_ in node.catches) {
       _exceptionVars.add(catch_.exception!);
       _stackTraceVars.add(catch_.stackTrace!);
@@ -427,14 +427,14 @@ const int continuationRethrow = 2;
 // target block index to jump.
 const int continuationJump = 3;
 
-class Finalizer extends _ExceptionHandler {
+class _Finalizer extends _ExceptionHandler {
   final VariableDeclaration _continuationVar;
   final VariableDeclaration _exceptionVar;
   final VariableDeclaration _stackTraceVar;
-  final Finalizer? parentFinalizer;
+  final _Finalizer? parentFinalizer;
   final StateMachineCodeGenerator codeGen;
 
-  Finalizer(this.codeGen, TryFinally node, this.parentFinalizer, super.target)
+  _Finalizer(this.codeGen, TryFinally node, this.parentFinalizer, super.target)
       : _continuationVar =
             (node.parent as Block).statements[0] as VariableDeclaration,
         _exceptionVar =
@@ -488,19 +488,19 @@ class Finalizer extends _ExceptionHandler {
 }
 
 /// Represents target of a `break` statement.
-abstract class LabelTarget {
+abstract class _LabelTarget {
   void jump(StateMachineCodeGenerator codeGen);
 }
 
 /// Target of a [BreakStatement] that can be implemented with a Wasm `br`
 /// instruction.
 ///
-/// This [LabelTarget] is used when the [LabeledStatement] is compiled using
+/// This [_LabelTarget] is used when the [LabeledStatement] is compiled using
 /// the normal code generator (instead of async code generator).
-class DirectLabelTarget implements LabelTarget {
+class _DirectLabelTarget implements _LabelTarget {
   final w.Label label;
 
-  DirectLabelTarget(this.label);
+  _DirectLabelTarget(this.label);
 
   @override
   void jump(StateMachineCodeGenerator codeGen) {
@@ -510,14 +510,14 @@ class DirectLabelTarget implements LabelTarget {
 
 /// Target of a [BreakStatement] when the [LabeledStatement] is compiled to
 /// CFG.
-class IndirectLabelTarget implements LabelTarget {
+class _IndirectLabelTarget implements _LabelTarget {
   /// Number of finalizers wrapping the [LabeledStatement].
   final int finalizerDepth;
 
   /// CFG state for the [LabeledStatement] continuation.
   final StateTarget stateTarget;
 
-  IndirectLabelTarget(this.finalizerDepth, this.stateTarget);
+  _IndirectLabelTarget(this.finalizerDepth, this.stateTarget);
 
   @override
   void jump(StateMachineCodeGenerator codeGen) {
@@ -528,10 +528,10 @@ class IndirectLabelTarget implements LabelTarget {
     var i = finalizersToRun;
     codeGen.exceptionHandlers.forEachFinalizer((finalizer, last) {
       if (i <= 0) {
-        // Finalizer won't be run by the `break`, reset continuation.
+        // _Finalizer won't be run by the `break`, reset continuation.
         finalizer.setContinuationFallthrough();
       } else {
-        // Finalizer will be run by the `break`. Each finalizer jumps to the
+        // _Finalizer will be run by the `break`. Each finalizer jumps to the
         // next, last finalizer jumps to the `break` target.
         finalizer.setContinuationJump(i == 1
             ? stateTarget.index
@@ -551,11 +551,11 @@ class IndirectLabelTarget implements LabelTarget {
 /// Exception and stack trace variables of a [Catch] block. These variables are
 /// used to get the exception and stack trace to throw when compiling
 /// [Rethrow].
-class CatchVariables {
+class _CatchVariables {
   final VariableDeclaration exception;
   final VariableDeclaration stackTrace;
 
-  CatchVariables(this.exception, this.stackTrace);
+  _CatchVariables(this.exception, this.stackTrace);
 }
 
 /// A [CodeGenerator] that compiles the function to a state machine based on
@@ -587,49 +587,49 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   /// Exception handlers wrapping the current CFG block. Used to generate Wasm
   /// `try` and `catch` blocks around the CFG blocks.
-  late final ExceptionHandlerStack exceptionHandlers;
+  late final _ExceptionHandlerStack exceptionHandlers;
 
   /// Maps jump targets to their CFG targets. Used when jumping to a CFG block
   /// on `break`. Keys are [LabeledStatement]s or [SwitchCase]s.
-  final Map<TreeNode, LabelTarget> labelTargets = {};
+  final Map<TreeNode, _LabelTarget> labelTargets = {};
 
   /// Current [Catch] block stack, used to compile [Rethrow].
   ///
   /// Because there can be an `await` in a [Catch] block before a [Rethrow], we
   /// can't compile [Rethrow] to Wasm `rethrow`. Instead we `throw` using the
   /// [Rethrow]'s parent [Catch] block's exception and stack variables.
-  List<CatchVariables> catchVariableStack = [];
+  List<_CatchVariables> catchVariableStack = [];
 
   @override
   void generate() {
     closures = Closures(translator, member);
     setupParametersAndContexts(member.reference);
-    generateBodies(member.function!);
+    _generateBodies(member.function!);
   }
 
   @override
   w.BaseFunction generateLambda(Lambda lambda, Closures closures) {
     this.closures = closures;
     setupLambdaParametersAndContexts(lambda);
-    generateBodies(lambda.functionNode);
+    _generateBodies(lambda.functionNode);
     return function;
   }
 
-  void generateBodies(FunctionNode functionNode) {
+  void _generateBodies(FunctionNode functionNode) {
     // Number and categorize CFG targets.
-    targets = YieldFinder(translator.options.enableAsserts).find(functionNode);
+    targets = _YieldFinder(translator.options.enableAsserts).find(functionNode);
     for (final target in targets) {
       switch (target.placement) {
-        case StateTargetPlacement.Inner:
+        case _StateTargetPlacement.Inner:
           innerTargets[target.node] = target;
           break;
-        case StateTargetPlacement.After:
+        case _StateTargetPlacement.After:
           afterTargets[target.node] = target;
           break;
       }
     }
 
-    exceptionHandlers = ExceptionHandlerStack(this);
+    exceptionHandlers = _ExceptionHandlerStack(this);
 
     final resumeFun = defineBodyFunction(functionNode);
 
@@ -749,13 +749,13 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     StateTarget? after = afterTargets[node];
     if (after == null) {
       final w.Label label = b.block();
-      labelTargets[node] = DirectLabelTarget(label);
+      labelTargets[node] = _DirectLabelTarget(label);
       visitStatement(node.body);
       labelTargets.remove(node);
       b.end();
     } else {
       labelTargets[node] =
-          IndirectLabelTarget(exceptionHandlers.numFinalizers, after);
+          _IndirectLabelTarget(exceptionHandlers.numFinalizers, after);
       visitStatement(node.body);
       labelTargets.remove(node);
       emitTargetLabel(after);
@@ -841,7 +841,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     // Add jump infos
     for (final SwitchCase case_ in node.cases) {
-      labelTargets[case_] = IndirectLabelTarget(
+      labelTargets[case_] = _IndirectLabelTarget(
           exceptionHandlers.numFinalizers, innerTargets[case_]!);
     }
 
@@ -929,7 +929,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       setVariable(catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
 
       catchVariableStack
-          .add(CatchVariables(catch_.exception!, catch_.stackTrace!));
+          .add(_CatchVariables(catch_.exception!, catch_.stackTrace!));
 
       visitStatement(catch_.body);
 
@@ -988,7 +988,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     exceptionHandlers.terminateTryBlocks();
     exceptionHandlers.pop();
 
-    // Finalizer
+    // _Finalizer
     {
       emitTargetLabel(finalizerTarget);
       visitStatement(node.finalizer);
@@ -1056,7 +1056,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   @override
   void visitReturnStatement(ReturnStatement node) {
-    final Finalizer? firstFinalizer = exceptionHandlers.nextFinalizer;
+    final _Finalizer? firstFinalizer = exceptionHandlers.nextFinalizer;
     final value = node.expression;
 
     if (firstFinalizer == null) {
@@ -1079,7 +1079,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     final returnValueLocal = addLocal(translator.topInfo.nullableType);
     b.local_set(returnValueLocal);
 
-    // Set return value
+    // Set return value for the last finalizer to return.
     setSuspendStateCurrentReturnValue(() => b.local_get(returnValueLocal));
 
     // Update continuation variables of finalizers. Last finalizer returns
