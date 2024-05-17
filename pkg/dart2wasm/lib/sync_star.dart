@@ -81,7 +81,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   void completeAsync(void Function() emitValue) {}
 
   @override
-  void emitReturn() {
+  void emitReturn(void Function() emitValue) {
     // Set state target to final state.
     b.local_get(_suspendStateLocal);
     b.i32_const(targets.last.index);
@@ -169,7 +169,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
     // Final state: just keep returning.
     emitTargetLabel(targets.last);
-    emitReturn();
+    emitReturn(() {});
     b.end(); // masterLoop
 
     b.end(); // inner function

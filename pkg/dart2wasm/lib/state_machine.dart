@@ -658,9 +658,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
   void getSuspendStateCurrentReturnValue();
 
-  void completeAsync(void Function() emitValue);
-
-  void emitReturn();
+  void emitReturn(void Function() emitValue);
 
   w.FunctionBuilder defineBodyFunction(FunctionNode functionNode);
 
@@ -1010,8 +1008,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       b.i32_const(continuationReturn);
       b.i32_eq();
       b.if_();
-      completeAsync(() => getSuspendStateCurrentReturnValue());
-      emitReturn();
+      emitReturn(() => getSuspendStateCurrentReturnValue());
       b.end();
 
       // Rethrow
@@ -1063,14 +1060,13 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     final value = node.expression;
 
     if (firstFinalizer == null) {
-      completeAsync(() {
+      emitReturn(() {
         if (value == null) {
           b.ref_null(translator.topInfo.struct);
         } else {
           wrap(value, translator.topInfo.nullableType);
         }
       });
-      emitReturn();
       return;
     }
 

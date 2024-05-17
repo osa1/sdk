@@ -85,16 +85,12 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
   }
 
   @override
-  void completeAsync(void Function() emitValue) {
+  void emitReturn(void Function() emitValue) {
     b.local_get(_suspendStateLocal);
     b.struct_get(
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
     emitValue();
     call(translator.completerComplete.reference);
-  }
-
-  @override
-  void emitReturn() {
     b.return_();
   }
 
