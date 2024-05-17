@@ -5,10 +5,10 @@
 import 'package:kernel/ast.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
-import 'state_machine.dart';
 import 'class_info.dart';
 import 'closures.dart';
 import 'code_generator.dart';
+import 'state_machine.dart';
 
 class _ExceptionHandlerStack {
   /// Current exception handler stack. A CFG block generated when this is not
