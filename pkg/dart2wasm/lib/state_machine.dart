@@ -646,18 +646,33 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     generateInner(functionNode, context, resumeFun);
   }
 
+  /// Store the exception value emitted by [emitValue] in suspension state.
+  /// [getSuspendStateCurrentException] should return the value even after
+  /// suspending the function and continuing it later.
   void setSuspendStateCurrentException(void Function() emitValue);
 
+  /// Get the value set by [setSuspendStateCurrentException].
   void getSuspendStateCurrentException();
 
+  /// Same as [setSuspendStateCurrentException], but for the exception stack
+  /// trace.
   void setSuspendStateCurrentStackTrace(void Function() emitValue);
 
+  /// Same as [getSuspendStateCurrentException], but for the exception stack
+  /// trace.
   void getSuspendStateCurrentStackTrace();
 
+  /// Store the return value emitted by [emitValue] in suspension state.
+  /// [getSuspendStateReturnValue] should return the value ven after suspending
+  /// the function and continuing it later.
   void setSuspendStateCurrentReturnValue(void Function() emitValue);
 
+  /// Get the value set by [setSuspendStateCurrentReturnValue].
   void getSuspendStateCurrentReturnValue();
 
+  /// Generate a return from the function. For `async` functions, this should
+  /// call the completer and return. For `sync*`, this should terminate
+  /// iteration by returning `false`.
   void emitReturn(void Function() emitValue);
 
   w.FunctionBuilder defineBodyFunction(FunctionNode functionNode);
