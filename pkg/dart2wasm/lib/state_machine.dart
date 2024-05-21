@@ -3,10 +3,6 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:kernel/ast.dart';
-import 'package:wasm_builder/wasm_builder.dart' as w;
-
-import 'closures.dart';
-import 'code_generator.dart';
 
 /// Placement of a control flow graph target within a statement. This
 /// distinction is necessary since some statements need to have two targets
