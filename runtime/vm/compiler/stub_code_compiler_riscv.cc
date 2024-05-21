@@ -1212,16 +1212,6 @@ void StubCodeCompiler::GenerateAllocateArrayStub() {
     // R3: array size.
     // R7: new object end address.
 
-    // Store the type argument field.
-    __ StoreCompressedIntoObjectOffsetNoBarrier(
-        AllocateArrayABI::kResultReg, target::Array::type_arguments_offset(),
-        AllocateArrayABI::kTypeArgumentsReg);
-
-    // Set the length field.
-    __ StoreCompressedIntoObjectOffsetNoBarrier(AllocateArrayABI::kResultReg,
-                                                target::Array::length_offset(),
-                                                AllocateArrayABI::kLengthReg);
-
     // Calculate the size tag.
     // AllocateArrayABI::kResultReg: new object start as a tagged pointer.
     // AllocateArrayABI::kLengthReg: array length as Smi.
@@ -1243,6 +1233,16 @@ void StubCodeCompiler::GenerateAllocateArrayStub() {
     __ OrImmediate(T5, T5, tags);
     __ StoreFieldToOffset(T5, AllocateArrayABI::kResultReg,
                           target::Array::tags_offset());
+
+    // Store the type argument field.
+    __ StoreCompressedIntoObjectOffsetNoBarrier(
+        AllocateArrayABI::kResultReg, target::Array::type_arguments_offset(),
+        AllocateArrayABI::kTypeArgumentsReg);
+
+    // Set the length field.
+    __ StoreCompressedIntoObjectOffsetNoBarrier(AllocateArrayABI::kResultReg,
+                                                target::Array::length_offset(),
+                                                AllocateArrayABI::kLengthReg);
 
     // Initialize all array elements to raw_null.
     // AllocateArrayABI::kResultReg: new object start as a tagged pointer.
@@ -1927,6 +1927,9 @@ static void GenerateAllocateObjectHelper(Assembler* assembler,
       __ WriteAllocationCanary(kNewTopReg);  // Fix overshoot.
     }  // kFieldReg = T4
 
+    __ AddImmediate(AllocateObjectABI::kResultReg,
+                    AllocateObjectABI::kResultReg, kHeapObjectTag);
+
     if (is_cls_parameterized) {
       Label not_parameterized_case;
 
@@ -1944,15 +1947,14 @@ static void GenerateAllocateObjectHelper(Assembler* assembler,
                            host_type_arguments_field_offset_in_words_offset()));
 
       // Set the type arguments in the new object.
-      __ slli(kTypeOffsetReg, kTypeOffsetReg, target::kWordSizeLog2);
-      __ add(kTypeOffsetReg, kTypeOffsetReg, AllocateObjectABI::kResultReg);
-      __ sx(AllocateObjectABI::kTypeArgumentsReg, Address(kTypeOffsetReg, 0));
+      __ AddShifted(kTypeOffsetReg, AllocateObjectABI::kResultReg,
+                    kTypeOffsetReg, target::kWordSizeLog2);
+      __ StoreCompressedIntoObjectNoBarrier(
+          AllocateObjectABI::kResultReg, FieldAddress(kTypeOffsetReg, 0),
+          AllocateObjectABI::kTypeArgumentsReg);
 
       __ Bind(&not_parameterized_case);
     }  // kClsIdReg = R4, kTypeOffsetReg = R5
-
-    __ AddImmediate(AllocateObjectABI::kResultReg,
-                    AllocateObjectABI::kResultReg, kHeapObjectTag);
 
     __ ret();
 

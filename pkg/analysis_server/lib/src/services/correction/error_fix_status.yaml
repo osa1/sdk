@@ -230,9 +230,7 @@ CompileTimeErrorCode.AUGMENTED_EXPRESSION_IS_SETTER:
 CompileTimeErrorCode.AUGMENTED_EXPRESSION_NOT_OPERATOR:
   status: noFix
 CompileTimeErrorCode.AWAIT_IN_LATE_LOCAL_VARIABLE_INITIALIZER:
-  status: needsFix
-  notes: |-
-    The fix is to remove the `late` modifier.
+  status: hasFix
 CompileTimeErrorCode.AWAIT_IN_WRONG_CONTEXT:
   status: hasFix
 CompileTimeErrorCode.AWAIT_OF_INCOMPATIBLE_TYPE:
@@ -664,9 +662,7 @@ CompileTimeErrorCode.EXTENSION_OVERRIDE_ACCESS_TO_STATIC_MEMBER:
 CompileTimeErrorCode.EXTENSION_OVERRIDE_ARGUMENT_NOT_ASSIGNABLE:
   status: noFix
 CompileTimeErrorCode.EXTENSION_OVERRIDE_WITH_CASCADE:
-  status: needsFix
-  notes: |-
-    Replace the `..` with `.`.
+  status: hasFix
 CompileTimeErrorCode.EXTENSION_OVERRIDE_WITHOUT_ACCESS:
   status: noFix
 CompileTimeErrorCode.EXTENSION_TYPE_CONSTRUCTOR_WITH_SUPER_FORMAL_PARAMETER:
@@ -842,13 +838,9 @@ CompileTimeErrorCode.IMPLICIT_THIS_REFERENCE_IN_INITIALIZER:
 CompileTimeErrorCode.IMPLICIT_SUPER_INITIALIZER_MISSING_ARGUMENTS:
   status: hasFix
 CompileTimeErrorCode.IMPORT_INTERNAL_LIBRARY:
-  status: needsFix
-  notes: |-
-    Remove the import.
+  status: hasFix
 CompileTimeErrorCode.IMPORT_OF_NON_LIBRARY:
-  status: needsFix
-  notes: |-
-    Remove the import.
+  status: hasFix
 CompileTimeErrorCode.IMPORT_OF_NOT_AUGMENTATION:
   status: needsFix
   notes: |-
@@ -990,9 +982,7 @@ CompileTimeErrorCode.INVALID_INLINE_FUNCTION_TYPE:
 CompileTimeErrorCode.INVALID_MACRO_APPLICATION_TARGET:
   status: noFix
 CompileTimeErrorCode.INVALID_MODIFIER_ON_CONSTRUCTOR:
-  status: needsFix
-  notes: |-
-    Remove the modifier.
+  status: hasFix
 CompileTimeErrorCode.INVALID_MODIFIER_ON_SETTER:
   status: needsFix
   notes: |-
@@ -1045,9 +1035,7 @@ CompileTimeErrorCode.LATE_FINAL_FIELD_WITH_CONST_CONSTRUCTOR:
     Remove `late`.
     Remove `const`.
 CompileTimeErrorCode.LATE_FINAL_LOCAL_ALREADY_ASSIGNED:
-  status: needsFix
-  notes: |-
-    Remove `final`.
+  status: hasFix
 CompileTimeErrorCode.LIST_ELEMENT_TYPE_NOT_ASSIGNABLE:
   status: noFix
 CompileTimeErrorCode.MACRO_DECLARATIONS_PHASE_INTROSPECTION_CYCLE:
@@ -1119,9 +1107,7 @@ CompileTimeErrorCode.MIXIN_APPLICATION_NO_CONCRETE_SUPER_INVOKED_SETTER:
 CompileTimeErrorCode.MIXIN_APPLICATION_NOT_IMPLEMENTED_INTERFACE:
   status: hasFix
 CompileTimeErrorCode.MIXIN_CLASS_DECLARATION_EXTENDS_NOT_OBJECT:
-  status: needsFix
-  notes: |-
-    Remove the extends clause.
+  status: hasFix
 CompileTimeErrorCode.MIXIN_CLASS_DECLARES_CONSTRUCTOR:
   notes: |-
     Remove the constructor.
@@ -1179,9 +1165,7 @@ CompileTimeErrorCode.NEW_WITH_UNDEFINED_CONSTRUCTOR:
 CompileTimeErrorCode.NEW_WITH_UNDEFINED_CONSTRUCTOR_DEFAULT:
   status: hasFix
 CompileTimeErrorCode.NO_ANNOTATION_CONSTRUCTOR_ARGUMENTS:
-  status: needsFix
-  notes: |-
-    Add an empty argument list.
+  status: hasFix
 CompileTimeErrorCode.NO_COMBINED_SUPER_SIGNATURE:
   status: noFix
 CompileTimeErrorCode.NO_DEFAULT_SUPER_CONSTRUCTOR_EXPLICIT:
@@ -2637,9 +2621,7 @@ ParserErrorCode.CONST_AND_FINAL:
   notes: |-
     Remove either `const` or `final`.
 ParserErrorCode.CONST_CLASS:
-  status: needsFix
-  notes: |-
-    Remove the `const` keyword.
+  status: hasFix
 ParserErrorCode.CONST_CONSTRUCTOR_WITH_BODY:
   status: noFix
 ParserErrorCode.CONST_ENUM:
