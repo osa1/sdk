@@ -141,6 +141,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     //
     // Note: the inner function does not throw, so we don't need a `try` block
     // here.
+
     b.local_get(asyncStateLocal);
     b.ref_null(translator.topInfo.struct); // await value
     b.ref_null(translator.topInfo.struct); // error value
@@ -149,6 +150,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     b.drop(); // drop null
 
     // (3) Return the completer's future.
+
     b.local_get(asyncStateLocal);
     final completerFutureGetterType = translator.functions
         .getFunctionType(translator.completerFuture.getterReference);
@@ -314,7 +316,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
     }
 
     // Set state target to label after await.
-    final StateTarget after = afterTargets[node.parent]!;
+    final StateTarget after = afterTargets[node]!;
     b.local_get(_suspendStateLocal);
     b.i32_const(after.index);
     b.struct_set(
