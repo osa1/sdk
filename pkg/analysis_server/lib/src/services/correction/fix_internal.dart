@@ -8,6 +8,7 @@ import 'package:analysis_server/src/services/correction/dart/add_await.dart';
 import 'package:analysis_server/src/services/correction/dart/add_call_super.dart';
 import 'package:analysis_server/src/services/correction/dart/add_const.dart';
 import 'package:analysis_server/src/services/correction/dart/add_diagnostic_property_reference.dart';
+import 'package:analysis_server/src/services/correction/dart/add_empty_argument_list.dart';
 import 'package:analysis_server/src/services/correction/dart/add_enum_constant.dart';
 import 'package:analysis_server/src/services/correction/dart/add_eol_at_end_of_file.dart';
 import 'package:analysis_server/src/services/correction/dart/add_explicit_call.dart';
@@ -135,6 +136,7 @@ import 'package:analysis_server/src/services/correction/dart/remove_empty_catch.
 import 'package:analysis_server/src/services/correction/dart/remove_empty_constructor_body.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_empty_else.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_empty_statement.dart';
+import 'package:analysis_server/src/services/correction/dart/remove_extends_clause.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_extra_modifier.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_if_null_operator.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_initializer.dart';
@@ -869,6 +871,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   CompileTimeErrorCode.AUGMENTATION_MODIFIER_EXTRA: [
     RemoveExtraModifier.new,
   ],
+  CompileTimeErrorCode.AWAIT_IN_LATE_LOCAL_VARIABLE_INITIALIZER: [
+    RemoveLate.new,
+  ],
   CompileTimeErrorCode.AWAIT_IN_WRONG_CONTEXT: [
     AddAsync.new,
   ],
@@ -930,6 +935,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   CompileTimeErrorCode.EXTENSION_OVERRIDE_ACCESS_TO_STATIC_MEMBER: [
     ReplaceWithExtensionName.new,
   ],
+  CompileTimeErrorCode.EXTENSION_OVERRIDE_WITH_CASCADE: [
+    ReplaceCascadeWithDot.new,
+  ],
   CompileTimeErrorCode.EXTRA_POSITIONAL_ARGUMENTS: [
     CreateConstructor.new,
   ],
@@ -985,6 +993,12 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   CompileTimeErrorCode.IMPLICIT_SUPER_INITIALIZER_MISSING_ARGUMENTS: [
     AddSuperParameter.new,
   ],
+  CompileTimeErrorCode.IMPORT_OF_NON_LIBRARY: [
+    RemoveUnusedImport.new,
+  ],
+  CompileTimeErrorCode.IMPORT_INTERNAL_LIBRARY: [
+    RemoveUnusedImport.new,
+  ],
   CompileTimeErrorCode.INITIALIZING_FORMAL_FOR_NON_EXISTENT_FIELD: [
     ChangeTo.field,
     CreateField.new,
@@ -1005,8 +1019,14 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     ChangeTypeAnnotation.new,
     MakeVariableNullable.new,
   ],
+  CompileTimeErrorCode.INVALID_MODIFIER_ON_CONSTRUCTOR: [
+    RemoveExtraModifier.new,
+  ],
   CompileTimeErrorCode.INVOCATION_OF_NON_FUNCTION_EXPRESSION: [
     RemoveParenthesesInGetterInvocation.new,
+  ],
+  CompileTimeErrorCode.LATE_FINAL_LOCAL_ALREADY_ASSIGNED: [
+    MakeVariableNotFinal.new,
   ],
   CompileTimeErrorCode.MISSING_DEFAULT_VALUE_FOR_PARAMETER: [
     AddRequiredKeyword.new,
@@ -1023,6 +1043,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ],
   CompileTimeErrorCode.MIXIN_APPLICATION_NOT_IMPLEMENTED_INTERFACE: [
     ExtendClassForMixin.new,
+  ],
+  CompileTimeErrorCode.MIXIN_CLASS_DECLARATION_EXTENDS_NOT_OBJECT: [
+    RemoveExtendsClause.new,
   ],
   CompileTimeErrorCode.MIXIN_OF_DISALLOWED_CLASS: [
     RemoveNameFromDeclarationClause.new,
@@ -1043,6 +1066,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ],
   CompileTimeErrorCode.NEW_WITH_UNDEFINED_CONSTRUCTOR: [
     CreateConstructor.new,
+  ],
+  CompileTimeErrorCode.NO_ANNOTATION_CONSTRUCTOR_ARGUMENTS: [
+    AddEmptyArgumentList.new,
   ],
   CompileTimeErrorCode.NON_ABSTRACT_CLASS_INHERITS_ABSTRACT_MEMBER_FIVE_PLUS: [
     CreateMissingOverrides.new,
@@ -1299,6 +1325,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ],
   ParserErrorCode.ABSTRACT_CLASS_MEMBER: [
     RemoveAbstract.bulkFixable,
+  ],
+  ParserErrorCode.CONST_CLASS: [
+    RemoveConst.new,
   ],
   ParserErrorCode.DEFAULT_IN_SWITCH_EXPRESSION: [
     ReplaceWithWildcard.new,
@@ -1657,7 +1686,7 @@ class FixInFileProcessor {
 
     var fixes = <Fix>[];
     for (var generator in generators) {
-      if (generator().canBeAppliedToFile) {
+      if (generator().canBeAppliedAcrossSingleFile) {
         _FixState fixState = _EmptyFixState(
           ChangeBuilder(workspace: workspace),
         );
@@ -1713,10 +1742,9 @@ class FixInFileProcessor {
       var fixKind = producer.fixKind;
       await producer.compute(localBuilder);
       assert(
-        !(producer.canBeAppliedToFile || producer.canBeAppliedInBulk) ||
-            producer.fixKind == fixKind,
-        'Producers use in bulk fixes must not modify FixKind during computation. '
-        '$producer changed from $fixKind to ${producer.fixKind}.',
+        !producer.canBeAppliedAcrossSingleFile || producer.fixKind == fixKind,
+        'Producers used in bulk fixes must not modify the FixKind during '
+        'computation. $producer changed from $fixKind to ${producer.fixKind}.',
       );
 
       var multiFixKind = producer.multiFixKind;

@@ -12,10 +12,8 @@ import 'package:analyzer_plugin/utilities/range_factory.dart';
 
 class RemoveLate extends ResolvedCorrectionProducer {
   @override
-  bool get canBeAppliedInBulk => true;
-
-  @override
-  bool get canBeAppliedToFile => true;
+  CorrectionApplicability get applicability =>
+      CorrectionApplicability.automatically;
 
   @override
   FixKind get fixKind => DartFixKind.REMOVE_LATE;
@@ -25,7 +23,18 @@ class RemoveLate extends ResolvedCorrectionProducer {
 
   _LateKeywordLocation? get _lateKeywordLocation {
     var node = this.node;
-    if (node is Block) {
+    if (node is AwaitExpression) {
+      var parent = node.parent;
+      if (parent is VariableDeclaration) {
+        var lateKeyword = parent.parent?.beginToken;
+        if (lateKeyword != null && lateKeyword.keyword == Keyword.LATE) {
+          return _LateKeywordLocation(
+            lateKeyword: lateKeyword,
+            nextToken: lateKeyword.next!,
+          );
+        }
+      }
+    } else if (node is Block) {
       // The `late` token does not belong any node, so when we look for a
       // node that covers it, we find the enclosing `Block`. So, we iterate
       // over statements to find the actual declaration statement.

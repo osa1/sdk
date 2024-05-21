@@ -6,7 +6,6 @@ import 'package:kernel/ast.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
 import 'async.dart';
-import 'closures.dart';
 import 'code_generator.dart';
 
 /// Placement of a control flow graph target within a statement. This
@@ -128,7 +127,7 @@ class YieldFinder extends RecursiveVisitor {
     // have awaits. This is to keep the code size small: with normal
     // compilation finalizer blocks need to be duplicated based on
     // continuations, which we don't need in the CFG implementation.
-    yieldCount += 1;
+    yieldCount++;
     recurse(node.body);
     addTarget(node, StateTargetPlacement.Inner);
     recurse(node.finalizer);
@@ -139,7 +138,7 @@ class YieldFinder extends RecursiveVisitor {
   void visitTryCatch(TryCatch node) {
     // Also always compile [TryCatch] blocks to the CFG to be able to set
     // finalizer continuations.
-    yieldCount += 1;
+    yieldCount++;
     recurse(node.body);
     for (Catch c in node.catches) {
       addTarget(c, StateTargetPlacement.Inner);
@@ -164,23 +163,27 @@ class YieldFinder extends RecursiveVisitor {
   // Handle awaits. After the await transformation await can only appear in a
   // RHS of a top-level assignment, or as a top-level statement.
   @override
-  void visitVariableSet(VariableSet node) {
-    if (node.value is AwaitExpression) {
-      yieldCount++;
-      addTarget(node, StateTargetPlacement.After);
-    } else {
-      super.visitVariableSet(node);
-    }
-  }
-
-  @override
   void visitExpressionStatement(ExpressionStatement node) {
-    if (node.expression is AwaitExpression) {
+    final expression = node.expression;
+
+    // Handle awaits in RHS of assignments.
+    if (expression is VariableSet) {
+      final value = expression.value;
+      if (value is AwaitExpression) {
+        yieldCount++;
+        addTarget(value, StateTargetPlacement.After);
+        return;
+      }
+    }
+
+    // Handle top-level awaits.
+    if (expression is AwaitExpression) {
       yieldCount++;
       addTarget(node, StateTargetPlacement.After);
-    } else {
-      super.visitExpressionStatement(node);
+      return;
     }
+
+    super.visitExpressionStatement(node);
   }
 
   @override

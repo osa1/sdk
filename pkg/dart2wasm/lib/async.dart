@@ -826,7 +826,7 @@ class AsyncCodeGenerator extends CodeGenerator {
     }
 
     // Set state target to label after await.
-    final StateTarget after = afterTargets[node.parent]!;
+    final StateTarget after = afterTargets[node]!;
     b.local_get(suspendStateLocal);
     b.i32_const(after.index);
     b.struct_set(

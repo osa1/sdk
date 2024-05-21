@@ -219,6 +219,26 @@ void f() {
 ''');
   }
 
+  Future<void> test_importOfNonLibrary() async {
+    newFile('$testPackageLibPath/part.dart', r'''
+part of lib;
+''');
+    await resolveTestCode(r'''
+import 'part.dart';
+''');
+    await assertHasFix('''
+''');
+  }
+
+  test_internalLibraryImport() async {
+    await resolveTestCode('''
+import 'dart:_internal';
+''');
+
+    await assertHasFix('''
+''', errorFilter: (e) => e.errorCode == WarningCode.UNUSED_IMPORT);
+  }
+
   Future<void> test_severalLines() async {
     await resolveTestCode('''
 import
