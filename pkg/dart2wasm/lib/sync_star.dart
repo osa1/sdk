@@ -42,7 +42,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   w.Local get _pendingExceptionLocal => function.locals[1];
   w.Local get _pendingStackTraceLocal => function.locals[2];
 
-  @override
   w.FunctionBuilder _defineBodyFunction(FunctionNode functionNode) =>
       m.functions.define(
           m.types.defineFunction([
@@ -91,9 +90,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void getSuspendStateCurrentReturnValue() {}
-
-  @override
-  void completeAsync(void Function() emitValue) {}
 
   @override
   void emitReturn(void Function() emitValue) {
