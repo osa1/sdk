@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "75e239c06f49c35a66595649e2172e16bad5f8b8",
+  "co19_rev": "ce52bad581af26062e8da7bdb0b0c5a5fc89ec7e",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "a7c23b2422492dcc515d1ba4abe3609b50e2a139",
@@ -120,7 +120,7 @@ vars = {
   # EOL comment after a dependency to disable this and pin it at its current
   # revision.
 
-  "args_rev": "5c83bc9785d6c32ffe6824ba79fadcc51fbcd1c1",
+  "args_rev": "cf905519d67054a5e8d8835ffd4b247d8bbb602d",
   "async_rev": "77a25d77392b131df4ecac85bcfe9a30f82a9f40",
   "bazel_worker_rev": "2fb4fbff6ee8d26fee1f3576fa0500057d897afd",
   "benchmark_harness_rev": "accc7552b5fc0ba38493707635dc9e1ce7b90f12",
@@ -151,7 +151,7 @@ vars = {
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
   "glob_rev": "ee48ea82a1ccb64c8cc62e9f4f44c44ca67add71",
   "html_rev": "00d34611eee5eff976bd12a631357a4d591ef5fb",
-  "http_rev": "76deb751b41a675ac214d0ce2b9919f406175137",
+  "http_rev": "5c01453ab467408194143d4106092201f03ed98e",
   "http_multi_server_rev": "4a791af861da1cf53b57d9928fbc605f57139e4f",
   "http_parser_rev": "702698a3fc726f7cbb8cd7824a8639c7fe84b169",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
@@ -163,13 +163,13 @@ vars = {
   "matcher_rev": "4ac4096facce24a781ab6609ca99995aeb443b25",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   "mime_rev": "b01c9a24e0991da479bd405138be3b3e403ff456",
-  "mockito_rev": "4be52e16d06c8c5384d1cf5a511f0c9a7d829cf7",
+  "mockito_rev": "2302814df66e651b6710311366501523dbee2e11",
   "native_rev": "fef40aebc3cf34654919e8a5785b6c50b3ea445c", # mosum@ and dacoharkes@ are rolling breaking changes manually while the assets features are in experimental.
   "package_config_rev": "39096768806ccae4b7025dd4114f15f2df424b0c",
   "path_rev": "9be79e72be7837fd8b99ae51a69f4c9f04ec29b4",
   "pool_rev": "1a6f2df19d7a24baaf674e032a0310a4f76725de",
   "protobuf_rev": "ccf104dbc36929c0f8708285d5f3a8fae206343e",
-  "pub_rev": "e184bfc725793cbbf222fa8d8f96da10c40af24a", # disable tools/rev_sdk_deps.dart
+  "pub_rev": "e70850b53ef9b15a08af7fb0f0f2dcdbfa762b34", # disable tools/rev_sdk_deps.dart
   "pub_semver_rev": "f57c9c31dfd4e45ce6b11f18ee388e526ba1792a",
   "shelf_rev": "d9f82bf2cdd87e2878cfdc167aa41b9ce87a52d8",
   "source_map_stack_trace_rev": "6834af5e9e4ba880741b1357a5967fee8d90827c",
@@ -180,7 +180,7 @@ vars = {
   "stream_channel_rev": "61ad87242146c54cbe90f1cb436e830ae873925b",
   "string_scanner_rev": "32468bdd9a2baefe2fbcae31ac21daca9e2a8bde",
   "sync_http_rev": "82553db87ae0292d4cb35aa9db6ea2a5451fcb92",
-  "tar_rev": "6150a0c88d9bd17e3e961593a9a7a9564866e8b4",
+  "tar_rev": "b62573f39a4de28f69d9ed82b02fbd96b12b9633",
   "term_glyph_rev": "a46b48bd28c724e3cd6c18464e1d5ce823601488",
   "test_rev": "2464ad5c5945c98edd33fb69b3616a14771f1c8d",
   "test_descriptor_rev": "d61bf6cbccf8020d4dd2f1d8c91fb21c4be16290",
@@ -191,7 +191,7 @@ vars = {
   "vector_math_rev": "43f2a77bb0be812b027a68a11792d563713b42a1",
   "watcher_rev": "c182cd3db6f0bc285bf5da52df422f5c64f21a37",
   "web_rev": "d7766451f43001276b5493b2261d2973702b8334",
-  "web_socket_channel_rev": "8c77d6fb8597fde3a0d1058ed7b7b9d6e4df6cc4",
+  "web_socket_channel_rev": "45b8ce9ce9fb5194a24d3dff8913c573fbe7896a",
   "webdev_rev": "fc32eb69f2ad666e9ab1cb3300510e5daed222d6",
   "webdriver_rev": "f85779edd7c9f66198d4391ed3631db1d97a5b11",
   "webkit_inspection_protocol_rev": "5740cc91eaeb13a02007b77b128fccf4b056db6e",

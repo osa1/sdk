@@ -11,6 +11,7 @@ import 'add_const_test.dart' as add_const;
 import 'add_curly_braces_test.dart' as add_curly_braces;
 import 'add_diagnostic_property_reference_test.dart'
     as add_diagnostic_property_reference;
+import 'add_empty_argument_list_test.dart' as add_empty_argument_list;
 import 'add_enum_constant_test.dart' as add_enum_constant_test;
 import 'add_eol_at_end_of_file_test.dart' as add_eol_at_end_of_file;
 import 'add_explicit_call_test.dart' as add_explicit_call;
@@ -175,6 +176,7 @@ import 'remove_empty_constructor_body_test.dart'
     as remove_empty_constructor_body;
 import 'remove_empty_else_test.dart' as remove_empty_else;
 import 'remove_empty_statement_test.dart' as remove_empty_statement;
+import 'remove_extends_clause_test.dart' as remove_extends_clause;
 import 'remove_extra_modifier_test.dart' as remove_extra_modifier;
 import 'remove_if_null_operator_test.dart' as remove_if_null_operator;
 import 'remove_initializer_test.dart' as remove_initializer;
@@ -295,6 +297,7 @@ void main() {
     add_const.main();
     add_curly_braces.main();
     add_diagnostic_property_reference.main();
+    add_empty_argument_list.main();
     add_enum_constant_test.main();
     add_eol_at_end_of_file.main();
     add_explicit_call.main();
@@ -435,6 +438,7 @@ void main() {
     remove_empty_constructor_body.main();
     remove_empty_else.main();
     remove_empty_statement.main();
+    remove_extends_clause.main();
     remove_extra_modifier.main();
     remove_if_null_operator.main();
     remove_initializer.main();
