@@ -22,8 +22,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
   w.Local get _pendingExceptionLocal => function.locals[2];
   w.Local get _pendingStackTraceLocal => function.locals[3];
 
-  @override
-  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
+  w.FunctionBuilder _defineBodyFunction(FunctionNode functionNode) =>
       m.functions.define(
           m.types.defineFunction([
             asyncSuspendStateInfo.nonNullableType, // _AsyncSuspendState
@@ -96,7 +95,7 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void generateFunctions(FunctionNode functionNode, Context? context) {
-    final resumeFun = defineBodyFunction(functionNode);
+    final resumeFun = _defineBodyFunction(functionNode);
 
     _generateOuter(functionNode, context, resumeFun);
 
@@ -281,6 +280,8 @@ class AsyncCodeGenerator extends StateMachineCodeGenerator {
   // Handle awaits
   @override
   void visitExpressionStatement(ExpressionStatement node) {
+    // All `await` expressions are transformed into variable sets of `await` by
+    // `_AwaitTransformer`.
     final expression = node.expression;
     if (expression is VariableSet) {
       final value = expression.value;

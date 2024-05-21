@@ -27,13 +27,13 @@ enum _StateTargetPlacement { Inner, After }
 class StateTarget {
   final int index;
   final TreeNode node;
-  final _StateTargetPlacement placement;
+  final _StateTargetPlacement _placement;
 
-  StateTarget(this.index, this.node, this.placement);
+  StateTarget(this.index, this.node, this._placement);
 
   @override
   String toString() {
-    String place = placement == _StateTargetPlacement.Inner ? "in" : "after";
+    String place = _placement == _StateTargetPlacement.Inner ? "in" : "after";
     return "$index: $place $node";
   }
 }
@@ -331,7 +331,7 @@ class _ExceptionHandlerStack {
         codeGen.setSuspendStateCurrentStackTrace(
             () => codeGen.b.local_get(stackTraceLocal));
 
-        codeGen.jumpToTarget(_handlers[nextHandlerIdx].target);
+        codeGen._jumpToTarget(_handlers[nextHandlerIdx].target);
       }
 
       codeGen.b.catch_(codeGen.translator.exceptionTag);
@@ -541,9 +541,9 @@ class _IndirectLabelTarget implements _LabelTarget {
     });
 
     if (finalizersToRun == 0) {
-      codeGen.jumpToTarget(stateTarget);
+      codeGen._jumpToTarget(stateTarget);
     } else {
-      codeGen.jumpToTarget(codeGen.exceptionHandlers.nextFinalizer!.target);
+      codeGen._jumpToTarget(codeGen.exceptionHandlers.nextFinalizer!.target);
     }
   }
 }
@@ -619,7 +619,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Number and categorize CFG targets.
     targets = _YieldFinder(translator.options.enableAsserts).find(functionNode);
     for (final target in targets) {
-      switch (target.placement) {
+      switch (target._placement) {
         case _StateTargetPlacement.Inner:
           innerTargets[target.node] = target;
           break;
@@ -696,7 +696,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     exceptionHandlers.generateTryBlocks(b);
   }
 
-  void jumpToTarget(StateTarget target,
+  void _jumpToTarget(StateTarget target,
       {Expression? condition, bool negated = false}) {
     if (condition == null && negated) return;
     if (target.index > currentTargetIndex) {
@@ -721,7 +721,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     emitTargetLabel(inner);
     allocateContext(node);
     visitStatement(node.body);
-    jumpToTarget(inner, condition: node.condition);
+    _jumpToTarget(inner, condition: node.condition);
   }
 
   @override
@@ -735,12 +735,12 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       visitStatement(variable);
     }
     emitTargetLabel(inner);
-    jumpToTarget(after, condition: node.condition, negated: true);
+    _jumpToTarget(after, condition: node.condition, negated: true);
     visitStatement(node.body);
 
     emitForStatementUpdate(node);
 
-    jumpToTarget(inner);
+    _jumpToTarget(inner);
     emitTargetLabel(after);
   }
 
@@ -750,10 +750,10 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     if (after == null) return super.visitIfStatement(node);
     StateTarget? inner = innerTargets[node];
 
-    jumpToTarget(inner ?? after, condition: node.condition, negated: true);
+    _jumpToTarget(inner ?? after, condition: node.condition, negated: true);
     visitStatement(node.then);
     if (node.otherwise != null) {
-      jumpToTarget(after);
+      _jumpToTarget(after);
       emitTargetLabel(inner!);
       visitStatement(node.otherwise!);
     }
@@ -819,7 +819,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       b.local_get(switchValueNullableLocal!);
       b.ref_is_null();
       b.if_();
-      jumpToTarget(nullTarget);
+      _jumpToTarget(nullTarget);
       b.end();
       b.local_get(switchValueNullableLocal);
       b.ref_as_non_null();
@@ -840,7 +840,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
           b.local_get(switchValueNonNullableLocal);
           switchInfo.compare();
           b.if_();
-          jumpToTarget(innerTargets[c]!);
+          _jumpToTarget(innerTargets[c]!);
           b.end();
         }
       }
@@ -852,7 +852,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     } else {
       final StateTarget defaultLabel =
           defaultCase != null ? innerTargets[defaultCase]! : after;
-      jumpToTarget(defaultLabel);
+      _jumpToTarget(defaultLabel);
     }
 
     // Add jump infos
@@ -865,7 +865,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     for (SwitchCase c in node.cases) {
       emitTargetLabel(innerTargets[c]!);
       visitStatement(c.body);
-      jumpToTarget(after);
+      _jumpToTarget(after);
     }
 
     // Remove jump infos
@@ -900,7 +900,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     exceptionHandlers.pushTryCatch(node);
     exceptionHandlers.generateTryBlocks(b);
     visitStatement(node.body);
-    jumpToTarget(after);
+    _jumpToTarget(after);
     exceptionHandlers.terminateTryBlocks();
     exceptionHandlers.pop();
 
@@ -916,7 +916,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
         // points and generate target labels.
         b.if_();
         if (nextCatch != null) {
-          jumpToTarget(innerTargets[nextCatch]!);
+          _jumpToTarget(innerTargets[nextCatch]!);
         } else {
           // Rethrow.
           getSuspendStateCurrentException();
@@ -951,7 +951,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
       catchVariableStack.removeLast();
 
-      jumpToTarget(after);
+      _jumpToTarget(after);
     }
 
     for (int catchIdx = 0; catchIdx < node.catches.length; catchIdx += 1) {
@@ -1000,7 +1000,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Set continuation of the finalizer.
     finalizer.setContinuationFallthrough();
 
-    jumpToTarget(finalizerTarget);
+    _jumpToTarget(finalizerTarget);
     exceptionHandlers.terminateTryBlocks();
     exceptionHandlers.pop();
 
@@ -1016,7 +1016,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       finalizer.pushContinuation();
       b.i32_eqz();
       b.if_();
-      jumpToTarget(fallthroughContinuationTarget);
+      _jumpToTarget(fallthroughContinuationTarget);
       b.end();
 
       // Return
@@ -1058,9 +1058,9 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     allocateContext(node);
     emitTargetLabel(inner);
-    jumpToTarget(after, condition: node.condition, negated: true);
+    _jumpToTarget(after, condition: node.condition, negated: true);
     visitStatement(node.body);
-    jumpToTarget(inner);
+    _jumpToTarget(inner);
     emitTargetLabel(after);
   }
 
@@ -1109,7 +1109,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     });
 
     // Jump to the first finalizer
-    jumpToTarget(firstFinalizer.target);
+    _jumpToTarget(firstFinalizer.target);
   }
 
   @override

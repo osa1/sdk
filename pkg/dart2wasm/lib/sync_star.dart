@@ -28,7 +28,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   w.Local get _pendingStackTraceLocal => function.locals[2];
 
   @override
-  w.FunctionBuilder defineBodyFunction(FunctionNode functionNode) =>
+  w.FunctionBuilder _defineBodyFunction(FunctionNode functionNode) =>
       m.functions.define(
           m.types.defineFunction([
             suspendStateInfo.nonNullableType, // _SuspendState
@@ -94,7 +94,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void generateFunctions(FunctionNode functionNode, Context? context) {
-    final resumeFun = defineBodyFunction(functionNode);
+    final resumeFun = _defineBodyFunction(functionNode);
 
     _generateOuter(functionNode, context, resumeFun);
 
@@ -189,8 +189,6 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
 
   @override
   void visitYieldStatement(YieldStatement node) {
-    StateTarget after = afterTargets[node]!;
-
     // Evaluate operand and store it to `_current` for `yield` or
     // `_yieldStarIterable` for `yield*`.
     b.local_get(_suspendStateLocal);
@@ -223,6 +221,7 @@ class SyncStarCodeGenerator extends StateMachineCodeGenerator {
     }
 
     // Set state target to label after yield.
+    final StateTarget after = afterTargets[node]!;
     b.local_get(_suspendStateLocal);
     b.i32_const(after.index);
     b.struct_set(suspendStateInfo.struct, FieldIndex.suspendStateTargetIndex);
