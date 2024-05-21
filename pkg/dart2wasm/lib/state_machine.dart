@@ -167,7 +167,7 @@ class YieldFinder extends RecursiveVisitor {
       final value = expression.value;
       if (value is AwaitExpression) {
         yieldCount++;
-        addTarget(node, StateTargetPlacement.After);
+        addTarget(value, StateTargetPlacement.After);
         return;
       }
     }
