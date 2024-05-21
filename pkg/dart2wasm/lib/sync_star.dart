@@ -10,6 +10,21 @@ import 'closures.dart';
 import 'code_generator.dart';
 import 'state_machine.dart';
 
+/// A specialized code generator for generating code for `sync*` functions.
+///
+/// This will create an "outer" function which is a small function that just
+/// instantiates and returns a [_SyncStarIterable], plus an "inner" function
+/// containing the body of the `sync*` function.
+///
+/// For the inner function, all statements containing any `yield` or `yield*`
+/// statements will be translated to an explicit control flow graph implemented
+/// via a switch (via the Wasm `br_table` instruction) in a loop. This enables
+/// the function to suspend its execution at yield points and jump back to the
+/// point of suspension when the execution is resumed.
+///
+/// Local state is preserved via the closure contexts, which will implicitly
+/// capture all local variables in a `sync*` function even if they are not
+/// captured by any lambdas.
 class SyncStarCodeGenerator extends StateMachineCodeGenerator {
   SyncStarCodeGenerator(super.translator, super.function, super.reference);
 
