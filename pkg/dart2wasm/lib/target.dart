@@ -11,6 +11,8 @@ import 'package:front_end/src/api_prototype/const_conditional_simplifier.dart'
     show ConstConditionalSimplifier;
 import 'package:front_end/src/api_prototype/constant_evaluator.dart'
     as constantEvaluator show ConstantEvaluator, EvaluationMode;
+import 'package:front_end/src/fasta/codes/fasta_codes.dart'
+    show messageJsInteropAnnotationInUserLibrary;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/clone.dart';
@@ -246,8 +248,9 @@ class WasmTarget extends Target {
     // Check that FfiNative annotations and Wasm import/export pragmas are only
     // used in `dart:` libaries.
     for (Library library in libraries) {
-      if (!_libraryMayUseInteropPragmas(library)) {
-        _throwOnInteropPragmas(library, coreTypes, diagnosticReporter);
+      if (!library.importUri.isScheme('dart')) {
+        _reportInteropPragmasInUserLibrary(library, coreTypes,
+            diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
       }
     }
 
@@ -528,11 +531,8 @@ class WasmVerification extends Verification {
   }
 }
 
-bool _libraryMayUseInteropPragmas(Library library) =>
-    library.importUri.isScheme('dart');
-
-void _throwOnInteropPragmas(Library library, CoreTypes coreTypes,
-    DiagnosticReporter diagnosticReporter) {
+void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
+    DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
   final dartFfiUri = Uri.parse('dart:ffi');
   for (Procedure procedure in library.procedures) {
     for (Expression annotation in procedure.annotations) {
@@ -546,15 +546,24 @@ void _throwOnInteropPragmas(Library library, CoreTypes coreTypes,
       final cls = annotationConstant.classNode;
       if (cls.name == 'Native' &&
           cls.enclosingLibrary.importUri == dartFfiUri) {
-        throw 'Native imported in user library: ${procedure.location}';
-      }
-      if (cls.name == 'pragma') {
+        diagnosticReporter.report(
+          messageJsInteropAnnotationInUserLibrary,
+          annotation.fileOffset,
+          0,
+          library.fileUri,
+        );
+      } else if (cls.name == 'pragma') {
         final pragmaName =
             annotationConstant.fieldValues[coreTypes.pragmaName.fieldReference];
         if (pragmaName is StringConstant) {
           if (pragmaName.value == 'wasm:import' ||
               pragmaName.value == 'wasm:export') {
-            throw 'wasm:import or wasm:export pragma in user library: ${procedure.location} (uri = ${library.importUri})';
+            diagnosticReporter.report(
+              messageJsInteropAnnotationInUserLibrary,
+              annotation.fileOffset,
+              0,
+              library.fileUri,
+            );
           }
         }
       }

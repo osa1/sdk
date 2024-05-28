@@ -10162,6 +10162,17 @@ Message _withArgumentsJointPatternVariablesMismatch(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeJsInteropAnnotationInUserLibrary =
+    messageJsInteropAnnotationInUserLibrary;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageJsInteropAnnotationInUserLibrary = const MessageCode(
+  "JsInteropAnnotationInUserLibrary",
+  problemMessage:
+      r"""Interop annotations `@Native`, `@pragma('wasm:import', ...)`, `@pragma('wasm:export', ...)` are for internal use only and cannot be used in user libraries.""",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name, String name2)>
     templateJsInteropDartClassExtendsJSClass =
     const Template<Message Function(String name, String name2)>(

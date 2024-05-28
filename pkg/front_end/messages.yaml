@@ -5844,6 +5844,9 @@ JsInteropStaticInteropWithNonStaticSupertype:
   problemMessage: "JS interop class '#name' has an `@staticInterop` annotation, but has supertype '#name2', which does not."
   correctionMessage: "Try marking the supertype as a static interop class using `@staticInterop`."
 
+JsInteropAnnotationInUserLibrary:
+  problemMessage: "Interop annotations `@Native`, `@pragma('wasm:import', ...)`, `@pragma('wasm:export', ...)` are for internal use only and cannot be used in user libraries."
+
 NonNullableNotAssignedError:
   problemMessage: "Non-nullable variable '#name' must be assigned before it can be used."
   script: |
