@@ -700,6 +700,8 @@ JsInteropStaticInteropWithInstanceMembers/analyzerCode: Fail # Web compiler spec
 JsInteropStaticInteropWithInstanceMembers/example: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/analyzerCode: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/example: Fail # Web compiler specific
+JsInteropAnnotationInUserLibrary/analyzerCode: Fail # Web compiler specific
+JsInteropAnnotationInUserLibrary/example: Fail # Web compiler specific
 LanguageVersionInvalidInDotPackages/analyzerCode: Fail
 LanguageVersionMismatchInPart/analyzerCode: Fail
 LanguageVersionMismatchInPart/part_wrapped_script: Fail # Part in (now) part.
