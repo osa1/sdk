@@ -533,6 +533,7 @@ class WasmVerification extends Verification {
 
 void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
     DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
+  final dartCoreUri = Uri.parse('dart:core');
   final dartFfiUri = Uri.parse('dart:ffi');
   for (Procedure procedure in library.procedures) {
     for (Expression annotation in procedure.annotations) {
@@ -552,7 +553,8 @@ void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
           0,
           library.fileUri,
         );
-      } else if (cls.name == 'pragma') {
+      } else if (cls.name == 'pragma' &&
+          cls.enclosingLibrary.importUri == dartCoreUri) {
         final pragmaName =
             annotationConstant.fieldValues[coreTypes.pragmaName.fieldReference];
         if (pragmaName is StringConstant) {
