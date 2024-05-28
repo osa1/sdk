@@ -243,6 +243,40 @@ class WasmTarget extends Target {
       ReferenceFromIndex? referenceFromIndex,
       {void Function(String msg)? logger,
       ChangedStructureNotifier? changedStructureNotifier}) {
+    // Check that FfiNative annotations and Wasm import/export pragmas are only
+    // used in `dart:` libaries.
+    final dartFfiUri = Uri.parse('dart:ffi');
+    for (Library library in libraries) {
+      if (!library.fileUri.isScheme('dart')) {
+        for (Procedure procedure in library.procedures) {
+          for (Expression annotation in procedure.annotations) {
+            if (annotation is! ConstantExpression) {
+              continue;
+            }
+            final annotationConstant = annotation.constant;
+            if (annotationConstant is! InstanceConstant) {
+              continue;
+            }
+            final cls = annotationConstant.classNode;
+            if (cls.name == 'Native' &&
+                cls.enclosingLibrary.importUri == dartFfiUri) {
+              throw 'Native imported in user library: ${procedure.location}';
+            }
+            if (cls.name == 'pragma') {
+              final pragmaName = annotationConstant
+                  .fieldValues[coreTypes.pragmaName.fieldReference];
+              if (pragmaName is StringConstant) {
+                if (pragmaName.value == 'wasm:import' ||
+                    pragmaName.value == 'wasm:export') {
+                  throw 'wasm:import or wasm:export pragma in user library: ${procedure.location} (file uri = ${library.fileUri})';
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     Set<Library> transitiveImportingJSInterop = {
       ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("package:js/js.dart")),
