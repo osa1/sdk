@@ -114,6 +114,8 @@ placing
 pointer`s
 pragma
 pragma('vm:deeply
+pragma('wasm:export
+pragma('wasm:import
 preexisting
 pubspec.yaml
 r
