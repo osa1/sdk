@@ -188,6 +188,8 @@ CyclicRedirectingFactoryConstructors/part_wrapped_script: Fail # Error is report
 CyclicRedirectingFactoryConstructors/script: Fail # Error is reported for each factory involved in the cycle.
 CyclicRepresentationDependency/analyzerCode: Fail
 CyclicTypedef/example: Fail
+DartFfiInDart2Wasm/example: Fail
+DartFfiInDart2Wasm/analyzerCode: Fail
 DeferredAfterPrefix/example: Fail
 DeferredExtensionImport/analyzerCode: Fail
 DeferredExtensionImport/part_wrapped_script: Fail
@@ -700,8 +702,6 @@ JsInteropStaticInteropWithInstanceMembers/analyzerCode: Fail # Web compiler spec
 JsInteropStaticInteropWithInstanceMembers/example: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/analyzerCode: Fail # Web compiler specific
 JsInteropStaticInteropWithNonStaticSupertype/example: Fail # Web compiler specific
-JsInteropAnnotationInUserLibrary/analyzerCode: Fail # Web compiler specific
-JsInteropAnnotationInUserLibrary/example: Fail # Web compiler specific
 LanguageVersionInvalidInDotPackages/analyzerCode: Fail
 LanguageVersionMismatchInPart/analyzerCode: Fail
 LanguageVersionMismatchInPart/part_wrapped_script: Fail # Part in (now) part.
@@ -1115,6 +1115,8 @@ VarAsTypeName/part_wrapped_script1: Fail
 VarAsTypeName/script1: Fail # Too many problems
 VariableCouldBeNullDueToWrite/analyzerCode: Fail
 VariableCouldBeNullDueToWrite/example: Fail
+WasmImportOrExportInUserCode/analyzerCode: Fail
+WasmImportOrExportInUserCode/example: Fail
 WeakReferenceMismatchReturnAndArgumentTypes/analyzerCode: Fail
 WeakReferenceMismatchReturnAndArgumentTypes/example: Fail
 WeakReferenceNotOneArgument/analyzerCode: Fail
