@@ -532,10 +532,11 @@ class WasmVerification extends Verification {
   }
 }
 
+final _dartCoreUri = Uri.parse('dart:core');
+final _dartFfiUri = Uri.parse('dart:ffi');
+
 void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
     DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
-  final dartCoreUri = Uri.parse('dart:core');
-  final dartFfiUri = Uri.parse('dart:ffi');
   for (Procedure procedure in library.procedures) {
     for (Expression annotation in procedure.annotations) {
       if (annotation is! ConstantExpression) {
@@ -547,7 +548,7 @@ void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
       }
       final cls = annotationConstant.classNode;
       if (cls.name == 'Native' &&
-          cls.enclosingLibrary.importUri == dartFfiUri) {
+          cls.enclosingLibrary.importUri == _dartFfiUri) {
         diagnosticReporter.report(
           messageJsInteropAnnotationInUserLibrary,
           annotation.fileOffset,
@@ -555,7 +556,7 @@ void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
           library.fileUri,
         );
       } else if (cls.name == 'pragma' &&
-          cls.enclosingLibrary.importUri == dartCoreUri) {
+          cls.enclosingLibrary.importUri == _dartCoreUri) {
         final pragmaName =
             annotationConstant.fieldValues[coreTypes.pragmaName.fieldReference];
         if (pragmaName is StringConstant) {
