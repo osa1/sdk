@@ -2748,7 +2748,7 @@ const Code<Null> codeDartFfiInDart2Wasm = messageDartFfiInDart2Wasm;
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const MessageCode messageDartFfiInDart2Wasm = const MessageCode(
   "DartFfiInDart2Wasm",
-  problemMessage: r"""dart:ffi cannot be used when compiling to Wasm yet""",
+  problemMessage: r"""dart:ffi cannot be used when compiling to Wasm""",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
@@ -17648,7 +17648,7 @@ const Code<Null> codeWasmImportOrExportInUserCode =
 const MessageCode messageWasmImportOrExportInUserCode = const MessageCode(
   "WasmImportOrExportInUserCode",
   problemMessage:
-      r"""`wasm:import` and `wasm:export` are for internal use only and cannot be used in user code.""",
+      r"""Pragmas `wasm:import` and `wasm:export` are for internal use only and cannot be used by user code.""",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.

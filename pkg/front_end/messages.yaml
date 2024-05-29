@@ -281,7 +281,7 @@ ConstEvalUnhandledException:
   problemMessage: "Unhandled exception: #constant"
 
 DartFfiInDart2Wasm:
-  problemMessage: "dart:ffi cannot be used when compiling to Wasm yet"
+  problemMessage: "dart:ffi cannot be used when compiling to Wasm"
 
 NotConstantExpression:
   problemMessage: "#string is not a constant expression."
@@ -7015,7 +7015,7 @@ ResourceIdentifiersMultiple:
   problemMessage: "Only one resource identifier pragma can be used at a time."
 
 WasmImportOrExportInUserCode:
-  problemMessage: "`wasm:import` and `wasm:export` are for internal use only and cannot be used in user code."
+  problemMessage: "Pragmas `wasm:import` and `wasm:export` are for internal use only and cannot be used by user code."
 
 WeakReferenceNotStatic:
   problemMessage: "Weak reference pragma can be used on a static method only."
