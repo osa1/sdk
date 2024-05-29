@@ -5,7 +5,6 @@
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
-import 'package:kernel/target/targets.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 import 'package:vm/modular/transformations/type_casts_optimizer.dart'
