@@ -12,7 +12,7 @@ import 'package:front_end/src/api_prototype/const_conditional_simplifier.dart'
 import 'package:front_end/src/api_prototype/constant_evaluator.dart'
     as constantEvaluator show ConstantEvaluator, EvaluationMode;
 import 'package:front_end/src/fasta/codes/fasta_codes.dart'
-    show messageJsInteropAnnotationInUserLibrary;
+    show messageWasmImportOrExportInUserCode, messageDartFfiInDart2Wasm;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/clone.dart';
@@ -536,6 +536,19 @@ final _dartFfiUri = Uri.parse('dart:ffi');
 
 void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
     DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
+  // Check `dart:ffi` dependencies.
+  for (LibraryDependency dep in library.dependencies) {
+    if (dep.targetLibrary.importUri == _dartFfiUri) {
+      diagnosticReporter.report(
+        messageDartFfiInDart2Wasm,
+        dep.fileOffset,
+        0,
+        library.fileUri,
+      );
+    }
+  }
+
+  // Check `pragma('wasm:import')` and `pragma('wasm:export')` annotations.
   for (Procedure procedure in library.procedures) {
     for (Expression annotation in procedure.annotations) {
       if (annotation is! ConstantExpression) {
@@ -546,15 +559,7 @@ void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
         continue;
       }
       final cls = annotationConstant.classNode;
-      if (cls.name == 'Native' &&
-          cls.enclosingLibrary.importUri == _dartFfiUri) {
-        diagnosticReporter.report(
-          messageJsInteropAnnotationInUserLibrary,
-          annotation.fileOffset,
-          0,
-          library.fileUri,
-        );
-      } else if (cls.name == 'pragma' &&
+      if (cls.name == 'pragma' &&
           cls.enclosingLibrary.importUri == _dartCoreUri) {
         final pragmaName =
             annotationConstant.fieldValues[coreTypes.pragmaName.fieldReference];
@@ -562,7 +567,7 @@ void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
           if (pragmaName.value == 'wasm:import' ||
               pragmaName.value == 'wasm:export') {
             diagnosticReporter.report(
-              messageJsInteropAnnotationInUserLibrary,
+              messageWasmImportOrExportInUserCode,
               annotation.fileOffset,
               0,
               library.fileUri,

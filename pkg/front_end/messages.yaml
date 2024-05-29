@@ -280,6 +280,9 @@ ConstEvalUnhandledCoreException:
 ConstEvalUnhandledException:
   problemMessage: "Unhandled exception: #constant"
 
+DartFfiInDart2Wasm:
+  problemMessage: "dart:ffi cannot be used when compiling to Wasm"
+
 NotConstantExpression:
   problemMessage: "#string is not a constant expression."
   analyzerCode: NOT_CONSTANT_EXPRESSION
@@ -5844,9 +5847,6 @@ JsInteropStaticInteropWithNonStaticSupertype:
   problemMessage: "JS interop class '#name' has an `@staticInterop` annotation, but has supertype '#name2', which does not."
   correctionMessage: "Try marking the supertype as a static interop class using `@staticInterop`."
 
-JsInteropAnnotationInUserLibrary:
-  problemMessage: "Interop annotations `@Native`, `@pragma('wasm:import', ...)`, `@pragma('wasm:export', ...)` are for internal use only and cannot be used in user libraries."
-
 NonNullableNotAssignedError:
   problemMessage: "Non-nullable variable '#name' must be assigned before it can be used."
   script: |
@@ -7013,6 +7013,9 @@ ResourceIdentifiersNotStatic:
 
 ResourceIdentifiersMultiple:
   problemMessage: "Only one resource identifier pragma can be used at a time."
+
+WasmImportOrExportInUserCode:
+  problemMessage: "`wasm:import` and `wasm:export` are for internal use only and cannot be used in user code."
 
 WeakReferenceNotStatic:
   problemMessage: "Weak reference pragma can be used on a static method only."

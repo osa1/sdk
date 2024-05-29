@@ -2743,6 +2743,15 @@ Message _withArgumentsCyclicTypedef(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeDartFfiInDart2Wasm = messageDartFfiInDart2Wasm;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageDartFfiInDart2Wasm = const MessageCode(
+  "DartFfiInDart2Wasm",
+  problemMessage: r"""dart:ffi cannot be used when compiling to Wasm""",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name, String string)>
     templateDebugTrace =
     const Template<Message Function(String name, String string)>(
@@ -10160,17 +10169,6 @@ Message _withArgumentsJointPatternVariablesMismatch(String name) {
     },
   );
 }
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Code<Null> codeJsInteropAnnotationInUserLibrary =
-    messageJsInteropAnnotationInUserLibrary;
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const MessageCode messageJsInteropAnnotationInUserLibrary = const MessageCode(
-  "JsInteropAnnotationInUserLibrary",
-  problemMessage:
-      r"""Interop annotations `@Native`, `@pragma('wasm:import', ...)`, `@pragma('wasm:export', ...)` are for internal use only and cannot be used in user libraries.""",
-);
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name, String name2)>
@@ -17640,6 +17638,17 @@ const MessageCode messageVoidWithTypeArguments = const MessageCode(
   index: 100,
   problemMessage: r"""Type 'void' can't have type arguments.""",
   correctionMessage: r"""Try removing the type arguments.""",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeWasmImportOrExportInUserCode =
+    messageWasmImportOrExportInUserCode;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageWasmImportOrExportInUserCode = const MessageCode(
+  "WasmImportOrExportInUserCode",
+  problemMessage:
+      r"""`wasm:import` and `wasm:export` are for internal use only and cannot be used in user code.""",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
