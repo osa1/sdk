@@ -2748,7 +2748,7 @@ const Code<Null> codeDartFfiInDart2Wasm = messageDartFfiInDart2Wasm;
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const MessageCode messageDartFfiInDart2Wasm = const MessageCode(
   "DartFfiInDart2Wasm",
-  problemMessage: r"""dart:ffi cannot be used when compiling to Wasm""",
+  problemMessage: r"""dart:ffi cannot be used when compiling to Wasm yet""",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.

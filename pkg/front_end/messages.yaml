@@ -281,7 +281,7 @@ ConstEvalUnhandledException:
   problemMessage: "Unhandled exception: #constant"
 
 DartFfiInDart2Wasm:
-  problemMessage: "dart:ffi cannot be used when compiling to Wasm"
+  problemMessage: "dart:ffi cannot be used when compiling to Wasm yet"
 
 NotConstantExpression:
   problemMessage: "#string is not a constant expression."
