@@ -1061,6 +1061,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   CompileTimeErrorCode.MIXIN_SUBTYPE_OF_BASE_IS_NOT_BASE: [
     AddClassModifier.base,
   ],
+  CompileTimeErrorCode.MIXIN_SUBTYPE_OF_FINAL_IS_NOT_BASE: [
+    AddClassModifier.base,
+  ],
   CompileTimeErrorCode.MIXIN_OF_DISALLOWED_CLASS: [
     RemoveNameFromDeclarationClause.new,
   ],
@@ -1341,6 +1344,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ParserErrorCode.ABSTRACT_CLASS_MEMBER: [
     RemoveAbstract.bulkFixable,
   ],
+  ParserErrorCode.ABSTRACT_STATIC_FIELD: [
+    RemoveExtraModifier.new,
+  ],
   ParserErrorCode.CONST_CLASS: [
     RemoveConst.new,
   ],
@@ -1465,9 +1471,6 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     RemoveAnnotation.new,
   ],
   WarningCode.INVALID_FACTORY_ANNOTATION: [
-    RemoveAnnotation.new,
-  ],
-  WarningCode.INVALID_IMMUTABLE_ANNOTATION: [
     RemoveAnnotation.new,
   ],
   WarningCode.INVALID_INTERNAL_ANNOTATION: [
