@@ -149,4 +149,6 @@ u
 unavailable
 unsound
 v
+wasm:export
+wasm:import
 x
