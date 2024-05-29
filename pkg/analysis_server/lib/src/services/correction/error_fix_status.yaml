@@ -45,8 +45,8 @@
 #
 # Stats:
 # -  42 "needsEvaluation"
-# - 359 "needsFix"
-# - 392 "hasFix"
+# - 357 "needsFix"
+# - 394 "hasFix"
 # - 516 "noFix"
 
 AnalysisOptionsErrorCode.INCLUDED_FILE_PARSE_ERROR:
@@ -1120,9 +1120,7 @@ CompileTimeErrorCode.MIXIN_ON_TYPE_ALIAS_EXPANDS_TO_TYPE_PARAMETER:
 CompileTimeErrorCode.MIXIN_SUBTYPE_OF_BASE_IS_NOT_BASE:
   status: hasFix
 CompileTimeErrorCode.MIXIN_SUBTYPE_OF_FINAL_IS_NOT_BASE:
-  status: needsFix
-  notes: |-
-    Add `base`.
+  status: hasFix
 CompileTimeErrorCode.MIXIN_SUPER_CLASS_CONSTRAINT_DEFERRED_CLASS:
   status: needsFix
   notes: |-
@@ -2534,9 +2532,7 @@ ParserErrorCode.ABSTRACT_SEALED_CLASS:
   notes: |-
     Remove either the `abstract` or the `sealed` keyword.
 ParserErrorCode.ABSTRACT_STATIC_FIELD:
-  status: needsFix
-  notes: |-
-    Remove the `abstract` keyword.
+  status: hasFix
 ParserErrorCode.ABSTRACT_STATIC_METHOD:
   status: needsFix
   notes: |-
@@ -3578,8 +3574,6 @@ WarningCode.INVALID_FACTORY_METHOD_DECL:
   status: noFix
 WarningCode.INVALID_FACTORY_METHOD_IMPL:
   status: noFix
-WarningCode.INVALID_IMMUTABLE_ANNOTATION:
-  status: hasFix
 WarningCode.INVALID_INTERNAL_ANNOTATION:
   status: hasFix
 WarningCode.INVALID_LITERAL_ANNOTATION:
