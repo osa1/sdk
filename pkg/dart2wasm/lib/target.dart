@@ -246,9 +246,10 @@ class WasmTarget extends Target {
       {void Function(String msg)? logger,
       ChangedStructureNotifier? changedStructureNotifier}) {
     // Check that FfiNative annotations and Wasm import/export pragmas are only
-    // used in `dart:` libaries.
+    // used in `dart:` libaries and SDK tests.
     for (Library library in libraries) {
-      if (!library.importUri.isScheme('dart')) {
+      if (!library.importUri.isScheme('dart') &&
+          !library.importUri.toString().contains('tests/web/wasm')) {
         _reportInteropPragmasInUserLibrary(library, coreTypes,
             diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
       }
