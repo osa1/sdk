@@ -537,6 +537,10 @@ final _dartFfiUri = Uri.parse('dart:ffi');
 void _reportInteropPragmasInUserLibrary(Library library, CoreTypes coreTypes,
     DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
   // Check `dart:ffi` dependencies.
+  //
+  // We could export `dart:ffi` as `dart:_ffi` and remove `dart:ffi` from the
+  // platform, but Flutter already uses `dart:ffi` so we can't do this easily.
+  // For now reject `dart:ffi` outside of `dart:` libs here.
   for (LibraryDependency dep in library.dependencies) {
     if (dep.targetLibrary.importUri == _dartFfiUri) {
       diagnosticReporter.report(
