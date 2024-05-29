@@ -249,7 +249,7 @@ class WasmTarget extends Target {
     // used in `dart:` libaries and SDK tests.
     for (Library library in libraries) {
       if (!library.importUri.isScheme('dart') &&
-          !library.importUri.toString().contains('tests/web/wasm')) {
+          !library.importUri.toString().contains('tests/web/wasm/ffi')) {
         _reportInteropPragmasInUserLibrary(library, coreTypes,
             diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
       }
