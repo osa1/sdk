@@ -116,6 +116,7 @@ class JsInteropChecks extends RecursiveVisitor {
   // of `libraries.json`.
   static const _allowedInteropLibrariesInDart2WasmPackages = [
     // Both these packages re-export other interop libraries
+    'js',
     'js_util',
     // Flutter/benchmarks.
     'flutter',
