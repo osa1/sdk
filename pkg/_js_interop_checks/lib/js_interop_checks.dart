@@ -635,11 +635,6 @@ class JsInteropChecks extends RecursiveVisitor {
   /// Assumes given [member] is not JS interop, and reports an error if
   /// [member] is `external` and not an allowed `external` usage.
   void _checkDisallowedExternal(Member member) {
-    // TODO(joshualitt): These checks add value for our users, but unfortunately
-    // some backends support multiple native APIs. We should really make a
-    // neutral 'ExternalUsageVerifier` class, but until then we just disable
-    // this check on Dart2Wasm.
-    if (isDart2Wasm) return;
     if (member.isExternal) {
       if (_isAllowedExternalUsage(member)) return;
       if (member.isExtensionMember) {
