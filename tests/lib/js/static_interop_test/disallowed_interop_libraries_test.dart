@@ -22,6 +22,6 @@
 
 /**/ import 'dart:ffi';
 //   ^
-// [web] JS interop library 'dart:ffi' can't be imported when compiling to Wasm.
+// [web] 'dart:ffi' can't be imported when compiling to Wasm.
 
 void main() {}
