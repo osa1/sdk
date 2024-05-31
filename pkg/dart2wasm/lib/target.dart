@@ -527,11 +527,15 @@ class WasmVerification extends Verification {
 final _dartCoreUri = Uri.parse('dart:core');
 
 /// Check that `wasm:import` and `wasm:export` pragmas are only used in `dart:`
-/// libraries and in some specific tests.
+/// libraries and in tests, with the exception of
+/// `reject_import_export_pragmas` test.
 void _checkWasmImportExportPragmas(List<Library> libraries, CoreTypes coreTypes,
     DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
   for (Library library in libraries) {
-    if (library.importUri.isScheme('dart')) {
+    final importUri = library.importUri;
+    if (importUri.isScheme('dart') ||
+        (importUri.path.contains('tests/web/wasm') &&
+            !importUri.path.contains('reject_import_export_pragmas'))) {
       continue;
     }
 
