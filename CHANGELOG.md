@@ -9,9 +9,13 @@ This is a patch release that:
   `array.new_fixed()` has a constant larger than 10000 (issues [#55872],
   [#55876]).
 
+- Disallows `dart:ffi` imports and `wasm:import` and `wasm:export` pragmas in
+  user code in dart2wasm (issue [#55733]).
+
 [#55767]: https://github.com/dart-lang/sdk/issues/55767
 [#55872]: https://github.com/dart-lang/sdk/issues/55872
 [#55876]: https://github.com/dart-lang/sdk/issues/55876
+[#55733]: https://github.com/dart-lang/sdk/issues/55733
 
 ## 3.4.2 - 2024-05-29
 
