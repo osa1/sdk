@@ -244,13 +244,13 @@ class WasmTarget extends Target {
       {void Function(String msg)? logger,
       ChangedStructureNotifier? changedStructureNotifier}) {
     Set<Library> transitiveImportingJSInterop = {
-      ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("package:js/js.dart")),
-      ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("dart:_js_annotations")),
-      ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("dart:js_interop")),
-      ...?jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("dart:convert")),
     };
     if (transitiveImportingJSInterop.isEmpty) {
