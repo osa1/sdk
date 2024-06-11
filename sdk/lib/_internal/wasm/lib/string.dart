@@ -57,7 +57,7 @@ void copyRangeFromUint8ListToOneByteString(
 OneByteString createOneByteStringFromCharacters(
     U8List bytes, int start, int end) {
   final len = end - start;
-  final s = OneByteString.withLength(end - start);
+  final s = OneByteString.withLength(len);
   s._array.copy(0, bytes.data, start, len);
   return s;
 }
