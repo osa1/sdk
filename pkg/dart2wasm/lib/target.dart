@@ -543,8 +543,9 @@ void _checkWasmImportExportPragmas(List<Library> libraries, CoreTypes coreTypes,
   for (Library library in libraries) {
     final importUri = library.importUri;
     if (importUri.isScheme('dart') ||
-        JsInteropChecks.allowedInteropLibrariesInDart2WasmPackages
-            .any((pkg) => importUri.pathSegments.first == pkg) ||
+        (importUri.isScheme('package') &&
+            JsInteropChecks.allowedInteropLibrariesInDart2WasmPackages
+                .any((pkg) => importUri.pathSegments.first == pkg)) ||
         (importUri.path.contains('tests/web/wasm') &&
             !importUri.path.contains('reject_import_export_pragmas'))) {
       continue;
