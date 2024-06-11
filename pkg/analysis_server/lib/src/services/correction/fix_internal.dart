@@ -188,6 +188,7 @@ import 'package:analysis_server/src/services/correction/dart/rename_to_camel_cas
 import 'package:analysis_server/src/services/correction/dart/replace_boolean_with_bool.dart';
 import 'package:analysis_server/src/services/correction/dart/replace_cascade_with_dot.dart';
 import 'package:analysis_server/src/services/correction/dart/replace_colon_with_equals.dart';
+import 'package:analysis_server/src/services/correction/dart/replace_colon_with_in.dart';
 import 'package:analysis_server/src/services/correction/dart/replace_container_with_sized_box.dart';
 import 'package:analysis_server/src/services/correction/dart/replace_empty_map_pattern.dart';
 import 'package:analysis_server/src/services/correction/dart/replace_final_with_const.dart';
@@ -1035,6 +1036,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   CompileTimeErrorCode.INVALID_MODIFIER_ON_CONSTRUCTOR: [
     RemoveLexeme.modifier,
   ],
+  CompileTimeErrorCode.INVALID_MODIFIER_ON_SETTER: [
+    RemoveLexeme.modifier,
+  ],
   CompileTimeErrorCode.INVALID_USE_OF_COVARIANT: [
     RemoveLexeme.keyword,
   ],
@@ -1358,6 +1362,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ParserErrorCode.ABSTRACT_STATIC_METHOD: [
     RemoveLexeme.modifier,
   ],
+  ParserErrorCode.COLON_IN_PLACE_OF_IN: [
+    ReplaceColonWithIn.new,
+  ],
   ParserErrorCode.CONST_CLASS: [
     RemoveConst.new,
   ],
@@ -1451,6 +1458,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ],
   ParserErrorCode.MISSING_FUNCTION_BODY: [
     ConvertIntoBlockBody.missingBody,
+  ],
+  ParserErrorCode.MISSING_TYPEDEF_PARAMETERS: [
+    AddEmptyArgumentList.new,
   ],
   ParserErrorCode.MIXIN_DECLARES_CONSTRUCTOR: [
     RemoveConstructor.new,

@@ -85,6 +85,8 @@ class JsInteropChecks extends RecursiveVisitor {
   final ExportChecker exportChecker;
   final bool isDart2Wasm;
 
+  final List<String> _disallowedInteropLibrariesInDart2Wasm;
+
   /// Native tests to exclude from checks on external.
   // TODO(rileyporter): Use ExternalName from CFE to exclude native tests.
   static final List<Pattern> _allowedNativeTestPatterns = [
@@ -107,7 +109,7 @@ class JsInteropChecks extends RecursiveVisitor {
     // Negative lookahead to test the violation.
     RegExp(
         r'(?<!generated_)tests/lib/js/static_interop_test(?!/disallowed_interop_libraries_test.dart)'),
-    RegExp(r'(?<!generated_)tests/web/wasm'),
+    RegExp(r'(?<!generated_)tests/web/wasm/(?!ffi/).*'),
     // Flutter tests.
     RegExp(r'flutter/lib/web_ui/test'),
   ];
@@ -115,7 +117,7 @@ class JsInteropChecks extends RecursiveVisitor {
   // TODO(srujzs): Help migrate some of these away. Once we're done, we can
   // remove `dart:*` interop libraries from the check as they can be moved out
   // of `libraries.json`.
-  static const _allowedInteropLibrariesInDart2WasmPackages = [
+  static const allowedInteropLibrariesInDart2WasmPackages = [
     // Both these packages re-export other interop libraries
     'js',
     'js_util',
@@ -131,7 +133,7 @@ class JsInteropChecks extends RecursiveVisitor {
   ];
 
   /// Interop libraries that cannot be used in dart2wasm.
-  static const _disallowedInteropLibrariesInDart2Wasm = [
+  static const _disallowedInteropLibrariesInDart2WasmByDefault = [
     'package:js/js.dart',
     'package:js/js_util.dart',
     'dart:js_util',
@@ -163,12 +165,16 @@ class JsInteropChecks extends RecursiveVisitor {
 
   JsInteropChecks(this._coreTypes, ClassHierarchy hierarchy, this._reporter,
       this._nativeClasses,
-      {this.isDart2Wasm = false})
+      {this.isDart2Wasm = false, bool enableExperimentalFfi = false})
       : exportChecker = ExportChecker(_reporter, _coreTypes.objectClass),
         _functionToJSTarget = _coreTypes.index.getTopLevelProcedure(
             'dart:js_interop', 'FunctionToJSExportedDartFunction|get#toJS'),
         _staticTypeContext = StatefulStaticTypeContext.stacked(
-            TypeEnvironment(_coreTypes, hierarchy)) {
+            TypeEnvironment(_coreTypes, hierarchy)),
+        _disallowedInteropLibrariesInDart2Wasm = [
+          for (final entry in _disallowedInteropLibrariesInDart2WasmByDefault)
+            if (!(entry == 'dart:ffi' && enableExperimentalFfi)) entry
+        ] {
     extensionIndex =
         ExtensionIndex(_coreTypes, _staticTypeContext.typeEnvironment);
   }
@@ -547,7 +553,7 @@ class JsInteropChecks extends RecursiveVisitor {
         // `dart:ui`.
         final allowedToImport = uri.isScheme('dart') ||
             (uri.isScheme('package') &&
-                _allowedInteropLibrariesInDart2WasmPackages
+                allowedInteropLibrariesInDart2WasmPackages
                     .any((pkg) => uri.pathSegments.first == pkg)) ||
             _allowedUseOfDart2WasmDisallowedInteropLibrariesTestPatterns
                 .any((pattern) => uri.path.contains(pattern));

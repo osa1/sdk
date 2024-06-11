@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/messages/codes.dart'
-    show Message, LocatedMessage;
+    show Message, LocatedMessage, messageWasmImportOrExportInUserCode;
 import 'package:_js_interop_checks/js_interop_checks.dart';
 import 'package:_js_interop_checks/src/js_interop.dart' as jsInteropHelper;
 import 'package:_js_interop_checks/src/transformations/shared_interop_transformer.dart';
@@ -89,10 +89,14 @@ class ConstantResolver extends Transformer {
 }
 
 class WasmTarget extends Target {
-  WasmTarget({this.removeAsserts = false, this.mode = Mode.regular});
+  WasmTarget(
+      {this.enableExperimentalFfi = true,
+      this.removeAsserts = false,
+      this.mode = Mode.regular});
 
-  bool removeAsserts;
-  Mode mode;
+  final bool removeAsserts;
+  final Mode mode;
+  final bool enableExperimentalFfi;
   Class? _growableList;
   Class? _immutableList;
   Class? _wasmDefaultMap;
@@ -206,7 +210,7 @@ class WasmTarget extends Target {
         diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
     final jsInteropChecks = JsInteropChecks(
         coreTypes, hierarchy, jsInteropReporter, _nativeClasses!,
-        isDart2Wasm: true);
+        isDart2Wasm: true, enableExperimentalFfi: enableExperimentalFfi);
     // Process and validate first before doing anything with exports.
     for (Library library in interopDependentLibraries) {
       jsInteropChecks.visitLibrary(library);
@@ -243,6 +247,11 @@ class WasmTarget extends Target {
       ReferenceFromIndex? referenceFromIndex,
       {void Function(String msg)? logger,
       ChangedStructureNotifier? changedStructureNotifier}) {
+    // Check `wasm:import` and `wasm:export` pragmas before FFI transforms as
+    // FFI transforms convert JS interop annotations to these pragmas.
+    _checkWasmImportExportPragmas(libraries, coreTypes,
+        diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
+
     Set<Library> transitiveImportingJSInterop = {
       ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("package:js/js.dart")),
@@ -497,6 +506,10 @@ class WasmTarget extends Target {
   @override
   Class concreteDoubleLiteralClass(CoreTypes coreTypes, double value) =>
       _boxedDouble ??= coreTypes.index.getClass("dart:core", "_BoxedDouble");
+
+  @override
+  DartLibrarySupport get dartLibrarySupport => CustomizedDartLibrarySupport(
+      unsupported: {if (!enableExperimentalFfi) 'ffi'});
 }
 
 class WasmVerification extends Verification {
@@ -517,5 +530,54 @@ class WasmVerification extends Verification {
           node is AsExpression;
     }
     return false;
+  }
+}
+
+final _dartCoreUri = Uri.parse('dart:core');
+
+/// Check that `wasm:import` and `wasm:export` pragmas are only used in `dart:`
+/// libraries and in tests, with the exception of
+/// `reject_import_export_pragmas` test.
+void _checkWasmImportExportPragmas(List<Library> libraries, CoreTypes coreTypes,
+    DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
+  for (Library library in libraries) {
+    final importUri = library.importUri;
+    if (importUri.isScheme('dart') ||
+        (importUri.isScheme('package') &&
+            JsInteropChecks.allowedInteropLibrariesInDart2WasmPackages
+                .any((pkg) => importUri.pathSegments.first == pkg)) ||
+        (importUri.path.contains('tests/web/wasm') &&
+            !importUri.path.contains('reject_import_export_pragmas'))) {
+      continue;
+    }
+
+    for (Member member in library.members) {
+      for (Expression annotation in member.annotations) {
+        if (annotation is! ConstantExpression) {
+          continue;
+        }
+        final annotationConstant = annotation.constant;
+        if (annotationConstant is! InstanceConstant) {
+          continue;
+        }
+        final cls = annotationConstant.classNode;
+        if (cls.name == 'pragma' &&
+            cls.enclosingLibrary.importUri == _dartCoreUri) {
+          final pragmaName = annotationConstant
+              .fieldValues[coreTypes.pragmaName.fieldReference];
+          if (pragmaName is StringConstant) {
+            if (pragmaName.value == 'wasm:import' ||
+                pragmaName.value == 'wasm:export') {
+              diagnosticReporter.report(
+                messageWasmImportOrExportInUserCode,
+                annotation.fileOffset,
+                0,
+                library.fileUri,
+              );
+            }
+          }
+        }
+      }
+    }
   }
 }
