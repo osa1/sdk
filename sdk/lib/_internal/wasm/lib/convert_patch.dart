@@ -1471,11 +1471,11 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
  * Chunked JSON parser that parses UTF-8 chunks.
  */
 class _JsonUtf8Parser extends _JsonParserWithListener
-    with _ChunkedJsonParser<Uint8List> {
+    with _ChunkedJsonParser<U8List> {
   static final U8List emptyChunk = U8List(0);
 
   final _Utf8Decoder decoder;
-  Uint8List chunk = emptyChunk;
+  U8List chunk = emptyChunk;
   int chunkEnd = 0;
 
   _JsonUtf8Parser(_JsonListener listener, bool allowMalformed)
@@ -1487,10 +1487,10 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   }
 
   void parseChunk(List<int> value, int start, int end) {
-    if (value is Uint8List) {
+    if (value is U8List) {
       chunk = value;
     } else {
-      final bytes = Uint8List(end - start);
+      final bytes = U8List(end - start);
       bytes.setRange(0, bytes.length, value, start);
       end = bytes.length;
       start = 0;
