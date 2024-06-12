@@ -193,12 +193,12 @@ class _JsonListener {
 class _NumberBuffer {
   static const int minCapacity = 16;
   static const int defaultOverhead = 5;
-  WasmArray<WasmI8> list;
+  WasmArray<WasmI8> array;
   int length = 0;
   _NumberBuffer(int initialCapacity)
-      : list = WasmArray<WasmI8>(_initialCapacity(initialCapacity));
+      : array = WasmArray<WasmI8>(_initialCapacity(initialCapacity));
 
-  int get capacity => list.length;
+  int get capacity => array.length;
 
   // Pick an initial capacity greater than the first part's size.
   // The typical use case has two parts, this is the attempt at
@@ -217,15 +217,15 @@ class _NumberBuffer {
 
   // Grows to the exact size asked for.
   void ensureCapacity(int newCapacity) {
-    WasmArray<WasmI8> list = this.list;
-    if (newCapacity <= list.length) return;
-    WasmArray<WasmI8> newList = WasmArray<WasmI8>(newCapacity);
-    newList.copy(0, list, 0, list.length);
-    this.list = newList;
+    WasmArray<WasmI8> array = this.array;
+    if (newCapacity <= array.length) return;
+    WasmArray<WasmI8> newArray = WasmArray<WasmI8>(newCapacity);
+    newArray.copy(0, array, 0, array.length);
+    this.array = newArray;
   }
 
   String getString() {
-    String result = createOneByteStringFromCharactersArray(list, 0, length);
+    String result = createOneByteStringFromCharactersArray(array, 0, length);
     return result;
   }
 
@@ -233,7 +233,6 @@ class _NumberBuffer {
   // not only working on strings, but also on char-code lists, without losing
   // performance.
   num parseNum() => num.parse(getString());
-
   double parseDouble() => double.parse(getString());
 }
 
@@ -1247,7 +1246,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     int end = chunkEnd;
     int length = end - start;
     var buffer = new _NumberBuffer(length);
-    copyCharsToList(start, end, buffer.list, 0);
+    copyCharsToList(start, end, buffer.array, 0);
     buffer.length = length;
     this.buffer = buffer;
     this.partialState = PARTIAL_NUMERAL | state;
@@ -1260,7 +1259,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     int newCount = count + length;
     int newCapacity = newCount + overhead;
     buffer.ensureCapacity(newCapacity);
-    copyCharsToList(start, end, buffer.list, count);
+    copyCharsToList(start, end, buffer.array, count);
     buffer.length = newCount;
   }
 
