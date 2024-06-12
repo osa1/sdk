@@ -200,6 +200,10 @@ class _NumberBuffer {
 
   int get capacity => array.length;
 
+  void clear() {
+    length = 0;
+  }
+
   // Pick an initial capacity greater than the first part's size.
   // The typical use case has two parts, this is the attempt at
   // guessing the size of the second part without overdoing it.
@@ -428,12 +432,14 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   int partialState = NO_PARTIAL;
 
   /**
-   * Extra data stored while parsing a primitive value.
-   * May be set during parsing, always set at chunk end if a value is partial.
-   *
-   * May contain a string buffer while parsing strings.
+   * String parts stored while parsing a string.
    */
-  dynamic buffer = null;
+  StringBuffer stringBuffer = StringBuffer();
+
+  /**
+   * Number parts stored while parsing a number.
+   */
+  _NumberBuffer numberBuffer = _NumberBuffer(100);
 
   /**
    * Push the current parse [state] on a stack.
@@ -473,9 +479,8 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         // A partial number might be a valid number if we know it's done.
         // There is an unnecessary overhead if input is a single number,
         // but this is assumed to be rare.
-        _NumberBuffer buffer = this.buffer;
-        this.buffer = null;
-        finishChunkNumber(numState, 0, 0, buffer);
+        finishChunkNumber(numState, 0, 0, numberBuffer);
+        numberBuffer.clear();
       } else if (partialType == PARTIAL_STRING) {
         fail(chunkEnd, "Unterminated string");
       } else {
@@ -641,8 +646,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   int parsePartialNumber(int position, int state) {
     int start = position;
     // Primitive implementation, can be optimized.
-    _NumberBuffer buffer = this.buffer;
-    this.buffer = null;
+    _NumberBuffer buffer = this.numberBuffer;
     int end = chunkEnd;
     toBailout:
     {
@@ -677,6 +681,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
             state = NUM_E;
           } else {
             finishChunkNumber(state, start, position, buffer);
+            numberBuffer.clear();
             return position;
           }
         }
@@ -695,6 +700,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
             state = NUM_E;
           } else {
             finishChunkNumber(state, start, position, buffer);
+            numberBuffer.clear();
             return position;
           }
         }
@@ -721,11 +727,13 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         digit = char ^ CHAR_0;
       }
       finishChunkNumber(state, start, position, buffer);
+      numberBuffer.clear();
       return position;
     }
     // Bailout code in case the current chunk ends while parsing the numeral.
     assert(position == end);
-    continueChunkNumber(state, start, buffer);
+    continueChunkNumber(state, start);
+    numberBuffer.clear();
     return chunkEnd;
   }
 
@@ -1245,10 +1253,8 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   int beginChunkNumber(int state, int start) {
     int end = chunkEnd;
     int length = end - start;
-    var buffer = new _NumberBuffer(length);
-    copyCharsToList(start, end, buffer.array, 0);
-    buffer.length = length;
-    this.buffer = buffer;
+    copyCharsToList(start, end, numberBuffer.array, 0);
+    numberBuffer.length = length;
     this.partialState = PARTIAL_NUMERAL | state;
     return end;
   }
@@ -1264,10 +1270,9 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   }
 
   // Continues an already chunked number across an entire chunk.
-  int continueChunkNumber(int state, int start, _NumberBuffer buffer) {
+  int continueChunkNumber(int state, int start) {
     int end = chunkEnd;
-    addNumberChunk(buffer, start, end, _NumberBuffer.defaultOverhead);
-    this.buffer = buffer;
+    addNumberChunk(numberBuffer, start, end, _NumberBuffer.defaultOverhead);
     this.partialState = PARTIAL_NUMERAL | state;
     return end;
   }
@@ -1477,23 +1482,21 @@ class _JsonStringParser extends _JsonParserWithListener
   }
 
   void beginString() {
-    this.buffer = new StringBuffer();
+    stringBuffer.clear();
   }
 
   void addSliceToString(int start, int end) {
-    StringBuffer buffer = this.buffer;
-    buffer.write(chunk.substring(start, end));
+    stringBuffer.write(chunk.substring(start, end));
   }
 
   void addCharToString(int charCode) {
-    StringBuffer buffer = this.buffer;
-    buffer.writeCharCode(charCode);
+    stringBuffer.writeCharCode(charCode);
   }
 
   String endString() {
-    StringBuffer buffer = this.buffer;
-    this.buffer = null;
-    return buffer.toString();
+    final string = stringBuffer.toString();
+    stringBuffer.clear();
+    return string;
   }
 
   void copyCharsToList(
@@ -1611,25 +1614,23 @@ class _JsonUtf8Parser extends _JsonParserWithListener
 
   void beginString() {
     decoder.reset();
-    this.buffer = new StringBuffer();
+    stringBuffer.clear();
   }
 
   void addSliceToString(int start, int end) {
-    final StringBuffer buffer = this.buffer;
-    buffer.write(decoder.convertChunked(chunk, start, end));
+    stringBuffer.write(decoder.convertChunked(chunk, start, end));
   }
 
   void addCharToString(int charCode) {
-    final StringBuffer buffer = this.buffer;
-    decoder.flush(buffer);
-    buffer.writeCharCode(charCode);
+    decoder.flush(stringBuffer);
+    stringBuffer.writeCharCode(charCode);
   }
 
   String endString() {
-    final StringBuffer buffer = this.buffer;
-    decoder.flush(buffer);
-    this.buffer = null;
-    return buffer.toString();
+    decoder.flush(stringBuffer);
+    final string = stringBuffer.toString();
+    stringBuffer.clear();
+    return string;
   }
 
   void copyCharsToList(
