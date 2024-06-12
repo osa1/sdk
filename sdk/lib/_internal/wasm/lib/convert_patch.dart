@@ -733,7 +733,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     // Bailout code in case the current chunk ends while parsing the numeral.
     assert(position == end);
     continueChunkNumber(state, start);
-    numberBuffer.clear();
     return chunkEnd;
   }
 
