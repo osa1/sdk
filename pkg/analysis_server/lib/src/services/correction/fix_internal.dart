@@ -126,6 +126,7 @@ import 'package:analysis_server/src/services/correction/dart/remove_assignment.d
 import 'package:analysis_server/src/services/correction/dart/remove_await.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_break.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_character.dart';
+import 'package:analysis_server/src/services/correction/dart/remove_comma.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_comparison.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_const.dart';
 import 'package:analysis_server/src/services/correction/dart/remove_constructor.dart';
@@ -1386,6 +1387,12 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ParserErrorCode.DUPLICATED_MODIFIER: [
     RemoveLexeme.modifier,
   ],
+  ParserErrorCode.EMPTY_RECORD_LITERAL_WITH_COMMA: [
+    RemoveComma.emptyRecordLiteral,
+  ],
+  ParserErrorCode.EMPTY_RECORD_TYPE_WITH_COMMA: [
+    RemoveComma.emptyRecordType,
+  ],
   ParserErrorCode.EXPECTED_TOKEN: [
     InsertSemicolon.new,
     ReplaceWithArrow.new,
@@ -1480,6 +1487,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ParserErrorCode.RECORD_TYPE_ONE_POSITIONAL_NO_TRAILING_COMMA: [
     AddTrailingComma.new,
   ],
+  ParserErrorCode.REPRESENTATION_FIELD_TRAILING_COMMA: [
+    RemoveComma.representationField,
+  ],
   ParserErrorCode.SEALED_MIXIN: [
     RemoveLexeme.modifier,
   ],
@@ -1493,6 +1503,9 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     RemoveLexeme.keyword,
   ],
   ParserErrorCode.STATIC_GETTER_WITHOUT_BODY: [
+    ConvertIntoBlockBody.missingBody,
+  ],
+  ParserErrorCode.STATIC_SETTER_WITHOUT_BODY: [
     ConvertIntoBlockBody.missingBody,
   ],
   ParserErrorCode.STATIC_OPERATOR: [
