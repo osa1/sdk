@@ -492,7 +492,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         // There is an unnecessary overhead if input is a single number,
         // but this is assumed to be rare.
         finishChunkNumber(numState, 0, 0);
-        numberBuffer.clear();
       } else if (partialType == PARTIAL_STRING) {
         fail(chunkEnd, "Unterminated string");
       } else {
@@ -691,7 +690,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
             state = NUM_E;
           } else {
             finishChunkNumber(state, start, position);
-            numberBuffer.clear();
             return position;
           }
         }
@@ -710,7 +708,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
             state = NUM_E;
           } else {
             finishChunkNumber(state, start, position);
-            numberBuffer.clear();
             return position;
           }
         }
@@ -737,7 +734,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         digit = char ^ CHAR_0;
       }
       finishChunkNumber(state, start, position);
-      numberBuffer.clear();
       return position;
     }
     // Bailout code in case the current chunk ends while parsing the numeral.
@@ -1287,6 +1283,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   int finishChunkNumber(int state, int start, int end) {
     if (state == NUM_ZERO) {
       listener.handleNumber(0);
+      numberBuffer.clear();
       return end;
     }
     if (end > start) {
@@ -1300,6 +1297,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     } else {
       fail(chunkEnd, "Unterminated number literal");
     }
+    numberBuffer.clear();
     return end;
   }
 
