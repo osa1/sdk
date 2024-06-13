@@ -1280,11 +1280,11 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     return end;
   }
 
-  int finishChunkNumber(int state, int start, int end) {
+  void finishChunkNumber(int state, int start, int end) {
     if (state == NUM_ZERO) {
       listener.handleNumber(0);
       numberBuffer.clear();
-      return end;
+      return;
     }
     if (end > start) {
       addNumberChunk(start, end, 0);
@@ -1298,7 +1298,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
       fail(chunkEnd, "Unterminated number literal");
     }
     numberBuffer.clear();
-    return end;
   }
 
   int parseNumber(int char, int position) {
