@@ -524,7 +524,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * Get character/code unit of current chunk.
    *
    * The [index] must be non-negative and less than `chunkEnd`.
-   * In practive, [index] will be no smaller than the `start` argument passed
+   * In practice, [index] will be no smaller than the `start` argument passed
    * to [parse].
    */
   int getChar(int index);
@@ -1597,7 +1597,7 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   bool get isUtf16Input => false;
 
   @pragma('wasm:prefer-inline')
-  int getChar(int position) => chunk[position];
+  int getChar(int position) => chunk.data.readUnsigned(position);
 
   String getString(int start, int end, int bits) {
     const int maxAsciiChar = 0x7f;
