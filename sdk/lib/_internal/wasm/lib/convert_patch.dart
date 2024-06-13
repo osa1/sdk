@@ -479,7 +479,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         // A partial number might be a valid number if we know it's done.
         // There is an unnecessary overhead if input is a single number,
         // but this is assumed to be rare.
-        finishChunkNumber(numState, 0, 0, numberBuffer);
+        finishChunkNumber(numState, 0, 0);
         numberBuffer.clear();
       } else if (partialType == PARTIAL_STRING) {
         fail(chunkEnd, "Unterminated string");
@@ -646,7 +646,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   int parsePartialNumber(int position, int state) {
     int start = position;
     // Primitive implementation, can be optimized.
-    _NumberBuffer buffer = this.numberBuffer;
     int end = chunkEnd;
     toBailout:
     {
@@ -680,7 +679,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
           } else if ((char | 0x20) == CHAR_e) {
             state = NUM_E;
           } else {
-            finishChunkNumber(state, start, position, buffer);
+            finishChunkNumber(state, start, position);
             numberBuffer.clear();
             return position;
           }
@@ -699,7 +698,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
           if ((char | 0x20) == CHAR_e) {
             state = NUM_E;
           } else {
-            finishChunkNumber(state, start, position, buffer);
+            finishChunkNumber(state, start, position);
             numberBuffer.clear();
             return position;
           }
@@ -726,7 +725,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         char = getChar(position);
         digit = char ^ CHAR_0;
       }
-      finishChunkNumber(state, start, position, buffer);
+      finishChunkNumber(state, start, position);
       numberBuffer.clear();
       return position;
     }
@@ -1258,37 +1257,37 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     return end;
   }
 
-  void addNumberChunk(_NumberBuffer buffer, int start, int end, int overhead) {
+  void addNumberChunk(int start, int end, int overhead) {
     int length = end - start;
-    int count = buffer.length;
+    int count = numberBuffer.length;
     int newCount = count + length;
     int newCapacity = newCount + overhead;
-    buffer.ensureCapacity(newCapacity);
-    copyCharsToList(start, end, buffer.array, count);
-    buffer.length = newCount;
+    numberBuffer.ensureCapacity(newCapacity);
+    copyCharsToList(start, end, numberBuffer.array, count);
+    numberBuffer.length = newCount;
   }
 
   // Continues an already chunked number across an entire chunk.
   int continueChunkNumber(int state, int start) {
     int end = chunkEnd;
-    addNumberChunk(numberBuffer, start, end, _NumberBuffer.defaultOverhead);
+    addNumberChunk(start, end, _NumberBuffer.defaultOverhead);
     this.partialState = PARTIAL_NUMERAL | state;
     return end;
   }
 
-  int finishChunkNumber(int state, int start, int end, _NumberBuffer buffer) {
+  int finishChunkNumber(int state, int start, int end) {
     if (state == NUM_ZERO) {
       listener.handleNumber(0);
       return end;
     }
     if (end > start) {
-      addNumberChunk(buffer, start, end, 0);
+      addNumberChunk(start, end, 0);
     }
     if (state == NUM_DIGIT) {
-      num value = buffer.parseNum();
+      num value = numberBuffer.parseNum();
       listener.handleNumber(value);
     } else if (state == NUM_DOT_DIGIT || state == NUM_E_DIGIT) {
-      listener.handleNumber(buffer.parseDouble());
+      listener.handleNumber(numberBuffer.parseDouble());
     } else {
       fail(chunkEnd, "Unterminated number literal");
     }
