@@ -451,7 +451,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   /**
    * Number parts stored while parsing a number.
    */
-  final _NumberBuffer numberBuffer = _NumberBuffer(100);
+  final _NumberBuffer numberBuffer = _NumberBuffer(_NumberBuffer.minCapacity);
 
   /**
    * Push the current parse [state] on a stack.
