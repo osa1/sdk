@@ -446,12 +446,12 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   /**
    * String parts stored while parsing a string.
    */
-  StringBuffer stringBuffer = StringBuffer();
+  final StringBuffer stringBuffer = StringBuffer();
 
   /**
    * Number parts stored while parsing a number.
    */
-  _NumberBuffer numberBuffer = _NumberBuffer(100);
+  final _NumberBuffer numberBuffer = _NumberBuffer(100);
 
   /**
    * Push the current parse [state] on a stack.
