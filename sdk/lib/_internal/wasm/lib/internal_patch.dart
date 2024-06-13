@@ -37,11 +37,20 @@ class Lists {
   }
 }
 
-// Base class for any wasm-backed typed data implementation class.
+/// Base class for Wasm-backed typed data implementation classes.
 abstract class WasmTypedDataBase {}
 
-// Base class for any wasm-backed string implementation class.
+/// Base class for Wasm-backed string implementation classes.
 abstract class WasmStringBase implements String {}
+
+/// Defines unchecked `codeUnitAt` that all dart2wasm string classes should
+/// implement.
+///
+/// This operation is unsed by libraries when we know that `codeUnitAt` cannot
+/// fail, to avoid redundant bounds checks.
+abstract class UnsafeStringOperations implements String {
+  int codeUnitAtUnchecked(int index);
+}
 
 // This function can be used to skip implicit or explicit checked down casts in
 // the parts of the core library implementation where we know by construction

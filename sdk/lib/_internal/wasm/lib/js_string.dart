@@ -4,7 +4,7 @@
 
 part of dart._js_types;
 
-final class JSStringImpl implements String {
+final class JSStringImpl implements String, UnsafeStringOperations {
   final WasmExternRef? _ref;
 
   JSStringImpl(this._ref);
@@ -48,11 +48,12 @@ final class JSStringImpl implements String {
   int codeUnitAt(int index) {
     final length = this.length;
     IndexErrorUtils.checkAssumePositiveLength(index, length);
-    return _codeUnitAtUnchecked(index);
+    return codeUnitAtUnchecked(index);
   }
 
+  @override
   @pragma("wasm:prefer-inline")
-  int _codeUnitAtUnchecked(int index) {
+  int codeUnitAtUnchecked(int index) {
     return _jsCharCodeAt(toExternRef, index);
   }
 
@@ -416,7 +417,7 @@ final class JSStringImpl implements String {
   static int _skipLeadingWhitespace(JSStringImpl string, int index) {
     final stringLength = string.length;
     while (index < stringLength) {
-      int codeUnit = string._codeUnitAtUnchecked(index);
+      int codeUnit = string.codeUnitAtUnchecked(index);
       if (codeUnit != spaceCodeUnit &&
           codeUnit != carriageReturnCodeUnit &&
           !_isWhitespace(codeUnit)) {
@@ -431,7 +432,7 @@ final class JSStringImpl implements String {
   /// Start looking at position [index - 1].
   static int _skipTrailingWhitespace(JSStringImpl string, int index) {
     while (index > 0) {
-      int codeUnit = string._codeUnitAtUnchecked(index - 1);
+      int codeUnit = string.codeUnitAtUnchecked(index - 1);
       if (codeUnit != spaceCodeUnit &&
           codeUnit != carriageReturnCodeUnit &&
           !_isWhitespace(codeUnit)) {
@@ -457,7 +458,7 @@ final class JSStringImpl implements String {
     if (resultLength == 0) return result;
 
     // Check NEL on the left.
-    final int firstCode = result._codeUnitAtUnchecked(0);
+    final int firstCode = result.codeUnitAtUnchecked(0);
     int startIndex = 0;
     if (firstCode == nelCodeUnit) {
       startIndex = _skipLeadingWhitespace(result, 1);
@@ -496,7 +497,7 @@ final class JSStringImpl implements String {
     if (resultLength == 0) return result;
 
     // Check NEL.
-    int firstCode = result._codeUnitAtUnchecked(0);
+    int firstCode = result.codeUnitAtUnchecked(0);
     if (firstCode == nelCodeUnit) {
       startIndex = _skipLeadingWhitespace(result, 1);
     }
@@ -644,7 +645,7 @@ final class JSStringImpl implements String {
     int hash = 0;
     final length = this.length;
     for (int i = 0; i < length; i++) {
-      hash = stringCombineHashes(hash, _codeUnitAtUnchecked(i));
+      hash = stringCombineHashes(hash, codeUnitAtUnchecked(i));
     }
     return stringFinalizeHash(hash);
   }
@@ -653,7 +654,7 @@ final class JSStringImpl implements String {
   @pragma("wasm:prefer-inline")
   String operator [](int index) {
     IndexErrorUtils.checkAssumePositiveLength(index, length);
-    return JSStringImpl(_jsFromCharCode(_codeUnitAtUnchecked(index)));
+    return JSStringImpl(_jsFromCharCode(codeUnitAtUnchecked(index)));
   }
 
   @override
@@ -669,7 +670,7 @@ final class JSStringImpl implements String {
     final length = this.length;
     if (other is String && length == other.length) {
       for (int i = 0; i < length; i++) {
-        if (_codeUnitAtUnchecked(i) != other.codeUnitAt(i)) {
+        if (codeUnitAtUnchecked(i) != other.codeUnitAt(i)) {
           return false;
         }
       }
@@ -688,7 +689,7 @@ final class JSStringImpl implements String {
     final length = this.length;
     final len = (length < otherLength) ? length : otherLength;
     for (int i = 0; i < len; i++) {
-      int thisCodeUnit = _codeUnitAtUnchecked(i);
+      int thisCodeUnit = codeUnitAtUnchecked(i);
       int otherCodeUnit = other.codeUnitAt(i);
       if (thisCodeUnit < otherCodeUnit) {
         return -1;
@@ -709,7 +710,7 @@ final class JSStringImpl implements String {
     final length = this.length;
     int first = 0;
     for (; first < length; first++) {
-      if (!_isWhitespace(_codeUnitAtUnchecked(first))) {
+      if (!_isWhitespace(codeUnitAtUnchecked(first))) {
         break;
       }
     }
@@ -719,7 +720,7 @@ final class JSStringImpl implements String {
   int lastNonWhitespace() {
     int last = length - 1;
     for (; last >= 0; last--) {
-      if (!_isWhitespace(_codeUnitAtUnchecked(last))) {
+      if (!_isWhitespace(codeUnitAtUnchecked(last))) {
         break;
       }
     }

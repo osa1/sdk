@@ -6,11 +6,12 @@ library dart._string;
 
 import "dart:_internal"
     show
-        CodeUnits,
         ClassID,
+        CodeUnits,
         EfficientLengthIterable,
         makeListFixedLength,
         unsafeCast,
+        UnsafeStringOperations,
         WasmStringBase;
 
 import 'dart:_js_helper' show JS, jsStringToDartString;
@@ -27,13 +28,6 @@ import "dart:typed_data" show Uint8List, Uint16List;
 @pragma('wasm:prefer-inline')
 void writeIntoOneByteString(OneByteString s, int index, int codePoint) =>
     s._setAt(index, codePoint);
-
-/// Static function for `OneByteString._codeUnitAtUnchecked` to avoid making
-/// `_codeUnitAtUnchecked` public, which would allow calling it in dynamic
-/// invocations.
-@pragma('wasm:prefer-inline')
-int oneByteStringCodeUnitAtUnchecked(OneByteString s, int index) =>
-    s._codeUnitAtUnchecked(index);
 
 /// Same as `writeIntoOneByteString`, but for `TwoByteString`.
 @pragma('wasm:prefer-inline')
@@ -70,7 +64,7 @@ OneByteString createOneByteStringFromCharactersArray(
 extension OneByteStringUnsafeExtensions on String {
   @pragma('wasm:prefer-inline')
   int oneByteStringCodeUnitAtUnchecked(int index) =>
-      unsafeCast<OneByteString>(this)._codeUnitAtUnchecked(index);
+      unsafeCast<OneByteString>(this).codeUnitAtUnchecked(index);
 }
 
 const int _maxLatin1 = 0xff;
@@ -1057,7 +1051,7 @@ abstract final class StringBase extends WasmStringBase {
 }
 
 @pragma("wasm:entry-point")
-final class OneByteString extends StringBase {
+final class OneByteString extends StringBase implements UnsafeStringOperations {
   @pragma("wasm:entry-point")
   final WasmArray<WasmI8> _array;
 
@@ -1093,15 +1087,16 @@ final class OneByteString extends StringBase {
     return StringBase._operatorEqualsFallback(this, other);
   }
 
+  @override
   @pragma('wasm:prefer-inline')
-  int _codeUnitAtUnchecked(int index) => _array.readUnsigned(index);
+  int codeUnitAtUnchecked(int index) => _array.readUnsigned(index);
 
   @override
   int codeUnitAt(int index) {
     if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
       throw IndexError.withLength(index, length);
     }
-    return _codeUnitAtUnchecked(index);
+    return codeUnitAtUnchecked(index);
   }
 
   @override
@@ -1125,7 +1120,7 @@ final class OneByteString extends StringBase {
     int i = 0;
     int start = 0;
     for (i = 0; i < this.length; ++i) {
-      if (this._codeUnitAtUnchecked(i) == charCode) {
+      if (this.codeUnitAtUnchecked(i) == charCode) {
         parts.add(this._substringUnchecked(start, i));
         start = i + 1;
       }
@@ -1189,7 +1184,7 @@ final class OneByteString extends StringBase {
         return -1;
       }
       for (int i = start; i < len; i++) {
-        if (this._codeUnitAtUnchecked(i) == patternCu0) {
+        if (this.codeUnitAtUnchecked(i) == patternCu0) {
           return i;
         }
       }
@@ -1206,7 +1201,7 @@ final class OneByteString extends StringBase {
         return false;
       }
       for (int i = start; i < len; i++) {
-        if (this._codeUnitAtUnchecked(i) == patternCu0) {
+        if (this.codeUnitAtUnchecked(i) == patternCu0) {
           return true;
         }
       }
@@ -1252,7 +1247,7 @@ final class OneByteString extends StringBase {
       }
     }
     for (int i = 0; i < length; i++) {
-      result._setAt(index++, this._codeUnitAtUnchecked(i));
+      result._setAt(index++, this.codeUnitAtUnchecked(i));
     }
     return result;
   }
@@ -1269,7 +1264,7 @@ final class OneByteString extends StringBase {
     OneByteString result = OneByteString.withLength(resultLength);
     int index = 0;
     for (int i = 0; i < length; i++) {
-      result._setAt(index++, this._codeUnitAtUnchecked(i));
+      result._setAt(index++, this.codeUnitAtUnchecked(i));
     }
     if (padLength == 1) {
       int padChar = padding.codeUnitAt(0);
@@ -1334,19 +1329,19 @@ final class OneByteString extends StringBase {
 
   String toLowerCase() {
     for (int i = 0; i < this.length; i++) {
-      final c = this._codeUnitAtUnchecked(i);
-      if (c == unsafeCast<OneByteString>(_LC_TABLE)._codeUnitAtUnchecked(c))
+      final c = this.codeUnitAtUnchecked(i);
+      if (c == unsafeCast<OneByteString>(_LC_TABLE).codeUnitAtUnchecked(c))
         continue;
       // Upper-case character found.
       final result = OneByteString.withLength(this.length);
       for (int j = 0; j < i; j++) {
-        result._setAt(j, this._codeUnitAtUnchecked(j));
+        result._setAt(j, this.codeUnitAtUnchecked(j));
       }
       for (int j = i; j < this.length; j++) {
         result._setAt(
             j,
             unsafeCast<OneByteString>(_LC_TABLE)
-                ._codeUnitAtUnchecked(this._codeUnitAtUnchecked(j)));
+                .codeUnitAtUnchecked(this.codeUnitAtUnchecked(j)));
       }
       return result;
     }
@@ -1355,16 +1350,16 @@ final class OneByteString extends StringBase {
 
   String toUpperCase() {
     for (int i = 0; i < this.length; i++) {
-      final c = this._codeUnitAtUnchecked(i);
+      final c = this.codeUnitAtUnchecked(i);
       // Continue loop if character is unchanged by upper-case conversion.
-      if (c == unsafeCast<OneByteString>(_UC_TABLE)._codeUnitAtUnchecked(c))
+      if (c == unsafeCast<OneByteString>(_UC_TABLE).codeUnitAtUnchecked(c))
         continue;
 
       // Check rest of string for characters that do not convert to
       // single-characters in the Latin-1 range.
       for (int j = i; j < this.length; j++) {
-        final c = this._codeUnitAtUnchecked(j);
-        if ((unsafeCast<OneByteString>(_UC_TABLE)._codeUnitAtUnchecked(c) ==
+        final c = this.codeUnitAtUnchecked(j);
+        if ((unsafeCast<OneByteString>(_UC_TABLE).codeUnitAtUnchecked(c) ==
                 0x00) &&
             (c != 0x00)) {
           // We use the 0x00 value for characters other than the null character,
@@ -1377,13 +1372,13 @@ final class OneByteString extends StringBase {
       // characters.
       final result = OneByteString.withLength(this.length);
       for (int j = 0; j < i; j++) {
-        result._setAt(j, this._codeUnitAtUnchecked(j));
+        result._setAt(j, this.codeUnitAtUnchecked(j));
       }
       for (int j = i; j < this.length; j++) {
         result._setAt(
             j,
             unsafeCast<OneByteString>(_UC_TABLE)
-                ._codeUnitAtUnchecked(this._codeUnitAtUnchecked(j)));
+                .codeUnitAtUnchecked(this.codeUnitAtUnchecked(j)));
       }
       return result;
     }
@@ -1411,7 +1406,7 @@ final class OneByteString extends StringBase {
 }
 
 @pragma("wasm:entry-point")
-final class TwoByteString extends StringBase {
+final class TwoByteString extends StringBase implements UnsafeStringOperations {
   @pragma("wasm:entry-point")
   final WasmArray<WasmI16> _array;
 
@@ -1470,11 +1465,15 @@ final class TwoByteString extends StringBase {
   }
 
   @override
+  @pragma('wasm:prefer-inline')
+  int codeUnitAtUnchecked(int index) => _array.readUnsigned(index);
+
+  @override
   int codeUnitAt(int index) {
     if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
       throw IndexError.withLength(index, length);
     }
-    return _array.readUnsigned(index);
+    return codeUnitAtUnchecked(index);
   }
 
   @override

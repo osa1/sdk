@@ -2,7 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
+import "dart:_internal"
+    show patch, POWERS_OF_TEN, unsafeCast, UnsafeStringOperations;
 import "dart:_js_string_convert";
 import "dart:_js_types";
 import "dart:_string";
@@ -828,9 +829,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           break;
         }
-        if ((oneByteStringCodeUnitAtUnchecked(charAttributes, char) &
-                CHAR_WHITESPACE) ==
-            0) {
+        if ((charAttributes.codeUnitAtUnchecked(char) & CHAR_WHITESPACE) == 0) {
           break;
         }
         position++;
@@ -1057,7 +1056,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           continue;
         }
-        if ((oneByteStringCodeUnitAtUnchecked(charAttributes, char) &
+        if ((charAttributes.codeUnitAtUnchecked(char) &
                 CHAR_SIMPLE_STRING_END) !=
             0) {
           break;
@@ -1143,7 +1142,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           continue;
         }
-        if ((oneByteStringCodeUnitAtUnchecked(charAttributes, char) &
+        if ((charAttributes.codeUnitAtUnchecked(char) &
                 CHAR_SIMPLE_STRING_END) !=
             0) {
           break;
@@ -1470,7 +1469,9 @@ class _JsonStringParser extends _JsonParserWithListener
   @pragma('wasm:prefer-inline')
   bool get isUtf16Input => true;
 
-  int getChar(int position) => chunk.codeUnitAt(position);
+  @pragma('wasm:prefer-inline')
+  int getChar(int position) =>
+      unsafeCast<UnsafeStringOperations>(chunk).codeUnitAtUnchecked(position);
 
   String getString(int start, int end, int bits) {
     return chunk.substring(start, end);
@@ -1500,7 +1501,7 @@ class _JsonStringParser extends _JsonParserWithListener
       int start, int end, WasmArray<WasmI8> target, int offset) {
     int length = end - start;
     for (int i = 0; i < length; i++) {
-      target.write(offset + i, chunk.codeUnitAt(start + i));
+      target.write(offset + i, getChar(start + i));
     }
   }
 
