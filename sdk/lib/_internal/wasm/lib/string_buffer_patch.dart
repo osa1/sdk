@@ -79,7 +79,7 @@ class StringBuffer {
       }
       _ensureCapacity(1);
       final localBuffer = _buffer!;
-      localBuffer.data.write(_bufferPosition++, charCode);
+      u16ListData(localBuffer).write(_bufferPosition++, charCode);
       _bufferCodeUnitMagnitude |= charCode;
     } else {
       if (charCode > 0x10FFFF) {
@@ -88,8 +88,9 @@ class StringBuffer {
       _ensureCapacity(2);
       int bits = charCode - 0x10000;
       final localBuffer = _buffer!;
-      localBuffer.data.write(_bufferPosition++, 0xD800 | (bits >> 10));
-      localBuffer.data.write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
+      u16ListData(localBuffer).write(_bufferPosition++, 0xD800 | (bits >> 10));
+      u16ListData(localBuffer)
+          .write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
       _bufferCodeUnitMagnitude |= 0xFFFF;
     }
   }
@@ -214,9 +215,10 @@ class StringBuffer {
   static String _create(U16List buffer, int length, bool isLatin1) {
     if (isLatin1) {
       return createOneByteStringFromTwoByteCharactersArray(
-          buffer.data, 0, length);
+          u16ListData(buffer), 0, length);
     } else {
-      return createTwoByteStringFromCharactersArray(buffer.data, 0, length);
+      return createTwoByteStringFromCharactersArray(
+          u16ListData(buffer), 0, length);
     }
   }
 }
