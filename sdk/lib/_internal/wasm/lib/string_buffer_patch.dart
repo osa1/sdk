@@ -3,15 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_internal" show patch;
-import "dart:_string"
-    show
-        StringBase,
-        TwoByteString,
-        createOneByteStringFromTwoByteCharactersArray,
-        createTwoByteStringFromCharactersArray;
+import "dart:_string";
+import "dart:_typed_data";
 import "dart:_wasm";
-
-import "dart:typed_data" show Uint16List;
 
 @patch
 class StringBuffer {
@@ -43,10 +37,11 @@ class StringBuffer {
   int _partsCodeUnitsSinceCompaction = 0;
 
   /**
-   * The buffer is used to build up a string from code units. It is used when
-   * writing short strings or individual char codes to the buffer.
+   * The buffer is used to build up a string from code units. It is
+   * used when writing short strings or individual char codes to the
+   * buffer. The buffer is allocated on demand.
    */
-  WasmArray<WasmI16> _buffer;
+  U16List? _buffer;
   int _bufferPosition = 0;
 
   /**
@@ -61,7 +56,7 @@ class StringBuffer {
 
   /// Creates the string buffer with an initial content.
   @patch
-  StringBuffer([Object content = ""]) : _buffer = WasmArray(_BUFFER_SIZE) {
+  StringBuffer([Object content = ""]) {
     write(content);
   }
 
@@ -83,7 +78,8 @@ class StringBuffer {
         throw RangeError.range(charCode, 0, 0x10FFFF);
       }
       _ensureCapacity(1);
-      _buffer.write(_bufferPosition++, charCode);
+      final localBuffer = _buffer!;
+      localBuffer.data.write(_bufferPosition++, charCode);
       _bufferCodeUnitMagnitude |= charCode;
     } else {
       if (charCode > 0x10FFFF) {
@@ -91,8 +87,9 @@ class StringBuffer {
       }
       _ensureCapacity(2);
       int bits = charCode - 0x10000;
-      _buffer.write(_bufferPosition++, 0xD800 | (bits >> 10));
-      _buffer.write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
+      final localBuffer = _buffer!;
+      localBuffer.data.write(_bufferPosition++, 0xD800 | (bits >> 10));
+      localBuffer.data.write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
       _bufferCodeUnitMagnitude |= 0xFFFF;
     }
   }
@@ -140,7 +137,10 @@ class StringBuffer {
 
   /** Ensures that the buffer has enough capacity to add n code units. */
   void _ensureCapacity(int n) {
-    if (_bufferPosition + n > _buffer.length) {
+    final localBuffer = _buffer;
+    if (localBuffer == null) {
+      _buffer = U16List(_BUFFER_SIZE);
+    } else if (_bufferPosition + n > localBuffer.length) {
       _consumeBuffer();
     }
   }
@@ -153,7 +153,7 @@ class StringBuffer {
   void _consumeBuffer() {
     if (_bufferPosition == 0) return;
     bool isLatin1 = _bufferCodeUnitMagnitude <= 0xFF;
-    String str = _create(_buffer, _bufferPosition, isLatin1);
+    String str = _create(_buffer!, _bufferPosition, isLatin1);
     _bufferPosition = _bufferCodeUnitMagnitude = 0;
     _addPart(str);
   }
@@ -211,11 +211,12 @@ class StringBuffer {
   /**
    * Create a [String] from the UFT-16 code units in buffer.
    */
-  static String _create(WasmArray<WasmI16> buffer, int length, bool isLatin1) {
+  static String _create(U16List buffer, int length, bool isLatin1) {
     if (isLatin1) {
-      return createOneByteStringFromTwoByteCharactersArray(buffer, 0, length);
+      return createOneByteStringFromTwoByteCharactersArray(
+          buffer.data, 0, length);
     } else {
-      return createTwoByteStringFromCharactersArray(buffer, 0, length);
+      return createTwoByteStringFromCharactersArray(buffer.data, 0, length);
     }
   }
 }

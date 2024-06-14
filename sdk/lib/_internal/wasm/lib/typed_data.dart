@@ -2505,6 +2505,8 @@ class U16List extends _WasmI16ArrayBase
   U16List._(WasmArray<WasmI16> data, int offsetInElements, int length)
       : super._(data, offsetInElements, length);
 
+  WasmArray<WasmI16> get data => _data;
+
   factory U16List._withMutability(WasmArray<WasmI16> buffer, int offsetInBytes,
           int length, bool mutable) =>
       mutable
