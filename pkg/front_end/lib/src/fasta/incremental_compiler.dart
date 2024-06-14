@@ -546,7 +546,7 @@ class IncrementalCompiler implements IncrementalKernelGenerator {
       changed = true;
       if (experimentalInvalidation != null) {
         convertedLibraries ??= new Map<LibraryBuilder, List<CompilationUnit>>();
-        convertedLibraries[builder] = [dillBuilder];
+        convertedLibraries[builder] = [dillBuilder.mainCompilationUnit];
       }
     }
     nextGoodKernelTarget.loader.clearSourceLibraryBuilders();
@@ -1912,7 +1912,7 @@ class IncrementalCompiler implements IncrementalKernelGenerator {
                     combinator.fileOffset, libraryBuilder.fileUri));
           }
 
-          debugLibrary.addImport(
+          debugLibrary.compilationUnit.addImport(
               metadata: null,
               isAugmentationImport: false,
               uri: dependency.importedLibraryReference.canonicalName!.name,

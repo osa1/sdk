@@ -156,8 +156,8 @@ class SourceLoader extends Loader {
 
   List<SourceLibraryBuilder>? _sourceLibraryBuilders;
 
-  final Queue<SourceLibraryBuilder> _unparsedLibraries =
-      new Queue<SourceLibraryBuilder>();
+  final Queue<SourceCompilationUnit> _unparsedLibraries =
+      new Queue<SourceCompilationUnit>();
 
   final List<Library> libraries = <Library>[];
 
@@ -291,8 +291,8 @@ class SourceLoader extends Loader {
     assert(!libraryBuilder.isAugmenting,
         "Unexpected augmenting library $libraryBuilder.");
     Uri uri = libraryBuilder.importUri;
-    _markDartLibraries(uri, libraryBuilder, libraryBuilder);
-    _compilationUnits[uri] = libraryBuilder;
+    _markDartLibraries(uri, libraryBuilder, libraryBuilder.mainCompilationUnit);
+    _compilationUnits[uri] = libraryBuilder.mainCompilationUnit;
     _loadedLibraryBuilders[uri] = libraryBuilder;
   }
 
@@ -396,14 +396,15 @@ class SourceLoader extends Loader {
     String libraryName = DartLibrarySupport.getDartLibraryName(dottedName);
     Uri uri = new Uri(scheme: "dart", path: libraryName);
     // TODO(johnniwinther): This should really be libraries only.
-    CompilationUnit? library = lookupCompilationUnit(uri);
+    CompilationUnit? compilationUnit = lookupCompilationUnit(uri);
     // TODO(johnniwinther): Why is the dill target sometimes not loaded at this
     // point? And does it matter?
-    library ??= target.dillTarget.loader.lookupLibraryBuilder(uri);
+    compilationUnit ??=
+        target.dillTarget.loader.lookupLibraryBuilder(uri)?.mainCompilationUnit;
     return DartLibrarySupport.isDartLibrarySupported(libraryName,
-            libraryExists: library != null,
-            isSynthetic: library?.isSynthetic ?? true,
-            isUnsupported: library?.isUnsupported ?? true,
+            libraryExists: compilationUnit != null,
+            isSynthetic: compilationUnit?.isSynthetic ?? true,
+            isUnsupported: compilationUnit?.isUnsupported ?? true,
             dartLibrarySupport: target.backendTarget.dartLibrarySupport)
         ? "true"
         : null;
@@ -513,7 +514,7 @@ class SourceLoader extends Loader {
       roots.add(uri);
     }
 
-    _checkForDartCore(uri, libraryBuilder, libraryBuilder);
+    _checkForDartCore(uri, libraryBuilder, libraryBuilder.compilationUnit);
 
     Uri libraryUri = origin?.importUri ?? uri;
     if (target.backendTarget.mayDefineRestrictedType(libraryUri)) {
@@ -522,7 +523,7 @@ class SourceLoader extends Loader {
     if (uri.isScheme("dart")) {
       target.readPatchFiles(libraryBuilder);
     }
-    _unparsedLibraries.addLast(libraryBuilder);
+    _unparsedLibraries.addLast(libraryBuilder.compilationUnit);
 
     return libraryBuilder;
   }
@@ -532,7 +533,8 @@ class SourceLoader extends Loader {
         target.dillTarget.loader.lookupLibraryBuilder(uri);
     if (libraryBuilder != null) {
       _checkDillLibraryBuilderNnbdMode(libraryBuilder);
-      _checkForDartCore(uri, libraryBuilder, libraryBuilder);
+      _checkForDartCore(
+          uri, libraryBuilder, libraryBuilder.mainCompilationUnit);
     }
     return libraryBuilder;
   }
@@ -685,18 +687,19 @@ class SourceLoader extends Loader {
     CompilationUnit? compilationUnit = _compilationUnits[uri];
     if (compilationUnit == null) {
       if (target.dillTarget.isLoaded) {
-        compilationUnit = _lookupDillLibraryBuilder(uri);
+        compilationUnit = _lookupDillLibraryBuilder(uri)?.mainCompilationUnit;
       }
       if (compilationUnit == null) {
         compilationUnit = _createSourceLibraryBuilder(
-            uri,
-            fileUri,
-            origin as SourceLibraryBuilder?,
-            referencesFromIndex,
-            referenceIsPartOwner,
-            isAugmentation,
-            isPatch,
-            addAsRoot);
+                uri,
+                fileUri,
+                origin as SourceLibraryBuilder?,
+                referencesFromIndex,
+                referenceIsPartOwner,
+                isAugmentation,
+                isPatch,
+                addAsRoot)
+            .compilationUnit;
       }
       _compilationUnits[uri] = compilationUnit;
     }
@@ -873,8 +876,9 @@ severity: $severity
   /// part of the error message.
   Set<SourceLibraryBuilder> _unavailableDartLibraries = {};
 
-  Future<Token> tokenize(SourceLibraryBuilder libraryBuilder,
+  Future<Token> tokenize(SourceCompilationUnit compilationUnit,
       {bool suppressLexicalErrors = false}) async {
+    SourceLibraryBuilder libraryBuilder = compilationUnit.sourceLibraryBuilder;
     target.benchmarker?.beginSubdivide(BenchmarkSubdivides.tokenize);
     Uri fileUri = libraryBuilder.fileUri;
 
@@ -1037,26 +1041,26 @@ severity: $severity
     _typeInferenceEngine!.typeDependencies[member] = typeDependency;
   }
 
-  /// Registers the [library] as unparsed with the given [source] code.
+  /// Registers the [compilationUnit] as unparsed with the given [source] code.
   ///
   /// This is used for creating synthesized augmentation libraries.
   void registerUnparsedLibrarySource(
-      SourceLibraryBuilder library, String source) {
+      SourceCompilationUnit compilationUnit, String source) {
     List<int> codeUnits = source.codeUnits;
     Uint8List bytes = new Uint8List(codeUnits.length + 1);
     bytes.setRange(0, codeUnits.length, codeUnits);
-    sourceBytes[library.fileUri] = bytes;
-    _unparsedLibraries.addLast(library);
+    sourceBytes[compilationUnit.fileUri] = bytes;
+    _unparsedLibraries.addLast(compilationUnit);
   }
 
   /// Runs the [OutlineBuilder] on the source of all [_unparsedLibraries].
   Future<void> buildOutlines() async {
     _ensureCoreLibrary();
     while (_unparsedLibraries.isNotEmpty) {
-      SourceLibraryBuilder library = _unparsedLibraries.removeFirst();
+      SourceCompilationUnit compilationUnit = _unparsedLibraries.removeFirst();
       currentUriForCrashReporting =
-          new UriOffset(library.importUri, TreeNode.noOffset);
-      await buildOutline(library);
+          new UriOffset(compilationUnit.importUri, TreeNode.noOffset);
+      await buildOutline(compilationUnit);
     }
     currentUriForCrashReporting = null;
     logSummary(outlineSummaryTemplate);
@@ -1147,14 +1151,14 @@ severity: $severity
     return bytes.sublist(0, bytes.length - 1);
   }
 
-  Future<Null> buildOutline(SourceLibraryBuilder library) async {
-    Token tokens = await tokenize(library);
-    OffsetMap offsetMap = new OffsetMap(library.fileUri);
-    OutlineBuilder listener = new OutlineBuilder(library, offsetMap);
+  Future<Null> buildOutline(SourceCompilationUnit compilationUnit) async {
+    Token tokens = await tokenize(compilationUnit);
+    OffsetMap offsetMap = new OffsetMap(compilationUnit.fileUri);
+    OutlineBuilder listener = new OutlineBuilder(compilationUnit, offsetMap);
     new ClassMemberParser(listener,
-            allowPatterns: library.libraryFeatures.patterns.isEnabled)
+            allowPatterns: compilationUnit.libraryFeatures.patterns.isEnabled)
         .parseUnit(tokens);
-    library.offsetMap = offsetMap;
+    compilationUnit.offsetMap = offsetMap;
   }
 
   /// Builds all the method bodies found in the given [library].
@@ -1173,7 +1177,8 @@ severity: $severity
     // We tokenize source files twice to keep memory usage low. This is the
     // second time, and the first time was in [buildOutline] above. So this
     // time we suppress lexical errors.
-    Token tokens = await tokenize(library, suppressLexicalErrors: true);
+    SourceCompilationUnit compilationUnit = library.compilationUnit;
+    Token tokens = await tokenize(compilationUnit, suppressLexicalErrors: true);
 
     if (target.benchmarker != null) {
       // When benchmarking we do extra parsing on it's own to get a timing of
@@ -1201,17 +1206,20 @@ severity: $severity
       }
     }
 
-    DietListener listener = createDietListener(library, library.offsetMap);
+    DietListener listener =
+        createDietListener(library, compilationUnit.offsetMap);
     DietParser parser = new DietParser(listener,
         allowPatterns: library.libraryFeatures.patterns.isEnabled);
     parser.parseUnit(tokens);
     for (Part part in library.parts) {
       assert(part.compilationUnit.partOfLibrary == library,
           "Part ${part.compilationUnit} is not part of ${library}.");
-      Token tokens = await tokenize(
-          part.compilationUnit as SourceLibraryBuilder,
-          suppressLexicalErrors: true);
-      DietListener listener = createDietListener(library, part.offsetMap);
+      SourceCompilationUnit compilationUnit =
+          part.compilationUnit as SourceCompilationUnit;
+      Token tokens =
+          await tokenize(compilationUnit, suppressLexicalErrors: true);
+      DietListener listener =
+          createDietListener(library, compilationUnit.offsetMap);
       DietParser parser = new DietParser(listener,
           allowPatterns: library.libraryFeatures.patterns.isEnabled);
       parser.parseUnit(tokens);
@@ -1224,7 +1232,8 @@ severity: $severity
       bool isClassInstanceMember,
       FunctionNode parameters,
       VariableDeclaration? extensionThis) async {
-    Token token = await tokenize(libraryBuilder, suppressLexicalErrors: false);
+    Token token = await tokenize(libraryBuilder.compilationUnit,
+        suppressLexicalErrors: false);
     DietListener dietListener = createDietListener(
         libraryBuilder,
         // Expression compilation doesn't build an outline, and thus doesn't
@@ -1314,34 +1323,39 @@ severity: $severity
   }
 
   void resolveParts() {
-    Map<Uri, SourceLibraryBuilder> parts = {};
+    Map<Uri, SourceCompilationUnit> parts = {};
     List<SourceLibraryBuilder> libraries = [];
     List<SourceLibraryBuilder> sourceLibraries = [];
     List<SourceLibraryBuilder> augmentationLibraries = [];
-    _compilationUnits.forEach((Uri uri, CompilationUnit library) {
-      if (library.loader == this && library is SourceLibraryBuilder) {
-        if (library.isPart) {
-          parts[uri] = library;
-        } else {
-          if (library.isAugmenting) {
-            augmentationLibraries.add(library);
+    _compilationUnits.forEach((Uri uri, CompilationUnit compilationUnit) {
+      switch (compilationUnit) {
+        case SourceCompilationUnit():
+          if (compilationUnit.isPart) {
+            parts[uri] = compilationUnit;
           } else {
-            sourceLibraries.add(library);
-            _loadedLibraryBuilders[uri] = library;
+            SourceLibraryBuilder sourceLibraryBuilder =
+                compilationUnit.createLibrary();
+            if (compilationUnit.isAugmenting) {
+              // TODO(johnniwinther): Avoid creating a [SourceLibraryBuilder]
+              // for augmentation libraries.
+              augmentationLibraries.add(sourceLibraryBuilder);
+            } else {
+              sourceLibraries.add(sourceLibraryBuilder);
+              _loadedLibraryBuilders[uri] = sourceLibraryBuilder;
+            }
+            libraries.add(sourceLibraryBuilder);
           }
-          libraries.add(library);
-        }
-      } else {
-        _loadedLibraryBuilders[uri] = library as DillLibraryBuilder;
+        case DillCompilationUnit():
+          _loadedLibraryBuilders[uri] = compilationUnit.libraryBuilder;
       }
     });
     Set<Uri> usedParts = new Set<Uri>();
     for (SourceLibraryBuilder library in libraries) {
       library.includeParts(usedParts);
     }
-    for (MapEntry<Uri, SourceLibraryBuilder> entry in parts.entries) {
+    for (MapEntry<Uri, SourceCompilationUnit> entry in parts.entries) {
       Uri uri = entry.key;
-      SourceLibraryBuilder part = entry.value;
+      SourceCompilationUnit part = entry.value;
       if (usedParts.contains(uri)) {
         _compilationUnits.remove(uri);
         if (roots.contains(uri)) {
@@ -1350,9 +1364,10 @@ severity: $severity
         }
       } else {
         part.addProblem(messagePartOrphan, 0, 1, part.fileUri);
-        part.validatePart(null, null);
-        sourceLibraries.add(part);
-        _loadedLibraryBuilders[uri] = part;
+        SourceLibraryBuilder sourceLibraryBuilder = part.createLibrary();
+        sourceLibraryBuilder.validatePart(null, null);
+        sourceLibraries.add(sourceLibraryBuilder);
+        _loadedLibraryBuilders[uri] = sourceLibraryBuilder;
       }
     }
     ticker.logMs("Resolved parts");
@@ -1366,19 +1381,28 @@ severity: $severity
     assert(
         _compilationUnits.values.every((library) =>
             !(library is SourceLibraryBuilder && library.isAugmenting)),
-        "Augmentation library found in libraryBuilders: "
-        // ignore: lines_longer_than_80_chars
-        "${_compilationUnits.values.where((library) => !(library is SourceLibraryBuilder && library.isAugmenting))}.");
+        "Augmentation library found in libraryBuilders: " +
+            _compilationUnits.values
+                .where((compilationUnit) =>
+                    !(compilationUnit is SourceCompilationUnit &&
+                        compilationUnit.isAugmenting))
+                .join(', ') +
+            ".");
     assert(
         sourceLibraries.every((library) => !library.isAugmenting),
         "Augmentation library found in sourceLibraryBuilders: "
         "${sourceLibraries.where((library) => library.isAugmenting)}.");
     assert(
-        _compilationUnits.values.every((library) =>
-            library.loader != this || sourceLibraries.contains(library)),
-        "Source library not found in sourceLibraryBuilders:"
-        "${_compilationUnits.values.where((library) => // force line break
-            library.loader == this && !sourceLibraries.contains(library))}");
+        _compilationUnits.values.every((compilationUnit) =>
+            compilationUnit.loader != this ||
+            sourceLibraries.contains(compilationUnit.libraryBuilder)),
+        "Source library not found in sourceLibraryBuilders:" +
+            _compilationUnits.values
+                .where((compilationUnit) =>
+                    compilationUnit.loader == this &&
+                    !sourceLibraries.contains(compilationUnit.libraryBuilder))
+                .join(', ') +
+            ".");
     ticker.logMs("Applied augmentations");
   }
 
