@@ -41,7 +41,7 @@ class StringBuffer {
    * used when writing short strings or individual char codes to the
    * buffer. The buffer is allocated on demand.
    */
-  U16List? _buffer;
+  WasmArray<WasmI16>? _buffer;
   int _bufferPosition = 0;
 
   /**
@@ -79,7 +79,7 @@ class StringBuffer {
       }
       _ensureCapacity(1);
       final localBuffer = _buffer!;
-      u16ListData(localBuffer).write(_bufferPosition++, charCode);
+      localBuffer.write(_bufferPosition++, charCode);
       _bufferCodeUnitMagnitude |= charCode;
     } else {
       if (charCode > 0x10FFFF) {
@@ -88,9 +88,8 @@ class StringBuffer {
       _ensureCapacity(2);
       int bits = charCode - 0x10000;
       final localBuffer = _buffer!;
-      u16ListData(localBuffer).write(_bufferPosition++, 0xD800 | (bits >> 10));
-      u16ListData(localBuffer)
-          .write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
+      localBuffer.write(_bufferPosition++, 0xD800 | (bits >> 10));
+      localBuffer.write(_bufferPosition++, 0xDC00 | (bits & 0x3FF));
       _bufferCodeUnitMagnitude |= 0xFFFF;
     }
   }
@@ -140,7 +139,7 @@ class StringBuffer {
   void _ensureCapacity(int n) {
     final localBuffer = _buffer;
     if (localBuffer == null) {
-      _buffer = U16List(_BUFFER_SIZE);
+      _buffer = WasmArray<WasmI16>(_BUFFER_SIZE);
     } else if (_bufferPosition + n > localBuffer.length) {
       _consumeBuffer();
     }
@@ -212,13 +211,11 @@ class StringBuffer {
   /**
    * Create a [String] from the UFT-16 code units in buffer.
    */
-  static String _create(U16List buffer, int length, bool isLatin1) {
+  static String _create(WasmArray<WasmI16> buffer, int length, bool isLatin1) {
     if (isLatin1) {
-      return createOneByteStringFromTwoByteCharactersArray(
-          u16ListData(buffer), 0, length);
+      return createOneByteStringFromTwoByteCharactersArray(buffer, 0, length);
     } else {
-      return createTwoByteStringFromCharactersArray(
-          u16ListData(buffer), 0, length);
+      return createTwoByteStringFromCharactersArray(buffer, 0, length);
     }
   }
 }

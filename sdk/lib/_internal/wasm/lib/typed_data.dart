@@ -2532,9 +2532,6 @@ class U16List extends _WasmI16ArrayBase
   }
 }
 
-@pragma("wasm:prefer-inline")
-WasmArray<WasmI16> u16ListData(U16List list) => list._data;
-
 class I32List extends _WasmI32ArrayBase
     with
         _IntListMixin,
