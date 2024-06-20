@@ -111,7 +111,8 @@ String _toLowerCase(String string) => JS<String>(
  * [StringBase] contains common methods used by concrete String
  * implementations, e.g., OneByteString.
  */
-abstract final class StringBase extends WasmStringBase {
+abstract final class StringBase extends WasmStringBase
+    implements StringUncheckedOperationsBase {
   bool _isWhitespace(int codeUnit);
 
   // Constants used by replaceAll encoding of string slices between matches.
@@ -1165,6 +1166,7 @@ final class OneByteString extends StringBase {
     return StringBase._operatorEqualsFallback(this, other);
   }
 
+  @override
   @pragma('wasm:prefer-inline')
   int _codeUnitAtUnchecked(int index) => _array.readUnsigned(index);
 
@@ -1604,8 +1606,12 @@ final class TwoByteString extends StringBase {
     if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
       throw IndexError.withLength(index, length);
     }
-    return _array.readUnsigned(index);
+    return _codeUnitAtUnchecked(index);
   }
+
+  @override
+  @pragma('wasm:prefer-inline')
+  int _codeUnitAtUnchecked(int index) => _array.readUnsigned(index);
 
   @override
   int get length => _array.length;
