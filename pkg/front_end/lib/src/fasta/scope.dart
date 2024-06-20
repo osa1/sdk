@@ -14,7 +14,7 @@ import 'builder/library_builder.dart';
 import 'builder/member_builder.dart';
 import 'builder/metadata_builder.dart';
 import 'builder/name_iterator.dart';
-import 'codes/fasta_codes.dart';
+import '../codes/cfe_codes.dart';
 import 'kernel/body_builder.dart' show JumpTarget;
 import 'kernel/body_builder_context.dart';
 import 'kernel/hierarchy/class_member.dart' show ClassMember;
@@ -26,7 +26,6 @@ import 'source/source_extension_type_declaration_builder.dart';
 import 'source/source_function_builder.dart';
 import 'source/source_library_builder.dart';
 import 'source/source_member_builder.dart';
-import 'util/helpers.dart' show DelayedActionPerformer;
 
 enum ScopeKind {
   /// Scope of pattern switch-case statements
@@ -1001,9 +1000,7 @@ mixin ErroneousMemberBuilderMixin implements SourceMemberBuilder {
   ProcedureKind? get kind => null;
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     throw new UnsupportedError('$runtimeType.buildOutlineExpressions');
   }

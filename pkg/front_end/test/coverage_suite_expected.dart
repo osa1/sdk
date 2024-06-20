@@ -93,6 +93,16 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 236,
     missCount: 356,
   ),
+  // 73.0892742453436%.
+  "package:front_end/src/codes/cfe_codes_generated.dart": (
+    hitCount: 1138,
+    missCount: 419,
+  ),
+  // 83.68336025848141%.
+  "package:front_end/src/codes/type_labeler.dart": (
+    hitCount: 518,
+    missCount: 101,
+  ),
   // 71.23287671232876%.
   "package:front_end/src/compute_platform_binaries_location.dart": (
     hitCount: 52,
@@ -275,20 +285,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 2,
     missCount: 0,
   ),
-  // 57.692307692307686%.
+  // 94.44444444444444%.
   "package:front_end/src/fasta/builder_graph.dart": (
-    hitCount: 30,
-    missCount: 22,
-  ),
-  // 73.0892742453436%.
-  "package:front_end/src/fasta/codes/fasta_codes_cfe_generated.dart": (
-    hitCount: 1138,
-    missCount: 419,
-  ),
-  // 83.68336025848141%.
-  "package:front_end/src/fasta/codes/type_labeler.dart": (
-    hitCount: 518,
-    missCount: 101,
+    hitCount: 17,
+    missCount: 1,
   ),
   // 100.0%.
   "package:front_end/src/fasta/combinator.dart": (
@@ -346,9 +346,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 129,
     missCount: 25,
   ),
-  // 82.51928020565553%.
+  // 82.69720101781171%.
   "package:front_end/src/fasta/dill/dill_library_builder.dart": (
-    hitCount: 321,
+    hitCount: 325,
     missCount: 68,
   ),
   // 77.03349282296651%.
@@ -401,9 +401,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 96,
     missCount: 3,
   ),
-  // 50.64402810304449%.
+  // 50.55718475073314%.
   "package:front_end/src/fasta/incremental_compiler.dart": (
-    hitCount: 865,
+    hitCount: 862,
     missCount: 843,
   ),
   // 0.0%.
@@ -421,15 +421,15 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 0,
     missCount: 128,
   ),
-  // 92.14792978694895%.
+  // 91.98196967627374%.
   "package:front_end/src/fasta/kernel/body_builder.dart": (
-    hitCount: 6877,
-    missCount: 586,
+    hitCount: 6734,
+    missCount: 587,
   ),
-  // 70.40816326530613%.
+  // 69.18367346938776%.
   "package:front_end/src/fasta/kernel/body_builder_context.dart": (
-    hitCount: 345,
-    missCount: 145,
+    hitCount: 339,
+    missCount: 151,
   ),
   // 36.44736842105264%.
   "package:front_end/src/fasta/kernel/collections.dart": (
@@ -541,10 +541,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 1,
     missCount: 33,
   ),
-  // 46.484375%.
+  // 46.09375%.
   "package:front_end/src/fasta/kernel/internal_ast.dart": (
-    hitCount: 595,
-    missCount: 685,
+    hitCount: 590,
+    missCount: 690,
   ),
   // 74.13793103448276%.
   "package:front_end/src/fasta/kernel/invalid_type.dart": (
@@ -561,10 +561,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 285,
     missCount: 3,
   ),
-  // 81.22605363984674%.
+  // 81.1119573495811%.
   "package:front_end/src/fasta/kernel/kernel_target.dart": (
-    hitCount: 1060,
-    missCount: 245,
+    hitCount: 1065,
+    missCount: 248,
   ),
   // 61.111111111111114%.
   "package:front_end/src/fasta/kernel/kernel_variable_builder.dart": (
@@ -686,9 +686,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 163,
     missCount: 40,
   ),
-  // 92.02898550724638%.
+  // 92.1875%.
   "package:front_end/src/fasta/source/diet_listener.dart": (
-    hitCount: 635,
+    hitCount: 649,
     missCount: 55,
   ),
   // 100.0%.
@@ -706,9 +706,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 118,
     missCount: 6,
   ),
-  // 93.57084357084358%.
+  // 93.60488798370672%.
   "package:front_end/src/fasta/source/outline_builder.dart": (
-    hitCount: 2285,
+    hitCount: 2298,
     missCount: 157,
   ),
   // 94.44444444444444%.
@@ -731,9 +731,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 858,
     missCount: 68,
   ),
-  // 95.73560767590618%.
+  // 95.6896551724138%.
   "package:front_end/src/fasta/source/source_enum_builder.dart": (
-    hitCount: 449,
+    hitCount: 444,
     missCount: 20,
   ),
   // 61.261261261261254%.
@@ -747,9 +747,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 425,
     missCount: 79,
   ),
-  // 92.22222222222223%.
+  // 92.3076923076923%.
   "package:front_end/src/fasta/source/source_factory_builder.dart": (
-    hitCount: 581,
+    hitCount: 588,
     missCount: 49,
   ),
   // 89.94668697638994%.
@@ -757,20 +757,20 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 1181,
     missCount: 132,
   ),
-  // 89.29663608562691%.
+  // 89.32926829268293%.
   "package:front_end/src/fasta/source/source_function_builder.dart": (
-    hitCount: 292,
+    hitCount: 293,
     missCount: 35,
   ),
-  // 85.4483096521313%.
+  // 85.37539740767915%.
   "package:front_end/src/fasta/source/source_library_builder.dart": (
-    hitCount: 3488,
-    missCount: 594,
+    hitCount: 3491,
+    missCount: 598,
   ),
-  // 81.8988464951198%.
+  // 81.96357174589072%.
   "package:front_end/src/fasta/source/source_loader.dart": (
-    hitCount: 1846,
-    missCount: 408,
+    hitCount: 1845,
+    missCount: 406,
   ),
   // 40.32258064516129%.
   "package:front_end/src/fasta/source/source_member_builder.dart": (
@@ -787,10 +787,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 330,
     missCount: 8,
   ),
-  // 78.37837837837837%.
+  // 83.33333333333334%.
   "package:front_end/src/fasta/source/stack_listener_impl.dart": (
-    hitCount: 29,
-    missCount: 8,
+    hitCount: 20,
+    missCount: 4,
   ),
   // 73.07692307692307%.
   "package:front_end/src/fasta/ticker.dart": (
@@ -827,9 +827,9 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 166,
     missCount: 29,
   ),
-  // 90.37792719684674%.
+  // 90.38906901343215%.
   "package:front_end/src/fasta/type_inference/inference_visitor.dart": (
-    hitCount: 7796,
+    hitCount: 7806,
     missCount: 830,
   ),
   // 85.96491228070175%.
@@ -877,10 +877,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 484,
     missCount: 56,
   ),
-  // 54.037267080745345%.
+  // 59.006211180124225%.
   "package:front_end/src/fasta/type_inference/type_inferrer.dart": (
-    hitCount: 87,
-    missCount: 74,
+    hitCount: 95,
+    missCount: 66,
   ),
   // 36.666666666666664%.
   "package:front_end/src/fasta/type_inference/type_schema.dart": (
@@ -907,10 +907,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 41,
     missCount: 13,
   ),
-  // 100.0%.
+  // 69.23076923076923%.
   "package:front_end/src/fasta/uris.dart": (
-    hitCount: 6,
-    missCount: 0,
+    hitCount: 9,
+    missCount: 4,
   ),
   // 0.0%.
   "package:front_end/src/fasta/util/error_reporter_file_copier.dart": (
@@ -932,10 +932,10 @@ const Map<String, ({int hitCount, int missCount})> _expect = {
     hitCount: 78,
     missCount: 1316,
   ),
-  // 20.424013434089%.
+  // 20.40687919463087%.
   "package:front_end/src/fasta/util/parser_ast_helper.dart": (
     hitCount: 973,
-    missCount: 3791,
+    missCount: 3795,
   ),
   // 86.54205607476636%.
   "package:front_end/src/fasta/util/textual_outline.dart": (

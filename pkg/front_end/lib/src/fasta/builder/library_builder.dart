@@ -122,6 +122,9 @@ abstract class SourceCompilationUnit implements CompilationUnit {
 
   LibraryFeatures get libraryFeatures;
 
+  /// Returns `true` if the compilation unit is part of a `dart:` library.
+  bool get isDartLibrary;
+
   /// The current declaration that is being built. When we start parsing a
   /// declaration (class, method, and so on), we don't have enough information
   /// to create a builder and this object records its members and types until,
@@ -194,7 +197,7 @@ abstract class SourceCompilationUnit implements CompilationUnit {
   void takeMixinApplications(
       Map<SourceClassBuilder, TypeBuilder> mixinApplications);
 
-  void addDependencies(Library library, Set<SourceLibraryBuilder> seen);
+  void addDependencies(Library library, Set<SourceCompilationUnit> seen);
 
   void includeParts(SourceLibraryBuilder libraryBuilder,
       List<SourceCompilationUnit> includedParts, Set<Uri> usedParts);
@@ -469,6 +472,10 @@ abstract class SourceCompilationUnit implements CompilationUnit {
   /// Return the primary message.
   Message reportFeatureNotEnabled(
       LibraryFeature feature, Uri fileUri, int charOffset, int length);
+
+  void addImportsToScope();
+
+  int finishDeferredLoadTearoffs();
 }
 
 abstract class LibraryBuilder implements Builder {

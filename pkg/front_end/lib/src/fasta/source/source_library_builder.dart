@@ -57,7 +57,7 @@ import '../builder/procedure_builder.dart';
 import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
 import '../builder/void_type_declaration_builder.dart';
-import '../codes/fasta_codes.dart';
+import '../../codes/cfe_codes.dart';
 import '../combinator.dart' show CombinatorBuilder;
 import '../configuration.dart' show Configuration;
 import '../export.dart' show Export;
@@ -103,7 +103,6 @@ import '../modifier.dart'
 import '../problems.dart' show unexpected, unhandled;
 import '../scope.dart';
 import '../uris.dart';
-import '../util/helpers.dart';
 import 'class_declaration.dart';
 import 'name_scheme.dart';
 import 'offset_map.dart';
@@ -123,7 +122,7 @@ import 'source_type_alias_builder.dart';
 class SourceCompilationUnitImpl implements SourceCompilationUnit {
   final SourceLibraryBuilder _sourceLibraryBuilder;
 
-  LibraryBuilder? _libraryBuilder;
+  SourceLibraryBuilder? _libraryBuilder;
 
   /// Map used to find objects created in the [OutlineBuilder] from within
   /// the [DietListener].
@@ -134,6 +133,10 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
   /// The part directives in this compilation unit.
   final List<Part> _parts = [];
 
+  final List<Import> imports = <Import>[];
+
+  final List<Export> exports = <Export>[];
+
   SourceCompilationUnitImpl(this._sourceLibraryBuilder);
 
   @override
@@ -141,6 +144,11 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
 
   @override
   LibraryFeatures get libraryFeatures => _sourceLibraryBuilder.libraryFeatures;
+
+  @override
+  bool get isDartLibrary =>
+      _sourceLibraryBuilder.origin.importUri.isScheme("dart") ||
+      fileUri.isScheme("org-dartlang-sdk");
 
   /// Returns the map of objects created in the [OutlineBuilder].
   ///
@@ -220,7 +228,7 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
   }
 
   @override
-  LibraryBuilder get libraryBuilder {
+  SourceLibraryBuilder get libraryBuilder {
     assert(_libraryBuilder != null,
         "Library builder for $this has not been computed yet.");
     return _libraryBuilder!;
@@ -247,7 +255,17 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
   }
 
   @override
-  Iterable<Uri> get dependencies => _sourceLibraryBuilder.dependencies;
+  Iterable<Uri> get dependencies sync* {
+    for (Export export in exports) {
+      yield export.exportedCompilationUnit.importUri;
+    }
+    for (Import import in imports) {
+      CompilationUnit? imported = import.importedCompilationUnit;
+      if (imported != null) {
+        yield imported.importUri;
+      }
+    }
+  }
 
   @override
   Uri get fileUri => _sourceLibraryBuilder.fileUri;
@@ -300,8 +318,40 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
   String toString() => 'SourceCompilationUnitImpl($fileUri)';
 
   @override
-  void addDependencies(Library library, Set<SourceLibraryBuilder> seen) {
-    _sourceLibraryBuilder.addDependencies(library, seen);
+  void addDependencies(Library library, Set<SourceCompilationUnit> seen) {
+    if (!seen.add(this)) {
+      return;
+    }
+
+    for (Import import in imports) {
+      // Rather than add a LibraryDependency, we attach an annotation.
+      if (import.nativeImportPath != null) {
+        _sourceLibraryBuilder.addNativeDependency(import.nativeImportPath!);
+        continue;
+      }
+
+      LibraryDependency libraryDependency;
+      if (import.deferred && import.prefixBuilder?.dependency != null) {
+        libraryDependency = import.prefixBuilder!.dependency!;
+      } else {
+        LibraryBuilder imported = import.importedLibraryBuilder!.origin;
+        Library targetLibrary = imported.library;
+        libraryDependency = new LibraryDependency.import(targetLibrary,
+            name: import.prefix,
+            combinators: toKernelCombinators(import.combinators))
+          ..fileOffset = import.charOffset;
+      }
+      library.addDependency(libraryDependency);
+      import.libraryDependency = libraryDependency;
+    }
+    for (Export export in exports) {
+      LibraryDependency libraryDependency = new LibraryDependency.export(
+          export.exportedLibraryBuilder.library,
+          combinators: toKernelCombinators(export.combinators))
+        ..fileOffset = export.charOffset;
+      library.addDependency(libraryDependency);
+      export.libraryDependency = libraryDependency;
+    }
   }
 
   @override
@@ -736,8 +786,51 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
         prefixCharOffset,
         importIndex,
         nativeImportPath: nativePath);
-    _sourceLibraryBuilder.imports.add(import);
+    imports.add(import);
     offsetMap?.registerImport(importKeyword!, import);
+  }
+
+  @override
+  void addImportsToScope() {
+    bool explicitCoreImport = _sourceLibraryBuilder == loader.coreLibrary;
+    for (Import import in imports) {
+      if (import.importedCompilationUnit?.isPart ?? false) {
+        addProblem(
+            templatePartOfInLibrary
+                .withArguments(import.importedCompilationUnit!.fileUri),
+            import.charOffset,
+            noLength,
+            fileUri);
+      }
+      if (import.importedLibraryBuilder == loader.coreLibrary) {
+        explicitCoreImport = true;
+      }
+      import.finalizeImports(_sourceLibraryBuilder);
+    }
+    if (!explicitCoreImport) {
+      NameIterator<Builder> iterator = loader.coreLibrary.exportScope
+          .filteredNameIterator(
+              includeDuplicates: false, includeAugmentations: false);
+      while (iterator.moveNext()) {
+        _sourceLibraryBuilder.addToScope(
+            iterator.name, iterator.current, -1, true);
+      }
+    }
+  }
+
+  @override
+  int finishDeferredLoadTearoffs() {
+    int total = 0;
+    for (Import import in imports) {
+      if (import.deferred) {
+        Procedure? tearoff = import.prefixBuilder!.loadLibraryBuilder!.tearoff;
+        if (tearoff != null) {
+          library.addProcedure(tearoff);
+        }
+        total++;
+      }
+    }
+    return total;
   }
 
   @override
@@ -767,7 +860,7 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
     exportedLibrary.addExporter(_sourceLibraryBuilder, combinators, charOffset);
     Export export = new Export(
         _sourceLibraryBuilder, exportedLibrary, combinators, charOffset);
-    _sourceLibraryBuilder.exports.add(export);
+    exports.add(export);
     offsetMap.registerExport(exportKeyword, export);
   }
 
@@ -1963,6 +2056,8 @@ class SourceCompilationUnitImpl implements SourceCompilationUnit {
           procedureNameScheme,
           nativeMethodName,
           redirectionTarget);
+      (sourceLibraryBuilder.redirectingFactoryBuilders ??= [])
+          .add(procedureBuilder as RedirectingFactoryBuilder);
     } else {
       procedureBuilder = new SourceFactoryBuilder(
           metadata,
@@ -2632,10 +2727,6 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
   final List<SourceCompilationUnit> _parts = [];
 
-  final List<Import> imports = <Import>[];
-
-  final List<Export> exports = <Export>[];
-
   final Scope importScope;
 
   @override
@@ -2776,6 +2867,13 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
   /// Information about which fields are promotable in this library, or `null`
   /// if [SourceLoader.computeFieldPromotability] hasn't been called.
   FieldNonPromotabilityInfo? fieldNonPromotabilityInfo;
+
+  /// Redirecting factory builders defined in the library. They should be
+  /// collected as they are built, so that we can build the outline expressions
+  /// in the right order.
+  ///
+  /// See [SourceLoader.buildOutlineExpressions] for details.
+  List<RedirectingFactoryBuilder>? redirectingFactoryBuilders;
 
   SourceLibraryBuilder.internal(
       SourceLoader loader,
@@ -3143,14 +3241,10 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
   @override
   Iterable<Uri> get dependencies sync* {
-    for (Export export in exports) {
-      yield export.exportedCompilationUnit.importUri;
-    }
-    for (Import import in imports) {
-      CompilationUnit? imported = import.importedCompilationUnit;
-      if (imported != null) {
-        yield imported.importUri;
-      }
+    yield* compilationUnit.dependencies;
+    for (SourceCompilationUnit part in parts) {
+      yield part.importUri;
+      yield* part.dependencies;
     }
   }
 
@@ -3407,7 +3501,7 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
 
     library.isSynthetic = isSynthetic;
     library.isUnsupported = isUnsupported;
-    addDependencies(library, new Set<SourceLibraryBuilder>());
+    addDependencies(library, new Set<SourceCompilationUnit>());
 
     library.name = name;
     library.procedures.sort(compareProcedures);
@@ -3451,29 +3545,11 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       }
     }
 
-    bool explicitCoreImport = this == loader.coreLibrary;
-    for (Import import in imports) {
-      if (import.importedCompilationUnit?.isPart ?? false) {
-        addProblem(
-            templatePartOfInLibrary
-                .withArguments(import.importedCompilationUnit!.fileUri),
-            import.charOffset,
-            noLength,
-            fileUri);
-      }
-      if (import.importedLibraryBuilder == loader.coreLibrary) {
-        explicitCoreImport = true;
-      }
-      import.finalizeImports(this);
-    }
-    if (!explicitCoreImport) {
-      NameIterator<Builder> iterator = loader.coreLibrary.exportScope
-          .filteredNameIterator(
-              includeDuplicates: false, includeAugmentations: false);
-      while (iterator.moveNext()) {
-        addToScope(iterator.name, iterator.current, -1, true);
-      }
-    }
+    compilationUnit.addImportsToScope();
+    // TODO(johnniwinther): Support imports into parts.
+    /*for (SourceCompilationUnit part in parts) {
+      part.addImportsToScope();
+    }*/
 
     NameIterator<Builder> iterator = exportScope.filteredNameIterator(
         includeDuplicates: false, includeAugmentations: false);
@@ -4013,16 +4089,14 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
         inConstFields: inConstFields);
   }
 
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedDefaultValueCloner> delayedDefaultValueCloners,
-      List<DelayedActionPerformer> delayedActionPerformers) {
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
+      List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     Iterable<SourceLibraryBuilder>? augmentationLibraries =
         this.augmentationLibraries;
     if (augmentationLibraries != null) {
       for (SourceLibraryBuilder augmentationLibrary in augmentationLibraries) {
-        augmentationLibrary.buildOutlineExpressions(classHierarchy,
-            delayedDefaultValueCloners, delayedActionPerformers);
+        augmentationLibrary.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       }
     }
 
@@ -4042,20 +4116,20 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     while (iterator.moveNext()) {
       Builder declaration = iterator.current;
       if (declaration is SourceClassBuilder) {
-        declaration.buildOutlineExpressions(classHierarchy,
-            delayedActionPerformers, delayedDefaultValueCloners);
+        declaration.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       } else if (declaration is SourceExtensionBuilder) {
-        declaration.buildOutlineExpressions(classHierarchy,
-            delayedActionPerformers, delayedDefaultValueCloners);
+        declaration.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       } else if (declaration is SourceExtensionTypeDeclarationBuilder) {
-        declaration.buildOutlineExpressions(classHierarchy,
-            delayedActionPerformers, delayedDefaultValueCloners);
+        declaration.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       } else if (declaration is SourceMemberBuilder) {
-        declaration.buildOutlineExpressions(classHierarchy,
-            delayedActionPerformers, delayedDefaultValueCloners);
+        declaration.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       } else if (declaration is SourceTypeAliasBuilder) {
-        declaration.buildOutlineExpressions(classHierarchy,
-            delayedActionPerformers, delayedDefaultValueCloners);
+        declaration.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       } else {
         assert(
             declaration is PrefixBuilder ||
@@ -4190,40 +4264,8 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
     library.addAnnotation(annotation);
   }
 
-  void addDependencies(Library library, Set<SourceLibraryBuilder> seen) {
-    if (!seen.add(this)) {
-      return;
-    }
-
-    for (Import import in imports) {
-      // Rather than add a LibraryDependency, we attach an annotation.
-      if (import.nativeImportPath != null) {
-        addNativeDependency(import.nativeImportPath!);
-        continue;
-      }
-
-      LibraryDependency libraryDependency;
-      if (import.deferred && import.prefixBuilder?.dependency != null) {
-        libraryDependency = import.prefixBuilder!.dependency!;
-      } else {
-        LibraryBuilder imported = import.importedLibraryBuilder!.origin;
-        Library targetLibrary = imported.library;
-        libraryDependency = new LibraryDependency.import(targetLibrary,
-            name: import.prefix,
-            combinators: toKernelCombinators(import.combinators))
-          ..fileOffset = import.charOffset;
-      }
-      library.addDependency(libraryDependency);
-      import.libraryDependency = libraryDependency;
-    }
-    for (Export export in exports) {
-      LibraryDependency libraryDependency = new LibraryDependency.export(
-          export.exportedLibraryBuilder.library,
-          combinators: toKernelCombinators(export.combinators))
-        ..fileOffset = export.charOffset;
-      library.addDependency(libraryDependency);
-      export.libraryDependency = libraryDependency;
-    }
+  void addDependencies(Library library, Set<SourceCompilationUnit> seen) {
+    compilationUnit.addDependencies(library, seen);
     for (SourceCompilationUnit part in parts) {
       part.addDependencies(library, seen);
     }
@@ -4320,16 +4362,10 @@ class SourceLibraryBuilder extends LibraryBuilderImpl {
       }
     }
 
-    for (Import import in imports) {
-      if (import.deferred) {
-        Procedure? tearoff = import.prefixBuilder!.loadLibraryBuilder!.tearoff;
-        if (tearoff != null) {
-          library.addProcedure(tearoff);
-        }
-        total++;
-      }
+    total += compilationUnit.finishDeferredLoadTearoffs();
+    for (SourceCompilationUnit part in parts) {
+      total += part.finishDeferredLoadTearoffs();
     }
-
     return total;
   }
 

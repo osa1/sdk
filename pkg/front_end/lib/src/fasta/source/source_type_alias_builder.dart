@@ -17,7 +17,7 @@ import '../builder/metadata_builder.dart';
 import '../builder/name_iterator.dart';
 import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
-import '../codes/fasta_codes.dart'
+import '../../codes/cfe_codes.dart'
     show templateCyclicTypedef, templateTypeArgumentMismatch;
 import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
@@ -25,7 +25,6 @@ import '../kernel/expression_generator_helper.dart';
 import '../kernel/kernel_helper.dart';
 import '../problems.dart' show unhandled;
 import '../scope.dart';
-import '../util/helpers.dart';
 import 'source_library_builder.dart' show SourceLibraryBuilder;
 
 class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
@@ -327,9 +326,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
         inConstFields: inConstFields);
   }
 
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     MetadataBuilder.buildAnnotations(
         typedef,
@@ -350,7 +347,6 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
                 inMetadata: true,
                 inConstFields: false),
             classHierarchy,
-            delayedActionPerformers,
             computeTypeParameterScope(libraryBuilder.scope));
       }
     }
