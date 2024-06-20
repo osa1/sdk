@@ -216,7 +216,7 @@ extension ByteDataToJSDataView on ByteData {
     final t = this;
     return JSDataView._(JSValue(t is js_types.JSDataViewImpl
         ? t.toExternRef
-        : jsDataViewFromDartByteData(t, lengthInBytes.toDouble())));
+        : jsDataViewFromDartByteData(t, lengthInBytes)));
   }
 }
 
