@@ -17,10 +17,12 @@ abstract class StringUncheckedOperationsBase {
 }
 
 extension StringUncheckedOperations on String {
+  @pragma('wasm:prefer-inline')
   int codeUnitAtUnchecked(int index) =>
       unsafeCast<StringUncheckedOperationsBase>(this)
           ._codeUnitAtUnchecked(index);
 
+  @pragma('wasm:prefer-inline')
   String substringUnchecked(int start, int end) =>
       unsafeCast<StringUncheckedOperationsBase>(this)
           ._substringUnchecked(start, end);

@@ -20,23 +20,29 @@ import 'dart:_wasm';
 
 import "dart:typed_data" show Uint8List, Uint16List;
 
-/// Static function for `OneByteString._setAt` to avoid making `_setAt` public,
-/// which would allow calling it in dynamic invocations.
-@pragma('wasm:prefer-inline')
-void writeIntoOneByteString(OneByteString s, int index, int codePoint) =>
-    s._setAt(index, codePoint);
+extension OneByteStringUncheckedOperations on OneByteString {
+  @pragma('wasm:prefer-inline')
+  int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
 
-/// Static function for `OneByteString._codeUnitAtUnchecked` to avoid making
-/// `_codeUnitAtUnchecked` public, which would allow calling it in dynamic
-/// invocations.
-@pragma('wasm:prefer-inline')
-int oneByteStringCodeUnitAtUnchecked(OneByteString s, int index) =>
-    s._codeUnitAtUnchecked(index);
+  @pragma('wasm:prefer-inline')
+  String substringUnchecked(int start, int end) =>
+      _substringUnchecked(start, end);
 
-/// Same as `writeIntoOneByteString`, but for `TwoByteString`.
-@pragma('wasm:prefer-inline')
-void writeIntoTwoByteString(TwoByteString s, int index, int codePoint) =>
-    s._setAt(index, codePoint);
+  @pragma('wasm:prefer-inline')
+  void setUnchecked(int index, int codePoint) => _setAt(index, codePoint);
+}
+
+extension TwoByteStringUncheckedOperations on TwoByteString {
+  @pragma('wasm:prefer-inline')
+  int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
+
+  @pragma('wasm:prefer-inline')
+  String substringUnchecked(int start, int end) =>
+      _substringUnchecked(start, end);
+
+  @pragma('wasm:prefer-inline')
+  void setUnchecked(int index, int codePoint) => _setAt(index, codePoint);
+}
 
 /// Static function for `OneByteString._array` to avoid making `_array` public.
 @pragma('wasm:prefer-inline')
@@ -1650,7 +1656,7 @@ OneByteString _stringAllocate1(double length) {
 
 @pragma("wasm:export", "\$stringWrite1")
 void _stringWrite1(OneByteString string, double index, double codePoint) {
-  writeIntoOneByteString(string, index.toInt(), codePoint.toInt());
+  string.setUnchecked(index.toInt(), codePoint.toInt());
 }
 
 @pragma("wasm:export", "\$stringAllocate2")
@@ -1660,5 +1666,5 @@ TwoByteString _stringAllocate2(double length) {
 
 @pragma("wasm:export", "\$stringWrite2")
 void _stringWrite2(TwoByteString string, double index, double codePoint) {
-  writeIntoTwoByteString(string, index.toInt(), codePoint.toInt());
+  string.setUnchecked(index.toInt(), codePoint.toInt());
 }
