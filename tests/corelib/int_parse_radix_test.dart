@@ -95,7 +95,7 @@ void main() {
   void testFails(String source, int radix) {
     Expect.throwsFormatException(
         () => int.parse(source, radix: radix), "$source/$radix");
-    Expect.equals(-999, int.tryParse(source, radix: radix) ?? -999);
+    Expect.equals(null, int.tryParse(source, radix: radix));
   }
 
   for (int i = 2; i < 36; i++) {
