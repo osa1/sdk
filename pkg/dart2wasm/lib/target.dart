@@ -280,6 +280,8 @@ class WasmTarget extends Target {
           component, Uri.parse("dart:js_interop")),
       ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("dart:convert")),
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+          component, Uri.parse("dart:_string")),
     };
     if (transitiveImportingJSInterop.isEmpty) {
       logger?.call("Skipped JS interop transformations");
