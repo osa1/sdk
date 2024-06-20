@@ -146,6 +146,7 @@ class WasmTarget extends Target {
         'dart:_internal',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_string',
         'dart:_wasm',
         'dart:async',
         'dart:developer',
@@ -157,20 +158,19 @@ class WasmTarget extends Target {
         'dart:js_util',
         'dart:nativewrappers',
         'dart:typed_data',
-        if (mode != Mode.jsCompatibility) 'dart:_string',
       ];
 
   @override
   List<String> get extraIndexedLibraries => [
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_string',
         'dart:_wasm',
         'dart:collection',
         'dart:js_interop',
         'dart:js_interop_unsafe',
         'dart:js_util',
         'dart:typed_data',
-        if (mode != Mode.jsCompatibility) 'dart:_string',
       ];
 
   @override
@@ -489,7 +489,7 @@ class WasmTarget extends Target {
     // In JSCM all strings are JS strings.
     if (mode == Mode.jsCompatibility) {
       return _jsString ??=
-          coreTypes.index.getClass("dart:_js_types", "JSStringImpl");
+          coreTypes.index.getClass("dart:_string", "JSStringImpl");
     }
     const int maxLatin1 = 0xff;
     for (int i = 0; i < value.length; ++i) {
