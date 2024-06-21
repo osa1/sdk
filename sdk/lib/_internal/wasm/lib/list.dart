@@ -2,24 +2,30 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of "core_patch.dart";
+library dart._list;
+
+import 'dart:_internal';
+import 'dart:_wasm';
+import 'dart:collection';
+
+part "growable_list.dart";
 
 const int _maxWasmArrayLength = 2147483647; // max i32
 
 @pragma("wasm:entry-point")
-abstract class _ListBase<E> extends ListBase<E> {
+abstract class WasmListBase<E> extends ListBase<E> {
   @pragma("wasm:entry-point")
   int _length;
 
   @pragma("wasm:entry-point")
   WasmArray<Object?> _data;
 
-  _ListBase(int length, int capacity)
+  WasmListBase(int length, int capacity)
       : _length = length,
         _data = WasmArray<Object?>(
             RangeError.checkValueInInterval(capacity, 0, _maxWasmArrayLength));
 
-  _ListBase._withData(this._length, this._data);
+  WasmListBase._withData(this._length, this._data);
 
   @pragma('wasm:prefer-inline')
   E operator [](int index) {
@@ -35,7 +41,7 @@ abstract class _ListBase<E> extends ListBase<E> {
     final int actualEnd = RangeError.checkValidRange(start, end, listLength);
     int length = actualEnd - start;
     if (length == 0) return <E>[];
-    return _GrowableList<E>(length)..setRange(0, length, this, start);
+    return GrowableList<E>(length)..setRange(0, length, this, start);
   }
 
   void forEach(f(E element)) {
@@ -46,13 +52,12 @@ abstract class _ListBase<E> extends ListBase<E> {
     }
   }
 
-  List<E> toList({bool growable = true}) {
-    return List.from(this, growable: growable);
-  }
+  @pragma("wasm:prefer-inline")
+  List<E> toList({bool growable = true}) => List.from(this, growable: growable);
 }
 
 @pragma("wasm:entry-point")
-abstract class _ModifiableList<E> extends _ListBase<E> {
+abstract class _ModifiableList<E> extends WasmListBase<E> {
   _ModifiableList(int length, int capacity) : super(length, capacity);
 
   _ModifiableList._withData(int length, WasmArray<Object?> data)
@@ -111,19 +116,21 @@ abstract class _ModifiableList<E> extends _ListBase<E> {
 }
 
 @pragma("wasm:entry-point")
-class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
-  _List._(int length) : super(length, length);
+class ModifiableFixedLengthList<E> extends _ModifiableList<E>
+    with FixedLengthListMixin<E> {
+  ModifiableFixedLengthList._(int length) : super(length, length);
 
-  factory _List(int length) => _List._(length);
+  factory ModifiableFixedLengthList(int length) =>
+      ModifiableFixedLengthList._(length);
 
   // Specialization of List.empty constructor for growable == false.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
-  factory _List.empty() => _List<E>(0);
+  factory ModifiableFixedLengthList.empty() => ModifiableFixedLengthList<E>(0);
 
   // Specialization of List.filled constructor for growable == false.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
-  factory _List.filled(int length, E fill) {
-    final result = _List<E>(length);
+  factory ModifiableFixedLengthList.filled(int length, E fill) {
+    final result = ModifiableFixedLengthList<E>(length);
     if (fill != null) {
       result._data.fill(0, fill, length);
     }
@@ -132,8 +139,9 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
 
   // Specialization of List.generate constructor for growable == false.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
-  factory _List.generate(int length, E generator(int index)) {
-    final result = _List<E>(length);
+  factory ModifiableFixedLengthList.generate(
+      int length, E generator(int index)) {
+    final result = ModifiableFixedLengthList<E>(length);
     for (int i = 0; i < result.length; ++i) {
       result._data[i] = generator(i);
     }
@@ -141,27 +149,28 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
   }
 
   // Specialization of List.of constructor for growable == false.
-  factory _List.of(Iterable<E> elements) {
-    if (elements is _ListBase) {
-      return _List._ofListBase(unsafeCast(elements));
+  factory ModifiableFixedLengthList.of(Iterable<E> elements) {
+    if (elements is WasmListBase) {
+      return ModifiableFixedLengthList._ofListBase(unsafeCast(elements));
     }
     if (elements is EfficientLengthIterable) {
-      return _List._ofEfficientLengthIterable(unsafeCast(elements));
+      return ModifiableFixedLengthList._ofEfficientLengthIterable(
+          unsafeCast(elements));
     }
-    return _List._ofOther(elements);
+    return ModifiableFixedLengthList.fromIterable(elements);
   }
 
-  factory _List._ofListBase(_ListBase<E> elements) {
+  factory ModifiableFixedLengthList._ofListBase(WasmListBase<E> elements) {
     final int length = elements.length;
-    final list = _List<E>(length);
+    final list = ModifiableFixedLengthList<E>(length);
     list._data.copy(0, elements._data, 0, length);
     return list;
   }
 
-  factory _List._ofEfficientLengthIterable(
+  factory ModifiableFixedLengthList._ofEfficientLengthIterable(
       EfficientLengthIterable<E> elements) {
     final int length = elements.length;
-    final list = _List<E>(length);
+    final list = ModifiableFixedLengthList<E>(length);
     if (length > 0) {
       int i = 0;
       for (var element in elements) {
@@ -172,12 +181,13 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
     return list;
   }
 
-  factory _List._ofOther(Iterable<E> elements) {
-    // The static type of `makeListFixedLength` is `List<E>`, not `_List<E>`,
+  factory ModifiableFixedLengthList.fromIterable(Iterable<E> elements) {
+    // The static type of `makeListFixedLength` is `List<E>`, not `ModifiableFixedLengthList<E>`,
     // but we know that is what it does.  `makeListFixedLength` is too generally
     // typed since it is available on the web platform which has different
     // system List types.
-    return unsafeCast(makeListFixedLength(_GrowableList<E>._ofOther(elements)));
+    return unsafeCast(
+        makeListFixedLength(GrowableList<E>.fromIterable(elements)));
   }
 
   Iterator<E> get iterator {
@@ -186,7 +196,7 @@ class _List<E> extends _ModifiableList<E> with FixedLengthListMixin<E> {
 }
 
 @pragma("wasm:entry-point")
-class _ImmutableList<E> extends _ListBase<E> with UnmodifiableListMixin<E> {
+class _ImmutableList<E> extends WasmListBase<E> with UnmodifiableListMixin<E> {
   factory _ImmutableList._uninstantiable() {
     throw UnsupportedError(
         "_ImmutableList can only be allocated by the runtime");
@@ -204,11 +214,11 @@ class _FixedSizeListIterator<E> implements Iterator<E> {
   int _index;
   E? _current;
 
-  _FixedSizeListIterator(_ListBase<E> list)
+  _FixedSizeListIterator(WasmListBase<E> list)
       : _data = list._data,
         _length = list.length,
         _index = 0 {
-    assert(list is _List<E> || list is _ImmutableList<E>);
+    assert(list is ModifiableFixedLengthList<E> || list is _ImmutableList<E>);
   }
 
   E get current => _current as E;

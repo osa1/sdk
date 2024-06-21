@@ -2,33 +2,32 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of "core_patch.dart";
+part of "dart:_list";
 
 @pragma("wasm:entry-point")
-class _GrowableList<E> extends _ModifiableList<E> {
-  _GrowableList._(int length, int capacity) : super(length, capacity);
+class GrowableList<E> extends _ModifiableList<E> {
+  GrowableList._(int length, int capacity) : super(length, capacity);
 
   @pragma("wasm:entry-point")
-  _GrowableList._withData(WasmArray<Object?> data)
+  GrowableList._withData(WasmArray<Object?> data)
       : super._withData(data.length, data);
 
-  factory _GrowableList(int length) {
-    return _GrowableList<E>._(length, length);
-  }
+  @pragma("wasm:prefer-inline")
+  factory GrowableList(int length) => GrowableList<E>._(length, length);
 
-  factory _GrowableList.withCapacity(int capacity) {
-    return _GrowableList<E>._(0, capacity);
-  }
+  @pragma("wasm:prefer-inline")
+  factory GrowableList.withCapacity(int capacity) =>
+      GrowableList<E>._(0, capacity);
 
   // Specialization of List.empty constructor for growable == true.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
   @pragma("wasm:entry-point")
-  factory _GrowableList.empty() => _GrowableList(0);
+  factory GrowableList.empty() => GrowableList(0);
 
   // Specialization of List.filled constructor for growable == true.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
-  factory _GrowableList.filled(int length, E fill) {
-    final result = _GrowableList<E>(length);
+  factory GrowableList.filled(int length, E fill) {
+    final result = GrowableList<E>(length);
     if (fill != null) {
       result._data.fill(0, fill, length);
     }
@@ -37,8 +36,8 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
   // Specialization of List.generate constructor for growable == true.
   // Used by pkg/dart2wasm/lib/list_factory_specializer.dart.
-  factory _GrowableList.generate(int length, E generator(int index)) {
-    final result = _GrowableList<E>(length);
+  factory GrowableList.generate(int length, E generator(int index)) {
+    final result = GrowableList<E>(length);
     for (int i = 0; i < result.length; ++i) {
       result._data[i] = generator(i);
     }
@@ -46,27 +45,27 @@ class _GrowableList<E> extends _ModifiableList<E> {
   }
 
   // Specialization of List.of constructor for growable == true.
-  factory _GrowableList.of(Iterable<E> elements) {
-    if (elements is _ListBase) {
-      return _GrowableList._ofListBase(unsafeCast(elements));
+  factory GrowableList.of(Iterable<E> elements) {
+    if (elements is WasmListBase) {
+      return GrowableList._ofListBase(unsafeCast(elements));
     }
     if (elements is EfficientLengthIterable) {
-      return _GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
+      return GrowableList._ofEfficientLengthIterable(unsafeCast(elements));
     }
-    return _GrowableList._ofOther(elements);
+    return GrowableList.fromIterable(elements);
   }
 
-  factory _GrowableList._ofListBase(_ListBase<E> elements) {
+  factory GrowableList._ofListBase(WasmListBase<E> elements) {
     final int length = elements.length;
-    final list = _GrowableList<E>(length);
+    final list = GrowableList<E>(length);
     list._data.copy(0, elements._data, 0, length);
     return list;
   }
 
-  factory _GrowableList._ofEfficientLengthIterable(
+  factory GrowableList._ofEfficientLengthIterable(
       EfficientLengthIterable<E> elements) {
     final int length = elements.length;
-    final list = _GrowableList<E>(length);
+    final list = GrowableList<E>(length);
     if (length > 0) {
       int i = 0;
       for (var element in elements) {
@@ -77,8 +76,8 @@ class _GrowableList<E> extends _ModifiableList<E> {
     return list;
   }
 
-  factory _GrowableList._ofOther(Iterable<E> elements) {
-    final list = _GrowableList<E>(0);
+  factory GrowableList.fromIterable(Iterable<E> elements) {
+    final list = GrowableList<E>(0);
     for (var elements in elements) {
       list.add(elements);
     }
@@ -143,10 +142,10 @@ class _GrowableList<E> extends _ModifiableList<E> {
     if (index < 0 || index > length) {
       throw RangeError.range(index, 0, length);
     }
-    if (iterable is! _ListBase) {
+    if (iterable is! WasmListBase) {
       // Read out all elements before making room to ensure consistency of the
       // modified list in case the iterator throws.
-      iterable = _List.of(iterable);
+      iterable = ModifiableFixedLengthList.of(iterable);
     }
     int insertionLength = iterable.length;
     int capacity = _capacity;
@@ -291,12 +290,12 @@ class _GrowableList<E> extends _ModifiableList<E> {
 
 // Iterator for growable lists.
 class _GrowableListIterator<E> implements Iterator<E> {
-  final _GrowableList<E> _list;
+  final GrowableList<E> _list;
   final int _length; // Cache list length for modification check.
   int _index;
   E? _current;
 
-  _GrowableListIterator(_GrowableList<E> list)
+  _GrowableListIterator(GrowableList<E> list)
       : _list = list,
         _length = list.length,
         _index = 0;
