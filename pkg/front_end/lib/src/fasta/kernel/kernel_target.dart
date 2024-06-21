@@ -335,11 +335,11 @@ class KernelTarget {
       benchmarker?.enterPhase(BenchmarkPhases.outline_kernelBuildOutlines);
       await loader.buildOutlines();
 
-      benchmarker?.enterPhase(BenchmarkPhases.outline_becomeCoreLibrary);
-      loader.coreLibrary.becomeCoreLibrary();
-
       benchmarker?.enterPhase(BenchmarkPhases.outline_resolveParts);
       loader.resolveParts();
+
+      benchmarker?.enterPhase(BenchmarkPhases.outline_becomeCoreLibrary);
+      loader.coreLibrary.becomeCoreLibrary();
 
       benchmarker?.enterPhase(BenchmarkPhases.outline_computeMacroDeclarations);
       NeededPrecompilations? result =
@@ -543,13 +543,6 @@ class KernelTarget {
           ?.enterPhase(BenchmarkPhases.outline_computeFieldPromotability);
       loader.computeFieldPromotability();
 
-      benchmarker?.enterPhase(
-          BenchmarkPhases.outline_performRedirectingFactoryInference);
-      // TODO(johnniwinther): Add an interface for registering delayed actions.
-      List<DelayedDefaultValueCloner> delayedDefaultValueCloners = [];
-      loader.inferRedirectingFactories(
-          loader.hierarchy, delayedDefaultValueCloners);
-
       benchmarker?.enterPhase(BenchmarkPhases.outline_performTopLevelInference);
       loader.performTopLevelInference(sortedSourceClassBuilders);
 
@@ -563,6 +556,8 @@ class KernelTarget {
       loader.checkMixins(sortedSourceClassBuilders);
 
       benchmarker?.enterPhase(BenchmarkPhases.outline_buildOutlineExpressions);
+      // TODO(johnniwinther): Add an interface for registering delayed actions.
+      List<DelayedDefaultValueCloner> delayedDefaultValueCloners = [];
       loader.buildOutlineExpressions(
           loader.hierarchy, delayedDefaultValueCloners);
       delayedDefaultValueCloners.forEach(registerDelayedDefaultValueCloner);
