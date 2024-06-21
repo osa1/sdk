@@ -196,10 +196,10 @@ class ModifiableFixedLengthList<E> extends _ModifiableList<E>
 }
 
 @pragma("wasm:entry-point")
-class ImmutableLIst<E> extends WasmListBase<E> with UnmodifiableListMixin<E> {
-  factory ImmutableLIst._uninstantiable() {
+class ImmutableList<E> extends WasmListBase<E> with UnmodifiableListMixin<E> {
+  factory ImmutableList._uninstantiable() {
     throw UnsupportedError(
-        "ImmutableLIst can only be allocated by the runtime");
+        "ImmutableList can only be allocated by the runtime");
   }
 
   Iterator<E> get iterator {
@@ -218,7 +218,7 @@ class _FixedSizeListIterator<E> implements Iterator<E> {
       : _data = list._data,
         _length = list.length,
         _index = 0 {
-    assert(list is ModifiableFixedLengthList<E> || list is ImmutableLIst<E>);
+    assert(list is ModifiableFixedLengthList<E> || list is ImmutableList<E>);
   }
 
   E get current => _current as E;
