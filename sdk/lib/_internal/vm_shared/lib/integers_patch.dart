@@ -158,7 +158,6 @@ class int {
     int multiplier = _PARSE_LIMITS[tableIndex + 1];
     int positiveOverflowLimit = 0;
     int negativeOverflowLimit = 0;
-    tableIndex = tableIndex << 1; // pre-multiply by 2 for simpler indexing
     positiveOverflowLimit = _int64OverflowLimits[tableIndex];
     if (positiveOverflowLimit == 0) {
       positiveOverflowLimit = _initInt64OverflowLimits(tableIndex, multiplier);
@@ -285,12 +284,11 @@ class int {
   /// For each multiplier from `_PARSE_LIMITS[tableIndex + 1]` this table
   /// contains
   ///
-  /// * `[tableIndex*2]` = positive limit for result
-  /// * `[tableIndex*2 + 1]` = negative limit for result
-  /// * `[tableIndex*2 + 2]` = limit for smi if result is exactly at positive limit
-  /// * `[tableIndex*2 + 3]` = limit for smi if result is exactly at negative limit
-  static final Int64List _int64OverflowLimits =
-      new Int64List(_PARSE_LIMITS.length * 2);
+  /// * `[tableIndex]` = positive limit for result
+  /// * `[tableIndex + 1]` = negative limit for result
+  /// * `[tableIndex + 2]` = limit for smi if result is exactly at positive limit
+  /// * `[tableIndex + 3]` = limit for smi if result is exactly at negative limit
+  static final Int64List _int64OverflowLimits = Int64List(_PARSE_LIMITS.length);
 
   static int _initInt64OverflowLimits(int tableIndex, int multiplier) {
     _int64OverflowLimits[tableIndex] = _maxInt64 ~/ multiplier;
