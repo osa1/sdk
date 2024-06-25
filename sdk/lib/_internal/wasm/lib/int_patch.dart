@@ -149,7 +149,6 @@ class int {
     int multiplier = _PARSE_LIMITS[tableIndex + 1];
     int positiveOverflowLimit = 0;
     int negativeOverflowLimit = 0;
-    tableIndex = tableIndex << 1; // pre-multiply by 2 for simpler indexing
     positiveOverflowLimit = _int64OverflowLimits[tableIndex];
     if (positiveOverflowLimit == 0) {
       positiveOverflowLimit = _initInt64OverflowLimits(tableIndex, multiplier);
