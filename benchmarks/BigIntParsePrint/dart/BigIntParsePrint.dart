@@ -17,7 +17,7 @@ import 'native_version_dummy.dart'
 // Global sinks used to ensure that the results are not optimized.
 dynamic sink1, sink2;
 
-bool runtimeFalse() => int.parse('1') == 0;
+final bool runtimeFalse = int.parse('1') == 0;
 
 // These benchmarks measure digit-throughput for parsing and formatting.
 //
