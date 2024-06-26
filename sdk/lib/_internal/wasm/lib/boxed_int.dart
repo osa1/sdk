@@ -408,7 +408,7 @@ final class _BoxedInt extends int {
     return _binaryGcd(x, y, false);
   }
 
-  int get hashCode => _intHashCode(this);
+  int get hashCode => intHashCode(this);
 
   external int operator ~();
   external int get bitLength;
@@ -417,7 +417,7 @@ final class _BoxedInt extends int {
   external String toString();
 }
 
-int _intHashCode(int value) {
+int intHashCode(int value) {
   const int magic = 0x2D51;
   int lower = (value & 0xFFFFFFFF) * magic;
   int upper = (value >>> 32) * magic;

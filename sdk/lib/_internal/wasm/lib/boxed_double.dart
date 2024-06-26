@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:_boxed_int' show intHashCode;
 import 'dart:_internal' show doubleToIntBits, intBitsToDouble;
 import 'dart:_js_helper' show JS, jsStringToDartString;
 import 'dart:_string';
@@ -29,7 +30,7 @@ final class _BoxedDouble extends double {
     const int maxInt = 0x7FFFFFFFFFFFFFFF;
     int intValue = value._toInt();
     if (intValue.toDouble() == value && intValue != maxInt) {
-      return _intHashCode(intValue);
+      return intHashCode(intValue);
     }
     int bits = doubleToIntBits(value);
     return (bits ^ (bits >>> 32)) & 0x3FFFFFFF;
