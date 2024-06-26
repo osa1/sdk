@@ -3,6 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal' show patch;
+import 'dart:_js_helper' show jsStringFromDartString, JS;
+import 'dart:_string' show JSStringImplExt;
 
 @patch
 class double {
@@ -15,6 +17,28 @@ class double {
         throw FormatException('Invalid double $source');
       } else {
         return onError(source);
+      }
+    }
+    return result;
+  }
+
+  static double? _tryParseJS(String source) {
+    // Notice that JS parseFloat accepts garbage at the end of the string.
+    // Accept only:
+    // - [+/-]NaN
+    // - [+/-]Infinity
+    // - a Dart double literal
+    // We do allow leading or trailing whitespace.
+    double result = JS<double>(r"""s => {
+      if (!/^\s*[+-]?(?:Infinity|NaN|(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?)\s*$/.test(s)) {
+        return NaN;
+      }
+      return parseFloat(s);
+    }""", jsStringFromDartString(source).toExternRef);
+    if (result.isNaN) {
+      String trimmed = source.trim();
+      if (!(trimmed == 'NaN' || trimmed == '+NaN' || trimmed == '-NaN')) {
+        return null;
       }
     }
     return result;

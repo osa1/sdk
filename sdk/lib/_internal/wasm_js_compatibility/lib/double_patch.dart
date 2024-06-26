@@ -9,25 +9,6 @@ import 'dart:_string' show JSStringImplExt;
 @patch
 class double {
   @patch
-  static double? tryParse(String source) {
-    // Notice that JS parseFloat accepts garbage at the end of the string.
-    // Accept only:
-    // - [+/-]NaN
-    // - [+/-]Infinity
-    // - a Dart double literal
-    // We do allow leading or trailing whitespace.
-    double result = JS<double>(r"""s => {
-      if (!/^\s*[+-]?(?:Infinity|NaN|(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?)\s*$/.test(s)) {
-        return NaN;
-      }
-      return parseFloat(s);
-    }""", jsStringFromDartString(source).toExternRef);
-    if (result.isNaN) {
-      String trimmed = source.trim();
-      if (!(trimmed == 'NaN' || trimmed == '+NaN' || trimmed == '-NaN')) {
-        return null;
-      }
-    }
-    return result;
-  }
+  @pragma('wasm:prefer-inline')
+  static double? tryParse(String source) => _tryParseJS(source);
 }

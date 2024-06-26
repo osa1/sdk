@@ -3,8 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_internal' show patch, POWERS_OF_TEN;
-import 'dart:_js_helper' show jsStringFromDartString, JS;
-import 'dart:_string' show JSStringImplExt;
+import 'dart:_string' show StringUncheckedOperations;
 
 @patch
 class double {
@@ -16,28 +15,13 @@ class double {
     int end = source.lastNonWhitespace() + 1;
     assert(start < end);
     var result = _tryParseDouble(source, start, end);
+    if (result != null) return result;
 
-    // Notice that JS parseFloat accepts garbage at the end of the string.
-    // Accept only:
-    // - [+/-]NaN
-    // - [+/-]Infinity
-    // - a Dart double literal
-    // We do allow leading or trailing whitespace.
-    double jsResult = JS<double>(r"""s => {
-      if (!/^\s*[+-]?(?:Infinity|NaN|(?:\.\d+|\d+(?:\.\d*)?)(?:[eE][+-]?\d+)?)\s*$/.test(s)) {
-        return NaN;
-      }
-      return parseFloat(s);
-    }""", jsStringFromDartString(source).toExternRef);
-    if (jsResult.isNaN) {
-      String trimmed = source.trim();
-      if (!(trimmed == 'NaN' || trimmed == '+NaN' || trimmed == '-NaN')) {
-        return null;
-      }
-    }
-    return jsResult;
+    return _tryParseJS(source);
   }
 
+  // Fast path copied from VM's double_patch, with changes to use unchecked
+  // `codeUnitAt`.
   static double? _tryParseDouble(String str, int start, int end) {
     assert(start < end);
     const int _DOT = 0x2e; // '.'
@@ -54,12 +38,12 @@ class double {
     int exponentDelta = 0;
     double doubleValue = 0.0;
     double sign = 1.0;
-    int firstChar = str.codeUnitAt(start);
+    int firstChar = str.codeUnitAtUnchecked(start);
     if (firstChar == _MINUS) {
       sign = -1.0;
       start++;
       if (start == end) return null;
-      firstChar = str.codeUnitAt(start);
+      firstChar = str.codeUnitAtUnchecked(start);
     }
     if (firstChar == _I) {
       if (end == start + 8 && str.startsWith("nfinity", start + 1)) {
@@ -69,8 +53,8 @@ class double {
     }
     if (firstChar == _N) {
       if (end == start + 3 &&
-          str.codeUnitAt(start + 1) == _a &&
-          str.codeUnitAt(start + 2) == _N) {
+          str.codeUnitAtUnchecked(start + 1) == _a &&
+          str.codeUnitAtUnchecked(start + 2) == _N) {
         return double.nan;
       }
       return null;
@@ -83,7 +67,7 @@ class double {
       digitsSeen = true;
     }
     for (int i = start; i < end; i++) {
-      int c = str.codeUnitAt(i);
+      int c = str.codeUnitAtUnchecked(i);
       int digit = c ^ _ZERO; // '0'-'9' characters are now 0-9 integers.
       if (digit <= 9) {
         doubleValue = 10.0 * doubleValue + digit;
