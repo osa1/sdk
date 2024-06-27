@@ -292,8 +292,8 @@ class Translator with KernelNodes {
     dynamicForwarders = DynamicForwarders(this);
   }
 
-  w.Module translate() {
-    m = w.ModuleBuilder(watchPoints: options.watchPoints);
+  w.Module translate(Uri? sourceMapUrl) {
+    m = w.ModuleBuilder(sourceMapUrl, watchPoints: options.watchPoints);
     voidMarker = w.RefType.def(w.StructType("void"), nullable: true);
 
     // Collect imports and exports as the very first thing so the function types

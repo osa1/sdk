@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:front_end/src/api_unstable/vm.dart' show printDiagnosticMessage;
+import 'package:path/path.dart' as path;
 
 import 'compile.dart';
 import 'compiler_options.dart';
@@ -20,8 +21,10 @@ Future<int> generateWasm(WasmCompilerOptions options,
     print('  - platformPath file = ${options.platformPath}');
   }
 
-  CompilerOutput? output = await compileToModule(
-      options, (message) => printDiagnosticMessage(message, errorPrinter));
+  final relativeSourceMapUrl =
+      Uri.file(path.basename('${options.outputFile}.map'));
+  CompilerOutput? output = await compileToModule(options, relativeSourceMapUrl,
+      (message) => printDiagnosticMessage(message, errorPrinter));
 
   if (output == null) {
     return 1;
@@ -34,6 +37,9 @@ Future<int> generateWasm(WasmCompilerOptions options,
   final jsFile = options.outputJSRuntimeFile ??
       '${options.outputFile.substring(0, options.outputFile.lastIndexOf('.'))}.mjs';
   await File(jsFile).writeAsString(output.jsRuntime);
+
+  final sourceMap = output.sourceMap;
+  await File('${options.outputFile}.map').writeAsString(sourceMap);
 
   return 0;
 }

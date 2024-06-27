@@ -159,9 +159,32 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     return expectedType;
   }
 
+  Source? _currentSourceMapSource;
+
+  void setCurrentSourceMapSource(Source? source) =>
+      _currentSourceMapSource = source;
+
+  void setSourceMapFileOffset(int fileOffset) {
+    if (fileOffset == TreeNode.noOffset) {
+      return;
+    }
+    final source = _currentSourceMapSource;
+    if (source == null) {
+      return;
+    }
+    final fileUri = source.fileUri!;
+    final location = source.getLocation(fileUri, fileOffset);
+    b.startSourceMapping(
+        fileUri, location.line - 1, location.column - 1, member.name.text);
+  }
+
   /// Generate code for the member.
   void generate() {
     Member member = this.member;
+
+    final source = member.enclosingComponent!.uriToSource[member.fileUri]!;
+    setCurrentSourceMapSource(source);
+    setSourceMapFileOffset(member.fileOffset);
 
     if (member is Constructor) {
       // Closures are built when constructor functions are added to worklist.
@@ -877,6 +900,12 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// result to the expected type if needed. All expression code generation goes
   /// through this method.
   w.ValueType wrap(Expression node, w.ValueType expectedType) {
+    if (node is FileUriNode) {
+      final source =
+          node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
+      setCurrentSourceMapSource(source);
+    }
+    setSourceMapFileOffset(node.fileOffset);
     try {
       w.ValueType resultType = node.accept1(this, expectedType);
       translator.convertType(function, resultType, expectedType);
@@ -888,6 +917,12 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   void visitStatement(Statement node) {
+    if (node is FileUriNode) {
+      final source =
+          node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
+      setCurrentSourceMapSource(source);
+    }
+    setSourceMapFileOffset(node.fileOffset);
     try {
       node.accept(this);
     } catch (_) {

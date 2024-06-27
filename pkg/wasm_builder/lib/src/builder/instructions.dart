@@ -6,6 +6,7 @@
 
 import '../ir/ir.dart' as ir;
 import 'builder.dart';
+import 'source_map.dart';
 
 // TODO(joshualitt): Suggested further optimizations:
 //   1) Add size estimates to `_Instruction`, and then remove logic where we
@@ -119,6 +120,12 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// middle of the stack are left out.
   int maxStackShown = 10;
 
+  /// Mappings for the instructions in [_instructions] to their source code.
+  ///
+  /// Since we add mappings as we generate instructions, this will be sorted
+  /// based on [SourceMapping.instructionStartIndex].
+  List<SourceMapping> _sourceMappings = [];
+
   int _indent = 1;
   final List<String> _traceLines = [];
 
@@ -155,8 +162,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   String get trace => _traceLines.join();
 
   @override
-  ir.Instructions forceBuild() =>
-      ir.Instructions(locals, _instructions, _stackTraces, _traceLines);
+  ir.Instructions forceBuild() => ir.Instructions(
+      locals, _instructions, _stackTraces, _traceLines, _sourceMappings);
 
   void _add(ir.Instruction i) {
     _instructions.add(i);
@@ -344,6 +351,13 @@ class InstructionsBuilder with Builder<ir.Instructions> {
         reachableAfter: reachableAfter,
         indentBefore: -1,
         indentAfter: reindent ? 1 : 0);
+  }
+
+  // Source maps
+
+  void startSourceMapping(Uri fileUri, int line, int col, String? name) {
+    _sourceMappings
+        .add(SourceMapping(_instructions.length, fileUri, line, col, name));
   }
 
   // Meta
