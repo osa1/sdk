@@ -220,8 +220,8 @@ abstract final class StringBase extends WasmStringBase
       bits |= nonBmpCode | 0x10000;
       multiCodeUnitChars += 1;
     }
-    // bits < 0 || bits > 0xFFFF
-    if (bits.toWasmI64().gtU(const WasmI64(0xFFFF))) {
+    // bits < 0 || bits > 0xFFFFF
+    if (bits.toWasmI64().gtU(const WasmI64(0xFFFFF))) {
       throw ArgumentError(typedCharCodes);
     }
     if (multiCodeUnitChars == 0) {
