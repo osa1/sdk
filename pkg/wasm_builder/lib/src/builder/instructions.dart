@@ -358,14 +358,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
         .add(SourceMapping(_instructions.length, fileUri, line, col, name));
   }
 
-  /// Terminate the current mapping and start a dummy mapping that's mapped to
-  /// a non-existent file called "NA".
-  ///
-  /// Source maps don't have a way to stop mapping, so we have to create a
-  /// dummy mapping for unmapped regions instead.
   void stopSourceMapping() {
-    _sourceMappings
-        .add(SourceMapping(_instructions.length, Uri.file("NA"), 0, 0, null));
+    _sourceMappings.add(SourceMapping.unmapped(_instructions.length));
   }
 
   // Meta
