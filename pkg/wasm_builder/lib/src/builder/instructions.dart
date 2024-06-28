@@ -152,9 +152,6 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     _labelStack.add(Expression(const [], outputs));
   }
 
-  /// Whether the current point in the instruction stream is reachable.
-  bool get reachable => _reachable;
-
   /// Whether the instruction sequence has been completed by the final `end`.
   bool get isComplete => _labelStack.isEmpty;
 
@@ -166,6 +163,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
       locals, _instructions, _stackTraces, _traceLines, _sourceMappings);
 
   void _add(ir.Instruction i) {
+    if (!_reachable) return;
     _instructions.add(i);
     if (module.watchPoints.isNotEmpty) {
       _stackTraces![i] = StackTrace.current;
@@ -239,7 +237,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   }
 
   ir.ValueType get _topOfStack {
-    if (!reachable) return ir.RefType.common(nullable: true);
+    if (!_reachable) return ir.RefType.common(nullable: true);
     if (_stackTypes.isEmpty) _reportError("Stack underflow");
     return _stackTypes.last;
   }
@@ -283,7 +281,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   bool _verifyTypesFun(List<ir.ValueType> inputs,
       List<ir.ValueType> Function(List<ir.ValueType>) outputsFun,
       {List<Object>? trace, bool reachableAfter = true}) {
-    if (!reachable) {
+    if (!_reachable) {
       return _debugTrace(trace, reachableAfter: false);
     }
     final int baseStackHeight = _topOfLabelStack.baseStackHeight;
@@ -302,7 +300,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
 
   bool _verifyBranchTypes(Label label,
       [int popped = 0, List<ir.ValueType> pushed = const []]) {
-    if (!reachable) {
+    if (!_reachable) {
       return true;
     }
     final List<ir.ValueType> inputs = label.targetTypes;
@@ -325,7 +323,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   bool _verifyStartOfBlock(Label label, {required List<Object> trace}) {
     return _debugTrace(
         ["$label:", ...trace, ir.FunctionType(label.inputs, label.outputs)],
-        reachableAfter: reachable, indentAfter: 1);
+        reachableAfter: _reachable, indentAfter: 1);
   }
 
   bool _verifyEndOfBlock(List<ir.ValueType> outputs,
@@ -333,7 +331,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
       required bool reachableAfter,
       required bool reindent}) {
     final Label label = _topOfLabelStack;
-    if (reachable) {
+    if (_reachable) {
       final int expectedHeight = label.baseStackHeight + label.outputs.length;
       if (_stackTypes.length != expectedHeight) {
         _reportError("Incorrect stack height at end of block"
@@ -373,8 +371,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   void unreachable() {
     assert(_verifyTypes(const [], const [],
         trace: const ['unreachable'], reachableAfter: false));
-    _reachable = false;
     _add(const ir.Unreachable());
+    _reachable = false;
   }
 
   /// Emit a `nop` instruction.
@@ -388,7 +386,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     label.ordinal = ++_labelCount;
     label.depth = _labelStack.length;
     label.baseStackHeight = _stackTypes.length - label.inputs.length;
-    label.reachable = reachable;
+    label.reachable = _reachable;
     label.localInitializationStackHeight = _localInitializationStack.length;
     _labelStack.add(label);
     assert(_verifyStartOfBlock(label, trace: trace));
@@ -496,16 +494,16 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// Emit a `throw` instruction.
   void throw_(ir.Tag tag) {
     assert(_verifyTypes(tag.type.inputs, const [], trace: ['throw', tag]));
-    _reachable = false;
     _add(ir.Throw(tag));
+    _reachable = false;
   }
 
   /// Emit a `rethrow` instruction.
   void rethrow_(Label label) {
     assert(label is Try && label.hasCatch);
     assert(_verifyTypes(const [], const [], trace: ['rethrow', label]));
-    _reachable = false;
     _add(ir.Rethrow(_labelIndex(label)));
+    _reachable = false;
   }
 
   /// Emit an `end` instruction.
@@ -530,8 +528,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     assert(_verifyTypes(const [], const [],
         trace: ['br', label], reachableAfter: false));
     assert(_verifyBranchTypes(label));
-    _reachable = false;
     _add(ir.Br(_labelIndex(label)));
+    _reachable = false;
   }
 
   /// Emit a `br_if` instruction.
@@ -550,17 +548,17 @@ class InstructionsBuilder with Builder<ir.Instructions> {
       assert(_verifyBranchTypes(label));
     }
     assert(_verifyBranchTypes(defaultLabel));
-    _reachable = false;
     _add(ir.BrTable(
         labels.map(_labelIndex).toList(), _labelIndex(defaultLabel)));
+    _reachable = false;
   }
 
   /// Emit a `return` instruction.
   void return_() {
     assert(_verifyTypes(_labelStack[0].outputs, const [],
         trace: const ['return'], reachableAfter: false));
-    _reachable = false;
     _add(const ir.Return());
+    _reachable = false;
   }
 
   /// Emit a `call` instruction.

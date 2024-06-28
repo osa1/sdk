@@ -8,10 +8,10 @@ import 'package:kernel/src/find_type_visitor.dart';
 import 'package:kernel/type_algebra.dart' show containsTypeVariable;
 import 'package:kernel/util/graph.dart' show Graph, computeStrongComponents;
 
+import '../base/problems.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/formal_parameter_builder.dart';
 import '../builder/function_type_builder.dart';
-import '../builder/library_builder.dart';
 import '../builder/named_type_builder.dart';
 import '../builder/nullability_builder.dart';
 import '../builder/record_type_builder.dart';
@@ -28,7 +28,6 @@ import '../codes/cfe_codes.dart'
 import '../dill/dill_class_builder.dart' show DillClassBuilder;
 import '../dill/dill_type_alias_builder.dart' show DillTypeAliasBuilder;
 import '../kernel/utils.dart';
-import '../base/problems.dart';
 import '../source/source_class_builder.dart';
 import '../source/source_extension_builder.dart';
 import '../source/source_extension_type_declaration_builder.dart';
@@ -40,9 +39,7 @@ import '../source/source_type_alias_builder.dart';
 // name matches that of the variable, it's interpreted as an occurrence of a
 // type variable.
 VarianceCalculationValue computeTypeVariableBuilderVariance(
-    NominalVariableBuilder variable,
-    TypeBuilder? type,
-    LibraryBuilder libraryBuilder) {
+    NominalVariableBuilder variable, TypeBuilder? type) {
   switch (type) {
     case NamedTypeBuilder(
         :TypeDeclarationBuilder? declaration,
@@ -55,9 +52,9 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
           if (arguments != null) {
             for (int i = 0; i < arguments.length; ++i) {
               result = result.meet(declaration.cls.typeParameters[i].variance
-                  .combine(computeTypeVariableBuilderVariance(
-                          variable, arguments[i], libraryBuilder)
-                      .variance!));
+                  .combine(
+                      computeTypeVariableBuilderVariance(variable, arguments[i])
+                          .variance!));
             }
           }
           return new VarianceCalculationValue.fromVariance(result);
@@ -77,9 +74,7 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
                 declarationTypeVariable.varianceCalculationValue =
                     VarianceCalculationValue.inProgress;
                 Variance computedVariance = computeTypeVariableBuilderVariance(
-                        declarationTypeVariable,
-                        declaration.type,
-                        libraryBuilder)
+                        declarationTypeVariable, declaration.type)
                     .variance!;
 
                 declarationTypeVariable.varianceCalculationValue =
@@ -104,7 +99,7 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
               }
 
               result = result.meet(computeTypeVariableBuilderVariance(
-                      variable, type.typeArguments![i], libraryBuilder)
+                      variable, type.typeArguments![i])
                   .variance!
                   .combine(declarationTypeVariableVariance.variance!));
             }
@@ -116,9 +111,9 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
             for (int i = 0; i < arguments.length; ++i) {
               result = result.meet(declaration
                   .extensionTypeDeclaration.typeParameters[i].variance
-                  .combine(computeTypeVariableBuilderVariance(
-                          variable, arguments[i], libraryBuilder)
-                      .variance!));
+                  .combine(
+                      computeTypeVariableBuilderVariance(variable, arguments[i])
+                          .variance!));
             }
           }
           return new VarianceCalculationValue.fromVariance(result);
@@ -132,6 +127,7 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
         case ExtensionBuilder():
         case InvalidTypeDeclarationBuilder():
         case BuiltinTypeDeclarationBuilder():
+        // Coverage-ignore(suite): Not run.
         // TODO(johnniwinther): How should we handle this case?
         case OmittedTypeDeclarationBuilder():
         case null:
@@ -144,9 +140,8 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
       ):
       Variance result = Variance.unrelated;
       if (returnType is! OmittedTypeBuilder) {
-        result = result.meet(computeTypeVariableBuilderVariance(
-                variable, returnType, libraryBuilder)
-            .variance!);
+        result = result.meet(
+            computeTypeVariableBuilderVariance(variable, returnType).variance!);
       }
       if (typeVariables != null) {
         for (StructuralVariableBuilder typeVariable in typeVariables) {
@@ -156,7 +151,7 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
           // if [variable] occurs in the bound.
           if (typeVariable.bound != null &&
               computeTypeVariableBuilderVariance(
-                      variable, typeVariable.bound!, libraryBuilder) !=
+                      variable, typeVariable.bound!) !=
                   VarianceCalculationValue.calculatedUnrelated) {
             result = Variance.invariant;
           }
@@ -165,8 +160,7 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
       if (formals != null) {
         for (ParameterBuilder formal in formals) {
           result = result.meet(Variance.contravariant.combine(
-              computeTypeVariableBuilderVariance(
-                      variable, formal.type, libraryBuilder)
+              computeTypeVariableBuilderVariance(variable, formal.type)
                   .variance!));
         }
       }
@@ -178,16 +172,16 @@ VarianceCalculationValue computeTypeVariableBuilderVariance(
       Variance result = Variance.unrelated;
       if (positionalFields != null) {
         for (RecordTypeFieldBuilder field in positionalFields) {
-          result = result.meet(computeTypeVariableBuilderVariance(
-                  variable, field.type, libraryBuilder)
-              .variance!);
+          result = result.meet(
+              computeTypeVariableBuilderVariance(variable, field.type)
+                  .variance!);
         }
       }
       if (namedFields != null) {
         for (RecordTypeFieldBuilder field in namedFields) {
-          result = result.meet(computeTypeVariableBuilderVariance(
-                  variable, field.type, libraryBuilder)
-              .variance!);
+          result = result.meet(
+              computeTypeVariableBuilderVariance(variable, field.type)
+                  .variance!);
         }
       }
       return new VarianceCalculationValue.fromVariance(result);
@@ -383,15 +377,19 @@ TypeBuilder _substituteNamedTypeBuilder(
           newArguments[i] = substitutedArgument;
         }
       }
+    // Coverage-ignore(suite): Not run.
     case NominalVariableBuilder():
       // Handled above.
       throw new UnsupportedError("Unexpected NominalVariableBuilder");
+    // Coverage-ignore(suite): Not run.
     case StructuralVariableBuilder():
       // Handled above.
       throw new UnsupportedError("Unexpected StructuralVariableBuilder");
+    // Coverage-ignore(suite): Not run.
     case InvalidTypeDeclarationBuilder():
       // Don't substitute.
       break;
+    // Coverage-ignore(suite): Not run.
     case ExtensionBuilder():
     case BuiltinTypeDeclarationBuilder():
     // TODO(johnniwinther): How should we handle this case?
@@ -755,12 +753,17 @@ List<NamedTypeBuilder> findVariableUsesInType(
       }
       break;
     case FunctionTypeBuilder(
+        // Coverage-ignore(suite): Not run.
         :List<StructuralVariableBuilder>? typeVariables,
+        // Coverage-ignore(suite): Not run.
         :List<ParameterBuilder>? formals,
+        // Coverage-ignore(suite): Not run.
         :TypeBuilder returnType
       ):
+      // Coverage-ignore(suite): Not run.
       uses.addAll(findVariableUsesInType(variable, returnType));
       if (typeVariables != null) {
+        // Coverage-ignore-block(suite): Not run.
         for (StructuralVariableBuilder dependentVariable in typeVariables) {
           if (dependentVariable.bound != null) {
             uses.addAll(
@@ -773,6 +776,7 @@ List<NamedTypeBuilder> findVariableUsesInType(
         }
       }
       if (formals != null) {
+        // Coverage-ignore-block(suite): Not run.
         for (ParameterBuilder formal in formals) {
           uses.addAll(findVariableUsesInType(variable, formal.type));
         }
@@ -787,6 +791,7 @@ List<NamedTypeBuilder> findVariableUsesInType(
         }
       }
       if (namedFields != null) {
+        // Coverage-ignore-block(suite): Not run.
         for (RecordTypeFieldBuilder field in namedFields) {
           uses.addAll(findVariableUsesInType(variable, field.type));
         }
@@ -875,6 +880,7 @@ List<Object> findRawTypesWithInboundReferences(TypeBuilder? type) {
                 }
               }
               if (hasInbound) {
+                // Coverage-ignore-block(suite): Not run.
                 typesAndDependencies.add(type);
                 typesAndDependencies.add(const <Object>[]);
               }
@@ -894,6 +900,7 @@ List<Object> findRawTypesWithInboundReferences(TypeBuilder? type) {
                   List<Object> dependencies =
                       findInboundReferences(type.typeVariables!);
                   if (dependencies.length != 0) {
+                    // Coverage-ignore-block(suite): Not run.
                     typesAndDependencies.add(type);
                     typesAndDependencies.add(dependencies);
                   }
@@ -905,6 +912,7 @@ List<Object> findRawTypesWithInboundReferences(TypeBuilder? type) {
               List<Object> dependencies =
                   findInboundReferences(declaration.typeParameters!);
               if (dependencies.length != 0) {
+                // Coverage-ignore-block(suite): Not run.
                 typesAndDependencies.add(type);
                 typesAndDependencies.add(dependencies);
               }
@@ -914,6 +922,7 @@ List<Object> findRawTypesWithInboundReferences(TypeBuilder? type) {
           case ExtensionBuilder():
           case InvalidTypeDeclarationBuilder():
           case BuiltinTypeDeclarationBuilder():
+          // Coverage-ignore(suite): Not run.
           // TODO(johnniwinther): How should we handle this case?
           case OmittedTypeDeclarationBuilder():
           case null:
@@ -938,6 +947,7 @@ List<Object> findRawTypesWithInboundReferences(TypeBuilder? type) {
                 .addAll(findRawTypesWithInboundReferences(variable.bound));
           }
           if (variable.defaultType != null) {
+            // Coverage-ignore-block(suite): Not run.
             typesAndDependencies.addAll(
                 findRawTypesWithInboundReferences(variable.defaultType));
           }
@@ -1101,6 +1111,7 @@ List<List<RawTypeCycleElement>> findRawTypePathsToDeclaration(
                 visitTypeVariables(type.typeVariables);
               }
             case ExtensionBuilder():
+              // Coverage-ignore(suite): Not run.
               visitTypeVariables(declaration.typeParameters);
             case ExtensionTypeDeclarationBuilder():
               visitTypeVariables(declaration.typeParameters);
@@ -1117,6 +1128,7 @@ List<List<RawTypeCycleElement>> findRawTypePathsToDeclaration(
             case BuiltinTypeDeclarationBuilder():
               // Do nothing.
               break;
+            // Coverage-ignore(suite): Not run.
             // TODO(johnniwinther): How should we handle this case?
             case OmittedTypeDeclarationBuilder():
             case null:
@@ -1143,6 +1155,7 @@ List<List<RawTypeCycleElement>> findRawTypePathsToDeclaration(
                 findRawTypePathsToDeclaration(variable.bound, end, visited));
           }
           if (variable.defaultType != null) {
+            // Coverage-ignore-block(suite): Not run.
             paths.addAll(findRawTypePathsToDeclaration(
                 variable.defaultType, end, visited));
           }
@@ -1499,5 +1512,6 @@ class RawTypeCycleElement {
 
   RawTypeCycleElement(this.type, this.typeVariable)
       : assert(typeVariable is NominalVariableBuilder? ||
+            // Coverage-ignore(suite): Not run.
             typeVariable is StructuralVariableBuilder?);
 }

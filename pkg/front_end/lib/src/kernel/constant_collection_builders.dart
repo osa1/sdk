@@ -40,9 +40,11 @@ abstract class _ListOrSetConstantBuilder<L extends Expression> {
     if (constant is AbortConstant) return constant;
     Constant spread = evaluator.unlower(constant);
     if (evaluator.shouldBeUnevaluated) {
+      // Coverage-ignore-block(suite): Not run.
       // Unevaluated spread
       parts.add(spread);
     } else if (spread == evaluator.nullConstant) {
+      // Coverage-ignore-block(suite): Not run.
       // Null spread
       return evaluator.createEvaluationErrorConstant(
           spreadExpression, messageConstEvalNullValue);
@@ -54,12 +56,14 @@ abstract class _ListOrSetConstantBuilder<L extends Expression> {
       } else if (spread is SetConstant) {
         entries = spread.entries;
       } else if (evaluator.backend.isLoweredListConstant(spread)) {
+        // Coverage-ignore-block(suite): Not run.
         entries = <Constant>[];
         evaluator.backend.forEachLoweredListConstantElement(spread,
             (Constant element) {
           entries.add(element);
         });
       } else if (evaluator.backend.isLoweredSetConstant(constant)) {
+        // Coverage-ignore-block(suite): Not run.
         entries = <Constant>[];
         evaluator.backend.forEachLoweredSetConstantElement(spread,
             (Constant element) {
@@ -105,7 +109,7 @@ class ListConstantBuilder extends _ListOrSetConstantBuilder<ListLiteral> {
     if (parts.last is List<Constant>) {
       lastPart = parts.last as List<Constant>;
     } else {
-      // Probably unreachable.
+      // Coverage-ignore: Probably unreachable.
       parts.add(lastPart = <Constant>[]);
     }
     Constant value = evaluator.ensureIsSubtype(constant, elementType, context);
@@ -129,6 +133,7 @@ class ListConstantBuilder extends _ListOrSetConstantBuilder<ListLiteral> {
     for (Object part in parts) {
       if (part is List<Constant>) {
         if (part.isEmpty) continue;
+        // Coverage-ignore-block(suite): Not run.
         lists.add(new ConstantExpression(new ListConstant(elementType, part)));
       } else if (part is Constant) {
         lists.add(evaluator._wrap(part));
@@ -150,6 +155,7 @@ class SetConstantBuilder extends _ListOrSetConstantBuilder<SetLiteral> {
       : super(original, elementType, evaluator);
 
   @override
+  // Coverage-ignore(suite): Not run.
   SetLiteral makeLiteral(List<Expression> elements) =>
       new SetLiteral(elements, isConst: true);
 
@@ -163,6 +169,7 @@ class SetConstantBuilder extends _ListOrSetConstantBuilder<SetLiteral> {
             templateConstEvalElementNotPrimitiveEquality
                 .withArguments(constant));
       } else {
+        // Coverage-ignore-block(suite): Not run.
         return evaluator.createEvaluationErrorConstant(context,
             templateConstEvalElementImplementsEqual.withArguments(constant));
       }
@@ -177,7 +184,7 @@ class SetConstantBuilder extends _ListOrSetConstantBuilder<SetLiteral> {
     if (parts.last is List<Constant>) {
       lastPart = parts.last as List<Constant>;
     } else {
-      // Probably unreachable.
+      // Coverage-ignore: Probably unreachable.
       parts.add(lastPart = <Constant>[]);
     }
     Constant value = evaluator.ensureIsSubtype(constant, elementType, context);
@@ -193,6 +200,7 @@ class SetConstantBuilder extends _ListOrSetConstantBuilder<SetLiteral> {
       SetConstant result = new SetConstant(elementType, entries);
       return evaluator.lowerSetConstant(result);
     }
+    // Coverage-ignore-block(suite): Not run.
     List<Expression> sets = <Expression>[];
     for (Object part in parts) {
       if (part is List<Constant>) {
@@ -235,6 +243,7 @@ class MapConstantBuilder {
     Constant value = evaluator._evaluateSubexpression(element.value);
     if (value is AbortConstant) return value;
     if (evaluator.shouldBeUnevaluated) {
+      // Coverage-ignore-block(suite): Not run.
       parts.add(evaluator.unevaluated(
           element.key,
           new MapLiteral([
@@ -253,9 +262,11 @@ class MapConstantBuilder {
     if (constant is AbortConstant) return constant;
     Constant spread = evaluator.unlower(constant);
     if (evaluator.shouldBeUnevaluated) {
+      // Coverage-ignore-block(suite): Not run.
       // Unevaluated spread
       parts.add(spread);
     } else if (spread == evaluator.nullConstant) {
+      // Coverage-ignore-block(suite): Not run.
       // Null spread
       return evaluator.createEvaluationErrorConstant(
           spreadExpression, messageConstEvalNullValue);
@@ -268,6 +279,7 @@ class MapConstantBuilder {
           if (error != null) return error;
         }
       } else if (evaluator.backend.isLoweredMapConstant(spread)) {
+        // Coverage-ignore-block(suite): Not run.
         AbortConstant? error;
         evaluator.backend.forEachLoweredMapConstantEntry(spread,
             (Constant key, Constant value) {
@@ -291,7 +303,7 @@ class MapConstantBuilder {
     if (parts.last is List<ConstantMapEntry>) {
       lastPart = parts.last as List<ConstantMapEntry>;
     } else {
-      // Probably unreachable.
+      // Coverage-ignore: Probably unreachable.
       parts.add(lastPart = <ConstantMapEntry>[]);
     }
     if (!evaluator.hasPrimitiveEqual(key,
@@ -300,6 +312,7 @@ class MapConstantBuilder {
         return evaluator.createEvaluationErrorConstant(keyContext,
             templateConstEvalKeyNotPrimitiveEquality.withArguments(key));
       } else {
+        // Coverage-ignore-block(suite): Not run.
         return evaluator.createEvaluationErrorConstant(
             keyContext, templateConstEvalKeyImplementsEqual.withArguments(key));
       }
@@ -325,6 +338,7 @@ class MapConstantBuilder {
       return evaluator
           .lowerMapConstant(new MapConstant(keyType, valueType, entries));
     }
+    // Coverage-ignore-block(suite): Not run.
     List<Expression> maps = <Expression>[];
     for (Object part in parts) {
       if (part is List<ConstantMapEntry>) {

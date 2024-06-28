@@ -7,6 +7,8 @@ library fasta.source_type_alias_builder;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
+import '../base/problems.dart' show unhandled;
+import '../base/scope.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/formal_parameter_builder.dart';
@@ -23,8 +25,6 @@ import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/expression_generator_helper.dart';
 import '../kernel/kernel_helper.dart';
-import '../base/problems.dart' show unhandled;
-import '../base/scope.dart';
 import '../util/helpers.dart';
 import 'source_library_builder.dart' show SourceLibraryBuilder;
 
@@ -174,8 +174,10 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
               typeParameters = declaration.typeVariables;
             case TypeAliasBuilder():
               typeParameters = declaration.typeVariables;
+            // Coverage-ignore(suite): Not run.
             case ExtensionTypeDeclarationBuilder():
               typeParameters = declaration.typeParameters;
+            // Coverage-ignore(suite): Not run.
             case BuiltinTypeDeclarationBuilder():
             case InvalidTypeDeclarationBuilder():
             case OmittedTypeDeclarationBuilder():
@@ -500,6 +502,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       case ExtensionBuilder():
       case InvalidTypeDeclarationBuilder():
       case BuiltinTypeDeclarationBuilder():
+      // Coverage-ignore(suite): Not run.
       // TODO(johnniwinther): How should we handle this case?
       case OmittedTypeDeclarationBuilder():
       case null:

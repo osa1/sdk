@@ -8,18 +8,13 @@ import 'dart:async' show Zone, runZoned;
 
 import 'package:_fe_analyzer_shared/src/messages/codes.dart';
 import 'package:_fe_analyzer_shared/src/messages/severity.dart' show Severity;
-
-import 'package:_fe_analyzer_shared/src/util/colors.dart' as colors;
-
 import 'package:_fe_analyzer_shared/src/scanner/string_canonicalizer.dart'
     show clearStringCanonicalizationCache;
-
+import 'package:_fe_analyzer_shared/src/util/colors.dart' as colors;
 import 'package:kernel/ast.dart' show Source;
 
 import '../api_prototype/file_system.dart' show FileSystem;
-
 import '../base/processed_options.dart' show ProcessedOptions;
-
 import 'command_line_reporting.dart' as command_line_reporting;
 
 final Object compilerContextKey = new Object();
@@ -77,7 +72,9 @@ class CompilerContext {
   }
 
   static void recordDependency(Uri uri) {
-    if (!uri.isScheme("file") && !uri.isScheme("http")) {
+    if (!uri.isScheme("file") &&
+        // Coverage-ignore(suite): Not run.
+        !uri.isScheme("http")) {
       throw new ArgumentError("Expected a file or http URI, but got: '$uri'.");
     }
     CompilerContext? context = Zone.current[compilerContextKey];
@@ -89,6 +86,7 @@ class CompilerContext {
   static CompilerContext get current {
     CompilerContext? context = Zone.current[compilerContextKey];
     if (context == null) {
+      // Coverage-ignore-block(suite): Not run.
       // Note: we throw directly and don't use internalProblem, because
       // internalProblem depends on having a compiler context available.
       String problemMessage =

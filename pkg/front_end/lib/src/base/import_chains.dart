@@ -4,6 +4,7 @@
 
 import 'package:_fe_analyzer_shared/src/util/link.dart';
 import 'package:_fe_analyzer_shared/src/util/relativize.dart' as uri_extras;
+
 import '../builder/library_builder.dart';
 
 /// Compute the set of distinct import chains to the library at [uri] within
@@ -62,6 +63,7 @@ Set<String> computeImportChainsFor(
 
     if (!importChains.contains(importChain)) {
       if (importChains.length > compactChainLimit) {
+        // Coverage-ignore-block(suite): Not run.
         importChains.add('...');
         return false;
       } else {
@@ -71,6 +73,7 @@ Set<String> computeImportChainsFor(
 
     chainCount++;
     if (chainCount > chainLimit) {
+      // Coverage-ignore-block(suite): Not run.
       // Assume there are more import chains.
       importChains.add('...');
       return false;
@@ -206,6 +209,7 @@ abstract class CodeLocation {
         String packageName = uri.path.substring(0, slashPos);
         return new PackageLocation(packageName);
       } else {
+        // Coverage-ignore-block(suite): Not run.
         // This is an invalid import uri, like "package:foo.dart".
         return new UriLocation(uri);
       }

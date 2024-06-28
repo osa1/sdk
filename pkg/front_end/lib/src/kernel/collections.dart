@@ -5,18 +5,13 @@
 library fasta.collections;
 
 import 'package:kernel/ast.dart';
-
 import 'package:kernel/src/printer.dart';
-
 import 'package:kernel/type_environment.dart' show StaticTypeContext;
 
 import '../base/messages.dart'
     show noLength, templateExpectedAfterButGot, templateExpectedButGot;
-
 import '../base/problems.dart' show getFileUri, unsupported;
-
 import '../type_inference/inference_helper.dart' show InferenceHelper;
-
 import 'internal_ast.dart';
 
 /// Mixin for spread and control-flow elements.
@@ -29,19 +24,23 @@ mixin ControlFlowElement on AuxiliaryExpression {
   /// Spread and control-flow elements are not expressions and do not have a
   /// static type.
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getStaticType(StaticTypeContext context) {
     return unsupported("getStaticType", fileOffset, getFileUri(this));
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getStaticTypeInternal(StaticTypeContext context) {
     return unsupported("getStaticTypeInternal", fileOffset, getFileUri(this));
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept<R>(ExpressionVisitor<R> v) => v.visitAuxiliaryExpression(this);
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept1<R, A>(ExpressionVisitor1<R, A> v, A arg) =>
       v.visitAuxiliaryExpression(this, arg);
 
@@ -72,17 +71,20 @@ class SpreadElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     expression.accept(v);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     expression = v.transform(expression);
     expression.parent = this;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     expression = v.transform(expression);
     expression.parent = this;
@@ -101,6 +103,7 @@ class SpreadElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('...');
     if (isNullAware) {
@@ -123,6 +126,7 @@ class IfElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     condition.accept(v);
     then.accept(v);
@@ -130,6 +134,7 @@ class IfElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     condition = v.transform(condition);
     condition.parent = this;
@@ -142,6 +147,7 @@ class IfElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     condition = v.transform(condition);
     condition.parent = this;
@@ -166,6 +172,7 @@ class IfElement extends AuxiliaryExpression with ControlFlowElement {
     MapLiteralEntry? otherwiseEntry;
     Expression? otherwise = this.otherwise;
     if (otherwise != null) {
+      // Coverage-ignore-block(suite): Not run.
       if (otherwise is ControlFlowElement) {
         ControlFlowElement otherwiseElement = otherwise;
         otherwiseEntry = otherwiseElement.toMapLiteralEntry(onConvertElement);
@@ -184,6 +191,7 @@ class IfElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('if (');
     printer.writeExpression(condition);
@@ -211,6 +219,7 @@ class ForElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     visitList(variables, v);
     condition?.accept(v);
@@ -219,6 +228,7 @@ class ForElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     v.transformList(variables, this);
     if (condition != null) {
@@ -231,6 +241,7 @@ class ForElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     v.transformVariableDeclarationList(variables, this);
     if (condition != null) {
@@ -265,6 +276,7 @@ class ForElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('for (');
     for (int index = 0; index < variables.length; index++) {
@@ -303,7 +315,9 @@ class ForInElement extends AuxiliaryExpression with ControlFlowElement {
     syntheticAssignment?.parent = this;
     expressionEffects?.parent = this;
     body.parent = this;
-    problem?.parent = this;
+    problem
+        // Coverage-ignore(suite): Not run.
+        ?.parent = this;
   }
 
   Statement? get prologue => syntheticAssignment != null
@@ -312,6 +326,7 @@ class ForInElement extends AuxiliaryExpression with ControlFlowElement {
       : expressionEffects;
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     variable.accept(v);
     iterable.accept(v);
@@ -322,6 +337,7 @@ class ForInElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     variable = v.transform(variable);
     variable.parent = this;
@@ -344,6 +360,7 @@ class ForInElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     variable = v.transform(variable);
     variable.parent = this;
@@ -388,6 +405,7 @@ class ForInElement extends AuxiliaryExpression with ControlFlowElement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter state) {
     // TODO(johnniwinther): Implement this.
   }
@@ -415,13 +433,16 @@ mixin ControlFlowMapEntry implements MapLiteralEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept<R>(TreeVisitor<R> v) => v.visitMapLiteralEntry(this);
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept1<R, A>(TreeVisitor1<R, A> v, A arg) =>
       v.visitMapLiteralEntry(this, arg);
 
   @override
+  // Coverage-ignore(suite): Not run.
   String toStringInternal() => toText(defaultAstTextStrategy);
 }
 
@@ -441,17 +462,20 @@ class SpreadMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     expression.accept(v);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     expression = v.transform(expression);
     expression.parent = this;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     expression = v.transform(expression);
     expression.parent = this;
@@ -463,6 +487,7 @@ class SpreadMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('...');
     expression.toTextInternal(printer);
@@ -482,6 +507,7 @@ class IfMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     condition.accept(v);
     then.accept(v);
@@ -489,6 +515,7 @@ class IfMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     condition = v.transform(condition);
     condition.parent = this;
@@ -501,6 +528,7 @@ class IfMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     condition = v.transform(condition);
     condition.parent = this;
@@ -518,6 +546,7 @@ class IfMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('if (');
     condition.toTextInternal(printer);
@@ -545,6 +574,7 @@ class ForMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     visitList(variables, v);
     condition?.accept(v);
@@ -553,6 +583,7 @@ class ForMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     v.transformList(variables, this);
     if (condition != null) {
@@ -565,6 +596,7 @@ class ForMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     v.transformVariableDeclarationList(variables, this);
     if (condition != null) {
@@ -582,6 +614,7 @@ class ForMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
     printer.write('for (');
     for (int index = 0; index < variables.length; index++) {
@@ -620,7 +653,9 @@ class ForInMapEntry extends TreeNode with ControlFlowMapEntry {
     syntheticAssignment?.parent = this;
     expressionEffects?.parent = this;
     body.parent = this;
-    problem?.parent = this;
+    problem
+        // Coverage-ignore(suite): Not run.
+        ?.parent = this;
   }
 
   Statement? get prologue => syntheticAssignment != null
@@ -629,6 +664,7 @@ class ForInMapEntry extends TreeNode with ControlFlowMapEntry {
       : expressionEffects;
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitChildren(Visitor v) {
     variable.accept(v);
     iterable.accept(v);
@@ -639,6 +675,7 @@ class ForInMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformChildren(Transformer v) {
     variable = v.transform(variable);
     variable.parent = this;
@@ -661,6 +698,7 @@ class ForInMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void transformOrRemoveChildren(RemovingTransformer v) {
     variable = v.transform(variable);
     variable.parent = this;
@@ -688,6 +726,7 @@ class ForInMapEntry extends TreeNode with ControlFlowMapEntry {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter state) {
     // TODO(johnniwinther): Implement this.
   }
@@ -717,7 +756,9 @@ Expression convertToElement(
         convertToElement(entry.then, helper, onConvertMapEntry),
         entry.otherwise == null
             ? null
-            : convertToElement(entry.otherwise!, helper, onConvertMapEntry))
+            :
+            // Coverage-ignore(suite): Not run.
+            convertToElement(entry.otherwise!, helper, onConvertMapEntry))
       ..fileOffset = entry.fileOffset;
     onConvertMapEntry(entry, result);
     return result;
@@ -730,7 +771,9 @@ Expression convertToElement(
         then: convertToElement(entry.then, helper, onConvertMapEntry),
         otherwise: entry.otherwise == null
             ? null
-            : convertToElement(entry.otherwise!, helper, onConvertMapEntry))
+            :
+            // Coverage-ignore(suite): Not run.
+            convertToElement(entry.otherwise!, helper, onConvertMapEntry))
       ..matchedValueType = entry.matchedValueType
       ..fileOffset = entry.fileOffset;
     onConvertMapEntry(entry, result);
@@ -780,6 +823,7 @@ Expression convertToElement(
       return key;
     }
   }
+  // Coverage-ignore(suite): Not run.
   // TODO(johnniwinther): How can this be triggered? This will fail if
   // encountered in top level inference.
   return helper!.buildProblem(
@@ -799,12 +843,14 @@ bool isConvertibleToMapEntry(Expression element) {
   if (element is IfCaseElement) {
     return isConvertibleToMapEntry(element.then) &&
         (element.otherwise == null ||
+            // Coverage-ignore(suite): Not run.
             isConvertibleToMapEntry(element.otherwise!));
   }
   if (element is ForElement) {
     return isConvertibleToMapEntry(element.body);
   }
   if (element is PatternForElement) {
+    // Coverage-ignore-block(suite): Not run.
     return isConvertibleToMapEntry(element.body);
   }
   if (element is ForInElement) {
@@ -846,7 +892,9 @@ MapLiteralEntry convertToMapEntry(Expression element, InferenceHelper helper,
         then: convertToMapEntry(element.then, helper, onConvertElement),
         otherwise: element.otherwise == null
             ? null
-            : convertToMapEntry(element.otherwise!, helper, onConvertElement))
+            :
+            // Coverage-ignore(suite): Not run.
+            convertToMapEntry(element.otherwise!, helper, onConvertElement))
       ..matchedValueType = element.matchedValueType
       ..fileOffset = element.fileOffset;
     onConvertElement(element, result);
@@ -887,6 +935,7 @@ MapLiteralEntry convertToMapEntry(Expression element, InferenceHelper helper,
     onConvertElement(element, result);
     return result;
   }
+  // Coverage-ignore(suite): Not run.
   return new MapLiteralEntry(
       helper.buildProblem(
         templateExpectedAfterButGot.withArguments(':'),

@@ -9,7 +9,6 @@ import 'package:kernel/src/nnbd_top_merge.dart';
 import 'package:kernel/src/norm.dart';
 import 'package:kernel/type_algebra.dart';
 
-import '../../testing/id_testing_utils.dart' show typeToText;
 import '../../builder/builder.dart';
 import '../../builder/declaration_builders.dart';
 import '../../builder/library_builder.dart';
@@ -17,6 +16,7 @@ import '../../builder/named_type_builder.dart';
 import '../../builder/type_builder.dart';
 import '../../codes/cfe_codes.dart';
 import '../../source/source_library_builder.dart';
+import '../../testing/id_testing_utils.dart' show typeToText;
 import '../../type_inference/type_schema.dart' show UnknownType;
 import 'hierarchy_builder.dart';
 import 'mixin_inferrer.dart';
@@ -90,6 +90,7 @@ abstract class HierarchyNodeBuilder {
         if (interfaces.length == 1) {
           return null;
         } else {
+          // Coverage-ignore-block(suite): Not run.
           interfaces = interfaces.toList();
           interfaces.removeAt(i);
           return _ignoreFunction(interfaces);
@@ -319,6 +320,7 @@ class ClassHierarchyNode {
   /// If `true`, [mixedInNode] is non-null.
   bool get isMixinApplication => mixedInNode != null;
 
+  // Coverage-ignore(suite): Not run.
   /// Returns a list of all supertypes of [classBuilder], including this node.
   List<ClassHierarchyNode> computeAllSuperNodes(
       ClassHierarchyBuilder hierarchy) {
@@ -369,6 +371,7 @@ class ClassHierarchyNode {
     return "$sb";
   }
 
+  // Coverage-ignore(suite): Not run.
   static int compareMaxInheritancePath(
       ClassHierarchyNode a, ClassHierarchyNode b) {
     return b.maxInheritancePath.compareTo(a.maxInheritancePath);

@@ -5,15 +5,10 @@
 library fasta.library_builder;
 
 import 'package:_fe_analyzer_shared/src/messages/severity.dart' show Severity;
-import 'package:_fe_analyzer_shared/src/parser/parser.dart'
-    show FormalParameterKind;
-import 'package:_fe_analyzer_shared/src/scanner/token.dart' show Token;
-import 'package:kernel/ast.dart'
-    show AsyncMarker, Class, Library, ProcedureKind, Reference;
+import 'package:kernel/ast.dart' show Class, Library, Version;
 
 import '../api_prototype/experimental_flags.dart';
 import '../base/combinator.dart' show CombinatorBuilder;
-import '../base/configuration.dart';
 import '../base/export.dart' show Export;
 import '../base/identifiers.dart';
 import '../base/loader.dart' show Loader;
@@ -23,31 +18,28 @@ import '../base/messages.dart'
         LocatedMessage,
         Message,
         ProblemReporting,
+        noLength,
         templateInternalProblemConstructorNotFound,
         templateInternalProblemNotFoundIn,
         templateInternalProblemPrivateConstructorAccess;
 import '../base/problems.dart' show internalProblem;
 import '../base/scope.dart';
+import '../kernel/hierarchy/members_builder.dart';
 import '../source/name_scheme.dart';
 import '../source/offset_map.dart';
+import '../source/outline_builder.dart';
 import '../source/source_class_builder.dart';
-import '../source/source_enum_builder.dart';
 import '../source/source_function_builder.dart';
 import '../source/source_library_builder.dart';
 import '../source/source_loader.dart';
 import 'builder.dart';
 import 'constructor_reference_builder.dart';
 import 'declaration_builders.dart';
-import 'formal_parameter_builder.dart';
 import 'inferable_type_builder.dart';
 import 'member_builder.dart';
 import 'metadata_builder.dart';
-import 'mixin_application_builder.dart';
 import 'modifier_builder.dart';
 import 'name_iterator.dart';
-import 'named_type_builder.dart';
-import 'nullability_builder.dart';
-import 'omitted_type_builder.dart';
 import 'prefix_builder.dart';
 import 'type_builder.dart';
 
@@ -57,7 +49,9 @@ sealed class CompilationUnit {
   /// This is the canonical uri for the compilation unit, for instance
   /// 'dart:core'.
   Uri get importUri;
+
   Uri get fileUri;
+
   bool get isSynthetic;
 
   /// If true, the library is not supported through the 'dart.library.*' value
@@ -110,57 +104,53 @@ sealed class CompilationUnit {
 
 abstract class DillCompilationUnit implements CompilationUnit {}
 
-abstract class SourceCompilationUnit
-    implements CompilationUnit, ProblemReporting {
+abstract class SourceCompilationUnit implements CompilationUnit {
+  OutlineBuilder createOutlineBuilder();
+
   SourceLibraryBuilder createLibrary();
 
   @override
   SourceLoader get loader;
 
-  // TODO(johnniwinther): Remove this.
-  SourceLibraryBuilder get sourceLibraryBuilder;
+  OffsetMap get offsetMap;
+
+  /// The language version of this compilation unit as defined by the language
+  /// version of the package it belongs to, if present, or the current language
+  /// version otherwise.
+  ///
+  /// This language version will be used as the language version for the
+  /// compilation unit if the compilation unit does not contain an explicit
+  /// `@dart=` annotation.
+  LanguageVersion get packageLanguageVersion;
+
+  /// Set the language version to an explicit major and minor version.
+  ///
+  /// The default language version specified by the `package_config.json` file
+  /// is passed to the constructor, but the library can have source code that
+  /// specifies another one which should be supported.
+  ///
+  /// Only the first registered language version is used.
+  ///
+  /// [offset] and [length] refers to the offset and length of the source code
+  /// specifying the language version.
+  void registerExplicitLanguageVersion(Version version,
+      {int offset = 0, int length = noLength});
 
   // TODO(johnniwinther): Remove this.
-  TypeParameterScopeBuilder get libraryTypeParameterScopeBuilder;
+  bool get forAugmentationLibrary;
 
-  abstract OffsetMap offsetMap;
+  // TODO(johnniwinther): Remove this.
+  bool get forPatchLibrary;
+
+  /// If this is an compilation unit for an augmentation library, returns the
+  /// import uri for the origin library. Otherwise the [importUri] for the
+  /// compilation unit itself.
+  Uri get originImportUri;
 
   LibraryFeatures get libraryFeatures;
 
   /// Returns `true` if the compilation unit is part of a `dart:` library.
   bool get isDartLibrary;
-
-  /// The current declaration that is being built. When we start parsing a
-  /// declaration (class, method, and so on), we don't have enough information
-  /// to create a builder and this object records its members and types until,
-  /// for example, [addClass] is called.
-  TypeParameterScopeBuilder get currentTypeParameterScopeBuilder;
-
-  void beginNestedDeclaration(TypeParameterScopeKind kind, String name,
-      {bool hasMembers = true});
-
-  TypeParameterScopeBuilder endNestedDeclaration(
-      TypeParameterScopeKind kind, String? name);
-
-  /// Call this when entering a class, mixin, enum, or extension type
-  /// declaration.
-  ///
-  /// This is done to set up the current [_indexedContainer] used to lookup
-  /// references of members from a previous incremental compilation.
-  ///
-  /// Called in `OutlineBuilder.beginClassDeclaration`,
-  /// `OutlineBuilder.beginEnum`, `OutlineBuilder.beginMixinDeclaration` and
-  /// `OutlineBuilder.beginExtensionTypeDeclaration`.
-  void beginIndexedContainer(String name,
-      {required bool isExtensionTypeDeclaration});
-
-  /// Call this when leaving a class, mixin, enum, or extension type
-  /// declaration.
-  ///
-  /// Called in `OutlineBuilder.endClassDeclaration`,
-  /// `OutlineBuilder.endEnum`, `OutlineBuilder.endMixinDeclaration` and
-  /// `OutlineBuilder.endExtensionTypeDeclaration`.
-  void endIndexedContainer();
 
   String? computeAndValidateConstructorName(Identifier identifier,
       {isFactory = false});
@@ -209,277 +199,32 @@ abstract class SourceCompilationUnit
 
   void validatePart(SourceLibraryBuilder? library, Set<Uri>? usedParts);
 
-  void addScriptToken(int charOffset);
-
-  void addPart(OffsetMap offsetMap, Token partKeyword,
-      List<MetadataBuilder>? metadata, String uri, int charOffset);
-
-  void addPartOf(List<MetadataBuilder>? metadata, String? name, String? uri,
-      int uriOffset);
-
-  void addImport(
-      {OffsetMap? offsetMap,
-      Token? importKeyword,
-      required List<MetadataBuilder>? metadata,
-      required bool isAugmentationImport,
-      required String uri,
-      required List<Configuration>? configurations,
-      required String? prefix,
-      required List<CombinatorBuilder>? combinators,
-      required bool deferred,
-      required int charOffset,
-      required int prefixCharOffset,
-      required int uriOffset,
-      required int importIndex});
-
-  void addExport(
-      OffsetMap offsetMap,
-      Token exportKeyword,
-      List<MetadataBuilder>? metadata,
-      String uri,
-      List<Configuration>? configurations,
-      List<CombinatorBuilder>? combinators,
-      int charOffset,
-      int uriOffset);
-
-  void addClass(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier identifier,
-      List<NominalVariableBuilder>? typeVariables,
-      TypeBuilder? supertype,
-      MixinApplicationBuilder? mixins,
-      List<TypeBuilder>? interfaces,
-      int startOffset,
-      int nameOffset,
-      int endOffset,
-      int supertypeOffset,
-      {required bool isMacro,
-      required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
-      required bool isAugmentation,
-      required bool isMixinClass});
-
-  void addEnum(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      Identifier identifier,
-      List<NominalVariableBuilder>? typeVariables,
-      MixinApplicationBuilder? supertypeBuilder,
-      List<TypeBuilder>? interfaceBuilders,
-      List<EnumConstantInfo?>? enumConstantInfos,
-      int startCharOffset,
-      int charEndOffset);
-
-  void addExtensionDeclaration(
-      OffsetMap offsetMap,
-      Token beginToken,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier? identifier,
-      List<NominalVariableBuilder>? typeVariables,
-      TypeBuilder type,
-      int startOffset,
-      int nameOffset,
-      int endOffset);
-
-  void addExtensionTypeDeclaration(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier identifier,
-      List<NominalVariableBuilder>? typeVariables,
-      List<TypeBuilder>? interfaces,
-      int startOffset,
-      int endOffset);
-
-  void addMixinDeclaration(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier identifier,
-      List<NominalVariableBuilder>? typeVariables,
-      List<TypeBuilder>? supertypeConstraints,
-      List<TypeBuilder>? interfaces,
-      int startOffset,
-      int nameOffset,
-      int endOffset,
-      int supertypeOffset,
-      {required bool isBase,
-      required bool isAugmentation});
-
-  void addNamedMixinApplication(
-      List<MetadataBuilder>? metadata,
-      String name,
-      List<NominalVariableBuilder>? typeVariables,
-      int modifiers,
-      TypeBuilder? supertype,
-      MixinApplicationBuilder mixinApplication,
-      List<TypeBuilder>? interfaces,
-      int startCharOffset,
-      int charOffset,
-      int charEndOffset,
-      {required bool isMacro,
-      required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
-      required bool isAugmentation,
-      required bool isMixinClass});
-
-  MixinApplicationBuilder addMixinApplication(
-      List<TypeBuilder> mixins, int charOffset);
-
-  void addFunctionTypeAlias(
-      List<MetadataBuilder>? metadata,
-      String name,
-      List<NominalVariableBuilder>? typeVariables,
-      TypeBuilder type,
-      int charOffset);
-
-  void addConstructor(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier identifier,
-      String constructorName,
-      List<NominalVariableBuilder>? typeVariables,
-      List<FormalParameterBuilder>? formals,
-      int startCharOffset,
-      int charOffset,
-      int charOpenParenOffset,
-      int charEndOffset,
-      String? nativeMethodName,
-      {Token? beginInitializers,
-      required bool forAbstractClassOrMixin});
-
-  void addPrimaryConstructor(
-      {required OffsetMap offsetMap,
-      required Token beginToken,
-      required String constructorName,
-      required List<NominalVariableBuilder>? typeVariables,
-      required List<FormalParameterBuilder>? formals,
-      required int charOffset,
-      required bool isConst});
-
-  void addPrimaryConstructorField(
-      {required List<MetadataBuilder>? metadata,
-      required TypeBuilder type,
-      required String name,
-      required int charOffset});
-
-  void addFactoryMethod(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      Identifier identifier,
-      List<FormalParameterBuilder>? formals,
-      ConstructorReferenceBuilder? redirectionTarget,
-      int startCharOffset,
-      int charOffset,
-      int charOpenParenOffset,
-      int charEndOffset,
-      String? nativeMethodName,
-      AsyncMarker asyncModifier);
-
-  void addProcedure(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      TypeBuilder? returnType,
-      Identifier identifier,
-      String name,
-      List<NominalVariableBuilder>? typeVariables,
-      List<FormalParameterBuilder>? formals,
-      ProcedureKind kind,
-      int startCharOffset,
-      int charOffset,
-      int charOpenParenOffset,
-      int charEndOffset,
-      String? nativeMethodName,
-      AsyncMarker asyncModifier,
-      {required bool isInstanceMember,
-      required bool isExtensionMember,
-      required bool isExtensionTypeMember});
-
-  void addFields(
-      OffsetMap offsetMap,
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      bool isTopLevel,
-      TypeBuilder? type,
-      List<FieldInfo> fieldInfos);
-
-  FormalParameterBuilder addFormalParameter(
-      List<MetadataBuilder>? metadata,
-      FormalParameterKind kind,
-      int modifiers,
-      TypeBuilder type,
-      String name,
-      bool hasThis,
-      bool hasSuper,
-      int charOffset,
-      Token? initializerToken);
-
-  ConstructorReferenceBuilder addConstructorReference(TypeName name,
-      List<TypeBuilder>? typeArguments, String? suffix, int charOffset);
-
-  TypeBuilder addNamedType(
-      TypeName typeName,
-      NullabilityBuilder nullabilityBuilder,
-      List<TypeBuilder>? arguments,
-      int charOffset,
-      {required InstanceTypeVariableAccessState instanceTypeVariableAccess});
-
-  FunctionTypeBuilder addFunctionType(
-      TypeBuilder returnType,
-      List<StructuralVariableBuilder>? structuralVariableBuilders,
-      List<FormalParameterBuilder>? formals,
-      NullabilityBuilder nullabilityBuilder,
-      Uri fileUri,
-      int charOffset,
-      {required bool hasFunctionFormalParameterSyntax});
-
-  TypeBuilder addVoidType(int charOffset);
-
-  InferableTypeBuilder addInferableType();
-
-  NominalVariableBuilder addNominalTypeVariable(List<MetadataBuilder>? metadata,
-      String name, TypeBuilder? bound, int charOffset, Uri fileUri,
-      {required TypeVariableKind kind});
-
-  StructuralVariableBuilder addStructuralTypeVariable(
-      List<MetadataBuilder>? metadata,
-      String name,
-      TypeBuilder? bound,
-      int charOffset,
-      Uri fileUri);
-
-  /// Creates a copy of [original] into the scope of [declaration].
-  ///
-  /// This is used for adding copies of class type parameters to factory
-  /// methods and unnamed mixin applications, and for adding copies of
-  /// extension type parameters to extension instance methods.
-  ///
-  /// If [synthesizeTypeParameterNames] is `true` the names of the
-  /// [TypeParameter] are prefix with '#' to indicate that their synthesized.
-  List<NominalVariableBuilder> copyTypeVariables(
-      List<NominalVariableBuilder> original,
-      TypeParameterScopeBuilder declaration,
-      {required TypeVariableKind kind});
-
-  Builder addBuilder(String name, Builder declaration, int charOffset,
-      {Reference? getterReference, Reference? setterReference});
-
   /// Reports that [feature] is not enabled, using [charOffset] and
   /// [length] for the location of the message.
   ///
   /// Return the primary message.
   Message reportFeatureNotEnabled(
       LibraryFeature feature, Uri fileUri, int charOffset, int length);
+
+  /// Reports [message] on all compilation units that access this compilation
+  /// unit.
+  void addProblemAtAccessors(Message message);
+
+  Iterable<LibraryAccess> get accessors;
+
+  /// Non-null if this library causes an error upon access, that is, there was
+  /// an error reading its source.
+  abstract Message? accessProblem;
+
+  void issuePostponedProblems();
+
+  void markLanguageVersionFinal();
+
+  void addSyntheticImport(
+      {required String uri,
+      required String? prefix,
+      required List<CombinatorBuilder>? combinators,
+      required bool deferred});
 
   void addImportsToScope();
 
@@ -488,6 +233,24 @@ abstract class SourceCompilationUnit
   void forEachExtensionInScope(void Function(ExtensionBuilder) f);
 
   void clearExtensionsInScopeCache();
+
+  /// This method instantiates type parameters to their bounds in some cases
+  /// where they were omitted by the programmer and not provided by the type
+  /// inference.  The method returns the number of distinct type variables
+  /// that were instantiated in this library.
+  int computeDefaultTypes(TypeBuilder dynamicType, TypeBuilder nullType,
+      TypeBuilder bottomType, ClassBuilder objectClass);
+
+  /// Computes variances of type parameters on typedefs.
+  ///
+  /// The variance property of type parameters on typedefs is computed from the
+  /// use of the parameters in the right-hand side of the typedef definition.
+  int computeVariances();
+
+  void computeShowHideElements(ClassMembersBuilder membersBuilder);
+
+  // TODO(johnniwinther): Remove this.
+  Builder addBuilder(String name, Builder declaration, int charOffset);
 }
 
 abstract class LibraryBuilder implements Builder, ProblemReporting {
@@ -638,9 +401,11 @@ abstract class LibraryBuilderImpl extends ModifierBuilderImpl
       : super(null, -1);
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isSynthetic => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Builder? get parent => null;
 
   @override
@@ -653,6 +418,7 @@ abstract class LibraryBuilderImpl extends ModifierBuilderImpl
   Loader get loader;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get modifiers => 0;
 
   @override
@@ -728,6 +494,7 @@ abstract class LibraryBuilderImpl extends ModifierBuilderImpl
     Builder? cls = (bypassLibraryPrivacy ? scope : exportScope)
         .lookup(className, -1, fileUri);
     if (cls is TypeAliasBuilder) {
+      // Coverage-ignore-block(suite): Not run.
       TypeAliasBuilder aliasBuilder = cls;
       // No type arguments are available, but this method is only called in
       // order to find constructors of specific non-generic classes (errors),
@@ -745,10 +512,13 @@ abstract class LibraryBuilderImpl extends ModifierBuilderImpl
         if (!cls.isAbstract) {
           return constructor;
         }
-      } else if (constructor.isFactory) {
+      }
+      // Coverage-ignore(suite): Not run.
+      else if (constructor.isFactory) {
         return constructor;
       }
     }
+    // Coverage-ignore-block(suite): Not run.
     throw internalProblem(
         templateInternalProblemConstructorNotFound.withArguments(
             "$className.$constructorName", importUri),
@@ -774,6 +544,7 @@ abstract class LibraryBuilderImpl extends ModifierBuilderImpl
       CompilationUnit accessor, int charOffset, int length, Uri fileUri) {}
 
   @override
+  // Coverage-ignore(suite): Not run.
   StringBuffer printOn(StringBuffer buffer) {
     return buffer..write(isPart || isAugmenting ? fileUri : importUri);
   }

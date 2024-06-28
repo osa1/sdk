@@ -9,8 +9,8 @@ import 'package:kernel/clone.dart' show CloneVisitorNotMembers;
 import 'package:kernel/type_algebra.dart' show Substitution;
 import 'package:kernel/type_environment.dart';
 
-import '../builder/library_builder.dart';
 import '../base/messages.dart';
+import '../builder/library_builder.dart';
 
 /// Data for clone default values for synthesized function nodes once the
 /// original default values have been computed.
@@ -309,6 +309,7 @@ void adjustAnnotationFileUri(Annotatable annotatable, Uri annotatableFileUri) {
     Expression annotation = annotations[i];
     if (annotation is FileUriExpression &&
         annotation.fileUri == annotatableFileUri) {
+      // Coverage-ignore-block(suite): Not run.
       annotations[i] = annotation.expression..parent = annotatable;
     }
   }

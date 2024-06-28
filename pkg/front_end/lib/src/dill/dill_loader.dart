@@ -10,13 +10,7 @@ import 'package:_fe_analyzer_shared/src/messages/severity.dart' show Severity;
 import 'package:kernel/ast.dart'
     show Class, Component, DartType, ExtensionTypeDeclaration, Library;
 
-import '../builder/declaration_builders.dart';
-import '../builder/library_builder.dart';
-import '../builder/type_builder.dart';
-import '../codes/cfe_codes.dart'
-    show SummaryTemplate, Template, templateDillOutlineSummary;
 import '../base/crash.dart' show firstSourceUri;
-import '../kernel/type_builder_computer.dart' show TypeBuilderComputer;
 import '../base/loader.dart';
 import '../base/messages.dart'
     show
@@ -29,9 +23,15 @@ import '../base/messages.dart'
         messagePlatformPrivateLibraryAccess,
         templateInternalProblemContextSeverity;
 import '../base/problems.dart' show internalProblem;
-import '../source/source_loader.dart' show SourceLoader;
 import '../base/ticker.dart' show Ticker;
 import '../base/uris.dart';
+import '../builder/declaration_builders.dart';
+import '../builder/library_builder.dart';
+import '../builder/type_builder.dart';
+import '../codes/cfe_codes.dart'
+    show SummaryTemplate, Template, templateDillOutlineSummary;
+import '../kernel/type_builder_computer.dart' show TypeBuilderComputer;
+import '../source/source_loader.dart' show SourceLoader;
 import 'dill_library_builder.dart' show DillLibraryBuilder;
 import 'dill_target.dart' show DillTarget;
 
@@ -106,7 +106,9 @@ class DillLoader extends Loader {
     DillLibraryBuilder? libraryBuilder = _builders[uri];
     if (libraryBuilder == null) {
       libraryBuilder = _knownLibraryBuilders.remove(uri);
-      assert(libraryBuilder != null, "No library found for $uri.");
+      assert(
+          libraryBuilder != null, // Coverage-ignore(suite): Not run.
+          "No library found for $uri.");
       _builders[uri] = libraryBuilder!;
       assert(libraryBuilder.loader == this);
       if (uri.isScheme("dart")) {
@@ -136,6 +138,7 @@ class DillLoader extends Loader {
           !accessor.isPart &&
           !target.backendTarget
               .allowPlatformPrivateLibraryAccess(accessor.importUri, uri)) {
+        // Coverage-ignore-block(suite): Not run.
         accessor.addProblem(messagePlatformPrivateLibraryAccess, charOffset,
             noLength, accessor.fileUri);
       }
@@ -145,6 +148,7 @@ class DillLoader extends Loader {
 
   void _ensureCoreLibrary() {
     if (_coreLibrary == null) {
+      // Coverage-ignore-block(suite): Not run.
       read(Uri.parse("dart:core"), 0, accessor: first);
       // TODO(askesc): When all backends support set literals, we no longer
       // need to index dart:collection, as it is only needed for desugaring of
@@ -164,7 +168,9 @@ class DillLoader extends Loader {
   }
 
   void _logSummary(Template<SummaryTemplate> template) {
-    ticker.log((Duration elapsed, Duration sinceStart) {
+    ticker.log(
+        // Coverage-ignore(suite): Not run.
+        (Duration elapsed, Duration sinceStart) {
       int libraryCount = 0;
       for (DillLibraryBuilder library in libraryBuilders) {
         assert(library.loader == this);
@@ -237,14 +243,23 @@ severity: $severity
     target.context.report(
         fileUri != null
             ? message.withLocation(fileUri, charOffset, length)
-            : message.withoutLocation(),
+            :
+            // Coverage-ignore(suite): Not run.
+            message.withoutLocation(),
         severity,
         context: context,
         involvedFiles: involvedFiles);
     if (severity == Severity.error) {
-      (wasHandled ? handledErrors : unhandledErrors).add(fileUri != null
-          ? message.withLocation(fileUri, charOffset, length)
-          : message.withoutLocation());
+      (wasHandled
+              ?
+              // Coverage-ignore(suite): Not run.
+              handledErrors
+              : unhandledErrors)
+          .add(fileUri != null
+              ? message.withLocation(fileUri, charOffset, length)
+              :
+              // Coverage-ignore(suite): Not run.
+              message.withoutLocation());
     }
     FormattedMessage formattedMessage = target.createFormattedMessage(
         message, charOffset, length, fileUri, context, severity,
@@ -264,7 +279,9 @@ severity: $severity
     for (int i = 0; i < componentLibraries.length; i++) {
       Library library = componentLibraries[i];
       Uri uri = library.importUri;
-      if (filter == null || filter(library.importUri)) {
+      if (filter == null ||
+          // Coverage-ignore(suite): Not run.
+          filter(library.importUri)) {
         libraries.add(library);
         registerKnownLibrary(library);
         requestedLibraries.add(uri);
@@ -340,6 +357,7 @@ severity: $severity
     return _typeBuilderComputer.visit(type);
   }
 
+  // Coverage-ignore(suite): Not run.
   bool containsLibraryBuilder(Uri importUri) =>
       _builders.containsKey(importUri);
 
@@ -348,8 +366,10 @@ severity: $severity
 
   Iterable<DillLibraryBuilder> get libraryBuilders => _builders.values;
 
+  // Coverage-ignore(suite): Not run.
   Iterable<Uri> get libraryImportUris => _builders.keys;
 
+  // Coverage-ignore(suite): Not run.
   void registerLibraryBuilder(DillLibraryBuilder libraryBuilder) {
     Uri importUri = libraryBuilder.importUri;
     libraryBuilder.loader = this;

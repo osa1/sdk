@@ -10,13 +10,11 @@ import 'package:kernel/transformations/flags.dart' show TransformerFlag;
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
-import '../builder/declaration_builders.dart';
-
 import "../base/problems.dart" show unhandled;
-
+import '../builder/declaration_builders.dart';
 import '../source/source_library_builder.dart';
-import 'hierarchy/class_member.dart';
 import 'combined_member_signature.dart';
+import 'hierarchy/class_member.dart';
 import 'kernel_target.dart';
 
 class ForwardingNode {
@@ -99,6 +97,7 @@ class ForwardingNode {
     if (_combinedMemberSignature.members.length == 1 &&
         !needMixinStub &&
         !hasNoSuchMethodTarget) {
+      // Coverage-ignore-block(suite): Not run.
       // Optimization: Avoid complex computation for simple scenarios.
 
       // Covariance can only come from [interfaceMember] so we never need a
@@ -216,6 +215,7 @@ class ForwardingNode {
               case ProcedureStubKind.ConcreteMixinStub:
                 finalTarget = interfaceMember.stubTarget!;
                 break;
+              // Coverage-ignore(suite): Not run.
               case ProcedureStubKind.RepresentationField:
                 assert(
                     false,
@@ -250,11 +250,14 @@ class ForwardingNode {
       return stub;
     } else {
       if (_combinedMemberSignature.needsCovarianceMerging) {
+        // Coverage-ignore-block(suite): Not run.
         _combinedMemberSignature.combinedMemberSignatureCovariance!
             .applyCovariance(interfaceMember);
       }
       if (needsNoSuchMethodForwarder) {
-        assert(interfaceMember is Procedure,
+        assert(
+            interfaceMember is Procedure,
+            // Coverage-ignore(suite): Not run.
             "Unexpected abstract member: ${interfaceMember}");
         (interfaceMember as Procedure).stubKind =
             ProcedureStubKind.NoSuchMethodForwarder;
@@ -299,6 +302,7 @@ class ForwardingNode {
     Expression superCall;
     assert(
         !superTarget.isAbstract,
+        // Coverage-ignore(suite): Not run.
         "Abstract super target $superTarget found for '${name}' in "
         "${typeDeclaration}.");
     switch (kind) {
@@ -400,6 +404,7 @@ class ForwardingNode {
         }
         superCall = new SuperPropertySet(name, expression, superTarget);
         break;
+      // Coverage-ignore(suite): Not run.
       default:
         unhandled('$kind', '_createForwardingImplIfNeeded', -1, null);
     }

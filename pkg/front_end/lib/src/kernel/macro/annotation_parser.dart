@@ -3,24 +3,25 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/experiments/flags.dart';
-import 'package:macros/src/executor.dart' as macro;
 import 'package:_fe_analyzer_shared/src/messages/codes.dart';
 import 'package:_fe_analyzer_shared/src/parser/parser.dart';
 import 'package:_fe_analyzer_shared/src/parser/quote.dart';
 import 'package:_fe_analyzer_shared/src/scanner/error_token.dart';
 import 'package:_fe_analyzer_shared/src/scanner/token.dart';
+import 'package:macros/src/executor.dart' as macro;
 
+import '../../base/scope.dart';
+import '../../base/uri_offset.dart';
 import '../../builder/builder.dart';
 import '../../builder/declaration_builders.dart';
 import '../../builder/member_builder.dart';
 import '../../builder/metadata_builder.dart';
 import '../../builder/prefix_builder.dart';
-import '../../base/scope.dart';
 import '../../source/diet_parser.dart';
 import '../../source/source_library_builder.dart';
-import '../../base/uri_offset.dart';
 import 'macro.dart';
 
+// Coverage-ignore(suite): Not run.
 List<MacroApplication>? prebuildAnnotations(
     {required SourceLibraryBuilder enclosingLibrary,
     required List<MetadataBuilder>? metadataBuilders,
@@ -67,6 +68,7 @@ class _UnrecognizedNode implements _Node {
   const _UnrecognizedNode();
 }
 
+// Coverage-ignore(suite): Not run.
 class _MacroClassNode implements _Node {
   final Token token;
   final ClassBuilder classBuilder;
@@ -74,6 +76,7 @@ class _MacroClassNode implements _Node {
   _MacroClassNode(this.token, this.classBuilder);
 }
 
+// Coverage-ignore(suite): Not run.
 class _MacroConstructorNode implements _Node {
   final ClassBuilder classBuilder;
   final String constructorName;
@@ -81,12 +84,14 @@ class _MacroConstructorNode implements _Node {
   _MacroConstructorNode(this.classBuilder, this.constructorName);
 }
 
+// Coverage-ignore(suite): Not run.
 class _PrefixNode implements _Node {
   final PrefixBuilder prefixBuilder;
 
   _PrefixNode(this.prefixBuilder);
 }
 
+// Coverage-ignore(suite): Not run.
 class _MacroApplicationNode implements _Node {
   final MacroApplication application;
 
@@ -97,6 +102,7 @@ class _NoArgumentsNode implements _Node {
   const _NoArgumentsNode();
 }
 
+// Coverage-ignore(suite): Not run.
 class _ArgumentsNode implements _Node {
   final List<macro.Argument> positionalArguments;
   final Map<String, macro.Argument> namedArguments;
@@ -104,6 +110,7 @@ class _ArgumentsNode implements _Node {
   _ArgumentsNode(this.positionalArguments, this.namedArguments);
 }
 
+// Coverage-ignore(suite): Not run.
 class _MacroArgumentNode implements _Node {
   Object? get value => argument.value;
 
@@ -112,18 +119,21 @@ class _MacroArgumentNode implements _Node {
   _MacroArgumentNode(this.argument);
 }
 
+// Coverage-ignore(suite): Not run.
 class _TokenNode implements _Node {
   final Token token;
 
   _TokenNode(this.token);
 }
 
+// Coverage-ignore(suite): Not run.
 class _NamedArgumentIdentifierNode implements _Node {
   final String name;
 
   _NamedArgumentIdentifierNode(this.name);
 }
 
+// Coverage-ignore(suite): Not run.
 class _NamedArgumentNode implements _Node {
   final String name;
   final macro.Argument argument;
@@ -133,6 +143,7 @@ class _NamedArgumentNode implements _Node {
   _NamedArgumentNode(this.name, this.argument);
 }
 
+// Coverage-ignore(suite): Not run.
 class _MacroListener implements Listener {
   ClassBuilder? _macroClassBuilder;
 
@@ -1967,7 +1978,8 @@ class _MacroListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     _unhandled('map entry');
   }
 
@@ -2185,6 +2197,11 @@ class _MacroListener implements Listener {
 
   @override
   void endConstantPattern(Token? constKeyword) {
+    _unsupported();
+  }
+
+  @override
+  void handleNullAwareElement(Token spreadToken) {
     _unsupported();
   }
 

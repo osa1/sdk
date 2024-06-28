@@ -4,14 +4,14 @@
 
 import 'package:kernel/ast.dart';
 
+import '../base/scope.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/library_builder.dart';
 import '../builder/member_builder.dart';
 import '../builder/type_builder.dart';
-import '../base/scope.dart';
+import 'dill_builder_mixins.dart';
 import 'dill_class_builder.dart';
 import 'dill_extension_member_builder.dart';
-import 'dill_builder_mixins.dart';
 
 class DillExtensionBuilder extends ExtensionBuilderImpl
     with DillDeclarationBuilderMixin {
@@ -48,7 +48,9 @@ class DillExtensionBuilder extends ExtensionBuilderImpl
           } else {
             Procedure procedure = descriptor.memberReference.asProcedure;
             Procedure? tearOff = descriptor.tearOffReference?.asProcedure;
-            assert(tearOff != null, "No tear found for ${descriptor}");
+            assert(
+                tearOff != null, // Coverage-ignore(suite): Not run.
+                "No tear found for ${descriptor}");
             scope.addLocalMember(
                 name.text,
                 new DillExtensionInstanceMethodBuilder(
@@ -94,11 +96,13 @@ class DillExtensionBuilder extends ExtensionBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder get onType {
     return _onType ??=
         libraryBuilder.loader.computeTypeBuilder(extension.onType);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<TypeParameter> get typeParameterNodes => extension.typeParameters;
 }

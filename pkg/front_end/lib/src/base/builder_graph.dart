@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.builder_graph;
-
 import 'package:kernel/util/graph.dart' show Graph;
 
 import '../builder/library_builder.dart';
@@ -22,6 +20,7 @@ class BuilderGraph implements Graph<Uri> {
     List<Uri> neighbors = [];
     LibraryBuilder? libraryBuilder = libraryBuilders[vertex];
     if (libraryBuilder == null) {
+      // Coverage-ignore-block(suite): Not run.
       throw "Library not found: $vertex";
     }
     for (Uri importUri in libraryBuilder.dependencies) {

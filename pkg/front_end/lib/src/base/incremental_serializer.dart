@@ -7,13 +7,12 @@ library fasta.incremental_serializer;
 import 'dart:typed_data' show Uint8List;
 
 import 'package:kernel/binary/ast_from_binary.dart' show SubComponentView;
-
 import 'package:kernel/binary/ast_to_binary.dart' show BinaryPrinter;
-
 import 'package:kernel/kernel.dart' show Component, Library, LibraryDependency;
 
 import '../kernel/utils.dart' show ByteSink;
 
+// Coverage-ignore(suite): Not run.
 class IncrementalSerializer {
   final Map<Uri, SerializationGroup> uriToGroup =
       new Map<Uri, SerializationGroup>();
@@ -328,6 +327,7 @@ class IncrementalSerializer {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class SerializationGroup {
   final Uint8List serializedData;
   final Set<Uri> uris;

@@ -16,20 +16,17 @@ import 'package:kernel/ast.dart'
         ProcedureKind,
         ProcedureStubKind;
 
+import '../base/modifier.dart'
+    show abstractMask, constMask, externalMask, finalMask, lateMask, staticMask;
+import '../base/problems.dart' show unhandled;
 import '../builder/builder.dart';
 import '../builder/constructor_builder.dart';
 import '../builder/field_builder.dart';
 import '../builder/member_builder.dart';
-
 import '../builder/procedure_builder.dart';
 import '../kernel/hierarchy/class_member.dart';
 import '../kernel/hierarchy/members_builder.dart' show ClassMembersBuilder;
 import '../kernel/member_covariance.dart';
-
-import '../base/modifier.dart'
-    show abstractMask, constMask, externalMask, finalMask, lateMask, staticMask;
-
-import '../base/problems.dart' show unhandled;
 
 abstract class DillMemberBuilder extends MemberBuilderImpl {
   @override
@@ -60,7 +57,11 @@ abstract class DillMemberBuilder extends MemberBuilderImpl {
   @override
   ProcedureKind? get kind {
     final Member member = this.member;
-    return member is Procedure ? member.kind : null;
+    return member is Procedure
+        ?
+        // Coverage-ignore(suite): Not run.
+        member.kind
+        : null;
   }
 
   @override
@@ -85,6 +86,7 @@ abstract class DillMemberBuilder extends MemberBuilderImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isAssignable => false;
 
   List<ClassMember>? _localMembers;
@@ -108,6 +110,7 @@ abstract class DillMemberBuilder extends MemberBuilderImpl {
           : const <ClassMember>[];
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterable<Annotatable> get annotatables => [member];
 }
 
@@ -127,6 +130,7 @@ class DillFieldBuilder extends DillMemberBuilder implements FieldBuilder {
   Member? get writeTarget => isAssignable ? field : null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get invokeTarget => field;
 
   @override
@@ -163,9 +167,11 @@ class DillGetterBuilder extends DillProcedureBuilder {
   Member get readTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get invokeTarget => procedure;
 }
 
@@ -178,12 +184,14 @@ class DillSetterBuilder extends DillProcedureBuilder {
   Member get member => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get readTarget => null;
 
   @override
   Member get writeTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get invokeTarget => null;
 }
 
@@ -199,9 +207,11 @@ class DillMethodBuilder extends DillProcedureBuilder {
   Member get readTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get invokeTarget => procedure;
 }
 
@@ -214,12 +224,15 @@ class DillOperatorBuilder extends DillProcedureBuilder {
   Member get member => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get readTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get invokeTarget => procedure;
 }
 
@@ -236,6 +249,7 @@ class DillFactoryBuilder extends DillProcedureBuilder {
   Member? get readTarget => _factoryTearOff ?? procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -261,6 +275,7 @@ class DillConstructorBuilder extends DillMemberBuilder
   Member get readTarget => _constructorTearOff ?? constructor;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -322,11 +337,13 @@ class DillClassMember extends BuilderClassMember {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void inferType(ClassMembersBuilder hierarchy) {
     // Do nothing; this is only for source members.
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void registerOverrideDependency(Set<ClassMember> overriddenMembers) {
     // Do nothing; this is only for source members.
   }
@@ -366,6 +383,7 @@ int computeModifiers(Member member) {
   } else if (member is Constructor) {
     modifier |= member.isConst ? constMask : 0;
   } else {
+    // Coverage-ignore-block(suite): Not run.
     dynamic parent = member.parent;
     unhandled("${member.runtimeType}", "computeModifiers", member.fileOffset,
         Uri.base.resolve(parent.fileUri));

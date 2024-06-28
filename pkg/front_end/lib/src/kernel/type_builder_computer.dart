@@ -6,9 +6,10 @@ library fasta.type_builder_computer;
 
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show FormalParameterKind;
-
 import 'package:kernel/ast.dart';
 
+import '../base/loader.dart' show Loader;
+import '../base/uris.dart' show missingUri;
 import '../builder/declaration_builders.dart';
 import '../builder/dynamic_type_declaration_builder.dart';
 import '../builder/fixed_type_builder.dart';
@@ -22,11 +23,7 @@ import '../builder/nullability_builder.dart';
 import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
 import '../builder/void_type_declaration_builder.dart';
-
 import '../kernel/utils.dart';
-
-import '../base/loader.dart' show Loader;
-import '../base/uris.dart' show missingUri;
 
 class TypeBuilderComputer {
   final _TypeBuilderComputerHelper _typeBuilderComputerHelper;
@@ -104,6 +101,7 @@ class _TypeBuilderComputerHelper
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder visitNeverType(NeverType node,
       Map<TypeParameter, NominalVariableBuilder> pendingNominalVariables) {
     return new NamedTypeBuilderImpl.forDartType(node, neverDeclaration,
@@ -153,6 +151,7 @@ class _TypeBuilderComputerHelper
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder visitFutureOrType(FutureOrType node,
       Map<TypeParameter, NominalVariableBuilder> pendingNominalVariables) {
     TypeBuilder argument =
@@ -247,12 +246,14 @@ class _TypeBuilderComputerHelper
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder visitIntersectionType(IntersectionType node,
       Map<TypeParameter, NominalVariableBuilder> pendingNominalVariables) {
     throw "Not implemented";
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder visitTypedefType(TypedefType node,
       Map<TypeParameter, NominalVariableBuilder> pendingNominalVariables) {
     throw "Not implemented";

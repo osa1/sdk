@@ -6,11 +6,9 @@ library fasta.problems;
 
 import 'package:_fe_analyzer_shared/src/messages/severity.dart'
     show Severity, severityTexts;
-
 import 'package:kernel/ast.dart' show FileUriNode, TreeNode;
 
 import 'compiler_context.dart' show CompilerContext;
-
 import 'messages.dart'
     show
         LocatedMessage,
@@ -22,6 +20,7 @@ import 'messages.dart'
         templateInternalProblemUnimplemented,
         templateInternalProblemUnsupported;
 
+// Coverage-ignore(suite): Not run.
 class DebugAbort {
   final LocatedMessage message;
 
@@ -38,6 +37,7 @@ class DebugAbort {
   String toString() => "DebugAbort: ${message.problemMessage}";
 }
 
+// Coverage-ignore(suite): Not run.
 /// Used to report an internal error.
 ///
 /// Internal errors should be avoided as best as possible, but are preferred
@@ -60,6 +60,7 @@ Never internalProblem(Message message, int charOffset, Uri? uri) {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 Never unimplemented(String what, int charOffset, Uri? uri) {
   return internalProblem(
       templateInternalProblemUnimplemented.withArguments(what),
@@ -67,6 +68,7 @@ Never unimplemented(String what, int charOffset, Uri? uri) {
       uri);
 }
 
+// Coverage-ignore(suite): Not run.
 Never unhandled(String what, String where, int charOffset, Uri? uri) {
   return internalProblem(
       templateInternalProblemUnhandled.withArguments(what, where),
@@ -74,6 +76,7 @@ Never unhandled(String what, String where, int charOffset, Uri? uri) {
       uri);
 }
 
+// Coverage-ignore(suite): Not run.
 Never unexpected(String expected, String actual, int charOffset, Uri? uri) {
   return internalProblem(
       templateInternalProblemUnexpected.withArguments(expected, actual),
@@ -81,6 +84,7 @@ Never unexpected(String expected, String actual, int charOffset, Uri? uri) {
       uri);
 }
 
+// Coverage-ignore(suite): Not run.
 Never unsupported(String operation, int charOffset, Uri? uri) {
   return internalProblem(
       templateInternalProblemUnsupported.withArguments(operation),
@@ -88,6 +92,7 @@ Never unsupported(String operation, int charOffset, Uri? uri) {
       uri);
 }
 
+// Coverage-ignore(suite): Not run.
 Uri? getFileUri(TreeNode node) {
   TreeNode? parent = node;
   do {
