@@ -6,7 +6,7 @@
 
 import '../ir/ir.dart' as ir;
 import 'builder.dart';
-import 'source_map.dart';
+import '../../source_map.dart';
 
 // TODO(joshualitt): Suggested further optimizations:
 //   1) Add size estimates to `_Instruction`, and then remove logic where we
@@ -123,7 +123,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// Mappings for the instructions in [_instructions] to their source code.
   ///
   /// Since we add mappings as we generate instructions, this will be sorted
-  /// based on [SourceMapping.instructionStartIndex].
+  /// based on [SourceMapping.instructionOffset].
   List<SourceMapping> _sourceMappings = [];
 
   int _indent = 1;
@@ -356,6 +356,16 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   void startSourceMapping(Uri fileUri, int line, int col, String? name) {
     _sourceMappings
         .add(SourceMapping(_instructions.length, fileUri, line, col, name));
+  }
+
+  /// Terminate the current mapping and start a dummy mapping that's mapped to
+  /// a non-existent file called "NA".
+  ///
+  /// Source maps don't have a way to stop mapping, so we have to create a
+  /// dummy mapping for unmapped regions instead.
+  void stopSourceMapping() {
+    _sourceMappings
+        .add(SourceMapping(_instructions.length, Uri.file("NA"), 0, 0, null));
   }
 
   // Meta

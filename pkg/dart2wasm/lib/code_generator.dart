@@ -257,6 +257,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     translator.membersBeingGenerated.add(member);
     generateBody(member);
+    b.stopSourceMapping();
     translator.membersBeingGenerated.remove(member);
   }
 

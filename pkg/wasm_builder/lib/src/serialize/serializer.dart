@@ -6,7 +6,7 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'source_map.dart';
+import '../../source_map.dart';
 
 abstract class Serializable {
   void serialize(Serializer s);
