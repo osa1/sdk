@@ -114,8 +114,7 @@ String _serializeSourceMap(List<SourceMapping> mappings) {
       final sourceIndex = sourceIndices[sourceInfo.fileUri]!;
 
       lastSourceIndex = _encodeVLQ(mappingsStr, sourceIndex, lastSourceIndex);
-      lastSourceLine =
-          _encodeVLQ(mappingsStr, sourceInfo.line, lastSourceLine);
+      lastSourceLine = _encodeVLQ(mappingsStr, sourceInfo.line, lastSourceLine);
       lastSourceColumn =
           _encodeVLQ(mappingsStr, sourceInfo.col, lastSourceColumn);
 
