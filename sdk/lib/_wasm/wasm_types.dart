@@ -146,11 +146,17 @@ class WasmI64 extends _WasmBase {
 
   external int toInt();
 
-  /// `i64.le_u`.
+  /// Wasm `i64.le_u` instruction.
   external bool leU(WasmI64 other);
 
-  /// `i64.lt_u`.
+  /// Wasm `i64.lt_u` instruction.
   external bool ltU(WasmI64 other);
+
+  /// Wasm `i64.ge_u` instruction.
+  external bool geU(WasmI64 other);
+
+  /// Wasm `i64.gt_u` instruction.
+  external bool gtU(WasmI64 other);
 }
 
 /// The Wasm `f32` type.

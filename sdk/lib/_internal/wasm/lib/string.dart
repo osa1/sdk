@@ -220,7 +220,8 @@ abstract final class StringBase extends WasmStringBase
       bits |= nonBmpCode | 0x10000;
       multiCodeUnitChars += 1;
     }
-    if (bits < 0 || bits > 0xFFFFF) {
+    // bits < 0 || bits > 0xFFFF
+    if (bits.toWasmI64().gtU(const WasmI64(0xFFFF))) {
       throw ArgumentError(typedCharCodes);
     }
     if (multiCodeUnitChars == 0) {
@@ -276,7 +277,8 @@ abstract final class StringBase extends WasmStringBase
           ..add(0xDC00 | (nonBmpChar & 0x3FF));
       }
     }
-    if (bits < 0 || bits > 0xFFFFF) {
+    // bits < 0 || bits > 0xFFFFF
+    if (bits.toWasmI64().gtU(const WasmI64(0xFFFFF))) {
       throw ArgumentError(charCodes);
     }
     List<int> charCodeList = makeListFixedLength<int>(list);
@@ -394,7 +396,8 @@ abstract final class StringBase extends WasmStringBase
   }
 
   bool startsWith(Pattern pattern, [int index = 0]) {
-    if ((index < 0) || (index > this.length)) {
+    // index < 0 || index > length
+    if (index.toWasmI64().gtU(length.toWasmI64())) {
       throw RangeError.range(index, 0, this.length);
     }
     if (pattern is String) {
@@ -404,7 +407,8 @@ abstract final class StringBase extends WasmStringBase
   }
 
   int indexOf(Pattern pattern, [int start = 0]) {
-    if ((start < 0) || (start > this.length)) {
+    // start < 0 || start > length
+    if (start.toWasmI64().gtU(length.toWasmI64())) {
       throw RangeError.range(start, 0, this.length, "start");
     }
     if (pattern is String) {
@@ -429,7 +433,8 @@ abstract final class StringBase extends WasmStringBase
   int lastIndexOf(Pattern pattern, [int? start]) {
     if (start == null) {
       start = this.length;
-    } else if (start < 0 || start > this.length) {
+    } else if (start.toWasmI64().gtU(length.toWasmI64())) {
+      // start < 0 || start > length
       throw RangeError.range(start, 0, this.length);
     }
     if (pattern is String) {
@@ -623,8 +628,9 @@ abstract final class StringBase extends WasmStringBase
 
   bool contains(Pattern pattern, [int startIndex = 0]) {
     if (pattern is String) {
-      if (startIndex < 0 || startIndex > this.length) {
-        throw RangeError.range(startIndex, 0, this.length);
+      // startIndex < 0 || startIndex > length
+      if (startIndex.toWasmI64().gtU(length.toWasmI64())) {
+        throw RangeError.range(startIndex, 0, length);
       }
       return indexOf(pattern, startIndex) >= 0;
     }
@@ -1010,14 +1016,16 @@ abstract final class StringBase extends WasmStringBase
   }
 
   Iterable<Match> allMatches(String string, [int start = 0]) {
-    if (start < 0 || start > string.length) {
+    // start < 0 || start > string.length
+    if (start.toWasmI64().gtU(string.length.toWasmI64())) {
       throw RangeError.range(start, 0, string.length, "start");
     }
     return StringAllMatchesIterable(string, this, start);
   }
 
   Match? matchAsPrefix(String string, [int start = 0]) {
-    if (start < 0 || start > string.length) {
+    // start < 0 || start > string.length
+    if (start.toWasmI64().gtU(string.length.toWasmI64())) {
       throw RangeError.range(start, 0, string.length);
     }
     if (start + this.length > string.length) return null;
