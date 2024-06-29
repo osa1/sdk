@@ -1260,7 +1260,6 @@ class _ClosureDynamicEntryGenerator implements _FunctionGenerator {
   @override
   void generate(Translator translator) {
     final b = function.body;
-    b.stopSourceMapping();
 
     final bool takesContextOrReceiver =
         paramInfo.member == null || paramInfo.member!.isInstanceMember;
@@ -1487,7 +1486,6 @@ class PartialInstantiator {
           ),
           name);
       final b = function.body;
-      b.stopSourceMapping();
       translator.constants.instantiateConstant(function, b,
           TypeLiteralConstant(type), translator.types.nonNullableTypeType);
       for (int i = 1; i < wasmTarget.type.inputs.length; ++i) {
@@ -1516,7 +1514,6 @@ class PartialInstantiator {
           ),
           name);
       final b = function.body;
-      b.stopSourceMapping();
       translator.constants.instantiateConstant(function, b,
           TypeLiteralConstant(type1), translator.types.nonNullableTypeType);
       translator.constants.instantiateConstant(function, b,

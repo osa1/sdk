@@ -182,10 +182,6 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   void generate() {
     Member member = this.member;
 
-    final source = member.enclosingComponent!.uriToSource[member.fileUri]!;
-    setCurrentSourceMapSource(source);
-    setSourceMapFileOffset(member.fileOffset);
-
     if (member is Constructor) {
       // Closures are built when constructor functions are added to worklist.
       closures = translator.constructorClosures[member.reference]!;
@@ -231,6 +227,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       return;
     }
 
+    final source = member.enclosingComponent!.uriToSource[member.fileUri]!;
+    setCurrentSourceMapSource(source);
+    setSourceMapFileOffset(member.fileOffset);
+
     if (member is Constructor) {
       translator.membersBeingGenerated.add(member);
       if (reference.isConstructorBodyReference) {
@@ -257,7 +257,6 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     translator.membersBeingGenerated.add(member);
     generateBody(member);
-    b.stopSourceMapping();
     translator.membersBeingGenerated.remove(member);
   }
 

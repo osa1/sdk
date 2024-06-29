@@ -124,7 +124,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   ///
   /// Since we add mappings as we generate instructions, this will be sorted
   /// based on [SourceMapping.instructionOffset].
-  List<SourceMapping> _sourceMappings = [];
+  final List<SourceMapping> _sourceMappings = [];
 
   int _indent = 1;
   final List<String> _traceLines = [];

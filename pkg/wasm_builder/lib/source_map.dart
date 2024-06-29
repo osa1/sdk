@@ -67,7 +67,7 @@ String _serializeSourceMap(List<SourceMapping> mappings) {
   final Set<Uri> sourcesSet = {};
   for (final mapping in mappings) {
     if (mapping.sourceInfo?.fileUri != null) {
-      sourcesSet.add(mapping.sourceInfo!.fileUri!);
+      sourcesSet.add(mapping.sourceInfo!.fileUri);
     }
   }
 

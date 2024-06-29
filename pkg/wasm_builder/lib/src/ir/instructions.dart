@@ -56,5 +56,7 @@ class Instructions implements Serializable {
 
       instructionIdx += 1;
     }
+
+    s.sourceMapSerializer.addMapping(s.offset, null);
   }
 }
