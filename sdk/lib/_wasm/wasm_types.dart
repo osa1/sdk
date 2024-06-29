@@ -297,6 +297,12 @@ class WasmTable<T> extends _WasmBase {
 extension IntToWasmInt on int {
   WasmI32 toWasmI32() => WasmI32.fromInt(this);
   WasmI64 toWasmI64() => WasmI64.fromInt(this);
+
+  /// Wasm `i64.ge_u` instruction.
+  bool geU(int other) => this.toWasmI64().geU(other.toWasmI64());
+
+  /// Wasm `i64.gt_u` instruction.
+  bool gtU(int other) => this.toWasmI64().gtU(other.toWasmI64());
 }
 
 extension DoubleToWasmFloat on double {

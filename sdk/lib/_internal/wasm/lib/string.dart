@@ -221,7 +221,7 @@ abstract final class StringBase extends WasmStringBase
       multiCodeUnitChars += 1;
     }
     // bits < 0 || bits > 0xFFFFF
-    if (bits.toWasmI64().gtU(const WasmI64(0xFFFFF))) {
+    if (bits.gtU(0xFFFFF)) {
       throw ArgumentError(typedCharCodes);
     }
     if (multiCodeUnitChars == 0) {
@@ -278,7 +278,7 @@ abstract final class StringBase extends WasmStringBase
       }
     }
     // bits < 0 || bits > 0xFFFFF
-    if (bits.toWasmI64().gtU(const WasmI64(0xFFFFF))) {
+    if (bits.gtU(0xFFFFF)) {
       throw ArgumentError(charCodes);
     }
     List<int> charCodeList = makeListFixedLength<int>(list);
@@ -397,7 +397,7 @@ abstract final class StringBase extends WasmStringBase
 
   bool startsWith(Pattern pattern, [int index = 0]) {
     // index < 0 || index > length
-    if (index.toWasmI64().gtU(length.toWasmI64())) {
+    if (index.gtU(length)) {
       throw RangeError.range(index, 0, this.length);
     }
     if (pattern is String) {
@@ -408,7 +408,7 @@ abstract final class StringBase extends WasmStringBase
 
   int indexOf(Pattern pattern, [int start = 0]) {
     // start < 0 || start > length
-    if (start.toWasmI64().gtU(length.toWasmI64())) {
+    if (start.gtU(length)) {
       throw RangeError.range(start, 0, this.length, "start");
     }
     if (pattern is String) {
@@ -433,7 +433,7 @@ abstract final class StringBase extends WasmStringBase
   int lastIndexOf(Pattern pattern, [int? start]) {
     if (start == null) {
       start = this.length;
-    } else if (start.toWasmI64().gtU(length.toWasmI64())) {
+    } else if (start.gtU(length)) {
       // start < 0 || start > length
       throw RangeError.range(start, 0, this.length);
     }
@@ -629,7 +629,7 @@ abstract final class StringBase extends WasmStringBase
   bool contains(Pattern pattern, [int startIndex = 0]) {
     if (pattern is String) {
       // startIndex < 0 || startIndex > length
-      if (startIndex.toWasmI64().gtU(length.toWasmI64())) {
+      if (startIndex.gtU(length)) {
         throw RangeError.range(startIndex, 0, length);
       }
       return indexOf(pattern, startIndex) >= 0;
@@ -1017,7 +1017,7 @@ abstract final class StringBase extends WasmStringBase
 
   Iterable<Match> allMatches(String string, [int start = 0]) {
     // start < 0 || start > string.length
-    if (start.toWasmI64().gtU(string.length.toWasmI64())) {
+    if (start.gtU(string.length)) {
       throw RangeError.range(start, 0, string.length, "start");
     }
     return StringAllMatchesIterable(string, this, start);
@@ -1025,7 +1025,7 @@ abstract final class StringBase extends WasmStringBase
 
   Match? matchAsPrefix(String string, [int start = 0]) {
     // start < 0 || start > string.length
-    if (start.toWasmI64().gtU(string.length.toWasmI64())) {
+    if (start.gtU(string.length)) {
       throw RangeError.range(start, 0, string.length);
     }
     if (start + this.length > string.length) return null;
@@ -1188,7 +1188,7 @@ final class OneByteString extends StringBase {
 
   @override
   int codeUnitAt(int index) {
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+    if (index.geU(length)) {
       throw IndexError.withLength(index, length);
     }
     return _codeUnitAtUnchecked(index);
@@ -1619,7 +1619,7 @@ final class TwoByteString extends StringBase {
 
   @override
   int codeUnitAt(int index) {
-    if (WasmI64.fromInt(length).leU(WasmI64.fromInt(index))) {
+    if (index.geU(length)) {
       throw IndexError.withLength(index, length);
     }
     return _codeUnitAtUnchecked(index);

@@ -301,7 +301,7 @@ final class _BoxedInt extends int {
 
     int b = this;
     // b < 0 || b > m, m is positive (checked above)
-    if (b.toWasmI64().gtU(m.toWasmI64())) {
+    if (b.gtU(m)) {
       b %= m;
     }
     int r = 1;
@@ -393,7 +393,7 @@ final class _BoxedInt extends int {
     if (m == 1) return 0;
     int t = this;
     // t < 0 || t >= m, m is positive (checked above)
-    if (t.toWasmI64().geU(m.toWasmI64())) t %= m;
+    if (t.geU(m)) t %= m;
     if (t == 1) return 1;
     if ((t == 0) || (t.isEven && m.isEven)) {
       throw new Exception("Not coprime");

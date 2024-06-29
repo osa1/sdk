@@ -349,7 +349,7 @@ final class _BoxedDouble extends double {
 
     // Step 2.
     // fractionDigits < 0 || fractionDigits > 20
-    if (fractionDigits.toWasmI64().gtU(const WasmI64(20))) {
+    if (fractionDigits.gtU(20)) {
       throw new RangeError.range(fractionDigits, 0, 20, "fractionDigits");
     }
 
@@ -389,7 +389,7 @@ final class _BoxedDouble extends double {
     // Step 7.
     if (fractionDigits != null) {
       // fractionDigits < 0 || fractionDigits > 20
-      if (fractionDigits.toWasmI64().gtU(const WasmI64(20))) {
+      if (fractionDigits.gtU(20)) {
         throw new RangeError.range(fractionDigits, 0, 20, "fractionDigits");
       }
     }
