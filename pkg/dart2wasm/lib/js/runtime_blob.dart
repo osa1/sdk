@@ -47,7 +47,7 @@ const jsRuntimeBlobPart3 = r'''
       return array;
     }
 
-    // A special symbol attached to functions that wrap Dart functions.
+    // A special symbol attached to functions that translateExpression Dart functions.
     const jsWrappedDartFunctionSymbol = Symbol("JSWrappedDartFunction");
 
     function finalizeWrapper(dartFunction, wrapped) {

@@ -724,7 +724,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     emitTargetLabel(inner);
     allocateContext(node);
-    visitStatement(node.body);
+    translateStatement(node.body);
     _jumpToTarget(inner, condition: node.condition);
   }
 
@@ -736,11 +736,11 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     allocateContext(node);
     for (VariableDeclaration variable in node.variables) {
-      visitStatement(variable);
+      translateStatement(variable);
     }
     emitTargetLabel(inner);
     _jumpToTarget(after, condition: node.condition, negated: true);
-    visitStatement(node.body);
+    translateStatement(node.body);
 
     emitForStatementUpdate(node);
 
@@ -755,11 +755,11 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     StateTarget? inner = innerTargets[node];
 
     _jumpToTarget(inner ?? after, condition: node.condition, negated: true);
-    visitStatement(node.then);
+    translateStatement(node.then);
     if (node.otherwise != null) {
       _jumpToTarget(after);
       emitTargetLabel(inner!);
-      visitStatement(node.otherwise!);
+      translateStatement(node.otherwise!);
     }
     emitTargetLabel(after);
   }
@@ -770,13 +770,13 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     if (after == null) {
       final w.Label label = b.block();
       labelTargets[node] = _DirectLabelTarget(label);
-      visitStatement(node.body);
+      translateStatement(node.body);
       labelTargets.remove(node);
       b.end();
     } else {
       labelTargets[node] =
           _IndirectLabelTarget(exceptionHandlers._numFinalizers, after);
-      visitStatement(node.body);
+      translateStatement(node.body);
       labelTargets.remove(node);
       emitTargetLabel(after);
     }
@@ -807,7 +807,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
         isNullable ? addLocal(switchInfo.nullableType) : null;
 
     // Initialize switch value local
-    wrap(node.expression,
+    translateExpression(node.expression,
         isNullable ? switchInfo.nullableType : switchInfo.nonNullableType);
     b.local_set(
         isNullable ? switchValueNullableLocal! : switchValueNonNullableLocal);
@@ -840,7 +840,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
             exp is ConstantExpression && exp.constant is NullConstant) {
           // Null already checked, skip
         } else {
-          wrap(exp, switchInfo.nonNullableType);
+          translateExpression(exp, switchInfo.nonNullableType);
           b.local_get(switchValueNonNullableLocal);
           switchInfo.compare();
           b.if_();
@@ -868,7 +868,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Emit case bodies
     for (SwitchCase c in node.cases) {
       emitTargetLabel(innerTargets[c]!);
-      visitStatement(c.body);
+      translateStatement(c.body);
       _jumpToTarget(after);
     }
 
@@ -903,7 +903,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
 
     exceptionHandlers._pushTryCatch(node);
     exceptionHandlers._generateTryBlocks(b);
-    visitStatement(node.body);
+    translateStatement(node.body);
     _jumpToTarget(after);
     exceptionHandlers._terminateTryBlocks();
     exceptionHandlers._pop();
@@ -951,7 +951,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
       catchVariableStack
           .add(CatchVariables._(catch_.exception!, catch_.stackTrace!));
 
-      visitStatement(catch_.body);
+      translateStatement(catch_.body);
 
       catchVariableStack.removeLast();
 
@@ -999,7 +999,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Body
     final finalizer = exceptionHandlers._pushTryFinally(node);
     exceptionHandlers._generateTryBlocks(b);
-    visitStatement(node.body);
+    translateStatement(node.body);
 
     // Set continuation of the finalizer.
     finalizer.setContinuationFallthrough();
@@ -1011,7 +1011,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     // Finalizer
     {
       emitTargetLabel(finalizerTarget);
-      visitStatement(node.finalizer);
+      translateStatement(node.finalizer);
 
       // Check continuation.
 
@@ -1063,7 +1063,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     allocateContext(node);
     emitTargetLabel(inner);
     _jumpToTarget(after, condition: node.condition, negated: true);
-    visitStatement(node.body);
+    translateStatement(node.body);
     _jumpToTarget(inner);
     emitTargetLabel(after);
   }
@@ -1084,7 +1084,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
         if (value == null) {
           b.ref_null(translator.topInfo.struct);
         } else {
-          wrap(value, translator.topInfo.nullableType);
+          translateExpression(value, translator.topInfo.nullableType);
         }
       });
       return;
@@ -1093,7 +1093,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
     if (value == null) {
       b.ref_null(translator.topInfo.struct);
     } else {
-      wrap(value, translator.topInfo.nullableType);
+      translateExpression(value, translator.topInfo.nullableType);
     }
 
     final returnValueLocal = addLocal(translator.topInfo.nullableType);
@@ -1119,7 +1119,7 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
   @override
   w.ValueType visitThrow(Throw node, w.ValueType expectedType) {
     final exceptionLocal = addLocal(translator.topInfo.nonNullableType);
-    wrap(node.expression, translator.topInfo.nonNullableType);
+    translateExpression(node.expression, translator.topInfo.nonNullableType);
     b.local_set(exceptionLocal);
 
     final stackTraceLocal =

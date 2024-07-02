@@ -143,7 +143,7 @@ class Intrinsifier {
     // WasmAnyRef.isObject
     if (cls == translator.wasmAnyRefClass) {
       assert(name == "isObject");
-      codeGen.wrap(receiver, w.RefType.any(nullable: false));
+      codeGen.translateExpression(receiver, w.RefType.any(nullable: false));
       b.ref_test(translator.topInfo.nonNullableType);
       return w.NumType.i32;
     }
@@ -151,7 +151,7 @@ class Intrinsifier {
     // WasmArrayRef.length
     if (cls == translator.wasmArrayRefClass) {
       assert(name == 'length');
-      codeGen.wrap(receiver, w.RefType.array(nullable: false));
+      codeGen.translateExpression(receiver, w.RefType.array(nullable: false));
       b.array_len();
       b.i64_extend_i32_u();
       return w.NumType.i64;
@@ -173,7 +173,7 @@ class Intrinsifier {
     if (cls == translator.coreTypes.intClass && name == 'bitLength') {
       w.Local temp = codeGen.function.addLocal(w.NumType.i64);
       b.i64_const(64);
-      codeGen.wrap(receiver, w.NumType.i64);
+      codeGen.translateExpression(receiver, w.NumType.i64);
       b.local_tee(temp);
       b.local_get(temp);
       b.i64_const(63);
@@ -187,7 +187,7 @@ class Intrinsifier {
     // Pointer.address
     if (cls == translator.ffiPointerClass && name == 'address') {
       // A Pointer is represented by its i32 address.
-      codeGen.wrap(receiver, w.NumType.i32);
+      codeGen.translateExpression(receiver, w.NumType.i32);
       b.i64_extend_i32_u();
       return w.NumType.i64;
     }
@@ -207,7 +207,8 @@ class Intrinsifier {
     // WasmAnyRef.toObject
     if (cls == translator.wasmAnyRefClass && name == "toObject") {
       w.Label succeed = b.block(const [], [translator.topInfo.nonNullableType]);
-      codeGen.wrap(receiver, const w.RefType.any(nullable: false));
+      codeGen.translateExpression(
+          receiver, const w.RefType.any(nullable: false));
       b.br_on_cast(succeed, const w.RefType.any(nullable: false),
           translator.topInfo.nonNullableType);
       codeGen.throwWasmRefError("a Dart object");
@@ -220,7 +221,7 @@ class Intrinsifier {
       w.StorageType? receiverType = translator.builtinTypes[cls];
       switch (receiverType) {
         case w.NumType.i32:
-          codeGen.wrap(receiver, w.NumType.i32);
+          codeGen.translateExpression(receiver, w.NumType.i32);
           switch (name) {
             case "toIntSigned":
               b.i64_extend_i32_s();
@@ -238,26 +239,30 @@ class Intrinsifier {
         case w.NumType.i64:
           switch (name) {
             case "toInt":
-              codeGen.wrap(receiver, w.NumType.i64);
+              codeGen.translateExpression(receiver, w.NumType.i64);
               return w.NumType.i64;
             case "leU":
-              codeGen.wrap(receiver, w.NumType.i64);
-              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              codeGen.translateExpression(receiver, w.NumType.i64);
+              codeGen.translateExpression(
+                  node.arguments.positional[0], w.NumType.i64);
               b.i64_le_u();
               return boolType;
             case "ltU":
-              codeGen.wrap(receiver, w.NumType.i64);
-              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              codeGen.translateExpression(receiver, w.NumType.i64);
+              codeGen.translateExpression(
+                  node.arguments.positional[0], w.NumType.i64);
               b.i64_lt_u();
               return boolType;
             case "geU":
-              codeGen.wrap(receiver, w.NumType.i64);
-              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              codeGen.translateExpression(receiver, w.NumType.i64);
+              codeGen.translateExpression(
+                  node.arguments.positional[0], w.NumType.i64);
               b.i64_ge_u();
               return boolType;
             case "gtU":
-              codeGen.wrap(receiver, w.NumType.i64);
-              codeGen.wrap(node.arguments.positional[0], w.NumType.i64);
+              codeGen.translateExpression(receiver, w.NumType.i64);
+              codeGen.translateExpression(
+                  node.arguments.positional[0], w.NumType.i64);
               b.i64_gt_u();
               return boolType;
             default:
@@ -265,16 +270,16 @@ class Intrinsifier {
           }
         case w.NumType.f32:
           assert(name == "toDouble");
-          codeGen.wrap(receiver, w.NumType.f32);
+          codeGen.translateExpression(receiver, w.NumType.f32);
           b.f64_promote_f32();
           return w.NumType.f64;
         case w.NumType.f64:
           switch (name) {
             case "toDouble":
-              codeGen.wrap(receiver, w.NumType.f64);
+              codeGen.translateExpression(receiver, w.NumType.f64);
               return w.NumType.f64;
             case "truncSatS":
-              codeGen.wrap(receiver, w.NumType.f64);
+              codeGen.translateExpression(receiver, w.NumType.f64);
               b.i64_trunc_sat_f64_s();
               return w.NumType.i64;
             default:
@@ -290,13 +295,13 @@ class Intrinsifier {
             " at ${node.location}";
       }
       w.Table table = translator.getTable(receiver.target as Field)!;
-      codeGen.wrap(node.arguments.positional[0], w.NumType.i32);
+      codeGen.translateExpression(node.arguments.positional[0], w.NumType.i32);
       if (name == '[]') {
         b.table_get(table);
         return table.type;
       } else {
         assert(name == '[]=');
-        codeGen.wrap(node.arguments.positional[1], table.type);
+        codeGen.translateExpression(node.arguments.positional[1], table.type);
         b.table_set(table);
         return codeGen.voidMarker;
       }
@@ -328,7 +333,7 @@ class Intrinsifier {
         final entries = (receiver.constant as ListConstant).entries;
         if (0 <= constIndex && constIndex < entries.length) {
           Expression element = ConstantExpression(entries[constIndex]);
-          return codeGen.wrap(element, typeOfExp(element));
+          return codeGen.translateExpression(element, typeOfExp(element));
         }
       }
 
@@ -345,8 +350,8 @@ class Intrinsifier {
       var code = _binaryOperatorMap[leftType]?[rightType]?[name];
       if (code != null) {
         w.ValueType outType = isComparison(name) ? w.NumType.i32 : leftType;
-        codeGen.wrap(left, leftType);
-        codeGen.wrap(right, rightType);
+        codeGen.translateExpression(left, leftType);
+        codeGen.translateExpression(right, rightType);
         code(codeGen);
         return outType;
       }
@@ -356,7 +361,7 @@ class Intrinsifier {
       w.ValueType opType = translator.translateType(receiverType);
       var code = _unaryOperatorMap[opType]?[name];
       if (code != null) {
-        codeGen.wrap(operand, opType);
+        codeGen.translateExpression(operand, opType);
         code(codeGen);
         return _unaryResultMap[name] ?? opType;
       }
@@ -372,32 +377,32 @@ class Intrinsifier {
 
     // Compare bool, Pointer or WasmI32.
     if (leftType == w.NumType.i32 && rightType == w.NumType.i32) {
-      codeGen.wrap(node.left, w.NumType.i32);
-      codeGen.wrap(node.right, w.NumType.i32);
+      codeGen.translateExpression(node.left, w.NumType.i32);
+      codeGen.translateExpression(node.right, w.NumType.i32);
       b.i32_eq();
       return w.NumType.i32;
     }
 
     // Compare int or WasmI64.
     if (leftType == w.NumType.i64 && rightType == w.NumType.i64) {
-      codeGen.wrap(node.left, w.NumType.i64);
-      codeGen.wrap(node.right, w.NumType.i64);
+      codeGen.translateExpression(node.left, w.NumType.i64);
+      codeGen.translateExpression(node.right, w.NumType.i64);
       b.i64_eq();
       return w.NumType.i32;
     }
 
     // Compare WasmF32.
     if (leftType == w.NumType.f32 && rightType == w.NumType.f32) {
-      codeGen.wrap(node.left, w.NumType.f32);
-      codeGen.wrap(node.right, w.NumType.f32);
+      codeGen.translateExpression(node.left, w.NumType.f32);
+      codeGen.translateExpression(node.right, w.NumType.f32);
       b.f32_eq();
       return w.NumType.i32;
     }
 
     // Compare double or WasmF64.
     if (leftType == doubleType && rightType == doubleType) {
-      codeGen.wrap(node.left, w.NumType.f64);
-      codeGen.wrap(node.right, w.NumType.f64);
+      codeGen.translateExpression(node.left, w.NumType.f64);
+      codeGen.translateExpression(node.right, w.NumType.f64);
       b.f64_eq();
       return w.NumType.i32;
     }
@@ -513,8 +518,9 @@ class Intrinsifier {
           case '[]':
             final array = node.arguments.positional[0];
             final index = node.arguments.positional[1];
-            codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(index, w.NumType.i64);
+            codeGen.translateExpression(
+                array, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(index, w.NumType.i64);
             b.i32_wrap_i64();
             if (wasmType is w.PackedType) {
               b.array_get_u(arrayType);
@@ -526,10 +532,11 @@ class Intrinsifier {
             final array = node.arguments.positional[0];
             final index = node.arguments.positional[1];
             final value = node.arguments.positional[2];
-            codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(index, w.NumType.i64);
+            codeGen.translateExpression(
+                array, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(index, w.NumType.i64);
             b.i32_wrap_i64();
-            codeGen.wrap(value, typeOfExp(value));
+            codeGen.translateExpression(value, typeOfExp(value));
             b.array_set(arrayType);
             return codeGen.voidMarker;
           case 'copy':
@@ -539,14 +546,15 @@ class Intrinsifier {
             final sourceOffset = node.arguments.positional[3];
             final size = node.arguments.positional[4];
 
-            codeGen.wrap(destArray, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(destOffset, w.NumType.i64);
+            codeGen.translateExpression(
+                destArray, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(destOffset, w.NumType.i64);
             b.i32_wrap_i64();
-            codeGen.wrap(
+            codeGen.translateExpression(
                 sourceArray, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(sourceOffset, w.NumType.i64);
+            codeGen.translateExpression(sourceOffset, w.NumType.i64);
             b.i32_wrap_i64();
-            codeGen.wrap(size, w.NumType.i64);
+            codeGen.translateExpression(size, w.NumType.i64);
             b.i32_wrap_i64();
             b.array_copy(arrayType, arrayType);
             return codeGen.voidMarker;
@@ -556,11 +564,13 @@ class Intrinsifier {
             final value = node.arguments.positional[2];
             final size = node.arguments.positional[3];
 
-            codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(offset, w.NumType.i64);
+            codeGen.translateExpression(
+                array, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(offset, w.NumType.i64);
             b.i32_wrap_i64();
-            codeGen.wrap(value, translator.translateType(dartElementType));
-            codeGen.wrap(size, w.NumType.i64);
+            codeGen.translateExpression(
+                value, translator.translateType(dartElementType));
+            codeGen.translateExpression(size, w.NumType.i64);
             b.i32_wrap_i64();
             b.array_fill(arrayType);
             return codeGen.voidMarker;
@@ -574,7 +584,7 @@ class Intrinsifier {
             final sourceArrayLocal = codeGen.addLocal(sourceArrayRefType);
             final newArrayLocal = codeGen.addLocal(sourceArrayRefType);
 
-            codeGen.wrap(sourceArray, sourceArrayRefType);
+            codeGen.translateExpression(sourceArray, sourceArrayRefType);
             b.local_tee(sourceArrayLocal);
 
             b.array_len();
@@ -635,8 +645,9 @@ class Intrinsifier {
             final unsigned = memberName == 'readUnsigned';
             final array = node.arguments.positional[0];
             final index = node.arguments.positional[1];
-            codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(index, w.NumType.i64);
+            codeGen.translateExpression(
+                array, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(index, w.NumType.i64);
             b.i32_wrap_i64();
             if (innerExtend) {
               if (unsigned) {
@@ -665,10 +676,11 @@ class Intrinsifier {
             final array = node.arguments.positional[0];
             final index = node.arguments.positional[1];
             final value = node.arguments.positional[2];
-            codeGen.wrap(array, w.RefType.def(arrayType, nullable: false));
-            codeGen.wrap(index, w.NumType.i64);
+            codeGen.translateExpression(
+                array, w.RefType.def(arrayType, nullable: false));
+            codeGen.translateExpression(index, w.NumType.i64);
             b.i32_wrap_i64();
-            codeGen.wrap(value, typeOfExp(value));
+            codeGen.translateExpression(value, typeOfExp(value));
             if (outerExtend) {
               if (wasmType == w.NumType.f32) {
                 b.f32_demote_f64();
@@ -693,8 +705,8 @@ class Intrinsifier {
           DartType doubleType = translator.coreTypes.doubleNonNullableRawType;
           List<DartType> types = [dartTypeOf(first), dartTypeOf(second)];
           if (types.every((t) => t == intType)) {
-            codeGen.wrap(first, w.NumType.i64);
-            codeGen.wrap(second, w.NumType.i64);
+            codeGen.translateExpression(first, w.NumType.i64);
+            codeGen.translateExpression(second, w.NumType.i64);
             b.i64_eq();
             return w.NumType.i32;
           }
@@ -704,8 +716,8 @@ class Intrinsifier {
               t != doubleType &&
               !translator.hierarchy
                   .isSubInterfaceOf(intType.classNode, t.classNode))) {
-            codeGen.wrap(first, w.RefType.eq(nullable: true));
-            codeGen.wrap(second, w.RefType.eq(nullable: true));
+            codeGen.translateExpression(first, w.RefType.eq(nullable: true));
+            codeGen.translateExpression(second, w.RefType.eq(nullable: true));
             b.ref_eq();
             return w.NumType.i32;
           }
@@ -716,7 +728,7 @@ class Intrinsifier {
           final objectClassId = translator
               .classIdNumbering.classIds[translator.coreTypes.objectClass]!;
 
-          codeGen.wrap(classId, w.NumType.i64);
+          codeGen.translateExpression(classId, w.NumType.i64);
           b.i32_wrap_i64();
           b.emitClassIdRangeCheck([Range(objectClassId, objectClassId)]);
           return w.NumType.i32;
@@ -727,7 +739,7 @@ class Intrinsifier {
               .getConcreteClassIdRanges(translator.coreTypes.functionClass);
           assert(ranges.length <= 1);
 
-          codeGen.wrap(classId, w.NumType.i64);
+          codeGen.translateExpression(classId, w.NumType.i64);
           b.i32_wrap_i64();
           b.emitClassIdRangeCheck(ranges);
           return w.NumType.i32;
@@ -738,7 +750,7 @@ class Intrinsifier {
               .getConcreteClassIdRanges(translator.coreTypes.recordClass);
           assert(ranges.length <= 1);
 
-          codeGen.wrap(classId, w.NumType.i64);
+          codeGen.translateExpression(classId, w.NumType.i64);
           b.i32_wrap_i64();
           b.emitClassIdRangeCheck(ranges);
           return w.NumType.i32;
@@ -751,7 +763,7 @@ class Intrinsifier {
         case "getIdentityHashField":
           Expression arg = node.arguments.positional[0];
           w.ValueType objectType = translator.objectInfo.nonNullableType;
-          codeGen.wrap(arg, objectType);
+          codeGen.translateExpression(arg, objectType);
           b.struct_get(translator.objectInfo.struct, FieldIndex.identityHash);
           b.i64_extend_i32_u();
           return w.NumType.i64;
@@ -759,8 +771,8 @@ class Intrinsifier {
           Expression arg = node.arguments.positional[0];
           Expression hash = node.arguments.positional[1];
           w.ValueType objectType = translator.objectInfo.nonNullableType;
-          codeGen.wrap(arg, objectType);
-          codeGen.wrap(hash, w.NumType.i64);
+          codeGen.translateExpression(arg, objectType);
+          codeGen.translateExpression(hash, w.NumType.i64);
           b.i32_wrap_i64();
           b.struct_set(translator.objectInfo.struct, FieldIndex.identityHash);
           return codeGen.voidMarker;
@@ -775,33 +787,38 @@ class Intrinsifier {
           Expression operand = node.arguments.positional.single;
           // Just evaluate the operand and let the context convert it to the
           // expected type.
-          return codeGen.wrap(operand, typeOfExp(operand));
+          return codeGen.translateExpression(operand, typeOfExp(operand));
         case "_nativeEffect":
           // Ignore argument
           return translator.voidMarker;
         case "floatToIntBits":
-          codeGen.wrap(node.arguments.positional.single, w.NumType.f64);
+          codeGen.translateExpression(
+              node.arguments.positional.single, w.NumType.f64);
           b.f32_demote_f64();
           b.i32_reinterpret_f32();
           b.i64_extend_i32_u();
           return w.NumType.i64;
         case "intBitsToFloat":
-          codeGen.wrap(node.arguments.positional.single, w.NumType.i64);
+          codeGen.translateExpression(
+              node.arguments.positional.single, w.NumType.i64);
           b.i32_wrap_i64();
           b.f32_reinterpret_i32();
           b.f64_promote_f32();
           return w.NumType.f64;
         case "doubleToIntBits":
-          codeGen.wrap(node.arguments.positional.single, w.NumType.f64);
+          codeGen.translateExpression(
+              node.arguments.positional.single, w.NumType.f64);
           b.i64_reinterpret_f64();
           return w.NumType.i64;
         case "intBitsToDouble":
-          codeGen.wrap(node.arguments.positional.single, w.NumType.i64);
+          codeGen.translateExpression(
+              node.arguments.positional.single, w.NumType.i64);
           b.f64_reinterpret_i64();
           return w.NumType.f64;
         case "getID":
           ClassInfo info = translator.topInfo;
-          codeGen.wrap(node.arguments.positional.single, info.nonNullableType);
+          codeGen.translateExpression(
+              node.arguments.positional.single, info.nonNullableType);
           b.struct_get(info.struct, FieldIndex.classId);
           b.i64_extend_i32_u();
           return w.NumType.i64;
@@ -817,7 +834,8 @@ class Intrinsifier {
       // Pointer.fromAddress
       if (name == "fromAddress") {
         // A Pointer is represented by its i32 address.
-        codeGen.wrap(node.arguments.positional.single, w.NumType.i64);
+        codeGen.translateExpression(
+            node.arguments.positional.single, w.NumType.i64);
         b.i32_wrap_i64();
         return w.NumType.i32;
       }
@@ -830,7 +848,7 @@ class Intrinsifier {
       if (loadStoreFunctionNames.hasMatch(name)) {
         Expression pointerArg = node.arguments.positional[0];
         Expression offsetArg = node.arguments.positional[1];
-        codeGen.wrap(pointerArg, w.NumType.i32);
+        codeGen.translateExpression(pointerArg, w.NumType.i32);
         int offset;
         if (offsetArg is IntLiteral) {
           offset = offsetArg.value;
@@ -838,7 +856,7 @@ class Intrinsifier {
             offsetArg.constant is IntConstant) {
           offset = (offsetArg.constant as IntConstant).value;
         } else {
-          codeGen.wrap(offsetArg, w.NumType.i64);
+          codeGen.translateExpression(offsetArg, w.NumType.i64);
           b.i32_wrap_i64();
           b.i32_add();
           offset = 0;
@@ -885,44 +903,53 @@ class Intrinsifier {
             return w.NumType.i32;
           case "_storeInt8":
           case "_storeUint8":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.i64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.i64);
             b.i64_store8(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeInt16":
           case "_storeUint16":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.i64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.i64);
             b.i64_store16(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeInt32":
           case "_storeUint32":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.i64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.i64);
             b.i64_store32(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeInt64":
           case "_storeUint64":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.i64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.i64);
             b.i64_store(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeFloat":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.f64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.f64);
             b.f32_demote_f64();
             b.f32_store(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeFloatUnaligned":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.f64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.f64);
             b.f32_demote_f64();
             b.f32_store(translator.ffiMemory, offset, 0);
             return translator.voidMarker;
           case "_storeDouble":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.f64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.f64);
             b.f64_store(translator.ffiMemory, offset);
             return translator.voidMarker;
           case "_storeDoubleUnaligned":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.f64);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.f64);
             b.f64_store(translator.ffiMemory, offset, 0);
             return translator.voidMarker;
           case "_storePointer":
-            codeGen.wrap(node.arguments.positional[2], w.NumType.i32);
+            codeGen.translateExpression(
+                node.arguments.positional[2], w.NumType.i32);
             b.i32_store(translator.ffiMemory, offset);
             return translator.voidMarker;
         }
@@ -943,7 +970,7 @@ class Intrinsifier {
         }
 
         Expression length = node.arguments.positional[0];
-        codeGen.wrap(length, w.NumType.i64);
+        codeGen.translateExpression(length, w.NumType.i64);
         b.i32_wrap_i64();
         if (node.arguments.positional.length < 2) {
           b.array_new_default(arrayType);
@@ -958,7 +985,8 @@ class Intrinsifier {
             // Initialize to the provided value
             w.Local lengthTemp = codeGen.addLocal(w.NumType.i32);
             b.local_set(lengthTemp);
-            codeGen.wrap(initialValue, arrayType.elementType.type.unpacked);
+            codeGen.translateExpression(
+                initialValue, arrayType.elementType.type.unpacked);
             b.local_get(lengthTemp);
             b.array_new(arrayType);
           }
@@ -971,7 +999,7 @@ class Intrinsifier {
         Expression ref = node.arguments.positional[0];
         w.RefType resultType = typeOfExp(node) as w.RefType;
         w.Label succeed = b.block(const [], [resultType]);
-        codeGen.wrap(ref, w.RefType.func(nullable: false));
+        codeGen.translateExpression(ref, w.RefType.func(nullable: false));
         b.br_on_cast(succeed, w.RefType.func(nullable: false), resultType);
         codeGen.throwWasmRefError("a function with the expected signature");
         b.end(); // succeed
@@ -1000,51 +1028,51 @@ class Intrinsifier {
         case w.NumType.i32:
           switch (name) {
             case "fromInt":
-              codeGen.wrap(value, w.NumType.i64);
+              codeGen.translateExpression(value, w.NumType.i64);
               b.i32_wrap_i64();
               return w.NumType.i32;
             case "int8FromInt":
-              codeGen.wrap(value, w.NumType.i64);
+              codeGen.translateExpression(value, w.NumType.i64);
               b.i32_wrap_i64();
               b.i32_extend8_s();
               return w.NumType.i32;
             case "uint8FromInt":
-              codeGen.wrap(value, w.NumType.i64);
+              codeGen.translateExpression(value, w.NumType.i64);
               b.i32_wrap_i64();
               b.i32_const(0xFF);
               b.i32_and();
               return w.NumType.i32;
             case "int16FromInt":
-              codeGen.wrap(value, w.NumType.i64);
+              codeGen.translateExpression(value, w.NumType.i64);
               b.i32_wrap_i64();
               b.i32_extend16_s();
               return w.NumType.i32;
             case "uint16FromInt":
-              codeGen.wrap(value, w.NumType.i64);
+              codeGen.translateExpression(value, w.NumType.i64);
               b.i32_wrap_i64();
               b.i32_const(0xFFFF);
               b.i32_and();
               return w.NumType.i32;
             case "fromBool":
-              codeGen.wrap(value, w.NumType.i32);
+              codeGen.translateExpression(value, w.NumType.i32);
               return w.NumType.i32;
             default:
               throw 'Unhandled WasmI32 factory: $name';
           }
 
         case w.NumType.i64:
-          codeGen.wrap(value, w.NumType.i64);
+          codeGen.translateExpression(value, w.NumType.i64);
           return w.NumType.i64;
         case w.NumType.f32:
-          codeGen.wrap(value, w.NumType.f64);
+          codeGen.translateExpression(value, w.NumType.f64);
           b.f32_demote_f64();
           return w.NumType.f32;
         case w.NumType.f64:
-          codeGen.wrap(value, w.NumType.f64);
+          codeGen.translateExpression(value, w.NumType.f64);
           return w.NumType.f64;
         default:
           w.RefType valueType = targetType as w.RefType;
-          codeGen.wrap(value, valueType);
+          codeGen.translateExpression(value, valueType);
           return valueType;
       }
     }
@@ -1054,27 +1082,27 @@ class Intrinsifier {
       switch (name) {
         case "_externalizeNonNullable":
           final value = node.arguments.positional.single;
-          codeGen.wrap(value, w.RefType.any(nullable: false));
+          codeGen.translateExpression(value, w.RefType.any(nullable: false));
           b.extern_externalize();
           return w.RefType.extern(nullable: false);
         case "_externalizeNullable":
           final value = node.arguments.positional.single;
-          codeGen.wrap(value, w.RefType.any(nullable: true));
+          codeGen.translateExpression(value, w.RefType.any(nullable: true));
           b.extern_externalize();
           return w.RefType.extern(nullable: true);
         case "_internalizeNonNullable":
           final value = node.arguments.positional.single;
-          codeGen.wrap(value, w.RefType.extern(nullable: false));
+          codeGen.translateExpression(value, w.RefType.extern(nullable: false));
           b.extern_internalize();
           return w.RefType.any(nullable: false);
         case "_internalizeNullable":
           final value = node.arguments.positional.single;
-          codeGen.wrap(value, w.RefType.extern(nullable: true));
+          codeGen.translateExpression(value, w.RefType.extern(nullable: true));
           b.extern_internalize();
           return w.RefType.any(nullable: true);
         case "_wasmExternRefIsNull":
           final value = node.arguments.positional.single;
-          codeGen.wrap(value, w.RefType.extern(nullable: true));
+          codeGen.translateExpression(value, w.RefType.extern(nullable: true));
           b.ref_is_null();
           return w.NumType.i32;
       }
@@ -1085,7 +1113,7 @@ class Intrinsifier {
 
   w.ValueType _changeListClassID(StaticInvocation node, Class newClass) {
     ClassInfo receiverInfo = translator.classInfo[translator.listBaseClass]!;
-    codeGen.wrap(
+    codeGen.translateExpression(
         node.arguments.positional.single, receiverInfo.nonNullableType);
     w.Local receiverLocal =
         codeGen.function.addLocal(receiverInfo.nonNullableType);
@@ -1130,7 +1158,7 @@ class Intrinsifier {
               : throw "WasmArray.literal argument is not a list literal"
                   " at ${value.location}";
       for (Expression element in elements) {
-        codeGen.wrap(element, elementType);
+        codeGen.translateExpression(element, elementType);
       }
       b.array_new_fixed(arrayType, elements.length);
       return w.RefType.def(arrayType, nullable: false);
@@ -1151,12 +1179,13 @@ class Intrinsifier {
       w.RefType receiverType =
           translator.translateType(dartTypeOf(receiver.receiver)) as w.RefType;
       w.Local temp = codeGen.addLocal(receiverType);
-      codeGen.wrap(receiver.receiver, receiverType);
+      codeGen.translateExpression(receiver.receiver, receiverType);
       b.local_set(temp);
       w.FunctionType functionType = receiverType.heapType as w.FunctionType;
       assert(node.arguments.positional.length == functionType.inputs.length);
       for (int i = 0; i < node.arguments.positional.length; i++) {
-        codeGen.wrap(node.arguments.positional[i], functionType.inputs[i]);
+        codeGen.translateExpression(
+            node.arguments.positional[i], functionType.inputs[i]);
       }
       b.local_get(temp);
       b.call_ref(functionType);
@@ -1180,12 +1209,14 @@ class Intrinsifier {
       w.RefType receiverType =
           translator.translateType(wasmFunctionType) as w.RefType;
       w.Local tableIndex = codeGen.addLocal(w.NumType.i32);
-      codeGen.wrap(receiver.arguments.positional.single, w.NumType.i32);
+      codeGen.translateExpression(
+          receiver.arguments.positional.single, w.NumType.i32);
       b.local_set(tableIndex);
       w.FunctionType functionType = receiverType.heapType as w.FunctionType;
       assert(node.arguments.positional.length == functionType.inputs.length);
       for (int i = 0; i < node.arguments.positional.length; i++) {
-        codeGen.wrap(node.arguments.positional[i], functionType.inputs[i]);
+        codeGen.translateExpression(
+            node.arguments.positional[i], functionType.inputs[i]);
       }
       b.local_get(tableIndex);
       b.call_indirect(functionType, table);
