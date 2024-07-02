@@ -168,10 +168,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     if (fileOffset == TreeNode.noOffset) {
       return;
     }
-    final source = _currentSourceMapSource;
-    if (source == null) {
-      return;
-    }
+    final source = _currentSourceMapSource!;
     final fileUri = source.fileUri!;
     final location = source.getLocation(fileUri, fileOffset);
     b.startSourceMapping(
@@ -747,6 +744,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     // Initialize closure information from enclosing member.
     this.closures = closures;
 
+    setCurrentSourceMapSource(lambda.functionNodeSource);
+
     assert(lambda.functionNode.asyncMarker != AsyncMarker.Async);
 
     setupLambdaParametersAndContexts(lambda);
@@ -927,20 +926,12 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   }
 
   void visitStatement(Statement node) {
-    final oldSource = _currentSourceMapSource;
-    if (node is FileUriNode) {
-      final source =
-          node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
-      setCurrentSourceMapSource(source);
-    }
     setSourceMapFileOffset(node.fileOffset);
     try {
       node.accept(this);
     } catch (_) {
       _printLocation(node);
       rethrow;
-    } finally {
-      setCurrentSourceMapSource(oldSource);
     }
   }
 
