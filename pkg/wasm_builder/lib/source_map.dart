@@ -21,7 +21,7 @@ class SourceMapping {
       this.instructionOffset, Uri fileUri, int line, int col, String? name)
       : sourceInfo = SourceInfo(fileUri, line, col, name);
 
-  SourceMapping.unmapped(this.instructionOffset) : sourceInfo = null {}
+  SourceMapping.unmapped(this.instructionOffset) : sourceInfo = null;
 
   @override
   String toString() => '$instructionOffset -> $sourceInfo';
@@ -45,6 +45,18 @@ class SourceInfo {
 
   @override
   String toString() => '$fileUri:$line:$col ($name)';
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! SourceInfo) {
+      return false;
+    }
+
+    return fileUri == other.fileUri &&
+        line == other.line &&
+        col == other.col &&
+        name == other.name;
+  }
 }
 
 class SourceMapSerializer {

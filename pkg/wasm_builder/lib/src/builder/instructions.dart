@@ -354,12 +354,20 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   // Source maps
 
   void startSourceMapping(Uri fileUri, int line, int col, String? name) {
-    _sourceMappings
-        .add(SourceMapping(_instructions.length, fileUri, line, col, name));
+    _addSourceMapping(
+        SourceMapping(_instructions.length, fileUri, line, col, name));
   }
 
   void stopSourceMapping() {
-    _sourceMappings.add(SourceMapping.unmapped(_instructions.length));
+    _addSourceMapping(SourceMapping.unmapped(_instructions.length));
+  }
+
+  void _addSourceMapping(SourceMapping mapping) {
+    if (_sourceMappings.isNotEmpty &&
+        _sourceMappings.last.sourceInfo == mapping.sourceInfo) {
+      return;
+    }
+    _sourceMappings.add(mapping);
   }
 
   // Meta
