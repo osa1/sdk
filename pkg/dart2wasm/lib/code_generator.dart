@@ -900,6 +900,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// result to the expected type if needed. All expression code generation goes
   /// through this method.
   w.ValueType wrap(Expression node, w.ValueType expectedType) {
+    final currentSource = _currentSourceMapSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
@@ -913,10 +914,13 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     } catch (_) {
       _printLocation(node);
       rethrow;
+    } finally {
+      setCurrentSourceMapSource(currentSource);
     }
   }
 
   void visitStatement(Statement node) {
+    final currentSource = _currentSourceMapSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
@@ -928,6 +932,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     } catch (_) {
       _printLocation(node);
       rethrow;
+    } finally {
+      setCurrentSourceMapSource(currentSource);
     }
   }
 
