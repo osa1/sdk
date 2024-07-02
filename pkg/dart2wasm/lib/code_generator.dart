@@ -507,12 +507,19 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     for (Field field in info.cls!.fields) {
       if (field.isInstanceMember && field.initializer != null) {
+        final oldSource = _currentSourceMapSource;
+        final newSource = field.enclosingComponent!.uriToSource[field.fileUri]!;
+        setCurrentSourceMapSource(newSource);
+        setSourceMapFileOffset(field.fileOffset);
+
         int fieldIndex = translator.fieldIndex[field]!;
         w.Local local = addLocal(info.struct.fields[fieldIndex].type.unpacked);
 
         wrap(field.initializer!, info.struct.fields[fieldIndex].type.unpacked);
         b.local_set(local);
         fieldLocals[field] = local;
+
+        setCurrentSourceMapSource(oldSource);
       }
     }
   }
@@ -900,7 +907,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// result to the expected type if needed. All expression code generation goes
   /// through this method.
   w.ValueType wrap(Expression node, w.ValueType expectedType) {
-    final currentSource = _currentSourceMapSource;
+    final oldSource = _currentSourceMapSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
@@ -915,12 +922,12 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _printLocation(node);
       rethrow;
     } finally {
-      setCurrentSourceMapSource(currentSource);
+      setCurrentSourceMapSource(oldSource);
     }
   }
 
   void visitStatement(Statement node) {
-    final currentSource = _currentSourceMapSource;
+    final oldSource = _currentSourceMapSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
@@ -933,7 +940,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _printLocation(node);
       rethrow;
     } finally {
-      setCurrentSourceMapSource(currentSource);
+      setCurrentSourceMapSource(oldSource);
     }
   }
 
