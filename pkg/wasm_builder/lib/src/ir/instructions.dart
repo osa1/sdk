@@ -35,8 +35,10 @@ class Instructions implements Serializable {
   @override
   void serialize(Serializer s) {
     int sourceMappingIdx = 0;
-    int instructionIdx = 0;
-    for (final i in instructions) {
+    for (int instructionIdx = 0;
+        instructionIdx < instructions.length;
+        instructionIdx += 1) {
+      final i = instructions[instructionIdx];
       if (_stackTraces != null) s.debugTrace(_stackTraces![i]!);
 
       while (sourceMappingIdx < _sourceMappings.length &&
@@ -53,8 +55,6 @@ class Instructions implements Serializable {
       }
 
       i.serialize(s);
-
-      instructionIdx += 1;
     }
 
     s.sourceMapSerializer.addMapping(s.offset, null);
