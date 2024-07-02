@@ -41,16 +41,18 @@ class Instructions implements Serializable {
       final i = instructions[instructionIdx];
       if (_stackTraces != null) s.debugTrace(_stackTraces![i]!);
 
-      while (sourceMappingIdx < _sourceMappings.length &&
-          _sourceMappings[sourceMappingIdx].instructionOffset <
+      // Skip to the mapping that covers the current instruction.
+      while (sourceMappingIdx < _sourceMappings.length - 1 &&
+          _sourceMappings[sourceMappingIdx + 1].instructionOffset <=
               instructionIdx) {
         sourceMappingIdx += 1;
       }
 
       if (sourceMappingIdx < _sourceMappings.length) {
         final mapping = _sourceMappings[sourceMappingIdx];
-        if (mapping.instructionOffset == instructionIdx) {
+        if (mapping.instructionOffset <= instructionIdx) {
           s.sourceMapSerializer.addMapping(s.offset, mapping.sourceInfo);
+          sourceMappingIdx += 1;
         }
       }
 
