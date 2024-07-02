@@ -131,7 +131,6 @@ String _serializeSourceMap(List<SourceMapping> mappings) {
 
   return """{
       "version": 3,
-      "file": "main.dart.wasm",
       "sources": [${sourcesList.map((source) => '"$source"').join(",")}],
       "names": [${namesList.map((name) => '"$name"').join(",")}],
       "mappings": "$mappingsStr"
