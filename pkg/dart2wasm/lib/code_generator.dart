@@ -945,7 +945,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// through this method.
   w.ValueType wrap(Expression node, w.ValueType expectedType) {
     var sourceUpdated = false;
-    Source? oldSource = null;
+    Source? oldSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;

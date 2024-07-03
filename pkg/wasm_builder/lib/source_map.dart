@@ -167,18 +167,18 @@ int _encodeVLQ(StringSink output, int value, int offset) {
   }
   delta = (delta << 1) | signBit;
   do {
-    int digit = delta & _VLQ_BASE_MASK;
-    delta >>= _VLQ_BASE_SHIFT;
+    int digit = delta & _vlqBaseMask;
+    delta >>= _vlqBaseShift;
     if (delta > 0) {
-      digit |= _VLQ_CONTINUATION_BIT;
+      digit |= _vlqContinuationBit;
     }
-    output.write(_BASE64_DIGITS[digit]);
+    output.write(_base64Digits[digit]);
   } while (delta > 0);
   return value;
 }
 
-const int _VLQ_BASE_SHIFT = 5;
-const int _VLQ_BASE_MASK = (1 << 5) - 1;
-const int _VLQ_CONTINUATION_BIT = 1 << 5;
-const String _BASE64_DIGITS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn'
+const int _vlqBaseShift = 5;
+const int _vlqBaseMask = (1 << 5) - 1;
+const int _vlqContinuationBit = 1 << 5;
+const String _base64Digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn'
     'opqrstuvwxyz0123456789+/';
