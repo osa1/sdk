@@ -363,10 +363,28 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   }
 
   void _addSourceMapping(SourceMapping mapping) {
-    if (_sourceMappings.isNotEmpty &&
-        _sourceMappings.last.sourceInfo == mapping.sourceInfo) {
-      return;
+    if (_sourceMappings.isNotEmpty) {
+      final lastMapping = _sourceMappings.last;
+
+      // Check if we are overriding the current source location. This can
+      // happen when we restore the source location after a compiling a
+      // sub-tree, and the next node in the AST immediately updates the source
+      // location. The restored location is then never used.
+      if (lastMapping.instructionOffset == mapping.instructionOffset) {
+        _sourceMappings.removeLast();
+        _sourceMappings.add(mapping);
+        return;
+      }
+
+      // Check if we the new mapping maps to the same source as the old
+      // mapping. This happens when we have e.g. an instance field get like
+      // `length`, which gets transformed by the front-end as `this.length`. In
+      // this case `this` and `length` will have the same source location.
+      if (lastMapping.sourceInfo == mapping.sourceInfo) {
+        return;
+      }
     }
+
     _sourceMappings.add(mapping);
   }
 
