@@ -26,7 +26,7 @@ class Instructions implements Serializable {
   ///
   /// Since we add mappings as we generate instructions, this will be sorted
   /// based on [SourceMapping.instructionOffset].
-  final List<SourceMapping> _sourceMappings;
+  final List<SourceMapping>? _sourceMappings;
 
   /// Create a new instruction sequence.
   Instructions(this.locals, this.instructions, this._stackTraces,
@@ -34,6 +34,7 @@ class Instructions implements Serializable {
 
   @override
   void serialize(Serializer s) {
+    final sourceMappings = _sourceMappings;
     int sourceMappingIdx = 0;
     for (int instructionIdx = 0;
         instructionIdx < instructions.length;
@@ -41,18 +42,20 @@ class Instructions implements Serializable {
       final i = instructions[instructionIdx];
       if (_stackTraces != null) s.debugTrace(_stackTraces![i]!);
 
-      // Skip to the mapping that covers the current instruction.
-      while (sourceMappingIdx < _sourceMappings.length - 1 &&
-          _sourceMappings[sourceMappingIdx + 1].instructionOffset <=
-              instructionIdx) {
-        sourceMappingIdx += 1;
-      }
-
-      if (sourceMappingIdx < _sourceMappings.length) {
-        final mapping = _sourceMappings[sourceMappingIdx];
-        if (mapping.instructionOffset <= instructionIdx) {
-          s.sourceMapSerializer.addMapping(s.offset, mapping.sourceInfo);
+      if (sourceMappings != null) {
+        // Skip to the mapping that covers the current instruction.
+        while (sourceMappingIdx < sourceMappings.length - 1 &&
+            sourceMappings[sourceMappingIdx + 1].instructionOffset <=
+                instructionIdx) {
           sourceMappingIdx += 1;
+        }
+
+        if (sourceMappingIdx < sourceMappings.length) {
+          final mapping = sourceMappings[sourceMappingIdx];
+          if (mapping.instructionOffset <= instructionIdx) {
+            s.sourceMapSerializer.addMapping(s.offset, mapping.sourceInfo);
+            sourceMappingIdx += 1;
+          }
         }
       }
 

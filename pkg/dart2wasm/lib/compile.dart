@@ -24,6 +24,7 @@ import 'package:kernel/core_types.dart';
 import 'package:kernel/kernel.dart' show writeComponentToText;
 import 'package:kernel/library_index.dart';
 import 'package:kernel/verifier.dart';
+import 'package:path/path.dart' as path;
 import 'package:vm/kernel_front_end.dart' show writeDepfile;
 import 'package:vm/transformations/mixin_deduplication.dart'
     as mixin_deduplication show transformComponent;
@@ -47,7 +48,7 @@ import 'translator.dart';
 class CompilerOutput {
   final Uint8List wasmModule;
   final String jsRuntime;
-  final String sourceMap;
+  final String? sourceMap;
 
   CompilerOutput(this.wasmModule, this.jsRuntime, this.sourceMap);
 }
@@ -57,9 +58,7 @@ class CompilerOutput {
 /// Returns `null` if an error occurred during compilation. The
 /// [handleDiagnosticMessage] callback will have received an error message
 /// describing the error.
-Future<CompilerOutput?> compileToModule(
-    compiler.WasmCompilerOptions options,
-    Uri? sourceMapUrl,
+Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
     void Function(DiagnosticMessage) handleDiagnosticMessage) async {
   var succeeded = true;
   void diagnosticMessageHandler(DiagnosticMessage message) {
@@ -200,12 +199,17 @@ Future<CompilerOutput?> compileToModule(
         depFile);
   }
 
-  final wasmModule = translator.translate(sourceMapUrl);
+  final generateSourceMaps = options.translatorOptions.generateSourceMaps;
+  final relativeSourceMapUrl = generateSourceMaps
+      ? Uri.file(path.basename('${options.outputFile}.map'))
+      : null;
+  final wasmModule = translator.translate(relativeSourceMapUrl);
   final serializer = Serializer();
   wasmModule.serialize(serializer);
   final wasmModuleSerialized = serializer.data;
 
-  final sourceMap = serializer.sourceMapSerializer.serialize();
+  final sourceMap =
+      generateSourceMaps ? serializer.sourceMapSerializer.serialize() : null;
 
   String jsRuntime = jsRuntimeFinalizer.generate(
       translator.functions.translatedProcedures,

@@ -124,7 +124,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   ///
   /// Since we add mappings as we generate instructions, this will be sorted
   /// based on [SourceMapping.instructionOffset].
-  final List<SourceMapping> _sourceMappings = [];
+  final List<SourceMapping>? _sourceMappings;
 
   int _indent = 1;
   final List<String> _traceLines = [];
@@ -148,7 +148,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
 
   /// Create a new instruction sequence.
   InstructionsBuilder(this.module, List<ir.ValueType> outputs)
-      : _stackTraces = module.watchPoints.isNotEmpty ? {} : null {
+      : _stackTraces = module.watchPoints.isNotEmpty ? {} : null,
+        _sourceMappings = module.sourceMapUrl == null ? null : [] {
     _labelStack.add(Expression(const [], outputs));
   }
 
@@ -363,16 +364,21 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   }
 
   void _addSourceMapping(SourceMapping mapping) {
-    if (_sourceMappings.isNotEmpty) {
-      final lastMapping = _sourceMappings.last;
+    final sourceMappings = _sourceMappings;
+    if (sourceMappings == null) {
+      return;
+    }
+
+    if (sourceMappings.isNotEmpty) {
+      final lastMapping = sourceMappings.last;
 
       // Check if we are overriding the current source location. This can
       // happen when we restore the source location after a compiling a
       // sub-tree, and the next node in the AST immediately updates the source
       // location. The restored location is then never used.
       if (lastMapping.instructionOffset == mapping.instructionOffset) {
-        _sourceMappings.removeLast();
-        _sourceMappings.add(mapping);
+        sourceMappings.removeLast();
+        sourceMappings.add(mapping);
         return;
       }
 
@@ -385,7 +391,7 @@ class InstructionsBuilder with Builder<ir.Instructions> {
       }
     }
 
-    _sourceMappings.add(mapping);
+    sourceMappings.add(mapping);
   }
 
   // Meta
