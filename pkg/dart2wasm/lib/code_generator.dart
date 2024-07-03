@@ -159,16 +159,32 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     return expectedType;
   }
 
-  Source? _currentSourceMapSource;
+  Source? _sourceMapSource;
 
-  void setCurrentSourceMapSource(Source? source) =>
-      _currentSourceMapSource = source;
+  /// Update the [Source] for the AST nodes being compiled.
+  ///
+  /// The [Source] is used to resolve [TreeNode.fileOffset]s to file URI, line,
+  /// and column numbers, to be able to generate source mappings, in
+  /// [setSourceMapFileOffset].
+  ///
+  /// Setting this `null` disables source mapping for the instructions being
+  /// generated.
+  ///
+  /// This should be called before [setSourceMapFileOffset] as the file offset
+  /// passed to that function is resolved using the [Source].
+  void setSourceMapSource(Source? source) => _sourceMapSource = source;
 
+  /// Update the source location of the AST nodes being compiled in the source
+  /// map.
+  ///
+  /// When the offset is [TreeNode.noOffset], this disables mapping the
+  /// generated instructions.
   void setSourceMapFileOffset(int fileOffset) {
     if (fileOffset == TreeNode.noOffset) {
+      b.stopSourceMapping();
       return;
     }
-    final source = _currentSourceMapSource!;
+    final source = _sourceMapSource!;
     final fileUri = source.fileUri!;
     final location = source.getLocation(fileUri, fileOffset);
     b.startSourceMapping(
@@ -225,7 +241,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     }
 
     final source = member.enclosingComponent!.uriToSource[member.fileUri]!;
-    setCurrentSourceMapSource(source);
+    setSourceMapSource(source);
     setSourceMapFileOffset(member.fileOffset);
 
     if (member is Constructor) {
@@ -504,9 +520,9 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
 
     for (Field field in info.cls!.fields) {
       if (field.isInstanceMember && field.initializer != null) {
-        final oldSource = _currentSourceMapSource;
+        final oldSource = _sourceMapSource;
         final newSource = field.enclosingComponent!.uriToSource[field.fileUri]!;
-        setCurrentSourceMapSource(newSource);
+        setSourceMapSource(newSource);
         setSourceMapFileOffset(field.fileOffset);
 
         int fieldIndex = translator.fieldIndex[field]!;
@@ -516,7 +532,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
         b.local_set(local);
         fieldLocals[field] = local;
 
-        setCurrentSourceMapSource(oldSource);
+        setSourceMapSource(oldSource);
       }
     }
   }
@@ -744,7 +760,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     // Initialize closure information from enclosing member.
     this.closures = closures;
 
-    setCurrentSourceMapSource(lambda.functionNodeSource);
+    setSourceMapSource(lambda.functionNodeSource);
 
     assert(lambda.functionNode.asyncMarker != AsyncMarker.Async);
 
@@ -906,11 +922,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// result to the expected type if needed. All expression code generation goes
   /// through this method.
   w.ValueType wrap(Expression node, w.ValueType expectedType) {
-    final oldSource = _currentSourceMapSource;
+    final oldSource = _sourceMapSource;
     if (node is FileUriNode) {
       final source =
           node.enclosingComponent!.uriToSource[(node as FileUriNode).fileUri]!;
-      setCurrentSourceMapSource(source);
+      setSourceMapSource(source);
     }
     setSourceMapFileOffset(node.fileOffset);
     try {
@@ -921,7 +937,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
       _printLocation(node);
       rethrow;
     } finally {
-      setCurrentSourceMapSource(oldSource);
+      setSourceMapSource(oldSource);
     }
   }
 

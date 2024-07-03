@@ -57,6 +57,9 @@ class SourceInfo {
         col == other.col &&
         name == other.name;
   }
+
+  @override
+  int get hashCode => Object.hash(fileUri, line, col, name);
 }
 
 class SourceMapSerializer {
