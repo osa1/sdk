@@ -43,7 +43,7 @@ Future<int> generateWasm(WasmCompilerOptions options,
   await outFile.writeAsBytes(output.wasmModule);
 
   final jsFile = options.outputJSRuntimeFile ??
-      path.setExtension(options.outputFile, 'mjs');
+      path.setExtension(options.outputFile, '.mjs');
   await File(jsFile).writeAsString(output.jsRuntime);
 
   final sourceMap = output.sourceMap;
