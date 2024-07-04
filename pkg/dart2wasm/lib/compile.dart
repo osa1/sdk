@@ -24,7 +24,6 @@ import 'package:kernel/core_types.dart';
 import 'package:kernel/kernel.dart' show writeComponentToText;
 import 'package:kernel/library_index.dart';
 import 'package:kernel/verifier.dart';
-import 'package:path/path.dart' as path;
 import 'package:vm/kernel_front_end.dart' show writeDepfile;
 import 'package:vm/transformations/mixin_deduplication.dart'
     as mixin_deduplication show transformComponent;
@@ -58,7 +57,14 @@ class CompilerOutput {
 /// Returns `null` if an error occurred during compilation. The
 /// [handleDiagnosticMessage] callback will have received an error message
 /// describing the error.
-Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
+///
+/// When generating a source map, `sourceMapUrl` argument should be provided
+/// with the URL of the source map. This value will be added to the Wasm module
+/// in `sourceMappingURL` section. When this argument is null the code
+/// generator does not generate source mappings.
+Future<CompilerOutput?> compileToModule(
+    compiler.WasmCompilerOptions options,
+    Uri? sourceMapUrl,
     void Function(DiagnosticMessage) handleDiagnosticMessage) async {
   var succeeded = true;
   void diagnosticMessageHandler(DiagnosticMessage message) {
@@ -200,10 +206,7 @@ Future<CompilerOutput?> compileToModule(compiler.WasmCompilerOptions options,
   }
 
   final generateSourceMaps = options.translatorOptions.generateSourceMaps;
-  final relativeSourceMapUrl = generateSourceMaps
-      ? Uri.file(path.basename('${options.outputFile}.map'))
-      : null;
-  final wasmModule = translator.translate(relativeSourceMapUrl);
+  final wasmModule = translator.translate(sourceMapUrl);
   final serializer = Serializer();
   wasmModule.serialize(serializer);
   final wasmModuleSerialized = serializer.data;
