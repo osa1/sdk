@@ -48,6 +48,10 @@ class SourceInfo {
 
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+
     if (other is! SourceInfo) {
       return false;
     }
