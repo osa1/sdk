@@ -355,19 +355,22 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   // Source maps
 
   void startSourceMapping(Uri fileUri, int line, int col, String? name) {
+    if (_sourceMappings == null) {
+      return;
+    }
     _addSourceMapping(
         SourceMapping(_instructions.length, fileUri, line, col, name));
   }
 
   void stopSourceMapping() {
+    if (_sourceMappings == null) {
+      return;
+    }
     _addSourceMapping(SourceMapping.unmapped(_instructions.length));
   }
 
   void _addSourceMapping(SourceMapping mapping) {
-    final sourceMappings = _sourceMappings;
-    if (sourceMappings == null) {
-      return;
-    }
+    final sourceMappings = _sourceMappings!;
 
     if (sourceMappings.isNotEmpty) {
       final lastMapping = sourceMappings.last;
