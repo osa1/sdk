@@ -10,16 +10,13 @@ import 'dart:convert';
 
 import 'package:source_maps/parser.dart';
 
-/// Read the file at the given [path].
-///
-/// This relies on the `readbuffer` function provided by d8.
-@JS()
-external JSArrayBuffer readbuffer(String path);
+void f() {
+  g();
+}
 
-/// Read the file at the given [path].
-Uint8List readfile(String path) => Uint8List.view(readbuffer(path).toDart);
-
-final stackTraceHexOffsetRegExp = RegExp(r'wasm-function.*(0x[0-9a-fA-F]+)\)$');
+void g() {
+  throw 'hi';
+}
 
 void main() {
   // Read source map of the current program.
@@ -55,17 +52,23 @@ void main() {
   //   at async action (/usr/local/google/home/omersa/dart/sdk/sdk/pkg/dart2wasm/bin/run_wasm.js:350:37)
   //
   // The first 5 frames are in Wasm, but "main tear-off trampoline" shouldn't
-  // have source mapping as it's compiler generated.
+  // have a source mapping as it's compiler generated.
 
-  const funNames = [
-    "_throwWithCurrentStackTrace",
-    "f",
-    "main",
-    "", // not mapped
-    "_invokeMain",
+  // (function name, line, column) of the frames we check.
+  //
+  // Information we don't check are "null": we don't want to check line/column
+  // of standard library functions to avoid breaking the test with unrelated
+  // changes to the standard library.
+  const List<(String, int?, int?)?> frameDetails = [
+    ("_throwWithCurrentStackTrace", null, null),
+    ("g", 18, 3),
+    ("f", 14, 3),
+    ("main", 31, 5),
+    null, // compiler generated, not mapped
+    ("_invokeMain", null, null),
   ];
 
-  for (int frameIdx = 0; frameIdx < 5; frameIdx += 1) {
+  for (int frameIdx = 0; frameIdx < frameDetails.length; frameIdx += 1) {
     final line = stackTraceLines[frameIdx];
     final hexOffsetMatch = stackTraceHexOffsetRegExp.firstMatch(line);
     if (hexOffsetMatch == null) {
@@ -77,22 +80,40 @@ void main() {
       throw "Unable to parse hex number in frame $frameIdx: $hexOffsetStr";
     }
     final span = mapping.spanFor(0, offset);
-    if (frameIdx == 3) {
+    final frameInfo = frameDetails[frameIdx];
+    if (frameInfo == null) {
       if (span != null) {
         throw "Stack frame $frameIdx should not have a source span, but it is mapped: $span";
       }
-    } else {
-      if (span == null) {
-        throw "Stack frame $frameIdx does not have source mapping";
+      continue;
+    }
+    if (span == null) {
+      throw "Stack frame $frameIdx does not have source mapping";
+    }
+    final funName = span.text;
+    if (frameInfo.$1 != funName) {
+      throw "Stack frame $frameIdx does not have expected name: expected ${frameInfo.$1}, found $funName";
+    }
+    if (frameInfo.$2 != null) {
+      if (span.start.line + 1 != frameInfo.$2) {
+        throw "Stack frame $frameIdx is expected to have line ${frameInfo.$2}, but it has line ${span.start.line + 1}";
       }
-      final funName = span.text;
-      if (funNames[frameIdx] != funName) {
-        throw "Stack frame $frameIdx does not have expected name: expected ${funNames[frameIdx]}, found $funName";
+    }
+    if (frameInfo.$3 != null) {
+      if (span.start.column + 1 != frameInfo.$3) {
+        throw "Stack frame $frameIdx is expected to have column ${frameInfo.$3}, but it has column ${span.start.column + 1}";
       }
     }
   }
 }
 
-void f() {
-  throw 'hi';
-}
+/// Read the file at the given [path].
+///
+/// This relies on the `readbuffer` function provided by d8.
+@JS()
+external JSArrayBuffer readbuffer(JSString path);
+
+/// Read the file at the given [path].
+Uint8List readfile(String path) => Uint8List.view(readbuffer(path.toJS).toDart);
+
+final stackTraceHexOffsetRegExp = RegExp(r'wasm-function.*(0x[0-9a-fA-F]+)\)$');
