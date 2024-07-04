@@ -191,6 +191,11 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// Returns the old file offset, which can be used to restore the source
   /// mapping after vising a sub-tree.
   int setSourceMapFileOffset(int fileOffset) {
+    if (!b.recordSourceMaps) {
+      final old = _sourceMapFileOffset;
+      _sourceMapFileOffset = fileOffset;
+      return old;
+    }
     if (fileOffset == TreeNode.noOffset) {
       b.stopSourceMapping();
       final old = _sourceMapFileOffset;

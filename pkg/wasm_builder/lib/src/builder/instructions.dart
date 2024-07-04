@@ -159,6 +159,8 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// Textual trace of the instructions.
   String get trace => _traceLines.join();
 
+  bool get recordSourceMaps => _sourceMappings != null;
+
   @override
   ir.Instructions forceBuild() => ir.Instructions(
       locals, _instructions, _stackTraces, _traceLines, _sourceMappings);
@@ -354,18 +356,22 @@ class InstructionsBuilder with Builder<ir.Instructions> {
 
   // Source maps
 
+  /// Start mapping added instructions to the source location given in
+  /// arguments.
+  ///
+  /// This assumes [recordSourceMaps] is `true`.
   void startSourceMapping(Uri fileUri, int line, int col, String? name) {
-    if (_sourceMappings == null) {
-      return;
-    }
     _addSourceMapping(
         SourceMapping(_instructions.length, fileUri, line, col, name));
   }
 
+  /// Stop mapping added instructions to the last source location given in
+  /// [startSourceMapping].
+  ///
+  /// The instructions added after this won't have a mapping in the source map.
+  ///
+  /// This assumes [recordSourceMaps] is `true`.
   void stopSourceMapping() {
-    if (_sourceMappings == null) {
-      return;
-    }
     _addSourceMapping(SourceMapping.unmapped(_instructions.length));
   }
 
