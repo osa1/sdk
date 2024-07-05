@@ -30,8 +30,9 @@ mixin KernelNodes {
   // dart:core various classes
   late final Class boxedBoolClass = index.getClass("dart:core", "_BoxedBool");
   late final Class boxedDoubleClass =
-      index.getClass("dart:core", "_BoxedDouble");
-  late final Class boxedIntClass = index.getClass("dart:core", "_BoxedInt");
+      index.getClass("dart:_boxed_double", "_BoxedDouble");
+  late final Class boxedIntClass =
+      index.getClass("dart:_boxed_int", "_BoxedInt");
   late final Class closureClass = index.getClass("dart:core", "_Closure");
   late final Class listBaseClass = index.getClass("dart:_list", "WasmListBase");
   late final Class fixedLengthListClass =
