@@ -528,12 +528,12 @@ class WasmTarget extends Target {
 
   @override
   Class concreteIntLiteralClass(CoreTypes coreTypes, int value) =>
-      _boxedInt ??= coreTypes.index.getClass("dart:_boxed_int", "_BoxedInt");
+      _boxedInt ??= coreTypes.index.getClass("dart:_boxed_int", "BoxedInt");
 
   @override
   Class concreteDoubleLiteralClass(CoreTypes coreTypes, double value) =>
       _boxedDouble ??=
-          coreTypes.index.getClass("dart:_boxed_double", "_BoxedDouble");
+          coreTypes.index.getClass("dart:_boxed_double", "BoxedDouble");
 
   @override
   DartLibrarySupport get dartLibrarySupport => CustomizedDartLibrarySupport(
