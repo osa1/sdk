@@ -6,10 +6,14 @@ library fasta.dill_library_builder;
 
 import 'dart:convert' show jsonDecode;
 
-import 'package:front_end/src/fasta/combinator.dart';
-import 'package:front_end/src/fasta/loader.dart';
 import 'package:kernel/ast.dart';
 
+import '../base/combinator.dart';
+import '../base/export.dart';
+import '../base/loader.dart';
+import '../base/problems.dart' show internalProblem, unhandled;
+import '../base/scope.dart';
+import '../base/uris.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/dynamic_type_declaration_builder.dart';
@@ -25,12 +29,8 @@ import '../codes/cfe_codes.dart'
         noLength,
         templateDuplicatedDeclaration,
         templateUnspecified;
-import '../fasta/export.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/utils.dart';
-import '../fasta/problems.dart' show internalProblem, unhandled;
-import '../fasta/scope.dart';
-import '../fasta/uris.dart';
 import 'dill_class_builder.dart' show DillClassBuilder;
 import 'dill_extension_builder.dart';
 import 'dill_extension_type_declaration_builder.dart';
@@ -47,7 +47,9 @@ class LazyLibraryScope extends LazyScope {
 
   @override
   void ensureScope() {
-    if (libraryBuilder == null) throw new StateError("No library builder.");
+    if (libraryBuilder == null) {
+      throw new StateError("No library builder.");
+    }
     libraryBuilder!.ensureLoaded();
   }
 }
@@ -65,6 +67,7 @@ class DillCompilationUnitImpl extends DillCompilationUnit {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void addProblem(Message message, int charOffset, int length, Uri? fileUri,
       {bool wasHandled = false,
       List<LocatedMessage>? context,
@@ -168,8 +171,11 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   }
 
   void ensureLoaded() {
-    if (!isReadyToBuild) throw new StateError("Not ready to build.");
+    if (!isReadyToBuild) {
+      throw new StateError("Not ready to build.");
+    }
     if (isBuilt && !isBuiltAndMarked) {
+      // Coverage-ignore-block(suite): Not run.
       isBuiltAndMarked = true;
       finalizeExports();
       return;
@@ -219,6 +225,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   Uri get fileUri => library.fileUri;
 
   @override
+  // Coverage-ignore(suite): Not run.
   String? get name => library.name;
 
   @override
@@ -295,6 +302,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
         StringConstant string = constantExpression.constant as StringConstant;
         stringValue = string.value;
       } else {
+        // Coverage-ignore-block(suite): Not run.
         StringLiteral string = field.initializer as StringLiteral;
         stringValue = string.value;
       }
@@ -313,11 +321,13 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
             _addBuilder(name, new DillGetterBuilder(member, this));
             break;
           case ProcedureKind.Operator:
+            // Coverage-ignore(suite): Not run.
             _addBuilder(name, new DillOperatorBuilder(member, this));
             break;
           case ProcedureKind.Method:
             _addBuilder(name, new DillMethodBuilder(member, this));
             break;
+          // Coverage-ignore(suite): Not run.
           case ProcedureKind.Factory:
             throw new UnsupportedError(
                 "Unexpected library procedure ${member.kind} for ${member}");
@@ -358,6 +368,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Builder computeAmbiguousDeclaration(
       String name, Builder builder, Builder other, int charOffset,
       {bool isExport = false, bool isImport = false}) {
@@ -375,6 +386,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   String get fullNameForErrors {
     return library.name ?? "<library '${library.fileUri}'>";
   }
@@ -393,11 +405,14 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       Builder declaration;
       if (messageText == exportDynamicSentinel) {
         assert(
-            name == 'dynamic', "Unexpected export name for 'dynamic': '$name'");
+            name == 'dynamic', // Coverage-ignore(suite): Not run.
+            "Unexpected export name for 'dynamic': '$name'");
         declaration = loader.coreLibrary.exportScope
             .lookupLocalMember(name, setter: false)!;
       } else if (messageText == exportNeverSentinel) {
-        assert(name == 'Never', "Unexpected export name for 'Never': '$name'");
+        assert(
+            name == 'Never', // Coverage-ignore(suite): Not run.
+            "Unexpected export name for 'Never': '$name'");
         declaration = loader.coreLibrary.exportScope
             .lookupLocalMember(name, setter: false)!;
       } else {
@@ -418,6 +433,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       Builder declaration;
       String name;
       if (sourceBuildersMap?.containsKey(reference) == true) {
+        // Coverage-ignore-block(suite): Not run.
         declaration = sourceBuildersMap![reference]!;
         if (declaration is TypeDeclarationBuilder) {
           name = declaration.name;
@@ -488,18 +504,21 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
                   node == declaration.extension) ||
               (declaration is ExtensionTypeDeclarationBuilder &&
                   node == declaration.extensionTypeDeclaration),
+          // Coverage-ignore(suite): Not run.
           "Unexpected declaration ${declaration} (${declaration.runtimeType}) "
           "for node ${node} (${node.runtimeType}).");
     }
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterator<T> fullMemberIterator<T extends Builder>() {
     return scope.filteredIterator<T>(
         includeDuplicates: false, includeAugmentations: false);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   NameIterator<T> fullMemberNameIterator<T extends Builder>() {
     return scope.filteredNameIterator(
         includeDuplicates: false, includeAugmentations: false);

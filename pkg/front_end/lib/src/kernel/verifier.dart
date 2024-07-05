@@ -17,7 +17,7 @@ import '../codes/cfe_codes.dart'
         messageVerificationErrorOriginContext,
         noLength,
         templateInternalProblemVerificationError;
-import '../fasta/compiler_context.dart' show CompilerContext;
+import '../base/compiler_context.dart' show CompilerContext;
 
 List<LocatedMessage> verifyComponent(
     Target target, VerificationStage stage, Component component,
@@ -33,6 +33,7 @@ List<LocatedMessage> verifyComponent(
   return listener.errors;
 }
 
+// Coverage-ignore(suite): Not run.
 class FastaVerificationErrorListener implements VerificationErrorListener {
   List<LocatedMessage> errors = [];
 

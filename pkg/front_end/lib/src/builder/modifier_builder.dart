@@ -4,8 +4,7 @@
 
 library fasta.modifier_builder;
 
-import '../fasta/modifier.dart';
-
+import '../base/modifier.dart';
 import 'builder.dart';
 
 abstract class ModifierBuilderImpl extends BuilderImpl {
@@ -35,6 +34,7 @@ abstract class ModifierBuilderImpl extends BuilderImpl {
   @override
   bool get isAugment => (modifiers & augmentMask) != 0;
 
+  // Coverage-ignore(suite): Not run.
   StringBuffer printOn(StringBuffer buffer) {
     return buffer..write(name);
   }

@@ -10,7 +10,7 @@ library;
 
 import 'package:kernel/ast.dart';
 
-import '../fasta/messages.dart'
+import '../base/messages.dart'
     show
         messageResourceIdentifiersNotStatic,
         messageResourceIdentifiersMultiple;
@@ -26,12 +26,15 @@ Iterable<InstanceConstant> findResourceAnnotations(Annotatable node) =>
         .where((instance) => isResourceIdentifier(instance.classNode))
         .toList(growable: false);
 
+// Coverage-ignore(suite): Not run.
 final Uri _metaLibraryUri = new Uri(scheme: 'package', path: 'meta/meta.dart');
 
 bool isResourceIdentifier(Class classNode) =>
     classNode.name == 'ResourceIdentifier' &&
+    // Coverage-ignore(suite): Not run.
     classNode.enclosingLibrary.importUri == _metaLibraryUri;
 
+// Coverage-ignore(suite): Not run.
 /// Report if the resource annotations is placed on anything but a static
 /// method.
 void validateResourceIdentifierDeclaration(

@@ -1113,8 +1113,14 @@ class Listener implements UnescapeErrorListener {
     logEvent("LibraryName");
   }
 
+  /// Called after parsing a map entry. Either the key or the value or both can
+  /// start with the null-aware token `?`. In that case, [nullAwareKeyToken] and
+  /// [nullAwareValueToken] are set appropriately. Substructures:
+  /// - expression
+  /// - expression
   // TODO(jensj): Should this have a `beginToken`?
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     logEvent("LiteralMapEntry");
   }
 
@@ -1770,7 +1776,7 @@ class Listener implements UnescapeErrorListener {
     logEvent('CastPattern');
   }
 
-  void handleAssignmentExpression(Token token) {
+  void handleAssignmentExpression(Token token, Token endToken) {
     logEvent("AssignmentExpression");
   }
 
@@ -1880,6 +1886,13 @@ class Listener implements UnescapeErrorListener {
   /// - expression
   void handleSpreadExpression(Token spreadToken) {
     logEvent("SpreadExpression");
+  }
+
+  /// Called after parsing a list or set element that starts with the null-aware
+  /// token `?`. Substructures:
+  /// - expression
+  void handleNullAwareElement(Token nullAwareToken) {
+    logEvent("NullAwareElement");
   }
 
   /// Called after parsing an element of a list or map pattern that starts with
@@ -2212,8 +2225,8 @@ class Listener implements UnescapeErrorListener {
 
   void beginSwitchExpressionCase() {}
 
-  // TODO(jensj): Should this have a `beginToken`?
-  void endSwitchExpressionCase(Token? when, Token arrow, Token endToken) {
+  void endSwitchExpressionCase(
+      Token beginToken, Token? when, Token arrow, Token endToken) {
     logEvent("SwitchExpressionCase");
   }
 

@@ -182,7 +182,7 @@ class Types {
     final b = codeGen.b;
     ClassInfo typeInfo = translator.classInfo[type.classNode]!;
     b.i32_const(encodedNullability(type));
-    b.i64_const(typeInfo.classId);
+    b.i32_const(typeInfo.classId);
     _makeTypeArray(codeGen, type.typeArguments);
   }
 
@@ -400,7 +400,7 @@ class Types {
             translator.classInfo[testedAgainstType.classNode]!;
         final typeArguments = testedAgainstType.typeArguments;
         b.i32_const(encodedNullability(testedAgainstType));
-        b.i64_const(typeClassInfo.classId);
+        b.i32_const(typeClassInfo.classId);
         if (typeArguments.isEmpty) {
           codeGen.call(translator.isInterfaceSubtype0.reference);
         } else if (typeArguments.length == 1) {
@@ -455,7 +455,7 @@ class Types {
       final typeClassInfo = translator.classInfo[testedAgainstType.classNode]!;
       final typeArguments = testedAgainstType.typeArguments;
       b.i32_const(encodedNullability(testedAgainstType));
-      b.i64_const(typeClassInfo.classId);
+      b.i32_const(typeClassInfo.classId);
       if (typeArguments.isEmpty) {
         outputsToDrop = codeGen.call(translator.asInterfaceSubtype0.reference);
       } else if (typeArguments.length == 1) {
@@ -559,7 +559,7 @@ class Types {
             [argumentType],
             [w.NumType.i32],
           ),
-          '<obj> is ${testedAgainstType.classNode}');
+          '<obj> is ${testedAgainstType.classNode.name}');
 
       final b = function.body;
       b.local_get(b.locals[0]);
@@ -623,7 +623,7 @@ class Types {
             [argumentType],
             [returnType],
           ),
-          '<obj> as ${testedAgainstType.classNode}');
+          '<obj> as ${testedAgainstType.classNode.name}');
 
       final b = function.body;
       w.Label asCheckBlock = b.block();
@@ -751,6 +751,7 @@ class RuntimeTypeInformation {
         continue;
       }
       Class superclass = superclassInfo.cls!;
+      assert(!superclass.isAnonymousMixin);
 
       // TODO(joshualitt): This includes abstract types that can't be
       // instantiated, but might be needed for subtype checks. The majority of
@@ -762,6 +763,8 @@ class RuntimeTypeInformation {
       Iterable<InterfaceType> subtypes = subclasses.map(
           (Class cls) => cls.getThisType(coreTypes, Nullability.nonNullable));
       for (InterfaceType subtype in subtypes) {
+        if (subtype.classNode.isAnonymousMixin) continue;
+
         types.interfaceTypeEnvironment._add(subtype);
 
         final List<DartType>? typeArguments = translator.hierarchy

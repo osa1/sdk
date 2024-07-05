@@ -6,9 +6,9 @@ library fasta.member_builder;
 
 import 'package:kernel/ast.dart';
 
+import '../base/modifier.dart';
 import '../kernel/hierarchy/class_member.dart';
 import '../kernel/hierarchy/members_builder.dart';
-import '../fasta/modifier.dart';
 import 'builder.dart';
 import 'declaration_builders.dart';
 import 'library_builder.dart';
@@ -251,6 +251,7 @@ abstract class BuilderClassMember implements ClassMember {
   bool get isProperty => memberKind != ClassMemberKind.Method;
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<ClassMember> get declarations =>
       throw new UnsupportedError("$runtimeType.declarations");
 

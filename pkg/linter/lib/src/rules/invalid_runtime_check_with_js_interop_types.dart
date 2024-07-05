@@ -335,7 +335,18 @@ class InvalidRuntimeCheckWithJSInteropTypes extends LintRule {
             name: lintName,
             description: _desc,
             details: _details,
-            categories: {Category.errors});
+            categories: {Category.error_prone});
+
+  @override
+  List<LintCode> get lintCodes => const [
+        dartTypeIsJsInteropTypeCode,
+        jsInteropTypeIsDartTypeCode,
+        jsInteropTypeIsInconsistentJsInteropType,
+        jsInteropTypeIsUnrelatedJsInteropTypeCode,
+        dartTypeAsJsInteropTypeCode,
+        jsInteropTypeAsDartTypeCode,
+        jsInteropTypeAsIncompatibleJsInteropTypeCode,
+      ];
 
   @override
   void registerNodeProcessors(

@@ -2,9 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:front_end/src/type_inference/delayed_expressions.dart';
-import 'package:front_end/src/type_inference/external_ast_helper.dart';
-import 'package:front_end/src/type_inference/matching_cache.dart';
+import 'delayed_expressions.dart';
+import 'external_ast_helper.dart';
+import 'matching_cache.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/core_types.dart';
 import 'package:kernel/names.dart';
@@ -322,6 +322,7 @@ class MatchingExpressionVisitor
                 fileOffset: entry.fileOffset),
             fileOffset: entry.fileOffset);
       } else {
+        // Coverage-ignore-block(suite): Not run.
         matchingExpression = DelayedAndExpression.merge(
             matchingExpression, containsExpression,
             fileOffset: entry.fileOffset);
@@ -342,6 +343,7 @@ class MatchingExpressionVisitor
             fileOffset: node.fileOffset);
       }
     }
+    // Coverage-ignore(suite): Not run.
     return matchingExpression ??
         new BooleanExpression(true, fileOffset: node.fileOffset);
   }
@@ -432,6 +434,7 @@ class MatchingExpressionVisitor
               fileOffset: field.fileOffset);
           break;
         case ObjectAccessKind.Never:
+          // Coverage-ignore(suite): Not run.
           expression = new DelayedDynamicGet(
               typedMatchedExpression,
               field.fieldName,
@@ -550,6 +553,7 @@ class MatchingExpressionVisitor
           fileOffset: node.fileOffset);
     }
 
+    // Coverage-ignore(suite): Not run.
     return matchingExpression ??
         new BooleanExpression(true, fileOffset: node.fileOffset);
   }
@@ -662,6 +666,7 @@ class MatchingExpressionVisitor
     if (node.subPattern != null) {
       return visitPattern(node.subPattern!, matchedExpression);
     }
+    // Coverage-ignore-block(suite): Not run.
     throw new UnsupportedError("RestPattern without subpattern.");
   }
 

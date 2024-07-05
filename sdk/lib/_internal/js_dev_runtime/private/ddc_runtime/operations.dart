@@ -428,6 +428,26 @@ _checkAndCall(f, ftype, obj, typeArgs, args, named, displayName) {
   return callNSM(errorMessage);
 }
 
+/// Given a Dart function [f] that was wrapped in a `Function.toJS` call, and
+/// the corresponding [args] used to call it, validates that the arity and types
+/// of [args] are correct.
+///
+/// Returns null if it's valid call and a [noSuchMethod] invocation with the
+/// specific error otherwise.
+validateFunctionToJSArgs(f, List args) {
+  var errorMessage = _argumentErrors(
+      JS<Object>('', '#[#]', f, JS_GET_NAME(JsGetName.SIGNATURE_NAME)),
+      args,
+      null);
+  if (errorMessage != null) {
+    return noSuchMethod(
+        f,
+        InvocationImpl(JS('', 'f.name'), args,
+            isMethod: true, failureMessage: errorMessage));
+  }
+  return null;
+}
+
 dcall(f, args, [@undefined named]) => _checkAndCall(
     f, null, JS('', 'void 0'), null, args, named, JS('', 'f.name'));
 
@@ -616,14 +636,6 @@ Map<K, V> constMap<K, V>(JSArray elements) {
 }
 
 final constantSets = JS<Object>('!', 'new Map()');
-var _immutableSetConstructor;
-
-// We cannot invoke private class constructors directly in Dart.
-Set<E> _createImmutableSet<E>(JSArray<E> elements) {
-  _immutableSetConstructor ??=
-      JS('', '#.#', getLibrary('dart:collection'), '_ImmutableSet\$');
-  return JS('', 'new (#(#)).from(#)', _immutableSetConstructor, E, elements);
-}
 
 Set<E> constSet<E>(JSArray<E> elements) {
   var count = elements.length;
@@ -633,7 +645,7 @@ Set<E> constSet<E>(JSArray<E> elements) {
   }
   Set<E>? result = JS('', '#.get(#)', map, E);
   if (result != null) return result;
-  result = _createImmutableSet<E>(elements);
+  result = ImmutableSet<E>.from(elements);
   JS('', '#.set(#, #)', map, E, result);
   return result;
 }

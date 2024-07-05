@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:front_end/src/kernel/body_builder_context.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
@@ -15,18 +14,19 @@ import '../builder/metadata_builder.dart';
 import '../builder/procedure_builder.dart';
 import '../builder/type_builder.dart';
 import '../kernel/augmentation_lowering.dart';
+import '../kernel/body_builder_context.dart';
 import '../kernel/hierarchy/class_member.dart';
 import '../kernel/hierarchy/members_builder.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/member_covariance.dart';
 import 'name_scheme.dart';
-import 'source_library_builder.dart' show SourceLibraryBuilder;
-import 'source_loader.dart' show SourceLoader;
 import 'source_builder_mixins.dart';
 import 'source_class_builder.dart';
 import 'source_extension_builder.dart';
 import 'source_extension_type_declaration_builder.dart';
 import 'source_function_builder.dart';
+import 'source_library_builder.dart' show SourceLibraryBuilder;
+import 'source_loader.dart' show SourceLoader;
 import 'source_member_builder.dart';
 
 class SourceProcedureBuilder extends SourceFunctionBuilderImpl
@@ -135,6 +135,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   @override
   Name get memberName => _memberName.name;
 
+  // Coverage-ignore(suite): Not run.
   List<SourceProcedureBuilder>? get augmentationsForTesting => _augmentations;
 
   @override
@@ -185,6 +186,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     assert(
         overriddenMembers.every((overriddenMember) =>
             overriddenMember.declarationBuilder != classBuilder),
+        // Coverage-ignore(suite): Not run.
         "Unexpected override dependencies for $this: $overriddenMembers");
     _overrideDependencies ??= {};
     _overrideDependencies!.addAll(overriddenMembers);
@@ -221,6 +223,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       case ProcedureKind.Getter:
         return procedure;
       case ProcedureKind.Factory:
+        // Coverage-ignore(suite): Not run.
         return procedure;
       case ProcedureKind.Operator:
       case ProcedureKind.Setter:
@@ -233,6 +236,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     switch (kind) {
       case ProcedureKind.Setter:
         return procedure;
+      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Method:
       case ProcedureKind.Getter:
       case ProcedureKind.Operator:
@@ -280,6 +284,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
           assert(extensionTearOff == null, "Unexpected extension tear-off.");
           f(member: _procedure, kind: BuiltMemberKind.ExtensionOperator);
           break;
+        // Coverage-ignore(suite): Not run.
         case ProcedureKind.Factory:
           throw new UnsupportedError(
               'Unexpected extension method kind ${kind}');
@@ -304,6 +309,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
           assert(extensionTearOff == null, "Unexpected extension tear-off.");
           f(member: _procedure, kind: BuiltMemberKind.ExtensionTypeOperator);
           break;
+        // Coverage-ignore(suite): Not run.
         case ProcedureKind.Factory:
           f(
               member: _procedure,
@@ -366,7 +372,8 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   void _buildExtensionTearOff(SourceLibraryBuilder sourceLibraryBuilder,
       SourceDeclarationBuilderMixin declarationBuilder) {
     assert(
-        _extensionTearOff != null, "No extension tear off created for $this.");
+        _extensionTearOff != null, // Coverage-ignore(suite): Not run.
+        "No extension tear off created for $this.");
 
     _extensionTearOffParameterMap = {};
 
@@ -531,6 +538,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
         (_augmentations ??= []).add(augmentation);
       }
     } else {
+      // Coverage-ignore-block(suite): Not run.
       reportAugmentationMismatch(augmentation);
     }
   }
@@ -543,6 +551,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     Procedure declaredProcedure = targetBuilder.actualProcedure;
 
     if (declaredProcedure.isAbstract || declaredProcedure.isExternal) {
+      // Coverage-ignore-block(suite): Not run.
       return targetBuilder._augmentedBuilder != null
           ? _getAugmentSuperTarget(targetBuilder._augmentedBuilder!)
           : null;

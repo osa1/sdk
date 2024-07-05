@@ -7,7 +7,7 @@ library fasta.fangorn;
 import 'package:kernel/ast.dart';
 import 'package:kernel/src/printer.dart';
 
-import '../fasta/problems.dart' show unsupported;
+import '../base/problems.dart' show unsupported;
 
 import '../type_inference/type_schema.dart';
 
@@ -371,7 +371,7 @@ class Forest {
       Statement statement = statements[i];
       if (statement is _VariablesDeclaration) {
         copy ??= new List<Statement>.of(statements.getRange(0, i));
-        copy.addAll(statement.declarations);
+        copy.addAll(statement.variableOrWildcardInitializers);
       } else if (copy != null) {
         copy.add(statement);
       }
@@ -446,7 +446,12 @@ class Forest {
       Expression? condition,
       List<Expression> updaters,
       Statement body) {
-    return new ForStatement(variables ?? [], condition, updaters, body)
+    return new ForStatement(
+        variables ?? // Coverage-ignore(suite): Not run.
+            [],
+        condition,
+        updaters,
+        body)
       ..fileOffset = fileOffset;
   }
 
@@ -542,19 +547,20 @@ class Forest {
   }
 
   _VariablesDeclaration variablesDeclaration(
-      List<VariableDeclaration> declarations, Uri uri) {
-    return new _VariablesDeclaration(declarations, uri);
+      List<Statement> statements, Uri uri) {
+    return new _VariablesDeclaration(statements, uri);
   }
 
   List<VariableDeclaration> variablesDeclarationExtractDeclarations(
       Object? variablesDeclaration) {
-    return (variablesDeclaration as _VariablesDeclaration).declarations;
+    return (variablesDeclaration as _VariablesDeclaration).variables;
   }
 
   Statement wrapVariables(Statement statement) {
     if (statement is _VariablesDeclaration) {
-      return new Block(
-          new List<Statement>.of(statement.declarations, growable: true))
+      return new Block(new List<Statement>.of(
+          statement.variableOrWildcardInitializers,
+          growable: true))
         ..fileOffset = statement.fileOffset;
     } else if (statement is VariableDeclaration) {
       return new Block(<Statement>[statement])
@@ -582,14 +588,17 @@ class Forest {
 
   bool isErroneousNode(Object? node) {
     if (node is ExpressionStatement) {
+      // Coverage-ignore-block(suite): Not run.
       ExpressionStatement statement = node;
       node = statement.expression;
     }
     if (node is VariableDeclaration) {
+      // Coverage-ignore-block(suite): Not run.
       VariableDeclaration variable = node;
       node = variable.initializer;
     }
     if (node is Let) {
+      // Coverage-ignore-block(suite): Not run.
       Let let = node;
       node = let.variable.initializer;
     }
@@ -713,15 +722,21 @@ class Forest {
   }
 
   ConstructorTearOff createConstructorTearOff(int fileOffset, Member target) {
-    assert(target is Constructor || (target is Procedure && target.isFactory),
+    assert(
+        target is Constructor || (target is Procedure && target.isFactory),
+        // Coverage-ignore(suite): Not run.
         "Unexpected constructor tear off target: $target");
     return new ConstructorTearOff(target)..fileOffset = fileOffset;
   }
 
   StaticTearOff createStaticTearOff(int fileOffset, Procedure procedure) {
-    assert(procedure.kind == ProcedureKind.Method,
+    assert(
+        procedure.kind == ProcedureKind.Method,
+        // Coverage-ignore(suite): Not run.
         "Unexpected static tear off target: $procedure");
-    assert(!procedure.isRedirectingFactory,
+    assert(
+        !procedure.isRedirectingFactory,
+        // Coverage-ignore(suite): Not run.
         "Unexpected static tear off target: $procedure");
     return new StaticTearOff(procedure)..fileOffset = fileOffset;
   }
@@ -894,34 +909,47 @@ class Forest {
 }
 
 class _VariablesDeclaration extends AuxiliaryStatement {
-  final List<VariableDeclaration> declarations;
+  /// A list of variable declarations with [ExpressionStatement]s and
+  /// [EmptyStatement]s from wildcard variable declarations.
+  final List<Statement> variableOrWildcardInitializers;
+
+  // A list of variable declarations that are not wildcard variables.
+  final List<VariableDeclaration> variables = [];
   final Uri uri;
 
-  _VariablesDeclaration(this.declarations, this.uri) {
-    setParents(declarations, this);
+  _VariablesDeclaration(this.variableOrWildcardInitializers, this.uri) {
+    setParents(variableOrWildcardInitializers, this);
+    for (Statement statement in variableOrWildcardInitializers) {
+      if (statement is VariableDeclaration) variables.add(statement);
+    }
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept<R>(v) {
     throw unsupported("accept", fileOffset, uri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   R accept1<R, A>(v, arg) {
     throw unsupported("accept1", fileOffset, uri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Never visitChildren(v) {
     throw unsupported("visitChildren", fileOffset, uri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Never transformChildren(v) {
     throw unsupported("transformChildren", fileOffset, uri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Never transformOrRemoveChildren(v) {
     throw unsupported("transformOrRemoveChildren", fileOffset, uri);
   }
@@ -932,13 +960,21 @@ class _VariablesDeclaration extends AuxiliaryStatement {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void toTextInternal(AstPrinter printer) {
-    for (int index = 0; index < declarations.length; index++) {
+    for (int index = 0;
+        index < variableOrWildcardInitializers.length;
+        index++) {
+      Statement statement = variableOrWildcardInitializers[index];
       if (index > 0) {
         printer.write(', ');
       }
-      printer.writeVariableDeclaration(declarations[index],
-          includeModifiersAndType: index == 0);
+      if (statement is VariableDeclaration) {
+        printer.writeVariableDeclaration(statement,
+            includeModifiersAndType: index == 0);
+      } else {
+        printer.writeStatement(statement);
+      }
     }
     printer.write(';');
   }

@@ -9,7 +9,6 @@ import 'package:_fe_analyzer_shared/src/exhaustiveness/shared.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/space.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/static_type.dart';
 import 'package:_fe_analyzer_shared/src/exhaustiveness/types.dart';
-import 'package:front_end/src/kernel/constant_evaluator.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
@@ -17,6 +16,8 @@ import 'package:kernel/src/printer.dart';
 import 'package:kernel/src/replacement_visitor.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
+
+import 'constant_evaluator.dart';
 
 /// AST printer strategy used by default in `CfeTypeOperations.typeToString`.
 const AstTextStrategy textStrategy = const AstTextStrategy(
@@ -34,6 +35,7 @@ class ExhaustivenessDataForTesting {
   Map<Node, ExhaustivenessResult> switchResults = {};
 }
 
+// Coverage-ignore(suite): Not run.
 class ExhaustivenessResult {
   final StaticType scrutineeType;
   final List<Space> caseSpaces;
@@ -72,7 +74,9 @@ class CfeTypeOperations implements TypeOperations<DartType> {
   @override
   bool isNullType(DartType type) {
     return type is NullType ||
-        (type is NeverType && type.nullability == Nullability.nullable);
+        (type is NeverType &&
+            // Coverage-ignore(suite): Not run.
+            type.nullability == Nullability.nullable);
   }
 
   @override
@@ -111,6 +115,7 @@ class CfeTypeOperations implements TypeOperations<DartType> {
       _typeEnvironment.objectNonNullableRawType;
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType get nullableObjectType => _typeEnvironment.objectNullableRawType;
 
   @override
@@ -150,6 +155,7 @@ class CfeTypeOperations implements TypeOperations<DartType> {
       }
       return fieldTypes;
     } else if (type is ExtensionType) {
+      // Coverage-ignore-block(suite): Not run.
       ExtensionTypeDeclaration extensionTypeDeclaration =
           type.extensionTypeDeclaration;
       Map<Key, DartType> fieldTypes = {};
@@ -290,11 +296,17 @@ class CfeTypeOperations implements TypeOperations<DartType> {
   @override
   bool hasSimpleName(DartType type) {
     return type is InterfaceType ||
+        // Coverage-ignore(suite): Not run.
         type is DynamicType ||
+        // Coverage-ignore(suite): Not run.
         type is VoidType ||
+        // Coverage-ignore(suite): Not run.
         type is NeverType ||
+        // Coverage-ignore(suite): Not run.
         type is NullType ||
+        // Coverage-ignore(suite): Not run.
         type is ExtensionType ||
+        // Coverage-ignore(suite): Not run.
         // TODO(johnniwinther): What about intersection types?
         type is TypeParameterType;
   }
@@ -434,6 +446,7 @@ class CfeSealedClassOperations
           //    class Class extends _Super&Mixin {}
           //
           if (superclass.mixedInClass == sealedClass) {
+            // Coverage-ignore-block(suite): Not run.
             list.add(cls);
             continue outer;
           }
@@ -469,6 +482,7 @@ class CfeSealedClassOperations
     if (thisType.typeArguments.isEmpty) {
       return thisType;
     }
+    // Coverage-ignore-block(suite): Not run.
     bool trivialSubstitution = true;
     if (thisType.typeArguments.length == asSealedType.typeArguments.length) {
       for (int i = 0; i < thisType.typeArguments.length; i++) {
@@ -648,6 +662,7 @@ class PatternConverter with SpaceCreator<Pattern, DartType> {
           hasExplicitTypeArguments:
               pattern.keyType != null && pattern.valueType != null);
     }
+    // Coverage-ignore-block(suite): Not run.
     assert(false, "Unexpected pattern $pattern (${pattern.runtimeType}).");
     return createUnknownSpace(path);
   }
@@ -665,12 +680,17 @@ class PatternConverter with SpaceCreator<Pattern, DartType> {
         return new Space(path, cache.getBoolValueStaticType(constant.value));
       } else if (constant is RecordConstant) {
         Map<Key, Space> properties = {};
-        for (int index = 0; index < constant.positional.length; index++) {
+        for (int index = 0;
+            index < constant.positional.length;
+            // Coverage-ignore(suite): Not run.
+            index++) {
+          // Coverage-ignore-block(suite): Not run.
           Key key = new RecordIndexKey(index);
           properties[key] = convertConstantToSpace(constant.positional[index],
               path: path.add(key));
         }
         for (MapEntry<String, Constant> entry in constant.named.entries) {
+          // Coverage-ignore-block(suite): Not run.
           Key key = new RecordNameKey(entry.key);
           properties[key] =
               convertConstantToSpace(entry.value, path: path.add(key));
@@ -688,6 +708,7 @@ class PatternConverter with SpaceCreator<Pattern, DartType> {
         return new Space(path, cache.getUnknownStaticType());
       }
     } else {
+      // Coverage-ignore-block(suite): Not run.
       // TODO(johnniwinther): Assert that constant value is available when the
       // exhaustiveness checking is complete.
       return new Space(path, cache.getUnknownStaticType());
@@ -742,11 +763,13 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitFunctionType(FunctionType type, CoreTypes coreTypes) {
     return false;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitFutureOrType(FutureOrType type, CoreTypes coreTypes) {
     return type.typeArgument.accept1(this, coreTypes);
   }
@@ -785,11 +808,13 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitNullType(NullType type, CoreTypes coreTypes) {
     return true;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitRecordType(RecordType type, CoreTypes coreTypes) {
     for (DartType positional in type.positional) {
       if (!positional.accept1(this, coreTypes)) {
@@ -810,17 +835,20 @@ class ExhaustiveDartTypeVisitor implements DartTypeVisitor1<bool, CoreTypes> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitStructuralParameterType(
       StructuralParameterType type, CoreTypes coreTypes) {
     return type.bound.accept1(this, coreTypes);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitTypedefType(TypedefType type, CoreTypes coreTypes) {
     return type.unalias.accept1(this, coreTypes);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool visitVoidType(VoidType type, CoreTypes coreTypes) {
     return false;
   }
@@ -830,6 +858,7 @@ class TypeParameterReplacer extends ReplacementVisitor {
   const TypeParameterReplacer();
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType? visitTypeParameterType(TypeParameterType node, Variance variance) {
     DartType replacement = super.visitTypeParameterType(node, variance) ?? node;
     if (replacement is TypeParameterType) {

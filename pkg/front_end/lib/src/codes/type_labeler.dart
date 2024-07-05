@@ -6,9 +6,9 @@ import 'dart:convert' show json;
 
 import 'package:kernel/ast.dart';
 
-import 'denylisted_classes.dart' show denylistedCoreClasses;
 import 'cfe_codes.dart'
     show Message, templateTypeOrigin, templateTypeOriginWithFileUri;
+import 'denylisted_classes.dart' show denylistedCoreClasses;
 
 /// A pretty-printer for Kernel types and constants with the ability to label
 /// raw types with numeric markers in Dart comments (e.g. `/*1*/`) to
@@ -159,7 +159,8 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
 
   @override
   void visitStructuralParameterType(StructuralParameterType node) {
-    result.add(node.parameter.name ?? "T#${identityHashCode(node.parameter)}");
+    result.add(node.parameter.name ?? // Coverage-ignore(suite): Not run.
+        "T#${identityHashCode(node.parameter)}");
     addNullability(node.declaredNullability);
   }
 
@@ -202,7 +203,10 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
       for (int i = node.requiredParameterCount;
           i < node.positionalParameters.length;
           i++) {
-        if (!first) result.add(", ");
+        if (!first) {
+          // Coverage-ignore-block(suite): Not run.
+          result.add(", ");
+        }
         node.positionalParameters[i].accept(this);
         first = false;
       }
@@ -213,7 +217,10 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
       result.add("{");
       first = true;
       for (int i = 0; i < node.namedParameters.length; i++) {
-        if (!first) result.add(", ");
+        if (!first) {
+          // Coverage-ignore-block(suite): Not run.
+          result.add(", ");
+        }
         node.namedParameters[i].type.accept(this);
         result.add(" ${node.namedParameters[i].name}");
         first = false;
@@ -326,6 +333,7 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitSymbolConstant(SymbolConstant node) {
     String text = node.libraryReference != null
         ? '#${node.libraryReference!.asLibrary.importUri}::${node.name}'
@@ -370,6 +378,7 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitSetConstant(SetConstant node) {
     result.add("<");
     node.typeArgument.accept(this);
@@ -392,7 +401,10 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
     result.add(">{");
     bool first = true;
     for (ConstantMapEntry entry in node.entries) {
-      if (!first) result.add(", ");
+      if (!first) {
+        // Coverage-ignore-block(suite): Not run.
+        result.add(", ");
+      }
       entry.key.accept(this);
       result.add(": ");
       entry.value.accept(this);
@@ -454,6 +466,7 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitRedirectingFactoryTearOffConstant(
       RedirectingFactoryTearOffConstant node) {
     Member constructor = node.target;
@@ -483,6 +496,7 @@ class TypeLabeler implements DartTypeVisitor<void>, ConstantVisitor<void> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitTypedefTearOffConstant(TypedefTearOffConstant node) {
     node.tearOffConstant.accept(this);
     if (node.parameters.isNotEmpty) {
@@ -577,7 +591,9 @@ class LabeledNode {
     }
     Message message = (importUri == fileUri || importUri.isScheme('dart'))
         ? templateTypeOrigin.withArguments(toString(), importUri)
-        : templateTypeOriginWithFileUri.withArguments(
+        :
+        // Coverage-ignore(suite): Not run.
+        templateTypeOriginWithFileUri.withArguments(
             toString(), importUri, fileUri);
     return "\n - " + message.problemMessage;
   }

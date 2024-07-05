@@ -13,7 +13,8 @@ import 'package:_fe_analyzer_shared/src/parser/listener.dart';
 import 'package:_fe_analyzer_shared/src/parser/member_kind.dart';
 import 'package:_fe_analyzer_shared/src/scanner/error_token.dart';
 import 'package:_fe_analyzer_shared/src/scanner/token.dart';
-import 'package:front_end/src/fasta/messages.dart';
+
+import '../base/messages.dart';
 
 // ignore_for_file: lines_longer_than_80_chars
 
@@ -1448,9 +1449,13 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     LiteralMapEntryHandle data = new LiteralMapEntryHandle(ParserAstType.HANDLE,
-        colon: colon, endToken: endToken);
+        colon: colon,
+        endToken: endToken,
+        nullAwareKeyToken: nullAwareKeyToken,
+        nullAwareValueToken: nullAwareValueToken);
     seen(data);
   }
 
@@ -2298,9 +2303,11 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
-  void handleAssignmentExpression(Token token) {
-    AssignmentExpressionHandle data =
-        new AssignmentExpressionHandle(ParserAstType.HANDLE, token: token);
+  void handleAssignmentExpression(Token token, Token endToken) {
+    AssignmentExpressionHandle data = new AssignmentExpressionHandle(
+        ParserAstType.HANDLE,
+        token: token,
+        endToken: endToken);
     seen(data);
   }
 
@@ -2447,6 +2454,14 @@ abstract class AbstractParserAstListener implements Listener {
     SpreadExpressionHandle data = new SpreadExpressionHandle(
         ParserAstType.HANDLE,
         spreadToken: spreadToken);
+    seen(data);
+  }
+
+  @override
+  void handleNullAwareElement(Token nullAwareToken) {
+    NullAwareElementHandle data = new NullAwareElementHandle(
+        ParserAstType.HANDLE,
+        nullAwareToken: nullAwareToken);
     seen(data);
   }
 
@@ -2931,9 +2946,11 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
-  void endSwitchExpressionCase(Token? when, Token arrow, Token endToken) {
+  void endSwitchExpressionCase(
+      Token beginToken, Token? when, Token arrow, Token endToken) {
     SwitchExpressionCaseEnd data = new SwitchExpressionCaseEnd(
         ParserAstType.END,
+        beginToken: beginToken,
         when: when,
         arrow: arrow,
         endToken: endToken);
@@ -6229,15 +6246,22 @@ class LibraryNameEnd extends ParserAstNode {
 class LiteralMapEntryHandle extends ParserAstNode {
   final Token colon;
   final Token endToken;
+  final Token? nullAwareKeyToken;
+  final Token? nullAwareValueToken;
 
   LiteralMapEntryHandle(ParserAstType type,
-      {required this.colon, required this.endToken})
+      {required this.colon,
+      required this.endToken,
+      this.nullAwareKeyToken,
+      this.nullAwareValueToken})
       : super("LiteralMapEntry", type);
 
   @override
   Map<String, Object?> get deprecatedArguments => {
         "colon": colon,
         "endToken": endToken,
+        "nullAwareKeyToken": nullAwareKeyToken,
+        "nullAwareValueToken": nullAwareValueToken,
       };
 
   @override
@@ -8148,13 +8172,16 @@ class CastPatternHandle extends ParserAstNode {
 
 class AssignmentExpressionHandle extends ParserAstNode {
   final Token token;
+  final Token endToken;
 
-  AssignmentExpressionHandle(ParserAstType type, {required this.token})
+  AssignmentExpressionHandle(ParserAstType type,
+      {required this.token, required this.endToken})
       : super("AssignmentExpression", type);
 
   @override
   Map<String, Object?> get deprecatedArguments => {
         "token": token,
+        "endToken": endToken,
       };
 
   @override
@@ -8471,6 +8498,21 @@ class SpreadExpressionHandle extends ParserAstNode {
 
   @override
   R accept<R>(ParserAstVisitor<R> v) => v.visitSpreadExpressionHandle(this);
+}
+
+class NullAwareElementHandle extends ParserAstNode {
+  final Token nullAwareToken;
+
+  NullAwareElementHandle(ParserAstType type, {required this.nullAwareToken})
+      : super("NullAwareElement", type);
+
+  @override
+  Map<String, Object?> get deprecatedArguments => {
+        "nullAwareToken": nullAwareToken,
+      };
+
+  @override
+  R accept<R>(ParserAstVisitor<R> v) => v.visitNullAwareElementHandle(this);
 }
 
 class RestPatternHandle extends ParserAstNode {
@@ -9531,17 +9573,25 @@ class SwitchExpressionCaseBegin extends ParserAstNode {
   R accept<R>(ParserAstVisitor<R> v) => v.visitSwitchExpressionCaseBegin(this);
 }
 
-class SwitchExpressionCaseEnd extends ParserAstNode {
+class SwitchExpressionCaseEnd extends ParserAstNode
+    implements BeginAndEndTokenParserAstNode {
+  @override
+  final Token beginToken;
   final Token? when;
   final Token arrow;
+  @override
   final Token endToken;
 
   SwitchExpressionCaseEnd(ParserAstType type,
-      {this.when, required this.arrow, required this.endToken})
+      {required this.beginToken,
+      this.when,
+      required this.arrow,
+      required this.endToken})
       : super("SwitchExpressionCase", type);
 
   @override
   Map<String, Object?> get deprecatedArguments => {
+        "beginToken": beginToken,
         "when": when,
         "arrow": arrow,
         "endToken": endToken,
@@ -10265,6 +10315,7 @@ abstract class ParserAstVisitor<R> {
   R visitIfControlFlowEnd(IfControlFlowEnd node);
   R visitIfElseControlFlowEnd(IfElseControlFlowEnd node);
   R visitSpreadExpressionHandle(SpreadExpressionHandle node);
+  R visitNullAwareElementHandle(NullAwareElementHandle node);
   R visitRestPatternHandle(RestPatternHandle node);
   R visitFunctionTypedFormalParameterBegin(
       FunctionTypedFormalParameterBegin node);
@@ -11424,6 +11475,10 @@ class RecursiveParserAstVisitor implements ParserAstVisitor<void> {
 
   @override
   void visitSpreadExpressionHandle(SpreadExpressionHandle node) =>
+      node.visitChildren(this);
+
+  @override
+  void visitNullAwareElementHandle(NullAwareElementHandle node) =>
       node.visitChildren(this);
 
   @override

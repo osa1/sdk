@@ -5,7 +5,6 @@
 import 'package:kernel/ast.dart';
 
 import '../builder/builder.dart';
-
 import 'dill_member_builder.dart';
 
 abstract class DillExtensionMemberBuilder extends DillMemberBuilder {
@@ -18,9 +17,11 @@ abstract class DillExtensionMemberBuilder extends DillMemberBuilder {
   bool get isStatic => _descriptor.isStatic;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isExternal => member.isExternal;
 
   @override
+  // Coverage-ignore(suite): Not run.
   String get name => _descriptor.name.text;
 
   @override
@@ -48,6 +49,7 @@ class DillExtensionFieldBuilder extends DillExtensionMemberBuilder {
       : super(field, descriptor, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get member => field;
 
   @override
@@ -57,6 +59,7 @@ class DillExtensionFieldBuilder extends DillExtensionMemberBuilder {
   Member? get writeTarget => isAssignable ? field : null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get invokeTarget => field;
 
   @override
@@ -75,6 +78,7 @@ class DillExtensionSetterBuilder extends DillExtensionMemberBuilder {
         super(procedure, descriptor, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get member => procedure;
 
   @override
@@ -84,6 +88,7 @@ class DillExtensionSetterBuilder extends DillExtensionMemberBuilder {
   Member get writeTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get invokeTarget => null;
 }
 
@@ -96,12 +101,14 @@ class DillExtensionGetterBuilder extends DillExtensionMemberBuilder {
         super(procedure, descriptor, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get member => procedure;
 
   @override
   Member get readTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -123,6 +130,7 @@ class DillExtensionOperatorBuilder extends DillExtensionMemberBuilder {
   Member? get readTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -139,15 +147,18 @@ class DillExtensionStaticMethodBuilder extends DillExtensionMemberBuilder {
         super(procedure, descriptor, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get member => procedure;
 
   @override
   Member get readTarget => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get invokeTarget => procedure;
 }
 
@@ -166,15 +177,18 @@ class DillExtensionInstanceMethodBuilder extends DillExtensionMemberBuilder {
         super(procedure, descriptor, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member get member => procedure;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterable<Member> get exportedMembers => [procedure, _extensionTearOff];
 
   @override
   Member get readTarget => _extensionTearOff;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override

@@ -5985,7 +5985,7 @@ class Parser {
               ? parseThrowExpression(next, /* allowCascades = */ false)
               : parsePrecedenceExpression(
                   next, level, allowCascades, ConstantPatternContext.none);
-          listener.handleAssignmentExpression(operator);
+          listener.handleAssignmentExpression(operator, token);
         } else if (identical(tokenLevel, POSTFIX_PRECEDENCE)) {
           if ((identical(type, TokenType.PLUS_PLUS)) ||
               (identical(type, TokenType.MINUS_MINUS))) {
@@ -6334,7 +6334,7 @@ class Parser {
     if (identical(next.type.precedence, ASSIGNMENT_PRECEDENCE)) {
       Token assignment = next;
       token = parseExpressionWithoutCascade(next);
-      listener.handleAssignmentExpression(assignment);
+      listener.handleAssignmentExpression(assignment, token);
     }
     listener.endCascade();
     return token;
@@ -6991,8 +6991,19 @@ class Parser {
         hasSetEntry ??= !isMapEntry;
         if (isMapEntry) {
           Token colon = token.next!;
-          token = parseExpression(colon);
-          listener.handleLiteralMapEntry(colon, token.next!);
+          Token next = colon.next!;
+          if (optional('?', next)) {
+            // Null-aware value. For example:
+            //   <int, String>{ x: ?y }
+            token = parseExpression(next);
+            listener.handleLiteralMapEntry(colon, token,
+                nullAwareKeyToken: null, nullAwareValueToken: next);
+          } else {
+            // Non null-aware entry. For example:
+            //   <bool, num>{ x: y }
+            token = parseExpression(colon);
+            listener.handleLiteralMapEntry(colon, token.next!);
+          }
         }
       } else {
         while (info != null) {
@@ -7000,8 +7011,19 @@ class Parser {
             token = parseExpression(token);
             if (optional(':', token.next!)) {
               Token colon = token.next!;
-              token = parseExpression(colon);
-              listener.handleLiteralMapEntry(colon, token.next!);
+              Token next = colon.next!;
+              if (optional('?', next)) {
+                token = parseExpression(next);
+                // Null-aware value. For example:
+                //   <double, Symbol>{ if (b) x: ?y }
+                listener.handleLiteralMapEntry(colon, token,
+                    nullAwareKeyToken: null, nullAwareValueToken: next);
+              } else {
+                // Non null-aware entry. For example:
+                //   <String, int>{ if (b) x : y }
+                token = parseExpression(colon);
+                listener.handleLiteralMapEntry(colon, token.next!);
+              }
             }
           } else {
             token = info.parse(token, this);
@@ -10302,7 +10324,7 @@ class Parser {
       mayParseFunctionExpressions = false;
       while (true) {
         listener.beginSwitchExpressionCase();
-        next = token.next!;
+        Token beginToken = next = token.next!;
         if (optional('default', next)) {
           reportRecoverableError(next, codes.messageDefaultInSwitchExpression);
           listener.handleNoType(next);
@@ -10336,7 +10358,7 @@ class Parser {
         mayParseFunctionExpressions = true;
         token = parseExpression(token);
         mayParseFunctionExpressions = false;
-        listener.endSwitchExpressionCase(when, arrow, token);
+        listener.endSwitchExpressionCase(beginToken, when, arrow, token);
         ++caseCount;
         next = token.next!;
 

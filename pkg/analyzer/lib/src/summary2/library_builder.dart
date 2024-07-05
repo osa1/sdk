@@ -39,6 +39,7 @@ import 'package:analyzer/src/summary2/types_builder.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:analyzer/src/utilities/extensions/object.dart';
+import 'package:collection/collection.dart';
 import 'package:macros/src/executor.dart' as macro;
 
 class DefiningLinkingUnit extends LinkingUnit {
@@ -525,7 +526,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       (performance) {
         return macroApplier.buildAugmentationLibraryCode(
           uri,
-          _macroResults.flattenedToList2,
+          _macroResults.flattenedToList,
         );
       },
     );
@@ -1276,11 +1277,12 @@ class LibraryBuilder with MacroApplicationsContainer {
     }
   }
 
-  static void build(
-    Linker linker,
-    LibraryFileKind inputLibrary,
-    MacroResultInput? inputMacroResult,
-  ) {
+  static void build({
+    required Linker linker,
+    required LibraryFileKind inputLibrary,
+    required MacroResultInput? inputMacroResult,
+    required OperationPerformanceImpl performance,
+  }) {
     var elementFactory = linker.elementFactory;
     var rootReference = linker.rootReference;
 
@@ -1288,9 +1290,11 @@ class LibraryBuilder with MacroApplicationsContainer {
     var libraryUriStr = libraryFile.uriStr;
     var libraryReference = rootReference.getChild(libraryUriStr);
 
-    var libraryUnitNode = libraryFile.parse(
-      performance: OperationPerformanceImpl('<root>'),
-    );
+    var libraryUnitNode = performance.run('libraryFile', (performance) {
+      return libraryFile.parse(
+        performance: performance,
+      );
+    });
 
     var name = '';
     var nameOffset = -1;

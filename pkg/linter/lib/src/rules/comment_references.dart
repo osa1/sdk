@@ -70,7 +70,7 @@ class CommentReferences extends LintRule {
             name: 'comment_references',
             description: _desc,
             details: _details,
-            categories: {Category.errors});
+            categories: {Category.documentation_comment_maintenance});
 
   @override
   LintCode get lintCode => code;
@@ -123,6 +123,7 @@ class _Visitor extends SimpleAstVisitor<void> {
 
   @override
   void visitCommentReference(CommentReference node) {
+    if (node.isSynthetic) return;
     var expression = node.expression;
     if (expression.isSynthetic) return;
     if (expression is Identifier &&

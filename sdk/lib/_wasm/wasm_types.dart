@@ -131,6 +131,14 @@ class WasmI32 extends _WasmBase {
   external int toIntSigned();
   external int toIntUnsigned();
   external bool toBool();
+  external bool operator <(WasmI32 other);
+  external bool operator <=(WasmI32 other);
+  external bool operator ==(covariant WasmI32 other);
+  external bool operator >(WasmI32 other);
+  external bool operator >=(WasmI32 other);
+  external WasmI32 operator +(WasmI32 other);
+  external WasmI32 operator -(WasmI32 other);
+  external WasmI32 operator >>(WasmI32 other);
 }
 
 /// The Wasm `i64` type.
@@ -146,11 +154,17 @@ class WasmI64 extends _WasmBase {
 
   external int toInt();
 
-  /// `i64.le_u`.
+  /// Wasm `i64.le_u` instruction.
   external bool leU(WasmI64 other);
 
-  /// `i64.lt_u`.
+  /// Wasm `i64.lt_u` instruction.
   external bool ltU(WasmI64 other);
+
+  /// Wasm `i64.ge_u` instruction.
+  external bool geU(WasmI64 other);
+
+  /// Wasm `i64.gt_u` instruction.
+  external bool gtU(WasmI64 other);
 }
 
 /// The Wasm `f32` type.
@@ -291,6 +305,22 @@ class WasmTable<T> extends _WasmBase {
 extension IntToWasmInt on int {
   WasmI32 toWasmI32() => WasmI32.fromInt(this);
   WasmI64 toWasmI64() => WasmI64.fromInt(this);
+
+  /// Wasm `i64.le_u` instruction.
+  @pragma("wasm:prefer-inline")
+  bool leU(int other) => this.toWasmI64().leU(other.toWasmI64());
+
+  /// Wasm `i64.lt_u` instruction.
+  @pragma("wasm:prefer-inline")
+  bool ltU(int other) => this.toWasmI64().ltU(other.toWasmI64());
+
+  /// Wasm `i64.ge_u` instruction.
+  @pragma("wasm:prefer-inline")
+  bool geU(int other) => this.toWasmI64().geU(other.toWasmI64());
+
+  /// Wasm `i64.gt_u` instruction.
+  @pragma("wasm:prefer-inline")
+  bool gtU(int other) => this.toWasmI64().gtU(other.toWasmI64());
 }
 
 extension DoubleToWasmFloat on double {

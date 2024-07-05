@@ -2,13 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:kernel/ast.dart';
 import 'package:macros/macros.dart' as macro;
 import 'package:macros/src/executor.dart' as macro;
 import 'package:macros/src/executor/exception_impls.dart' as macro;
 import 'package:macros/src/executor/introspection_impls.dart' as macro;
 import 'package:macros/src/executor/remote_instance.dart' as macro;
-import 'package:kernel/ast.dart';
 
+import '../../base/uri_offset.dart';
 import '../../builder/builder.dart';
 import '../../builder/declaration_builders.dart';
 import '../../builder/formal_parameter_builder.dart';
@@ -20,11 +21,11 @@ import '../../source/source_factory_builder.dart';
 import '../../source/source_field_builder.dart';
 import '../../source/source_loader.dart';
 import '../../source/source_procedure_builder.dart';
-import '../../fasta/uri_offset.dart';
 import '../hierarchy/hierarchy_builder.dart';
 import 'identifiers.dart';
 import 'types.dart';
 
+// Coverage-ignore(suite): Not run.
 class MacroIntrospection {
   final SourceLoader _sourceLoader;
   late final MacroTypes types = new MacroTypes(this, _sourceLoader);
@@ -666,6 +667,7 @@ class MacroIntrospection {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class _TypePhaseIntrospector implements macro.TypePhaseIntrospector {
   final SourceLoader sourceLoader;
 
@@ -713,6 +715,7 @@ class _TypePhaseIntrospector implements macro.TypePhaseIntrospector {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
     implements macro.DeclarationPhaseIntrospector {
   final ClassHierarchyBuilder classHierarchy;
@@ -847,6 +850,7 @@ class _DeclarationPhaseIntrospector extends _TypePhaseIntrospector
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class _DefinitionPhaseIntrospector extends _DeclarationPhaseIntrospector
     implements macro.DefinitionPhaseIntrospector {
   _DefinitionPhaseIntrospector(

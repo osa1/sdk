@@ -4,15 +4,15 @@
 
 library fasta.named_type_builder;
 
-import 'package:front_end/src/util/helpers.dart';
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/src/unaliasing.dart' as unaliasing;
 
-import '../codes/cfe_codes.dart'
+import '../base/messages.dart'
     show
         LocatedMessage,
         Message,
+        ProblemReporting,
         Severity,
         Template,
         messageClassImplementsDeferredClass,
@@ -33,10 +33,11 @@ import '../codes/cfe_codes.dart'
         templateTypeArgumentMismatch,
         templateTypeArgumentsOnTypeVariable,
         templateTypeNotFound;
+import '../base/scope.dart';
+import '../base/uris.dart';
 import '../kernel/implicit_field_type.dart';
-import '../fasta/scope.dart';
 import '../source/source_library_builder.dart';
-import '../fasta/uris.dart';
+import '../util/helpers.dart';
 import 'builder.dart';
 import 'declaration_builders.dart';
 import 'inferable_type_builder.dart';
@@ -135,7 +136,9 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
             fileUri: fileUri,
             charOffset: charOffset,
             instanceTypeVariableAccess: instanceTypeVariableAccess)
-        : new _InferredNamedTypeBuilder(name, nullabilityBuilder,
+        :
+        // Coverage-ignore(suite): Not run.
+        new _InferredNamedTypeBuilder(name, nullabilityBuilder,
             arguments: arguments,
             fileUri: fileUri,
             charOffset: charOffset,
@@ -180,14 +183,15 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
   bool get isVoidType => declaration is VoidTypeDeclarationBuilder;
 
   @override
-  void bind(LibraryBuilder libraryBuilder, TypeDeclarationBuilder declaration) {
+  void bind(
+      ProblemReporting problemReporting, TypeDeclarationBuilder declaration) {
     _declaration = declaration.origin;
-    _check(libraryBuilder);
+    _check(problemReporting);
   }
 
   @override
-  void resolveIn(
-      Scope scope, int charOffset, Uri fileUri, LibraryBuilder library) {
+  void resolveIn(Scope scope, int charOffset, Uri fileUri,
+      ProblemReporting problemReporting) {
     if (_declaration != null) return;
     Builder? member;
     String? qualifier = typeName.qualifier;
@@ -201,7 +205,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
       member = scope.lookup(typeName.name, typeName.nameOffset, fileUri);
     }
     if (member is TypeDeclarationBuilder) {
-      bind(library, member);
+      bind(problemReporting, member);
     } else {
       Template<Message Function(String name)> template =
           member == null ? templateTypeNotFound : templateNotAType;
@@ -221,16 +225,16 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         ];
         message = template.withArguments(nameText);
       }
-      library.addProblem(message, nameOffset, nameLength, fileUri,
+      problemReporting.addProblem(message, nameOffset, nameLength, fileUri,
           context: context);
       TypeDeclarationBuilder declaration = buildInvalidTypeDeclarationBuilder(
           message.withLocation(fileUri, nameOffset, nameLength),
           context: context);
-      bind(library, declaration);
+      bind(problemReporting, declaration);
     }
   }
 
-  void _check(LibraryBuilder library) {
+  void _check(ProblemReporting problemReporting) {
     if (_declaration is InvalidTypeDeclarationBuilder) {
       return;
     }
@@ -241,7 +245,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         int nameLength = typeName.nameLength;
         Message message =
             templateTypeArgumentsOnTypeVariable.withArguments(nameText);
-        library.addProblem(message, nameOffset, nameLength, fileUri);
+        problemReporting.addProblem(message, nameOffset, nameLength, fileUri);
         // TODO(johnniwinther): Should we retain the declaration to support
         //  additional errors?
         _declaration = buildInvalidTypeDeclarationBuilder(
@@ -251,18 +255,19 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         int nameLength = typeName.nameLength;
         Message message = templateTypeArgumentMismatch
             .withArguments(declaration!.typeVariablesCount);
-        library.addProblem(message, nameOffset, nameLength, fileUri);
+        problemReporting.addProblem(message, nameOffset, nameLength, fileUri);
         _declaration = buildInvalidTypeDeclarationBuilder(
             message.withLocation(fileUri!, nameOffset, nameLength));
       }
     }
-    if (_declaration!.isExtension && library is SourceLibraryBuilder) {
+    // TODO(johnniwinther): Remove check for `is SourceLibraryBuilder`.
+    if (_declaration!.isExtension && problemReporting is SourceLibraryBuilder) {
       String nameText = typeName.name;
       int nameOffset = typeName.nameOffset;
       int nameLength = typeName.nameLength;
       // TODO(johnniwinther): Create a custom message.
       Message message = templateNotAType.withArguments(nameText);
-      library.addProblem(message, nameOffset, nameLength, fileUri);
+      problemReporting.addProblem(message, nameOffset, nameLength, fileUri);
       _declaration = buildInvalidTypeDeclarationBuilder(
           message.withLocation(fileUri!, nameOffset, nameLength));
     } else if (_declaration is NominalVariableBuilder) {
@@ -277,7 +282,8 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
             int nameOffset = typeName.nameOffset;
             int nameLength = typeName.nameLength;
             Message message = messageTypeVariableInStaticContext;
-            library.addProblem(message, nameOffset, nameLength, fileUri);
+            problemReporting.addProblem(
+                message, nameOffset, nameLength, fileUri);
             _declaration = buildInvalidTypeDeclarationBuilder(
                 message.withLocation(fileUri!, nameOffset, nameLength));
             return;
@@ -289,6 +295,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
                 message.withLocation(fileUri!, nameOffset, nameLength));
             return;
           case InstanceTypeVariableAccessState.Unexpected:
+            // Coverage-ignore(suite): Not run.
             assert(false,
                 "Unexpected instance type variable $typeParameterBuilder");
             break;
@@ -310,7 +317,10 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
       buffer.write("<");
       bool first = true;
       for (TypeBuilder t in typeArguments) {
-        if (!first) buffer.write(", ");
+        if (!first) {
+          // Coverage-ignore-block(suite): Not run.
+          buffer.write(", ");
+        }
         first = false;
         t.printOn(buffer);
       }
@@ -346,6 +356,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
 
     Message message;
     if (declaration!.isTypeVariable) {
+      // Coverage-ignore-block(suite): Not run.
       message =
           templateSupertypeIsTypeVariable.withArguments(fullNameForErrors);
     } else if (type.nullability == Nullability.nullable) {
@@ -370,31 +381,36 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
               messageExtendsDeferredClass,
               typeName.fullNameOffset,
               typeName.fullNameLength,
-              fileUri ?? libraryBuilder.fileUri);
+              fileUri ?? // Coverage-ignore(suite): Not run.
+                  libraryBuilder.fileUri);
         case TypeUse.classImplementsType:
           libraryBuilder.addProblem(
               messageClassImplementsDeferredClass,
               typeName.fullNameOffset,
               typeName.fullNameLength,
-              fileUri ?? libraryBuilder.fileUri);
+              fileUri ?? // Coverage-ignore(suite): Not run.
+                  libraryBuilder.fileUri);
         case TypeUse.mixinOnType:
           libraryBuilder.addProblem(
               messageMixinSuperClassConstraintDeferredClass,
               typeName.fullNameOffset,
               typeName.fullNameLength,
-              fileUri ?? libraryBuilder.fileUri);
+              fileUri ?? // Coverage-ignore(suite): Not run.
+                  libraryBuilder.fileUri);
         case TypeUse.extensionTypeImplementsType:
           libraryBuilder.addProblem(
               messageExtensionTypeImplementsDeferred,
               typeName.fullNameOffset,
               typeName.fullNameLength,
-              fileUri ?? libraryBuilder.fileUri);
+              fileUri ?? // Coverage-ignore(suite): Not run.
+                  libraryBuilder.fileUri);
         case TypeUse.classWithType:
           libraryBuilder.addProblem(
               messageMixinDeferredMixin,
               typeName.fullNameOffset,
               typeName.fullNameLength,
-              fileUri ?? libraryBuilder.fileUri);
+              fileUri ?? // Coverage-ignore(suite): Not run.
+                  libraryBuilder.fileUri);
         case TypeUse.literalTypeArgument:
         case TypeUse.variableType:
         case TypeUse.typeParameterBound:
@@ -413,13 +429,21 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         case TypeUse.typeLiteral:
         case TypeUse.extensionOnType:
         case TypeUse.extensionTypeRepresentationType:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.typeArgument:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.typedefAlias:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.instantiation:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.enumSelfType:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.macroTypeArgument:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.typeParameterDefaultType:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.defaultTypeAsTypeArgument:
+        // Coverage-ignore(suite): Not run.
         case TypeUse.deferredTypeError:
       }
     }
@@ -432,7 +456,9 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
     if (libraryBuilder is SourceLibraryBuilder) {
       _checkDeferred(libraryBuilder, typeUse);
       if (!isRecordAccessAllowed(libraryBuilder) &&
+          // Coverage-ignore(suite): Not run.
           isDartCoreRecord(aliasedType)) {
+        // Coverage-ignore-block(suite): Not run.
         libraryBuilder.reportFeatureNotEnabled(
             libraryBuilder.libraryFeatures.records,
             fileUri ?? libraryBuilder.fileUri,
@@ -448,7 +474,9 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
       {Set<TypeAliasBuilder>? usedTypeAliasBuilders,
       List<TypeBuilder>? unboundTypes,
       List<StructuralVariableBuilder>? unboundTypeVariables}) {
-    assert(declaration != null, "Declaration has not been resolved on $this.");
+    assert(
+        declaration != null, // Coverage-ignore(suite): Not run.
+        "Declaration has not been resolved on $this.");
     if (declaration is TypeAliasBuilder) {
       return (declaration as TypeAliasBuilder).unalias(typeArguments,
           usedTypeAliasBuilders: usedTypeAliasBuilders,
@@ -461,11 +489,15 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
   @override
   DartType buildAliased(
       LibraryBuilder library, TypeUse typeUse, ClassHierarchyBase? hierarchy) {
-    assert(hierarchy != null || isExplicit, "Cannot build $this.");
+    assert(
+        hierarchy != null || isExplicit, // Coverage-ignore(suite): Not run.
+        "Cannot build $this.");
     DartType builtType = _buildAliasedInternal(library, typeUse, hierarchy);
     if (library is SourceLibraryBuilder &&
         !isRecordAccessAllowed(library) &&
+        // Coverage-ignore(suite): Not run.
         isDartCoreRecord(builtType)) {
+      // Coverage-ignore-block(suite): Not run.
       library.reportFeatureNotEnabled(
           library.libraryFeatures.records,
           fileUri ?? library.fileUri,
@@ -478,7 +510,9 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
 
   DartType _buildAliasedInternal(
       LibraryBuilder library, TypeUse typeUse, ClassHierarchyBase? hierarchy) {
-    assert(declaration != null, "Declaration has not been resolved on $this.");
+    assert(
+        declaration != null, // Coverage-ignore(suite): Not run.
+        "Declaration has not been resolved on $this.");
     return declaration!.buildAliasedType(
         library,
         nullabilityBuilder,
@@ -496,6 +530,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
     switch (declaration) {
       case ClassBuilder():
         if (declaration.isNullClass) {
+          // Coverage-ignore-block(suite): Not run.
           if (!library.mayImplementRestrictedTypes) {
             library.addProblem(
                 templateExtendingRestricted.withArguments(declaration.name),
@@ -507,7 +542,9 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         DartType type = build(library, typeUse);
         if (type is InterfaceType) {
           return new Supertype(type.classNode, type.typeArguments);
-        } else if (type is FutureOrType) {
+        }
+        // Coverage-ignore(suite): Not run.
+        else if (type is FutureOrType) {
           return new Supertype(declaration.cls, [type.typeArgument]);
         } else if (type is NullType) {
           return new Supertype(declaration.cls, []);
@@ -518,6 +555,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
         if (type is InterfaceType && type.nullability != Nullability.nullable) {
           return new Supertype(type.classNode, type.typeArguments);
         } else if (type is NullType) {
+          // Coverage-ignore-block(suite): Not run.
           // Even though `Null` is disallowed as a supertype,
           // [ClassHierarchyBuilder] still expects it to be built to the
           // respective [InterfaceType] referencing the deprecated class.
@@ -538,6 +576,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
           return new Supertype(
               (unaliasedDeclaration as ClassBuilder).cls, const <DartType>[]);
         } else if (type is FutureOrType) {
+          // Coverage-ignore-block(suite): Not run.
           // Even though `FutureOr` is disallowed as a supertype,
           // [ClassHierarchyBuilder] still expects it to be built to the
           // respective [InterfaceType] referencing the deprecated class. In
@@ -574,6 +613,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
       case ExtensionTypeDeclarationBuilder():
       case ExtensionBuilder():
       case BuiltinTypeDeclarationBuilder():
+      // Coverage-ignore(suite): Not run.
       // TODO(johnniwinther): How should we handle this case?
       case OmittedTypeDeclarationBuilder():
     }
@@ -610,6 +650,7 @@ abstract class NamedTypeBuilderImpl extends NamedTypeBuilder {
       case ExtensionBuilder():
       case ExtensionTypeDeclarationBuilder():
       case BuiltinTypeDeclarationBuilder():
+      // Coverage-ignore(suite): Not run.
       // TODO(johnniwinther): How should we handle this case?
       case OmittedTypeDeclarationBuilder():
     }
@@ -751,6 +792,7 @@ class _ExplicitNamedTypeBuilder extends NamedTypeBuilderImpl {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// A named type that needs type inference to be fully defined.
 ///
 /// This occurs through macros where type arguments can be defined in terms of

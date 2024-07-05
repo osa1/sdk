@@ -257,11 +257,31 @@ class CompileTimeErrorCode extends AnalyzerErrorCode {
         "Try changing the augmentation to match the declaration kind.",
   );
 
+  static const CompileTimeErrorCode AUGMENTATION_TYPE_PARAMETER_BOUND =
+      CompileTimeErrorCode(
+    'AUGMENTATION_TYPE_PARAMETER_BOUND',
+    "The augmentation type parameter must have the same bound as the "
+        "corresponding type parameter of the declaration.",
+    correctionMessage:
+        "Try changing the augmentation to match the declaration type "
+        "parameters.",
+  );
+
   static const CompileTimeErrorCode AUGMENTATION_TYPE_PARAMETER_COUNT =
       CompileTimeErrorCode(
     'AUGMENTATION_TYPE_PARAMETER_COUNT',
     "The augmentation must have the same number of type parameters as the "
         "declaration.",
+    correctionMessage:
+        "Try changing the augmentation to match the declaration type "
+        "parameters.",
+  );
+
+  static const CompileTimeErrorCode AUGMENTATION_TYPE_PARAMETER_NAME =
+      CompileTimeErrorCode(
+    'AUGMENTATION_TYPE_PARAMETER_NAME',
+    "The augmentation type parameter must have the same name as the "
+        "corresponding type parameter of the declaration.",
     correctionMessage:
         "Try changing the augmentation to match the declaration type "
         "parameters.",
@@ -7615,6 +7635,18 @@ class WarningCode extends AnalyzerErrorCode {
     "The name {0} is shown, but isn't used.",
     correctionMessage: "Try removing the name from the list of shown members.",
     hasPublishedDocs: true,
+  );
+
+  ///  Parameters:
+  ///  0: the URI pointing to a nonexistent file
+  static const WarningCode URI_DOES_NOT_EXIST_IN_DOC_IMPORT = WarningCode(
+    'URI_DOES_NOT_EXIST',
+    "Target of URI doesn't exist: '{0}'.",
+    correctionMessage:
+        "Try creating the file referenced by the URI, or try using a URI for a "
+        "file that does exist.",
+    hasPublishedDocs: true,
+    uniqueName: 'URI_DOES_NOT_EXIST_IN_DOC_IMPORT',
   );
 
   ///  Parameters:

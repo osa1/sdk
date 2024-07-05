@@ -4,6 +4,8 @@
 
 import 'package:kernel/ast.dart';
 
+import '../base/problems.dart';
+import '../base/scope.dart';
 import '../builder/builder.dart';
 import '../builder/constructor_reference_builder.dart';
 import '../builder/declaration_builders.dart';
@@ -13,8 +15,6 @@ import '../builder/name_iterator.dart';
 import '../builder/type_builder.dart';
 import '../codes/cfe_codes.dart';
 import '../dill/dill_member_builder.dart';
-import '../fasta/problems.dart';
-import '../fasta/scope.dart';
 import '../type_inference/type_schema.dart';
 import 'source_factory_builder.dart';
 import 'source_library_builder.dart';
@@ -237,6 +237,7 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
         includeDuplicates: includeDuplicates);
   }
 
+  // Coverage-ignore(suite): Not run.
   factory ClassDeclarationMemberIterator.local(D classBuilder,
       {required bool includeDuplicates}) {
     return new ClassDeclarationMemberIterator._(classBuilder, null,
@@ -274,9 +275,12 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }
 
+// Coverage-ignore(suite): Not run.
 class ClassDeclarationMemberNameIterator<D extends ClassDeclaration,
     T extends Builder> implements NameIterator<T> {
   NameIterator<T>? _iterator;
@@ -344,6 +348,7 @@ class ClassDeclarationConstructorIterator<D extends ClassDeclaration,
         includeDuplicates: includeDuplicates);
   }
 
+  // Coverage-ignore(suite): Not run.
   factory ClassDeclarationConstructorIterator.local(D classBuilder,
       {required bool includeDuplicates}) {
     return new ClassDeclarationConstructorIterator._(classBuilder, null,
@@ -382,7 +387,9 @@ class ClassDeclarationConstructorIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }
 
 class ClassDeclarationConstructorNameIterator<D extends ClassDeclaration,
@@ -432,8 +439,12 @@ class ClassDeclarationConstructorNameIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 
   @override
-  String get name => _iterator?.name ?? (throw new StateError('No element'));
+  String get name =>
+      _iterator?.name ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }

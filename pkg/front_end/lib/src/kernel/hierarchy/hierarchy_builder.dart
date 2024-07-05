@@ -11,8 +11,8 @@ import 'package:kernel/core_types.dart' show CoreTypes;
 import 'package:kernel/src/types.dart' show Types;
 import 'package:kernel/type_algebra.dart' show Substitution, uniteNullabilities;
 
+import '../../base/loader.dart' show Loader;
 import '../../builder/declaration_builders.dart';
-import '../../fasta/loader.dart' show Loader;
 import '../../source/source_class_builder.dart';
 import '../../source/source_extension_type_declaration_builder.dart';
 import '../../source/source_loader.dart' show SourceLoader;
@@ -79,6 +79,7 @@ class ClassHierarchyBuilder
 
   Supertype? asSupertypeOf(InterfaceType subtype, Class supertype) {
     if (subtype.classNode == supertype) {
+      // Coverage-ignore-block(suite): Not run.
       return new Supertype(supertype, subtype.typeArguments);
     }
     Supertype? cls = getClassAsInstanceOf(subtype.classNode, supertype);
@@ -128,10 +129,12 @@ class ClassHierarchyBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool isSubInterfaceOf(Class subtype, Class superclass) {
     return getClassAsInstanceOf(subtype, superclass) != null;
   }
 
+  // Coverage-ignore(suite): Not run.
   InterfaceType _getLegacyLeastUpperBoundInternal(
       TypeDeclarationType type1,
       TypeDeclarationType type2,
@@ -192,6 +195,7 @@ class ClassHierarchyBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   InterfaceType getLegacyLeastUpperBound(
       InterfaceType type1, InterfaceType type2) {
     if (type1 == type2) return type1;
@@ -201,6 +205,7 @@ class ClassHierarchyBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   InterfaceType getLegacyLeastUpperBoundFromSupertypeLists(
       TypeDeclarationType type1,
       TypeDeclarationType type2,

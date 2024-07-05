@@ -868,11 +868,20 @@ abstract final class DartFixKind {
     DartFixKindPriority.IN_FILE - 20,
     'Inline type definitions everywhere in file',
   );
+  static const INSERT_BODY = FixKind(
+    'dart.fix.insertBody',
+    DartFixKindPriority.DEFAULT,
+    'Insert body',
+  );
   static const INSERT_SEMICOLON = FixKind(
     'dart.fix.insertSemicolon',
     DartFixKindPriority.DEFAULT,
     "Insert ';'",
   );
+  static const INSERT_SEMICOLON_MULTI = FixKind(
+      'dart.fix.insertSemicolon.multi',
+      DartFixKindPriority.IN_FILE,
+      "Insert ';' everywhere in file");
   static const MAKE_CLASS_ABSTRACT = FixKind(
     'dart.fix.makeClassAbstract',
     DartFixKindPriority.DEFAULT,

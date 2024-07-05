@@ -4,7 +4,7 @@
 
 library fasta.declaration;
 
-import '../fasta/problems.dart' show unsupported;
+import '../base/problems.dart' show unsupported;
 
 abstract class Builder {
   /// Used when multiple things with the same name are declared within the same
@@ -274,9 +274,11 @@ abstract class BuilderImpl implements Builder {
   bool get hasProblem => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isConst => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isConstructor => false;
 
   @override
@@ -286,6 +288,7 @@ abstract class BuilderImpl implements Builder {
   bool get isField => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isFinal => false;
 
   @override
@@ -295,15 +298,19 @@ abstract class BuilderImpl implements Builder {
   bool get isExtension => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isDeclarationMember => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isClassMember => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isExtensionMember => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isExtensionTypeMember => false;
 
   @override
@@ -337,15 +344,18 @@ abstract class BuilderImpl implements Builder {
   bool get isSetter => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isStatic => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isExternal => false;
 
   @override
   bool get isSynthetic => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isTopLevel => false;
 
   @override
@@ -355,6 +365,7 @@ abstract class BuilderImpl implements Builder {
   bool get isTypeVariable => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   void applyAugmentation(Builder augmentation) {
     unsupported("${runtimeType}.applyAugmentation", charOffset, fileUri);
   }

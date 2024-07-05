@@ -23475,13 +23475,21 @@ _Target of URI doesn't exist: '{0}'._
 The analyzer produces this diagnostic when an import, export, or part
 directive is found where the URI refers to a file that doesn't exist.
 
-#### Example
+#### Examples
 
 If the file `lib.dart` doesn't exist, the following code produces this
 diagnostic:
 
 ```dart
 import [!'lib.dart'!];
+```
+
+If the file `lib.dart` doesn't exist, the following code produces this
+diagnostic:
+
+```dart
+/// @docImport [!'lib.dart'!];
+library;
 ```
 
 #### Common fixes
@@ -27251,7 +27259,9 @@ import 'bar.dart';
 
 ### prefer_typing_uninitialized_variables
 
-_Prefer typing uninitialized variables and fields._
+_An uninitialized field should have an explicit type annotation._
+
+_An uninitialized variable should have an explicit type annotation._
 
 #### Description
 
@@ -28585,7 +28595,9 @@ part of 'lib.dart';
 
 ### use_super_parameters
 
-_Use super-initializer parameters where possible._
+_Convert '{0}' to a super parameter._
+
+_Convert {0} to super parameters._
 
 #### Description
 

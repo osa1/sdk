@@ -417,10 +417,11 @@ class LibraryAnalyzer {
     //
     // Compute inheritance and override errors.
     //
-    var inheritanceOverrideVerifier = InheritanceOverrideVerifier(
-        _typeSystem, _inheritance, errorReporter,
-        strictCasts: _analysisOptions.strictCasts);
-    inheritanceOverrideVerifier.verifyUnit(unit);
+    InheritanceOverrideVerifier(
+      _typeSystem,
+      _inheritance,
+      errorReporter,
+    ).verifyUnit(unit);
 
     //
     // Use the ErrorVerifier to compute errors.
@@ -428,6 +429,7 @@ class LibraryAnalyzer {
     ErrorVerifier errorVerifier = ErrorVerifier(
       errorReporter,
       _libraryElement,
+      unit.declaredElement!,
       _typeProvider,
       _inheritance,
       _libraryVerificationContext,
@@ -619,15 +621,20 @@ class LibraryAnalyzer {
           CompileTimeErrorCode.USE_OF_NATIVE_EXTENSION,
         );
       } else if (state.importedSource == null) {
+        var errorCode = state.isDocImport
+            ? WarningCode.URI_DOES_NOT_EXIST_IN_DOC_IMPORT
+            : CompileTimeErrorCode.URI_DOES_NOT_EXIST;
         errorReporter.atNode(
           directive.uri,
-          CompileTimeErrorCode.URI_DOES_NOT_EXIST,
+          errorCode,
           arguments: [selectedUriStr],
         );
       } else if (state is LibraryImportWithFile && !state.importedFile.exists) {
-        var errorCode = isGeneratedSource(state.importedSource)
-            ? CompileTimeErrorCode.URI_HAS_NOT_BEEN_GENERATED
-            : CompileTimeErrorCode.URI_DOES_NOT_EXIST;
+        var errorCode = state.isDocImport
+            ? WarningCode.URI_DOES_NOT_EXIST_IN_DOC_IMPORT
+            : isGeneratedSource(state.importedSource)
+                ? CompileTimeErrorCode.URI_HAS_NOT_BEEN_GENERATED
+                : CompileTimeErrorCode.URI_DOES_NOT_EXIST;
         errorReporter.atNode(
           directive.uri,
           errorCode,

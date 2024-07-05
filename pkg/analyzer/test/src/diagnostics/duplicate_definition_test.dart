@@ -158,6 +158,33 @@ class C {
     ]);
   }
 
+  test_instance_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+class C {
+  int get foo => 0;
+}
+
+augment class C {
+  augment int get foo => 0;
+}
+''');
+  }
+
+  test_instance_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class C {
+  int get foo => 0;
+}
+
+augment class C {
+  int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 61, 3,
+          contextMessages: [message(testFile, 20, 3)]),
+    ]);
+  }
+
   test_instance_getter_method() async {
     await assertErrorsInCode(r'''
 class C {
@@ -204,53 +231,29 @@ class C {
   }
 
   test_instance_method_method_augment() async {
-    var a = newFile('$testPackageLibPath/a.dart', r'''
-augment library 'test.dart';
+    await assertNoErrorsInCode(r'''
+class A {
+  void foo() {}
+}
 
 augment class A {
   augment void foo() {}
 }
 ''');
-
-    newFile(testFile.path, r'''
-import augment 'a.dart';
-
-class A {
-  void foo() {}
-}
-''');
-
-    await resolveTestFile();
-    assertNoErrorsInResult();
-
-    await resolveFile2(a);
-    assertNoErrorsInResult();
   }
 
   test_instance_method_method_inAugmentation() async {
-    var a = newFile('$testPackageLibPath/a.dart', r'''
-augment library 'test.dart';
+    await assertErrorsInCode(r'''
+class A {
+  void foo() {}
+}
 
 augment class A {
   void foo() {}
 }
-''');
-
-    newFile(testFile.path, r'''
-import augment 'a.dart';
-
-class A {
-  void foo() {}
-}
-''');
-
-    await resolveTestFile();
-    assertNoErrorsInResult();
-
-    await resolveFile2(a);
-    assertErrorsInResult([
-      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 55, 3,
-          contextMessages: [message(testFile, 43, 3)]),
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 54, 3,
+          contextMessages: [message(testFile, 17, 3)]),
     ]);
   }
 
@@ -263,6 +266,48 @@ class C {
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 32, 3,
           contextMessages: [message(testFile, 17, 3)]),
+    ]);
+  }
+
+  test_instance_method_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  void foo() {}
+}
+
+augment class A {
+  set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 53, 3,
+          contextMessages: [message(testFile, 17, 3)]),
+    ]);
+  }
+
+  test_instance_operator_operator_augment() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  int operator +(int _) => 0;
+}
+
+augment class A {
+  augment int operator +(int _) => 0;
+}
+''');
+  }
+
+  test_instance_operator_operator_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  int operator +(int _) => 0;
+}
+
+augment class A {
+  int operator +(int _) => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 76, 1,
+          contextMessages: [message(testFile, 25, 1)]),
     ]);
   }
 
@@ -287,6 +332,21 @@ class C {
     ]);
   }
 
+  test_instance_setter_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  set foo(_) {}
+}
+
+augment class A {
+  void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 54, 3,
+          contextMessages: [message(testFile, 16, 3)]),
+    ]);
+  }
+
   test_instance_setter_setter() async {
     await assertErrorsInCode(r'''
 class C {
@@ -295,6 +355,33 @@ class C {
 }
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 42, 3,
+          contextMessages: [message(testFile, 21, 3)]),
+    ]);
+  }
+
+  test_instance_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+class C {
+  void set foo(_) {}
+}
+
+augment class C {
+  augment void set foo(_) {}
+}
+''');
+  }
+
+  test_instance_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class C {
+  void set foo(_) {}
+}
+
+augment class C {
+  void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 63, 3,
           contextMessages: [message(testFile, 21, 3)]),
     ]);
   }
@@ -368,6 +455,33 @@ class C {
     ]);
   }
 
+  test_static_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  static int get foo => 0;
+}
+
+augment class A {
+  augment static int get foo => 0;
+}
+''');
+  }
+
+  test_static_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  static int get foo => 0;
+}
+
+augment class A {
+  static int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 75, 3,
+          contextMessages: [message(testFile, 27, 3)]),
+    ]);
+  }
+
   test_static_getter_method() async {
     await assertErrorsInCode(r'''
 class C {
@@ -413,6 +527,33 @@ class C {
     ]);
   }
 
+  test_static_method_method_augment() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  static void foo() {}
+}
+
+augment class A {
+  augment static void foo() {}
+}
+''');
+  }
+
+  test_static_method_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  static void foo() {}
+}
+
+augment class A {
+  static void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 68, 3,
+          contextMessages: [message(testFile, 24, 3)]),
+    ]);
+  }
+
   test_static_method_setter() async {
     await assertErrorsInCode(r'''
 class C {
@@ -454,6 +595,33 @@ class C {
 }
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 56, 3,
+          contextMessages: [message(testFile, 28, 3)]),
+    ]);
+  }
+
+  test_static_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  static void set foo(_) {}
+}
+
+augment class A {
+  augment static void set foo(_) {}
+}
+''');
+  }
+
+  test_static_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+class A {
+  static void set foo(_) {}
+}
+
+augment class A {
+  static void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 77, 3,
           contextMessages: [message(testFile, 28, 3)]),
     ]);
   }
@@ -556,6 +724,35 @@ enum E {
     ]);
   }
 
+  test_instance_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  int get foo => 0;
+}
+
+augment enum E {;
+  augment int get foo => 0;
+}
+''');
+  }
+
+  test_instance_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  int get foo => 0;
+}
+
+augment enum E {;
+  int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 65, 3,
+          contextMessages: [message(testFile, 24, 3)]),
+    ]);
+  }
+
   test_instance_getter_method() async {
     await assertErrorsInCode(r'''
 enum E {
@@ -605,6 +802,35 @@ enum E {
     ]);
   }
 
+  test_instance_method_method_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  void foo() {}
+}
+
+augment enum E {;
+  augment void foo() {}
+}
+''');
+  }
+
+  test_instance_method_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  void foo() {}
+}
+
+augment enum E {;
+  void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 58, 3,
+          contextMessages: [message(testFile, 21, 3)]),
+    ]);
+  }
+
   test_instance_method_setter() async {
     await assertErrorsInCode(r'''
 enum E {
@@ -650,6 +876,35 @@ enum E {
 }
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 46, 3,
+          contextMessages: [message(testFile, 25, 3)]),
+    ]);
+  }
+
+  test_instance_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  void set foo(_) {}
+}
+
+augment enum E {;
+  augment void set foo(_) {}
+}
+''');
+  }
+
+  test_instance_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  void set foo(_) {}
+}
+
+augment enum E {;
+  void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 67, 3,
           contextMessages: [message(testFile, 25, 3)]),
     ]);
   }
@@ -774,6 +1029,35 @@ enum E {
     ]);
   }
 
+  test_static_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  static int get foo => 0;
+}
+
+augment enum E {;
+  augment static int get foo => 0;
+}
+''');
+  }
+
+  test_static_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  static int get foo => 0;
+}
+
+augment enum E {;
+  static int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 79, 3,
+          contextMessages: [message(testFile, 31, 3)]),
+    ]);
+  }
+
   test_static_getter_method() async {
     await assertErrorsInCode(r'''
 enum E {
@@ -819,6 +1103,35 @@ enum E {
 }
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 51, 3,
+          contextMessages: [message(testFile, 28, 3)]),
+    ]);
+  }
+
+  test_static_method_method_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  static void foo() {}
+}
+
+augment enum E {;
+  augment static void foo() {}
+}
+''');
+  }
+
+  test_static_method_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  static void foo() {}
+}
+
+augment enum E {;
+  static void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 72, 3,
           contextMessages: [message(testFile, 28, 3)]),
     ]);
   }
@@ -871,6 +1184,35 @@ enum E {
           contextMessages: [message(testFile, 32, 3)]),
     ]);
   }
+
+  test_static_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+enum E {
+  v;
+  static void set foo(_) {}
+}
+
+augment enum E {;
+  augment static void set foo(_) {}
+}
+''');
+  }
+
+  test_static_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+enum E {
+  v;
+  static void set foo(_) {}
+}
+
+augment enum E {;
+  static void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 81, 3,
+          contextMessages: [message(testFile, 32, 3)]),
+    ]);
+  }
 }
 
 @reflectiveTest
@@ -917,6 +1259,33 @@ extension E on A {
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 60, 3,
           contextMessages: [message(testFile, 40, 3)]),
+    ]);
+  }
+
+  test_instance_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  int get foo => 0;
+}
+
+augment extension E {
+  augment int get foo => 0;
+}
+''');
+  }
+
+  test_instance_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  int get foo => 0;
+}
+
+augment extension E {
+  int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 76, 3,
+          contextMessages: [message(testFile, 31, 3)]),
     ]);
   }
 
@@ -969,6 +1338,33 @@ extension E on A {
     ]);
   }
 
+  test_instance_method_method_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  void foo() {}
+}
+
+augment extension E {
+  augment void foo() {}
+}
+''');
+  }
+
+  test_instance_method_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  void foo() {}
+}
+
+augment extension E {
+  void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 69, 3,
+          contextMessages: [message(testFile, 28, 3)]),
+    ]);
+  }
+
   test_instance_method_setter() async {
     await assertErrorsInCode(r'''
 class A {}
@@ -1015,6 +1411,33 @@ extension E on A {
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 62, 3,
           contextMessages: [message(testFile, 41, 3)]),
+    ]);
+  }
+
+  test_instance_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  void set foo(_) {}
+}
+
+augment extension E {
+  augment void set foo(_) {}
+}
+''');
+  }
+
+  test_instance_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  void set foo(_) {}
+}
+
+augment extension E {
+  void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 78, 3,
+          contextMessages: [message(testFile, 32, 3)]),
     ]);
   }
 
@@ -1093,6 +1516,33 @@ extension E on A {
     ]);
   }
 
+  test_static_getter_getter_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  static int get foo => 0;
+}
+
+augment extension E {
+  augment static int get foo => 0;
+}
+''');
+  }
+
+  test_static_getter_getter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  static int get foo => 0;
+}
+
+augment extension E {
+  static int get foo => 0;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 90, 3,
+          contextMessages: [message(testFile, 38, 3)]),
+    ]);
+  }
+
   test_static_getter_method() async {
     await assertErrorsInCode(r'''
 class A {}
@@ -1142,6 +1592,33 @@ extension E on A {
     ]);
   }
 
+  test_static_method_method_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  static void foo() {}
+}
+
+augment extension E {
+  augment static void foo() {}
+}
+''');
+  }
+
+  test_static_method_method_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  static void foo() {}
+}
+
+augment extension E {
+  static void foo() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 83, 3,
+          contextMessages: [message(testFile, 35, 3)]),
+    ]);
+  }
+
   test_static_method_setter() async {
     await assertErrorsInCode(r'''
 class A {}
@@ -1187,6 +1664,33 @@ extension E on A {
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 76, 3,
           contextMessages: [message(testFile, 48, 3)]),
+    ]);
+  }
+
+  test_static_setter_setter_augment() async {
+    await assertNoErrorsInCode(r'''
+extension E on int {
+  static void set foo(_) {}
+}
+
+augment extension E {
+  augment static void set foo(_) {}
+}
+''');
+  }
+
+  test_static_setter_setter_inAugmentation() async {
+    await assertErrorsInCode(r'''
+extension E on int {
+  static void set foo(_) {}
+}
+
+augment extension E {
+  static void set foo(_) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 92, 3,
+          contextMessages: [message(testFile, 39, 3)]),
     ]);
   }
 
@@ -1894,6 +2398,30 @@ void f() {
     ]);
   }
 
+  test_block_localVariable_localVariable_wildcard() async {
+    await assertNoErrorsInCode(r'''
+void f() {
+  var _ = 0;
+  var _ = 1;
+}
+''');
+  }
+
+  test_block_localVariable_localVariable_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+void f() {
+  var _ = 0;
+  var _ = 1;
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 74, 1,
+          contextMessages: [message(testFile, 61, 1)]),
+    ]);
+  }
+
   test_block_localVariable_patternVariable() async {
     await assertErrorsInCode(r'''
 void f() {
@@ -1906,6 +2434,27 @@ void f() {
           contextMessages: [message(testFile, 17, 1)]),
       error(HintCode.UNUSED_LOCAL_VARIABLE, 31, 1),
     ]);
+  }
+
+  test_block_localVariable_patternVariable_wildcard() async {
+    await assertNoErrorsInCode(r'''
+void f() {
+  var _ = 0;
+  var (_) = 1;
+}
+''');
+  }
+
+  test_block_localVariable_patternVariable_wildcard_preWildcards() async {
+    await assertNoErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+void f() {
+  var _ = 0;
+  var (_) = 1;
+}
+''');
   }
 
   test_block_patternVariable_localVariable() async {
@@ -1947,6 +2496,26 @@ main() {
     ]);
   }
 
+  test_catch_wildcard() async {
+    await assertNoErrorsInCode(r'''
+f() {
+  try {} catch (_, _) {}
+}''');
+  }
+
+  test_catch_wildcard_preWildCards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+f() {
+  try {} catch (_, _) {}
+}''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 69, 1,
+          contextMessages: [message(testFile, 66, 1)]),
+    ]);
+  }
+
   test_emptyName() async {
     // Note: This code has two FunctionElements '() {}' with an empty name; this
     // tests that the empty string is not put into the scope (more than once).
@@ -1972,6 +2541,28 @@ f() {
     ]);
   }
 
+  test_for_initializers_wildcard() async {
+    await assertNoErrorsInCode(r'''
+f() {
+  for (int _ = 0, _ = 0; ;) {}
+}
+''');
+  }
+
+  test_for_initializers_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+f() {
+  for (int _ = 0, _ = 0; ;) {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 68, 1,
+          contextMessages: [message(testFile, 61, 1)]),
+    ]);
+  }
+
   test_getter_single() async {
     await assertNoErrorsInCode('''
 bool get a => true;
@@ -1990,6 +2581,33 @@ class A {
     ]);
   }
 
+  test_parameters_constructor_field_first_wildcard() async {
+    await assertErrorsInCode(r'''
+class A {
+  int? _;
+  A(this._, int _);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 17, 1),
+    ]);
+  }
+
+  test_parameters_constructor_field_first_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A {
+  int? _;
+  A(this._, int _);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 61, 1),
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 80, 1,
+          contextMessages: [message(testFile, 73, 1)]),
+    ]);
+  }
+
   test_parameters_constructor_field_second() async {
     await assertErrorsInCode(r'''
 class A {
@@ -2002,6 +2620,68 @@ class A {
     ]);
   }
 
+  test_parameters_constructor_field_second_wildcard() async {
+    await assertErrorsInCode(r'''
+class A {
+  int? _;
+  A(int _, this._);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 17, 1),
+    ]);
+  }
+
+  test_parameters_constructor_field_second_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A {
+  int? _;
+  A(int _, this._);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 61, 1),
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 80, 1,
+          contextMessages: [message(testFile, 72, 1)]),
+    ]);
+  }
+
+  test_parameters_constructor_super_first_wildcard() async {
+    await assertErrorsInCode(r'''
+class A {
+  int? _;
+  A(this._);
+}
+class B extends A {
+  B(super._, super._);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 17, 1),
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 74, 1,
+          contextMessages: [message(testFile, 65, 1)]),
+    ]);
+  }
+
+  test_parameters_constructor_super_first_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A {
+  int? _;
+  A(this._);
+}
+class B extends A {
+  B(super._, super._);
+}
+''', [
+      error(WarningCode.UNUSED_FIELD, 61, 1),
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 118, 1,
+          contextMessages: [message(testFile, 109, 1)]),
+    ]);
+  }
+
   test_parameters_functionTypeAlias() async {
     await assertErrorsInCode(r'''
 typedef void F(int a, double a);
@@ -2011,12 +2691,48 @@ typedef void F(int a, double a);
     ]);
   }
 
+  test_parameters_functionTypeAlias_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef void F(int _, double _);
+''');
+  }
+
+  test_parameters_functionTypeAlias_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef void F(int _, double _);
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 73, 1,
+          contextMessages: [message(testFile, 63, 1)]),
+    ]);
+  }
+
   test_parameters_genericFunction() async {
     await assertErrorsInCode(r'''
 typedef F = void Function(int a, double a);
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 40, 1,
           contextMessages: [message(testFile, 30, 1)]),
+    ]);
+  }
+
+  test_parameters_genericFunction_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef F = void Function(int _, double _);
+''');
+  }
+
+  test_parameters_genericFunction_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef F = void Function(int _, double _);
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 84, 1,
+          contextMessages: [message(testFile, 74, 1)]),
     ]);
   }
 
@@ -2033,6 +2749,31 @@ main() {
     ]);
   }
 
+  test_parameters_localFunction_wildcard() async {
+    await assertErrorsInCode(r'''
+f() {
+  g(int _, double _) {};
+}
+''', [
+      error(WarningCode.UNUSED_ELEMENT, 8, 1),
+    ]);
+  }
+
+  test_parameters_localFunction_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+f() {
+  g(int _, double _) {};
+}
+''', [
+      error(WarningCode.UNUSED_ELEMENT, 52, 1),
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 68, 1,
+          contextMessages: [message(testFile, 58, 1)]),
+    ]);
+  }
+
   test_parameters_method() async {
     await assertErrorsInCode(r'''
 class A {
@@ -2045,12 +2786,54 @@ class A {
     ]);
   }
 
+  test_parameters_method_wildcard() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  m(int _, double _) {
+  }
+}
+''');
+  }
+
+  test_parameters_method_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A {
+  m(int _, double _) {
+  }
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 72, 1,
+          contextMessages: [message(testFile, 62, 1)]),
+    ]);
+  }
+
   test_parameters_topLevelFunction() async {
     await assertErrorsInCode(r'''
 f(int a, double a) {}
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 16, 1,
           contextMessages: [message(testFile, 6, 1)]),
+    ]);
+  }
+
+  test_parameters_topLevelFunction_wildcard() async {
+    await assertNoErrorsInCode(r'''
+f(int _, double _) {}
+''');
+  }
+
+  test_parameters_topLevelFunction_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+f(int _, double _) {}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 60, 1,
+          contextMessages: [message(testFile, 50, 1)]),
     ]);
   }
 
@@ -2089,6 +2872,36 @@ void f() {
     ]);
   }
 
+  test_switchDefault_localVariable_localVariable_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+void f() {
+  switch (0) {
+    default:
+      var _;
+      var _;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 106, 1,
+          contextMessages: [message(testFile, 93, 1)]),
+    ]);
+  }
+
+  test_switchDefault_localVariable_localVariable_wildcard() async {
+    await assertNoErrorsInCode(r'''
+void f() {
+  switch (0) {
+    default:
+      var _;
+      var _;
+  }
+}
+''');
+  }
+
   test_switchPatternCase_localVariable_localVariable() async {
     await assertErrorsInCode(r'''
 void f() {
@@ -2106,12 +2919,60 @@ void f() {
     ]);
   }
 
+  test_switchPatternCase_localVariable_localVariable_wildcard() async {
+    await assertNoErrorsInCode(r'''
+void f() {
+  switch (0) {
+    case 0:
+      var _;
+      var _;
+  }
+}
+''');
+  }
+
+  test_switchPatternCase_localVariable_localVariable_wildcard_preWildCards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+void f() {
+  switch (0) {
+    case 0:
+      var _;
+      var _;
+  }
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 105, 1,
+          contextMessages: [message(testFile, 92, 1)]),
+    ]);
+  }
+
   test_typeParameters_class() async {
     await assertErrorsInCode(r'''
 class A<T, T> {}
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 11, 1,
           contextMessages: [message(testFile, 8, 1)]),
+    ]);
+  }
+
+  test_typeParameters_class_wildcard() async {
+    await assertNoErrorsInCode(r'''
+class A<_, _> {}
+''');
+  }
+
+  test_typeParameters_class_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A<_, _> {}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 55, 1,
+          contextMessages: [message(testFile, 52, 1)]),
     ]);
   }
 
@@ -2124,12 +2985,48 @@ typedef void F<T, T>();
     ]);
   }
 
+  test_typeParameters_functionTypeAlias_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef void F<_, _>();
+''');
+  }
+
+  test_typeParameters_functionTypeAlias_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef void F<_, _>();
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 62, 1,
+          contextMessages: [message(testFile, 59, 1)]),
+    ]);
+  }
+
   test_typeParameters_genericFunction() async {
     await assertErrorsInCode(r'''
 typedef F = void Function<T, T>();
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 29, 1,
           contextMessages: [message(testFile, 26, 1)]),
+    ]);
+  }
+
+  test_typeParameters_genericFunction_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef F = void Function<_, _>();
+''');
+  }
+
+  test_typeParameters_genericFunction_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef F = void Function<_, _>();
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 73, 1,
+          contextMessages: [message(testFile, 70, 1)]),
     ]);
   }
 
@@ -2142,12 +3039,48 @@ typedef F<T, T> = void Function();
     ]);
   }
 
+  test_typeParameters_genericTypedef_functionType_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef F<_, _> = void Function();
+''');
+  }
+
+  test_typeParameters_genericTypedef_functionType_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef F<_, _> = void Function();
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 57, 1,
+          contextMessages: [message(testFile, 54, 1)]),
+    ]);
+  }
+
   test_typeParameters_genericTypedef_interfaceType() async {
     await assertErrorsInCode(r'''
 typedef F<T, T> = Map;
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 13, 1,
           contextMessages: [message(testFile, 10, 1)]),
+    ]);
+  }
+
+  test_typeParameters_genericTypedef_interfaceType_wildcard() async {
+    await assertNoErrorsInCode(r'''
+typedef F<_, _> = Map;
+''');
+  }
+
+  test_typeParameters_genericTypedef_interfaceType_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+typedef F<_, _> = Map;
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 57, 1,
+          contextMessages: [message(testFile, 54, 1)]),
     ]);
   }
 
@@ -2162,12 +3095,52 @@ class A {
     ]);
   }
 
+  test_typeParameters_method_wildcard() async {
+    await assertNoErrorsInCode(r'''
+class A {
+  void m<_, _>() {}
+}
+''');
+  }
+
+  test_typeParameters_method_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+class A {
+  void m<_, _>() {}
+}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 66, 1,
+          contextMessages: [message(testFile, 63, 1)]),
+    ]);
+  }
+
   test_typeParameters_topLevelFunction() async {
     await assertErrorsInCode(r'''
 void f<T, T>() {}
 ''', [
       error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 10, 1,
           contextMessages: [message(testFile, 7, 1)]),
+    ]);
+  }
+
+  test_typeParameters_topLevelFunction_wildcard() async {
+    await assertNoErrorsInCode(r'''
+void f<_, _>() {}
+''');
+  }
+
+  test_typeParameters_topLevelFunction_wildcard_preWildcards() async {
+    await assertErrorsInCode(r'''
+// @dart = 3.4
+// (pre wildcard-variables)
+
+void f<_, _>() {}
+''', [
+      error(CompileTimeErrorCode.DUPLICATE_DEFINITION, 54, 1,
+          contextMessages: [message(testFile, 51, 1)]),
     ]);
   }
 }

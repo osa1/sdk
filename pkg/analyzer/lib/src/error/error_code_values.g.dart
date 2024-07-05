@@ -67,7 +67,9 @@ const List<ErrorCode> errorCodeValues = [
   CompileTimeErrorCode.AUGMENTATION_MODIFIER_EXTRA,
   CompileTimeErrorCode.AUGMENTATION_MODIFIER_MISSING,
   CompileTimeErrorCode.AUGMENTATION_OF_DIFFERENT_DECLARATION_KIND,
+  CompileTimeErrorCode.AUGMENTATION_TYPE_PARAMETER_BOUND,
   CompileTimeErrorCode.AUGMENTATION_TYPE_PARAMETER_COUNT,
+  CompileTimeErrorCode.AUGMENTATION_TYPE_PARAMETER_NAME,
   CompileTimeErrorCode.AUGMENTATION_WITHOUT_DECLARATION,
   CompileTimeErrorCode.AUGMENTATION_WITHOUT_IMPORT,
   CompileTimeErrorCode.AUGMENTATION_WITHOUT_LIBRARY,
@@ -1105,5 +1107,6 @@ const List<ErrorCode> errorCodeValues = [
   WarningCode.UNUSED_RESULT,
   WarningCode.UNUSED_RESULT_WITH_MESSAGE,
   WarningCode.UNUSED_SHOWN_NAME,
+  WarningCode.URI_DOES_NOT_EXIST_IN_DOC_IMPORT,
   WarningCode.invalid_use_of_do_not_submit_member,
 ];

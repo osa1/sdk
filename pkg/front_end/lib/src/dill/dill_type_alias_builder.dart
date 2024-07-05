@@ -7,11 +7,11 @@ library fasta.dill_typedef_builder;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
+import '../base/problems.dart' show unimplemented;
 import '../builder/declaration_builders.dart';
 import '../builder/library_builder.dart';
 import '../builder/metadata_builder.dart';
 import '../builder/type_builder.dart';
-import '../fasta/problems.dart' show unimplemented;
 import 'dill_class_builder.dart' show computeTypeVariableBuilders;
 import 'dill_library_builder.dart' show DillLibraryBuilder;
 
@@ -32,6 +32,7 @@ class DillTypeAliasBuilder extends TypeAliasBuilderImpl {
       : super(null, typedef.name, parent, typedef.fileOffset);
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<MetadataBuilder> get metadata {
     return unimplemented("metadata", -1, null);
   }
@@ -46,6 +47,7 @@ class DillTypeAliasBuilder extends TypeAliasBuilderImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get fromDill => true;
 
   @override

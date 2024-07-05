@@ -57,6 +57,7 @@ import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:analyzer/src/utilities/extensions/string.dart';
 import 'package:analyzer/src/utilities/uri_cache.dart';
 import 'package:analyzer/src/workspace/pub.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
 /// This class computes analysis results for Dart files.
@@ -95,7 +96,7 @@ import 'package:meta/meta.dart';
 // TODO(scheglov): Clean up the list of implicitly analyzed files.
 class AnalysisDriver {
   /// The version of data format, should be incremented on every format change.
-  static const int DATA_VERSION = 368;
+  static const int DATA_VERSION = 369;
 
   /// The number of exception contexts allowed to write. Once this field is
   /// zero, we stop writing any new exception contexts in this process.
@@ -349,7 +350,7 @@ class AnalysisDriver {
   /// in this driver.
   List<String> get enabledPluginNames => analysisOptionsMap.entries
       .map((e) => e.options.enabledPluginNames)
-      .flattenedToList2;
+      .flattenedToList;
 
   /// Return the stream that produces [ExceptionResult]s.
   Stream<ExceptionResult> get exceptions => _exceptionController.stream;
@@ -677,7 +678,7 @@ class AnalysisDriver {
 
     // Discover files in package/lib folders.
     if (_sourceFactory.packageMap case var packageMap?) {
-      var folders = packageMap.values.flattenedToList2;
+      var folders = packageMap.values.flattenedToList;
       for (var folder in folders) {
         discoverRecursively(folder);
       }
@@ -1593,7 +1594,6 @@ class AnalysisDriver {
     );
 
     _fsState = FileSystemState(
-      _logger,
       _byteStore,
       _resourceProvider,
       name,

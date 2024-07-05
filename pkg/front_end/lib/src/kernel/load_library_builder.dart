@@ -19,11 +19,9 @@ import 'package:kernel/ast.dart'
         Reference,
         ReturnStatement;
 
+import '../builder/builder.dart';
 import '../builder/library_builder.dart';
 import '../source/source_library_builder.dart' show SourceLibraryBuilder;
-
-import '../builder/builder.dart';
-
 import 'forest.dart' show Forest;
 
 /// Builder to represent the `deferLibrary.loadLibrary` calls and tear-offs.
@@ -57,6 +55,7 @@ class LoadLibraryBuilder extends BuilderImpl {
       this._importCharOffset, this._combinators);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Uri get fileUri => parent.fileUri;
 
   LoadLibrary createLoadLibrary(
@@ -65,7 +64,10 @@ class LoadLibraryBuilder extends BuilderImpl {
   }
 
   Procedure createTearoffMethod(Forest forest) {
-    if (tearoff != null) return tearoff!;
+    if (tearoff != null) {
+      // Coverage-ignore-block(suite): Not run.
+      return tearoff!;
+    }
     LoadLibrary expression = createLoadLibrary(charOffset, forest, null);
     String prefix = expression.import.name!;
     Name name = new Name('_#loadLibrary_$prefix', parent.library);
@@ -84,5 +86,6 @@ class LoadLibraryBuilder extends BuilderImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   String get fullNameForErrors => 'loadLibrary';
 }

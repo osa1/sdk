@@ -19,8 +19,8 @@ import 'package:_fe_analyzer_shared/src/scanner/utf8_bytes_scanner.dart'
 import 'package:kernel/ast.dart' show Version;
 
 import '../api_prototype/experimental_flags.dart' show ExperimentalFlag;
+import '../base/messages.dart' show Message;
 import '../codes/cfe_codes.dart' show codeNativeClauseShouldBeAnnotation;
-import '../fasta/messages.dart' show Message;
 
 abstract class _Chunk implements Comparable<_Chunk> {
   late int originalPosition;
@@ -143,7 +143,10 @@ abstract class _SortableChunk extends _TokenChunk {
 
   @override
   int compareTo(_Chunk o) {
-    if (o is! _SortableChunk) return super.compareTo(o);
+    if (o is! _SortableChunk) {
+      // Coverage-ignore-block(suite): Not run.
+      return super.compareTo(o);
+    }
 
     _SortableChunk other = o;
 
@@ -389,10 +392,12 @@ class _MetadataChunk extends _TokenChunk {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class _ScriptTagChunk extends _TokenChunk {
   _ScriptTagChunk(Token token) : super(token, token);
 }
 
+// Coverage-ignore(suite): Not run.
 class _UnknownChunk extends _TokenChunk {
   _UnknownChunk(Token startToken, Token endToken) : super(startToken, endToken);
 }
@@ -443,6 +448,7 @@ String? textualOutline(
     parsedChunks.add(new _LanguageVersionChunk(
         languageVersionToken.major, languageVersionToken.minor)
       ..originalPosition = originalPosition.value++);
+    // Coverage-ignore-block(suite): Not run.
     infoForTesting?.languageVersionTokens.add(languageVersionToken);
   });
   Token firstToken = scanner.tokenize();
@@ -450,6 +456,7 @@ String? textualOutline(
   ClassMemberParser classMemberParser =
       new ClassMemberParser(listener, allowPatterns: enablePatterns);
   classMemberParser.parseUnit(firstToken);
+  // Coverage-ignore(suite): Not run.
   infoForTesting?.hasParserErrors = listener.gotError;
   if (listener.gotError && returnNullOnError) {
     return null;
@@ -515,6 +522,7 @@ List<_Chunk> _mergeAndSort(List<_Chunk> chunks) {
     }
   }
   if (metadataChunks != null) {
+    // Coverage-ignore-block(suite): Not run.
     for (_MetadataChunk metadata in metadataChunks) {
       result.add(metadata);
     }
@@ -587,6 +595,7 @@ Token? _textualizeTokens(
     return metadataChunk.endToken.next;
   }
 
+  // Coverage-ignore-block(suite): Not run.
   // This token --- and whatever else tokens until we reach a start token we
   // know is an unknown chunk. We don't yet know the end.
   if (currentUnknown.start == null) {
@@ -643,6 +652,7 @@ void outputUnknownChunk(
     BoxedInt originalPosition,
     TextualOutlineInfoForTesting? infoForTesting) {
   if (_currentUnknown.start == null) return;
+  // Coverage-ignore-block(suite): Not run.
   infoForTesting?.hasUnknownChunk = true;
   parsedChunks.add(
       new _UnknownChunk(_currentUnknown.start!, _currentUnknown.interimEnd!)
@@ -651,6 +661,7 @@ void outputUnknownChunk(
   _currentUnknown.interimEnd = null;
 }
 
+// Coverage-ignore(suite): Not run.
 void main(List<String> args) {
   File f = new File(args[0]);
   Uint8List data = f.readAsBytesSync();
@@ -698,6 +709,7 @@ class TextualOutlineListener extends Listener {
   final Map<Token, _TokenChunk> unsortableElementStartToChunk = {};
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleScript(Token token) {
     unsortableElementStartToChunk[token] = new _ScriptTagChunk(token);
   }
@@ -898,6 +910,7 @@ class TextualOutlineListener extends Listener {
     if (message.code == codeNativeClauseShouldBeAnnotation) {
       return;
     }
+    // Coverage-ignore-block(suite): Not run.
     gotError = true;
   }
 }

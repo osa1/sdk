@@ -66,7 +66,7 @@ import 'package:analyzer/src/fasta/doc_comment_builder.dart';
 import 'package:analyzer/src/fasta/error_converter.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:analyzer/src/summary2/ast_binary_tokens.dart';
-import 'package:analyzer/src/utilities/extensions/collection.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -147,6 +147,9 @@ class AstBuilder extends StackListener {
   /// `true` if class-modifiers is enabled
   final bool enableClassModifiers;
 
+  /// `true` if null-aware elements is enabled
+  final bool enableNullAwareElements;
+
   final FeatureSet _featureSet;
 
   final LineInfo _lineInfo;
@@ -174,6 +177,8 @@ class AstBuilder extends StackListener {
         enableInlineClass = _featureSet.isEnabled(Feature.inline_class),
         enableSealedClass = _featureSet.isEnabled(Feature.sealed_class),
         enableClassModifiers = _featureSet.isEnabled(Feature.class_modifiers),
+        enableNullAwareElements =
+            _featureSet.isEnabled(Feature.null_aware_elements),
         uri = uri ?? fileUri;
 
   @override
@@ -3111,7 +3116,7 @@ class AstBuilder extends StackListener {
     debugEvent("SwitchBlock");
 
     var membersList = popTypedList2<List<SwitchMemberImpl>>(caseCount);
-    var members = membersList.flattenedToList2;
+    var members = membersList.flattenedToList;
 
     Set<String> labels = <String>{};
     for (var member in members) {
@@ -3272,7 +3277,8 @@ class AstBuilder extends StackListener {
   }
 
   @override
-  void endSwitchExpressionCase(Token? when, Token arrow, Token endToken) {
+  void endSwitchExpressionCase(
+      Token beginToken, Token? when, Token arrow, Token endToken) {
     debugEvent("SwitchExpressionCase");
     var expression = pop() as ExpressionImpl;
     WhenClauseImpl? whenClause;
@@ -3723,7 +3729,7 @@ class AstBuilder extends StackListener {
   }
 
   @override
-  void handleAssignmentExpression(Token token) {
+  void handleAssignmentExpression(Token token, Token endToken) {
     assert(token.type.isAssignmentOperator);
     debugEvent("AssignmentExpression");
 
@@ -4745,9 +4751,19 @@ class AstBuilder extends StackListener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     assert(optional(':', colon));
     debugEvent("LiteralMapEntry");
+
+    // TODO(cstefantsova): Handle null-aware map entries.
+    if (!enableNullAwareElements &&
+        (nullAwareKeyToken != null || nullAwareValueToken != null)) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.null_aware_elements,
+        startToken: nullAwareKeyToken ?? nullAwareValueToken!,
+      );
+    }
 
     var value = pop() as ExpressionImpl;
     var key = pop() as ExpressionImpl;
@@ -5033,6 +5049,18 @@ class AstBuilder extends StackListener {
         operator: bang,
       ),
     );
+  }
+
+  @override
+  void handleNullAwareElement(Token nullAwareElement) {
+    debugEvent('NullAwareElement');
+    // TODO(cstefantsova): Handle null-aware elements.
+    if (!enableNullAwareElements) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.null_aware_elements,
+        startToken: nullAwareElement,
+      );
+    }
   }
 
   @override

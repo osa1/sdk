@@ -1210,8 +1210,9 @@ class ForwardingListener implements Listener {
   }
 
   @override
-  void endSwitchExpressionCase(Token? when, Token arrow, Token endToken) {
-    listener?.endSwitchExpressionCase(when, arrow, endToken);
+  void endSwitchExpressionCase(
+      Token beginToken, Token? when, Token arrow, Token endToken) {
+    listener?.endSwitchExpressionCase(beginToken, when, arrow, endToken);
   }
 
   @override
@@ -1358,8 +1359,8 @@ class ForwardingListener implements Listener {
   }
 
   @override
-  void handleAssignmentExpression(Token token) {
-    listener?.handleAssignmentExpression(token);
+  void handleAssignmentExpression(Token token, Token endToken) {
+    listener?.handleAssignmentExpression(token, endToken);
   }
 
   @override
@@ -1648,8 +1649,11 @@ class ForwardingListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
-    listener?.handleLiteralMapEntry(colon, endToken);
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
+    listener?.handleLiteralMapEntry(colon, endToken,
+        nullAwareKeyToken: nullAwareKeyToken,
+        nullAwareValueToken: nullAwareValueToken);
   }
 
   @override
@@ -1906,6 +1910,11 @@ class ForwardingListener implements Listener {
   @override
   void endConstantPattern(Token? constKeyword) {
     listener?.endConstantPattern(constKeyword);
+  }
+
+  @override
+  void handleNullAwareElement(Token nullAwareToken) {
+    listener?.handleNullAwareElement(nullAwareToken);
   }
 
   @override

@@ -35,9 +35,18 @@ import 'package:package_config/package_config.dart' as package_config;
 
 import '../api_prototype/experimental_flags.dart';
 import '../api_prototype/file_system.dart';
+import '../base/builder_graph.dart';
 import '../base/common.dart';
+import '../base/export.dart' show Export;
+import '../base/import_chains.dart';
 import '../base/instrumentation.dart' show Instrumentation;
+import '../base/loader.dart' show Loader, untranslatableUriScheme;
 import '../base/nnbd_mode.dart';
+import '../base/problems.dart' show internalProblem;
+import '../base/scope.dart';
+import '../base/ticker.dart' show Ticker;
+import '../base/uri_offset.dart';
+import '../base/uris.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/inferable_type_builder.dart';
@@ -48,13 +57,10 @@ import '../builder/named_type_builder.dart';
 import '../builder/nullability_builder.dart';
 import '../builder/omitted_type_builder.dart';
 import '../builder/type_builder.dart';
-import '../fasta/builder_graph.dart';
+import '../codes/cfe_codes.dart';
 import '../codes/denylisted_classes.dart'
     show denylistedCoreClasses, denylistedTypedDataClasses;
-import '../codes/cfe_codes.dart';
 import '../dill/dill_library_builder.dart';
-import '../fasta/export.dart' show Export;
-import '../fasta/import_chains.dart';
 import '../kernel/benchmarker.dart' show BenchmarkSubdivides;
 import '../kernel/body_builder.dart' show BodyBuilder;
 import '../kernel/body_builder_context.dart';
@@ -69,14 +75,8 @@ import '../kernel/kernel_helper.dart'
 import '../kernel/kernel_target.dart' show KernelTarget;
 import '../kernel/macro/macro.dart';
 import '../kernel/type_builder_computer.dart' show TypeBuilderComputer;
-import '../fasta/loader.dart' show Loader, untranslatableUriScheme;
-import '../fasta/problems.dart' show internalProblem;
-import '../fasta/scope.dart';
-import '../fasta/ticker.dart' show Ticker;
 import '../type_inference/type_inference_engine.dart';
 import '../type_inference/type_inferrer.dart';
-import '../fasta/uri_offset.dart';
-import '../fasta/uris.dart';
 import '../util/helpers.dart';
 import 'diet_listener.dart' show DietListener;
 import 'diet_parser.dart' show DietParser, useImplicitCreationExpressionInCfe;
@@ -190,6 +190,7 @@ class SourceLoader extends Loader {
   /// This is used for [hasSeenError].
   bool _hasSeenError = false;
 
+  // Coverage-ignore(suite): Not run.
   /// Clears the [seenMessages] and [hasSeenError] state.
   void resetSeenMessages() {
     seenMessages.clear();
@@ -233,8 +234,11 @@ class SourceLoader extends Loader {
   Set<ClassBuilder> _macroDeclarations = {};
 
   SourceLoader(this.fileSystem, this.includeComments, this.target)
-      : dataForTesting =
-            retainDataForTesting ? new SourceLoaderDataForTesting() : null;
+      : dataForTesting = retainDataForTesting
+            ?
+            // Coverage-ignore(suite): Not run.
+            new SourceLoaderDataForTesting()
+            : null;
 
   bool containsLoadedLibraryBuilder(Uri importUri) =>
       lookupLoadedLibraryBuilder(importUri) != null;
@@ -246,6 +250,7 @@ class SourceLoader extends Loader {
   CompilationUnit? lookupCompilationUnit(Uri importUri) =>
       _compilationUnits[importUri];
 
+  // Coverage-ignore(suite): Not run.
   CompilationUnit? lookupCompilationUnitByFileUri(Uri fileUri) {
     // TODO(johnniwinther): Store compilation units in a map by file URI?
     for (CompilationUnit compilationUnit in _compilationUnits.values) {
@@ -283,11 +288,16 @@ class SourceLoader extends Loader {
     _sourceLibraryBuilders!.clear();
   }
 
+  // Coverage-ignore(suite): Not run.
   Iterable<Uri> get loadedLibraryImportUris => _loadedLibraryBuilders.keys;
 
   void registerLoadedDillLibraryBuilder(DillLibraryBuilder libraryBuilder) {
-    assert(!libraryBuilder.isPart, "Unexpected part $libraryBuilder.");
-    assert(!libraryBuilder.isAugmenting,
+    assert(
+        !libraryBuilder.isPart, // Coverage-ignore(suite): Not run.
+        "Unexpected part $libraryBuilder.");
+    assert(
+        !libraryBuilder.isAugmenting,
+        // Coverage-ignore(suite): Not run.
         "Unexpected augmenting library $libraryBuilder.");
     Uri uri = libraryBuilder.importUri;
     _markDartLibraries(uri, libraryBuilder, libraryBuilder.mainCompilationUnit);
@@ -295,6 +305,7 @@ class SourceLoader extends Loader {
     _loadedLibraryBuilders[uri] = libraryBuilder;
   }
 
+  // Coverage-ignore(suite): Not run.
   LibraryBuilder? deregisterLoadedLibraryBuilder(Uri importUri) {
     LibraryBuilder? libraryBuilder = _loadedLibraryBuilders.remove(importUri);
     if (libraryBuilder != null) {
@@ -303,6 +314,7 @@ class SourceLoader extends Loader {
     return libraryBuilder;
   }
 
+  // Coverage-ignore(suite): Not run.
   void clearLibraryBuilders() {
     _compilationUnits.clear();
     _loadedLibraryBuilders.clear();
@@ -398,8 +410,10 @@ class SourceLoader extends Loader {
     CompilationUnit? compilationUnit = lookupCompilationUnit(uri);
     // TODO(johnniwinther): Why is the dill target sometimes not loaded at this
     // point? And does it matter?
-    compilationUnit ??=
-        target.dillTarget.loader.lookupLibraryBuilder(uri)?.mainCompilationUnit;
+    compilationUnit ??= target.dillTarget.loader
+        .lookupLibraryBuilder(uri)
+        // Coverage-ignore(suite): Not run.
+        ?.mainCompilationUnit;
     return DartLibrarySupport.isDartLibrarySupported(libraryName,
             libraryExists: compilationUnit != null,
             isSynthetic: compilationUnit?.isSynthetic ?? true,
@@ -409,7 +423,7 @@ class SourceLoader extends Loader {
         : null;
   }
 
-  SourceLibraryBuilder _createSourceLibraryBuilder(
+  SourceCompilationUnit _createSourceCompilationUnit(
       Uri uri,
       Uri? fileUri,
       SourceLibraryBuilder? origin,
@@ -463,6 +477,7 @@ class SourceLoader extends Loader {
       if (packageForLanguageVersion.languageVersion != null) {
         if (packageForLanguageVersion.languageVersion
             is package_config.InvalidLanguageVersion) {
+          // Coverage-ignore-block(suite): Not run.
           packageLanguageVersionProblem =
               messageLanguageVersionInvalidInDotPackages;
           packageLanguageVersion = new InvalidLanguageVersion(
@@ -472,6 +487,7 @@ class SourceLoader extends Loader {
               packageForLanguageVersion.languageVersion!.major,
               packageForLanguageVersion.languageVersion!.minor);
           if (version > target.currentSdkVersion) {
+            // Coverage-ignore-block(suite): Not run.
             packageLanguageVersionProblem =
                 templateLanguageVersionTooHigh.withArguments(
                     target.currentSdkVersion.major,
@@ -504,27 +520,29 @@ class SourceLoader extends Loader {
         referenceIsPartOwner: referenceIsPartOwner,
         isAugmentation: isAugmentation,
         isPatch: isPatch);
+    SourceCompilationUnit compilationUnit = libraryBuilder.compilationUnit;
     if (packageLanguageVersionProblem != null) {
       libraryBuilder.addPostponedProblem(
-          packageLanguageVersionProblem, 0, noLength, libraryBuilder.fileUri);
+          packageLanguageVersionProblem, 0, noLength, compilationUnit.fileUri);
     }
 
     if (addAsRoot) {
       roots.add(uri);
     }
 
-    _checkForDartCore(uri, libraryBuilder, libraryBuilder.compilationUnit);
+    _checkForDartCore(uri, libraryBuilder, compilationUnit);
 
     Uri libraryUri = origin?.importUri ?? uri;
     if (target.backendTarget.mayDefineRestrictedType(libraryUri)) {
+      // Coverage-ignore-block(suite): Not run.
       libraryBuilder.mayImplementRestrictedTypes = true;
     }
     if (uri.isScheme("dart")) {
       target.readPatchFiles(libraryBuilder);
     }
-    _unparsedLibraries.addLast(libraryBuilder.compilationUnit);
+    _unparsedLibraries.addLast(compilationUnit);
 
-    return libraryBuilder;
+    return compilationUnit;
   }
 
   DillLibraryBuilder? _lookupDillLibraryBuilder(Uri uri) {
@@ -542,6 +560,7 @@ class SourceLoader extends Loader {
     NonNullableByDefaultCompiledMode libraryMode =
         libraryBuilder.library.nonNullableByDefaultCompiledMode;
     if (libraryMode == NonNullableByDefaultCompiledMode.Invalid) {
+      // Coverage-ignore-block(suite): Not run.
       registerNnbdMismatchLibrary(
           libraryBuilder, messageInvalidNnbdDillLibrary);
     } else {
@@ -653,6 +672,7 @@ class SourceLoader extends Loader {
           firstLibrary, -1, noLength, firstLibrary.fileUri);
     }
     if (!_hasLibraryAccess(imported: uri, importer: firstLibrary?.importUri)) {
+      // Coverage-ignore-block(suite): Not run.
       if (firstLibrary != null) {
         firstLibrary.addProblem(messagePlatformPrivateLibraryAccess, -1,
             noLength, firstLibrary.importUri);
@@ -689,16 +709,15 @@ class SourceLoader extends Loader {
         compilationUnit = _lookupDillLibraryBuilder(uri)?.mainCompilationUnit;
       }
       if (compilationUnit == null) {
-        compilationUnit = _createSourceLibraryBuilder(
-                uri,
-                fileUri,
-                origin as SourceLibraryBuilder?,
-                referencesFromIndex,
-                referenceIsPartOwner,
-                isAugmentation,
-                isPatch,
-                addAsRoot)
-            .compilationUnit;
+        compilationUnit = _createSourceCompilationUnit(
+            uri,
+            fileUri,
+            origin as SourceLibraryBuilder?,
+            referencesFromIndex,
+            referenceIsPartOwner,
+            isAugmentation,
+            isPatch,
+            addAsRoot);
       }
       _compilationUnits[uri] = compilationUnit;
     }
@@ -731,7 +750,9 @@ class SourceLoader extends Loader {
   }
 
   void logSummary(Template<SummaryTemplate> template) {
-    ticker.log((Duration elapsed, Duration sinceStart) {
+    ticker.log(
+        // Coverage-ignore(suite): Not run.
+        (Duration elapsed, Duration sinceStart) {
       int libraryCount = 0;
       for (CompilationUnit library in compilationUnits) {
         if (library.loader == this) {
@@ -803,14 +824,18 @@ severity: $severity
     target.context.report(
         fileUri != null
             ? message.withLocation(fileUri, charOffset, length)
-            : message.withoutLocation(),
+            :
+            // Coverage-ignore(suite): Not run.
+            message.withoutLocation(),
         severity,
         context: context,
         involvedFiles: involvedFiles);
     if (severity == Severity.error) {
       (wasHandled ? handledErrors : unhandledErrors).add(fileUri != null
           ? message.withLocation(fileUri, charOffset, length)
-          : message.withoutLocation());
+          :
+          // Coverage-ignore(suite): Not run.
+          message.withoutLocation());
     }
     FormattedMessage formattedMessage = target.createFormattedMessage(
         message, charOffset, length, fileUri, context, severity,
@@ -867,19 +892,20 @@ severity: $severity
   Template<SummaryTemplate> get outlineSummaryTemplate =>
       templateSourceOutlineSummary;
 
-  /// The [SourceLibraryBuilder]s for the `dart:` libraries that are not
+  /// The [SourceCompilationUnit]s for the `dart:` libraries that are not
   /// available.
   ///
   /// We special-case the errors for accessing these libraries and report
   /// it at the end of [buildOutlines] to ensure that all import paths are
   /// part of the error message.
-  Set<SourceLibraryBuilder> _unavailableDartLibraries = {};
+  Set<SourceCompilationUnit> _unavailableDartLibraries = {};
 
   Future<Token> tokenize(SourceCompilationUnit compilationUnit,
       {bool suppressLexicalErrors = false}) async {
-    SourceLibraryBuilder libraryBuilder = compilationUnit.sourceLibraryBuilder;
-    target.benchmarker?.beginSubdivide(BenchmarkSubdivides.tokenize);
-    Uri fileUri = libraryBuilder.fileUri;
+    target.benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.beginSubdivide(BenchmarkSubdivides.tokenize);
+    Uri fileUri = compilationUnit.fileUri;
 
     // Lookup the file URI in the cache.
     Uint8List? bytes = sourceBytes[fileUri];
@@ -887,24 +913,25 @@ severity: $severity
     if (bytes == null) {
       // Error recovery.
       if (fileUri.isScheme(untranslatableUriScheme)) {
-        Uri importUri = libraryBuilder.importUri;
+        Uri importUri = compilationUnit.importUri;
         if (importUri.isScheme('dart')) {
           // We report this error later in [buildOutlines].
-          _unavailableDartLibraries.add(libraryBuilder);
+          _unavailableDartLibraries.add(compilationUnit);
         } else {
-          libraryBuilder.addProblemAtAccessors(
+          compilationUnit.addProblemAtAccessors(
               templateUntranslatableUri.withArguments(importUri));
         }
         bytes = synthesizeSourceForMissingFile(importUri, null);
       } else if (!fileUri.hasScheme) {
+        // Coverage-ignore-block(suite): Not run.
         target.benchmarker?.endSubdivide();
         return internalProblem(
             templateInternalProblemUriMissingScheme.withArguments(fileUri),
             -1,
-            libraryBuilder.importUri);
+            compilationUnit.importUri);
       } else if (fileUri.isScheme(MALFORMED_URI_SCHEME)) {
-        libraryBuilder.addProblemAtAccessors(messageExpectedUri);
-        bytes = synthesizeSourceForMissingFile(libraryBuilder.importUri, null);
+        compilationUnit.addProblemAtAccessors(messageExpectedUri);
+        bytes = synthesizeSourceForMissingFile(compilationUnit.importUri, null);
       }
       if (bytes != null) {
         Uint8List zeroTerminatedBytes = new Uint8List(bytes.length + 1);
@@ -923,9 +950,9 @@ severity: $severity
       } on FileSystemException catch (e) {
         Message message = templateCantReadFile.withArguments(
             fileUri, target.context.options.osErrorMessage(e.message));
-        libraryBuilder.addProblemAtAccessors(message);
+        compilationUnit.addProblemAtAccessors(message);
         rawBytes =
-            synthesizeSourceForMissingFile(libraryBuilder.importUri, message);
+            synthesizeSourceForMissingFile(compilationUnit.importUri, message);
       }
       Uint8List zeroTerminatedBytes = new Uint8List(rawBytes.length + 1);
       zeroTerminatedBytes.setRange(0, rawBytes.length, rawBytes);
@@ -939,31 +966,31 @@ severity: $severity
         configuration: new ScannerConfiguration(
             enableTripleShift: target.isExperimentEnabledInLibraryByVersion(
                 ExperimentalFlag.tripleShift,
-                libraryBuilder.importUri,
-                libraryBuilder.packageLanguageVersion.version),
+                compilationUnit.importUri,
+                compilationUnit.packageLanguageVersion.version),
             enableExtensionMethods:
                 target.isExperimentEnabledInLibraryByVersion(
                     ExperimentalFlag.extensionMethods,
-                    libraryBuilder.importUri,
-                    libraryBuilder.packageLanguageVersion.version),
+                    compilationUnit.importUri,
+                    compilationUnit.packageLanguageVersion.version),
             enableNonNullable: target.isExperimentEnabledInLibraryByVersion(
                 ExperimentalFlag.nonNullable,
-                libraryBuilder.importUri,
-                libraryBuilder.packageLanguageVersion.version),
-            forAugmentationLibrary: libraryBuilder.isAugmentationLibrary),
+                compilationUnit.importUri,
+                compilationUnit.packageLanguageVersion.version),
+            forAugmentationLibrary: compilationUnit.forAugmentationLibrary),
         languageVersionChanged:
             (Scanner scanner, LanguageVersionToken version) {
       if (!suppressLexicalErrors) {
-        libraryBuilder.registerExplicitLanguageVersion(
+        compilationUnit.registerExplicitLanguageVersion(
             new Version(version.major, version.minor),
             offset: version.offset,
             length: version.length);
       }
       scanner.configuration = new ScannerConfiguration(
           enableTripleShift:
-              libraryBuilder.libraryFeatures.tripleShift.isEnabled,
+              compilationUnit.libraryFeatures.tripleShift.isEnabled,
           enableExtensionMethods:
-              libraryBuilder.libraryFeatures.extensionMethods.isEnabled,
+              compilationUnit.libraryFeatures.extensionMethods.isEnabled,
           enableNonNullable: true);
     });
     Token token = result.tokens;
@@ -973,39 +1000,41 @@ severity: $severity
       /// We use the [importUri] of the created [Library] and not the
       /// [importUri] of the [LibraryBuilder] since it might be an augmentation
       /// library which is not directly part of the output.
-      Uri importUri = libraryBuilder.library.importUri;
-      if (libraryBuilder.isAugmenting) {
-        // For augmentation libraries we create a "fake" import uri.
+      Uri importUri = compilationUnit.library.importUri;
+      if (compilationUnit.isAugmenting) {
+        // For patch libraries we create a "fake" import uri.
         // We cannot use the import uri from the augmented library because
         // several different files would then have the same import uri,
         // and the VM does not support that. Also, what would, for instance,
         // setting a breakpoint on line 42 of some import uri mean, if the uri
         // represented several files?
-        if (libraryBuilder.isPatchLibrary) {
+        if (compilationUnit.forPatchLibrary) {
           // TODO(johnniwinther): Use augmentation-like solution for patching.
           List<String> newPathSegments =
               new List<String>.of(importUri.pathSegments);
-          newPathSegments.add(libraryBuilder.fileUri.pathSegments.last);
+          newPathSegments.add(compilationUnit.fileUri.pathSegments.last);
           newPathSegments[0] = "${newPathSegments[0]}-patch";
           importUri = importUri.replace(pathSegments: newPathSegments);
         } else {
-          importUri = libraryBuilder.importUri;
+          importUri = compilationUnit.importUri;
         }
       }
       target.addSourceInformation(
-          importUri, libraryBuilder.fileUri, result.lineStarts, source);
+          importUri, compilationUnit.fileUri, result.lineStarts, source);
     }
-    libraryBuilder.issuePostponedProblems();
-    libraryBuilder.markLanguageVersionFinal();
+    compilationUnit.issuePostponedProblems();
+    compilationUnit.markLanguageVersionFinal();
     while (token is ErrorToken) {
       if (!suppressLexicalErrors) {
         ErrorToken error = token;
-        libraryBuilder.addProblem(error.assertionMessage, offsetForToken(token),
-            lengthForToken(token), fileUri);
+        compilationUnit.addProblem(error.assertionMessage,
+            offsetForToken(token), lengthForToken(token), fileUri);
       }
       token = token.next!;
     }
-    target.benchmarker?.endSubdivide();
+    target.benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.endSubdivide();
     return token;
   }
 
@@ -1040,6 +1069,7 @@ severity: $severity
     _typeInferenceEngine!.typeDependencies[member] = typeDependency;
   }
 
+  // Coverage-ignore(suite): Not run.
   /// Registers the [compilationUnit] as unparsed with the given [source] code.
   ///
   /// This is used for creating synthesized augmentation libraries.
@@ -1073,9 +1103,9 @@ severity: $severity
     if (_unavailableDartLibraries.isNotEmpty) {
       CompilationUnit? rootLibrary = rootCompilationUnit;
       LoadedLibraries? loadedLibraries;
-      for (SourceLibraryBuilder libraryBuilder in _unavailableDartLibraries) {
+      for (SourceCompilationUnit compilationUnit in _unavailableDartLibraries) {
         List<LocatedMessage>? context;
-        Uri importUri = libraryBuilder.importUri;
+        Uri importUri = compilationUnit.importUri;
         Message message =
             templateUnavailableDartLibrary.withArguments(importUri);
         if (rootLibrary != null) {
@@ -1091,7 +1121,7 @@ severity: $severity
             if (importChain.containsAll(verboseImportChain)) {
               context = [
                 templateImportChainContextSimple
-                    .withArguments(libraryBuilder.importUri,
+                    .withArguments(compilationUnit.importUri,
                         importChain.map((part) => '    $part\n').join())
                     .withoutLocation(),
               ];
@@ -1099,7 +1129,7 @@ severity: $severity
               context = [
                 templateImportChainContext
                     .withArguments(
-                        libraryBuilder.importUri,
+                        compilationUnit.importUri,
                         importChain.map((part) => '    $part\n').join(),
                         verboseImportChain.map((part) => '    $part\n').join())
                     .withoutLocation(),
@@ -1108,12 +1138,13 @@ severity: $severity
           }
         }
         // We only include the [context] on the first library access.
-        if (libraryBuilder.accessors.isEmpty) {
+        if (compilationUnit.accessors.isEmpty) {
+          // Coverage-ignore-block(suite): Not run.
           // This is the entry point library, and nobody access it directly. So
           // we need to report a problem.
           addProblem(message, -1, 1, null, context: context);
         } else {
-          LibraryAccess access = libraryBuilder.accessors.first;
+          LibraryAccess access = compilationUnit.accessors.first;
           access.accessor.addProblem(
               message, access.charOffset, access.length, access.fileUri,
               context: context);
@@ -1121,21 +1152,20 @@ severity: $severity
       }
       // All subsequent library accesses are reported here without the context
       // message.
-      for (SourceLibraryBuilder libraryBuilder in _unavailableDartLibraries) {
-        Uri importUri = libraryBuilder.importUri;
+      for (SourceCompilationUnit compilationUnit in _unavailableDartLibraries) {
+        Uri importUri = compilationUnit.importUri;
         Message message =
             templateUnavailableDartLibrary.withArguments(importUri);
 
-        if (libraryBuilder.accessors.length > 1) {
-          for (int i = 1; i < libraryBuilder.accessors.length; i++) {
-            LibraryAccess access = libraryBuilder.accessors[i];
+        if (compilationUnit.accessors.length > 1) {
+          for (LibraryAccess access in compilationUnit.accessors) {
             access.accessor.addProblem(
                 message, access.charOffset, access.length, access.fileUri);
           }
         }
         // Mark the library with an access problem so that it will be marked
         // as synthetic and so that subsequent accesses will be reported.
-        libraryBuilder.accessProblem ??= message;
+        compilationUnit.accessProblem ??= message;
       }
       _unavailableDartLibraries.clear();
     }
@@ -1147,17 +1177,16 @@ severity: $severity
       return new Uint8List.view(
           bytes.buffer, bytes.offsetInBytes, bytes.length - 1);
     }
+    // Coverage-ignore(suite): Not run.
     return bytes.sublist(0, bytes.length - 1);
   }
 
   Future<Null> buildOutline(SourceCompilationUnit compilationUnit) async {
     Token tokens = await tokenize(compilationUnit);
-    OffsetMap offsetMap = new OffsetMap(compilationUnit.fileUri);
-    OutlineBuilder listener = new OutlineBuilder(compilationUnit, offsetMap);
+    OutlineBuilder listener = compilationUnit.createOutlineBuilder();
     new ClassMemberParser(listener,
             allowPatterns: compilationUnit.libraryFeatures.patterns.isEnabled)
         .parseUnit(tokens);
-    compilationUnit.offsetMap = offsetMap;
   }
 
   /// Builds all the method bodies found in the given [library].
@@ -1188,6 +1217,7 @@ severity: $severity
       // the "real" parsing is done. This in turn means that some errors
       // (e.g. missing semi-colon) will not be issued when benchmarking.
       {
+        // Coverage-ignore-block(suite): Not run.
         target.benchmarker?.beginSubdivide(
             BenchmarkSubdivides.body_buildBody_benchmark_specific_diet_parser);
         DietParser parser = new DietParser(new ForwardingListener(),
@@ -1196,6 +1226,7 @@ severity: $severity
         target.benchmarker?.endSubdivide();
       }
       {
+        // Coverage-ignore-block(suite): Not run.
         target.benchmarker?.beginSubdivide(
             BenchmarkSubdivides.body_buildBody_benchmark_specific_parser);
         Parser parser = new Parser(new ForwardingListener(),
@@ -1221,6 +1252,7 @@ severity: $severity
     }
   }
 
+  // Coverage-ignore(suite): Not run.
   Future<Expression> buildExpression(
       SourceLibraryBuilder libraryBuilder,
       String? enclosingClassOrExtension,
@@ -1358,6 +1390,7 @@ severity: $severity
           roots.add(part.partOfLibrary!.importUri);
         }
       } else {
+        // Coverage-ignore-block(suite): Not run.
         part.addProblem(messagePartOrphan, 0, 1, part.fileUri);
         SourceLibraryBuilder sourceLibraryBuilder = part.createLibrary();
         part.validatePart(null, null);
@@ -1374,8 +1407,11 @@ severity: $severity
     }
     _sourceLibraryBuilders = sourceLibraries;
     assert(
-        _compilationUnits.values.every((library) =>
-            !(library is SourceLibraryBuilder && library.isAugmenting)),
+        _compilationUnits.values
+            .every((library) => !(library is SourceLibraryBuilder &&
+                // Coverage-ignore(suite): Not run.
+                library.isAugmenting)),
+        // Coverage-ignore(suite): Not run.
         "Augmentation library found in libraryBuilders: " +
             _compilationUnits.values
                 .where((compilationUnit) =>
@@ -1385,12 +1421,14 @@ severity: $severity
             ".");
     assert(
         sourceLibraries.every((library) => !library.isAugmenting),
+        // Coverage-ignore(suite): Not run.
         "Augmentation library found in sourceLibraryBuilders: "
         "${sourceLibraries.where((library) => library.isAugmenting)}.");
     assert(
         _compilationUnits.values.every((compilationUnit) =>
             compilationUnit.loader != this ||
             sourceLibraries.contains(compilationUnit.libraryBuilder)),
+        // Coverage-ignore(suite): Not run.
         "Source library not found in sourceLibraryBuilders:" +
             _compilationUnits.values
                 .where((compilationUnit) =>
@@ -1487,6 +1525,7 @@ severity: $severity
       }
     }
 
+    // Coverage-ignore-block(suite): Not run.
     Builder? macroClassBuilder =
         macroLibraryBuilder.lookupLocalMember(macroClassName);
     if (macroClassBuilder is! ClassBuilder) {
@@ -1669,13 +1708,16 @@ severity: $severity
     return null;
   }
 
-  Class? get macroClass => _macroClassBuilder?.cls;
+  Class? get macroClass => _macroClassBuilder
+      // Coverage-ignore(suite): Not run.
+      ?.cls;
 
   Future<MacroApplications?> computeMacroApplications() async {
     if (_macroClassBuilder == null) {
       return null;
     }
 
+    // Coverage-ignore-block(suite): Not run.
     MacroApplications macroApplications = new MacroApplications(
         this,
         target.context.options.macroExecutor,
@@ -1692,6 +1734,7 @@ severity: $severity
     return null;
   }
 
+  // Coverage-ignore(suite): Not run.
   Future<void> computeAdditionalMacroApplications(
       MacroApplications macroApplications,
       Iterable<SourceLibraryBuilder> sourceLibraryBuilders) async {
@@ -1824,7 +1867,9 @@ severity: $severity
   /// found.
   void checkObjectClassHierarchy(ClassBuilder objectClass) {
     if (objectClass is SourceClassBuilder &&
+        // Coverage-ignore(suite): Not run.
         objectClass.libraryBuilder.loader == this) {
+      // Coverage-ignore-block(suite): Not run.
       if (objectClass.supertypeBuilder != null) {
         objectClass.supertypeBuilder = null;
         objectClass.addProblem(
@@ -1987,6 +2032,7 @@ severity: $severity
 
   bool checkEnumSupertypeIsDenylisted(SourceClassBuilder cls) {
     if (!cls.libraryBuilder.libraryFeatures.enhancedEnums.isEnabled) {
+      // Coverage-ignore-block(suite): Not run.
       cls.addProblem(
           templateEnumSupertypeOfNonAbstractClass.withArguments(cls.name),
           cls.charOffset,
@@ -2007,6 +2053,7 @@ severity: $severity
     for (int i = 0; i < directSupertypes.length; i++) {
       TypeDeclarationBuilder? supertype = directSupertypes[i];
       if (supertype is SourceEnumBuilder) {
+        // Coverage-ignore-block(suite): Not run.
         cls.addProblem(templateExtendingEnum.withArguments(supertype.name),
             cls.charOffset, noLength);
       } else if (!cls.libraryBuilder.mayImplementRestrictedTypes &&
@@ -2492,7 +2539,9 @@ severity: $severity
     Set<Library> libraries = new Set<Library>();
     List<Library> workList = <Library>[];
     for (LibraryBuilder libraryBuilder in loadedLibraryBuilders) {
-      assert(!libraryBuilder.isAugmenting,
+      assert(
+          !libraryBuilder.isAugmenting,
+          // Coverage-ignore(suite): Not run.
           "Unexpected augmentation library $libraryBuilder.");
       if ((libraryBuilder.loader == this ||
           libraryBuilder.importUri.isScheme("dart") ||
@@ -2575,8 +2624,15 @@ severity: $severity
       Class underscoreEnumClass) {
     for (SourceClassBuilder builder in sourceClasses) {
       assert(builder.libraryBuilder.loader == this && !builder.isAugmenting);
-      builder.checkSupertypes(coreTypes, hierarchyBuilder, objectClass,
-          enumClass, underscoreEnumClass, _macroClassBuilder?.cls);
+      builder.checkSupertypes(
+          coreTypes,
+          hierarchyBuilder,
+          objectClass,
+          enumClass,
+          underscoreEnumClass,
+          _macroClassBuilder
+              // Coverage-ignore(suite): Not run.
+              ?.cls);
     }
     for (SourceExtensionTypeDeclarationBuilder builder
         in sourceExtensionTypeDeclarations) {
@@ -2663,6 +2719,7 @@ severity: $severity
           // TODO(johnniwinther): Should the member be added to the extension
           //  type declaration?
           break;
+        // Coverage-ignore(suite): Not run.
         case ExtensionBuilder():
           throw new UnsupportedError(
               "Unexpected declaration ${declarationBuilder}.");
@@ -2779,12 +2836,15 @@ severity: $severity
     }
 
     target.benchmarker
+        // Coverage-ignore(suite): Not run.
         ?.beginSubdivide(BenchmarkSubdivides.delayedActionPerformer);
     for (DelayedActionPerformer delayedActionPerformer
         in delayedActionPerformers) {
       delayedActionPerformer.performDelayedActions(allowFurtherDelays: false);
     }
-    target.benchmarker?.endSubdivide();
+    target.benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.endSubdivide();
     ticker.logMs("Build outline expressions");
   }
 
@@ -2993,6 +3053,7 @@ severity: $severity
     LibraryBuilder? library =
         lookupLoadedLibraryBuilder(kernelLibrary.importUri);
     if (library == null) {
+      // Coverage-ignore-block(suite): Not run.
       return target.dillTarget.loader
           .computeExtensionTypeBuilderFromTargetExtensionType(extensionType);
     }
@@ -3259,6 +3320,7 @@ class Endian {
 }
 """;
 
+// Coverage-ignore(suite): Not run.
 class SourceLoaderDataForTesting {
   final Map<TreeNode, TreeNode> _aliasMap = {};
 

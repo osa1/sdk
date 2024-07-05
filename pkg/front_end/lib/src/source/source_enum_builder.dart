@@ -13,6 +13,9 @@ import 'package:kernel/reference_from_index.dart' show IndexedClass;
 import 'package:kernel/src/bounds_checks.dart';
 import 'package:kernel/transformations/flags.dart';
 
+import '../base/constant_context.dart';
+import '../base/modifier.dart' show constMask, hasInitializerMask, staticMask;
+import '../base/scope.dart';
 import '../builder/builder.dart';
 import '../builder/constructor_reference_builder.dart';
 import '../builder/declaration_builders.dart';
@@ -41,7 +44,6 @@ import '../codes/cfe_codes.dart'
         templateDuplicatedDeclarationSyntheticCause,
         templateEnumContainsRestrictedInstanceDeclaration,
         templateEnumConstantSameNameAsEnclosing;
-import '../fasta/constant_context.dart';
 import '../kernel/body_builder.dart';
 import '../kernel/body_builder_context.dart';
 import '../kernel/constness.dart';
@@ -49,8 +51,6 @@ import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/expression_generator_helper.dart';
 import '../kernel/internal_ast.dart';
 import '../kernel/kernel_helper.dart';
-import '../fasta/modifier.dart' show constMask, hasInitializerMask, staticMask;
-import '../fasta/scope.dart';
 import '../type_inference/inference_results.dart';
 import '../type_inference/type_schema.dart';
 import '../util/helpers.dart';
@@ -164,6 +164,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
     NamedTypeBuilder objectType = new NamedTypeBuilderImpl(
         const PredefinedTypeName("Object"), const NullabilityBuilder.omitted(),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Unexpected);
+    // Coverage-ignore(suite): Not run.
     supertypeBuilder ??= new NamedTypeBuilderImpl(
         const PredefinedTypeName("_Enum"), const NullabilityBuilder.omitted(),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Unexpected);
@@ -256,6 +257,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
           !customIndexDeclaration.isAbstract) {
         // Retrieve the earliest declaration for error reporting.
         while (customIndexDeclaration?.next != null) {
+          // Coverage-ignore-block(suite): Not run.
           customIndexDeclaration = customIndexDeclaration?.next;
         }
         libraryBuilder.addProblem(
@@ -633,6 +635,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
         MemberBuilder? superConstructor = enumClass.findConstructorOrFactory(
             "", charOffset, fileUri, libraryBuilder);
         if (superConstructor == null || !superConstructor.isConstructor) {
+          // Coverage-ignore-block(suite): Not run.
           // TODO(ahe): Ideally, we would also want to check that [Object]'s
           // unnamed constructor requires no arguments. But that information
           // isn't always available at this point, and it's not really a
@@ -862,11 +865,13 @@ class SourceEnumBuilder extends SourceClassBuilder {
         ? classHierarchy.getDispatchTarget(cls.superclass!, toStringName)
         : null;
     Procedure? toStringSuperTarget = superToString is Procedure &&
+            // Coverage-ignore(suite): Not run.
             superToString.enclosingClass != classHierarchy.coreTypes.objectClass
         ? superToString
         : null;
 
     if (toStringSuperTarget != null) {
+      // Coverage-ignore-block(suite): Not run.
       toStringBuilder.member.transformerFlags |= TransformerFlag.superCalls;
       toStringBuilder.body = new ReturnStatement(new SuperMethodInvocation(
           toStringName, new Arguments([]), toStringSuperTarget));

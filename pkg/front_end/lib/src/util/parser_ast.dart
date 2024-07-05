@@ -2,31 +2,23 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io' show File;
 import 'dart:typed_data' show Uint8List;
 
-import 'dart:io' show File;
-
 import 'package:_fe_analyzer_shared/src/messages/codes.dart';
-import 'package:_fe_analyzer_shared/src/scanner/scanner.dart'
-    show ScannerConfiguration;
-
+import 'package:_fe_analyzer_shared/src/parser/identifier_context.dart';
+import 'package:_fe_analyzer_shared/src/parser/listener.dart'
+    show UnescapeErrorListener;
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show ClassMemberParser, Parser;
-
+import 'package:_fe_analyzer_shared/src/parser/quote.dart' show unescapeString;
+import 'package:_fe_analyzer_shared/src/scanner/scanner.dart'
+    show ScannerConfiguration;
+import 'package:_fe_analyzer_shared/src/scanner/token.dart' show Token;
 import 'package:_fe_analyzer_shared/src/scanner/utf8_bytes_scanner.dart'
     show Utf8BytesScanner;
 
-import 'package:_fe_analyzer_shared/src/scanner/token.dart' show Token;
-
-import 'package:_fe_analyzer_shared/src/parser/listener.dart'
-    show UnescapeErrorListener;
-
-import 'package:_fe_analyzer_shared/src/parser/identifier_context.dart';
-
-import 'package:_fe_analyzer_shared/src/parser/quote.dart' show unescapeString;
-
 import '../source/diet_parser.dart';
-
 import 'parser_ast_helper.dart';
 
 // TODO(jensj): Possibly all the enableX bools should be replaced by an
@@ -56,6 +48,7 @@ CompilationUnitEnd getAST(
     includeComments: includeComments,
     configuration: scannerConfiguration,
     languageVersionChanged: (scanner, languageVersion) {
+      // Coverage-ignore-block(suite): Not run.
       // For now don't do anything, but having it (making it non-null) means the
       // configuration won't be reset.
       languageVersionsSeen?.add(languageVersion);
@@ -65,11 +58,13 @@ CompilationUnitEnd getAST(
   );
   Token firstToken = scanner.tokenize();
   if (lineStarts != null) {
+    // Coverage-ignore-block(suite): Not run.
     lineStarts.addAll(scanner.lineStarts);
   }
   ParserASTListener listener = new ParserASTListener();
   Parser parser;
   if (includeBody) {
+    // Coverage-ignore-block(suite): Not run.
     parser = new Parser(
       listener,
       useImplicitCreationExpression: useImplicitCreationExpressionInCfe,
@@ -105,26 +100,31 @@ class IgnoreSomeForCompatibilityAstVisitor extends RecursiveParserAstVisitor {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitTypeArgumentsEnd(TypeArgumentsEnd node) {
     // Ignored
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitTypeListEnd(TypeListEnd node) {
     // Ignored
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitFunctionTypeEnd(FunctionTypeEnd node) {
     // Ignored
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitBlockEnd(BlockEnd node) {
     // Ignored
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// Best-effort visitor for ParserAstNode that visits top-level entries
 /// and class members only (i.e. no bodies, no field initializer content, no
 /// names etc).
@@ -508,6 +508,7 @@ enum GeneralAstContentType {
   FunctionBody,
 }
 
+// Coverage-ignore(suite): Not run.
 extension GeneralASTContentExtension on ParserAstNode {
   // TODO(jensj): This might not actually be useful - we're doing a lot of if's
   // here, but will then have to do more if's or a switch at the call site to
@@ -920,6 +921,7 @@ extension GeneralASTContentExtension on ParserAstNode {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MetadataStarExtension on MetadataStarEnd {
   List<MetadataEnd> getMetadataEntries() {
     List<MetadataEnd> result = [];
@@ -931,6 +933,7 @@ extension MetadataStarExtension on MetadataStarEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MetadataExtension on MetadataEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -943,6 +946,7 @@ extension MetadataExtension on MetadataEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension CompilationUnitExtension on CompilationUnitEnd {
   List<TopLevelDeclarationEnd> getClasses() {
     List<TopLevelDeclarationEnd> result = [];
@@ -1030,6 +1034,7 @@ extension CompilationUnitExtension on CompilationUnitEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension TopLevelDeclarationExtension on TopLevelDeclarationEnd {
   IdentifierHandle getIdentifier() {
     for (ParserAstNode child in children!) {
@@ -1051,6 +1056,7 @@ extension TopLevelDeclarationExtension on TopLevelDeclarationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MixinDeclarationExtension on MixinDeclarationEnd {
   ClassOrMixinOrExtensionBodyEnd getClassOrMixinOrExtensionBody() {
     for (ParserAstNode child in children!) {
@@ -1068,6 +1074,7 @@ extension MixinDeclarationExtension on MixinDeclarationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension NamedMixinApplicationExtension on NamedMixinApplicationEnd {
   IdentifierHandle getMixinIdentifier() {
     ParserAstNode? parent = this.parent;
@@ -1076,6 +1083,7 @@ extension NamedMixinApplicationExtension on NamedMixinApplicationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassDeclarationExtension on ClassDeclarationEnd {
   ClassOrMixinOrExtensionBodyEnd getClassOrMixinOrExtensionBody() {
     for (ParserAstNode child in children!) {
@@ -1118,6 +1126,7 @@ extension ClassDeclarationExtension on ClassDeclarationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassOrMixinBodyExtension on ClassOrMixinOrExtensionBodyEnd {
   List<MemberEnd> getMembers() {
     List<MemberEnd> members = [];
@@ -1130,6 +1139,7 @@ extension ClassOrMixinBodyExtension on ClassOrMixinOrExtensionBodyEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MemberExtension on MemberEnd {
   // TODO(jensj): This might not actually be useful - we're doing a lot of if's
   // here, but will then have to do more if's or a switch at the call site to
@@ -1427,6 +1437,7 @@ extension MemberExtension on MemberEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MixinFieldsExtension on MixinFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1449,6 +1460,7 @@ extension MixinFieldsExtension on MixinFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionFieldsExtension on ExtensionFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1471,6 +1483,7 @@ extension ExtensionFieldsExtension on ExtensionFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionTypeFieldsExtension on ExtensionTypeFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1493,6 +1506,7 @@ extension ExtensionTypeFieldsExtension on ExtensionTypeFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension EnumFieldsExtension on EnumFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1515,6 +1529,7 @@ extension EnumFieldsExtension on EnumFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassFieldsExtension on ClassFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1551,6 +1566,7 @@ extension ClassFieldsExtension on ClassFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension EnumExtension on EnumEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> ids = [];
@@ -1577,6 +1593,7 @@ extension EnumExtension on EnumEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionDeclarationExtension on ExtensionDeclarationEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> ids = [];
@@ -1602,6 +1619,7 @@ extension ExtensionDeclarationExtension on ExtensionDeclarationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionTypeDeclarationExtension on ExtensionTypeDeclarationEnd {
   Token? getExtensionTypeName() {
     ExtensionTypeDeclarationBegin begin =
@@ -1619,6 +1637,7 @@ extension ExtensionTypeDeclarationExtension on ExtensionTypeDeclarationEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension TopLevelMethodExtension on TopLevelMethodEnd {
   IdentifierHandle getNameIdentifier() {
     for (ParserAstNode child in children!) {
@@ -1636,6 +1655,7 @@ extension TopLevelMethodExtension on TopLevelMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension TypedefExtension on TypedefEnd {
   IdentifierHandle getNameIdentifier() {
     for (ParserAstNode child in children!) {
@@ -1649,6 +1669,7 @@ extension TypedefExtension on TypedefEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ImportExtension on ImportEnd {
   IdentifierHandle? getImportPrefix() {
     for (ParserAstNode child in children!) {
@@ -1695,6 +1716,7 @@ extension ImportExtension on ImportEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExportExtension on ExportEnd {
   String getExportUriString() {
     StringBuffer sb = new StringBuffer();
@@ -1730,6 +1752,7 @@ extension ExportExtension on ExportEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension PartExtension on PartEnd {
   String getPartUriString() {
     StringBuffer sb = new StringBuffer();
@@ -1747,6 +1770,7 @@ extension PartExtension on PartEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension PartOfExtension on PartOfEnd {
   String? getPartOfUriString() {
     StringBuffer sb = new StringBuffer();
@@ -1774,6 +1798,7 @@ extension PartOfExtension on PartOfEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension LibraryNameExtension on LibraryNameEnd {
   List<String> getNameIdentifiers() {
     List<String> result = [];
@@ -1790,12 +1815,14 @@ class UnescapeErrorListenerDummy implements UnescapeErrorListener {
   const UnescapeErrorListenerDummy();
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleUnescapeError(
       Message message, covariant location, int offset, int length) {
     // Purposely doesn't do anything.
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension TopLevelFieldsExtension on TopLevelFieldsEnd {
   List<IdentifierHandle> getFieldIdentifiers() {
     int countLeft = count;
@@ -1818,6 +1845,7 @@ extension TopLevelFieldsExtension on TopLevelFieldsEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 bool _isTypeOrNoType(ParserAstNode node) {
   return node is TypeHandle ||
       node is RecordTypeEnd ||
@@ -1826,6 +1854,7 @@ bool _isTypeOrNoType(ParserAstNode node) {
       node is FunctionTypeEnd;
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassMethodExtension on ClassMethodEnd {
   BlockFunctionBodyEnd? getBlockFunctionBody() {
     for (ParserAstNode child in children!) {
@@ -1856,6 +1885,7 @@ extension ClassMethodExtension on ClassMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MixinMethodExtension on MixinMethodEnd {
   Token getNameIdentifierToken() {
     bool foundType = false;
@@ -1877,6 +1907,7 @@ extension MixinMethodExtension on MixinMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionMethodExtension on ExtensionMethodEnd {
   Token getNameIdentifierToken() {
     bool foundType = false;
@@ -1898,6 +1929,7 @@ extension ExtensionMethodExtension on ExtensionMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionTypeMethodExtension on ExtensionTypeMethodEnd {
   Token getNameIdentifierToken() {
     bool foundType = false;
@@ -1919,6 +1951,7 @@ extension ExtensionTypeMethodExtension on ExtensionTypeMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension EnumMethodExtension on EnumMethodEnd {
   String getNameIdentifier() {
     bool foundType = false;
@@ -1936,6 +1969,7 @@ extension EnumMethodExtension on EnumMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassFactoryMethodExtension on ClassFactoryMethodEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -1950,6 +1984,7 @@ extension ClassFactoryMethodExtension on ClassFactoryMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MixinFactoryMethodExtension on MixinFactoryMethodEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -1964,6 +1999,7 @@ extension MixinFactoryMethodExtension on MixinFactoryMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionFactoryMethodExtension on ExtensionFactoryMethodEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -1978,6 +2014,7 @@ extension ExtensionFactoryMethodExtension on ExtensionFactoryMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionTypeFactoryMethodExtension on ExtensionTypeFactoryMethodEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -1992,6 +2029,7 @@ extension ExtensionTypeFactoryMethodExtension on ExtensionTypeFactoryMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension EnumFactoryMethodExtension on EnumFactoryMethodEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -2006,6 +2044,7 @@ extension EnumFactoryMethodExtension on EnumFactoryMethodEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ClassConstructorExtension on ClassConstructorEnd {
   FormalParametersEnd getFormalParameters() {
     for (ParserAstNode child in children!) {
@@ -2045,6 +2084,7 @@ extension ClassConstructorExtension on ClassConstructorEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionConstructorExtension on ExtensionConstructorEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -2057,6 +2097,7 @@ extension ExtensionConstructorExtension on ExtensionConstructorEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension ExtensionTypeConstructorExtension on ExtensionTypeConstructorEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -2069,6 +2110,7 @@ extension ExtensionTypeConstructorExtension on ExtensionTypeConstructorEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension EnumConstructorExtension on EnumConstructorEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -2081,6 +2123,7 @@ extension EnumConstructorExtension on EnumConstructorEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension MixinConstructorExtension on MixinConstructorEnd {
   List<IdentifierHandle> getIdentifiers() {
     List<IdentifierHandle> result = [];
@@ -2093,6 +2136,7 @@ extension MixinConstructorExtension on MixinConstructorEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension FormalParametersExtension on FormalParametersEnd {
   List<FormalParameterEnd> getFormalParameters() {
     List<FormalParameterEnd> result = [];
@@ -2114,12 +2158,14 @@ extension FormalParametersExtension on FormalParametersEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension FormalParameterExtension on FormalParameterEnd {
   FormalParameterBegin getBegin() {
     return children!.first as FormalParameterBegin;
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension OptionalFormalParametersExtension on OptionalFormalParametersEnd {
   List<FormalParameterEnd> getFormalParameters() {
     List<FormalParameterEnd> result = [];
@@ -2132,6 +2178,7 @@ extension OptionalFormalParametersExtension on OptionalFormalParametersEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension InitializersExtension on InitializersEnd {
   List<InitializerEnd> getInitializers() {
     List<InitializerEnd> result = [];
@@ -2148,12 +2195,14 @@ extension InitializersExtension on InitializersEnd {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 extension InitializerExtension on InitializerEnd {
   InitializerBegin getBegin() {
     return children!.first as InitializerBegin;
   }
 }
 
+// Coverage-ignore(suite): Not run.
 void main(List<String> args) {
   File f = new File(args[0]);
   Uint8List data = f.readAsBytesSync();
@@ -2206,6 +2255,7 @@ class ParserASTListener extends AbstractParserAstListener {
           }
         }
         if (beginIndex == null) {
+          // Coverage-ignore-block(suite): Not run.
           throw "Couldn't find a begin for ${entry.what}. Has:\n"
               "${data.map((e) => "${e.what}: ${e.type}").join("\n")}";
         }
@@ -2245,7 +2295,9 @@ class ParserASTListener extends AbstractParserAstListener {
                 end == "EnumFields")) {
           // beginFields is ended by one of endTopLevelFields, endMixinFields,
           // endEnumFields or endExtensionFields.
-        } else if (begin == "ForStatement" && end == "ForIn") {
+        } else if (begin == "ForStatement" &&
+            // Coverage-ignore(suite): Not run.
+            end == "ForIn") {
           // beginForStatement is ended by either endForStatement or endForIn.
         } else if (begin == "FactoryMethod" &&
             (end == "ClassFactoryMethod" ||
@@ -2256,7 +2308,9 @@ class ParserASTListener extends AbstractParserAstListener {
           // beginFactoryMethod is ended by either endClassFactoryMethod,
           // endMixinFactoryMethod, endExtensionFactoryMethod, or
           // endEnumFactoryMethod.
-        } else if (begin == "ForControlFlow" && (end == "ForInControlFlow")) {
+        }
+        // Coverage-ignore(suite): Not run.
+        else if (begin == "ForControlFlow" && (end == "ForInControlFlow")) {
           // beginForControlFlow is ended by either endForControlFlow or
           // endForInControlFlow.
         } else if (begin == "IfControlFlow" && (end == "IfElseControlFlow")) {
@@ -2293,6 +2347,7 @@ class ParserASTListener extends AbstractParserAstListener {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Uri get uri => throw new UnimplementedError();
 
   @override
