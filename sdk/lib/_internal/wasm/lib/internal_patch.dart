@@ -125,23 +125,39 @@ void _invokeCallback1(void Function(dynamic) callback, dynamic arg) {
 // Will be patched in `pkg/dart2wasm/lib/compile.dart` right before TFA.
 external Function get mainTearOff;
 
-/// Used to invoke the `main` function from JS, printing any exceptions that
-/// escape.
+// `pkg/dart2wasm/lib/compile.dart` will remove the duplicate `invokeMain`s
+// below and leave only the right one based on the `main`'s type.
+
 @pragma("wasm:export", "\$invokeMain")
-void _invokeMain(WasmExternRef jsArrayRef) {
+void _invokeMain0(WasmExternRef jsArrayRef) {
+  try {
+    unsafeCast<void Function()>(mainTearOff)();
+  } catch (e, s) {
+    print(e);
+    print(s);
+    rethrow;
+  }
+}
+
+@pragma("wasm:export", "\$invokeMain")
+void _invokeMain1(WasmExternRef jsArrayRef) {
   try {
     final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
     final args = <String>[for (final jsValue in jsArray) jsValue.toDart];
-    final main = mainTearOff;
-    if (main is void Function(List<String>, Null)) {
-      main(List.unmodifiable(args), null);
-    } else if (main is void Function(List<String>)) {
-      main(List.unmodifiable(args));
-    } else if (main is void Function()) {
-      main();
-    } else {
-      throw "Could not call main";
-    }
+    unsafeCast<void Function(List<String>)>(mainTearOff)(args);
+  } catch (e, s) {
+    print(e);
+    print(s);
+    rethrow;
+  }
+}
+
+@pragma("wasm:export", "\$invokeMain")
+void _invokeMain2(WasmExternRef jsArrayRef) {
+  try {
+    final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
+    final args = <String>[for (final jsValue in jsArray) jsValue.toDart];
+    unsafeCast<void Function(List<String>, Null)>(mainTearOff)(args, null);
   } catch (e, s) {
     print(e);
     print(s);

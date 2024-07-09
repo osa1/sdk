@@ -173,9 +173,32 @@ Future<CompilerOutput?> compileToModule(
       .singleWhere((lib) => lib.importUri.toString() == 'dart:_internal');
   final mainTearOff = internalLib.procedures
       .singleWhere((procedure) => procedure.name.text == 'mainTearOff');
+  final Procedure mainMethod = component.mainMethod!;
   mainTearOff.isExternal = false;
-  mainTearOff.function.body = ReturnStatement(
-      ConstantExpression(StaticTearOffConstant(component.mainMethod!)));
+  mainTearOff.function.body =
+      ReturnStatement(ConstantExpression(StaticTearOffConstant(mainMethod)));
+
+  final FunctionNode mainFunction = mainMethod.function;
+  final String invokeMainName;
+  if (mainFunction.typeParameters.isNotEmpty ||
+      mainFunction.namedParameters.isNotEmpty ||
+      mainFunction.requiredParameterCount > 2) {
+    throw "Unsupported main function type";
+  } else {
+    if (mainFunction.requiredParameterCount == 0) {
+      invokeMainName = "_invokeMain0";
+    } else if (mainFunction.requiredParameterCount == 1) {
+      invokeMainName = "_invokeMain1";
+    } else if (mainFunction.requiredParameterCount == 2) {
+      invokeMainName = "_invokeMain2";
+    } else {
+      throw "Unsupported main function type";
+    }
+  }
+
+  internalLib.procedures.retainWhere((member) =>
+      !member.name.text.startsWith("_invokeMain") ||
+      member.name.text == invokeMainName);
 
   // Keep the flags in-sync with
   // pkg/vm/test/transformations/type_flow/transformer_test.dart
