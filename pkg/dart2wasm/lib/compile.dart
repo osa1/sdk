@@ -182,12 +182,14 @@ Future<CompilerOutput?> compileToModule(
 
   final FunctionNode mainFunction = mainMethod.function;
   final String invokeMainName;
-  // `main` should have zero or one positional parameters, checked by
+  // `main` should have zero, one, or two positional parameters, checked by
   // `WasmTarget.performModularTransformationsOnLibraries`.
   if (mainFunction.requiredParameterCount == 0) {
     invokeMainName = "_invokeMain0";
-  } else {
+  } else if (mainFunction.requiredParameterCount == 1) {
     invokeMainName = "_invokeMain1";
+  } else {
+    invokeMainName = "_invokeMain2";
   }
 
   internalLib.procedures.retainWhere((member) =>

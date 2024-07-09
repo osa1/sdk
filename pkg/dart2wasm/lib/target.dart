@@ -624,7 +624,7 @@ void _checkMainType(Procedure mainProcedure,
   final FunctionNode mainFunction = mainProcedure.function;
   if (mainFunction.typeParameters.isNotEmpty ||
       mainFunction.namedParameters.isNotEmpty ||
-      mainFunction.requiredParameterCount > 1) {
+      mainFunction.requiredParameterCount > 2) {
     diagnosticReporter.report(
       messageDart2WasmUnsupportedMain,
       mainProcedure.fileOffset,

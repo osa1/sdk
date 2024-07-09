@@ -144,7 +144,20 @@ void _invokeMain1(WasmExternRef jsArrayRef) {
   try {
     final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
     final args = <String>[for (final jsValue in jsArray) jsValue.toDart];
-    unsafeCast<void Function(List<String>)>(mainTearOff)(args);
+    unsafeCast<void Function(dynamic)>(mainTearOff)(args);
+  } catch (e, s) {
+    print(e);
+    print(s);
+    rethrow;
+  }
+}
+
+@pragma("wasm:export", "\$invokeMain")
+void _invokeMain2(WasmExternRef jsArrayRef) {
+  try {
+    final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
+    final args = <String>[for (final jsValue in jsArray) jsValue.toDart];
+    unsafeCast<void Function(dynamic, dynamic)>(mainTearOff)(args, null);
   } catch (e, s) {
     print(e);
     print(s);
