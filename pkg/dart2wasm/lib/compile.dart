@@ -4,6 +4,8 @@
 
 import 'dart:typed_data';
 
+import 'package:_fe_analyzer_shared/src/messages/codes.dart'
+    show messageDart2WasmUnsupportedMain;
 import 'package:build_integration/file_system/multi_root.dart'
     show MultiRootFileSystem;
 import 'package:front_end/src/api_prototype/macros.dart' as macros
@@ -180,20 +182,12 @@ Future<CompilerOutput?> compileToModule(
 
   final FunctionNode mainFunction = mainMethod.function;
   final String invokeMainName;
-  if (mainFunction.typeParameters.isNotEmpty ||
-      mainFunction.namedParameters.isNotEmpty ||
-      mainFunction.requiredParameterCount > 2) {
-    throw "Unsupported main function type";
+  // `main` should have zero or one positional parameters, checked by
+  // `WasmTarget.performModularTransformationsOnLibraries`.
+  if (mainFunction.requiredParameterCount == 0) {
+    invokeMainName = "_invokeMain0";
   } else {
-    if (mainFunction.requiredParameterCount == 0) {
-      invokeMainName = "_invokeMain0";
-    } else if (mainFunction.requiredParameterCount == 1) {
-      invokeMainName = "_invokeMain1";
-    } else if (mainFunction.requiredParameterCount == 2) {
-      invokeMainName = "_invokeMain2";
-    } else {
-      throw "Unsupported main function type";
-    }
+    invokeMainName = "_invokeMain1";
   }
 
   internalLib.procedures.retainWhere((member) =>

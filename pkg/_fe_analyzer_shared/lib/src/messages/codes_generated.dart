@@ -2721,6 +2721,17 @@ Message _withArgumentsCyclicTypedef(String name) {
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Null> codeDart2WasmUnsupportedMain = messageDart2WasmUnsupportedMain;
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const MessageCode messageDart2WasmUnsupportedMain = const MessageCode(
+  "Dart2WasmUnsupportedMain",
+  problemMessage: r"""Unsupported main function""",
+  correctionMessage:
+      r"""Main function should have one of these types: `void Function()`, `void Function(List<String>)`.""",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Null> codeDartFfiLibraryInDart2Wasm =
     messageDartFfiLibraryInDart2Wasm;
 

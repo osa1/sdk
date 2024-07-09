@@ -7363,3 +7363,7 @@ UnexpectedSuperParametersInGenerativeConstructors:
   analyzerCode: INVALID_SUPER_FORMAL_PARAMETER_LOCATION
   script: |
     class A { A(); A.named(super.x) : this(); }
+
+Dart2WasmUnsupportedMain:
+  problemMessage: "Unsupported main function"
+  correctionMessage: "Main function should have one of these types: `void Function()`, `void Function(List<String>)`."

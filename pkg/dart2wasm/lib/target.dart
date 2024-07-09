@@ -3,7 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:_fe_analyzer_shared/src/messages/codes.dart'
-    show Message, LocatedMessage, messageWasmImportOrExportInUserCode;
+    show
+        Message,
+        LocatedMessage,
+        messageWasmImportOrExportInUserCode,
+        messageDart2WasmUnsupportedMain;
 import 'package:_js_interop_checks/js_interop_checks.dart';
 import 'package:_js_interop_checks/src/js_interop.dart' as jsInteropHelper;
 import 'package:_js_interop_checks/src/transformations/shared_interop_transformer.dart';
@@ -355,6 +359,12 @@ class WasmTarget extends Target {
     wasmTrans.transformLibraries(libraries, coreTypes, hierarchy);
 
     awaitTrans.transformLibraries(libraries, hierarchy, coreTypes);
+
+    final mainMethod = component.mainMethod;
+    if (mainMethod != null) {
+      _checkMainType(mainMethod,
+          diagnosticReporter as DiagnosticReporter<Message, LocatedMessage>);
+    }
   }
 
   @override
@@ -605,5 +615,21 @@ void _checkWasmImportExportPragmas(List<Library> libraries, CoreTypes coreTypes,
         }
       }
     }
+  }
+}
+
+void _checkMainType(Procedure mainProcedure,
+    DiagnosticReporter<Message, LocatedMessage> diagnosticReporter) {
+  var unsupported = false;
+  final FunctionNode mainFunction = mainProcedure.function;
+  if (mainFunction.typeParameters.isNotEmpty ||
+      mainFunction.namedParameters.isNotEmpty ||
+      mainFunction.requiredParameterCount > 1) {
+    diagnosticReporter.report(
+      messageDart2WasmUnsupportedMain,
+      mainProcedure.fileOffset,
+      0,
+      mainProcedure.enclosingLibrary.fileUri,
+    );
   }
 }
