@@ -955,7 +955,8 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   /// Generates code for an expression plus conversion code to convert the
   /// result to the expected type if needed. All expression code generation goes
   /// through this method.
-  w.ValueType wrap(Expression node, w.ValueType expectedType) {
+  w.ValueType wrap(Expression node, w.ValueType expectedType,
+      {bool convert = true}) {
     var sourceUpdated = false;
     Source? oldSource;
     if (node is FileUriNode) {
@@ -967,8 +968,12 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
     final oldFileOffset = setSourceMapFileOffset(node.fileOffset);
     try {
       w.ValueType resultType = node.accept1(this, expectedType);
-      translator.convertType(function, resultType, expectedType);
-      return expectedType;
+      if (convert) {
+        translator.convertType(function, resultType, expectedType);
+        return expectedType;
+      } else {
+        return resultType;
+      }
     } catch (_) {
       _printLocation(node);
       rethrow;
@@ -3215,7 +3220,15 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
   @override
   w.ValueType visitAsExpression(AsExpression node, w.ValueType expectedType) {
     if (translator.options.omitExplicitTypeChecks || node.isUnchecked) {
-      return wrap(node.operand, expectedType);
+      final resultType = wrap(node.operand, expectedType, convert: false);
+      if (!resultType.isSubtypeOf(expectedType) &&
+          resultType is! w.RefType &&
+          expectedType is! w.RefType) {
+        b.unreachable();
+      } else {
+        translator.convertType(function, resultType, expectedType);
+      }
+      return expectedType;
     }
 
     final operandType = dartTypeOf(node.operand);
