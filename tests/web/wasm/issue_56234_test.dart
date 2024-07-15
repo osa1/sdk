@@ -14,6 +14,6 @@ class C {
 
 void main() {
   final C c = C(0.0);
-  int value = c.getX() as int;
-  print(value);
+  int value = c.getX() as int; //# 01: runtime error
+  print(value); //# 01: runtime error
 }
