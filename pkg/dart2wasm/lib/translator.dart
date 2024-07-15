@@ -870,7 +870,7 @@ class Translator with KernelNodes {
         }
         b.struct_get(info.struct, FieldIndex.boxValue);
       } else {
-        if (options.omitExplicitTypeChecks) {
+        if (options.omitExplicitTypeChecks || options.omitImplicitTypeChecks) {
           b.unreachable();
         } else {
           throw "Conversion between non-reference types";
