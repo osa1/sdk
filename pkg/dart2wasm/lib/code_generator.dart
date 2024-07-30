@@ -3856,8 +3856,7 @@ class SwitchInfo {
       nonNullableType = translator.topInfo.nonNullableType;
       nullableType = translator.topInfo.nullableType;
 
-      // Per spec, compare with virtual invocation
-      // `<case expr> == <switch expr>`.
+      // Per spec, compare with `<case expr> == <switch expr>`.
       final Member equalsMember;
       if (check<BoolLiteral, BoolConstant>()) {
         equalsMember = translator.boxedBoolEquals;
@@ -3890,12 +3889,6 @@ class SwitchInfo {
 
         codeGen.call(equalsMember.reference);
       };
-
-      // compare = (pushSwitchExpr, pushCaseExpr) {
-      //   pushCaseExpr();
-      //   pushSwitchExpr();
-      //   codeGen.call(equalsMember.reference);
-      // };
     } else if (check<BoolLiteral, BoolConstant>()) {
       // bool switch
       nonNullableType = w.NumType.i32;
