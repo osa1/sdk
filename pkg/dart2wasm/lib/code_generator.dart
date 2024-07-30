@@ -1735,7 +1735,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
           // Null already checked, skip
         } else {
           switchInfo.compare(
-            () => b.local_get(switchValueNonNullableLocal),
+            () {
+              b.local_get(switchValueNonNullableLocal);
+              return switchValueNonNullableLocal.type;
+            },
             () => wrap(exp, switchInfo.nonNullableType),
           );
           b.br_if(switchLabels[c]!);
@@ -3812,8 +3815,8 @@ class SwitchInfo {
   /// Generates code that compares value of a `case` expression with the
   /// `switch` expression's value. Calls [pushSwitchExpr] and [pushCaseExpr]
   /// once.
-  late final void Function(
-      void Function() pushSwitchExpr, void Function() pushCaseExpr) compare;
+  late final void Function(w.ValueType Function() pushSwitchExpr,
+      w.ValueType Function() pushCaseExpr) compare;
 
   /// The `default: ...` case, if exists.
   late final SwitchCase? defaultCase;
@@ -3852,14 +3855,47 @@ class SwitchInfo {
       // Object equality switch
       nonNullableType = translator.topInfo.nonNullableType;
       nullableType = translator.topInfo.nullableType;
+
       // Per spec, compare with virtual invocation
       // `<case expr> == <switch expr>`.
-      compare = (pushSwitchExpr, pushCaseExpr) => codeGen._virtualCall(
-          node,
-          translator.coreTypes.objectEquals,
-          _VirtualCallKind.Call,
-          (_sig) => pushCaseExpr(),
-          (_sig, _paramInfo) => pushSwitchExpr());
+      final Member equalsMember;
+      if (check<BoolLiteral, BoolConstant>()) {
+        equalsMember = translator.boxedBoolEquals;
+      } else if (check<IntLiteral, IntConstant>()) {
+        equalsMember = translator.boxedIntEquals;
+      } else if (check<StringLiteral, StringConstant>()) {
+        equalsMember = translator.options.jsCompatibility
+            ? translator.jsStringEquals
+            : translator.stringEquals;
+      } else {
+        equalsMember = translator.coreTypes.identicalProcedure;
+      }
+
+      final equalsMemberSignature =
+          translator.signatureForDirectCall(equalsMember.reference);
+
+      // Per spec, `==` can't have type, or extra (optional) positional and
+      // named arguments. So we don't have to check `ParamInfo` for it and
+      // add missing optional parameters.
+      assert(equalsMemberSignature.inputs.length == 2);
+
+      compare = (pushSwitchExpr, pushCaseExpr) {
+        final caseExprType = pushCaseExpr();
+        translator.convertType(
+            codeGen.function, caseExprType, equalsMemberSignature.inputs[0]);
+
+        final switchExprType = pushSwitchExpr();
+        translator.convertType(
+            codeGen.function, switchExprType, equalsMemberSignature.inputs[1]);
+
+        codeGen.call(equalsMember.reference);
+      };
+
+      // compare = (pushSwitchExpr, pushCaseExpr) {
+      //   pushCaseExpr();
+      //   pushSwitchExpr();
+      //   codeGen.call(equalsMember.reference);
+      // };
     } else if (check<BoolLiteral, BoolConstant>()) {
       // bool switch
       nonNullableType = w.NumType.i32;
