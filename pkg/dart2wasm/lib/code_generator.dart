@@ -1735,10 +1735,7 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
           // Null already checked, skip
         } else {
           switchInfo.compare(
-            () {
-              b.local_get(switchValueNonNullableLocal);
-              return switchValueNonNullableLocal.type;
-            },
+            switchValueNonNullableLocal,
             () => wrap(exp, switchInfo.nonNullableType),
           );
           b.br_if(switchLabels[c]!);
@@ -3813,10 +3810,9 @@ class SwitchInfo {
   late final w.ValueType nonNullableType;
 
   /// Generates code that compares value of a `case` expression with the
-  /// `switch` expression's value. Calls [pushSwitchExpr] and [pushCaseExpr]
-  /// once.
-  late final void Function(w.ValueType Function() pushSwitchExpr,
-      w.ValueType Function() pushCaseExpr) compare;
+  /// `switch` expression's value. Calls [pushCaseExpr] once.
+  late final void Function(
+      w.Local switchExprLocal, w.ValueType Function() pushCaseExpr) compare;
 
   /// The `default: ...` case, if exists.
   late final SwitchCase? defaultCase;
@@ -3849,7 +3845,7 @@ class SwitchInfo {
       // default-only switch
       nonNullableType = w.RefType.eq(nullable: false);
       nullableType = w.RefType.eq(nullable: true);
-      compare = (_pushSwitchExpr, _pushCaseExpr) =>
+      compare = (_switchExprLocal, _pushCaseExpr) =>
           throw "Comparison in default-only switch";
     } else if (switchExprType is DynamicType) {
       // Object equality switch
@@ -3878,14 +3874,14 @@ class SwitchInfo {
       // add missing optional parameters.
       assert(equalsMemberSignature.inputs.length == 2);
 
-      compare = (pushSwitchExpr, pushCaseExpr) {
+      compare = (switchExprLocal, pushCaseExpr) {
         final caseExprType = pushCaseExpr();
         translator.convertType(
             codeGen.function, caseExprType, equalsMemberSignature.inputs[0]);
 
-        final switchExprType = pushSwitchExpr();
-        translator.convertType(
-            codeGen.function, switchExprType, equalsMemberSignature.inputs[1]);
+        codeGen.b.local_get(switchExprLocal);
+        translator.convertType(codeGen.function, switchExprLocal.type,
+            equalsMemberSignature.inputs[1]);
 
         codeGen.call(equalsMember.reference);
       };
@@ -3894,8 +3890,8 @@ class SwitchInfo {
       nonNullableType = w.NumType.i32;
       nullableType =
           translator.classInfo[translator.boxedBoolClass]!.nullableType;
-      compare = (pushSwitchExpr, pushCaseExpr) {
-        pushSwitchExpr();
+      compare = (switchExprLocal, pushCaseExpr) {
+        codeGen.b.local_get(switchExprLocal);
         pushCaseExpr();
         codeGen.b.i32_eq();
       };
@@ -3904,8 +3900,8 @@ class SwitchInfo {
       nonNullableType = w.NumType.i64;
       nullableType =
           translator.classInfo[translator.boxedIntClass]!.nullableType;
-      compare = (pushSwitchExpr, pushCaseExpr) {
-        pushSwitchExpr();
+      compare = (switchExprLocal, pushCaseExpr) {
+        codeGen.b.local_get(switchExprLocal);
         pushCaseExpr();
         codeGen.b.i64_eq();
       };
@@ -3915,8 +3911,8 @@ class SwitchInfo {
           .classInfo[translator.coreTypes.stringClass]!.repr.nonNullableType;
       nullableType = translator
           .classInfo[translator.coreTypes.stringClass]!.repr.nullableType;
-      compare = (pushSwitchExpr, pushCaseExpr) {
-        pushSwitchExpr();
+      compare = (switchExprLocal, pushCaseExpr) {
+        codeGen.b.local_get(switchExprLocal);
         pushCaseExpr();
         codeGen.call(translator.options.jsCompatibility
             ? translator.jsStringEquals.reference
@@ -3926,8 +3922,8 @@ class SwitchInfo {
       // Object identity switch
       nonNullableType = translator.topInfo.nonNullableType;
       nullableType = translator.topInfo.nullableType;
-      compare = (pushSwitchExpr, pushCaseExpr) {
-        pushSwitchExpr();
+      compare = (switchExprLocal, pushCaseExpr) {
+        codeGen.b.local_get(switchExprLocal);
         pushCaseExpr();
         codeGen.call(translator.coreTypes.identicalProcedure.reference);
       };
