@@ -3845,7 +3845,7 @@ class SwitchInfo {
       // default-only switch
       nonNullableType = w.RefType.eq(nullable: false);
       nullableType = w.RefType.eq(nullable: true);
-      compare = (_switchExprLocal, _pushCaseExpr) =>
+      compare = (switchExprLocal, pushCaseExpr) =>
           throw "Comparison in default-only switch";
     } else if (switchExprType is DynamicType) {
       // Object equality switch
