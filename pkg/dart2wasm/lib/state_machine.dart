@@ -846,7 +846,10 @@ abstract class StateMachineCodeGenerator extends CodeGenerator {
         } else {
           wrap(exp, switchInfo.nonNullableType);
           b.local_get(switchValueNonNullableLocal);
-          switchInfo.compare();
+          switchInfo.compare(
+            () => b.local_get(switchValueNonNullableLocal),
+            () => wrap(exp, switchInfo.nonNullableType),
+          );
           b.if_();
           _jumpToTarget(innerTargets[c]!);
           b.end();

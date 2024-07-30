@@ -1734,9 +1734,10 @@ class CodeGenerator extends ExpressionVisitor1<w.ValueType, w.ValueType>
             exp is ConstantExpression && exp.constant is NullConstant) {
           // Null already checked, skip
         } else {
-          wrap(exp, switchInfo.nonNullableType);
-          b.local_get(switchValueNonNullableLocal);
-          switchInfo.compare();
+          switchInfo.compare(
+            () => b.local_get(switchValueNonNullableLocal),
+            () => wrap(exp, switchInfo.nonNullableType),
+          );
           b.br_if(switchLabels[c]!);
         }
       }
@@ -3809,9 +3810,10 @@ class SwitchInfo {
   late final w.ValueType nonNullableType;
 
   /// Generates code that compares value of a `case` expression with the
-  /// `switch` expression's value. Expects `case` and `switch` values to be on
-  /// stack, in that order.
-  late final void Function() compare;
+  /// `switch` expression's value. Calls [pushSwitchExpr] and [pushCaseExpr]
+  /// once.
+  late final void Function(
+      void Function() pushSwitchExpr, void Function() pushCaseExpr) compare;
 
   /// The `default: ...` case, if exists.
   late final SwitchCase? defaultCase;
@@ -3822,8 +3824,9 @@ class SwitchInfo {
   SwitchInfo(CodeGenerator codeGen, SwitchStatement node) {
     final translator = codeGen.translator;
 
-    final switchExprClass =
-        translator.classForType(codeGen.dartTypeOf(node.expression));
+    final switchExprType = codeGen.dartTypeOf(node.expression);
+
+    final switchExprClass = translator.classForType(switchExprType);
 
     bool check<L extends Expression, C extends Constant>() =>
         node.cases.expand((c) => c.expressions).every((e) =>
@@ -3843,34 +3846,62 @@ class SwitchInfo {
       // default-only switch
       nonNullableType = w.RefType.eq(nullable: false);
       nullableType = w.RefType.eq(nullable: true);
-      compare = () => throw "Comparison in default-only switch";
+      compare = (_pushSwitchExpr, _pushCaseExpr) =>
+          throw "Comparison in default-only switch";
+    } else if (switchExprType is DynamicType) {
+      // Object equality switch
+      nonNullableType = translator.topInfo.nonNullableType;
+      nullableType = translator.topInfo.nullableType;
+      // Per spec, compare with virtual invocation
+      // `<case expr> == <switch expr>`.
+      compare = (pushSwitchExpr, pushCaseExpr) => codeGen._virtualCall(
+          node,
+          translator.coreTypes.objectEquals,
+          _VirtualCallKind.Call,
+          (_sig) => pushCaseExpr(),
+          (_sig, _paramInfo) => pushSwitchExpr());
     } else if (check<BoolLiteral, BoolConstant>()) {
       // bool switch
       nonNullableType = w.NumType.i32;
       nullableType =
           translator.classInfo[translator.boxedBoolClass]!.nullableType;
-      compare = () => codeGen.b.i32_eq();
+      compare = (pushSwitchExpr, pushCaseExpr) {
+        pushSwitchExpr();
+        pushCaseExpr();
+        codeGen.b.i32_eq();
+      };
     } else if (check<IntLiteral, IntConstant>()) {
       // int switch
       nonNullableType = w.NumType.i64;
       nullableType =
           translator.classInfo[translator.boxedIntClass]!.nullableType;
-      compare = () => codeGen.b.i64_eq();
+      compare = (pushSwitchExpr, pushCaseExpr) {
+        pushSwitchExpr();
+        pushCaseExpr();
+        codeGen.b.i64_eq();
+      };
     } else if (check<StringLiteral, StringConstant>()) {
       // String switch
       nonNullableType = translator
           .classInfo[translator.coreTypes.stringClass]!.repr.nonNullableType;
       nullableType = translator
           .classInfo[translator.coreTypes.stringClass]!.repr.nullableType;
-      compare = () => codeGen.call(translator.options.jsCompatibility
-          ? translator.jsStringEquals.reference
-          : translator.stringEquals.reference);
+      compare = (pushSwitchExpr, pushCaseExpr) {
+        pushSwitchExpr();
+        pushCaseExpr();
+        codeGen.call(translator.options.jsCompatibility
+            ? translator.jsStringEquals.reference
+            : translator.stringEquals.reference);
+      };
     } else {
-      // Object switch
+      // Object identity switch
       nonNullableType = translator.topInfo.nonNullableType;
       nullableType = translator.topInfo.nullableType;
-      compare =
-          () => codeGen.call(translator.coreTypes.identicalProcedure.reference);
+      compare = (pushSwitchExpr, pushCaseExpr) {
+        pushSwitchExpr();
+        pushCaseExpr();
+        codeGen.call(translator.coreTypes.identicalProcedure.reference);
+      };
     }
 
     // Special cases
