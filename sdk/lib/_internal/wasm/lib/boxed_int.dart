@@ -2,16 +2,18 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:_boxed_double';
 import 'dart:_internal';
+import 'dart:_wasm';
 
 @pragma("wasm:entry-point")
-final class _BoxedInt extends int {
+final class BoxedInt extends int {
   // A boxed int contains an unboxed int.
   @pragma("wasm:entry-point")
   int value = 0;
 
   /// Dummy factory to silence error about missing superclass constructor.
-  external factory _BoxedInt();
+  external factory BoxedInt();
 
   external num operator +(num other);
   external num operator -(num other);
@@ -25,12 +27,12 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator ~/(num other) => other is int
       ? _truncDiv(this.value, other)
-      : _BoxedDouble.truncDiv(toDouble(), unsafeCast<double>(other));
+      : BoxedDouble.truncDiv(toDouble(), unsafeCast<double>(other));
 
   @pragma("wasm:prefer-inline")
   num operator %(num other) => other is int
       ? _modulo(this, other)
-      : _BoxedDouble.modulo(toDouble(), unsafeCast<double>(other));
+      : BoxedDouble.modulo(toDouble(), unsafeCast<double>(other));
 
   static int _modulo(int a, int b) {
     int rem = a - (a ~/ b) * b;
@@ -57,13 +59,13 @@ final class _BoxedInt extends int {
       throw IntegerDivisionByZeroException();
     }
 
-    return a._div_s(b);
+    return a.divS(b);
   }
 
   @pragma("wasm:prefer-inline")
   num remainder(num other) => other is int
       ? this - (this ~/ other) * other
-      : _BoxedDouble.computeRemainder(toDouble(), unsafeCast<double>(other));
+      : BoxedDouble.computeRemainder(toDouble(), unsafeCast<double>(other));
 
   external int operator -();
 
@@ -74,8 +76,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator >>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shr_s(shift);
+    if (shift.ltU(64)) {
+      return value.shrS(shift);
     }
 
     if (shift < 0) {
@@ -83,14 +85,14 @@ final class _BoxedInt extends int {
     }
 
     // shift >= 64, 0 or -1 depending on sign: `this >= 0 ? 0 : -1`
-    return value._shr_s(63);
+    return value.shrS(63);
   }
 
   @pragma("wasm:prefer-inline")
   int operator >>>(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shr_u(shift);
+    if (shift.ltU(64)) {
+      return value.shrU(shift);
     }
 
     if (shift < 0) {
@@ -104,8 +106,8 @@ final class _BoxedInt extends int {
   @pragma("wasm:prefer-inline")
   int operator <<(int shift) {
     // Unsigned comparison to check for large and negative shifts
-    if (shift._lt_u(64)) {
-      return value._shl(shift);
+    if (shift.ltU(64)) {
+      return value.shl(shift);
     }
 
     if (shift < 0) {
@@ -194,7 +196,7 @@ final class _BoxedInt extends int {
       } else {
         // If abs(other) > MAX_EXACT_INT_TO_DOUBLE, then other has an integer
         // value (no bits below the decimal point).
-        other = other._toInt();
+        other = other.truncSatS();
       }
     }
     if (this < other) {
@@ -299,7 +301,8 @@ final class _BoxedInt extends int {
     }
 
     int b = this;
-    if (b < 0 || b > m) {
+    // b < 0 || b > m, m is positive (checked above)
+    if (b.gtU(m)) {
       b %= m;
     }
     int r = 1;
@@ -390,7 +393,8 @@ final class _BoxedInt extends int {
     if (m <= 0) throw new RangeError.range(m, 1, null, "modulus");
     if (m == 1) return 0;
     int t = this;
-    if ((t < 0) || (t >= m)) t %= m;
+    // t < 0 || t >= m, m is positive (checked above)
+    if (t.geU(m)) t %= m;
     if (t == 1) return 1;
     if ((t == 0) || (t.isEven && m.isEven)) {
       throw new Exception("Not coprime");
@@ -408,7 +412,7 @@ final class _BoxedInt extends int {
     return _binaryGcd(x, y, false);
   }
 
-  int get hashCode => _intHashCode(this);
+  int get hashCode => intHashCode(this);
 
   external int operator ~();
   external int get bitLength;
@@ -417,7 +421,7 @@ final class _BoxedInt extends int {
   external String toString();
 }
 
-int _intHashCode(int value) {
+int intHashCode(int value) {
   const int magic = 0x2D51;
   int lower = (value & 0xFFFFFFFF) * magic;
   int upper = (value >>> 32) * magic;

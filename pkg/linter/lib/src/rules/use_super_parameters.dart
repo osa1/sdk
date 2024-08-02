@@ -65,7 +65,10 @@ class UseSuperParameters extends LintRule {
             description: _desc,
             details: _details,
             state: State.experimental(),
-            categories: {Category.style});
+            categories: {LintRuleCategory.brevity});
+
+  @override
+  List<LintCode> get lintCodes => const [singleParam, multipleParams];
 
   @override
   void registerNodeProcessors(

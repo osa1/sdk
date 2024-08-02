@@ -25,8 +25,8 @@ import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/expression_generator_helper.dart';
 import '../kernel/kernel_helper.dart';
-import '../util/helpers.dart';
 import 'source_library_builder.dart' show SourceLibraryBuilder;
+import 'source_loader.dart';
 
 class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
   @override
@@ -83,7 +83,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       type = new InvalidTypeBuilderImpl(fileUri, charOffset);
     }
     if (typeVariables != null) {
-      for (TypeVariableBuilderBase typeVariable in typeVariables!) {
+      for (TypeVariableBuilder typeVariable in typeVariables!) {
         if (_checkCyclicTypedefDependency(typeVariable.bound, this, {this})) {
           // The bound is erroneous and should be set to [InvalidType].
           typeVariable.parameterBound = new InvalidType();
@@ -147,7 +147,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
                 return true;
               }
               if (declaration.typeVariables != null) {
-                for (TypeVariableBuilderBase typeVariable
+                for (TypeVariableBuilder typeVariable
                     in declaration.typeVariables!) {
                   if (_checkCyclicTypedefDependency(
                       typeVariable.bound,
@@ -168,23 +168,25 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
             }
           }
         } else if (declaration != null && declaration.typeVariablesCount > 0) {
-          List<TypeVariableBuilderBase>? typeParameters;
+          List<TypeVariableBuilder>? typeParameters;
           switch (declaration) {
             case ClassBuilder():
               typeParameters = declaration.typeVariables;
             case TypeAliasBuilder():
               typeParameters = declaration.typeVariables;
+            // Coverage-ignore(suite): Not run.
             case ExtensionTypeDeclarationBuilder():
               typeParameters = declaration.typeParameters;
+            // Coverage-ignore(suite): Not run.
             case BuiltinTypeDeclarationBuilder():
             case InvalidTypeDeclarationBuilder():
             case OmittedTypeDeclarationBuilder():
             case ExtensionBuilder():
-            case TypeVariableBuilderBase():
+            case TypeVariableBuilder():
           }
           if (typeParameters != null) {
             for (int i = 0; i < typeParameters.length; i++) {
-              TypeVariableBuilderBase typeParameter = typeParameters[i];
+              TypeVariableBuilder typeParameter = typeParameters[i];
               if (_checkCyclicTypedefDependency(typeParameter.defaultType!,
                   rootTypeAliasBuilder, seenTypeAliasBuilders)) {
                 return true;
@@ -251,7 +253,9 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
     if (thisType != null) {
       if (identical(thisType, pendingTypeAliasMarker)) {
         thisType = cyclicTypeAliasMarker;
-        // Cyclic type alias. The error is reported elsewhere.
+        assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+            "SourceTypeAliasBuilder.buildThisType",
+            expectedPhase: CompilationPhaseForProblemReporting.outline));
         return const InvalidType();
       } else if (identical(thisType, cyclicTypeAliasMarker)) {
         return const InvalidType();
@@ -299,7 +303,10 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
     }
 
     if (arguments != null && arguments.length != typeVariablesCount) {
-      // That should be caught and reported as a compile-time error earlier.
+      assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+          "SourceTypeAliasBuilder.buildAliasedTypeArguments: "
+          "the numbers of type parameters and type arguments don't match.",
+          expectedPhase: CompilationPhaseForProblemReporting.outline));
       return unhandled(
           templateTypeArgumentMismatch
               .withArguments(typeVariablesCount)
@@ -327,9 +334,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
         inConstFields: inConstFields);
   }
 
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     MetadataBuilder.buildAnnotations(
         typedef,
@@ -350,7 +355,6 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
                 inMetadata: true,
                 inConstFields: false),
             classHierarchy,
-            delayedActionPerformers,
             computeTypeParameterScope(libraryBuilder.scope));
       }
     }
@@ -361,18 +365,13 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
     });
   }
 
-  Scope computeTypeParameterScope(Scope parent) {
+  LookupScope computeTypeParameterScope(LookupScope parent) {
     if (typeVariables == null) return parent;
     Map<String, Builder> local = <String, Builder>{};
     for (NominalVariableBuilder variable in typeVariables!) {
       local[variable.name] = variable;
     }
-    return new Scope(
-        kind: ScopeKind.typeParameters,
-        local: local,
-        parent: parent,
-        debugName: "type parameter",
-        isModifiable: false);
+    return new TypeParameterScope(parent, local);
   }
 
   Map<Procedure, Member>? _tearOffDependencies;
@@ -500,6 +499,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       case ExtensionBuilder():
       case InvalidTypeDeclarationBuilder():
       case BuiltinTypeDeclarationBuilder():
+      // Coverage-ignore(suite): Not run.
       // TODO(johnniwinther): How should we handle this case?
       case OmittedTypeDeclarationBuilder():
       case null:

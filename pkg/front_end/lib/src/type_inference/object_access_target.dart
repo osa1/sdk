@@ -93,6 +93,224 @@ enum ObjectAccessTargetKind {
   nullableExtensionTypeRepresentation,
 }
 
+/// Type of the target in a function-like invocation.
+///
+/// [InvocationTargetType] and its subclasses encode the type information about
+/// `f` in expressions like `f<int, String>(0.1, isFoo: false)`.
+sealed class InvocationTargetType {
+  const InvocationTargetType();
+
+  /// If operator == is invoked, returns the target type or its approximation.
+  FunctionType get equalsFunctionType;
+
+  /// If `sublist` is invoked, returns the target type or its approximation.
+  FunctionType get sublistFunctionType;
+
+  /// If operator - is invoked, returns the target type or its approximation.
+  FunctionType get minusFunctionType;
+
+  /// If operator [] is invoked, returns the target type or its approximation.
+  FunctionType get indexGetFunctionType;
+
+  /// If operator >= is invoked, returns the target type or its approximation.
+  FunctionType get greaterThanOrEqualsFunctionType;
+
+  /// If operator <= is invoked, returns the target type or its approximation.
+  FunctionType get lessThanOrEqualsFunctionType;
+
+  /// If one of the operators <, >, <=, >= is invoked, returns the target type
+  /// or its approximation.
+  FunctionType get relationalFunctionType;
+
+  /// If `containsKey` is invoked, returns the target type or its approximation.
+  FunctionType get containsKeyFunctionType;
+
+  /// If operator []= is invoked, returns the target type or its approximation.
+  FunctionType get indexSetFunctionType;
+
+  /// If an operator taking one parameter is invoked, returns the target type or
+  /// its approximation.
+  FunctionType get binaryOperationFunctionType;
+
+  /// The return type of the target type or its approximation.
+  DartType get returnType;
+
+  /// [FunctionAccessKind] associated with the target.
+  FunctionAccessKind get functionAccessKind;
+
+  /// Returns the target type or computes its approximation that can take
+  /// [arguments].
+  FunctionType computeFunctionTypeForInference(Arguments arguments);
+}
+
+/// Target type that can be expressed as a fully defined [FunctionType].
+class InvocationTargetFunctionType extends InvocationTargetType {
+  final FunctionType functionType;
+
+  InvocationTargetFunctionType(this.functionType);
+
+  @override
+  FunctionType get equalsFunctionType => functionType;
+
+  @override
+  FunctionType get sublistFunctionType => functionType;
+
+  @override
+  FunctionType get minusFunctionType => functionType;
+
+  @override
+  FunctionType get indexGetFunctionType => functionType;
+
+  @override
+  FunctionType get greaterThanOrEqualsFunctionType => functionType;
+
+  @override
+  FunctionType get lessThanOrEqualsFunctionType => functionType;
+
+  @override
+  FunctionType get relationalFunctionType => functionType;
+
+  @override
+  FunctionType get containsKeyFunctionType => functionType;
+
+  @override
+  FunctionType get indexSetFunctionType => functionType;
+
+  @override
+  FunctionType get binaryOperationFunctionType => functionType;
+
+  @override
+  DartType get returnType => functionType.returnType;
+
+  @override
+  FunctionAccessKind get functionAccessKind => FunctionAccessKind.FunctionType;
+
+  @override
+  FunctionType computeFunctionTypeForInference(Arguments arguments) {
+    return functionType;
+  }
+}
+
+/// Base class for all target types that can't be expressed as a fully defined
+/// [FunctionType].
+sealed class InvocationTargetNonFunctionType extends InvocationTargetType {
+  const InvocationTargetNonFunctionType();
+
+  @override
+  FunctionType get equalsFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get sublistFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get minusFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get indexGetFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get greaterThanOrEqualsFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get lessThanOrEqualsFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get relationalFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get containsKeyFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionType get indexSetFunctionType {
+    return new FunctionType(
+        [const DynamicType()], returnType, Nullability.nonNullable);
+  }
+
+  @override
+  FunctionType get binaryOperationFunctionType {
+    return _oneParameterFunctionApproximation;
+  }
+
+  @override
+  FunctionAccessKind get functionAccessKind {
+    // TODO(cstefantsova): Should we have [FunctionAccessKind] elements for the
+    // invalid type and the Never type?
+    return FunctionAccessKind.Function;
+  }
+
+  FunctionType get _oneParameterFunctionApproximation {
+    return new FunctionType(
+        [const DynamicType()], returnType, Nullability.nonNullable);
+  }
+
+  @override
+  FunctionType computeFunctionTypeForInference(Arguments arguments) {
+    return new FunctionType(
+        new List<DartType>.filled(
+            arguments.positional.length, const DynamicType()),
+        this.returnType,
+        Nullability.nonNullable,
+        namedParameters: <NamedType>[
+          for (NamedExpression namedExpression in arguments.named)
+            new NamedType(namedExpression.name, const DynamicType())
+        ],
+        typeParameters: [
+          for (DartType _ in arguments.types)
+            new StructuralParameter(
+                null, const DynamicType(), const DynamicType())
+        ]);
+  }
+}
+
+/// Target type that accepts all shapes of the arguments.
+///
+/// For example: `foo(1)`, `bar(2, "3")`, where `foo` has static type `dynamic`
+/// and `bar` has static type `Function`.
+class InvocationTargetDynamicType extends InvocationTargetNonFunctionType {
+  const InvocationTargetDynamicType();
+
+  @override
+  DartType get returnType => const DynamicType();
+}
+
+/// Target type of an invalid function expression.
+///
+/// This invocation target type is used whenever the invocation target isn't
+/// callable or has static type [InvalidType]. For example, `3()`.
+class InvocationTargetInvalidType extends InvocationTargetNonFunctionType {
+  const InvocationTargetInvalidType();
+
+  @override
+  DartType get returnType => const InvalidType();
+}
+
+/// Target type of the `Never` type.
+///
+/// For example: `(throw 0)(1, 2, 3)`, `X()`, where `X` is a type variable
+/// defined as `X extends Never`.
+class InvocationTargetNeverType extends InvocationTargetNonFunctionType {
+  const InvocationTargetNeverType();
+
+  @override
+  DartType get returnType => const NeverType.nonNullable();
+}
+
 /// Result for performing an access on an object, like `o.foo`, `o.foo()` and
 /// `o.foo = ...`.
 abstract class ObjectAccessTarget {
@@ -179,19 +397,24 @@ abstract class ObjectAccessTarget {
       // TODO(johnniwinther): Unify stub kinds. Should we always make this a
       // member signature, merge member signature and abstract forwarding stub,
       // or add a new stub kind for abstract extension type members?
-      assert(member.enclosingExtensionTypeDeclaration != null,
+      assert(
+          member.enclosingExtensionTypeDeclaration != null,
+          // Coverage-ignore(suite): Not run.
           "Unexpected member without an enclosing class $member.");
       member = (member as Procedure).stubTarget!;
     }
     assert(
-        member.enclosingClass != null, "No enclosing class found on $member.");
+        member.enclosingClass != null, // Coverage-ignore(suite): Not run.
+        "No enclosing class found on $member.");
     return member;
   }
 
+  // Coverage-ignore(suite): Not run.
   /// The access index, if this is an access to a positional record field.
   /// Otherwise null.
   int? get recordFieldIndex => null;
 
+  // Coverage-ignore(suite): Not run.
   /// The access name, if this is an access to a named record field.
   /// Otherwise null.
   String? get recordFieldName => null;
@@ -277,10 +500,12 @@ abstract class ObjectAccessTarget {
       isNullableExtensionTypeMember ||
       isNullableExtensionTypeRepresentation;
 
+  // Coverage-ignore(suite): Not run.
   /// Returns the candidates for an ambiguous extension access.
   List<ExtensionAccessCandidate> get candidates =>
       throw new UnsupportedError('ObjectAccessTarget.candidates');
 
+  // Coverage-ignore(suite): Not run.
   /// Returns the original procedure kind, if this is an extension method or
   /// extension type method target.
   ///
@@ -290,12 +515,14 @@ abstract class ObjectAccessTarget {
   ClassMemberKind get declarationMethodKind =>
       throw new UnsupportedError('ObjectAccessTarget.declarationMethodKind');
 
+  // Coverage-ignore(suite): Not run.
   /// Returns type arguments for the type parameters of an extension or
   /// extension type method that comes from the extension or extension type
   /// declaration. These are determined from the receiver of the access.
   List<DartType> get receiverTypeArguments =>
       throw new UnsupportedError('ObjectAccessTarget.receiverTypeArguments');
 
+  // Coverage-ignore(suite): Not run.
   /// Returns the member to use for a tearoff.
   ///
   /// This is currently used for extension methods.
@@ -304,13 +531,22 @@ abstract class ObjectAccessTarget {
   Member? get tearoffTarget =>
       throw new UnsupportedError('ObjectAccessTarget.tearoffTarget');
 
-  FunctionType _getFunctionType(
+  InvocationTargetType _getFunctionType(
       InferenceVisitorBase base, DartType calleeType) {
     calleeType = calleeType.nonTypeVariableBound;
     if (calleeType is FunctionType) {
-      return calleeType;
+      return new InvocationTargetFunctionType(calleeType);
+    } else if (calleeType == base.coreTypes.functionNonNullableRawType ||
+        calleeType is DynamicType) {
+      return const InvocationTargetDynamicType();
+    } else if (calleeType is NeverType) {
+      // TODO(cstefantsova): Should we insert the nullability assert somewhere
+      // earlier?
+      assert(calleeType.nullability == Nullability.nonNullable);
+      return const InvocationTargetNeverType();
+    } else {
+      return const InvocationTargetInvalidType();
     }
-    return base.unknownFunction;
   }
 
   /// Returns the type of this target when accessed as an invocation on
@@ -332,7 +568,7 @@ abstract class ObjectAccessTarget {
   ///    c.getter1; // The getter type is `int Function()`.
   ///    c.getter2; // The getter type is [unknownFunction].
   ///
-  FunctionType getFunctionType(InferenceVisitorBase base);
+  InvocationTargetType getFunctionType(InferenceVisitorBase base);
 
   /// Returns the type of this target when accessed as a getter on
   /// [receiverType].
@@ -371,6 +607,7 @@ abstract class ObjectAccessTarget {
   /// operand is of type `int` and `num` otherwise.
   bool isSpecialCasedBinaryOperator(InferenceVisitorBase base) => false;
 
+  // Coverage-ignore(suite): Not run.
   /// Returns `true` if this target is ternary operator, whose return type is
   /// specialized to take the operand type into account.
   ///
@@ -484,7 +721,7 @@ class InstanceAccessTarget extends ObjectAccessTarget {
       : super.internal(ObjectAccessTargetKind.objectMember);
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     return _getFunctionType(base, getGetterType(base));
   }
 
@@ -521,35 +758,70 @@ class InstanceAccessTarget extends ObjectAccessTarget {
 
   @override
   DartType getIndexKeyType(InferenceVisitorBase base) {
-    FunctionType functionType = _getFunctionType(base, getGetterType(base));
-    if (functionType.positionalParameters.length >= 1) {
-      return functionType.positionalParameters[0];
+    InvocationTargetType invocationTargetType =
+        _getFunctionType(base, getGetterType(base));
+    FunctionType indexGetFunctionType =
+        invocationTargetType.indexGetFunctionType;
+    switch (invocationTargetType) {
+      case InvocationTargetFunctionType():
+        if (indexGetFunctionType.positionalParameters.isNotEmpty) {
+          return indexGetFunctionType.positionalParameters.first;
+        } else {
+          return const DynamicType();
+        }
+      case InvocationTargetDynamicType():
+      case InvocationTargetInvalidType():
+      case InvocationTargetNeverType():
+        return invocationTargetType
+            .indexGetFunctionType.positionalParameters.first;
     }
-    return const DynamicType();
   }
 
   @override
   DartType getIndexSetValueType(InferenceVisitorBase base) {
-    FunctionType functionType = _getFunctionType(base, getGetterType(base));
-    if (functionType.positionalParameters.length >= 2) {
-      return functionType.positionalParameters[1];
+    InvocationTargetType invocationTargetType =
+        _getFunctionType(base, getGetterType(base));
+    FunctionType indexSetFunctionType =
+        invocationTargetType.indexSetFunctionType;
+    switch (invocationTargetType) {
+      case InvocationTargetFunctionType():
+        if (indexSetFunctionType.positionalParameters.length >= 2) {
+          return indexSetFunctionType.positionalParameters[1];
+        } else {
+          return const DynamicType();
+        }
+      case InvocationTargetDynamicType():
+      case InvocationTargetInvalidType():
+      case InvocationTargetNeverType():
+        return invocationTargetType
+            .indexGetFunctionType.positionalParameters[1];
     }
-    return const DynamicType();
   }
 
   @override
   DartType getReturnType(InferenceVisitorBase base) {
-    FunctionType functionType = _getFunctionType(base, getGetterType(base));
-    return functionType.returnType;
+    return _getFunctionType(base, getGetterType(base)).returnType;
   }
 
   @override
   DartType getBinaryOperandType(InferenceVisitorBase base) {
-    FunctionType functionType = _getFunctionType(base, getGetterType(base));
-    if (functionType.positionalParameters.isNotEmpty) {
-      return functionType.positionalParameters.first;
+    InvocationTargetType invocationTargetType =
+        _getFunctionType(base, getGetterType(base));
+    FunctionType binaryOperationFunctionType =
+        invocationTargetType.binaryOperationFunctionType;
+    switch (invocationTargetType) {
+      case InvocationTargetFunctionType():
+        if (binaryOperationFunctionType.positionalParameters.isNotEmpty) {
+          return binaryOperationFunctionType.positionalParameters.first;
+        } else {
+          return const DynamicType();
+        }
+      case InvocationTargetDynamicType():
+      case InvocationTargetInvalidType():
+      case InvocationTargetNeverType():
+        return invocationTargetType
+            .indexGetFunctionType.positionalParameters.first;
     }
-    return const DynamicType();
   }
 }
 
@@ -571,7 +843,7 @@ class FunctionAccessTarget extends ObjectAccessTarget {
   Member? get member => null;
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     return _getFunctionType(base, receiverType);
   }
 
@@ -581,27 +853,32 @@ class FunctionAccessTarget extends ObjectAccessTarget {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getSetterType(InferenceVisitorBase base) {
     assert(false, "Unexpected call to ${runtimeType}.getSetterType");
     return const DynamicType();
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexKeyType(InferenceVisitorBase base) {
     return const DynamicType();
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexSetValueType(InferenceVisitorBase base) {
     return const DynamicType();
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getReturnType(InferenceVisitorBase base) {
     return getFunctionType(base).returnType;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getBinaryOperandType(InferenceVisitorBase base) {
     return const DynamicType();
   }
@@ -610,29 +887,35 @@ class FunctionAccessTarget extends ObjectAccessTarget {
 class DynamicAccessTarget extends ObjectAccessTarget {
   /// Creates an access on a dynamic receiver type with no known target.
   const DynamicAccessTarget.dynamic()
-      : super.internal(ObjectAccessTargetKind.dynamic);
+      : super // Coverage-ignore(suite): Not run.
+        .internal(ObjectAccessTargetKind.dynamic);
 
   /// Creates an access with no target due to an invalid receiver type.
   ///
   /// This is not in itself an error but a consequence of another error.
   const DynamicAccessTarget.invalid()
-      : super.internal(ObjectAccessTargetKind.invalid);
+      : super // Coverage-ignore(suite): Not run.
+        .internal(ObjectAccessTargetKind.invalid);
 
   /// Creates an access with no target.
   ///
   /// This is an error case.
   const DynamicAccessTarget.missing()
-      : super.internal(ObjectAccessTargetKind.missing);
+      : super // Coverage-ignore(suite): Not run.
+        .internal(ObjectAccessTargetKind.missing);
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType? get receiverType => null;
 
   @override
   Member? get member => null;
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
-    return base.unknownFunction;
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
+    return isInvalid
+        ? const InvocationTargetInvalidType()
+        : const InvocationTargetDynamicType();
   }
 
   @override
@@ -679,11 +962,14 @@ class NeverAccessTarget extends ObjectAccessTarget {
       : super.internal(ObjectAccessTargetKind.never);
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType? get receiverType => null;
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
-    return functionType ?? base.unknownFunction;
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
+    return functionType != null
+        ? new InvocationTargetFunctionType(functionType!)
+        : const InvocationTargetNeverType();
   }
 
   @override
@@ -737,15 +1023,16 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
             : ObjectAccessTargetKind.extensionMember);
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     switch (declarationMethodKind) {
       case ClassMemberKind.Method:
         FunctionType functionType =
             member.function!.computeFunctionType(Nullability.nonNullable);
-        return functionType;
+        return new InvocationTargetFunctionType(functionType);
       case ClassMemberKind.Getter:
         // TODO(johnniwinther): Handle implicit .call on extension getter.
         return _getFunctionType(base, member.function!.returnType);
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getFunctionType', -1, null);
     }
@@ -786,6 +1073,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
                 extensionTypeParameters, receiverTypeArguments);
         DartType resultType = instantiator.substitute(functionType.returnType);
         return resultType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getGetterType', -1, null);
     }
@@ -807,6 +1095,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
         DartType setterType =
             instantiator.substitute(functionType.positionalParameters[1]);
         return setterType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Method:
       case ClassMemberKind.Getter:
         throw unexpected('$this', 'getSetterType', -1, null);
@@ -830,6 +1119,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
           return keyType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getIndexKeyType', -1, null);
@@ -853,6 +1143,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
           return indexType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getIndexSetValueType', -1, null);
@@ -863,6 +1154,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
   DartType getReturnType(InferenceVisitorBase base) {
     switch (declarationMethodKind) {
       case ClassMemberKind.Method:
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
         FunctionType functionType =
             member.function!.computeFunctionType(Nullability.nonNullable);
@@ -874,6 +1166,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
           returnType = instantiator.substitute(returnType);
         }
         return returnType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         return const VoidType();
     }
@@ -888,6 +1181,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
         if (functionType.positionalParameters.length > 1) {
           DartType keyType = functionType.positionalParameters[1];
           if (functionType.typeParameters.isNotEmpty) {
+            // Coverage-ignore-block(suite): Not run.
             FunctionTypeInstantiator instantiator =
                 new FunctionTypeInstantiator.fromIterables(
                     functionType.typeParameters, receiverTypeArguments);
@@ -896,6 +1190,7 @@ class ExtensionAccessTarget extends ObjectAccessTarget {
           return keyType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         return const InvalidType();
@@ -922,8 +1217,9 @@ class AmbiguousExtensionAccessTarget extends ObjectAccessTarget {
   Member? get member => null;
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
-    return base.unknownFunction;
+  // Coverage-ignore(suite): Not run.
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
+    return const InvocationTargetInvalidType();
   }
 
   @override
@@ -1002,7 +1298,9 @@ class ExtensionAccessCandidate {
           return false;
         }
       }
-    } else if (other.isPlatform) {
+    }
+    // Coverage-ignore(suite): Not run.
+    else if (other.isPlatform) {
       // This is not platform, [other] is: this  is more specific.
       return true;
     } else {
@@ -1025,12 +1323,14 @@ abstract class RecordAccessTarget extends ObjectAccessTarget {
       : super.internal(kind);
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getBinaryOperandType(InferenceVisitorBase base) {
     return const DynamicType();
   }
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  // Coverage-ignore(suite): Not run.
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     return _getFunctionType(base, getGetterType(base));
   }
 
@@ -1040,21 +1340,25 @@ abstract class RecordAccessTarget extends ObjectAccessTarget {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexKeyType(InferenceVisitorBase base) {
     throw unexpected(runtimeType.toString(), 'getIndexKeyType', -1, null);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexSetValueType(InferenceVisitorBase base) {
     throw unexpected(runtimeType.toString(), 'getIndexSetValueType', -1, null);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getReturnType(InferenceVisitorBase base) {
     return getFunctionType(base).returnType;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getSetterType(InferenceVisitorBase base) {
     throw unexpected(runtimeType.toString(), 'getSetterType', -1, null);
   }
@@ -1114,15 +1418,17 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
             : ObjectAccessTargetKind.nullableExtensionTypeMember);
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     switch (declarationMethodKind) {
       case ClassMemberKind.Method:
         FunctionType functionType =
             member.function!.computeFunctionType(Nullability.nonNullable);
-        return functionType;
+        return new InvocationTargetFunctionType(functionType);
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
         // TODO(johnniwinther): Handle implicit .call on extension getter.
         return _getFunctionType(base, member.function!.returnType);
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getFunctionType', -1, null);
     }
@@ -1163,6 +1469,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
                 extensionTypeParameters, receiverTypeArguments);
         DartType resultType = instantiator.substitute(functionType.returnType);
         return resultType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getGetterType', -1, null);
     }
@@ -1184,6 +1491,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
         DartType setterType =
             instantiator.substitute(functionType.positionalParameters[1]);
         return setterType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Method:
       case ClassMemberKind.Getter:
         throw unexpected('$this', 'getSetterType', -1, null);
@@ -1207,6 +1515,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
           return keyType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getIndexKeyType', -1, null);
@@ -1230,6 +1539,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
           return indexType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         throw unexpected('$this', 'getIndexSetValueType', -1, null);
@@ -1240,6 +1550,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
   DartType getReturnType(InferenceVisitorBase base) {
     switch (declarationMethodKind) {
       case ClassMemberKind.Method:
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
         FunctionType functionType =
             member.function!.computeFunctionType(Nullability.nonNullable);
@@ -1251,6 +1562,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
           returnType = instantiator.substitute(returnType);
         }
         return returnType;
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Setter:
         return const VoidType();
     }
@@ -1273,6 +1585,7 @@ class ExtensionTypeAccessTarget extends ObjectAccessTarget {
           return keyType;
         }
         return const InvalidType();
+      // Coverage-ignore(suite): Not run.
       case ClassMemberKind.Getter:
       case ClassMemberKind.Setter:
         return const InvalidType();
@@ -1299,12 +1612,14 @@ class ExtensionTypeRepresentationAccessTarget extends ObjectAccessTarget {
             : ObjectAccessTargetKind.nullableExtensionTypeRepresentation);
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getBinaryOperandType(InferenceVisitorBase base) {
     throw unexpected('$this', 'getBinaryOperandType', -1, null);
   }
 
   @override
-  FunctionType getFunctionType(InferenceVisitorBase base) {
+  // Coverage-ignore(suite): Not run.
+  InvocationTargetType getFunctionType(InferenceVisitorBase base) {
     return _getFunctionType(base, getGetterType(base));
   }
 
@@ -1315,21 +1630,25 @@ class ExtensionTypeRepresentationAccessTarget extends ObjectAccessTarget {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexKeyType(InferenceVisitorBase base) {
     throw unexpected('$this', 'getIndexKeyType', -1, null);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getIndexSetValueType(InferenceVisitorBase base) {
     throw unexpected('$this', 'getIndexSetValueType', -1, null);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getReturnType(InferenceVisitorBase base) {
     throw unexpected('$this', 'getReturnType', -1, null);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   DartType getSetterType(InferenceVisitorBase base) {
     throw unexpected('$this', 'getSetterType', -1, null);
   }

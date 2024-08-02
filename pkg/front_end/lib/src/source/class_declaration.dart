@@ -237,6 +237,7 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
         includeDuplicates: includeDuplicates);
   }
 
+  // Coverage-ignore(suite): Not run.
   factory ClassDeclarationMemberIterator.local(D classBuilder,
       {required bool includeDuplicates}) {
     return new ClassDeclarationMemberIterator._(classBuilder, null,
@@ -246,7 +247,7 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
   ClassDeclarationMemberIterator._(
       D classDeclaration, this.augmentationBuilders,
       {required this.includeDuplicates})
-      : _iterator = classDeclaration.scope.filteredIterator<T>(
+      : _iterator = classDeclaration.nameSpace.filteredIterator<T>(
             parent: classDeclaration,
             includeDuplicates: includeDuplicates,
             includeAugmentations: false);
@@ -260,7 +261,7 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
     }
     if (augmentationBuilders != null && augmentationBuilders!.moveNext()) {
       D augmentationClassDeclaration = augmentationBuilders!.current;
-      _iterator = augmentationClassDeclaration.scope.filteredIterator<T>(
+      _iterator = augmentationClassDeclaration.nameSpace.filteredIterator<T>(
           parent: augmentationClassDeclaration,
           includeDuplicates: includeDuplicates,
           includeAugmentations: false);
@@ -274,9 +275,12 @@ class ClassDeclarationMemberIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }
 
+// Coverage-ignore(suite): Not run.
 class ClassDeclarationMemberNameIterator<D extends ClassDeclaration,
     T extends Builder> implements NameIterator<T> {
   NameIterator<T>? _iterator;
@@ -295,7 +299,7 @@ class ClassDeclarationMemberNameIterator<D extends ClassDeclaration,
   ClassDeclarationMemberNameIterator._(
       D classDeclaration, this.augmentationBuilders,
       {required this.includeDuplicates})
-      : _iterator = classDeclaration.scope.filteredNameIterator<T>(
+      : _iterator = classDeclaration.nameSpace.filteredNameIterator<T>(
             parent: classDeclaration,
             includeDuplicates: includeDuplicates,
             includeAugmentations: false);
@@ -309,10 +313,11 @@ class ClassDeclarationMemberNameIterator<D extends ClassDeclaration,
     }
     if (augmentationBuilders != null && augmentationBuilders!.moveNext()) {
       D augmentationClassDeclaration = augmentationBuilders!.current;
-      _iterator = augmentationClassDeclaration.scope.filteredNameIterator<T>(
-          parent: augmentationClassDeclaration,
-          includeDuplicates: includeDuplicates,
-          includeAugmentations: false);
+      _iterator = augmentationClassDeclaration.nameSpace
+          .filteredNameIterator<T>(
+              parent: augmentationClassDeclaration,
+              includeDuplicates: includeDuplicates,
+              includeAugmentations: false);
     }
     if (_iterator != null) {
       if (_iterator!.moveNext()) {
@@ -344,6 +349,7 @@ class ClassDeclarationConstructorIterator<D extends ClassDeclaration,
         includeDuplicates: includeDuplicates);
   }
 
+  // Coverage-ignore(suite): Not run.
   factory ClassDeclarationConstructorIterator.local(D classBuilder,
       {required bool includeDuplicates}) {
     return new ClassDeclarationConstructorIterator._(classBuilder, null,
@@ -382,7 +388,9 @@ class ClassDeclarationConstructorIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }
 
 class ClassDeclarationConstructorNameIterator<D extends ClassDeclaration,
@@ -432,8 +440,12 @@ class ClassDeclarationConstructorNameIterator<D extends ClassDeclaration,
   }
 
   @override
-  T get current => _iterator?.current ?? (throw new StateError('No element'));
+  T get current =>
+      _iterator?.current ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 
   @override
-  String get name => _iterator?.name ?? (throw new StateError('No element'));
+  String get name =>
+      _iterator?.name ?? // Coverage-ignore(suite): Not run.
+      (throw new StateError('No element'));
 }

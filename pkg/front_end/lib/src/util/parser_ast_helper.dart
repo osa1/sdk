@@ -1449,9 +1449,13 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     LiteralMapEntryHandle data = new LiteralMapEntryHandle(ParserAstType.HANDLE,
-        colon: colon, endToken: endToken);
+        colon: colon,
+        endToken: endToken,
+        nullAwareKeyToken: nullAwareKeyToken,
+        nullAwareValueToken: nullAwareValueToken);
     seen(data);
   }
 
@@ -2454,6 +2458,14 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
+  void handleNullAwareElement(Token nullAwareToken) {
+    NullAwareElementHandle data = new NullAwareElementHandle(
+        ParserAstType.HANDLE,
+        nullAwareToken: nullAwareToken);
+    seen(data);
+  }
+
+  @override
   void handleRestPattern(Token dots, {required bool hasSubPattern}) {
     RestPatternHandle data = new RestPatternHandle(ParserAstType.HANDLE,
         dots: dots, hasSubPattern: hasSubPattern);
@@ -2576,9 +2588,24 @@ abstract class AbstractParserAstListener implements Listener {
   }
 
   @override
+  void handleLiteralDoubleWithSeparators(Token token) {
+    LiteralDoubleWithSeparatorsHandle data =
+        new LiteralDoubleWithSeparatorsHandle(ParserAstType.HANDLE,
+            token: token);
+    seen(data);
+  }
+
+  @override
   void handleLiteralInt(Token token) {
     LiteralIntHandle data =
         new LiteralIntHandle(ParserAstType.HANDLE, token: token);
+    seen(data);
+  }
+
+  @override
+  void handleLiteralIntWithSeparators(Token token) {
+    LiteralIntWithSeparatorsHandle data =
+        new LiteralIntWithSeparatorsHandle(ParserAstType.HANDLE, token: token);
     seen(data);
   }
 
@@ -6234,15 +6261,22 @@ class LibraryNameEnd extends ParserAstNode {
 class LiteralMapEntryHandle extends ParserAstNode {
   final Token colon;
   final Token endToken;
+  final Token? nullAwareKeyToken;
+  final Token? nullAwareValueToken;
 
   LiteralMapEntryHandle(ParserAstType type,
-      {required this.colon, required this.endToken})
+      {required this.colon,
+      required this.endToken,
+      this.nullAwareKeyToken,
+      this.nullAwareValueToken})
       : super("LiteralMapEntry", type);
 
   @override
   Map<String, Object?> get deprecatedArguments => {
         "colon": colon,
         "endToken": endToken,
+        "nullAwareKeyToken": nullAwareKeyToken,
+        "nullAwareValueToken": nullAwareValueToken,
       };
 
   @override
@@ -8481,6 +8515,21 @@ class SpreadExpressionHandle extends ParserAstNode {
   R accept<R>(ParserAstVisitor<R> v) => v.visitSpreadExpressionHandle(this);
 }
 
+class NullAwareElementHandle extends ParserAstNode {
+  final Token nullAwareToken;
+
+  NullAwareElementHandle(ParserAstType type, {required this.nullAwareToken})
+      : super("NullAwareElement", type);
+
+  @override
+  Map<String, Object?> get deprecatedArguments => {
+        "nullAwareToken": nullAwareToken,
+      };
+
+  @override
+  R accept<R>(ParserAstVisitor<R> v) => v.visitNullAwareElementHandle(this);
+}
+
 class RestPatternHandle extends ParserAstNode {
   final Token dots;
   final bool hasSubPattern;
@@ -8756,6 +8805,22 @@ class LiteralDoubleHandle extends ParserAstNode {
   R accept<R>(ParserAstVisitor<R> v) => v.visitLiteralDoubleHandle(this);
 }
 
+class LiteralDoubleWithSeparatorsHandle extends ParserAstNode {
+  final Token token;
+
+  LiteralDoubleWithSeparatorsHandle(ParserAstType type, {required this.token})
+      : super("LiteralDoubleWithSeparators", type);
+
+  @override
+  Map<String, Object?> get deprecatedArguments => {
+        "token": token,
+      };
+
+  @override
+  R accept<R>(ParserAstVisitor<R> v) =>
+      v.visitLiteralDoubleWithSeparatorsHandle(this);
+}
+
 class LiteralIntHandle extends ParserAstNode {
   final Token token;
 
@@ -8769,6 +8834,22 @@ class LiteralIntHandle extends ParserAstNode {
 
   @override
   R accept<R>(ParserAstVisitor<R> v) => v.visitLiteralIntHandle(this);
+}
+
+class LiteralIntWithSeparatorsHandle extends ParserAstNode {
+  final Token token;
+
+  LiteralIntWithSeparatorsHandle(ParserAstType type, {required this.token})
+      : super("LiteralIntWithSeparators", type);
+
+  @override
+  Map<String, Object?> get deprecatedArguments => {
+        "token": token,
+      };
+
+  @override
+  R accept<R>(ParserAstVisitor<R> v) =>
+      v.visitLiteralIntWithSeparatorsHandle(this);
 }
 
 class LiteralListHandle extends ParserAstNode {
@@ -10281,6 +10362,7 @@ abstract class ParserAstVisitor<R> {
   R visitIfControlFlowEnd(IfControlFlowEnd node);
   R visitIfElseControlFlowEnd(IfElseControlFlowEnd node);
   R visitSpreadExpressionHandle(SpreadExpressionHandle node);
+  R visitNullAwareElementHandle(NullAwareElementHandle node);
   R visitRestPatternHandle(RestPatternHandle node);
   R visitFunctionTypedFormalParameterBegin(
       FunctionTypedFormalParameterBegin node);
@@ -10297,7 +10379,10 @@ abstract class ParserAstVisitor<R> {
   R visitAssertBegin(AssertBegin node);
   R visitAssertEnd(AssertEnd node);
   R visitLiteralDoubleHandle(LiteralDoubleHandle node);
+  R visitLiteralDoubleWithSeparatorsHandle(
+      LiteralDoubleWithSeparatorsHandle node);
   R visitLiteralIntHandle(LiteralIntHandle node);
+  R visitLiteralIntWithSeparatorsHandle(LiteralIntWithSeparatorsHandle node);
   R visitLiteralListHandle(LiteralListHandle node);
   R visitListPatternHandle(ListPatternHandle node);
   R visitLiteralSetOrMapHandle(LiteralSetOrMapHandle node);
@@ -11443,6 +11528,10 @@ class RecursiveParserAstVisitor implements ParserAstVisitor<void> {
       node.visitChildren(this);
 
   @override
+  void visitNullAwareElementHandle(NullAwareElementHandle node) =>
+      node.visitChildren(this);
+
+  @override
   void visitRestPatternHandle(RestPatternHandle node) =>
       node.visitChildren(this);
 
@@ -11501,7 +11590,17 @@ class RecursiveParserAstVisitor implements ParserAstVisitor<void> {
       node.visitChildren(this);
 
   @override
+  void visitLiteralDoubleWithSeparatorsHandle(
+          LiteralDoubleWithSeparatorsHandle node) =>
+      node.visitChildren(this);
+
+  @override
   void visitLiteralIntHandle(LiteralIntHandle node) => node.visitChildren(this);
+
+  @override
+  void visitLiteralIntWithSeparatorsHandle(
+          LiteralIntWithSeparatorsHandle node) =>
+      node.visitChildren(this);
 
   @override
   void visitLiteralListHandle(LiteralListHandle node) =>

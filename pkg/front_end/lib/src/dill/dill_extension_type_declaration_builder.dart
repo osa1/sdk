@@ -4,6 +4,7 @@
 
 import 'package:kernel/ast.dart';
 
+import '../base/name_space.dart';
 import '../base/scope.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/member_builder.dart';
@@ -19,6 +20,13 @@ class DillExtensionTypeDeclarationBuilder
     with DillClassMemberAccessMixin, DillDeclarationBuilderMixin {
   final ExtensionTypeDeclaration _extensionTypeDeclaration;
 
+  late final LookupScope _scope;
+
+  final NameSpace _nameSpace;
+
+  @override
+  final ConstructorScope constructorScope;
+
   List<NominalVariableBuilder>? _typeParameters;
 
   List<TypeBuilder>? _interfaceBuilders;
@@ -27,44 +35,42 @@ class DillExtensionTypeDeclarationBuilder
 
   DillExtensionTypeDeclarationBuilder(
       this._extensionTypeDeclaration, DillLibraryBuilder parent)
-      : super(
-            /*metadata builders*/
-            null,
-            /* modifiers*/
-            0,
+      : _nameSpace = new NameSpaceImpl(),
+        constructorScope = new ConstructorScope(
+            _extensionTypeDeclaration.name, <String, MemberBuilder>{}),
+        super(
+            /*metadata builders*/ null,
+            /* modifiers*/ 0,
             _extensionTypeDeclaration.name,
             parent,
-            _extensionTypeDeclaration.fileOffset,
-            new Scope(
-                kind: ScopeKind.declaration,
-                local: <String, MemberBuilder>{},
-                setters: <String, MemberBuilder>{},
-                parent: parent.scope,
-                debugName: "extension type ${_extensionTypeDeclaration.name}",
-                isModifiable: false),
-            new ConstructorScope(
-                _extensionTypeDeclaration.name, <String, MemberBuilder>{})) {
+            _extensionTypeDeclaration.fileOffset) {
+    _scope = new NameSpaceLookupScope(_nameSpace, ScopeKind.declaration,
+        "extension type ${_extensionTypeDeclaration.name}",
+        parent: parent.scope);
     for (Procedure procedure in _extensionTypeDeclaration.procedures) {
       String name = procedure.name.text;
       switch (procedure.kind) {
         case ProcedureKind.Factory:
+          // Coverage-ignore(suite): Not run.
           throw new UnsupportedError(
               "Unexpected procedure kind in extension type declaration: "
               "$procedure (${procedure.kind}).");
         case ProcedureKind.Setter:
-          scope.addLocalMember(name, new DillSetterBuilder(procedure, this),
+          // Coverage-ignore(suite): Not run.
+          nameSpace.addLocalMember(name, new DillSetterBuilder(procedure, this),
               setter: true);
           break;
         case ProcedureKind.Getter:
-          scope.addLocalMember(name, new DillGetterBuilder(procedure, this),
+          nameSpace.addLocalMember(name, new DillGetterBuilder(procedure, this),
               setter: false);
           break;
         case ProcedureKind.Operator:
-          scope.addLocalMember(name, new DillOperatorBuilder(procedure, this),
+          nameSpace.addLocalMember(
+              name, new DillOperatorBuilder(procedure, this),
               setter: false);
           break;
         case ProcedureKind.Method:
-          scope.addLocalMember(name, new DillMethodBuilder(procedure, this),
+          nameSpace.addLocalMember(name, new DillMethodBuilder(procedure, this),
               setter: false);
           break;
       }
@@ -76,7 +82,7 @@ class DillExtensionTypeDeclarationBuilder
         case ExtensionTypeMemberKind.Method:
           if (descriptor.isStatic) {
             Procedure procedure = descriptor.memberReference.asProcedure;
-            scope.addLocalMember(
+            nameSpace.addLocalMember(
                 name.text,
                 new DillExtensionTypeStaticMethodBuilder(
                     procedure, descriptor, this),
@@ -84,8 +90,10 @@ class DillExtensionTypeDeclarationBuilder
           } else {
             Procedure procedure = descriptor.memberReference.asProcedure;
             Procedure? tearOff = descriptor.tearOffReference?.asProcedure;
-            assert(tearOff != null, "No tear found for ${descriptor}");
-            scope.addLocalMember(
+            assert(
+                tearOff != null, // Coverage-ignore(suite): Not run.
+                "No tear found for ${descriptor}");
+            nameSpace.addLocalMember(
                 name.text,
                 new DillExtensionTypeInstanceMethodBuilder(
                     procedure, descriptor, this, tearOff!),
@@ -94,25 +102,25 @@ class DillExtensionTypeDeclarationBuilder
           break;
         case ExtensionTypeMemberKind.Getter:
           Procedure procedure = descriptor.memberReference.asProcedure;
-          scope.addLocalMember(name.text,
+          nameSpace.addLocalMember(name.text,
               new DillExtensionTypeGetterBuilder(procedure, descriptor, this),
               setter: false);
           break;
         case ExtensionTypeMemberKind.Field:
           Field field = descriptor.memberReference.asField;
-          scope.addLocalMember(name.text,
+          nameSpace.addLocalMember(name.text,
               new DillExtensionTypeFieldBuilder(field, descriptor, this),
               setter: false);
           break;
         case ExtensionTypeMemberKind.Setter:
           Procedure procedure = descriptor.memberReference.asProcedure;
-          scope.addLocalMember(name.text,
+          nameSpace.addLocalMember(name.text,
               new DillExtensionTypeSetterBuilder(procedure, descriptor, this),
               setter: true);
           break;
         case ExtensionTypeMemberKind.Operator:
           Procedure procedure = descriptor.memberReference.asProcedure;
-          scope.addLocalMember(name.text,
+          nameSpace.addLocalMember(name.text,
               new DillExtensionTypeOperatorBuilder(procedure, descriptor, this),
               setter: false);
           break;
@@ -139,6 +147,12 @@ class DillExtensionTypeDeclarationBuilder
 
   @override
   DillLibraryBuilder get libraryBuilder => parent as DillLibraryBuilder;
+
+  @override
+  LookupScope get scope => _scope;
+
+  @override
+  NameSpace get nameSpace => _nameSpace;
 
   @override
   DartType get declaredRepresentationType =>

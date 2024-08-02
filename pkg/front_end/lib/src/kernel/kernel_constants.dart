@@ -15,12 +15,20 @@ class KernelConstantErrorReporter extends ErrorReporter {
   KernelConstantErrorReporter(this.loader);
 
   @override
+  bool get supportsTrackingReportedErrors => true;
+
+  @override
+  bool get hasSeenError => loader.hasSeenError;
+
+  @override
   void report(LocatedMessage message, [List<LocatedMessage>? context]) {
     // Try to find library.
     Uri uri = message.uri!;
     CompilationUnit? compilationUnit = loader.lookupCompilationUnit(uri);
+    // Coverage-ignore(suite): Not run.
     compilationUnit ??= loader.lookupCompilationUnitByFileUri(uri);
     if (compilationUnit == null) {
+      // Coverage-ignore-block(suite): Not run.
       // TODO(jensj): Probably a part or something.
       loader.addProblem(message.messageObject, message.charOffset,
           message.length, message.uri,

@@ -70,11 +70,14 @@ class AlwaysSpecifyTypes extends LintRule {
             name: 'always_specify_types',
             description: _desc,
             details: _details,
-            categories: {Category.style});
+            categories: {LintRuleCategory.style});
 
   @override
-  List<String> get incompatibleRules =>
-      const ['avoid_types_on_closure_parameters', 'omit_local_variable_types'];
+  List<String> get incompatibleRules => const [
+        'avoid_types_on_closure_parameters',
+        'omit_local_variable_types',
+        'omit_obvious_local_variable_types',
+      ];
 
   @override
   LintCode get lintCode => code;

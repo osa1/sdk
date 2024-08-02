@@ -1587,10 +1587,17 @@ class ParserTestListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     seen(colon);
     seen(endToken);
-    doPrint('handleLiteralMapEntry(' '$colon, ' '$endToken)');
+    seen(nullAwareKeyToken);
+    seen(nullAwareValueToken);
+    doPrint('handleLiteralMapEntry('
+        '$colon, '
+        '$endToken, '
+        '$nullAwareKeyToken, '
+        '$nullAwareValueToken)');
   }
 
   @override
@@ -2647,6 +2654,12 @@ class ParserTestListener implements Listener {
   }
 
   @override
+  void handleNullAwareElement(Token nullAwareToken) {
+    seen(nullAwareToken);
+    doPrint('handleNullAwareElement(' '$nullAwareToken)');
+  }
+
+  @override
   void handleRestPattern(Token dots, {required bool hasSubPattern}) {
     seen(dots);
     doPrint('handleRestPattern(' '$dots, ' '$hasSubPattern)');
@@ -2768,9 +2781,21 @@ class ParserTestListener implements Listener {
   }
 
   @override
+  void handleLiteralDoubleWithSeparators(Token token) {
+    seen(token);
+    doPrint('handleLiteralDoubleWithSeparators(' '$token)');
+  }
+
+  @override
   void handleLiteralInt(Token token) {
     seen(token);
     doPrint('handleLiteralInt(' '$token)');
+  }
+
+  @override
+  void handleLiteralIntWithSeparators(Token token) {
+    seen(token);
+    doPrint('handleLiteralIntWithSeparators(' '$token)');
   }
 
   @override

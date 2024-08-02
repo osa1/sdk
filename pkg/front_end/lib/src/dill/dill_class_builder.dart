@@ -9,6 +9,7 @@ import 'package:kernel/class_hierarchy.dart';
 
 import '../base/loader.dart';
 import '../base/modifier.dart' show abstractMask, namedMixinApplicationMask;
+import '../base/name_space.dart';
 import '../base/problems.dart' show unimplemented;
 import '../base/scope.dart';
 import '../builder/builder.dart';
@@ -21,10 +22,11 @@ import 'dill_library_builder.dart' show DillLibraryBuilder;
 import 'dill_member_builder.dart';
 
 mixin DillClassMemberAccessMixin implements ClassMemberAccess {
-  Scope get scope;
+  NameSpace get nameSpace;
   ConstructorScope get constructorScope;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterator<T> fullConstructorIterator<T extends MemberBuilder>() =>
       constructorScope.filteredIterator<T>(
           includeAugmentations: true, includeDuplicates: false);
@@ -36,12 +38,13 @@ mixin DillClassMemberAccessMixin implements ClassMemberAccess {
 
   @override
   Iterator<T> fullMemberIterator<T extends Builder>() =>
-      scope.filteredIterator<T>(
+      nameSpace.filteredIterator<T>(
           includeAugmentations: true, includeDuplicates: false);
 
   @override
+  // Coverage-ignore(suite): Not run.
   NameIterator<T> fullMemberNameIterator<T extends Builder>() =>
-      scope.filteredNameIterator<T>(
+      nameSpace.filteredNameIterator<T>(
           includeAugmentations: true, includeDuplicates: false);
 }
 
@@ -50,6 +53,13 @@ class DillClassBuilder extends ClassBuilderImpl
   @override
   final Class cls;
 
+  late final LookupScope _scope;
+
+  final NameSpace _nameSpace;
+
+  @override
+  final ConstructorScope constructorScope;
+
   List<NominalVariableBuilder>? _typeVariables;
 
   TypeBuilder? _supertypeBuilder;
@@ -57,20 +67,21 @@ class DillClassBuilder extends ClassBuilderImpl
   List<TypeBuilder>? _interfaceBuilders;
 
   DillClassBuilder(this.cls, DillLibraryBuilder parent)
-      : super(
-            /*metadata builders*/ null,
-            computeModifiers(cls),
-            cls.name,
-            new Scope(
-                kind: ScopeKind.declaration,
-                local: <String, MemberBuilder>{},
-                setters: <String, MemberBuilder>{},
-                parent: parent.scope,
-                debugName: "class ${cls.name}",
-                isModifiable: false),
+      : _nameSpace = new NameSpaceImpl(),
+        constructorScope =
             new ConstructorScope(cls.name, <String, MemberBuilder>{}),
-            parent,
-            cls.fileOffset);
+        super(/*metadata builders*/ null, computeModifiers(cls), cls.name,
+            parent, cls.fileOffset) {
+    _scope = new NameSpaceLookupScope(
+        _nameSpace, ScopeKind.declaration, "class ${cls.name}",
+        parent: parent.scope);
+  }
+
+  @override
+  LookupScope get scope => _scope;
+
+  @override
+  NameSpace get nameSpace => _nameSpace;
 
   @override
   bool get isEnum => cls.isEnum;
@@ -129,12 +140,13 @@ class DillClassBuilder extends ClassBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<TypeBuilder>? get onTypes => null;
 
   void addField(Field field) {
     DillFieldBuilder builder = new DillFieldBuilder(field, this);
     String name = field.name.text;
-    scope.addLocalMember(name, builder, setter: false);
+    nameSpace.addLocalMember(name, builder, setter: false);
   }
 
   void addConstructor(Constructor constructor, Procedure? constructorTearOff) {
@@ -154,21 +166,22 @@ class DillClassBuilder extends ClassBuilderImpl
     String name = procedure.name.text;
     switch (procedure.kind) {
       case ProcedureKind.Factory:
+        // Coverage-ignore(suite): Not run.
         throw new UnsupportedError("Use addFactory for adding factories");
       case ProcedureKind.Setter:
-        scope.addLocalMember(name, new DillSetterBuilder(procedure, this),
+        nameSpace.addLocalMember(name, new DillSetterBuilder(procedure, this),
             setter: true);
         break;
       case ProcedureKind.Getter:
-        scope.addLocalMember(name, new DillGetterBuilder(procedure, this),
+        nameSpace.addLocalMember(name, new DillGetterBuilder(procedure, this),
             setter: false);
         break;
       case ProcedureKind.Operator:
-        scope.addLocalMember(name, new DillOperatorBuilder(procedure, this),
+        nameSpace.addLocalMember(name, new DillOperatorBuilder(procedure, this),
             setter: false);
         break;
       case ProcedureKind.Method:
-        scope.addLocalMember(name, new DillMethodBuilder(procedure, this),
+        nameSpace.addLocalMember(name, new DillMethodBuilder(procedure, this),
             setter: false);
         break;
     }
@@ -204,6 +217,7 @@ class DillClassBuilder extends ClassBuilderImpl
   bool get isMixinApplication => cls.isMixinApplication;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get declaresConstConstructor => cls.hasConstConstructor;
 
   @override
@@ -212,6 +226,7 @@ class DillClassBuilder extends ClassBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void set mixedInTypeBuilder(TypeBuilder? mixin) {
     unimplemented("mixedInType=", -1, null);
   }

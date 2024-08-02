@@ -25,14 +25,14 @@ class DillTarget {
 
   final Target backendTarget;
 
-  final CompilerContext context = CompilerContext.current;
+  final CompilerContext context;
 
   /// Shared with [CompilerContext].
-  final Map<Uri, Source> uriToSource = CompilerContext.current.uriToSource;
+  Map<Uri, Source> get uriToSource => context.uriToSource;
 
   final Benchmarker? benchmarker;
 
-  DillTarget(this.ticker, this.uriTranslator, this.backendTarget,
+  DillTarget(this.context, this.ticker, this.uriTranslator, this.backendTarget,
       {this.benchmarker}) {
     loader = new DillLoader(this);
   }
@@ -43,6 +43,7 @@ class DillTarget {
           accessor: loader.coreLibraryCompilationUnit);
     }
     if (context.compilingPlatform) {
+      // Coverage-ignore-block(suite): Not run.
       for (String uri in backendTarget.extraRequiredLibrariesPlatform) {
         loader.read(Uri.parse(uri), 0,
             accessor: loader.coreLibraryCompilationUnit);
@@ -60,9 +61,12 @@ class DillTarget {
       {List<Uri>? involvedFiles}) {
     ProcessedOptions processedOptions = context.options;
     return processedOptions.format(
+        context,
         fileUri != null
             ? message.withLocation(fileUri, charOffset, length)
-            : message.withoutLocation(),
+            :
+            // Coverage-ignore(suite): Not run.
+            message.withoutLocation(),
         severity,
         messageContext,
         involvedFiles: involvedFiles);
@@ -70,12 +74,18 @@ class DillTarget {
 
   void buildOutlines({bool suppressFinalizationErrors = false}) {
     if (loader.libraries.isNotEmpty) {
-      benchmarker?.enterPhase(BenchmarkPhases.dill_buildOutlines);
+      benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.enterPhase(BenchmarkPhases.dill_buildOutlines);
       loader.buildOutlines();
-      benchmarker?.enterPhase(BenchmarkPhases.dill_finalizeExports);
+      benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.enterPhase(BenchmarkPhases.dill_finalizeExports);
       loader.finalizeExports(
           suppressFinalizationErrors: suppressFinalizationErrors);
-      benchmarker?.enterPhase(BenchmarkPhases.unknownDillTarget);
+      benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.enterPhase(BenchmarkPhases.unknownDillTarget);
     }
     isLoaded = true;
   }

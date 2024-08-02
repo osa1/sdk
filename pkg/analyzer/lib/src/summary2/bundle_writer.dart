@@ -127,7 +127,6 @@ class BundleWriter {
     // Write the library units.
     // This will write also resolution data, e.g. for classes.
     _writeUnitElement(libraryElement.definingCompilationUnit);
-    _writeList(libraryElement.parts, _writePartElement);
 
     // Write resolution data for the library.
     _sink.writeUInt30(_resolutionSink.offset);
@@ -514,8 +513,6 @@ class BundleWriter {
     LibraryOrAugmentationElementImpl container,
   ) {
     _resolutionSink._writeAnnotationList(container.metadata);
-    _writeList(container.libraryImports, _writeImportElement);
-    _writeList(container.libraryExports, _writeExportElement);
     _writeList(
       container.augmentationImports,
       _writeAugmentationImportElement,
@@ -736,6 +733,11 @@ class BundleWriter {
 
     _sink._writeOptionalStringReference(unitElement.uri);
     _sink.writeBool(unitElement.isSynthetic);
+
+    _writeList(unitElement.libraryImports, _writeImportElement);
+    _writeList(unitElement.libraryExports, _writeExportElement);
+    _writeList(unitElement.parts, _writePartElement);
+
     _writeList(unitElement.classes, _writeClassElement);
     _writeList(unitElement.enums, _writeEnumElement);
     _writeList(unitElement.extensions, _writeExtensionElement);

@@ -27,6 +27,7 @@ import '../base/crash.dart' show Crash;
 import '../base/identifiers.dart'
     show Identifier, OperatorIdentifier, QualifiedName, SimpleIdentifier;
 import '../base/ignored_parser_errors.dart' show isIgnoredParserError;
+import '../base/local_scope.dart';
 import '../base/problems.dart' show DebugAbort;
 import '../base/scope.dart';
 import '../builder/builder.dart';
@@ -68,7 +69,7 @@ class DietListener extends StackListenerImpl {
 
   /// For top-level declarations, this is the library scope. For class members,
   /// this is the instance scope of [currentDeclaration].
-  Scope memberScope;
+  LookupScope memberScope;
 
   @override
   final Uri uri;
@@ -195,6 +196,7 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleNamedRecordField(Token colon) {
     debugEvent("NamedRecordField");
     pop(); // Named record field name.
@@ -236,6 +238,7 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleInvalidTypeArguments(Token token) {
     debugEvent("InvalidTypeArguments");
   }
@@ -262,7 +265,9 @@ class DietListener extends StackListenerImpl {
     assert(count == 0); // Count is always 0 as the diet parser skips formals.
     if (kind != MemberKind.GeneralizedFunctionType &&
         identical(peek(), "-") &&
+        // Coverage-ignore(suite): Not run.
         identical(beginToken.next, endToken)) {
+      // Coverage-ignore-block(suite): Not run.
       pop();
       push("unary-");
     }
@@ -273,6 +278,7 @@ class DietListener extends StackListenerImpl {
   void handleNoFormalParameters(Token token, MemberKind kind) {
     debugEvent("NoFormalParameters");
     if (identical(peek(), "-")) {
+      // Coverage-ignore-block(suite): Not run.
       pop();
       push("unary-");
     }
@@ -437,6 +443,7 @@ class DietListener extends StackListenerImpl {
     Object? suffix = pop();
     Object? prefix = pop();
     if (prefix is ParserRecovery) {
+      // Coverage-ignore-block(suite): Not run.
       push(prefix);
     } else if (suffix is ParserRecovery) {
       push(suffix);
@@ -457,6 +464,7 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void endLibraryAugmentation(
       Token augmentKeyword, Token libraryKeyword, Token semicolon) {
     debugEvent("endLibraryAugmentation");
@@ -492,6 +500,7 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleStringJuxtaposition(Token startToken, int literalCount) {
     debugEvent("StringJuxtaposition");
   }
@@ -519,6 +528,7 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleInvalidOperatorName(Token operatorKeyword, Token token) {
     debugEvent("InvalidOperatorName");
     push(new SimpleIdentifier(token));
@@ -705,11 +715,13 @@ class DietListener extends StackListenerImpl {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleNativeFunctionBody(Token nativeToken, Token semicolon) {
     debugEvent("NativeFunctionBody");
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleNativeFunctionBodyIgnored(Token nativeToken, Token semicolon) {
     debugEvent("NativeFunctionBodyIgnored");
   }
@@ -783,6 +795,7 @@ class DietListener extends StackListenerImpl {
       Builder? memberBuilder = _offsetMap.lookupProcedure(identifier);
       if (currentClass?.isEnum == true &&
           memberBuilder is SourceFieldBuilder &&
+          // Coverage-ignore(suite): Not run.
           memberBuilder.name == "values") {
         // This is the case of a method with the name 'values' declared in an
         // Enum. In that case the method is replaced with the synthesized field
@@ -814,12 +827,13 @@ class DietListener extends StackListenerImpl {
   }
 
   BodyBuilder createListener(
-      BodyBuilderContext bodyBuilderContext, Scope memberScope,
+      BodyBuilderContext bodyBuilderContext, LookupScope memberScope,
       {VariableDeclaration? thisVariable,
       List<TypeParameter>? thisTypeParameters,
-      Scope? formalParameterScope,
+      LocalScope? formalParameterScope,
       InferenceDataForTesting? inferenceDataForTesting}) {
     _benchmarker
+        // Coverage-ignore(suite): Not run.
         ?.beginSubdivide(BenchmarkSubdivides.diet_listener_createListener);
     // Note: we set thisType regardless of whether we are building a static
     // member, since that provides better error recovery.
@@ -838,14 +852,16 @@ class DietListener extends StackListenerImpl {
         thisTypeParameters,
         typeInferrer,
         constantContext);
-    _benchmarker?.endSubdivide();
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.endSubdivide();
     return result;
   }
 
   BodyBuilder createListenerInternal(
       BodyBuilderContext bodyBuilderContext,
-      Scope memberScope,
-      Scope? formalParameterScope,
+      LookupScope memberScope,
+      LocalScope? formalParameterScope,
       VariableDeclaration? thisVariable,
       List<TypeParameter>? thisTypeParameters,
       TypeInferrer typeInferrer,
@@ -853,7 +869,7 @@ class DietListener extends StackListenerImpl {
     return new BodyBuilder(
         libraryBuilder: libraryBuilder,
         context: bodyBuilderContext,
-        enclosingScope: memberScope,
+        enclosingScope: new EnclosingLocalScope(memberScope),
         formalParameterScope: formalParameterScope,
         hierarchy: hierarchy,
         coreTypes: coreTypes,
@@ -868,9 +884,9 @@ class DietListener extends StackListenerImpl {
       {required bool inOutlineBuildingPhase,
       required bool inMetadata,
       required bool inConstFields}) {
-    final Scope typeParameterScope =
+    final LookupScope typeParameterScope =
         builder.computeTypeParameterScope(memberScope);
-    final Scope formalParameterScope =
+    final LocalScope formalParameterScope =
         builder.computeFormalParameterScope(typeParameterScope);
     return createListener(
         builder.createBodyBuilderContext(
@@ -881,13 +897,18 @@ class DietListener extends StackListenerImpl {
         thisVariable: builder.thisVariable,
         thisTypeParameters: builder.thisTypeParameters,
         formalParameterScope: formalParameterScope,
-        inferenceDataForTesting: builder.dataForTesting?.inferenceData);
+        inferenceDataForTesting: builder
+            .dataForTesting
+            // Coverage-ignore(suite): Not run.
+            ?.inferenceData);
   }
 
   void buildRedirectingFactoryMethod(Token token, SourceFunctionBuilder builder,
       MemberKind kind, Token? metadata) {
-    _benchmarker?.beginSubdivide(
-        BenchmarkSubdivides.diet_listener_buildRedirectingFactoryMethod);
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.beginSubdivide(
+            BenchmarkSubdivides.diet_listener_buildRedirectingFactoryMethod);
     final BodyBuilder listener = createFunctionListener(builder,
         inOutlineBuildingPhase: false, inMetadata: false, inConstFields: false);
     try {
@@ -904,19 +925,25 @@ class DietListener extends StackListenerImpl {
       listener.pop(); // Pops formal parameters.
       listener.finishRedirectingFactoryBody();
       listener.checkEmpty(token.next!.charOffset);
-    } on DebugAbort {
+    }
+    // Coverage-ignore(suite): Not run.
+    on DebugAbort {
       rethrow;
     } catch (e, s) {
       throw new Crash(uri, token.charOffset, e, s);
     }
-    _benchmarker?.endSubdivide();
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.endSubdivide();
   }
 
   void buildFields(int count, Token token, bool isTopLevel) {
     assert(checkState(
         token, repeatedKind(ValueKinds.IdentifierOrParserRecovery, count)));
 
-    _benchmarker?.beginSubdivide(BenchmarkSubdivides.diet_listener_buildFields);
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.beginSubdivide(BenchmarkSubdivides.diet_listener_buildFields);
     List<Identifier?>? names =
         const FixedNullableList<Identifier>().pop(stack, count);
     Token? metadata = pop() as Token?;
@@ -934,12 +961,17 @@ class DietListener extends StackListenerImpl {
                 inMetadata: false,
                 inConstFields: declaration.isConst),
             memberScope,
-            inferenceDataForTesting: declaration.dataForTesting?.inferenceData),
+            inferenceDataForTesting: declaration
+                .dataForTesting
+                // Coverage-ignore(suite): Not run.
+                ?.inferenceData),
         token,
         metadata,
         isTopLevel);
     checkEmpty(token.charOffset);
-    _benchmarker?.endSubdivide();
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.endSubdivide();
   }
 
   @override
@@ -976,6 +1008,7 @@ class DietListener extends StackListenerImpl {
     assert(currentDeclaration == null);
     assert(memberScope == libraryBuilder.scope);
     if (name is ParserRecovery) {
+      // Coverage-ignore-block(suite): Not run.
       currentClassIsParserRecovery = true;
       return;
     }
@@ -1225,8 +1258,10 @@ class DietListener extends StackListenerImpl {
       listener.pop() as AsyncMarker?;
 
   void buildPrimaryConstructor(BodyBuilder bodyBuilder, Token startToken) {
-    _benchmarker?.beginSubdivide(
-        BenchmarkSubdivides.diet_listener_buildPrimaryConstructor);
+    _benchmarker
+        // Coverage-ignore(suite): Not run.
+        ?.beginSubdivide(
+            BenchmarkSubdivides.diet_listener_buildPrimaryConstructor);
     Token token = startToken;
     try {
       Parser parser = new Parser(bodyBuilder,
@@ -1239,8 +1274,12 @@ class DietListener extends StackListenerImpl {
       bodyBuilder.handleNoInitializers();
       bodyBuilder.checkEmpty(token.charOffset);
       bodyBuilder.finishFunction(formals, AsyncMarker.Sync, null);
-      _benchmarker?.endSubdivide();
-    } on DebugAbort {
+      _benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.endSubdivide();
+    }
+    // Coverage-ignore(suite): Not run.
+    on DebugAbort {
       rethrow;
     } catch (e, s) {
       throw new Crash(uri, token.charOffset, e, s);
@@ -1250,6 +1289,7 @@ class DietListener extends StackListenerImpl {
   void buildFunctionBody(BodyBuilder bodyBuilder, Token startToken,
       Token? metadata, MemberKind kind) {
     _benchmarker
+        // Coverage-ignore(suite): Not run.
         ?.beginSubdivide(BenchmarkSubdivides.diet_listener_buildFunctionBody);
     Token token = startToken;
     try {
@@ -1276,15 +1316,23 @@ class DietListener extends StackListenerImpl {
       bool isExpression = false;
       bool allowAbstract = asyncModifier == AsyncMarker.Sync;
 
-      _benchmarker?.beginSubdivide(BenchmarkSubdivides
-          .diet_listener_buildFunctionBody_parseFunctionBody);
+      _benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.beginSubdivide(BenchmarkSubdivides
+              .diet_listener_buildFunctionBody_parseFunctionBody);
       parser.parseFunctionBody(token, isExpression, allowAbstract);
       Statement? body = bodyBuilder.pop() as Statement?;
-      _benchmarker?.endSubdivide();
+      _benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.endSubdivide();
       bodyBuilder.checkEmpty(token.charOffset);
       bodyBuilder.finishFunction(formals, asyncModifier, body);
-      _benchmarker?.endSubdivide();
-    } on DebugAbort {
+      _benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.endSubdivide();
+    }
+    // Coverage-ignore(suite): Not run.
+    on DebugAbort {
       rethrow;
     } catch (e, s) {
       throw new Crash(uri, token.charOffset, e, s);

@@ -46,6 +46,7 @@ import 'package:_fe_analyzer_shared/src/parser/parser.dart'
 import 'package:_fe_analyzer_shared/src/parser/quote.dart';
 import 'package:_fe_analyzer_shared/src/parser/stack_listener.dart'
     show NullValues, StackListener;
+import 'package:_fe_analyzer_shared/src/parser/util.dart' show stripSeparators;
 import 'package:_fe_analyzer_shared/src/scanner/errors.dart'
     show translateErrorToken;
 import 'package:_fe_analyzer_shared/src/scanner/scanner.dart';
@@ -66,7 +67,7 @@ import 'package:analyzer/src/fasta/doc_comment_builder.dart';
 import 'package:analyzer/src/fasta/error_converter.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:analyzer/src/summary2/ast_binary_tokens.dart';
-import 'package:analyzer/src/utilities/extensions/collection.dart';
+import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -108,6 +109,9 @@ class AstBuilder extends StackListener {
 
   bool parseFunctionBodies = true;
 
+  /// Whether the 'augmentations' feature is enabled.
+  final bool enableAugmentations;
+
   /// `true` if triple-shift behavior is enabled
   final bool enableTripleShift;
 
@@ -129,7 +133,10 @@ class AstBuilder extends StackListener {
   /// `true` if enhanced enums are enabled
   final bool enableEnhancedEnums;
 
-  /// `true` if macros are enabled
+  /// Whether the 'enhanced_parts' feature is enabled.
+  final bool enableEnhancedParts;
+
+  /// Whether the 'macros' feature is enabled.
   final bool enableMacros;
 
   /// `true` if records are enabled
@@ -147,6 +154,12 @@ class AstBuilder extends StackListener {
   /// `true` if class-modifiers is enabled
   final bool enableClassModifiers;
 
+  /// `true` if null-aware elements is enabled
+  final bool enableNullAwareElements;
+
+  /// `true` if digit-separators is enabled.
+  final bool _enableDigitSeparators;
+
   final FeatureSet _featureSet;
 
   final LineInfo _lineInfo;
@@ -157,6 +170,7 @@ class AstBuilder extends StackListener {
       this._featureSet, this._lineInfo,
       [Uri? uri])
       : errorReporter = FastaErrorReporter(errorReporter),
+        enableAugmentations = _featureSet.isEnabled(Feature.augmentations),
         enableTripleShift = _featureSet.isEnabled(Feature.triple_shift),
         enableNonFunctionTypeAliases =
             _featureSet.isEnabled(Feature.nonfunction_type_aliases),
@@ -167,6 +181,7 @@ class AstBuilder extends StackListener {
             _featureSet.isEnabled(Feature.named_arguments_anywhere),
         enableSuperParameters = _featureSet.isEnabled(Feature.super_parameters),
         enableEnhancedEnums = _featureSet.isEnabled(Feature.enhanced_enums),
+        enableEnhancedParts = _featureSet.isEnabled(Feature.enhanced_parts),
         enableMacros = _featureSet.isEnabled(Feature.macros),
         enableRecords = _featureSet.isEnabled(Feature.records),
         enableUnnamedLibraries =
@@ -174,6 +189,10 @@ class AstBuilder extends StackListener {
         enableInlineClass = _featureSet.isEnabled(Feature.inline_class),
         enableSealedClass = _featureSet.isEnabled(Feature.sealed_class),
         enableClassModifiers = _featureSet.isEnabled(Feature.class_modifiers),
+        enableNullAwareElements =
+            _featureSet.isEnabled(Feature.null_aware_elements),
+        _enableDigitSeparators =
+            _featureSet.isEnabled(Feature.digit_separators),
         uri = uri ?? fileUri;
 
   @override
@@ -2760,6 +2779,18 @@ class AstBuilder extends StackListener {
     assert(optional(';', semicolon));
     debugEvent("Part");
 
+    var configurations = pop() as List<ConfigurationImpl>?;
+    if (!enableEnhancedParts) {
+      var configuration = configurations?.firstOrNull;
+      if (configuration != null) {
+        _reportFeatureNotEnabled(
+          feature: Feature.enhanced_parts,
+          startToken: configuration.ifKeyword,
+        );
+        configurations = [];
+      }
+    }
+
     var uri = pop() as StringLiteralImpl;
     var metadata = pop() as List<AnnotationImpl>?;
     var comment = _findComment(metadata, partKeyword);
@@ -2769,6 +2800,7 @@ class AstBuilder extends StackListener {
         metadata: metadata,
         partKeyword: partKeyword,
         uri: uri,
+        configurations: configurations,
         semicolon: semicolon,
       ),
     );
@@ -3111,7 +3143,7 @@ class AstBuilder extends StackListener {
     debugEvent("SwitchBlock");
 
     var membersList = popTypedList2<List<SwitchMemberImpl>>(caseCount);
-    var members = membersList.flattenedToList2;
+    var members = membersList.flattenedToList;
 
     Set<String> labels = <String>{};
     for (var member in members) {
@@ -4710,6 +4742,30 @@ class AstBuilder extends StackListener {
   }
 
   @override
+  void handleLiteralDoubleWithSeparators(Token token) {
+    assert(token.type == TokenType.DOUBLE_WITH_SEPARATORS);
+    debugEvent("LiteralDouble");
+
+    if (!_enableDigitSeparators) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.digit_separators,
+        startToken: token,
+      );
+    }
+
+    // Only copy `source` if we find a separator ('_'). Most int literals
+    // will not have any separator, and so a quick scan will show we do not
+    // need to produce a new String.
+    var source = stripSeparators(token.lexeme);
+    push(
+      DoubleLiteralImpl(
+        literal: token,
+        value: double.parse(source),
+      ),
+    );
+  }
+
+  @override
   void handleLiteralInt(Token token) {
     assert(identical(token.kind, INT_TOKEN) ||
         identical(token.kind, HEXADECIMAL_TOKEN));
@@ -4719,6 +4775,28 @@ class AstBuilder extends StackListener {
       IntegerLiteralImpl(
         literal: token,
         value: int.tryParse(token.lexeme),
+      ),
+    );
+  }
+
+  @override
+  void handleLiteralIntWithSeparators(Token token) {
+    assert(identical(token.kind, INT_TOKEN) ||
+        identical(token.kind, HEXADECIMAL_TOKEN));
+    debugEvent("LiteralInt");
+
+    if (!_enableDigitSeparators) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.digit_separators,
+        startToken: token,
+      );
+    }
+
+    var source = stripSeparators(token.lexeme);
+    push(
+      IntegerLiteralImpl(
+        literal: token,
+        value: int.tryParse(source),
       ),
     );
   }
@@ -4746,16 +4824,29 @@ class AstBuilder extends StackListener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
     assert(optional(':', colon));
     debugEvent("LiteralMapEntry");
+
+    if (!enableNullAwareElements &&
+        (nullAwareKeyToken != null || nullAwareValueToken != null)) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.null_aware_elements,
+        startToken: nullAwareKeyToken ?? nullAwareValueToken!,
+      );
+      nullAwareKeyToken = null;
+      nullAwareValueToken = null;
+    }
 
     var value = pop() as ExpressionImpl;
     var key = pop() as ExpressionImpl;
     push(
       MapLiteralEntryImpl(
+        keyQuestion: nullAwareKeyToken,
         key: key,
         separator: colon,
+        valueQuestion: nullAwareValueToken,
         value: value,
       ),
     );
@@ -4893,7 +4984,19 @@ class AstBuilder extends StackListener {
     debugEvent("NamedArgument");
 
     var expression = pop() as ExpressionImpl;
-    var name = pop() as SimpleIdentifierImpl;
+
+    SimpleIdentifierImpl name;
+    var nameCandidate = pop();
+    if (nameCandidate is AugmentedExpressionImpl) {
+      errorReporter.errorReporter?.atNode(
+        nameCandidate,
+        ParserErrorCode.INVALID_USE_OF_IDENTIFIER_AUGMENTED,
+      );
+      name = SimpleIdentifierImpl(nameCandidate.augmentedKeyword);
+    } else {
+      name = nameCandidate as SimpleIdentifierImpl;
+    }
+
     push(
       NamedExpressionImpl(
         name: LabelImpl(
@@ -5034,6 +5137,25 @@ class AstBuilder extends StackListener {
         operator: bang,
       ),
     );
+  }
+
+  @override
+  void handleNullAwareElement(Token nullAwareElement) {
+    debugEvent('NullAwareElement');
+    if (!enableNullAwareElements) {
+      _reportFeatureNotEnabled(
+        feature: ExperimentalFeatures.null_aware_elements,
+        startToken: nullAwareElement,
+      );
+    } else {
+      var expression = pop() as ExpressionImpl;
+      push(
+        NullAwareElementImpl(
+          question: nullAwareElement,
+          value: expression,
+        ),
+      );
+    }
   }
 
   @override
@@ -5513,7 +5635,19 @@ class AstBuilder extends StackListener {
     debugEvent("Type");
 
     var arguments = pop() as TypeArgumentListImpl?;
-    var name = pop() as IdentifierImpl;
+
+    IdentifierImpl name;
+    var nameCandidate = pop();
+    if (nameCandidate is AugmentedExpressionImpl) {
+      errorReporter.errorReporter?.atNode(
+        nameCandidate,
+        ParserErrorCode.INVALID_USE_OF_IDENTIFIER_AUGMENTED,
+      );
+      name = SimpleIdentifierImpl(nameCandidate.augmentedKeyword);
+    } else {
+      name = nameCandidate as IdentifierImpl;
+    }
+
     push(
       name.toNamedType(
         typeArguments: arguments,

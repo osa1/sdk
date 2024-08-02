@@ -38,6 +38,7 @@ import 'macros/macro_target.dart'
     show MacroConfiguration, computeMacroConfiguration;
 import 'source/source_loader.dart' show SourceLoader;
 
+// Coverage-ignore(suite): Not run.
 /// Implementation for the
 /// `package:front_end/src/api_prototype/kernel_generator.dart` and
 /// `package:front_end/src/api_prototype/summary_generator.dart` APIs.
@@ -47,8 +48,9 @@ Future<CompilerResult> generateKernel(ProcessedOptions options,
     bool truncateSummary = false,
     bool includeOffsets = true,
     bool includeHierarchyAndCoreTypes = false}) async {
-  return await CompilerContext.runWithOptions(options, (_) async {
-    return await generateKernelInternal(
+  return await CompilerContext.runWithOptions(options,
+      (CompilerContext c) async {
+    return await generateKernelInternal(c,
         buildSummary: buildSummary,
         buildComponent: buildComponent,
         truncateSummary: truncateSummary,
@@ -60,6 +62,7 @@ Future<CompilerResult> generateKernel(ProcessedOptions options,
 /// Note that if [buildSummary] is true it will be default serialize the summary
 /// but this can be disabled by setting [serializeIfBuildingSummary] to false.
 Future<InternalCompilerResult> generateKernelInternal(
+    CompilerContext compilerContext,
     {bool buildSummary = false,
     bool serializeIfBuildingSummary = true,
     bool buildComponent = true,
@@ -70,7 +73,7 @@ Future<InternalCompilerResult> generateKernelInternal(
     Benchmarker? benchmarker,
     Instrumentation? instrumentation,
     List<Component>? additionalDillsForTesting}) async {
-  ProcessedOptions options = CompilerContext.current.options;
+  ProcessedOptions options = compilerContext.options;
   assert(options.haveBeenValidated, "Options have not been validated");
 
   options.reportNullSafetyCompilationModeInfo();
@@ -83,7 +86,7 @@ Future<InternalCompilerResult> generateKernelInternal(
       UriTranslator uriTranslator = await options.getUriTranslator();
 
       DillTarget dillTarget = new DillTarget(
-          options.ticker, uriTranslator, options.target,
+          compilerContext, options.ticker, uriTranslator, options.target,
           benchmarker: benchmarker);
 
       List<Component> loadedComponents = <Component>[];
@@ -102,6 +105,7 @@ Future<InternalCompilerResult> generateKernelInternal(
           dillTarget.loader.appendLibraries(additionalDill);
         }
       } else if (options.hasAdditionalDills) {
+        // Coverage-ignore-block(suite): Not run.
         nameRoot = sdkSummary?.root ?? new CanonicalName.root();
         for (Component additionalDill
             in await options.loadAdditionalDills(nameRoot)) {
@@ -112,24 +116,28 @@ Future<InternalCompilerResult> generateKernelInternal(
 
       dillTarget.buildOutlines();
 
-      KernelTarget kernelTarget =
-          new KernelTarget(fs, false, dillTarget, uriTranslator);
+      KernelTarget kernelTarget = new KernelTarget(
+          compilerContext, fs, false, dillTarget, uriTranslator);
       sourceLoader = kernelTarget.loader;
       sourceLoader!.instrumentation = instrumentation;
       kernelTarget.setEntryPoints(options.inputs);
       NeededPrecompilations? neededPrecompilations =
           await kernelTarget.computeNeededPrecompilations();
-      kernelTarget.benchmarker?.enterPhase(BenchmarkPhases.precompileMacros);
+      kernelTarget.benchmarker
+          // Coverage-ignore(suite): Not run.
+          ?.enterPhase(BenchmarkPhases.precompileMacros);
       Map<Uri, ExecutorFactoryToken>? precompiled =
           await precompileMacros(neededPrecompilations, options);
       if (precompiled != null) {
+        // Coverage-ignore-block(suite): Not run.
         kernelTarget.benchmarker
             ?.enterPhase(BenchmarkPhases.unknownGenerateKernelInternal);
         continue;
       }
       kernelTarget.benchmarker
+          // Coverage-ignore(suite): Not run.
           ?.enterPhase(BenchmarkPhases.unknownGenerateKernelInternal);
-      return _buildInternal(
+      return _buildInternal(compilerContext,
           options: options,
           kernelTarget: kernelTarget,
           nameRoot: nameRoot,
@@ -144,12 +152,13 @@ Future<InternalCompilerResult> generateKernelInternal(
           retainDataForTesting: retainDataForTesting);
     }
   },
+      // Coverage-ignore(suite): Not run.
       () =>
           sourceLoader?.currentUriForCrashReporting ??
           new UriOffset(options.inputs.first, TreeNode.noOffset));
 }
 
-Future<InternalCompilerResult> _buildInternal(
+Future<InternalCompilerResult> _buildInternal(CompilerContext compilerContext,
     {required ProcessedOptions options,
     required KernelTarget kernelTarget,
     required CanonicalName? nameRoot,
@@ -167,11 +176,12 @@ Future<InternalCompilerResult> _buildInternal(
   Component summaryComponent = buildResult.component!;
   List<int>? summary = null;
   if (buildSummary) {
+    // Coverage-ignore-block(suite): Not run.
     if (options.verify) {
       List<LocatedMessage> errors = verifyComponent(
-          options.target, VerificationStage.outline, summaryComponent);
+          compilerContext, VerificationStage.outline, summaryComponent);
       for (LocatedMessage error in errors) {
-        options.report(error, Severity.error);
+        options.report(compilerContext, error, Severity.error);
       }
       assert(errors.isEmpty, "Verification errors found.");
     }
@@ -233,6 +243,7 @@ Future<InternalCompilerResult> _buildInternal(
         verify: options.verify);
     component = buildResult.component;
     if (options.debugDump) {
+      // Coverage-ignore-block(suite): Not run.
       printComponentText(component,
           libraryFilter: kernelTarget.isSourceLibraryForDebugging,
           showOffsets: options.debugDumpShowOffsets);
@@ -243,7 +254,9 @@ Future<InternalCompilerResult> _buildInternal(
   }
   // TODO(johnniwinther): Should we reuse the macro executor on subsequent
   // compilations where possible?
-  buildResult.macroApplications?.close();
+  buildResult.macroApplications
+      // Coverage-ignore(suite): Not run.
+      ?.close();
 
   return new InternalCompilerResult(
       summary: summary,
@@ -254,7 +267,6 @@ Future<InternalCompilerResult> _buildInternal(
           includeHierarchyAndCoreTypes ? kernelTarget.loader.hierarchy : null,
       coreTypes:
           includeHierarchyAndCoreTypes ? kernelTarget.loader.coreTypes : null,
-      deps: new List<Uri>.from(CompilerContext.current.dependencies),
       kernelTargetForTesting: retainDataForTesting ? kernelTarget : null);
 }
 
@@ -274,13 +286,6 @@ class InternalCompilerResult implements CompilerResult {
   @override
   final List<Component> loadedComponents;
 
-  /// Dependencies traversed by the compiler. Used only for generating
-  /// dependency .GN files in the dart-sdk build system.
-  /// Note this might be removed when we switch to compute dependencies without
-  /// using the compiler itself.
-  @override
-  final List<Uri> deps;
-
   @override
   final ClassHierarchy? classHierarchy;
 
@@ -297,12 +302,12 @@ class InternalCompilerResult implements CompilerResult {
       this.component,
       this.sdkComponent,
       required this.loadedComponents,
-      required this.deps,
       this.classHierarchy,
       this.coreTypes,
       this.kernelTargetForTesting});
 }
 
+// Coverage-ignore(suite): Not run.
 /// A fake absolute directory used as the root of a memory-file system in the
 /// compilation below.
 final Uri _defaultDir = Uri.parse('org-dartlang-macro:///a/b/c/');
@@ -318,6 +323,7 @@ final Uri _defaultDir = Uri.parse('org-dartlang-macro:///a/b/c/');
 Future<Map<Uri, ExecutorFactoryToken>?> precompileMacros(
     NeededPrecompilations? neededPrecompilations,
     ProcessedOptions options) async {
+  // Coverage-ignore-block(suite): Not run.
   if (neededPrecompilations != null) {
     if (options.globalFeatures.macros.isEnabled) {
       // TODO(johnniwinther): Avoid using [rawOptionsForTesting] to compute
@@ -336,6 +342,7 @@ Future<Map<Uri, ExecutorFactoryToken>?> precompileMacros(
   return null;
 }
 
+// Coverage-ignore(suite): Not run.
 Future<Map<Uri, ExecutorFactoryToken>?> _compileMacros(
     NeededPrecompilations neededPrecompilations,
     ProcessedOptions options) async {

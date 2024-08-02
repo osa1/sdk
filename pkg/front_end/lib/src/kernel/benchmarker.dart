@@ -1,3 +1,4 @@
+// Coverage-ignore(suite): Not run.
 // Copyright (c) 2022, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
@@ -91,6 +92,7 @@ class Benchmarker {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class PhaseTiming {
   final BenchmarkPhases phase;
   int _runtime = 0;
@@ -125,6 +127,7 @@ class PhaseTiming {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 class SubdivideTiming {
   final BenchmarkSubdivides phase;
   int _runtime = 0;
@@ -157,8 +160,9 @@ enum BenchmarkPhases {
   dill_finalizeExports,
 
   outline_kernelBuildOutlines,
-  outline_becomeCoreLibrary,
   outline_resolveParts,
+  outline_becomeCoreLibrary,
+  outline_buildScopes,
   outline_computeMacroDeclarations,
   outline_computeLibraryScopes,
   outline_computeMacroApplications,
@@ -184,8 +188,8 @@ enum BenchmarkPhases {
   outline_buildMacroDeclarationsForPhase2,
   outline_buildClassHierarchyMembers,
   outline_computeHierarchy,
-  outline_computeShowHideElements,
   outline_installTypedefTearOffs,
+  outline_performRedirectingFactoryInference,
   outline_performTopLevelInference,
   outline_checkOverrides,
   outline_checkAbstractMembers,
@@ -276,7 +280,6 @@ enum BenchmarkSubdivides {
   inferRedirectingFactoryTypeArguments,
 
   buildOutlineExpressions,
-  delayedActionPerformer,
 
   computeMacroApplications_macroExecutorProvider,
   macroApplications_macroExecutorLoadMacro,

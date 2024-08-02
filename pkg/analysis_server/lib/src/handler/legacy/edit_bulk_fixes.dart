@@ -24,7 +24,8 @@ class EditBulkFixes extends LegacyHandler {
     // Compute bulk fixes
     //
     try {
-      var params = EditBulkFixesParams.fromRequest(request);
+      var params = EditBulkFixesParams.fromRequest(request,
+          clientUriConverter: server.uriConverter);
       for (var file in params.included) {
         if (server.sendResponseErrorIfInvalidFilePath(request, file)) {
           return;
@@ -56,8 +57,9 @@ class EditBulkFixes extends LegacyHandler {
               '', result.builder!.sourceChange.edits, processor.fixDetails));
         }
       } else {
-        var result = await processor.fixPubspec(collection.contexts);
-        sendResult(EditBulkFixesResult('', result.edits, result.details));
+        var (:edits, :details) =
+            await processor.fixPubspec(collection.contexts);
+        sendResult(EditBulkFixesResult('', edits, details));
       }
     } catch (exception, stackTrace) {
       // TODO(brianwilkerson): Move exception handling outside [handle].

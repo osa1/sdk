@@ -3,19 +3,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io' show File, IOSink;
-
 import 'dart:typed_data' show BytesBuilder, Uint8List;
 
 import 'package:_fe_analyzer_shared/src/parser/formal_parameter_kind.dart';
 import 'package:_fe_analyzer_shared/src/scanner/scanner.dart' show Token;
 import 'package:_fe_analyzer_shared/src/scanner/token.dart'
     show SyntheticToken, TokenType;
-
 import 'package:kernel/ast.dart';
-import 'package:kernel/clone.dart';
 import 'package:kernel/binary/ast_to_binary.dart';
+import 'package:kernel/clone.dart';
 import 'package:kernel/text/ast_to_text.dart';
 
+import '../base/combinator.dart';
+import '../base/configuration.dart';
+import '../base/identifiers.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/fixed_type_builder.dart';
 import '../builder/formal_parameter_builder.dart';
@@ -23,10 +24,7 @@ import '../builder/metadata_builder.dart';
 import '../builder/omitted_type_builder.dart';
 import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
-import '../base/combinator.dart';
-import '../base/configuration.dart';
-import '../base/identifiers.dart';
-import '../source/source_library_builder.dart';
+import '../source/builder_factory.dart';
 import 'body_builder.dart';
 
 /// The name for the synthesized field used to store information of
@@ -45,6 +43,7 @@ const String exportDynamicSentinel = '<dynamic>';
 /// 'Never' from 'dart:core'.
 const String exportNeverSentinel = '<Never>';
 
+// Coverage-ignore(suite): Not run.
 void printNodeOn(Node? node, StringSink sink, {NameSystem? syntheticNames}) {
   if (node == null) {
     sink.write("null");
@@ -54,6 +53,7 @@ void printNodeOn(Node? node, StringSink sink, {NameSystem? syntheticNames}) {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 void printQualifiedNameOn(Member? member, StringSink sink) {
   if (member == null) {
     sink.write("null");
@@ -69,6 +69,7 @@ void printQualifiedNameOn(Member? member, StringSink sink) {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// Print the given [component].  Do nothing if it is `null`.  If the
 /// [libraryFilter] is provided, then only libraries that satisfy it are
 /// printed.
@@ -86,6 +87,7 @@ void printComponentText(Component? component,
   print(sb);
 }
 
+// Coverage-ignore(suite): Not run.
 /// Write [component] to file only including libraries that match [filter].
 Future<Null> writeComponentToFile(Component component, Uri uri,
     {bool Function(Library library)? filter}) async {
@@ -99,6 +101,7 @@ Future<Null> writeComponentToFile(Component component, Uri uri,
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// Serialize the libraries in [component] that match [filter].
 Uint8List serializeComponent(Component component,
     {bool Function(Library library)? filter,
@@ -115,6 +118,7 @@ Uint8List serializeComponent(Component component,
 
 const String kDebugClassName = "#DebugClass";
 
+// Coverage-ignore(suite): Not run.
 class _CollectLibraryDependencies extends RecursiveVisitor {
   Set<LibraryDependency> foundLibraryDependencies = {};
 
@@ -129,6 +133,7 @@ class _CollectLibraryDependencies extends RecursiveVisitor {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 Component createExpressionEvaluationComponent(Procedure procedure) {
   Library realLibrary = procedure.enclosingLibrary;
 
@@ -195,6 +200,7 @@ Component createExpressionEvaluationComponent(Procedure procedure) {
   return component;
 }
 
+// Coverage-ignore(suite): Not run.
 List<int> serializeProcedure(Procedure procedure) {
   return serializeComponent(createExpressionEvaluationComponent(procedure));
 }
@@ -209,6 +215,7 @@ class ByteSink implements Sink<List<int>> {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void close() {}
 }
 

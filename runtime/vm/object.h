@@ -1239,11 +1239,19 @@ class Class : public Object {
   // via `extends` or by `implements`, returns its CID.
   // If it has no implementation, returns kIllegalCid.
   // If it has more than one implementation, returns kDynamicCid.
-  intptr_t implementor_cid() const { return untag()->implementor_cid_; }
+  intptr_t implementor_cid() const {
+    // Classes in VM isolate use kVoidCid instead of kDynamicCid
+    // so that we could distinguish them.
+    intptr_t cid = untag()->implementor_cid_;
+    return cid == kVoidCid ? static_cast<intptr_t>(kDynamicCid) : cid;
+  }
 
   // Returns true if the implementor tracking state changes and so must be
   // propagated to this class's superclass and interfaces.
   bool NoteImplementor(const Class& implementor) const;
+
+  // Used by hot reload to reset the state.
+  void ClearImplementor() const;
 #endif
 
   static intptr_t num_type_arguments_offset() {
@@ -1687,8 +1695,8 @@ class Class : public Object {
   // Returns false if all possible implementations of this interface must be
   // instances of this class or its subclasses.
   bool is_implemented() const { return ImplementedBit::decode(state_bits()); }
-  void set_is_implemented() const;
-  void set_is_implemented_unsafe() const;
+  void set_is_implemented(bool value) const;
+  void set_is_implemented_unsafe(bool value) const;
 
   bool is_abstract() const { return AbstractBit::decode(state_bits()); }
   void set_is_abstract() const;
@@ -3173,7 +3181,14 @@ class Function : public Object {
   void SwitchToLazyCompiledUnoptimizedCode() const;
 
   // Compiles unoptimized code (if necessary) and attaches it to the function.
+  // If an error occurs during compilation, |Exceptions::PropagateError| will be
+  // called to propagate it.
   void EnsureHasCompiledUnoptimizedCode() const;
+
+  // Compiles unoptimized code (if necessary) and attaches it to the function.
+  // If an error occurs during compilation, the error is returned. Otherwise,
+  // |Error::null()| is returned.
+  ErrorPtr EnsureHasCompiledUnoptimizedCodeNoThrow() const;
 
   // Return the most recently compiled and installed code for this function.
   // It is not the only Code object that points to this function.
@@ -5334,6 +5349,7 @@ class Library : public Object {
                                         bool is_kernel_file);
 
   static LibraryPtr AsyncLibrary();
+  static LibraryPtr ConcurrentLibrary();
   static LibraryPtr ConvertLibrary();
   static LibraryPtr CoreLibrary();
   static LibraryPtr CollectionLibrary();
@@ -5374,8 +5390,8 @@ class Library : public Object {
   // helper methods and classes. Allow look up of private classes.
   static ClassPtr LookupCoreClass(const String& class_name);
 
-  // Return Function::null() if function does not exist in libs.
-  static FunctionPtr GetFunction(const GrowableArray<Library*>& libs,
+  // Return Function::null() if function does not exist in lib.
+  static FunctionPtr GetFunction(const Library& lib,
                                  const char* class_name,
                                  const char* function_name);
 

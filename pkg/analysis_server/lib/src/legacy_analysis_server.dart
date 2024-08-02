@@ -389,6 +389,7 @@ class LegacyAnalysisServer extends AnalysisServer {
     // Disable to avoid using this in unit tests.
     bool enableBlazeWatcher = false,
     DartFixPromptManager? dartFixPromptManager,
+    super.providedByteStore,
   })  : lspClientConfiguration =
             lsp.LspClientConfiguration(baseResourceProvider.pathContext),
         super(
@@ -423,7 +424,7 @@ class LegacyAnalysisServer extends AnalysisServer {
       ServerConnectedParams(
         options.reportProtocolVersion ?? PROTOCOL_VERSION,
         io.pid,
-      ).toNotification(),
+      ).toNotification(clientUriConverter: uriConverter),
     );
     debounceRequests(channel, discardedRequests)
         .listen(handleRequestOrResponse, onDone: done, onError: error);
@@ -481,7 +482,8 @@ class LegacyAnalysisServer extends AnalysisServer {
     return (Uri uri) async {
       var requestId = '${nextServerRequestId++}';
       await sendRequest(
-        ServerOpenUrlRequestParams('$uri').toRequest(requestId),
+        ServerOpenUrlRequestParams('$uri')
+            .toRequest(requestId, clientUriConverter: uriConverter),
       );
     };
   }
@@ -668,7 +670,8 @@ class LegacyAnalysisServer extends AnalysisServer {
     }
 
     channel.sendNotification(
-      LspNotificationParams(notification).toNotification(),
+      LspNotificationParams(notification)
+          .toNotification(clientUriConverter: uriConverter),
     );
   }
 
@@ -716,8 +719,8 @@ class LegacyAnalysisServer extends AnalysisServer {
     }
 
     // send the notification
-    channel.sendNotification(
-        ServerErrorParams(fatal, msg, '$stackTrace').toNotification());
+    channel.sendNotification(ServerErrorParams(fatal, msg, '$stackTrace')
+        .toNotification(clientUriConverter: uriConverter));
 
     // remember the last few exceptions
     if (exception is CaughtException) {
@@ -767,8 +770,8 @@ class LegacyAnalysisServer extends AnalysisServer {
       reportAnalysisAnalytics();
     }
     var analysis = AnalysisStatus(isAnalyzing);
-    channel.sendNotification(
-        ServerStatusParams(analysis: analysis).toNotification());
+    channel.sendNotification(ServerStatusParams(analysis: analysis)
+        .toNotification(clientUriConverter: uriConverter));
   }
 
   /// Implementation for `analysis.setAnalysisRoots`.
@@ -860,7 +863,7 @@ class LegacyAnalysisServer extends AnalysisServer {
     var actions = actionLabels.map((label) => MessageAction(label)).toList();
     var request =
         ServerShowMessageRequestParams(type.forLegacy, message, actions)
-            .toRequest(requestId);
+            .toRequest(requestId, clientUriConverter: uriConverter);
     var response = await sendRequest(request);
     return response.result?['action'] as String?;
   }

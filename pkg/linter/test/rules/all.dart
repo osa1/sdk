@@ -72,6 +72,7 @@ import 'await_only_futures_test.dart' as await_only_futures;
 import 'camel_case_extensions_test.dart' as camel_case_extensions;
 import 'camel_case_types_test.dart' as camel_case_types;
 import 'cancel_subscriptions_test.dart' as cancel_subscriptions;
+import 'cascade_invocations_test.dart' as cascade_invocations;
 import 'cast_nullable_to_non_nullable_test.dart'
     as cast_nullable_to_non_nullable;
 import 'close_sinks_test.dart' as close_sinks;
@@ -146,6 +147,8 @@ import 'null_check_on_nullable_type_parameter_test.dart'
     as null_check_on_nullable_type_parameter;
 import 'null_closures_test.dart' as null_closures;
 import 'omit_local_variable_types_test.dart' as omit_local_variable_types;
+import 'omit_obvious_local_variable_types_test.dart'
+    as omit_obvious_local_variable_types;
 import 'one_member_abstracts_test.dart' as one_member_abstracts;
 import 'only_throw_errors_test.dart' as only_throw_errors;
 import 'overridden_fields_test.dart' as overridden_fields;
@@ -159,6 +162,8 @@ import 'prefer_asserts_in_initializer_lists_test.dart'
     as prefer_asserts_in_initializer_lists;
 import 'prefer_asserts_with_message_test.dart' as prefer_asserts_with_message;
 import 'prefer_collection_literals_test.dart' as prefer_collection_literals;
+import 'prefer_conditional_assignment_test.dart'
+    as prefer_conditional_assignment;
 import 'prefer_const_constructors_in_immutables_test.dart'
     as prefer_const_constructors_in_immutables;
 import 'prefer_const_constructors_test.dart' as prefer_const_constructors;
@@ -185,6 +190,7 @@ import 'prefer_generic_function_type_aliases_test.dart'
 import 'prefer_if_elements_to_conditional_expressions_test.dart'
     as prefer_if_elements_to_conditional_expressions;
 import 'prefer_inlined_adds_test.dart' as prefer_inlined_adds;
+import 'prefer_int_literals_test.dart' as prefer_int_literals;
 import 'prefer_interpolation_to_compose_strings_test.dart'
     as prefer_interpolation_to_compose_strings;
 import 'prefer_iterable_whereType_test.dart' as prefer_iterable_whereType;
@@ -282,6 +288,8 @@ import 'use_rethrow_when_possible_test.dart' as use_rethrow_when_possible;
 import 'use_setters_to_change_properties_test.dart'
     as use_setters_to_change_properties;
 import 'use_string_buffers_test.dart' as use_string_buffers;
+import 'use_string_in_part_of_directives_test.dart'
+    as use_string_in_part_of_directives;
 import 'use_super_parameters_test.dart' as use_super_parameters;
 import 'use_test_throws_matchers_test.dart' as use_test_throws_matchers;
 import 'use_to_and_as_if_applicable_test.dart' as use_to_and_as_if_applicable;
@@ -335,6 +343,7 @@ void main() {
   camel_case_extensions.main();
   camel_case_types.main();
   cancel_subscriptions.main();
+  cascade_invocations.main();
   cast_nullable_to_non_nullable.main();
   close_sinks.main();
   collection_methods_unrelated_type.main();
@@ -390,6 +399,7 @@ void main() {
   null_check_on_nullable_type_parameter.main();
   null_closures.main();
   omit_local_variable_types.main();
+  omit_obvious_local_variable_types.main();
   one_member_abstracts.main();
   only_throw_errors.main();
   overridden_fields.main();
@@ -400,6 +410,7 @@ void main() {
   prefer_asserts_in_initializer_lists.main();
   prefer_asserts_with_message.main();
   prefer_collection_literals.main();
+  prefer_conditional_assignment.main();
   prefer_const_constructors_in_immutables.main();
   prefer_const_constructors.main();
   prefer_const_declarations.main();
@@ -418,6 +429,7 @@ void main() {
   prefer_generic_function_type_aliases.main();
   prefer_if_elements_to_conditional_expressions.main();
   prefer_inlined_adds.main();
+  prefer_int_literals.main();
   prefer_interpolation_to_compose_strings.main();
   prefer_iterable_whereType.main();
   prefer_mixin.main();
@@ -491,6 +503,7 @@ void main() {
   use_rethrow_when_possible.main();
   use_setters_to_change_properties.main();
   use_string_buffers.main();
+  use_string_in_part_of_directives.main();
   use_super_parameters.main();
   use_test_throws_matchers.main();
   use_to_and_as_if_applicable.main();

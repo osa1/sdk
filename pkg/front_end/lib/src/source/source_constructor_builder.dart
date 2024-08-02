@@ -10,6 +10,7 @@ import 'package:kernel/type_environment.dart';
 
 import '../base/constant_context.dart' show ConstantContext;
 import '../base/identifiers.dart';
+import '../base/local_scope.dart';
 import '../base/messages.dart'
     show
         LocatedMessage,
@@ -44,7 +45,6 @@ import '../kernel/kernel_helper.dart'
         finishProcedureAugmentation;
 import '../type_inference/inference_results.dart';
 import '../type_inference/type_schema.dart';
-import '../util/helpers.dart' show DelayedActionPerformer;
 import 'constructor_declaration.dart';
 import 'name_scheme.dart';
 import 'source_class_builder.dart';
@@ -53,7 +53,8 @@ import 'source_extension_type_declaration_builder.dart';
 import 'source_field_builder.dart';
 import 'source_function_builder.dart';
 import 'source_library_builder.dart' show SourceLibraryBuilder;
-import 'source_loader.dart' show SourceLoader;
+import 'source_loader.dart'
+    show CompilationPhaseForProblemReporting, SourceLoader;
 import 'source_member_builder.dart';
 
 abstract class SourceConstructorBuilder
@@ -153,6 +154,7 @@ abstract class AbstractSourceConstructorBuilder
     _hasFormalsInferred = true;
   }
 
+  // Coverage-ignore(suite): Not run.
   void _inferSuperInitializingFormals(ClassHierarchyBase hierarchy) {}
 
   void _buildFormals(Member member) {
@@ -299,11 +301,9 @@ abstract class AbstractSourceConstructorBuilder
   }
 
   void _buildConstructorForOutline(
-      Token? beginInitializers,
-      List<DelayedActionPerformer> delayedActionPerformers,
-      Scope declarationScope) {
+      Token? beginInitializers, LookupScope declarationScope) {
     if (beginInitializers != null) {
-      final Scope? formalParameterScope;
+      final LocalScope? formalParameterScope;
       if (isConst) {
         // We're going to fully build the constructor so we need scopes.
         formalParameterScope = computeFormalParameterInitializerScope(
@@ -325,11 +325,10 @@ abstract class AbstractSourceConstructorBuilder
       if (isConst) {
         bodyBuilder.constantContext = ConstantContext.required;
       }
+      inferFormalTypes(bodyBuilder.hierarchy);
       bodyBuilder.parseInitializers(beginInitializers,
           doFinishConstructor: isConst);
-      bodyBuilder.performBacklogComputations(
-          delayedActionPerformers: delayedActionPerformers,
-          allowFurtherDelays: false);
+      bodyBuilder.performBacklogComputations();
     }
   }
 
@@ -352,6 +351,7 @@ abstract class AbstractSourceConstructorBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void checkVariance(
       SourceClassBuilder sourceClassBuilder, TypeEnvironment typeEnvironment) {}
 
@@ -362,10 +362,12 @@ abstract class AbstractSourceConstructorBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<ClassMember> get localMembers =>
       throw new UnsupportedError('${runtimeType}.localMembers');
 
   @override
+  // Coverage-ignore(suite): Not run.
   List<ClassMember> get localSetters =>
       throw new UnsupportedError('${runtimeType}.localSetters');
 }
@@ -404,6 +406,7 @@ class DeclaredSourceConstructorBuilder
       List<NominalVariableBuilder>? typeVariables,
       this.formals,
       SourceLibraryBuilder compilationUnit,
+      Uri fileUri,
       int startCharOffset,
       int charOffset,
       int charOpenParenOffset,
@@ -430,7 +433,7 @@ class DeclaredSourceConstructorBuilder
             nativeMethodName) {
     _constructor = new Constructor(new FunctionNode(null),
         name: dummyName,
-        fileUri: compilationUnit.fileUri,
+        fileUri: fileUri,
         reference: constructorReference,
         isSynthetic: isSynthetic)
       ..startFileOffset = startCharOffset
@@ -449,6 +452,7 @@ class DeclaredSourceConstructorBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Name get memberName => _memberName.name;
 
   @override
@@ -464,6 +468,7 @@ class DeclaredSourceConstructorBuilder
       _constructor as Member;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -473,6 +478,7 @@ class DeclaredSourceConstructorBuilder
   FunctionNode get function => _constructor.function;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterable<Member> get exportedMembers => [constructor];
 
   @override
@@ -481,12 +487,14 @@ class DeclaredSourceConstructorBuilder
   @override
   DeclaredSourceConstructorBuilder get origin => actualOrigin ?? this;
 
+  // Coverage-ignore(suite): Not run.
   List<SourceConstructorBuilder>? get augmentationsForTesting => _augmentations;
 
   @override
   bool get isDeclarationInstanceMember => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isClassInstanceMember => false;
 
   @override
@@ -588,15 +596,24 @@ class DeclaredSourceConstructorBuilder
         if (declaration is ClassBuilder) {
           superclassBuilder = declaration;
         } else {
-          // The error in this case should be reported elsewhere.
+          assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+              "DeclaredSourceConstructorBuilder._computeSuperTargetBuilder: "
+              "Unaliased 'declaration' isn't a ClassBuilder.",
+              expectedPhase: CompilationPhaseForProblemReporting.outline));
           return null;
         }
       } else {
-        // The error in this case should be reported elsewhere.
+        assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+            "DeclaredSourceConstructorBuilder._computeSuperTargetBuilder: "
+            "'declaration' isn't a ClassBuilder or a TypeAliasBuilder.",
+            expectedPhase: CompilationPhaseForProblemReporting.outline));
         return null;
       }
     } else {
-      // The error in this case should be reported elsewhere.
+      assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+          "DeclaredSourceConstructorBuilder._computeSuperTargetBuilder: "
+          "'supertype' isn't a NamedTypeBuilder.",
+          expectedPhase: CompilationPhaseForProblemReporting.outline));
       return null;
     }
 
@@ -610,7 +627,10 @@ class DeclaredSourceConstructorBuilder
       if (memberBuilder is ConstructorBuilder) {
         superTarget = memberBuilder.invokeTarget;
       } else {
-        // The error in this case should be reported elsewhere.
+        assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+            "DeclaredSourceConstructorBuilder._computeSuperTargetBuilder: "
+            "Can't find the implied unnamed constructor in the superclass.",
+            expectedPhase: CompilationPhaseForProblemReporting.bodyBuilding));
         return null;
       }
     }
@@ -618,7 +638,16 @@ class DeclaredSourceConstructorBuilder
     MemberBuilder? constructorBuilder =
         superclassBuilder.findConstructorOrFactory(superTarget.name.text,
             charOffset, libraryBuilder.fileUri, libraryBuilder);
-    return constructorBuilder is ConstructorBuilder ? constructorBuilder : null;
+    if (constructorBuilder is ConstructorBuilder) {
+      return constructorBuilder;
+    } else {
+      assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+          "DeclaredSourceConstructorBuilder._computeSuperTargetBuilder: "
+          "Can't find a constructor with name '${superTarget.name.text}' in "
+          "the superclass.",
+          expectedPhase: CompilationPhaseForProblemReporting.outline));
+      return null;
+    }
   }
 
   final bool _hasSuperInitializingFormals;
@@ -682,8 +711,11 @@ class DeclaredSourceConstructorBuilder
       superTarget = superTargetBuilder.invokeTarget;
       superConstructorFunction = superTargetBuilder.function;
     } else {
-      // The error in this case should be reported elsewhere. Here we perform a
-      // simple recovery.
+      assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+          "DeclaredSourceConstructorBuilder.finalizeSuperInitializingFormals: "
+          "Can't compute super target.",
+          expectedPhase: CompilationPhaseForProblemReporting.bodyBuilding));
+      // Perform a simple recovery.
       return performRecoveryForErroneousCase();
     }
 
@@ -743,7 +775,13 @@ class DeclaredSourceConstructorBuilder
               (positionalSuperParameters ??= <int?>[]).add(null);
             }
           } else {
-            // The error is reported elsewhere.
+            assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+                "DeclaredSourceConstructorBuilder"
+                ".finalizeSuperInitializingFormals: "
+                "Super initializer count is greater than the count of "
+                "positional formals in the super constructor.",
+                expectedPhase:
+                    CompilationPhaseForProblemReporting.bodyBuilding));
           }
         } else {
           if (namedSuperFormalHasInitializer[formal.name] != null) {
@@ -800,24 +838,20 @@ class DeclaredSourceConstructorBuilder
   bool _hasBuiltOutlines = false;
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     if (_hasBuiltOutlines) return;
     if (isConst && isAugmenting) {
       origin.buildOutlineExpressions(
-          classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+          classHierarchy, delayedDefaultValueCloners);
     }
-    super.buildOutlineExpressions(
-        classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+    super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
 
     // For modular compilation purposes we need to include initializers
     // for const constructors into the outline. We also need to parse
     // initializers to infer types of the super-initializing parameters.
     if (isConst || _hasSuperInitializingFormals) {
-      _buildConstructorForOutline(
-          beginInitializers, delayedActionPerformers, classBuilder.scope);
+      _buildConstructorForOutline(beginInitializers, classBuilder.scope);
     }
     addSuperParameterDefaultValueCloners(delayedDefaultValueCloners);
     if (isConst && isAugmenting) {
@@ -830,11 +864,25 @@ class DeclaredSourceConstructorBuilder
   @override
   void addSuperParameterDefaultValueCloners(
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
-    ConstructorBuilder? superTargetBuilder =
-        _computeSuperTargetBuilder(constructor.initializers);
-    if (superTargetBuilder is SourceConstructorBuilder) {
-      superTargetBuilder
-          .addSuperParameterDefaultValueCloners(delayedDefaultValueCloners);
+    if (beginInitializers != null && constructor.initializers.isNotEmpty) {
+      // If the initializers aren't built yet, we can't compute the super
+      // target. The synthetic initializers should be excluded, since they can
+      // be built separately from formal field initializers.
+      bool allInitializersAreSynthetic = true;
+      for (Initializer initializer in constructor.initializers) {
+        if (!initializer.isSynthetic) {
+          allInitializersAreSynthetic = false;
+          break;
+        }
+      }
+      if (!allInitializersAreSynthetic) {
+        ConstructorBuilder? superTargetBuilder =
+            _computeSuperTargetBuilder(constructor.initializers);
+        if (superTargetBuilder is SourceConstructorBuilder) {
+          superTargetBuilder
+              .addSuperParameterDefaultValueCloners(delayedDefaultValueCloners);
+        }
+      }
     }
 
     delayedDefaultValueCloners.addAll(_delayedDefaultValueCloners);
@@ -895,6 +943,7 @@ class DeclaredSourceConstructorBuilder
         (_augmentations ??= []).add(augmentation);
       }
     } else {
+      // Coverage-ignore-block(suite): Not run.
       reportAugmentationMismatch(augmentation);
     }
   }
@@ -1015,13 +1064,16 @@ class SyntheticSourceConstructorBuilder extends DillConstructorBuilder
         super(constructor, constructorTearOff, parent);
 
   @override
+  // Coverage-ignore(suite): Not run.
   SourceLibraryBuilder get libraryBuilder =>
       super.libraryBuilder as SourceLibraryBuilder;
 
   @override
+  // Coverage-ignore(suite): Not run.
   DeclarationBuilder get declarationBuilder => classBuilder!;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isRedirecting {
     for (Initializer initializer in constructor.initializers) {
       if (initializer is RedirectingInitializer) {
@@ -1044,9 +1096,7 @@ class SyntheticSourceConstructorBuilder extends DillConstructorBuilder
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     if (_immediatelyDefiningConstructor != null) {
       // Ensure that default value expressions have been created for [_origin].
@@ -1054,8 +1104,8 @@ class SyntheticSourceConstructorBuilder extends DillConstructorBuilder
       // values and initializers first.
       MemberBuilder origin = _immediatelyDefiningConstructor!;
       if (origin is SourceConstructorBuilder) {
-        origin.buildOutlineExpressions(classHierarchy, delayedActionPerformers,
-            delayedDefaultValueCloners);
+        origin.buildOutlineExpressions(
+            classHierarchy, delayedDefaultValueCloners);
       }
       addSuperParameterDefaultValueCloners(delayedDefaultValueCloners);
       _immediatelyDefiningConstructor = null;
@@ -1083,6 +1133,7 @@ class SyntheticSourceConstructorBuilder extends DillConstructorBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void checkVariance(
       SourceClassBuilder sourceClassBuilder, TypeEnvironment typeEnvironment) {}
 
@@ -1156,6 +1207,7 @@ class SourceExtensionTypeConstructorBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Name get memberName => _memberName.name;
 
   SourceExtensionTypeDeclarationBuilder get extensionTypeDeclarationBuilder =>
@@ -1165,9 +1217,12 @@ class SourceExtensionTypeConstructorBuilder
   Member get member => _constructor;
 
   @override
-  Member get readTarget => _constructorTearOff ?? _constructor;
+  Member get readTarget =>
+      _constructorTearOff ?? // Coverage-ignore(suite): Not run.
+      _constructor;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Member? get writeTarget => null;
 
   @override
@@ -1177,9 +1232,11 @@ class SourceExtensionTypeConstructorBuilder
   FunctionNode get function => _constructor.function;
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterable<Member> get exportedMembers => [_constructor];
 
   @override
+  // Coverage-ignore(suite): Not run.
   void addSuperParameterDefaultValueCloners(
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {}
 
@@ -1198,20 +1255,16 @@ class SourceExtensionTypeConstructorBuilder
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
-    super.buildOutlineExpressions(
-        classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+    super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
 
     if (isConst) {
       // For modular compilation purposes we need to include initializers
       // for const constructors into the outline.
-      Scope typeParameterScope =
+      LookupScope typeParameterScope =
           computeTypeParameterScope(extensionTypeDeclarationBuilder.scope);
-      _buildConstructorForOutline(
-          beginInitializers, delayedActionPerformers, typeParameterScope);
+      _buildConstructorForOutline(beginInitializers, typeParameterScope);
       _buildBody();
     }
     beginInitializers = null;
@@ -1424,16 +1477,19 @@ class ExtensionTypeInitializerToStatementConverter
         ..fileOffset = node.fileOffset;
       return;
     }
+    // Coverage-ignore-block(suite): Not run.
     throw new UnsupportedError(
         "Unexpected initializer $node (${node.runtimeType})");
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitAssertInitializer(AssertInitializer node) {
     statements.add(node.statement);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitFieldInitializer(FieldInitializer node) {
     thisVariable
       ..initializer = (node.value..parent = thisVariable)
@@ -1441,6 +1497,7 @@ class ExtensionTypeInitializerToStatementConverter
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitInvalidInitializer(InvalidInitializer node) {
     statements.add(new ExpressionStatement(
         new InvalidExpression(null)..fileOffset = node.fileOffset)
@@ -1459,6 +1516,7 @@ class ExtensionTypeInitializerToStatementConverter
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void visitSuperInitializer(SuperInitializer node) {
     // TODO(johnniwinther): Report error for this case.
   }

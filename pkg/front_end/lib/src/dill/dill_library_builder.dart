@@ -11,6 +11,7 @@ import 'package:kernel/ast.dart';
 import '../base/combinator.dart';
 import '../base/export.dart';
 import '../base/loader.dart';
+import '../base/name_space.dart';
 import '../base/problems.dart' show internalProblem, unhandled;
 import '../base/scope.dart';
 import '../base/uris.dart';
@@ -22,13 +23,7 @@ import '../builder/member_builder.dart';
 import '../builder/name_iterator.dart';
 import '../builder/never_type_declaration_builder.dart';
 import '../codes/cfe_codes.dart'
-    show
-        LocatedMessage,
-        Message,
-        Severity,
-        noLength,
-        templateDuplicatedDeclaration,
-        templateUnspecified;
+    show LocatedMessage, Message, Severity, noLength, templateUnspecified;
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/utils.dart';
 import 'dill_class_builder.dart' show DillClassBuilder;
@@ -38,35 +33,22 @@ import 'dill_loader.dart' show DillLoader;
 import 'dill_member_builder.dart';
 import 'dill_type_alias_builder.dart' show DillTypeAliasBuilder;
 
-class LazyLibraryScope extends LazyScope {
-  DillLibraryBuilder? libraryBuilder;
-
-  LazyLibraryScope.top({bool isModifiable = false})
-      : super(<String, Builder>{}, <String, MemberBuilder>{}, null, "top",
-            isModifiable: isModifiable, kind: ScopeKind.library);
-
-  @override
-  void ensureScope() {
-    if (libraryBuilder == null) {
-      throw new StateError("No library builder.");
-    }
-    libraryBuilder!.ensureLoaded();
-  }
-}
-
 class DillCompilationUnitImpl extends DillCompilationUnit {
   final DillLibraryBuilder _dillLibraryBuilder;
+
+  @override
+  final List<Export> exporters = <Export>[];
 
   DillCompilationUnitImpl(this._dillLibraryBuilder);
 
   @override
-  void addExporter(LibraryBuilder exporter,
+  void addExporter(CompilationUnit exporter,
       List<CombinatorBuilder>? combinators, int charOffset) {
-    _dillLibraryBuilder.exporters
-        .add(new Export(exporter, this, combinators, charOffset));
+    exporters.add(new Export(exporter, this, combinators, charOffset));
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void addProblem(Message message, int charOffset, int length, Uri? fileUri,
       {bool wasHandled = false,
       List<LocatedMessage>? context,
@@ -121,6 +103,12 @@ class DillCompilationUnitImpl extends DillCompilationUnit {
 }
 
 class DillLibraryBuilder extends LibraryBuilderImpl {
+  late final LookupScope _scope;
+
+  late final DillLibraryNameSpace _nameSpace;
+
+  late final DillExportNameSpace _exportScope;
+
   @override
   final Library library;
 
@@ -144,14 +132,23 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   bool isBuilt = false;
   bool isBuiltAndMarked = false;
 
-  DillLibraryBuilder(this.library, this.loader)
-      : super(library.fileUri, new LazyLibraryScope.top(),
-            new LazyLibraryScope.top()) {
-    LazyLibraryScope lazyScope = scope as LazyLibraryScope;
-    lazyScope.libraryBuilder = this;
-    LazyLibraryScope lazyExportScope = exportScope as LazyLibraryScope;
-    lazyExportScope.libraryBuilder = this;
+  DillLibraryBuilder(this.library, this.loader) : super(library.fileUri) {
+    _nameSpace = new DillLibraryNameSpace(this);
+    _scope = new NameSpaceLookupScope(_nameSpace, ScopeKind.library, 'top');
+    _exportScope = new DillExportNameSpace(this);
   }
+
+  @override
+  LookupScope get scope => _scope;
+
+  @override
+  NameSpace get nameSpace => _nameSpace;
+
+  @override
+  NameSpace get exportNameSpace => _exportScope;
+
+  @override
+  List<Export> get exporters => mainCompilationUnit.exporters;
 
   @override
   LibraryBuilder get origin => this;
@@ -174,6 +171,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       throw new StateError("Not ready to build.");
     }
     if (isBuilt && !isBuiltAndMarked) {
+      // Coverage-ignore-block(suite): Not run.
       isBuiltAndMarked = true;
       finalizeExports();
       return;
@@ -223,6 +221,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   Uri get fileUri => library.fileUri;
 
   @override
+  // Coverage-ignore(suite): Not run.
   String? get name => library.name;
 
   @override
@@ -230,17 +229,17 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
 
   @override
   void becomeCoreLibrary() {
-    if (scope.lookupLocalMember("dynamic", setter: false) == null) {
+    if (nameSpace.lookupLocalMember("dynamic", setter: false) == null) {
       _addBuilder("dynamic",
           new DynamicTypeDeclarationBuilder(const DynamicType(), this, -1));
     }
-    if (scope.lookupLocalMember("Never", setter: false) == null) {
+    if (nameSpace.lookupLocalMember("Never", setter: false) == null) {
       _addBuilder(
           "Never",
           new NeverTypeDeclarationBuilder(
               const NeverType.nonNullable(), this, -1));
     }
-    assert(scope.lookupLocalMember("Null", setter: false) != null,
+    assert(nameSpace.lookupLocalMember("Null", setter: false) != null,
         "No class 'Null' found in dart:core.");
   }
 
@@ -299,6 +298,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
         StringConstant string = constantExpression.constant as StringConstant;
         stringValue = string.value;
       } else {
+        // Coverage-ignore-block(suite): Not run.
         StringLiteral string = field.initializer as StringLiteral;
         stringValue = string.value;
       }
@@ -317,11 +317,13 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
             _addBuilder(name, new DillGetterBuilder(member, this));
             break;
           case ProcedureKind.Operator:
+            // Coverage-ignore(suite): Not run.
             _addBuilder(name, new DillOperatorBuilder(member, this));
             break;
           case ProcedureKind.Method:
             _addBuilder(name, new DillMethodBuilder(member, this));
             break;
+          // Coverage-ignore(suite): Not run.
           case ProcedureKind.Factory:
             throw new UnsupportedError(
                 "Unexpected library procedure ${member.kind} for ${member}");
@@ -338,19 +340,20 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
 
     bool isSetter = declaration.isSetter;
     if (isSetter) {
-      scope.addLocalMember(name, declaration as MemberBuilder, setter: true);
+      nameSpace.addLocalMember(name, declaration as MemberBuilder,
+          setter: true);
     } else {
-      scope.addLocalMember(name, declaration, setter: false);
+      nameSpace.addLocalMember(name, declaration, setter: false);
     }
     if (declaration.isExtension) {
-      scope.addExtension(declaration as ExtensionBuilder);
+      nameSpace.addExtension(declaration as ExtensionBuilder);
     }
     if (!name.startsWith("_") && !name.contains('#')) {
       if (isSetter) {
-        exportScope.addLocalMember(name, declaration as MemberBuilder,
+        exportNameSpace.addLocalMember(name, declaration as MemberBuilder,
             setter: true);
       } else {
-        exportScope.addLocalMember(name, declaration, setter: false);
+        exportNameSpace.addLocalMember(name, declaration, setter: false);
       }
     }
     return declaration;
@@ -362,23 +365,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   }
 
   @override
-  Builder computeAmbiguousDeclaration(
-      String name, Builder builder, Builder other, int charOffset,
-      {bool isExport = false, bool isImport = false}) {
-    if (builder == other) return builder;
-    if (builder is InvalidTypeDeclarationBuilder) return builder;
-    if (other is InvalidTypeDeclarationBuilder) return other;
-    // For each entry mapping key `k` to declaration `d` in `NS` an entry
-    // mapping `k` to `d` is added to the exported namespace of `L` unless a
-    // top-level declaration with the name `k` exists in `L`.
-    if (builder.parent == this) return builder;
-    Message message = templateDuplicatedDeclaration.withArguments(name);
-    addProblem(message, charOffset, name.length, fileUri);
-    return new InvalidTypeDeclarationBuilder(
-        name, message.withLocation(fileUri, charOffset, name.length));
-  }
-
-  @override
+  // Coverage-ignore(suite): Not run.
   String get fullNameForErrors {
     return library.name ?? "<library '${library.fileUri}'>";
   }
@@ -397,12 +384,15 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       Builder declaration;
       if (messageText == exportDynamicSentinel) {
         assert(
-            name == 'dynamic', "Unexpected export name for 'dynamic': '$name'");
-        declaration = loader.coreLibrary.exportScope
+            name == 'dynamic', // Coverage-ignore(suite): Not run.
+            "Unexpected export name for 'dynamic': '$name'");
+        declaration = loader.coreLibrary.exportNameSpace
             .lookupLocalMember(name, setter: false)!;
       } else if (messageText == exportNeverSentinel) {
-        assert(name == 'Never', "Unexpected export name for 'Never': '$name'");
-        declaration = loader.coreLibrary.exportScope
+        assert(
+            name == 'Never', // Coverage-ignore(suite): Not run.
+            "Unexpected export name for 'Never': '$name'");
+        declaration = loader.coreLibrary.exportNameSpace
             .lookupLocalMember(name, setter: false)!;
       } else {
         Message message = templateUnspecified.withArguments(messageText);
@@ -412,7 +402,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
         declaration =
             new InvalidTypeDeclarationBuilder(name, message.withoutLocation());
       }
-      exportScope.addLocalMember(name, declaration, setter: false);
+      exportNameSpace.addLocalMember(name, declaration, setter: false);
     });
 
     Map<Reference, Builder>? sourceBuildersMap =
@@ -422,6 +412,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       Builder declaration;
       String name;
       if (sourceBuildersMap?.containsKey(reference) == true) {
+        // Coverage-ignore-block(suite): Not run.
         declaration = sourceBuildersMap![reference]!;
         if (declaration is TypeDeclarationBuilder) {
           name = declaration.name;
@@ -433,10 +424,10 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
         }
 
         if (declaration.isSetter) {
-          exportScope.addLocalMember(name, declaration as MemberBuilder,
+          exportNameSpace.addLocalMember(name, declaration as MemberBuilder,
               setter: true);
         } else {
-          exportScope.addLocalMember(name, declaration, setter: false);
+          exportNameSpace.addLocalMember(name, declaration, setter: false);
         }
       } else {
         Uri libraryUri;
@@ -473,13 +464,13 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
         }
         if (isSetter) {
           declaration =
-              library.exportScope.lookupLocalMember(name, setter: true)!;
-          exportScope.addLocalMember(name, declaration as MemberBuilder,
+              library.exportNameSpace.lookupLocalMember(name, setter: true)!;
+          exportNameSpace.addLocalMember(name, declaration as MemberBuilder,
               setter: true);
         } else {
           declaration =
-              library.exportScope.lookupLocalMember(name, setter: false)!;
-          exportScope.addLocalMember(name, declaration, setter: false);
+              library.exportNameSpace.lookupLocalMember(name, setter: false)!;
+          exportNameSpace.addLocalMember(name, declaration, setter: false);
         }
       }
 
@@ -492,20 +483,35 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
                   node == declaration.extension) ||
               (declaration is ExtensionTypeDeclarationBuilder &&
                   node == declaration.extensionTypeDeclaration),
+          // Coverage-ignore(suite): Not run.
           "Unexpected declaration ${declaration} (${declaration.runtimeType}) "
           "for node ${node} (${node.runtimeType}).");
     }
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterator<T> fullMemberIterator<T extends Builder>() {
-    return scope.filteredIterator<T>(
+    return nameSpace.filteredIterator<T>(
         includeDuplicates: false, includeAugmentations: false);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   NameIterator<T> fullMemberNameIterator<T extends Builder>() {
-    return scope.filteredNameIterator(
+    return nameSpace.filteredNameIterator(
         includeDuplicates: false, includeAugmentations: false);
+  }
+
+  @override
+  Version get languageVersion => library.languageVersion;
+
+  /// Patch up the export scope, using the two replacement maps to replace
+  /// builders in the export scope. The replacement maps from old LibraryBuilder
+  /// to map, mapping from name to new (replacement) builder.
+  void patchUpExportScope(
+      Map<LibraryBuilder, Map<String, Builder>> replacementMap,
+      Map<LibraryBuilder, Map<String, Builder>> replacementMapSetters) {
+    _exportScope.patchUpScope(replacementMap, replacementMapSetters);
   }
 }

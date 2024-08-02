@@ -20,14 +20,19 @@ import '../builder/procedure_builder.dart';
 import '../builder/type_builder.dart';
 import '../kernel/body_builder_context.dart';
 import '../kernel/kernel_helper.dart';
-import '../util/helpers.dart';
 import 'source_constructor_builder.dart';
 import 'source_field_builder.dart';
 import 'source_library_builder.dart';
+import 'source_loader.dart';
 import 'source_member_builder.dart';
 import 'source_procedure_builder.dart';
 
-mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
+abstract class SourceDeclarationBuilder implements IDeclarationBuilder {
+  void buildScopes(LibraryBuilder coreLibrary);
+}
+
+mixin SourceDeclarationBuilderMixin
+    implements DeclarationBuilderMixin, SourceDeclarationBuilder {
   @override
   SourceLibraryBuilder get libraryBuilder;
 
@@ -48,7 +53,7 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
   /// library.
   void buildInternal(LibraryBuilder coreLibrary,
       {required bool addMembersToLibrary}) {
-    SourceLibraryBuilder.checkMemberConflicts(libraryBuilder, scope,
+    SourceLibraryBuilder.checkMemberConflicts(libraryBuilder, nameSpace,
         checkForInstanceVsStaticConflict: true,
         checkForMethodVsSetterConflict: true);
 
@@ -60,6 +65,7 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
       Builder? objectSetter =
           objectClassBuilder.lookupLocalMember(name, setter: true);
       if (objectGetter != null && !objectGetter.isStatic ||
+          // Coverage-ignore(suite): Not run.
           objectSetter != null && !objectSetter.isStatic) {
         addProblem(
             // TODO(johnniwinther): Use a different error message for extension
@@ -70,6 +76,7 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
             name.length);
       }
       if (declaration.parent != this) {
+        // Coverage-ignore-block(suite): Not run.
         if (fileUri != declaration.parent!.fileUri) {
           unexpected("$fileUri", "${declaration.parent!.fileUri}", charOffset,
               fileUri);
@@ -92,13 +99,13 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
       }
     }
 
-    scope.unfilteredNameIterator.forEach(buildBuilders);
+    nameSpace.unfilteredNameIterator.forEach(buildBuilders);
     constructorScope.unfilteredNameIterator.forEach(buildBuilders);
   }
 
   int buildBodyNodes({required bool addMembersToLibrary}) {
     int count = 0;
-    Iterator<SourceMemberBuilder> iterator = scope
+    Iterator<SourceMemberBuilder> iterator = nameSpace
         .filteredIterator<SourceMemberBuilder>(
             parent: this, includeDuplicates: false, includeAugmentations: true)
         .join(constructorScope.filteredIterator<SourceMemberBuilder>(
@@ -107,10 +114,12 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
             includeAugmentations: true));
     while (iterator.moveNext()) {
       SourceMemberBuilder declaration = iterator.current;
-      count += declaration.buildBodyNodes((
-          {required Member member,
-          Member? tearOff,
-          required BuiltMemberKind kind}) {
+      count += declaration.buildBodyNodes(
+          // Coverage-ignore(suite): Not run.
+          (
+              {required Member member,
+              Member? tearOff,
+              required BuiltMemberKind kind}) {
         _buildMember(declaration, member, tearOff, kind,
             addMembersToLibrary: addMembersToLibrary);
       });
@@ -128,13 +137,15 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
         libraryBuilder.checkTypesInFunctionBuilder(builder, typeEnvironment);
         if (builder.isGetter) {
           Builder? setterDeclaration =
-              scope.lookupLocalMember(builder.name, setter: true);
+              nameSpace.lookupLocalMember(builder.name, setter: true);
           if (setterDeclaration != null) {
             libraryBuilder.checkGetterSetterTypes(builder,
                 setterDeclaration as ProcedureBuilder, typeEnvironment);
           }
         }
-      } else if (builder is SourceConstructorBuilder) {
+      }
+      // Coverage-ignore(suite): Not run.
+      else if (builder is SourceConstructorBuilder) {
         builder.checkTypes(libraryBuilder, typeEnvironment);
       } else {
         assert(false, "Unexpected member: $builder.");
@@ -147,9 +158,7 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
       required bool inMetadata,
       required bool inConstFields});
 
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     MetadataBuilder.buildAnnotations(
         annotatable,
@@ -170,16 +179,15 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
                 inMetadata: true,
                 inConstFields: false),
             classHierarchy,
-            delayedActionPerformers,
-            scope.parent!);
+            typeParameterScope);
       }
     }
 
-    Iterator<SourceMemberBuilder> iterator = scope.filteredIterator(
+    Iterator<SourceMemberBuilder> iterator = nameSpace.filteredIterator(
         parent: this, includeDuplicates: false, includeAugmentations: true);
     while (iterator.moveNext()) {
-      iterator.current.buildOutlineExpressions(
-          classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+      iterator.current
+          .buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
     }
   }
 
@@ -234,6 +242,9 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
   /// This is `null` if the declaration is not generic.
   List<NominalVariableBuilder>? get typeParameters;
 
+  /// The scope in which the [typeParameters] are declared.
+  LookupScope get typeParameterScope;
+
   @override
   List<DartType> buildAliasedTypeArguments(LibraryBuilder library,
       List<TypeBuilder>? arguments, ClassHierarchyBase? hierarchy) {
@@ -254,7 +265,10 @@ mixin SourceDeclarationBuilderMixin implements DeclarationBuilderMixin {
     }
 
     if (arguments != null && arguments.length != typeVariablesCount) {
-      // That should be caught and reported as a compile-time error earlier.
+      assert(libraryBuilder.loader.assertProblemReportedElsewhere(
+          "SourceDeclarationBuilderMixin.buildAliasedTypeArguments: "
+          "the numbers of type parameters and type arguments don't match.",
+          expectedPhase: CompilationPhaseForProblemReporting.outline));
       return unhandled(
           templateTypeArgumentMismatch
               .withArguments(typeVariablesCount)
@@ -287,7 +301,7 @@ mixin SourceTypedDeclarationBuilderMixin implements IDeclarationBuilder {
     while (iterator.moveNext()) {
       String name = iterator.name;
       MemberBuilder constructor = iterator.current;
-      Builder? member = scope.lookupLocalMember(name, setter: false);
+      Builder? member = nameSpace.lookupLocalMember(name, setter: false);
       if (member == null) continue;
       if (!member.isStatic) continue;
       // TODO(ahe): Revisit these messages. It seems like the last two should
@@ -308,9 +322,10 @@ mixin SourceTypedDeclarationBuilderMixin implements IDeclarationBuilder {
       }
     }
 
-    scope.forEachLocalSetter((String name, Builder setter) {
+    nameSpace.forEachLocalSetter((String name, Builder setter) {
       Builder? constructor = constructorScope.lookupLocalMember(name);
       if (constructor == null || !setter.isStatic) return;
+      // Coverage-ignore-block(suite): Not run.
       addProblem(templateConflictsWithConstructor.withArguments(name),
           setter.charOffset, noLength);
       addProblem(templateConflictsWithSetter.withArguments(name),

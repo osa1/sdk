@@ -15,6 +15,7 @@ import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -673,6 +674,7 @@ class ClassElementImpl extends ClassOrMixinElementImpl
         }
         implicitConstructor.parameters = implicitParameters.toFixedList();
       }
+      implicitConstructor.enclosingElement3 = this;
       implicitConstructor.enclosingElement = this;
       // TODO(scheglov): Why do we manually map parameters types above?
       implicitConstructor.superConstructor =
@@ -715,9 +717,10 @@ abstract class ClassOrMixinElementImpl extends InterfaceElementImpl {
   }
 }
 
-/// A concrete implementation of a [CompilationUnitElement].
+/// A concrete implementation of a [CompilationUnitElement] or
+/// [LibraryFragment].
 class CompilationUnitElementImpl extends UriReferencedElementImpl
-    implements CompilationUnitElement {
+    implements CompilationUnitElement, LibraryFragment {
   /// The source that corresponds to this compilation unit.
   @override
   final Source source;
@@ -725,13 +728,25 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   @override
   LineInfo lineInfo;
 
-  /// The source of the library containing this compilation unit.
-  ///
-  /// This is the same as the source of the containing [LibraryElement],
-  /// except that it does not require the containing [LibraryElement] to be
-  /// computed.
   @override
-  final Source librarySource;
+  final LibraryElementImpl library;
+
+  // TODO(scheglov): Remove after removing [LibraryAugmentationElementImpl].
+  late final LibraryOrAugmentationElementImpl libraryOrAugmentationElement;
+
+  /// The libraries exported by this unit.
+  List<LibraryExportElementImpl> _libraryExports =
+      _Sentinel.libraryExportElement;
+
+  /// The libraries imported by this unit.
+  List<LibraryImportElementImpl> _libraryImports =
+      _Sentinel.libraryImportElement;
+
+  /// The cached list of prefixes from [libraryImports].
+  List<PrefixElementImpl>? _libraryImportPrefixes;
+
+  /// The parts included by this unit.
+  List<PartElementImpl> _parts = const <PartElementImpl>[];
 
   /// A list containing all of the top-level accessors (getters and setters)
   /// contained in this compilation unit.
@@ -766,8 +781,8 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// Initialize a newly created compilation unit element to have the given
   /// [name].
   CompilationUnitElementImpl({
+    required this.library,
     required this.source,
-    required this.librarySource,
     required this.lineInfo,
   }) : super(null, -1);
 
@@ -780,6 +795,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// compilation unit to the given [accessors].
   set accessors(List<PropertyAccessorElementImpl> accessors) {
     for (var accessor in accessors) {
+      accessor.enclosingElement3 = this;
       accessor.enclosingElement = this;
     }
     _accessors = accessors;
@@ -800,6 +816,9 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
       ];
 
   @override
+  List<Fragment> get children3 => children.cast<Fragment>();
+
+  @override
   List<ClassElementImpl> get classes {
     return _classes;
   }
@@ -807,14 +826,39 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// Set the classes contained in this compilation unit to [classes].
   set classes(List<ClassElementImpl> classes) {
     for (var class_ in classes) {
+      class_.enclosingElement3 = this;
       class_.enclosingElement = this;
     }
     _classes = classes;
   }
 
   @override
+  List<ClassFragment> get classes2 => classes.cast<ClassFragment>();
+
+  @override
+  LibraryElement2 get element => enclosingElement as LibraryElement2;
+
+  @override
   LibraryOrAugmentationElement get enclosingElement =>
-      super.enclosingElement as LibraryOrAugmentationElement;
+      libraryOrAugmentationElement;
+
+  @override
+  CompilationUnitElementImpl? get enclosingElement3 {
+    switch (libraryOrAugmentationElement) {
+      case LibraryElementImpl library:
+        if (identical(library.definingCompilationUnit, this)) {
+          return null;
+        }
+        return library.definingCompilationUnit;
+      default:
+        return (libraryOrAugmentationElement.enclosingElement3
+                as LibraryOrAugmentationElementImpl)
+            .definingCompilationUnit;
+    }
+  }
+
+  @override
+  LibraryFragment? get enclosingFragment => null;
 
   @override
   CompilationUnitElementImpl get enclosingUnit {
@@ -829,10 +873,14 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// Set the enums contained in this compilation unit to the given [enums].
   set enums(List<EnumElementImpl> enums) {
     for (var element in enums) {
+      element.enclosingElement3 = this;
       element.enclosingElement = this;
     }
     _enums = enums;
   }
+
+  @override
+  List<EnumFragment> get enums2 => enums.cast<EnumFragment>();
 
   @override
   List<ExtensionElementImpl> get extensions {
@@ -843,10 +891,15 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// [extensions].
   set extensions(List<ExtensionElementImpl> extensions) {
     for (var extension in extensions) {
+      extension.enclosingElement3 = this;
       extension.enclosingElement = this;
     }
     _extensions = extensions;
   }
+
+  @override
+  List<ExtensionFragment> get extensions2 =>
+      extensions.cast<ExtensionFragment>();
 
   @override
   List<ExtensionTypeElementImpl> get extensionTypes {
@@ -855,10 +908,15 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   set extensionTypes(List<ExtensionTypeElementImpl> elements) {
     for (var element in elements) {
+      element.enclosingElement3 = this;
       element.enclosingElement = this;
     }
     _extensionTypes = elements;
   }
+
+  @override
+  List<ExtensionTypeFragment> get extensionTypes2 =>
+      extensionTypes.cast<ExtensionTypeFragment>();
 
   @override
   List<FunctionElementImpl> get functions {
@@ -869,10 +927,21 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   ///  given[functions].
   set functions(List<FunctionElementImpl> functions) {
     for (var function in functions) {
+      function.enclosingElement3 = this;
       function.enclosingElement = this;
     }
     _functions = functions;
   }
+
+  @override
+  List<TopLevelFunctionFragment> get functions2 =>
+      functions.cast<TopLevelFunctionFragment>();
+
+  @override
+  List<GetterFragment> get getters => accessors
+      .where((element) => element.isGetter)
+      .cast<GetterFragment>()
+      .toList();
 
   @override
   int get hashCode => source.hashCode;
@@ -882,6 +951,62 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   @override
   ElementKind get kind => ElementKind.COMPILATION_UNIT;
+
+  @override
+  List<LibraryExportElementImpl> get libraryExports {
+    linkedData?.read(this);
+    return _libraryExports;
+  }
+
+  set libraryExports(List<LibraryExportElementImpl> exports) {
+    for (var exportElement in exports) {
+      exportElement.enclosingElement3 = this;
+      exportElement.enclosingElement = library;
+    }
+    _libraryExports = exports;
+  }
+
+  @override
+  List<LibraryExport> get libraryExports2 =>
+      libraryExports.cast<LibraryExport>();
+
+  List<LibraryExportElementImpl> get libraryExports_unresolved {
+    return _libraryExports;
+  }
+
+  @override
+  LibraryFragment get libraryFragment => this;
+
+  @override
+  List<PrefixElementImpl> get libraryImportPrefixes {
+    return _libraryImportPrefixes ??= _buildLibraryImportPrefixes();
+  }
+
+  @override
+  List<LibraryImportElementImpl> get libraryImports {
+    linkedData?.read(this);
+    return _libraryImports;
+  }
+
+  set libraryImports(List<LibraryImportElementImpl> imports) {
+    for (var importElement in imports) {
+      importElement.enclosingElement3 = this;
+      importElement.enclosingElement = library;
+    }
+    _libraryImports = imports;
+    _libraryImportPrefixes = null;
+  }
+
+  @override
+  List<LibraryImport> get libraryImports2 =>
+      libraryImports.cast<LibraryImport>();
+
+  List<LibraryImportElementImpl> get libraryImports_unresolved {
+    return _libraryImports;
+  }
+
+  @override
+  Source get librarySource => library.source;
 
   @override
   List<ElementAnnotationImpl> get metadata {
@@ -897,13 +1022,58 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// Set the mixins contained in this compilation unit to the given [mixins].
   set mixins(List<MixinElementImpl> mixins) {
     for (var mixin_ in mixins) {
+      mixin_.enclosingElement3 = this;
       mixin_.enclosingElement = this;
     }
     _mixins = mixins;
   }
 
   @override
+  List<MixinFragment> get mixins2 => mixins.cast<MixinFragment>();
+
+  @override
+  Fragment? get nextFragment => throw UnsupportedError('Not yet implemented');
+
+  @override
+  List<PartInclude> get partIncludes =>
+      libraryImportPrefixes.cast<PartInclude>();
+
+  @override
+  List<PartElementImpl> get parts => _parts;
+
+  set parts(List<PartElementImpl> parts) {
+    for (var part in parts) {
+      part.enclosingElement3 = this;
+      part.enclosingElement = library;
+      var uri = part.uri;
+      if (uri is DirectiveUriWithUnitImpl) {
+        uri.unit.libraryOrAugmentationElement = library;
+        uri.unit.enclosingElement3 = this;
+        uri.unit.enclosingElement = library;
+      }
+    }
+    _parts = parts;
+  }
+
+  @override
+  List<PrefixElement2> get prefixes =>
+      libraryImportPrefixes.cast<PrefixElement2>();
+
+  @override
+  Fragment? get previousFragment =>
+      throw UnsupportedError('Not yet implemented');
+
+  @override
+  Scope get scope => enclosingElement.scope;
+
+  @override
   AnalysisSession get session => enclosingElement.session;
+
+  @override
+  List<SetterFragment> get setters => accessors
+      .where((element) => element.isSetter)
+      .cast<SetterFragment>()
+      .toList();
 
   @override
   List<TopLevelVariableElementImpl> get topLevelVariables {
@@ -914,10 +1084,15 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   ///  given[variables].
   set topLevelVariables(List<TopLevelVariableElementImpl> variables) {
     for (var variable in variables) {
+      variable.enclosingElement3 = this;
       variable.enclosingElement = this;
     }
     _variables = variables;
   }
+
+  @override
+  List<TopLevelVariableFragment> get topLevelVariables2 =>
+      topLevelVariables.cast<TopLevelVariableFragment>();
 
   @override
   List<TypeAliasElementImpl> get typeAliases {
@@ -927,10 +1102,15 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// Set the type aliases contained in this compilation unit to [typeAliases].
   set typeAliases(List<TypeAliasElementImpl> typeAliases) {
     for (var typeAlias in typeAliases) {
+      typeAlias.enclosingElement3 = this;
       typeAlias.enclosingElement = this;
     }
     _typeAliases = typeAliases;
   }
+
+  @override
+  List<TypeAliasFragment> get typeAliases2 =>
+      typeAliases.cast<TypeAliasFragment>();
 
   @override
   bool operator ==(Object other) =>
@@ -982,6 +1162,17 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
     reference.element = this;
 
     this.linkedData = linkedData;
+  }
+
+  List<PrefixElementImpl> _buildLibraryImportPrefixes() {
+    var prefixes = <PrefixElementImpl>{};
+    for (var import in libraryImports) {
+      var prefix = import.prefix?.element;
+      if (prefix != null) {
+        prefixes.add(prefix);
+      }
+    }
+    return prefixes.toFixedList();
   }
 }
 
@@ -1918,8 +2109,8 @@ class ElementAnnotationImpl implements ElementAnnotation {
   }
 }
 
-/// A base class for concrete implementations of an [Element].
-abstract class ElementImpl implements Element {
+/// A base class for concrete implementations of an [Element] or [Element2].
+abstract class ElementImpl implements Element, Element2 {
   static const _metadataFlag_isReady = 1 << 0;
   static const _metadataFlag_hasDeprecated = 1 << 1;
   static const _metadataFlag_hasOverride = 1 << 2;
@@ -1940,6 +2131,10 @@ abstract class ElementImpl implements Element {
   /// The enclosing element of this element, or `null` if this element is at the
   /// root of the element structure.
   ElementImpl? _enclosingElement;
+
+  /// The enclosing element of this element, or `null` if this element is at the
+  /// root of the element structure.
+  ElementImpl? _enclosingElement3;
 
   Reference? reference;
 
@@ -1982,7 +2177,13 @@ abstract class ElementImpl implements Element {
   }
 
   @override
+  Element2? get baseElement => this;
+
+  @override
   List<Element> get children => const [];
+
+  @override
+  List<Element2> get children2 => children.cast<Element2>();
 
   /// The length of the element's code, or `null` if the element is synthetic.
   int? get codeLength => _codeLength;
@@ -2016,6 +2217,24 @@ abstract class ElementImpl implements Element {
   /// Set the enclosing element of this element to the given [element].
   set enclosingElement(Element? element) {
     _enclosingElement = element as ElementImpl?;
+  }
+
+  @override
+  Element2? get enclosingElement2 {
+    var candidate = _enclosingElement;
+    if (candidate is CompilationUnitElementImpl ||
+        candidate is AugmentableElement) {
+      throw UnsupportedError('Cannot get an enclosingElement2 for a fragment');
+    }
+    return candidate as Element2?;
+  }
+
+  @override
+  Element? get enclosingElement3 => _enclosingElement3;
+
+  /// Set the enclosing element of this element to the given [element].
+  set enclosingElement3(Element? element) {
+    _enclosingElement3 = element as ElementImpl?;
   }
 
   /// Return the enclosing unit element (which might be the same as `this`), or
@@ -2396,6 +2615,9 @@ abstract class ElementImpl implements Element {
   LibraryElementImpl? get library => thisOrAncestorOfType();
 
   @override
+  LibraryElement2? get library2 => thisOrAncestorOfType2();
+
+  @override
   Source? get librarySource => library?.source;
 
   @override
@@ -2434,6 +2656,9 @@ abstract class ElementImpl implements Element {
 
   @override
   Element get nonSynthetic => this;
+
+  @override
+  Element2 get nonSynthetic2 => this;
 
   @override
   AnalysisSession? get session {
@@ -2486,15 +2711,31 @@ abstract class ElementImpl implements Element {
     builder.writeAbstractElement(this);
   }
 
+  @override
+  String displayString2({
+    bool multiline = false,
+    bool preferTypeAlias = false,
+  }) {
+    var builder = ElementDisplayStringBuilder(
+      multiline: multiline,
+      preferTypeAlias: preferTypeAlias,
+    );
+    appendTo(builder);
+    return builder.toString();
+  }
+
   /// Set this element as the enclosing element for given [element].
   void encloseElement(ElementImpl element) {
+    element.enclosingElement3 = this;
     element.enclosingElement = this;
   }
 
   /// Set this element as the enclosing element for given [elements].
   void encloseElements(List<Element> elements) {
     for (Element element in elements) {
-      (element as ElementImpl)._enclosingElement = this;
+      element as ElementImpl;
+      element._enclosingElement3 = this;
+      element._enclosingElement = this;
     }
   }
 
@@ -2531,6 +2772,14 @@ abstract class ElementImpl implements Element {
     return true;
   }
 
+  @override
+  bool isAccessibleIn2(LibraryElement2 library) {
+    if (Identifier.isPrivateName(name!)) {
+      return library == library2;
+    }
+    return true;
+  }
+
   void resetMetadataFlags() {
     _metadataFlags = 0;
   }
@@ -2559,10 +2808,54 @@ abstract class ElementImpl implements Element {
   }
 
   @override
+  E? thisOrAncestorMatching2<E extends Element2>(
+    bool Function(Element2) predicate,
+  ) {
+    Element2? element = this;
+    while (element != null && !predicate(element)) {
+      element = element.enclosingElement2;
+    }
+    return element as E?;
+  }
+
+  @override
+  E? thisOrAncestorMatching3<E extends Element>(
+    bool Function(Element) predicate,
+  ) {
+    Element? element = this;
+    while (element != null && !predicate(element)) {
+      element = element.enclosingElement3;
+    }
+    return element as E?;
+  }
+
+  @override
   E? thisOrAncestorOfType<E extends Element>() {
     Element element = this;
     while (element is! E) {
       var ancestor = element.enclosingElement;
+      if (ancestor == null) return null;
+      element = ancestor;
+    }
+    return element;
+  }
+
+  @override
+  E? thisOrAncestorOfType2<E extends Element2>() {
+    Element2 element = this;
+    while (element is! E) {
+      var ancestor = element.enclosingElement2;
+      if (ancestor == null) return null;
+      element = ancestor;
+    }
+    return element;
+  }
+
+  @override
+  E? thisOrAncestorOfType3<E extends Element>() {
+    Element element = this;
+    while (element is! E) {
+      var ancestor = element.enclosingElement3;
       if (ancestor == null) return null;
       element = ancestor;
     }
@@ -2910,7 +3203,8 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   /// [parameters].
   set parameters(List<ParameterElement> parameters) {
     for (ParameterElement parameter in parameters) {
-      (parameter as ParameterElementImpl).enclosingElement = this;
+      (parameter as ParameterElementImpl).enclosingElement3 = this;
+      parameter.enclosingElement = this;
     }
     _parameters = parameters;
   }
@@ -3061,9 +3355,7 @@ class ExtensionElementImpl extends InstanceElementImpl
 
   @override
   PropertyAccessorElement? getGetter(String getterName) {
-    int length = accessors.length;
-    for (int i = 0; i < length; i++) {
-      PropertyAccessorElement accessor = accessors[i];
+    for (var accessor in augmented.accessors) {
       if (accessor.isGetter && accessor.name == getterName) {
         return accessor;
       }
@@ -3073,9 +3365,7 @@ class ExtensionElementImpl extends InstanceElementImpl
 
   @override
   MethodElement? getMethod(String methodName) {
-    int length = methods.length;
-    for (int i = 0; i < length; i++) {
-      MethodElement method = methods[i];
+    for (var method in augmented.methods) {
       if (method.name == methodName) {
         return method;
       }
@@ -3085,7 +3375,10 @@ class ExtensionElementImpl extends InstanceElementImpl
 
   @override
   PropertyAccessorElement? getSetter(String setterName) {
-    return InterfaceElementImpl.getSetterFromAccessors(setterName, accessors);
+    return InterfaceElementImpl.getSetterFromAccessors(
+      setterName,
+      augmented.accessors,
+    );
   }
 }
 
@@ -3364,7 +3657,8 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
   /// [parameters].
   set parameters(List<ParameterElement> parameters) {
     for (ParameterElement parameter in parameters) {
-      (parameter as ParameterElementImpl).enclosingElement = this;
+      (parameter as ParameterElementImpl).enclosingElement3 = this;
+      parameter.enclosingElement = this;
     }
     _parameters = parameters;
   }
@@ -3471,6 +3765,7 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 
   set accessors(List<PropertyAccessorElementImpl> accessors) {
     for (var accessor in accessors) {
+      accessor.enclosingElement3 = this;
       accessor.enclosingElement = this;
     }
     _accessors = accessors;
@@ -3499,6 +3794,7 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 
   set fields(List<FieldElementImpl> fields) {
     for (var field in fields) {
+      field.enclosingElement3 = this;
       field.enclosingElement = this;
     }
     _fields = fields;
@@ -3522,6 +3818,7 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 
   set methods(List<MethodElementImpl> methods) {
     for (var method in methods) {
+      method.enclosingElement3 = this;
       method.enclosingElement = this;
     }
     _methods = methods;
@@ -3609,6 +3906,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
 
   set constructors(List<ConstructorElementImpl> constructors) {
     for (var constructor in constructors) {
+      constructor.enclosingElement3 = this;
       constructor.enclosingElement = this;
     }
     _constructors = constructors;
@@ -4117,17 +4415,6 @@ class LibraryAugmentationElementImpl extends LibraryOrAugmentationElementImpl
   LibraryElementImpl get library => augmentationTarget.library;
 
   @override
-  List<LibraryExportElementImpl> get libraryExports {
-    return _libraryExports;
-  }
-
-  @override
-  List<LibraryImportElementImpl> get libraryImports {
-    _readLinkedData();
-    return _libraryImports;
-  }
-
-  @override
   Source get librarySource => library.source;
 
   @override
@@ -4150,10 +4437,10 @@ class LibraryAugmentationElementImpl extends LibraryOrAugmentationElementImpl
   }
 }
 
-/// A concrete implementation of a [LibraryElement].
+/// A concrete implementation of a [LibraryElement] or [LibraryElement2].
 class LibraryElementImpl extends LibraryOrAugmentationElementImpl
     with _HasLibraryMixin, MacroTargetElement
-    implements LibraryElement {
+    implements LibraryElement, LibraryElement2 {
   /// The analysis context in which this library is defined.
   @override
   final AnalysisContext context;
@@ -4186,9 +4473,6 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   /// The entry point for this library, or `null` if this library does not have
   /// an entry point.
   FunctionElement? _entryPoint;
-
-  /// The list of `part` directives of this library.
-  List<PartElementImpl> _parts = const <PartElementImpl>[];
 
   /// The element representing the synthetic function `loadLibrary` that is
   /// defined for this library, or `null` if the element has not yet been
@@ -4229,6 +4513,13 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   List<ExtensionElement> get accessibleExtensions => scope.extensions;
 
   @override
+  List<ExtensionElement2> get accessibleExtensions2 {
+    return scope.extensions
+        .map((element) => element.augmentation as ExtensionElement2)
+        .toList();
+  }
+
+  @override
   List<AugmentationImportElementImpl> get augmentationImports {
     _readLinkedData();
     return super.augmentationImports;
@@ -4253,6 +4544,19 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
       ];
 
   @override
+  List<ClassElement2> get classes {
+    var declarations = <ClassElement2>{};
+    for (var unit in units) {
+      declarations.addAll(
+          unit._classes.map((element) => element.augmented as ClassElement2));
+    }
+    return declarations.toList();
+  }
+
+  @override
+  Null get enclosingElement3 => null;
+
+  @override
   CompilationUnitElementImpl get enclosingUnit {
     return _definingCompilationUnit;
   }
@@ -4268,6 +4572,20 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   @override
+  TopLevelFunctionElement? get entryPoint2 =>
+      entryPoint as TopLevelFunctionElement?;
+
+  @override
+  List<EnumElement2> get enums {
+    var declarations = <EnumElement2>{};
+    for (var unit in units) {
+      declarations.addAll(
+          unit._classes.map((element) => element.augmented as EnumElement2));
+    }
+    return declarations.toList();
+  }
+
+  @override
   List<LibraryElementImpl> get exportedLibraries {
     return libraryExports
         .map((import) => import.exportedLibrary)
@@ -4277,6 +4595,10 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   @override
+  List<LibraryElement2> get exportedLibraries2 =>
+      exportedLibraries.cast<LibraryElement2>();
+
+  @override
   Namespace get exportNamespace {
     linkedData?.read(this);
     return _exportNamespace ??= Namespace({});
@@ -4284,6 +4606,26 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   set exportNamespace(Namespace exportNamespace) {
     _exportNamespace = exportNamespace;
+  }
+
+  @override
+  List<ExtensionElement2> get extensions {
+    var declarations = <ExtensionElement2>{};
+    for (var unit in units) {
+      declarations.addAll(unit._extensions
+          .map((element) => element.augmented as ExtensionElement2));
+    }
+    return declarations.toList();
+  }
+
+  @override
+  List<ExtensionTypeElement2> get extensionTypes {
+    var declarations = <ExtensionTypeElement2>{};
+    for (var unit in units) {
+      declarations.addAll(unit._extensionTypes
+          .map((element) => element.augmented as ExtensionTypeElement2));
+    }
+    return declarations.toList();
   }
 
   /// Information about why non-promotable private fields in the library are not
@@ -4316,6 +4658,30 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   set fieldNameNonPromotabilityInfo(
       Map<String, FieldNameNonPromotabilityInfo>? value) {
     _fieldNameNonPromotabilityInfo = value;
+  }
+
+  @override
+  LibraryFragment get firstFragment =>
+      definingCompilationUnit as LibraryFragment;
+
+  @override
+  List<TopLevelFunctionElement> get functions {
+    var declarations = <TopLevelFunctionElement>{};
+    for (var unit in units) {
+      declarations.addAll(unit._functions.cast<TopLevelFunctionElement>());
+    }
+    return declarations.toList();
+  }
+
+  @override
+  List<GetterElement> get getters {
+    var declarations = <GetterElement>{};
+    for (var unit in units) {
+      declarations.addAll(unit._accessors
+          .where((element) => element.isGetter)
+          .cast<GetterElement>());
+    }
+    return declarations.toList();
   }
 
   bool get hasPartOfDirective {
@@ -4405,21 +4771,16 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   LibraryElementImpl get library => this;
 
   @override
-  List<LibraryExportElementImpl> get libraryExports {
-    _readLinkedData();
-    return _libraryExports;
-  }
-
-  @override
-  List<LibraryImportElementImpl> get libraryImports {
-    _readLinkedData();
-    return _libraryImports;
-  }
+  LibraryElement2 get library2 => this;
 
   @override
   FunctionElement get loadLibraryFunction {
     return _loadLibraryFunction;
   }
+
+  @override
+  TopLevelFunctionElement get loadLibraryFunction2 =>
+      loadLibraryFunction as TopLevelFunctionElement;
 
   @override
   List<ElementAnnotationImpl> get metadata {
@@ -4428,25 +4789,22 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   @override
-  String get name => super.name!;
-
-  @override
-  List<PartElementImpl> get parts => _parts;
-
-  set parts(List<PartElementImpl> parts) {
-    for (var part in parts) {
-      part.enclosingElement = this;
-      var uri = part.uri;
-      if (uri is DirectiveUriWithUnitImpl) {
-        uri.unit.enclosingElement = this;
-      }
+  List<MixinElement2> get mixins {
+    var declarations = <MixinElement2>{};
+    for (var unit in units) {
+      declarations.addAll(
+          unit._mixins.map((element) => element.augmented as MixinElement2));
     }
-    _parts = parts;
+    return declarations.toList();
   }
 
   @override
-  List<PrefixElementImpl> get prefixes =>
-      _prefixes ??= buildPrefixesFromImports(libraryImports);
+  String get name => super.name!;
+
+  @override
+  List<PartElementImpl> get parts {
+    return definingCompilationUnit.parts;
+  }
 
   @override
   Namespace get publicNamespace {
@@ -4456,6 +4814,17 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   set publicNamespace(Namespace publicNamespace) {
     _publicNamespace = publicNamespace;
+  }
+
+  @override
+  List<SetterElement> get setters {
+    var declarations = <SetterElement>{};
+    for (var unit in units) {
+      declarations.addAll(unit._accessors
+          .where((element) => element.isSetter)
+          .cast<SetterElement>());
+    }
+    return declarations.toList();
   }
 
   @override
@@ -4476,6 +4845,25 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
       yield* unit.topLevelVariables;
       yield* unit.typeAliases;
     }
+  }
+
+  @override
+  List<TopLevelVariableElement2> get topLevelVariables {
+    var declarations = <TopLevelVariableElement2>{};
+    for (var unit in units) {
+      declarations.addAll(unit._variables.cast<TopLevelVariableElement2>());
+    }
+    return declarations.toList();
+  }
+
+  @override
+  List<TypeAliasElement2> get typeAliases {
+    var declarations = <TypeAliasElement2>{};
+    for (var unit in units) {
+      declarations.addAll(unit._mixins
+          .map((element) => element.augmented as TypeAliasElement2));
+    }
+    return declarations.toList();
   }
 
   @override
@@ -4509,6 +4897,7 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
     _loadLibraryFunction =
         FunctionElementImpl(FunctionElement.LOAD_LIBRARY_NAME, -1)
           ..enclosingElement = library
+          ..enclosingElement3 = library
           ..isSynthetic = true
           ..returnType = typeProvider.futureDynamicType;
   }
@@ -4674,7 +5063,7 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   static List<PrefixElementImpl> buildPrefixesFromImports(
       List<LibraryImportElementImpl> imports) {
-    var prefixes = HashSet<PrefixElementImpl>();
+    var prefixes = <PrefixElementImpl>{};
     for (var element in imports) {
       var prefix = element.prefix?.element;
       if (prefix != null) {
@@ -4816,19 +5205,6 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   List<AugmentationImportElementImpl> _augmentationImports =
       _Sentinel.augmentationImportElement;
 
-  /// A list containing specifications of all of the imports defined in this
-  /// library.
-  List<LibraryExportElementImpl> _libraryExports =
-      _Sentinel.libraryExportElement;
-
-  /// A list containing specifications of all of the imports defined in this
-  /// library.
-  List<LibraryImportElementImpl> _libraryImports =
-      _Sentinel.libraryImportElement;
-
-  /// The cached list of prefixes.
-  List<PrefixElementImpl>? _prefixes;
-
   /// The scope of this library, `null` if it has not been created yet.
   LibraryOrAugmentationScope? _scope;
 
@@ -4844,7 +5220,9 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
 
   set augmentationImports(List<AugmentationImportElementImpl> imports) {
     for (var importElement in imports) {
+      importElement.enclosingElement3 = this;
       importElement.enclosingElement = this;
+      importElement.importedAugmentation?.enclosingElement3 = this;
       importElement.importedAugmentation?.enclosingElement = this;
     }
     _augmentationImports = imports;
@@ -4865,9 +5243,9 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
 
   /// Set the compilation unit that defines this library to the given
   ///  compilation[unit].
-  set definingCompilationUnit(CompilationUnitElement unit) {
-    assert((unit as CompilationUnitElementImpl).librarySource == unit.source);
-    (unit as CompilationUnitElementImpl).enclosingElement = this;
+  set definingCompilationUnit(CompilationUnitElementImpl unit) {
+    unit.libraryOrAugmentationElement = this;
+    unit.enclosingElement = this;
     _definingCompilationUnit = unit;
   }
 
@@ -4876,51 +5254,26 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
     return _definingCompilationUnit;
   }
 
-  List<LibraryExportElementImpl> get exports_unresolved {
-    return _libraryExports;
-  }
-
   @override
   String get identifier => '${_definingCompilationUnit.source.uri}';
-
-  List<LibraryImportElementImpl> get imports_unresolved {
-    return _libraryImports;
-  }
 
   @override
   LibraryElementImpl get library;
 
   @override
   List<LibraryExportElementImpl> get libraryExports {
-    _readLinkedData();
-    return _libraryExports;
-  }
-
-  /// Set the specifications of all of the exports defined in this library to
-  /// the given list of [exports].
-  set libraryExports(List<LibraryExportElementImpl> exports) {
-    for (var exportElement in exports) {
-      exportElement.enclosingElement = this;
-    }
-    _libraryExports = exports;
+    return definingCompilationUnit.libraryExports;
   }
 
   @override
-  List<LibraryImportElementImpl> get libraryImports;
-
-  /// Set the specifications of all of the imports defined in this library to
-  /// the given list of [imports].
-  set libraryImports(List<LibraryImportElementImpl> imports) {
-    for (var importElement in imports) {
-      importElement.enclosingElement = this;
-    }
-    _libraryImports = imports;
-    _prefixes = null;
+  List<LibraryImportElementImpl> get libraryImports {
+    return definingCompilationUnit.libraryImports;
   }
 
   @override
-  List<PrefixElementImpl> get prefixes =>
-      _prefixes ??= buildPrefixesFromImports(libraryImports);
+  List<PrefixElementImpl> get prefixes {
+    return definingCompilationUnit.libraryImportPrefixes;
+  }
 
   @override
   LibraryOrAugmentationScope get scope {
@@ -4940,18 +5293,6 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   }
 
   void _readLinkedData();
-
-  static List<PrefixElementImpl> buildPrefixesFromImports(
-      List<LibraryImportElementImpl> imports) {
-    var prefixes = HashSet<PrefixElementImpl>();
-    for (var import in imports) {
-      var prefix = import.prefix;
-      if (prefix != null) {
-        prefixes.add(prefix.element);
-      }
-    }
-    return prefixes.toList(growable: false);
-  }
 }
 
 /// A concrete implementation of a [LocalVariableElement].
@@ -5624,6 +5965,9 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement {
   Element? get enclosingElement => null;
 
   @override
+  Element? get enclosingElement3 => null;
+
+  @override
   bool get hasAlwaysThrows => false;
 
   @override
@@ -5793,7 +6137,17 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement {
   }
 
   @override
+  E? thisOrAncestorMatching3<E extends Element>(
+    bool Function(Element) predicate,
+  ) {
+    return null;
+  }
+
+  @override
   E? thisOrAncestorOfType<E extends Element>() => null;
+
+  @override
+  E? thisOrAncestorOfType3<E extends Element>() => null;
 
   @override
   String toString() {
@@ -6141,7 +6495,8 @@ class ParameterElementImpl extends VariableElementImpl
   /// [parameters].
   set parameters(List<ParameterElement> parameters) {
     for (ParameterElement parameter in parameters) {
-      (parameter as ParameterElementImpl).enclosingElement = this;
+      (parameter as ParameterElementImpl).enclosingElement3 = this;
+      parameter.enclosingElement = this;
     }
     _parameters = parameters;
   }
@@ -6155,7 +6510,8 @@ class ParameterElementImpl extends VariableElementImpl
   /// [typeParameters].
   set typeParameters(List<TypeParameterElement> typeParameters) {
     for (TypeParameterElement parameter in typeParameters) {
-      (parameter as TypeParameterElementImpl).enclosingElement = this;
+      (parameter as TypeParameterElementImpl).enclosingElement3 = this;
+      parameter.enclosingElement = this;
     }
     _typeParameters = typeParameters;
   }
@@ -6182,6 +6538,7 @@ class ParameterElementImpl_ofImplicitSetter extends ParameterElementImpl {
           nameOffset: -1,
           parameterKind: ParameterKind.REQUIRED,
         ) {
+    enclosingElement3 = setter;
     enclosingElement = setter;
     isSynthetic = true;
   }
@@ -6935,6 +7292,7 @@ class TypeAliasElementImpl extends _ExistingElementImpl
 
   set aliasedElement(ElementImpl? aliasedElement) {
     _aliasedElement = aliasedElement;
+    aliasedElement?.enclosingElement3 = this;
     aliasedElement?.enclosingElement = this;
   }
 
@@ -7286,7 +7644,8 @@ mixin TypeParameterizedElementMixin on ElementImpl
 
   set typeParameters(List<TypeParameterElement> typeParameters) {
     for (var typeParameter in typeParameters) {
-      (typeParameter as TypeParameterElementImpl).enclosingElement = this;
+      (typeParameter as TypeParameterElementImpl).enclosingElement3 = this;
+      typeParameter.enclosingElement = this;
     }
     _typeParameters = typeParameters;
   }

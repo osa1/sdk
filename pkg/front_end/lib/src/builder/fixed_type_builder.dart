@@ -6,7 +6,8 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
 import '../base/problems.dart';
-import '../source/source_library_builder.dart';
+import '../source/builder_factory.dart';
+import '../source/type_parameter_scope_builder.dart';
 import 'library_builder.dart';
 import 'nullability_builder.dart';
 import 'type_builder.dart';
@@ -21,17 +22,20 @@ class FixedTypeBuilderImpl extends FixedTypeBuilder {
   const FixedTypeBuilderImpl(this.type, this.fileUri, this.charOffset);
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration) {
     return this;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeName? get typeName => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   NullabilityBuilder get nullabilityBuilder =>
       new NullabilityBuilder.fromNullability(type.nullability);
 
@@ -39,9 +43,11 @@ class FixedTypeBuilderImpl extends FixedTypeBuilder {
   String get debugName => 'FixedTypeBuilder';
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isVoidType => type is VoidType;
 
   @override
+  // Coverage-ignore(suite): Not run.
   StringBuffer printOn(StringBuffer buffer) {
     buffer.write('type=${type}');
     return buffer;
@@ -60,21 +66,25 @@ class FixedTypeBuilderImpl extends FixedTypeBuilder {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype buildSupertype(LibraryBuilder library, TypeUse typeUse) {
     return unhandled(
         'buildSupertype', 'FixedTypeBuilder', charOffset ?? -1, fileUri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype buildMixedInType(LibraryBuilder library) {
     return unhandled(
         'buildMixedInType', 'FixedTypeBuilder', charOffset ?? -1, fileUri);
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder withNullabilityBuilder(NullabilityBuilder nullabilityBuilder) =>
       this;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isExplicit => true;
 }

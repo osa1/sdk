@@ -6,6 +6,7 @@
 
 import '../ir/ir.dart' as ir;
 import 'builder.dart';
+import '../../source_map.dart';
 
 // TODO(joshualitt): Suggested further optimizations:
 //   1) Add size estimates to `_Instruction`, and then remove logic where we
@@ -119,6 +120,12 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// middle of the stack are left out.
   int maxStackShown = 10;
 
+  /// Mappings for the instructions in [_instructions] to their source code.
+  ///
+  /// Since we add mappings as we generate instructions, this will be sorted
+  /// based on [SourceMapping.instructionOffset].
+  final List<SourceMapping>? _sourceMappings;
+
   int _indent = 1;
   final List<String> _traceLines = [];
 
@@ -140,9 +147,14 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   final Map<ir.Instruction, StackTrace>? _stackTraces;
 
   /// Create a new instruction sequence.
-  InstructionsBuilder(this.module, List<ir.ValueType> outputs)
-      : _stackTraces = module.watchPoints.isNotEmpty ? {} : null {
+  InstructionsBuilder(
+      this.module, List<ir.ValueType> inputs, List<ir.ValueType> outputs)
+      : _stackTraces = module.watchPoints.isNotEmpty ? {} : null,
+        _sourceMappings = module.sourceMapUrl == null ? null : [] {
     _labelStack.add(Expression(const [], outputs));
+    for (ir.ValueType paramType in inputs) {
+      _addParameter(paramType);
+    }
   }
 
   /// Whether the instruction sequence has been completed by the final `end`.
@@ -151,9 +163,11 @@ class InstructionsBuilder with Builder<ir.Instructions> {
   /// Textual trace of the instructions.
   String get trace => _traceLines.join();
 
+  bool get recordSourceMaps => _sourceMappings != null;
+
   @override
-  ir.Instructions forceBuild() =>
-      ir.Instructions(locals, _instructions, _stackTraces, _traceLines);
+  ir.Instructions forceBuild() => ir.Instructions(
+      locals, _instructions, _stackTraces, _traceLines, _sourceMappings);
 
   void _add(ir.Instruction i) {
     if (!_reachable) return;
@@ -163,10 +177,17 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     }
   }
 
-  ir.Local addLocal(ir.ValueType type, {required bool isParameter}) {
+  ir.Local _addParameter(ir.ValueType type) {
     final local = ir.Local(locals.length, type);
     locals.add(local);
-    _localInitialized.add(isParameter || type.defaultable);
+    _localInitialized.add(true);
+    return local;
+  }
+
+  ir.Local addLocal(ir.ValueType type) {
+    final local = ir.Local(locals.length, type);
+    locals.add(local);
+    _localInitialized.add(type.defaultable);
     return local;
   }
 
@@ -342,6 +363,55 @@ class InstructionsBuilder with Builder<ir.Instructions> {
         reachableAfter: reachableAfter,
         indentBefore: -1,
         indentAfter: reindent ? 1 : 0);
+  }
+
+  // Source maps
+
+  /// Start mapping added instructions to the source location given in
+  /// arguments.
+  ///
+  /// This assumes [recordSourceMaps] is `true`.
+  void startSourceMapping(Uri fileUri, int line, int col, String? name) {
+    _addSourceMapping(
+        SourceMapping(_instructions.length, fileUri, line, col, name));
+  }
+
+  /// Stop mapping added instructions to the last source location given in
+  /// [startSourceMapping].
+  ///
+  /// The instructions added after this won't have a mapping in the source map.
+  ///
+  /// This assumes [recordSourceMaps] is `true`.
+  void stopSourceMapping() {
+    _addSourceMapping(SourceMapping.unmapped(_instructions.length));
+  }
+
+  void _addSourceMapping(SourceMapping mapping) {
+    final sourceMappings = _sourceMappings!;
+
+    if (sourceMappings.isNotEmpty) {
+      final lastMapping = sourceMappings.last;
+
+      // Check if we are overriding the current source location. This can
+      // happen when we restore the source location after a compiling a
+      // sub-tree, and the next node in the AST immediately updates the source
+      // location. The restored location is then never used.
+      if (lastMapping.instructionOffset == mapping.instructionOffset) {
+        sourceMappings.removeLast();
+        sourceMappings.add(mapping);
+        return;
+      }
+
+      // Check if we the new mapping maps to the same source as the old
+      // mapping. This happens when we have e.g. an instance field get like
+      // `length`, which gets transformed by the front-end as `this.length`. In
+      // this case `this` and `length` will have the same source location.
+      if (lastMapping.sourceInfo == mapping.sourceInfo) {
+        return;
+      }
+    }
+
+    sourceMappings.add(mapping);
   }
 
   // Meta

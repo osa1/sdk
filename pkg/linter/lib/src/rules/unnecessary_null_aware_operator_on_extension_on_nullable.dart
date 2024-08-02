@@ -12,7 +12,8 @@ const _desc =
     r'Unnecessary null aware operator on extension on a nullable type.';
 
 const _details = r'''
-Avoid null aware operators for members defined in an extension on a nullable type.
+Avoid null aware operators for members defined in an extension on a nullable
+type.
 
 **BAD:**
 
@@ -46,7 +47,7 @@ class UnnecessaryNullAwareOperatorOnExtensionOnNullable extends LintRule {
           name: 'unnecessary_null_aware_operator_on_extension_on_nullable',
           description: _desc,
           details: _details,
-          categories: {Category.style},
+          categories: {LintRuleCategory.style},
         );
 
   @override

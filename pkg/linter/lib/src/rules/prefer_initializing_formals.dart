@@ -127,7 +127,7 @@ class PreferInitializingFormals extends LintRule {
             name: 'prefer_initializing_formals',
             description: _desc,
             details: _details,
-            categories: {Category.style});
+            categories: {LintRuleCategory.brevity, LintRuleCategory.style});
 
   @override
   LintCode get lintCode => code;

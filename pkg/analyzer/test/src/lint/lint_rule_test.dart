@@ -10,7 +10,6 @@ import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/source/source.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/token.dart';
-import 'package:analyzer/src/dart/error/lint_codes.dart';
 import 'package:analyzer/src/lint/linter.dart';
 import 'package:test/test.dart';
 
@@ -150,13 +149,19 @@ class CollectingReporter extends ErrorReporter {
 }
 
 class TestRule extends LintRule {
+  static const LintCode code =
+      LintCode('test_rule', 'Test rule.', correctionMessage: 'Try test rule.');
+
   TestRule()
       : super(
           name: 'test_rule',
           description: '',
           details: '... tl;dr ...',
-          categories: {Category.errors},
+          categories: {LintRuleCategory.errors},
         );
+
+  @override
+  LintCode get lintCode => code;
 }
 
 class _MockSource implements Source {

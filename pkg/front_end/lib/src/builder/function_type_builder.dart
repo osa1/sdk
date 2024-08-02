@@ -11,7 +11,9 @@ import 'package:kernel/src/unaliasing.dart';
 
 import '../codes/cfe_codes.dart' show messageSupertypeIsFunction, noLength;
 import '../kernel/implicit_field_type.dart';
+import '../source/builder_factory.dart';
 import '../source/source_library_builder.dart';
+import '../source/type_parameter_scope_builder.dart';
 import 'declaration_builders.dart';
 import 'formal_parameter_builder.dart';
 import 'inferable_type_builder.dart';
@@ -72,7 +74,9 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
             fileUri,
             charOffset,
             hasFunctionFormalParameterSyntax)
-        : new _InferredFunctionTypeBuilder(
+        :
+        // Coverage-ignore(suite): Not run.
+        new _InferredFunctionTypeBuilder(
             returnType,
             typeVariables,
             formals,
@@ -98,11 +102,13 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
   String get debugName => "Function";
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isVoidType => false;
 
   @override
   StringBuffer printOn(StringBuffer buffer) {
     if (typeVariables != null) {
+      // Coverage-ignore-block(suite): Not run.
       buffer.write("<");
       bool isFirst = true;
       for (StructuralVariableBuilder t in typeVariables!) {
@@ -117,6 +123,7 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
     }
     buffer.write("(");
     if (formals != null) {
+      // Coverage-ignore-block(suite): Not run.
       bool isFirst = true;
       for (ParameterBuilder t in formals!) {
         if (!isFirst) {
@@ -143,7 +150,9 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
   @override
   DartType buildAliased(
       LibraryBuilder library, TypeUse typeUse, ClassHierarchyBase? hierarchy) {
-    assert(hierarchy != null || isExplicit, "Cannot build $this.");
+    assert(
+        hierarchy != null || isExplicit, // Coverage-ignore(suite): Not run.
+        "Cannot build $this.");
     DartType builtReturnType =
         returnType.buildAliased(library, TypeUse.returnType, hierarchy);
     List<DartType> positionalParameters = <DartType>[];
@@ -197,11 +206,11 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
   @override
   FunctionTypeBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration) {
     List<StructuralVariableBuilder>? clonedTypeVariables;
     if (typeVariables != null) {
-      clonedTypeVariables = contextLibrary.copyStructuralVariables(
+      clonedTypeVariables = builderFactory.copyStructuralVariables(
           typeVariables!, contextDeclaration,
           kind: TypeVariableKind.function);
     }
@@ -210,11 +219,11 @@ abstract class FunctionTypeBuilderImpl extends FunctionTypeBuilder {
       clonedFormals =
           new List<ParameterBuilder>.generate(formals!.length, (int i) {
         ParameterBuilder formal = formals![i];
-        return formal.clone(newTypes, contextLibrary, contextDeclaration);
+        return formal.clone(newTypes, builderFactory, contextDeclaration);
       }, growable: false);
     }
     return new FunctionTypeBuilderImpl(
-        returnType.clone(newTypes, contextLibrary, contextDeclaration),
+        returnType.clone(newTypes, builderFactory, contextDeclaration),
         clonedTypeVariables,
         clonedFormals,
         nullabilityBuilder,
@@ -258,6 +267,7 @@ class _ExplicitFunctionTypeBuilder extends FunctionTypeBuilderImpl {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// A function type that needs type inference to be fully defined.
 ///
 /// This occurs through macros where return type or parameter types can be
@@ -289,7 +299,7 @@ class _InferredFunctionTypeBuilder extends FunctionTypeBuilderImpl
     } else {
       InferableTypeUse inferableTypeUse =
           new InferableTypeUse(library as SourceLibraryBuilder, this, typeUse);
-      library.registerInferableType(inferableTypeUse);
+      library.loader.inferableTypes.registerInferableType(inferableTypeUse);
       return new InferredType.fromInferableTypeUse(inferableTypeUse);
     }
   }

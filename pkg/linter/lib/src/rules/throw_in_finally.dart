@@ -59,7 +59,7 @@ class ThrowInFinally extends LintRule {
             name: 'throw_in_finally',
             description: _desc,
             details: _details,
-            categories: {Category.errors});
+            categories: {LintRuleCategory.errorProne});
 
   @override
   LintCode get lintCode => code;

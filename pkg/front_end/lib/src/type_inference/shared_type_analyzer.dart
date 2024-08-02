@@ -8,6 +8,7 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/core_types.dart';
 
 import '../codes/cfe_codes.dart';
+import '../source/source_loader.dart';
 import 'inference_helper.dart';
 import 'inference_visitor.dart';
 
@@ -46,7 +47,9 @@ class SharedTypeAnalyzerErrors
         nullSafetyEnabled
             ? templateSwitchExpressionNotSubtype.withArguments(
                 caseExpressionType, scrutineeType)
-            : templateSwitchExpressionNotAssignable.withArguments(
+            :
+            // Coverage-ignore(suite): Not run.
+            templateSwitchExpressionNotAssignable.withArguments(
                 scrutineeType, caseExpressionType),
         caseExpression.fileOffset,
         noLength,
@@ -117,10 +120,11 @@ class SharedTypeAnalyzerErrors
     required VariableDeclaration variable,
     required VariableDeclaration component,
   }) {
-    // TODO(cstefantsova): Currently this error is reported elsewhere due to
-    // the order the types are inferred.
     // TODO(johnniwinther): How should we handle errors that are not report
     // here? Should we have a sentinel error node, allow a nullable result, or ?
+    assert(visitor.libraryBuilder.loader.assertProblemReportedElsewhere(
+        "SharedTypeAnalyzerErrors.inconsistentJoinedPatternVariable",
+        expectedPhase: CompilationPhaseForProblemReporting.bodyBuilding));
   }
 
   @override

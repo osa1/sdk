@@ -37,7 +37,7 @@ class PreferIfNullOperators extends LintRule {
             name: 'prefer_if_null_operators',
             description: _desc,
             details: _details,
-            categories: {Category.style});
+            categories: {LintRuleCategory.brevity, LintRuleCategory.style});
 
   @override
   LintCode get lintCode => code;

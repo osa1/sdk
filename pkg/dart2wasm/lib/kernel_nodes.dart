@@ -30,8 +30,9 @@ mixin KernelNodes {
   // dart:core various classes
   late final Class boxedBoolClass = index.getClass("dart:core", "_BoxedBool");
   late final Class boxedDoubleClass =
-      index.getClass("dart:core", "_BoxedDouble");
-  late final Class boxedIntClass = index.getClass("dart:core", "_BoxedInt");
+      index.getClass("dart:_boxed_double", "BoxedDouble");
+  late final Class boxedIntClass =
+      index.getClass("dart:_boxed_int", "BoxedInt");
   late final Class closureClass = index.getClass("dart:core", "_Closure");
   late final Class listBaseClass = index.getClass("dart:_list", "WasmListBase");
   late final Class fixedLengthListClass =
@@ -227,6 +228,10 @@ mixin KernelNodes {
       index.getField("dart:collection", "_HashFieldBase", "_deletedKeys");
 
   // dart:core various procedures
+  late final Procedure boxedBoolEquals =
+      index.getProcedure("dart:core", "_BoxedBool", "==");
+  late final Procedure boxedIntEquals =
+      index.getProcedure("dart:_boxed_int", "BoxedInt", "==");
   late final Procedure objectHashCode =
       index.getProcedure("dart:core", "Object", "get:hashCode");
   late final Procedure objectNoSuchMethod =
@@ -250,7 +255,7 @@ mixin KernelNodes {
   late final Procedure stringInterpolate4 =
       index.getProcedure("dart:_string", "StringBase", "_interpolate4");
   late final Procedure truncDiv =
-      index.getProcedure("dart:core", "_BoxedInt", "_truncDiv");
+      index.getProcedure("dart:_boxed_int", "BoxedInt", "_truncDiv");
   late final Procedure runtimeTypeEquals =
       index.getTopLevelProcedure("dart:core", "_runtimeTypeEquals");
   late final Procedure runtimeTypeHashCode =
@@ -276,6 +281,12 @@ mixin KernelNodes {
       index.getProcedure("dart:core", "_TypeError", "_throwNullCheckError");
   late final Procedure throwAsCheckError =
       index.getProcedure("dart:core", "_TypeError", "_throwAsCheckError");
+  late final Procedure throwInterfaceTypeAsCheckError1 = index
+      .getTopLevelProcedure("dart:core", "_throwInterfaceTypeAsCheckError1");
+  late final Procedure throwInterfaceTypeAsCheckError2 = index
+      .getTopLevelProcedure("dart:core", "_throwInterfaceTypeAsCheckError2");
+  late final Procedure throwInterfaceTypeAsCheckError = index
+      .getTopLevelProcedure("dart:core", "_throwInterfaceTypeAsCheckError");
   late final Procedure throwWasmRefError =
       index.getProcedure("dart:core", "_TypeError", "_throwWasmRefError");
   late final Procedure throwArgumentTypeCheckError = index.getProcedure(

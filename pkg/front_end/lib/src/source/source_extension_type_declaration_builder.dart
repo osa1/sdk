@@ -10,6 +10,7 @@ import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
 import '../base/messages.dart';
+import '../base/name_space.dart';
 import '../base/problems.dart';
 import '../base/scope.dart';
 import '../builder/augmentation_iterator.dart';
@@ -28,7 +29,6 @@ import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/type_algorithms.dart';
 import '../type_inference/type_inference_engine.dart';
-import '../util/helpers.dart';
 import 'class_declaration.dart';
 import 'source_builder_mixins.dart';
 import 'source_constructor_builder.dart';
@@ -36,6 +36,7 @@ import 'source_factory_builder.dart';
 import 'source_field_builder.dart';
 import 'source_library_builder.dart';
 import 'source_member_builder.dart';
+import 'type_parameter_scope_builder.dart';
 
 class SourceExtensionTypeDeclarationBuilder
     extends ExtensionTypeDeclarationBuilderImpl
@@ -55,8 +56,20 @@ class SourceExtensionTypeDeclarationBuilder
 
   MergedClassMemberScope? _mergedScope;
 
+  final NameSpaceBuilder _nameSpaceBuilder;
+
+  late final LookupScope _scope;
+
+  late final NameSpace _nameSpace;
+
+  @override
+  final ConstructorScope constructorScope;
+
   @override
   final List<NominalVariableBuilder>? typeParameters;
+
+  @override
+  final LookupScope typeParameterScope;
 
   @override
   List<TypeBuilder>? interfaceBuilders;
@@ -71,8 +84,9 @@ class SourceExtensionTypeDeclarationBuilder
       String name,
       this.typeParameters,
       this.interfaceBuilders,
-      Scope scope,
-      ConstructorScope constructorScope,
+      this.typeParameterScope,
+      this._nameSpaceBuilder,
+      this.constructorScope,
       SourceLibraryBuilder parent,
       this.constructorReferences,
       int startOffset,
@@ -87,8 +101,21 @@ class SourceExtensionTypeDeclarationBuilder
                 typeParameters),
             reference: indexedContainer?.reference)
           ..fileOffset = nameOffset,
-        super(metadata, modifiers, name, parent, nameOffset, scope,
-            constructorScope);
+        super(metadata, modifiers, name, parent, nameOffset) {}
+
+  @override
+  LookupScope get scope => _scope;
+
+  @override
+  NameSpace get nameSpace => _nameSpace;
+
+  @override
+  void buildScopes(LibraryBuilder coreLibrary) {
+    _nameSpace = _nameSpaceBuilder.buildNameSpace(this);
+    _scope = new NameSpaceLookupScope(
+        nameSpace, ScopeKind.declaration, "extension type $name",
+        parent: typeParameterScope);
+  }
 
   @override
   SourceLibraryBuilder get libraryBuilder =>
@@ -101,6 +128,7 @@ class SourceExtensionTypeDeclarationBuilder
   @override
   SourceExtensionTypeDeclarationBuilder get origin => _origin ?? this;
 
+  // Coverage-ignore(suite): Not run.
   // TODO(johnniwinther): Add merged scope for extension type declarations.
   MergedClassMemberScope get mergedScope => _mergedScope ??= isAugmenting
       ? origin.mergedScope
@@ -109,7 +137,9 @@ class SourceExtensionTypeDeclarationBuilder
 
   @override
   ExtensionTypeDeclaration get extensionTypeDeclaration => isAugmenting
-      ? origin._extensionTypeDeclaration
+      ?
+      // Coverage-ignore(suite): Not run.
+      origin._extensionTypeDeclaration
       : _extensionTypeDeclaration;
 
   @override
@@ -146,15 +176,17 @@ class SourceExtensionTypeDeclarationBuilder
 
         if (typeParameters?.isNotEmpty ?? false) {
           for (NominalVariableBuilder variable in typeParameters!) {
-            Variance variance =
-                computeTypeVariableBuilderVariance(variable, typeBuilder)
-                    .variance!;
+            Variance variance = computeTypeVariableBuilderVariance(
+                    variable, typeBuilder,
+                    sourceLoader: libraryBuilder.loader)
+                .variance!;
             if (!variance.greaterThanOrEqual(variable.variance)) {
               if (variable.parameter.isLegacyCovariant) {
                 errorMessage =
                     templateWrongTypeParameterVarianceInSuperinterface
                         .withArguments(variable.name, interface);
               } else {
+                // Coverage-ignore-block(suite): Not run.
                 errorMessage =
                     templateInvalidTypeVariableInSupertypeWithVariance
                         .withArguments(variable.variance.keyword, variable.name,
@@ -203,6 +235,7 @@ class SourceExtensionTypeDeclarationBuilder
             if (LibraryBuilder.isFunction(cls, coreLibrary) ||
                 LibraryBuilder.isRecord(cls, coreLibrary)) {
               if (aliasBuilder != null) {
+                // Coverage-ignore-block(suite): Not run.
                 errorMessage = templateSuperExtensionTypeIsIllegalAliased
                     .withArguments(typeBuilder.fullNameForErrors, interface);
                 errorContext = [
@@ -221,6 +254,7 @@ class SourceExtensionTypeDeclarationBuilder
           errorMessage = templateSuperExtensionTypeIsTypeVariable
               .withArguments(typeBuilder.fullNameForErrors);
           if (aliasBuilder != null) {
+            // Coverage-ignore-block(suite): Not run.
             errorContext = [
               messageTypedefCause.withLocation(
                   aliasBuilder.fileUri, aliasBuilder.charOffset, noLength),
@@ -369,23 +403,25 @@ class SourceExtensionTypeDeclarationBuilder
             }
           }
         } else if (declaration != null && declaration.typeVariablesCount > 0) {
-          List<TypeVariableBuilderBase>? typeParameters;
+          List<TypeVariableBuilder>? typeParameters;
           switch (declaration) {
             case ClassBuilder():
               typeParameters = declaration.typeVariables;
             case TypeAliasBuilder():
+              // Coverage-ignore(suite): Not run.
               typeParameters = declaration.typeVariables;
             case ExtensionTypeDeclarationBuilder():
               typeParameters = declaration.typeParameters;
+            // Coverage-ignore(suite): Not run.
             case BuiltinTypeDeclarationBuilder():
             case InvalidTypeDeclarationBuilder():
             case OmittedTypeDeclarationBuilder():
             case ExtensionBuilder():
-            case TypeVariableBuilderBase():
+            case TypeVariableBuilder():
           }
           if (typeParameters != null) {
             for (int i = 0; i < typeParameters.length; i++) {
-              TypeVariableBuilderBase typeParameter = typeParameters[i];
+              TypeVariableBuilder typeParameter = typeParameters[i];
               if (_checkRepresentationDependency(
                   typeParameter.defaultType!,
                   rootExtensionTypeDeclaration,
@@ -557,18 +593,15 @@ class SourceExtensionTypeDeclarationBuilder
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
-    super.buildOutlineExpressions(
-        classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+    super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
 
     Iterator<SourceMemberBuilder> iterator = constructorScope.filteredIterator(
         parent: this, includeDuplicates: false, includeAugmentations: true);
     while (iterator.moveNext()) {
-      iterator.current.buildOutlineExpressions(
-          classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+      iterator.current
+          .buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
     }
   }
 
@@ -596,13 +629,16 @@ class SourceExtensionTypeDeclarationBuilder
       case BuiltMemberKind.ExtensionTypeSetter:
       case BuiltMemberKind.LateSetter:
       case BuiltMemberKind.ExtensionTypeOperator:
+        // Coverage-ignore(suite): Not run.
         unhandled(
             "${memberBuilder.runtimeType}:${memberKind}",
             "addMemberInternal",
             memberBuilder.charOffset,
             memberBuilder.fileUri);
       case BuiltMemberKind.ExtensionTypeRepresentationField:
-        assert(tearOff == null, "Unexpected tear-off $tearOff");
+        assert(
+            tearOff == null, // Coverage-ignore(suite): Not run.
+            "Unexpected tear-off $tearOff");
         extensionTypeDeclaration.addProcedure(member as Procedure);
     }
   }
@@ -626,6 +662,7 @@ class SourceExtensionTypeDeclarationBuilder
       case BuiltMemberKind.ExtensionSetter:
       case BuiltMemberKind.ExtensionOperator:
       case BuiltMemberKind.ExtensionTypeRepresentationField:
+        // Coverage-ignore(suite): Not run.
         unhandled("${memberBuilder.runtimeType}:${memberKind}", "buildMembers",
             memberBuilder.charOffset, memberBuilder.fileUri);
       case BuiltMemberKind.ExtensionField:
@@ -666,19 +703,20 @@ class SourceExtensionTypeDeclarationBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void applyAugmentation(Builder augmentation) {
     if (augmentation is SourceExtensionTypeDeclarationBuilder) {
       augmentation._origin = this;
-      scope.forEachLocalMember((String name, Builder member) {
+      nameSpace.forEachLocalMember((String name, Builder member) {
         Builder? memberAugmentation =
-            augmentation.scope.lookupLocalMember(name, setter: false);
+            augmentation.nameSpace.lookupLocalMember(name, setter: false);
         if (memberAugmentation != null) {
           member.applyAugmentation(memberAugmentation);
         }
       });
-      scope.forEachLocalSetter((String name, Builder member) {
+      nameSpace.forEachLocalSetter((String name, Builder member) {
         Builder? memberAugmentation =
-            augmentation.scope.lookupLocalMember(name, setter: true);
+            augmentation.nameSpace.lookupLocalMember(name, setter: true);
         if (memberAugmentation != null) {
           member.applyAugmentation(memberAugmentation);
         }
@@ -699,6 +737,7 @@ class SourceExtensionTypeDeclarationBuilder
   /// builder.
   SourceExtensionTypeConstructorBuilder? lookupConstructor(Name name) {
     if (name.text == "new") {
+      // Coverage-ignore-block(suite): Not run.
       name = new Name("", name.library);
     }
 
@@ -722,6 +761,7 @@ class SourceExtensionTypeDeclarationBuilder
           includeDuplicates: false);
 
   @override
+  // Coverage-ignore(suite): Not run.
   NameIterator<T> fullMemberNameIterator<T extends Builder>() =>
       new ClassDeclarationMemberNameIterator<
               SourceExtensionTypeDeclarationBuilder, T>(
@@ -746,6 +786,7 @@ class SourceExtensionTypeDeclarationBuilder
           includeDuplicates: false);
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isMixinDeclaration => false;
 
   @override
@@ -789,16 +830,19 @@ class SourceExtensionTypeDeclarationBuilder
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterator<T> localMemberIterator<T extends Builder>() =>
       new ClassDeclarationMemberIterator<SourceExtensionTypeDeclarationBuilder,
           T>.local(this, includeDuplicates: false);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Iterator<T> localConstructorIterator<T extends MemberBuilder>() =>
       new ClassDeclarationConstructorIterator<
           SourceExtensionTypeDeclarationBuilder,
           T>.local(this, includeDuplicates: false);
 
+  // Coverage-ignore(suite): Not run.
   /// Returns an iterator the origin extension type declaration and all
   /// augmentations in application order.
   Iterator<SourceExtensionTypeDeclarationBuilder> get declarationIterator =>

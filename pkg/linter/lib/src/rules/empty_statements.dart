@@ -52,7 +52,7 @@ class EmptyStatements extends LintRule {
             name: 'empty_statements',
             description: _desc,
             details: _details,
-            categories: {Category.errors});
+            categories: {LintRuleCategory.errorProne});
 
   @override
   LintCode get lintCode => code;

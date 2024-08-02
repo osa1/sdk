@@ -5,7 +5,8 @@
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
-import '../source/source_library_builder.dart';
+import '../source/builder_factory.dart';
+import '../source/type_parameter_scope_builder.dart';
 import 'library_builder.dart';
 import 'nullability_builder.dart';
 import 'type_builder.dart';
@@ -36,19 +37,22 @@ class InvalidTypeBuilderImpl extends InvalidTypeBuilder {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype? buildMixedInType(LibraryBuilder library) {
     return null;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype? buildSupertype(LibraryBuilder library, TypeUse typeUse) {
     return null;
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration) {
     return this;
   }
@@ -60,19 +64,24 @@ class InvalidTypeBuilderImpl extends InvalidTypeBuilder {
   bool get isExplicit => true;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isVoidType => false;
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeName? get typeName => null;
 
   @override
+  // Coverage-ignore(suite): Not run.
   NullabilityBuilder get nullabilityBuilder =>
       const NullabilityBuilder.inherent();
 
   @override
+  // Coverage-ignore(suite): Not run.
   StringBuffer printOn(StringBuffer buffer) => buffer;
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeBuilder withNullabilityBuilder(NullabilityBuilder nullabilityBuilder) {
     return this;
   }

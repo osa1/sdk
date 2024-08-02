@@ -1633,8 +1633,18 @@ class ForwardingListener implements Listener {
   }
 
   @override
+  void handleLiteralDoubleWithSeparators(Token token) {
+    listener?.handleLiteralDoubleWithSeparators(token);
+  }
+
+  @override
   void handleLiteralInt(Token token) {
     listener?.handleLiteralInt(token);
+  }
+
+  @override
+  void handleLiteralIntWithSeparators(Token token) {
+    listener?.handleLiteralIntWithSeparators(token);
   }
 
   @override
@@ -1649,8 +1659,11 @@ class ForwardingListener implements Listener {
   }
 
   @override
-  void handleLiteralMapEntry(Token colon, Token endToken) {
-    listener?.handleLiteralMapEntry(colon, endToken);
+  void handleLiteralMapEntry(Token colon, Token endToken,
+      {Token? nullAwareKeyToken, Token? nullAwareValueToken}) {
+    listener?.handleLiteralMapEntry(colon, endToken,
+        nullAwareKeyToken: nullAwareKeyToken,
+        nullAwareValueToken: nullAwareValueToken);
   }
 
   @override
@@ -1907,6 +1920,11 @@ class ForwardingListener implements Listener {
   @override
   void endConstantPattern(Token? constKeyword) {
     listener?.endConstantPattern(constKeyword);
+  }
+
+  @override
+  void handleNullAwareElement(Token nullAwareToken) {
+    listener?.handleNullAwareElement(nullAwareToken);
   }
 
   @override

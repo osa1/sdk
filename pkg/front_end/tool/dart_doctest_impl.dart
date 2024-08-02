@@ -31,7 +31,6 @@ import 'package:front_end/src/base/compiler_context.dart';
 import 'package:front_end/src/base/hybrid_file_system.dart';
 import 'package:front_end/src/base/incremental_compiler.dart';
 import 'package:front_end/src/base/processed_options.dart';
-import 'package:front_end/src/base/scope.dart';
 import 'package:front_end/src/base/uri_translator.dart';
 import 'package:front_end/src/builder/library_builder.dart';
 import 'package:front_end/src/codes/cfe_codes.dart';
@@ -238,7 +237,9 @@ class DartDocTest {
             message.toString().substring("$_portMessageBad: ".length);
         result.add(new TestResult(currentTest!, TestOutcome.Failed)
           ..message = strippedMessage);
-        _print(strippedMessage);
+        _print("Failure:\n"
+            "Test from ${currentTest!.location} failed with this message:\n"
+            "$strippedMessage\n");
       } else if (message.toString().startsWith("$_portMessageCrash: ")) {
         String strippedMessage =
             message.toString().substring("$_portMessageCrash: ".length);
@@ -458,39 +459,47 @@ const int $LF = 10;
 const int $SPACE = 32;
 const int $STAR = 42;
 
-class Test {}
+sealed class Test {
+  String get location;
+}
 
 class ExpectTest implements Test {
   final String call;
   final String result;
+  @override
+  final String location;
 
-  ExpectTest(this.call, this.result);
+  ExpectTest(this.call, this.result, this.location);
 
   @override
   bool operator ==(Object other) {
     if (other is! ExpectTest) return false;
     if (other.call != call) return false;
     if (other.result != result) return false;
+    if (other.location != location) return false;
     return true;
   }
 
   @override
   String toString() {
-    return "ExpectTest[$call, $result]";
+    return "ExpectTest[$call, $result, $location]";
   }
 }
 
 class TestParseError implements Test {
   final String message;
   final int position;
+  @override
+  final String location;
 
-  TestParseError(this.message, this.position);
+  TestParseError(this.message, this.position, this.location);
 
   @override
   bool operator ==(Object other) {
     if (other is! TestParseError) return false;
     if (other.message != message) return false;
     if (other.position != position) return false;
+    if (other.location != location) return false;
     return true;
   }
 
@@ -545,6 +554,12 @@ List<Test> extractTestsFromComment(
     return result;
   }
 
+  String getLocation(int offset) {
+    return source
+        .getLocation(source.importUri ?? source.fileUri!, offset)
+        .toString();
+  }
+
   Test scanDartDoc(int scanOffset) {
     final Token firstToken =
         scanRawBytes(utf8.encode(comments.substring(scanOffset)));
@@ -570,13 +585,18 @@ List<Test> extractTestsFromComment(
       StringBuffer sb = new StringBuffer();
       int firstPosition = _createParseErrorMessages(
           listener, sb, commentsData, scanOffset, source);
-      return new TestParseError(sb.toString(), firstPosition);
+      return new TestParseError(
+        sb.toString(),
+        firstPosition,
+        getLocation(firstPosition),
+      );
     } else if (!identical(",", comma.stringValue)) {
       int position = commentsData.charOffset + scanOffset + comma.charOffset;
       Message message = codes.templateExpectedButGot.withArguments(',');
       return new TestParseError(
         _createParseErrorMessage(source, position, comma, comma, message),
         position,
+        getLocation(position),
       );
     }
 
@@ -587,13 +607,18 @@ List<Test> extractTestsFromComment(
       StringBuffer sb = new StringBuffer();
       int firstPosition = _createParseErrorMessages(
           listener, sb, commentsData, scanOffset, source);
-      return new TestParseError(sb.toString(), firstPosition);
+      return new TestParseError(
+        sb.toString(),
+        firstPosition,
+        getLocation(firstPosition),
+      );
     } else if (!identical(")", endParen.stringValue)) {
       int position = commentsData.charOffset + scanOffset + endParen.charOffset;
       Message message = codes.templateExpectedButGot.withArguments(')');
       return new TestParseError(
         _createParseErrorMessage(source, position, comma, comma, message),
         position,
+        getLocation(position),
       );
     }
 
@@ -607,6 +632,7 @@ List<Test> extractTestsFromComment(
     return new ExpectTest(
       comments.substring(startPos, midEndPos),
       comments.substring(midStartPos, endPos),
+      getLocation(commentsData.charOffset + startPos),
     );
   }
 
@@ -779,7 +805,7 @@ class DocTestIncrementalCompiler extends IncrementalCompiler {
       DillTarget dillTarget,
       UriTranslator uriTranslator) {
     return new DocTestIncrementalKernelTarget(
-        this, fileSystem, includeComments, dillTarget, uriTranslator);
+        context, this, fileSystem, includeComments, dillTarget, uriTranslator);
   }
 
   LibraryBuilder? _dartDocTestLibraryBuilder;
@@ -817,13 +843,11 @@ class DocTestIncrementalCompiler extends IncrementalCompiler {
     SourceLibraryBuilder dartDocTestLibrary = new SourceLibraryBuilder(
       importUri: dartDocTestUri,
       fileUri: dartDocTestUri,
+      originImportUri: dartDocTestUri,
       packageLanguageVersion:
-          new ImplicitLanguageVersion(libraryBuilder.library.languageVersion),
+          new ImplicitLanguageVersion(libraryBuilder.languageVersion),
       loader: loader,
-      // TODO(jensj): Should probably set up scopes the same was as it's done
-      // (now) for expression compilation.
-      scope: libraryBuilder.scope
-          .createNestedScope(debugName: "dartdoctest", kind: ScopeKind.library),
+      parentScope: libraryBuilder.scope,
       nameOrigin: libraryBuilder,
       isUnsupported: false,
       isAugmentation: false,
@@ -872,9 +896,15 @@ class DocTestIncrementalCompiler extends IncrementalCompiler {
 
 class DocTestIncrementalKernelTarget extends IncrementalKernelTarget {
   final DocTestIncrementalCompiler compiler;
-  DocTestIncrementalKernelTarget(this.compiler, FileSystem fileSystem,
-      bool includeComments, DillTarget dillTarget, UriTranslator uriTranslator)
-      : super(fileSystem, includeComments, dillTarget, uriTranslator);
+  DocTestIncrementalKernelTarget(
+      CompilerContext compilerContext,
+      this.compiler,
+      FileSystem fileSystem,
+      bool includeComments,
+      DillTarget dillTarget,
+      UriTranslator uriTranslator)
+      : super(compilerContext, fileSystem, includeComments, dillTarget,
+            uriTranslator);
 
   @override
   SourceLoader createLoader() {
@@ -894,6 +924,7 @@ class DocTestSourceLoader extends SourceLoader {
       {required Uri importUri,
       required Uri fileUri,
       Uri? packageUri,
+      required Uri originImportUri,
       required LanguageVersion packageLanguageVersion,
       SourceLibraryBuilder? origin,
       IndexedLibrary? referencesFromIndex,
@@ -912,6 +943,7 @@ class DocTestSourceLoader extends SourceLoader {
     return super.createLibraryBuilder(
         importUri: importUri,
         fileUri: fileUri,
+        originImportUri: originImportUri,
         packageUri: packageUri,
         packageLanguageVersion: packageLanguageVersion,
         origin: origin,

@@ -13,6 +13,7 @@ import 'package:analysis_server/src/protocol_server.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/utilities/extensions/file_system.dart';
 import 'package:analyzer_plugin/src/utilities/client_uri_converter.dart';
+import 'package:analyzer_utilities/testing/tree_string_sink.dart';
 import 'package:collection/collection.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
@@ -21,7 +22,6 @@ import '../analysis_server_base.dart';
 import '../lsp/change_verifier.dart';
 import '../lsp/request_helpers_mixin.dart';
 import '../services/completion/dart/text_expectations.dart';
-import '../utils/tree_string_sink.dart';
 
 class EventsCollector {
   final ContextResolutionTest test;
@@ -32,14 +32,17 @@ class EventsCollector {
       switch (notification.event) {
         case ANALYSIS_NOTIFICATION_ERRORS:
           events.add(
-            AnalysisErrorsParams.fromNotification(notification),
+            AnalysisErrorsParams.fromNotification(notification,
+                clientUriConverter: test.server.uriConverter),
           );
         case ANALYSIS_NOTIFICATION_FLUSH_RESULTS:
           events.add(
-            AnalysisFlushResultsParams.fromNotification(notification),
+            AnalysisFlushResultsParams.fromNotification(notification,
+                clientUriConverter: test.server.uriConverter),
           );
         case LSP_NOTIFICATION_NOTIFICATION:
-          var params = LspNotificationParams.fromNotification(notification);
+          var params = LspNotificationParams.fromNotification(notification,
+              clientUriConverter: test.server.uriConverter);
           events.add(params.lspNotification);
         default:
           throw StateError(notification.event);
@@ -172,7 +175,8 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
     return handleSuccessfulRequest(
       AnalysisUpdateContentParams({
         convertPath(filePath): AddContentOverlay(content),
-      }).toRequest('${_nextLspRequestId++}'),
+      }).toRequest('${_nextLspRequestId++}',
+          clientUriConverter: server.uriConverter),
     );
   }
 
@@ -203,7 +207,8 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
 
   /// Creates a legacy request with an auto-assigned ID.
   Request createLegacyRequest(RequestParams params) {
-    return params.toRequest('${_nextLspRequestId++}');
+    return params.toRequest('${_nextLspRequestId++}',
+        clientUriConverter: server.uriConverter);
   }
 
   @override
@@ -219,7 +224,8 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
 
     var legacyRequest = createLegacyRequest(LspHandleParams(messageJson));
     var legacyResponse = await handleSuccessfulRequest(legacyRequest);
-    var legacyResult = LspHandleResult.fromResponse(legacyResponse);
+    var legacyResult = LspHandleResult.fromResponse(legacyResponse,
+        clientUriConverter: server.uriConverter);
 
     // Round-trip response via JSON because this doesn't happen automatically
     // when we're bypassing the streams (running in-process) and we want to
@@ -268,7 +274,8 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
   void processNotification(Notification notification) {
     super.processNotification(notification);
     if (notification.event == LSP_NOTIFICATION_NOTIFICATION) {
-      var params = LspNotificationParams.fromNotification(notification);
+      var params = LspNotificationParams.fromNotification(notification,
+          clientUriConverter: server.uriConverter);
       // Round-trip response via JSON because this doesn't happen automatically
       // when we're bypassing the streams (running in-process) and we want to
       // validate everything.
@@ -290,7 +297,8 @@ abstract class LspOverLegacyTest extends PubPackageAnalysisServerTest
     return handleSuccessfulRequest(
       AnalysisUpdateContentParams({
         convertPath(filePath): ChangeContentOverlay([edit]),
-      }).toRequest('${_nextLspRequestId++}'),
+      }).toRequest('${_nextLspRequestId++}',
+          clientUriConverter: server.uriConverter),
     );
   }
 

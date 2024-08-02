@@ -8,7 +8,7 @@ import 'package:_fe_analyzer_shared/src/scanner/scanner.dart' show Token;
 import 'package:kernel/ast.dart';
 import 'package:kernel/clone.dart';
 
-import '../base/scope.dart' show Scope;
+import '../base/scope.dart' show LookupScope;
 import '../kernel/body_builder.dart' show BodyBuilder;
 import '../kernel/body_builder_context.dart';
 import '../source/source_library_builder.dart' show SourceLibraryBuilder;
@@ -32,6 +32,7 @@ class MetadataBuilder {
       : charOffset = _beginToken.charOffset,
         hasPatch = _beginToken.next?.lexeme == 'patch';
 
+  // Coverage-ignore(suite): Not run.
   Token? get beginToken => _beginToken;
 
   static void buildAnnotations(
@@ -40,7 +41,7 @@ class MetadataBuilder {
       BodyBuilderContext bodyBuilderContext,
       SourceLibraryBuilder library,
       Uri fileUri,
-      Scope scope,
+      LookupScope scope,
       {bool createFileUriExpression = false}) {
     if (metadata == null) return;
 
@@ -94,6 +95,7 @@ class MetadataBuilder {
         cloner ??= new CloneVisitorNotMembers();
         Expression annotation =
             cloner.cloneInContext(annotationBuilder._expression!);
+        // Coverage-ignore(suite): Not run.
         if (createFileUriExpression && annotation is! FileUriExpression) {
           annotation = new FileUriExpression(annotation, fileUri)
             ..fileOffset = annotationBuilder.charOffset;
@@ -105,7 +107,7 @@ class MetadataBuilder {
       // TODO(johnniwinther): Avoid potentially inferring annotations multiple
       // times.
       bodyBuilder.inferAnnotations(parent, parent.annotations);
-      bodyBuilder.performBacklogComputations(allowFurtherDelays: false);
+      bodyBuilder.performBacklogComputations();
       for (MapEntry<MetadataBuilder, int> entry
           in parsedAnnotationBuilders.entries) {
         MetadataBuilder annotationBuilder = entry.key;

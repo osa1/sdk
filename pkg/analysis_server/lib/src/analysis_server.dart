@@ -27,7 +27,6 @@ import 'package:analysis_server/src/server/diagnostic_server.dart';
 import 'package:analysis_server/src/server/performance.dart';
 import 'package:analysis_server/src/services/completion/completion_performance.dart';
 import 'package:analysis_server/src/services/correction/assist_internal.dart';
-import 'package:analysis_server/src/services/correction/fix_processor.dart';
 import 'package:analysis_server/src/services/correction/namespace.dart';
 import 'package:analysis_server/src/services/pub/pub_api.dart';
 import 'package:analysis_server/src/services/pub/pub_command.dart';
@@ -44,10 +43,12 @@ import 'package:analysis_server/src/utilities/null_string_sink.dart';
 import 'package:analysis_server/src/utilities/process.dart';
 import 'package:analysis_server/src/utilities/request_statistics.dart';
 import 'package:analysis_server/src/utilities/tee_string_sink.dart';
+import 'package:analysis_server_plugin/src/correction/fix_generators.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/error/error.dart';
 import 'package:analyzer/exception/exception.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
@@ -136,6 +137,9 @@ abstract class AnalysisServer {
   /// The [SearchEngine] for this server.
   late final SearchEngine searchEngine;
 
+  /// The optional [ByteStore] to use as [byteStore].
+  final ByteStore? providedByteStore;
+
   late ByteStore byteStore;
 
   late FileContentCache fileContentCache;
@@ -196,6 +200,11 @@ abstract class AnalysisServer {
   /// The [ResourceProvider] using which paths are converted into [Resource]s.
   final OverlayResourceProvider resourceProvider;
 
+  /// The [ClientUriConverter] to use to convert between URIs/Paths when
+  /// communicating with the client.
+  late ClientUriConverter _uriConverter =
+      ClientUriConverter.noop(resourceProvider.pathContext);
+
   /// The next modification stamp for a changed file in the [resourceProvider].
   ///
   /// This value is increased each time it is used and used instead of real
@@ -231,7 +240,7 @@ abstract class AnalysisServer {
 
   /// A mapping of [ProducerGenerator]s to the set of lint names with which they
   /// are associated (can fix).
-  final Map<ProducerGenerator, Set<String>> producerGeneratorsForLintRules;
+  final Map<ProducerGenerator, Set<LintCode>> producerGeneratorsForLintRules;
 
   AnalysisServer(
     this.options,
@@ -247,6 +256,7 @@ abstract class AnalysisServer {
     this.requestStatistics,
     bool enableBlazeWatcher = false,
     DartFixPromptManager? dartFixPromptManager,
+    this.providedByteStore,
   })  : resourceProvider = OverlayResourceProvider(baseResourceProvider),
         pubApi = PubApi(instrumentationService, httpClient,
             Platform.environment['PUB_HOSTED_URL']),
@@ -412,20 +422,15 @@ abstract class AnalysisServer {
     return DateTime.now().difference(start);
   }
 
-  /// Gets the converter to change incoming client URIs into analyzer file
-  /// references (and back).
-  ///
-  /// Currently backed by a global for use by toJson/fromJson in the legacy
-  /// protocol classes.
-  ClientUriConverter get uriConverter => analyzer_plugin.clientUriConverter;
+  /// The [ClientUriConverter] to use to convert between URIs/Paths when
+  /// communicating with the client.
+  ClientUriConverter get uriConverter => _uriConverter;
 
-  /// Sets the converter to change incoming client URIs into analyzer file
-  /// references (and back).
-  ///
-  /// Currently backed by a global for use by toJson/fromJson in the legacy
-  /// protocol classes.
-  set uriConverter(ClientUriConverter converter) =>
-      analyzer_plugin.clientUriConverter = converter;
+  /// Sets the [ClientUriConverter] to use to convert between URIs/Paths when
+  /// communicating with the client.
+  set uriConverter(ClientUriConverter value) {
+    notificationManager.uriConverter = _uriConverter = value;
+  }
 
   /// Returns the function for sending prompts to the user and collecting button
   /// presses.
@@ -490,6 +495,10 @@ abstract class AnalysisServer {
     const G = 1024 * 1024 * 1024 /*1 GiB*/;
 
     const memoryCacheSize = 128 * M;
+
+    if (providedByteStore case var providedByteStore?) {
+      return providedByteStore;
+    }
 
     if (resourceProvider is OverlayResourceProvider) {
       resourceProvider = resourceProvider.baseProvider;

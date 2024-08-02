@@ -17,7 +17,9 @@ import '../codes/cfe_codes.dart'
         templateDuplicatedRecordTypeFieldName,
         templateDuplicatedRecordTypeFieldNameContext;
 import '../kernel/implicit_field_type.dart';
+import '../source/builder_factory.dart';
 import '../source/source_library_builder.dart';
+import '../source/type_parameter_scope_builder.dart';
 import '../util/helpers.dart';
 import 'inferable_type_builder.dart';
 import 'library_builder.dart';
@@ -63,7 +65,9 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
     return isExplicit
         ? new _ExplicitRecordTypeBuilder(
             positional, named, nullabilityBuilder, fileUri, charOffset)
-        : new _InferredRecordTypeBuilder(
+        :
+        // Coverage-ignore(suite): Not run.
+        new _InferredRecordTypeBuilder(
             positional, named, nullabilityBuilder, fileUri, charOffset);
   }
 
@@ -71,12 +75,14 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
       this.nullabilityBuilder, this.fileUri, this.charOffset);
 
   @override
+  // Coverage-ignore(suite): Not run.
   TypeName? get typeName => null;
 
   @override
   String get debugName => "Record";
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isVoidType => false;
 
   @override
@@ -92,12 +98,14 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
         }
         field.type.printOn(buffer);
         if (field.name != null) {
+          // Coverage-ignore-block(suite): Not run.
           buffer.write(" ");
           buffer.write(field.name);
         }
       }
     }
     if (namedFields != null) {
+      // Coverage-ignore-block(suite): Not run.
       if (!isFirst) {
         buffer.write(", ");
       }
@@ -131,7 +139,9 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
   @override
   DartType buildAliased(
       LibraryBuilder library, TypeUse typeUse, ClassHierarchyBase? hierarchy) {
-    assert(hierarchy != null || isExplicit, "Cannot build $this.");
+    assert(
+        hierarchy != null || isExplicit, // Coverage-ignore(suite): Not run.
+        "Cannot build $this.");
     const List<String> forbiddenObjectMemberNames = [
       "noSuchMethod",
       "toString",
@@ -264,6 +274,7 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype? buildSupertype(LibraryBuilder library, TypeUse typeUse) {
     library.addProblem(
         messageSupertypeIsFunction, charOffset, noLength, fileUri);
@@ -271,6 +282,7 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   Supertype? buildMixedInType(LibraryBuilder library) {
     return buildSupertype(library, TypeUse.classWithType);
   }
@@ -278,22 +290,23 @@ abstract class RecordTypeBuilderImpl extends RecordTypeBuilder {
   @override
   RecordTypeBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration) {
     List<RecordTypeFieldBuilder>? clonedPositional;
     if (positionalFields != null) {
       clonedPositional = new List<RecordTypeFieldBuilder>.generate(
           positionalFields!.length, (int i) {
         RecordTypeFieldBuilder entry = positionalFields![i];
-        return entry.clone(newTypes, contextLibrary, contextDeclaration);
+        return entry.clone(newTypes, builderFactory, contextDeclaration);
       }, growable: false);
     }
     List<RecordTypeFieldBuilder>? clonedNamed;
     if (namedFields != null) {
+      // Coverage-ignore-block(suite): Not run.
       clonedNamed = new List<RecordTypeFieldBuilder>.generate(
           namedFields!.length, (int i) {
         RecordTypeFieldBuilder entry = namedFields![i];
-        return entry.clone(newTypes, contextLibrary, contextDeclaration);
+        return entry.clone(newTypes, builderFactory, contextDeclaration);
       }, growable: false);
     }
     return new RecordTypeBuilderImpl(
@@ -334,6 +347,7 @@ class _ExplicitRecordTypeBuilder extends RecordTypeBuilderImpl {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// A record type that needs type inference to be fully defined.
 ///
 /// This occurs through macros where field types can be defined in terms of
@@ -362,7 +376,7 @@ class _InferredRecordTypeBuilder extends RecordTypeBuilderImpl
     } else {
       InferableTypeUse inferableTypeUse =
           new InferableTypeUse(library as SourceLibraryBuilder, this, typeUse);
-      library.registerInferableType(inferableTypeUse);
+      library.loader.inferableTypes.registerInferableType(inferableTypeUse);
       return new InferredType.fromInferableTypeUse(inferableTypeUse);
     }
   }
@@ -390,13 +404,13 @@ class RecordTypeFieldBuilder {
 
   RecordTypeFieldBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration) {
     // TODO(cstefantsova):  It's not clear how [metadata] is used currently,
     // and how it should be cloned.  Consider cloning it instead of reusing it.
     return new RecordTypeFieldBuilder(
         metadata,
-        type.clone(newTypes, contextLibrary, contextDeclaration),
+        type.clone(newTypes, builderFactory, contextDeclaration),
         name,
         charOffset,
         isWildcard: isWildcard);

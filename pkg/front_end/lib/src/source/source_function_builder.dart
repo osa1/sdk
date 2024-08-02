@@ -8,6 +8,7 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
 import '../api_prototype/lowering_predicates.dart';
+import '../base/local_scope.dart';
 import '../builder/builder.dart';
 import '../builder/constructor_builder.dart';
 import '../builder/declaration_builders.dart';
@@ -33,7 +34,6 @@ import '../base/scope.dart';
 import 'source_loader.dart' show SourceLoader;
 import '../type_inference/type_inference_engine.dart'
     show IncludesTypeParametersNonCovariantly;
-import '../util/helpers.dart' show DelayedActionPerformer;
 import 'source_builder_mixins.dart';
 import 'source_extension_type_declaration_builder.dart';
 import 'source_member_builder.dart';
@@ -74,14 +74,14 @@ abstract class SourceFunctionBuilder
 
   /// This is the formal parameter scope as specified in the Dart Programming
   /// Language Specification, 4th ed, section 9.2.
-  Scope computeFormalParameterScope(Scope parent);
+  LocalScope computeFormalParameterScope(LookupScope parent);
 
-  Scope computeFormalParameterInitializerScope(Scope parent);
+  LocalScope computeFormalParameterInitializerScope(LocalScope parent);
 
   /// This scope doesn't correspond to any scope specified in the Dart
   /// Programming Language Specification, 4th ed. It's an unspecified extension
   /// to support generic methods.
-  Scope computeTypeParameterScope(Scope parent);
+  LookupScope computeTypeParameterScope(LookupScope parent);
 
   FormalParameterBuilder? getFormal(Identifier identifier);
 
@@ -197,6 +197,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   bool get isExternal => (modifiers & externalMask) != 0;
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isAssignable => false;
 
   /// Returns `true` if this member is augmented, either by being the origin
@@ -204,8 +205,8 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   bool get isAugmented;
 
   @override
-  Scope computeFormalParameterScope(Scope parent) {
-    if (formals == null) return parent;
+  LocalScope computeFormalParameterScope(LookupScope parent) {
+    if (formals == null) return new FormalParameterScope(parent: parent);
     Map<String, Builder> local = <String, Builder>{};
     for (FormalParameterBuilder formal in formals!) {
       if (formal.isWildcard) {
@@ -216,16 +217,11 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
         local[formal.name] = formal;
       }
     }
-    return new Scope(
-        kind: ScopeKind.formals,
-        local: local,
-        parent: parent,
-        debugName: "formal parameter",
-        isModifiable: false);
+    return new FormalParameterScope(local: local, parent: parent);
   }
 
   @override
-  Scope computeFormalParameterInitializerScope(Scope parent) {
+  LocalScope computeFormalParameterInitializerScope(LocalScope parent) {
     // From
     // [dartLangSpec.tex](../../../../../../docs/language/dartLangSpec.tex) at
     // revision 94b23d3b125e9d246e07a2b43b61740759a0dace:
@@ -250,39 +246,38 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
 
       local[formal.name] = formal.forFormalParameterInitializerScope();
     }
-    return new Scope(
-        kind: ScopeKind.initializers,
-        local: local,
-        parent: parent,
+    return parent.createNestedFixedScope(
         debugName: "formal parameter initializer",
-        isModifiable: false);
+        kind: ScopeKind.initializers,
+        local: local);
   }
 
   @override
-  Scope computeTypeParameterScope(Scope parent) {
+  LookupScope computeTypeParameterScope(LookupScope parent) {
     if (typeVariables == null) return parent;
     Map<String, Builder> local = <String, Builder>{};
     for (NominalVariableBuilder variable in typeVariables!) {
       if (variable.isWildcard) continue;
       local[variable.name] = variable;
     }
-    return new Scope(
-        kind: ScopeKind.typeParameters,
-        local: local,
-        parent: parent,
-        debugName: "type parameter",
-        isModifiable: false);
+    return new TypeParameterScope(parent, local);
   }
 
   @override
   FormalParameterBuilder? getFormal(Identifier identifier) {
     if (formals != null) {
       for (FormalParameterBuilder formal in formals!) {
+        if (formal.isWildcard &&
+            identifier.name == '_' &&
+            formal.charOffset == identifier.nameOffset) {
+          return formal;
+        }
         if (formal.name == identifier.name &&
             formal.charOffset == identifier.nameOffset) {
           return formal;
         }
       }
+      // Coverage-ignore(suite): Not run.
       // If we have any formals we should find the one we're looking for.
       assert(false, "$identifier not found in $formals");
     }
@@ -309,7 +304,9 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
     // body with null.
     TreeNode? parent = function.parent;
     if (!(newBody == null &&
+        // Coverage-ignore(suite): Not run.
         parent is Procedure &&
+        // Coverage-ignore(suite): Not run.
         parent.isForwardingSemiStub)) {
       function.body = newBody;
       newBody?.parent = function;
@@ -317,6 +314,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   bool get isNative => nativeMethodName != null;
 
   void buildFunction() {
@@ -440,6 +438,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   VariableDeclaration? getTearOffParameter(int index) => null;
 
   @override
@@ -469,6 +468,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
 
   bool hasBuiltOutlineExpressions = false;
 
+  // Coverage-ignore(suite): Not run.
   bool get needsDefaultValuesBuiltAsOutlineExpressions {
     if (formals != null) {
       for (FormalParameterBuilder formal in formals!) {
@@ -481,16 +481,14 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     if (!hasBuiltOutlineExpressions) {
       DeclarationBuilder? classOrExtensionBuilder =
           isClassMember || isExtensionMember || isExtensionTypeMember
               ? parent as DeclarationBuilder
               : null;
-      Scope parentScope =
+      LookupScope parentScope =
           classOrExtensionBuilder?.scope ?? libraryBuilder.scope;
       for (Annotatable annotatable in annotatables) {
         MetadataBuilder.buildAnnotations(
@@ -514,7 +512,6 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
                   inMetadata: true,
                   inConstFields: false),
               classHierarchy,
-              delayedActionPerformers,
               computeTypeParameterScope(parentScope));
         }
       }
@@ -525,8 +522,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
         // buildOutlineExpressions to clear initializerToken to prevent
         // consuming too much memory.
         for (FormalParameterBuilder formal in formals!) {
-          formal.buildOutlineExpressions(
-              libraryBuilder, delayedActionPerformers);
+          formal.buildOutlineExpressions(libraryBuilder);
         }
       }
       hasBuiltOutlineExpressions = true;
@@ -544,6 +540,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
           constructor.member as Constructor, arguments)
         ..isConst = true;
     } else {
+      // Coverage-ignore-block(suite): Not run.
       annotation =
           new StaticInvocation(constructor.member as Procedure, arguments)
             ..isConst = true;
@@ -554,6 +551,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   @override
   bool checkAugmentation(SourceFunctionBuilder augmentation) {
     if (!isExternal && !augmentation.libraryBuilder.isAugmentationLibrary) {
+      // Coverage-ignore-block(suite): Not run.
       augmentation.libraryBuilder.addProblem(messagePatchNonExternal,
           augmentation.charOffset, noLength, augmentation.fileUri!, context: [
         messagePatchDeclarationOrigin.withLocation(
@@ -565,6 +563,7 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void reportAugmentationMismatch(Builder augmentation) {
     libraryBuilder.addProblem(messagePatchDeclarationMismatch,
         augmentation.charOffset, noLength, augmentation.fileUri!, context: [

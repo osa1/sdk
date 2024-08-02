@@ -75,7 +75,10 @@ class PublicMemberApiDocs extends LintRule {
             name: 'public_member_api_docs',
             description: _desc,
             details: _details,
-            categories: {Category.style});
+            categories: {
+              LintRuleCategory.publicInterface,
+              LintRuleCategory.style
+            });
 
   @override
   LintCode get lintCode => code;
@@ -224,7 +227,11 @@ class _Visitor extends SimpleAstVisitor {
     }
 
     // Check remaining functions.
-    functions.forEach(check);
+    for (var function in functions) {
+      if (!function.isEffectivelyPrivate) {
+        check(function);
+      }
+    }
 
     super.visitCompilationUnit(node);
   }

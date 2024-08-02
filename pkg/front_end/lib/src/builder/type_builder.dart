@@ -10,7 +10,8 @@ import 'package:kernel/class_hierarchy.dart';
 import '../base/messages.dart';
 import '../base/scope.dart';
 import '../kernel/type_algorithms.dart';
-import '../source/source_library_builder.dart';
+import '../source/builder_factory.dart';
+import '../source/type_parameter_scope_builder.dart';
 import 'declaration_builders.dart';
 import 'formal_parameter_builder.dart';
 import 'library_builder.dart';
@@ -360,9 +361,13 @@ sealed class TypeBuilder {
     TypeBuilder result = substitute(this, substitution,
         unboundTypes: unboundTypesInternal,
         unboundTypeVariables: unboundTypeVariablesInternal);
-    assert(unboundTypes != null || unboundTypesInternal.isEmpty,
+    assert(
+        unboundTypes != null || unboundTypesInternal.isEmpty,
+        // Coverage-ignore(suite): Not run.
         "Non-empty unbound types: $unboundTypesInternal.");
-    assert(unboundTypeVariables != null || unboundTypeVariablesInternal.isEmpty,
+    assert(
+        unboundTypeVariables != null || unboundTypeVariablesInternal.isEmpty,
+        // Coverage-ignore(suite): Not run.
         "Non-empty unbound type variables: $unboundTypeVariables.");
     return result;
   }
@@ -373,7 +378,7 @@ sealed class TypeBuilder {
   /// resolved later.
   TypeBuilder clone(
       List<NamedTypeBuilder> newTypes,
-      SourceLibraryBuilder contextLibrary,
+      BuilderFactory builderFactory,
       TypeParameterScopeBuilder contextDeclaration);
 
   String get fullNameForErrors => "${printOn(new StringBuffer())}";
@@ -486,7 +491,7 @@ abstract class NamedTypeBuilder extends TypeBuilder {
   @override
   TypeName get typeName;
 
-  void resolveIn(Scope scope, int charOffset, Uri fileUri,
+  void resolveIn(LookupScope scope, int charOffset, Uri fileUri,
       ProblemReporting problemReporting);
   void bind(
       ProblemReporting problemReporting, TypeDeclarationBuilder declaration);
@@ -557,15 +562,19 @@ class PredefinedTypeName implements TypeName {
   int get nameOffset => TreeNode.noOffset;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get nameLength => noLength;
 
   @override
+  // Coverage-ignore(suite): Not run.
   String get fullName => name;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get fullNameOffset => nameOffset;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get fullNameLength => noLength;
 }
 
@@ -584,6 +593,7 @@ class SyntheticTypeName implements TypeName {
   SyntheticTypeName(this.name, this.nameOffset);
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get nameLength => noLength;
 
   @override
@@ -593,9 +603,11 @@ class SyntheticTypeName implements TypeName {
   String get fullName => name;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get fullNameOffset => nameOffset;
 
   @override
+  // Coverage-ignore(suite): Not run.
   int get fullNameLength => noLength;
 }
 

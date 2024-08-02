@@ -4631,6 +4631,12 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
       _handleLateInitializeOnceCheck(invocation, sourceInformation);
     } else if (name == 'HCharCodeAt') {
       _handleCharCodeAt(invocation, sourceInformation);
+    } else if (name == 'HArrayFlagsGet') {
+      _handleArrayFlagsGet(invocation, sourceInformation);
+    } else if (name == 'HArrayFlagsSet') {
+      _handleArrayFlagsSet(invocation, sourceInformation);
+    } else if (name == 'HArrayFlagsCheck') {
+      _handleArrayFlagsCheck(invocation, sourceInformation);
     } else {
       reporter.internalError(
           _elementMap.getSpannable(targetElement, invocation),
@@ -5309,10 +5315,13 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
   void _maybeAddInteropNullAssertionForMember(
       FunctionEntity member, int argumentCount) {
     if (options.interopNullAssertions) {
-      final name =
-          PublicName(_nativeData.computeUnescapedJSInteropName(member.name!));
-      _addInteropNullAssertionForSelector(
-          Selector.call(name, CallStructure.unnamed(argumentCount)));
+      final functionType = _elementEnvironment.getFunctionType(member);
+      if (dartTypes.isNonNullableIfSound(functionType.returnType)) {
+        final name =
+            PublicName(_nativeData.computeUnescapedJSInteropName(member.name!));
+        _addInteropNullAssertionForSelector(
+            Selector.call(name, CallStructure.unnamed(argumentCount)));
+      }
     }
   }
 
@@ -5369,6 +5378,74 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
     }
     List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
     push(HCharCodeAt(inputs[0], inputs[1], _abstractValueDomain.uint31Type)
+      ..sourceInformation = sourceInformation);
+  }
+
+  void _handleArrayFlagsGet(
+      ir.StaticInvocation invocation, SourceInformation? sourceInformation) {
+    if (_unexpectedForeignArguments(invocation,
+        minPositional: 1, maxPositional: 1)) {
+      // Result expected on stack.
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
+    List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
+    final array = inputs.single;
+
+    push(HArrayFlagsGet(array, _abstractValueDomain.uint31Type)
+      ..sourceInformation = sourceInformation);
+  }
+
+  void _handleArrayFlagsSet(
+      ir.StaticInvocation invocation, SourceInformation? sourceInformation) {
+    if (_unexpectedForeignArguments(invocation,
+        minPositional: 2, maxPositional: 2, typeArgumentCount: 1)) {
+      // Result expected on stack.
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
+
+    List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
+    final array = inputs[0];
+    final flags = inputs[1];
+
+    // TODO(sra): Use the flags to improve in the AbstractValue, which may
+    // contain powerset domain bits outside of the conventional type
+    // system. Perhaps do this in types_propagation.
+    DartType type = _getDartTypeIfValid(invocation.arguments.types.single);
+    AbstractValue? instructionType = _typeBuilder.trustTypeMask(type);
+    // TODO(sra): Better type
+    instructionType ??= _abstractValueDomain.dynamicType;
+
+    push(HArrayFlagsSet(array, flags, instructionType)
+      ..sourceInformation = sourceInformation);
+  }
+
+  void _handleArrayFlagsCheck(
+      ir.StaticInvocation invocation, SourceInformation? sourceInformation) {
+    if (_unexpectedForeignArguments(invocation,
+        minPositional: 4, maxPositional: 5, typeArgumentCount: 1)) {
+      // Result expected on stack.
+      stack.add(graph.addConstantNull(closedWorld));
+      return;
+    }
+    List<HInstruction> inputs = _visitPositionalArguments(invocation.arguments);
+    final array = inputs[0];
+    final arrayFlags = inputs[1];
+    final checkFlags = inputs[2];
+    final operation = inputs[3];
+    final verb = inputs.length > 4 ? inputs[4] : null;
+
+    // TODO(sra): Use the flags to improve in the AbstractValue, which may
+    // contain powerset domain bits outside of the conventional type
+    // system. Perhaps do this in types_propagation.
+    DartType type = _getDartTypeIfValid(invocation.arguments.types.single);
+    AbstractValue? instructionType = _typeBuilder.trustTypeMask(type);
+    // TODO(sra): Better type
+    instructionType ??= _abstractValueDomain.dynamicType;
+
+    push(HArrayFlagsCheck(
+        array, arrayFlags, checkFlags, operation, verb, instructionType)
       ..sourceInformation = sourceInformation);
   }
 
@@ -5633,7 +5710,7 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
       _metrics.countSettersTotal.add();
       invoke = HInvokeDynamicSetter(selector, receiverType, element, inputs,
           isIntercepted, resultType, sourceInformation);
-    } else if (selector.isClosureCall) {
+    } else if (selector.isMaybeClosureCall) {
       assert(!isIntercepted);
       invoke = HInvokeClosure(
           selector, receiverType, inputs, resultType, typeArguments)
@@ -5649,7 +5726,8 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
       invoke.isBoundsSafe = node.isBoundsSafe;
     }
     push(invoke);
-    if (element != null) {
+    if (element != null &&
+        _abstractValueDomain.isNull(resultType).isDefinitelyFalse) {
       _maybeAddInteropNullAssertionForSelector(selector);
     }
   }
@@ -5728,9 +5806,10 @@ class KernelSsaGraphBuilder extends ir.VisitorDefault<void>
 
     // The allocation effects include the declared type if it is native (which
     // includes js interop types).
-    type = type.withoutNullability;
-    if (type is InterfaceType && _nativeData.isNativeClass(type.element)) {
-      nativeBehavior.typesInstantiated.add(type);
+    final nonNullableType = type.withoutNullability;
+    if (nonNullableType is InterfaceType &&
+        _nativeData.isNativeClass(nonNullableType.element)) {
+      nativeBehavior.typesInstantiated.add(nonNullableType);
     }
 
     // It also includes any other JS interop type. Technically, a JS interop API

@@ -5,6 +5,7 @@
 import 'dart:collection';
 
 import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart';
+import 'package:_fe_analyzer_shared/src/parser/util.dart' as shared;
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer_operations.dart'
     show Variance;
 import 'package:analyzer/dart/analysis/features.dart';
@@ -162,6 +163,9 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   /// The current library that is being analyzed.
   final LibraryElementImpl _currentLibrary;
 
+  /// The current unit that is being analyzed.
+  final CompilationUnitElementImpl _currentUnit;
+
   /// The type representing the type 'int'.
   late final InterfaceType _intType;
 
@@ -242,7 +246,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   /// The features enabled in the unit currently being checked for errors.
   FeatureSet? _featureSet;
 
-  final LibraryVerificationContext libraryVerificationContext;
+  final LibraryVerificationContext libraryContext;
   final RequiredParametersVerifier _requiredParametersVerifier;
   final ConstArgumentsVerifier _constArgumentsVerifier;
   final DuplicateDefinitionVerifier _duplicateDefinitionVerifier;
@@ -255,9 +259,10 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   ErrorVerifier(
     this.errorReporter,
     this._currentLibrary,
+    this._currentUnit,
     this._typeProvider,
     this._inheritanceManager,
-    this.libraryVerificationContext,
+    this.libraryContext,
     this.options, {
     required this.typeSystemOperations,
   })  : _uninstantiatedBoundChecker =
@@ -266,10 +271,9 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         _requiredParametersVerifier = RequiredParametersVerifier(errorReporter),
         _constArgumentsVerifier = ConstArgumentsVerifier(errorReporter),
         _duplicateDefinitionVerifier = DuplicateDefinitionVerifier(
-          _inheritanceManager,
           _currentLibrary,
           errorReporter,
-          libraryVerificationContext.duplicationDefinitionContext,
+          libraryContext.duplicationDefinitionContext,
         ) {
     _isInSystemLibrary = _currentLibrary.source.uri.isScheme('dart');
     _isInStaticVariableDeclaration = false;
@@ -479,7 +483,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       _enclosingClass = declarationElement;
 
       List<ClassMember> members = node.members;
-      _duplicateDefinitionVerifier.checkClass(node);
       if (!declarationElement.isDartCoreFunctionImpl) {
         _checkForBuiltInIdentifierAsName(
             node.name, CompileTimeErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_NAME);
@@ -494,14 +497,14 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
           superclass != null ||
           withClause != null) {
         var moreChecks = _checkClassInheritance(
-            node, superclass, withClause, implementsClause);
+            declarationElement, node, superclass, withClause, implementsClause);
         if (moreChecks) {
           _checkForNoDefaultSuperConstructorImplicit(element, augmented);
         }
       }
 
       if (node.nativeClause == null) {
-        libraryVerificationContext.constructorFieldsVerifier
+        libraryContext.constructorFieldsVerifier
             .addConstructors(errorReporter, augmented, members);
       }
 
@@ -530,13 +533,17 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }
 
   @override
-  void visitClassTypeAlias(ClassTypeAlias node) {
+  void visitClassTypeAlias(covariant ClassTypeAliasImpl node) {
+    var element = node.declaredElement!;
+    var augmented = element.augmented;
+    var declarationElement = augmented.declaration;
+
     _checkForBuiltInIdentifierAsName(
         node.name, CompileTimeErrorCode.BUILT_IN_IDENTIFIER_AS_TYPEDEF_NAME);
     try {
-      _enclosingClass = node.declaredElement as ClassElementImpl;
-      _checkClassInheritance(
-          node, node.superclass, node.withClause, node.implementsClause);
+      _enclosingClass = declarationElement;
+      _checkClassInheritance(declarationElement, node, node.superclass,
+          node.withClause, node.implementsClause);
       _checkForMainFunction1(node.name, node.declaredElement!);
       _checkForMixinClassErrorCodes(
           node, List.empty(), node.superclass, node.withClause);
@@ -682,8 +689,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       var declarationElement = augmented.declaration;
       _enclosingClass = declarationElement;
 
-      _duplicateDefinitionVerifier.checkEnum(node);
-
       _checkForBuiltInIdentifierAsName(
           node.name, CompileTimeErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_NAME);
       _checkForConflictingEnumTypeVariableErrorCodes(element);
@@ -691,7 +696,8 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       var withClause = node.withClause;
 
       if (implementsClause != null || withClause != null) {
-        _checkClassInheritance(node, null, withClause, implementsClause);
+        _checkClassInheritance(
+            declarationElement, node, null, withClause, implementsClause);
       }
 
       if (!element.isAugmentation) {
@@ -704,7 +710,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       }
 
       var members = node.members;
-      libraryVerificationContext.constructorFieldsVerifier
+      libraryContext.constructorFieldsVerifier
           .addConstructors(errorReporter, augmented, members);
       _checkForFinalNotInitializedInClass(element, members);
       _checkForWrongTypeParameterVarianceInSuperinterfaces();
@@ -765,7 +771,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     }
 
     _enclosingExtension = element;
-    _duplicateDefinitionVerifier.checkExtension(node);
     _checkForConflictingExtensionTypeVariableErrorCodes();
     _checkForFinalNotInitializedInClass(element, node.members);
 
@@ -812,12 +817,14 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       _checkForConflictingExtensionTypeTypeVariableErrorCodes(element);
 
       var members = node.members;
-      _duplicateDefinitionVerifier.checkExtensionType(node, declarationElement);
-      _checkForRepeatedType(node.implementsClause?.interfaces,
-          CompileTimeErrorCode.IMPLEMENTS_REPEATED);
+      _checkForRepeatedType(
+        libraryContext.setOfImplements(declarationElement),
+        node.implementsClause?.interfaces,
+        CompileTimeErrorCode.IMPLEMENTS_REPEATED,
+      );
       _checkForConflictingClassMembers(element);
       _checkForConflictingGenerics(node);
-      libraryVerificationContext.constructorFieldsVerifier
+      libraryContext.constructorFieldsVerifier
           .addConstructors(errorReporter, augmented, members);
       _checkForNonCovariantTypeParameterPositionInRepresentationType(
           node, element);
@@ -1116,7 +1123,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   }
 
   @override
-  void visitIntegerLiteral(IntegerLiteral node) {
+  void visitIntegerLiteral(covariant IntegerLiteralImpl node) {
     _checkForOutOfRange(node);
     super.visitIntegerLiteral(node);
   }
@@ -1232,7 +1239,6 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
       _enclosingClass = declarationElement;
 
       List<ClassMember> members = node.members;
-      _duplicateDefinitionVerifier.checkMixin(node);
       _checkForBuiltInIdentifierAsName(
           node.name, CompileTimeErrorCode.BUILT_IN_IDENTIFIER_AS_TYPE_NAME);
       _checkForConflictingClassTypeVariableErrorCodes();
@@ -1242,7 +1248,8 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
       // Only do error checks only if there is a non-null clause.
       if (onClause != null || implementsClause != null) {
-        _checkMixinInheritance(node, onClause, implementsClause);
+        _checkMixinInheritance(
+            declarationElement, node, onClause, implementsClause);
       }
 
       _checkForConflictingClassMembers(element);
@@ -1863,6 +1870,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   /// Returns `false` if a severe hierarchy error was found, so that further
   /// checking is not useful.
   bool _checkClassInheritance(
+      InterfaceElementImpl declarationElement,
       NamedCompilationUnitMember node,
       NamedType? superclass,
       WithClause? withClause,
@@ -1875,8 +1883,11 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         !_checkForAllMixinErrorCodes(withClause) &&
         !_checkForNoGenerativeConstructorsInSuperclass(superclass)) {
       _checkForExtendsDeferredClass(superclass);
-      _checkForRepeatedType(implementsClause?.interfaces,
-          CompileTimeErrorCode.IMPLEMENTS_REPEATED);
+      _checkForRepeatedType(
+        libraryContext.setOfImplements(declarationElement),
+        implementsClause?.interfaces,
+        CompileTimeErrorCode.IMPLEMENTS_REPEATED,
+      );
       _checkImplementsSuperClass(implementsClause);
       _checkMixinsSuperClass(withClause);
       _checkForMixinWithConflictingPrivateMember(withClause, superclass);
@@ -2361,7 +2372,11 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     var conflictingDeclaredNames = <String>{};
 
     // method declared in the enclosing class vs. inherited getter/setter
-    for (MethodElement method in enclosingClass.methods) {
+    for (MethodElement method in fragment.methods) {
+      if (method.source != _currentUnit.source) {
+        continue;
+      }
+
       String name = method.name;
 
       // find inherited property accessors
@@ -4964,32 +4979,37 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   ///   is the result of calling the unary minus operator on a double instance
   ///   representing the numerical value of n.
   ///   - Otherwise (the current behavior of -n)
-  void _checkForOutOfRange(IntegerLiteral node) {
-    String lexeme = node.literal.lexeme;
-    bool isNegated = (node as IntegerLiteralImpl).immediatelyNegated;
-    List<Object> extraErrorArgs = [];
+  void _checkForOutOfRange(IntegerLiteralImpl node) {
+    var source = node.literal.lexeme;
+    if (node.beginToken.type == TokenType.INT_WITH_SEPARATORS ||
+        node.beginToken.type == TokenType.HEXADECIMAL_WITH_SEPARATORS) {
+      source = shared.stripSeparators(source);
+    }
+    bool isNegated = node.immediatelyNegated;
 
     bool treatedAsDouble = node.staticType == _typeProvider.doubleType;
     bool valid = treatedAsDouble
-        ? IntegerLiteralImpl.isValidAsDouble(lexeme)
-        : IntegerLiteralImpl.isValidAsInteger(lexeme, isNegated);
+        ? IntegerLiteralImpl.isValidAsDouble(source)
+        : IntegerLiteralImpl.isValidAsInteger(source, isNegated);
 
     if (!valid) {
-      extraErrorArgs.add(isNegated ? '-$lexeme' : lexeme);
-
-      if (treatedAsDouble) {
-        // Suggest the nearest valid double (as a BigInt for printing reasons).
-        extraErrorArgs.add(
-            BigInt.from(IntegerLiteralImpl.nearestValidDouble(lexeme))
-                .toString());
-      }
+      var lexeme = node.literal.lexeme;
+      var messageArguments = [
+        isNegated ? '-$lexeme' : lexeme,
+        if (treatedAsDouble)
+          // Suggest the nearest valid double (as a BigInt, for printing).
+          // TODO(srawlins): Insert digit separators at the same positions as
+          // the input. This should be tested code, and a shared impl when we
+          // have an assist that adds digit separators to a number literal.
+          BigInt.from(IntegerLiteralImpl.nearestValidDouble(source)).toString(),
+      ];
 
       errorReporter.atNode(
         node,
         treatedAsDouble
             ? CompileTimeErrorCode.INTEGER_LITERAL_IMPRECISE_AS_DOUBLE
             : CompileTimeErrorCode.INTEGER_LITERAL_OUT_OF_RANGE,
-        arguments: extraErrorArgs,
+        arguments: messageArguments,
       );
     }
   }
@@ -5142,30 +5162,26 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     }
   }
 
-  void _checkForRepeatedType(List<NamedType>? namedTypes, ErrorCode errorCode) {
+  void _checkForRepeatedType(
+    Set<InstanceElement> accumulatedElements,
+    List<NamedType>? namedTypes,
+    ErrorCode errorCode,
+  ) {
     if (namedTypes == null) {
       return;
     }
 
-    int count = namedTypes.length;
-    List<bool> detectedRepeatOnIndex = List<bool>.filled(count, false);
-    for (int i = 0; i < count; i++) {
-      if (!detectedRepeatOnIndex[i]) {
-        var type = namedTypes[i].type;
-        if (type is InterfaceType) {
-          var element = type.element;
-          for (int j = i + 1; j < count; j++) {
-            var otherNode = namedTypes[j];
-            var otherType = otherNode.type;
-            if (otherType is InterfaceType && otherType.element == element) {
-              detectedRepeatOnIndex[j] = true;
-              errorReporter.atNode(
-                otherNode,
-                errorCode,
-                arguments: [element.name],
-              );
-            }
-          }
+    for (var namedType in namedTypes) {
+      var type = namedType.type;
+      if (type is InterfaceType) {
+        var element = type.element;
+        var added = accumulatedElements.add(element);
+        if (!added) {
+          errorReporter.atNode(
+            namedType,
+            errorCode,
+            arguments: [element.name],
+          );
         }
       }
     }
@@ -6062,7 +6078,10 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
   /// Checks the class for problems with the superclass, mixins, or implemented
   /// interfaces.
-  void _checkMixinInheritance(MixinDeclaration node, MixinOnClause? onClause,
+  void _checkMixinInheritance(
+      MixinElementImpl declarationElement,
+      MixinDeclaration node,
+      MixinOnClause? onClause,
       ImplementsClause? implementsClause) {
     // Only check for all of the inheritance logic around clauses if there
     // isn't an error code such as "Cannot implement double" already.
@@ -6070,10 +6089,12 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
         !_checkForImplementsClauseErrorCodes(implementsClause)) {
 //      _checkForImplicitDynamicType(superclass);
       _checkForRepeatedType(
+        libraryContext.setOfOn(declarationElement),
         onClause?.superclassConstraints,
         CompileTimeErrorCode.ON_REPEATED,
       );
       _checkForRepeatedType(
+        libraryContext.setOfImplements(declarationElement),
         implementsClause?.interfaces,
         CompileTimeErrorCode.IMPLEMENTS_REPEATED,
       );
@@ -6394,7 +6415,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
 
   void _reportMacroDiagnostics(MacroTargetElement element) {
     _MacroDiagnosticsReporter(
-      libraryContext: libraryVerificationContext,
+      libraryContext: libraryContext,
       errorReporter: errorReporter,
       element: element,
     ).report();
@@ -6528,6 +6549,15 @@ class LibraryVerificationContext {
   final ConstructorFieldsVerifier constructorFieldsVerifier;
   final Map<FileState, UnitAnalysis> units;
 
+  /// Elements referenced in `implements` clauses.
+  /// Key: the declaration element.
+  final Map<InstanceElement, Set<InstanceElement>> _setOfImplementsMap =
+      Map.identity();
+
+  /// Elements referenced in `on` clauses.
+  /// Key: the declaration element.
+  final Map<MixinElement, Set<InterfaceElement>> _setOfOnMaps = Map.identity();
+
   LibraryVerificationContext({
     required this.libraryKind,
     required this.constructorFieldsVerifier,
@@ -6564,6 +6594,14 @@ class LibraryVerificationContext {
 
   bool libraryCycleContains(Uri uri) {
     return libraryKind.libraryCycle.libraryUris.contains(uri);
+  }
+
+  Set<InstanceElement> setOfImplements(InstanceElement declaration) {
+    return _setOfImplementsMap[declaration] ??= Set.identity();
+  }
+
+  Set<InterfaceElement> setOfOn(MixinElement declaration) {
+    return _setOfOnMaps[declaration] ??= Set.identity();
   }
 }
 

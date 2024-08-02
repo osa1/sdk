@@ -29,6 +29,7 @@ import 'package:analyzer/src/error/best_practices_verifier.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/error/constructor_fields_verifier.dart';
 import 'package:analyzer/src/error/dead_code_verifier.dart';
+import 'package:analyzer/src/error/duplicate_definition_verifier.dart';
 import 'package:analyzer/src/error/ignore_validator.dart';
 import 'package:analyzer/src/error/imports_verifier.dart';
 import 'package:analyzer/src/error/inheritance_override.dart';
@@ -292,6 +293,13 @@ class LibraryAnalyzer {
       _computeVerifyErrors(unitAnalysis);
     }
 
+    MemberDuplicateDefinitionVerifier.checkLibrary(
+      inheritance: _inheritance,
+      libraryVerificationContext: _libraryVerificationContext,
+      libraryElement: _libraryElement,
+      units: _libraryUnits,
+    );
+
     _libraryVerificationContext.constructorFieldsVerifier.report();
 
     if (_analysisOptions.warning) {
@@ -340,14 +348,15 @@ class LibraryAnalyzer {
 
   void _computeLints() {
     var definingUnit = _libraryElement.definingCompilationUnit;
-    var analysesToContextUnits = <UnitAnalysis, LinterContextUnit>{};
-    LinterContextUnit? definingContextUnit;
+    var analysesToContextUnits = <UnitAnalysis, LintRuleUnitContext>{};
+    LintRuleUnitContext? definingContextUnit;
     WorkspacePackage? workspacePackage;
     for (var unitAnalysis in _libraryUnits.values) {
-      var linterContextUnit = LinterContextUnit(
-        unitAnalysis.file.content,
-        unitAnalysis.unit,
-        unitAnalysis.errorReporter,
+      var linterContextUnit = LintRuleUnitContext(
+        file: unitAnalysis.file.resource,
+        content: unitAnalysis.file.content,
+        unit: unitAnalysis.unit,
+        errorReporter: unitAnalysis.errorReporter,
       );
       analysesToContextUnits[unitAnalysis] = linterContextUnit;
       if (unitAnalysis.unit.declaredElement == definingUnit) {
@@ -361,7 +370,7 @@ class LibraryAnalyzer {
 
     var enableTiming = _analysisOptions.enableTiming;
     var nodeRegistry = NodeLintRegistry(enableTiming);
-    var context = LinterContextImpl(
+    var context = LinterContextWithResolvedResults(
       allUnits,
       definingContextUnit,
       _typeProvider,
@@ -417,10 +426,11 @@ class LibraryAnalyzer {
     //
     // Compute inheritance and override errors.
     //
-    var inheritanceOverrideVerifier = InheritanceOverrideVerifier(
-        _typeSystem, _inheritance, errorReporter,
-        strictCasts: _analysisOptions.strictCasts);
-    inheritanceOverrideVerifier.verifyUnit(unit);
+    InheritanceOverrideVerifier(
+      _typeSystem,
+      _inheritance,
+      errorReporter,
+    ).verifyUnit(unit);
 
     //
     // Use the ErrorVerifier to compute errors.
@@ -428,6 +438,7 @@ class LibraryAnalyzer {
     ErrorVerifier errorVerifier = ErrorVerifier(
       errorReporter,
       _libraryElement,
+      unit.declaredElement!,
       _typeProvider,
       _inheritance,
       _libraryVerificationContext,
@@ -808,7 +819,7 @@ class LibraryAnalyzer {
           var index = partIndex++;
           _resolvePartDirective(
             directive: directive,
-            partState: containerKind.parts[index],
+            partState: containerKind.partIncludes[index],
             partElement: containerElement.parts[index],
             errorReporter: containerErrorReporter,
             libraryNameNode: libraryNameNode,
@@ -1063,7 +1074,7 @@ class LibraryAnalyzer {
 
   void _resolvePartDirective({
     required PartDirectiveImpl directive,
-    required PartState partState,
+    required PartIncludeState partState,
     required PartElementImpl partElement,
     required ErrorReporter errorReporter,
     required LibraryIdentifier? libraryNameNode,
@@ -1073,7 +1084,7 @@ class LibraryAnalyzer {
 
     directive.element = partElement;
 
-    if (partState is! PartWithUriStr) {
+    if (partState is! PartIncludeWithUriStr) {
       errorReporter.atNode(
         directive.uri,
         CompileTimeErrorCode.URI_WITH_INTERPOLATION,
@@ -1081,7 +1092,7 @@ class LibraryAnalyzer {
       return;
     }
 
-    if (partState is! PartWithUri) {
+    if (partState is! PartIncludeWithUri) {
       errorReporter.atNode(
         directive.uri,
         CompileTimeErrorCode.INVALID_URI,
@@ -1090,7 +1101,7 @@ class LibraryAnalyzer {
       return;
     }
 
-    if (partState is! PartWithFile) {
+    if (partState is! PartIncludeWithFile) {
       errorReporter.atNode(
         directive.uri,
         CompileTimeErrorCode.URI_DOES_NOT_EXIST,

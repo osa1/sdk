@@ -85,6 +85,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       List<FormalParameterBuilder>? formals,
       this.kind,
       SourceLibraryBuilder libraryBuilder,
+      Uri fileUri,
       int startCharOffset,
       int charOffset,
       this.charOpenParenOffset,
@@ -109,7 +110,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
             ? ProcedureKind.Method
             : kind,
         new FunctionNode(null),
-        fileUri: libraryBuilder.fileUri,
+        fileUri: fileUri,
         reference: procedureReference,
         isSynthetic: isSynthetic)
       ..fileStartOffset = startCharOffset
@@ -135,6 +136,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   @override
   Name get memberName => _memberName.name;
 
+  // Coverage-ignore(suite): Not run.
   List<SourceProcedureBuilder>? get augmentationsForTesting => _augmentations;
 
   @override
@@ -185,6 +187,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     assert(
         overriddenMembers.every((overriddenMember) =>
             overriddenMember.declarationBuilder != classBuilder),
+        // Coverage-ignore(suite): Not run.
         "Unexpected override dependencies for $this: $overriddenMembers");
     _overrideDependencies ??= {};
     _overrideDependencies!.addAll(overriddenMembers);
@@ -221,6 +224,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       case ProcedureKind.Getter:
         return procedure;
       case ProcedureKind.Factory:
+        // Coverage-ignore(suite): Not run.
         return procedure;
       case ProcedureKind.Operator:
       case ProcedureKind.Setter:
@@ -233,6 +237,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     switch (kind) {
       case ProcedureKind.Setter:
         return procedure;
+      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Method:
       case ProcedureKind.Getter:
       case ProcedureKind.Operator:
@@ -280,6 +285,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
           assert(extensionTearOff == null, "Unexpected extension tear-off.");
           f(member: _procedure, kind: BuiltMemberKind.ExtensionOperator);
           break;
+        // Coverage-ignore(suite): Not run.
         case ProcedureKind.Factory:
           throw new UnsupportedError(
               'Unexpected extension method kind ${kind}');
@@ -304,6 +310,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
           assert(extensionTearOff == null, "Unexpected extension tear-off.");
           f(member: _procedure, kind: BuiltMemberKind.ExtensionTypeOperator);
           break;
+        // Coverage-ignore(suite): Not run.
         case ProcedureKind.Factory:
           f(
               member: _procedure,
@@ -366,7 +373,8 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   void _buildExtensionTearOff(SourceLibraryBuilder sourceLibraryBuilder,
       SourceDeclarationBuilderMixin declarationBuilder) {
     assert(
-        _extensionTearOff != null, "No extension tear off created for $this.");
+        _extensionTearOff != null, // Coverage-ignore(suite): Not run.
+        "No extension tear off created for $this.");
 
     _extensionTearOffParameterMap = {};
 
@@ -531,6 +539,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
         (_augmentations ??= []).add(augmentation);
       }
     } else {
+      // Coverage-ignore-block(suite): Not run.
       reportAugmentationMismatch(augmentation);
     }
   }
@@ -543,6 +552,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     Procedure declaredProcedure = targetBuilder.actualProcedure;
 
     if (declaredProcedure.isAbstract || declaredProcedure.isExternal) {
+      // Coverage-ignore-block(suite): Not run.
       return targetBuilder._augmentedBuilder != null
           ? _getAugmentSuperTarget(targetBuilder._augmentedBuilder!)
           : null;

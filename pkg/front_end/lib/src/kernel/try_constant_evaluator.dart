@@ -6,6 +6,7 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/target/targets.dart';
 import 'package:kernel/type_environment.dart';
 
+import '../base/problems.dart';
 import '../codes/cfe_codes.dart';
 import 'constant_evaluator.dart';
 
@@ -48,6 +49,7 @@ class TryConstantEvaluator extends ConstantEvaluator {
             enableTripleShift: true);
 
   @override
+  // Coverage-ignore(suite): Not run.
   Constant evaluate(StaticTypeContext staticTypeContext, Expression node,
       {TreeNode? contextNode}) {
     return evaluateOrNull(staticTypeContext, node, contextNode: contextNode)!;
@@ -62,6 +64,7 @@ class TryConstantEvaluator extends ConstantEvaluator {
       {TreeNode? contextNode, bool requireConstant = true}) {
     errorReporter.requiresConstant = requireConstant;
     if (node is ConstantExpression) {
+      // Coverage-ignore-block(suite): Not run.
       Constant constant = node.constant;
       // TODO(fishythefish): Add more control over what to do with
       // [UnevaluatedConstant]s.
@@ -80,6 +83,7 @@ class TryConstantEvaluator extends ConstantEvaluator {
       return constant;
     }
     if (requireConstant) {
+      // Coverage-ignore-block(suite): Not run.
       return super.evaluate(staticTypeContext, node, contextNode: contextNode);
     } else {
       Constant constant =
@@ -100,13 +104,23 @@ class _ErrorReporter implements ErrorReporter {
   _ErrorReporter(this._reportError);
 
   @override
+  bool get supportsTrackingReportedErrors => false;
+
+  @override
+  bool get hasSeenError {
+    return unsupported("_ErrorReporter.hasSeenError", -1, null);
+  }
+
+  @override
   void report(LocatedMessage message, [List<LocatedMessage>? context]) {
     if (requiresConstant) {
+      // Coverage-ignore-block(suite): Not run.
       _reportError(message, context);
     }
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// [Constant] visitor that returns `true` if the visitor constant contains
 /// an [UnevaluatedConstant].
 class UnevaluatedConstantFinder extends ComputeOnceConstantVisitor<bool> {

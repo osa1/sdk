@@ -14,12 +14,12 @@ import 'package:analyzer/src/dart/analysis/status.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/utilities/extensions/async.dart';
+import 'package:analyzer_utilities/testing/tree_string_sink.dart';
 import 'package:linter/src/rules.dart';
 import 'package:test/test.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
 import '../../../util/element_printer.dart';
-import '../../../util/tree_string_sink.dart';
 import '../resolution/context_collection_resolution.dart';
 import '../resolution/node_text_expectations.dart';
 import '../resolution/resolution.dart';
@@ -102,7 +102,6 @@ class AnalysisDriver_PubPackageTest extends PubPackageResolutionTest {
     var elementPrinter = ElementPrinter(
       sink: sink,
       configuration: ElementPrinterConfiguration(),
-      selfUriStr: null,
     );
 
     var events = collector.take();
@@ -858,7 +857,7 @@ var B = 0;
     flags: exists isLibrary
     selectedNode: SimpleIdentifier
       token: B
-      staticElement: package:test/b.dart::@getter::B
+      staticElement: package:test/b.dart::<fragment>::@getter::B
       staticType: int
 [status] idle
 ''');
@@ -884,7 +883,7 @@ var B = 1.2;
     flags: exists isLibrary
     selectedNode: SimpleIdentifier
       token: B
-      staticElement: package:test/b.dart::@getter::B
+      staticElement: package:test/b.dart::<fragment>::@getter::B
       staticType: double
 [status] idle
 ''');
@@ -3803,8 +3802,8 @@ void bar() {}
   flags: isLibrary
   enclosing: package:test/a.dart
   selectedElements
-    package:test/a.dart::@function::foo
-    package:test/a.dart::@function::bar
+    package:test/a.dart::<fragment>::@function::foo
+    package:test/a.dart::<fragment>::@function::bar
 [status] idle
 ''');
   }
@@ -3889,7 +3888,7 @@ class A {}
   flags: isAugmentation isMacroAugmentation
   enclosing: package:test/a.dart::@augmentation::package:test/a.macro.dart
   selectedElements
-    package:test/a.dart::@augmentation::package:test/a.macro.dart::@class::B
+    package:test/a.dart::@fragment::package:test/a.macro.dart::@class::B
 [status] idle
 ''');
   }
