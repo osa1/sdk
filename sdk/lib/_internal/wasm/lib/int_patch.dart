@@ -10,15 +10,17 @@ import "dart:_wasm";
 class int {
   @patch
   static int? tryParse(String source, {int? radix}) {
-    if (source.isEmpty) return null;
+    if (source.isEmpty) {
+      return null;
+    }
     if (radix == null || radix == 10) {
       // Try parsing immediately, without trimming whitespace.
       int? result = _tryParseIntRadix10(source, 0, source.length);
       if (result != null) return result;
-    } else if (radix < 2 || radix > 36) {
-      throw RangeError("Radix $radix not in range 2..36");
+    } else if ((radix - 2).leU(34)) {
+      return _parse(source, radix, _kNull);
     }
-    return _parse(source, radix, _kNull);
+    throw RangeError("Radix $radix not in range 2..36");
   }
 
   @patch
@@ -30,11 +32,10 @@ class int {
       // Try parsing immediately, without trimming whitespace.
       int? result = _tryParseIntRadix10(source, 0, source.length);
       if (result != null) return result;
-    } else if (radix < 2 || radix > 36) {
-      throw RangeError("Radix $radix not in range 2..36");
+    } else if ((radix - 2).leU(34)) {
+      return _parse(source, radix, onError)!;
     }
-    // Split here so improve odds of parse being inlined and the checks omitted.
-    return _parse(source, radix, onError)!;
+    throw RangeError("Radix $radix not in range 2..36");
   }
 
   static int? _parse(
@@ -96,7 +97,7 @@ class int {
       start += 1;
     }
 
-    final blockSize = _PARSE_LIMITS[radix - 2].toInt();
+    final blockSize = _PARSE_LIMITS[radix].toInt();
     final length = end - start;
 
     // Parse at most `blockSize` characters without overflows.
@@ -207,6 +208,8 @@ class int {
 
   // For each radix, 2-36, how many digits are guaranteed to fit in an `int`.
   static const _PARSE_LIMITS = const WasmArray<WasmI64>.literal([
+    0, // unused
+    0, // unused
     63, // radix: 2
     39,
     31,
