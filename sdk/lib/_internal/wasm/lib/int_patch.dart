@@ -17,10 +17,10 @@ class int {
       // Try parsing immediately, without trimming whitespace.
       int? result = _tryParseIntRadix10(source, 0, source.length);
       if (result != null) return result;
-    } else if ((radix - 2).leU(34)) {
-      return _parse(source, radix, _kNull);
+    } else if ((radix - 2).gtU(34)) {
+      throw RangeError("Radix $radix not in range 2..36");
     }
-    throw RangeError("Radix $radix not in range 2..36");
+    return _parse(source, radix, _kNull);
   }
 
   @patch
@@ -32,10 +32,11 @@ class int {
       // Try parsing immediately, without trimming whitespace.
       int? result = _tryParseIntRadix10(source, 0, source.length);
       if (result != null) return result;
-    } else if ((radix - 2).leU(34)) {
-      return _parse(source, radix, onError)!;
+    } else if ((radix - 2).gtU(34)) {
+      throw RangeError("Radix $radix not in range 2..36");
     }
-    throw RangeError("Radix $radix not in range 2..36");
+    // Split here so improve odds of parse being inlined and the checks omitted.
+    return _parse(source, radix, onError)!;
   }
 
   static int? _parse(
