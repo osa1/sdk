@@ -4,8 +4,7 @@
 
 import "dart:_internal" show patch;
 import "dart:_string" show StringUncheckedOperations;
-
-// TODO(omersa): Use unchecked array access (when reading `_PARSE_LIMITS`).
+import "dart:_wasm";
 
 @patch
 class int {
@@ -97,7 +96,7 @@ class int {
       start += 1;
     }
 
-    final blockSize = _PARSE_LIMITS[radix - 2];
+    final blockSize = _PARSE_LIMITS[radix - 2].toInt();
     final length = end - start;
 
     // Parse at most `blockSize` characters without overflows.
@@ -207,7 +206,7 @@ class int {
   }
 
   // For each radix, 2-36, how many digits are guaranteed to fit in an `int`.
-  static const _PARSE_LIMITS = const [
+  static const _PARSE_LIMITS = const WasmArray<WasmI64>.literal([
     63, // radix: 2
     39,
     31,
@@ -243,5 +242,5 @@ class int {
     12,
     12, // radix: 35
     12,
-  ];
+  ]);
 }
