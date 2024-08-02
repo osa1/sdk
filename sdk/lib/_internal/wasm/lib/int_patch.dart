@@ -181,9 +181,9 @@ class int {
   }
 
   static int? _tryParseIntRadix10(String str, int start, int end) {
-    var ix = start;
-    var sign = 1;
-    var c = str.codeUnitAtUnchecked(ix);
+    int ix = start;
+    int sign = 1;
+    int c = str.codeUnitAtUnchecked(ix);
     // Check for leading '+' or '-'.
     if ((c == 0x2b) || (c == 0x2d)) {
       ix++;
@@ -195,9 +195,9 @@ class int {
     if (end - ix > 18) {
       return null; // May not fit into an `int`.
     }
-    var result = 0;
+    int result = 0;
     for (int i = ix; i < end; i++) {
-      var c = 0x30 ^ str.codeUnitAtUnchecked(i);
+      int c = 0x30 ^ str.codeUnitAtUnchecked(i);
       if (9 < c) {
         return null;
       }
