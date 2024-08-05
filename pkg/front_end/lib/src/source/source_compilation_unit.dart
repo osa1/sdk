@@ -335,6 +335,7 @@ class SourceCompilationUnitImpl
         "Source library builder as already been created for $this.");
     _libraryBuilder = _sourceLibraryBuilder;
     if (isPart) {
+      // Coverage-ignore-block(suite): Not run.
       // This is a part with no enclosing library.
       addProblem(messagePartOrphan, 0, 1, fileUri);
       _clearPartsAndReportExporters();
@@ -727,7 +728,9 @@ class SourceCompilationUnitImpl
 
   @override
   void addImportsToScope() {
-    bool hasCoreImport = originImportUri == dartCore && !forPatchLibrary;
+    bool hasCoreImport = originImportUri == dartCore &&
+        // Coverage-ignore(suite): Not run.
+        !forPatchLibrary;
     for (Import import in _builderFactoryResult.imports) {
       if (import.importedCompilationUnit?.isPart ?? false) {
         // Coverage-ignore-block(suite): Not run.
@@ -964,8 +967,8 @@ class SourceCompilationUnitImpl
         count += computeDefaultTypesForVariables(declaration.typeVariables,
             inErrorRecovery: issues.isNotEmpty);
 
-        Iterator<SourceMemberBuilder> iterator = declaration.constructorScope
-            .filteredIterator<SourceMemberBuilder>(
+        Iterator<SourceMemberBuilder> iterator = declaration.nameSpace
+            .filteredConstructorIterator<SourceMemberBuilder>(
                 includeDuplicates: false, includeAugmentations: true);
         while (iterator.moveNext()) {
           processSourceMemberBuilder(iterator.current,
@@ -1016,8 +1019,8 @@ class SourceCompilationUnitImpl
         count += computeDefaultTypesForVariables(declaration.typeParameters,
             inErrorRecovery: issues.isNotEmpty);
 
-        Iterator<SourceMemberBuilder> iterator = declaration.constructorScope
-            .filteredIterator<SourceMemberBuilder>(
+        Iterator<SourceMemberBuilder> iterator = declaration.nameSpace
+            .filteredConstructorIterator<SourceMemberBuilder>(
                 includeDuplicates: false, includeAugmentations: true);
         while (iterator.moveNext()) {
           processSourceMemberBuilder(iterator.current,

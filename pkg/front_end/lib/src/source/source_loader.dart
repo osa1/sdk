@@ -254,6 +254,7 @@ class SourceLoader extends Loader {
     };
     assert(
         expectedFutureProblemsForCurrentPhase.isEmpty || hasSeenError,
+        // Coverage-ignore(suite): Not run.
         "Expected problems to be reported, but there were none.\n"
         "Current compilation phase: ${currentPhase}\n"
         "Expected at these locations:\n"
@@ -1477,9 +1478,8 @@ severity: $severity
     }
     _sourceLibraryBuilders = sourceLibraries;
     assert(
-        _compilationUnits.values.every(
-            (compilationUnit) => !(compilationUnit is SourceCompilationUnit &&
-                // Coverage-ignore(suite): Not run.
+        _compilationUnits.values.every((compilationUnit) =>
+            !(compilationUnit is SourceCompilationUnit &&
                 compilationUnit.isAugmenting)),
         // Coverage-ignore(suite): Not run.
         "Augmentation library found in libraryBuilders: " +
@@ -1736,8 +1736,8 @@ severity: $severity
             Map<String, List<String>>? constructorMap;
             for (ClassBuilder macroClass in macroClasses) {
               List<String> constructors = [];
-              NameIterator<MemberBuilder> iterator = macroClass.constructorScope
-                  .filteredNameIterator(
+              NameIterator<MemberBuilder> iterator = macroClass.nameSpace
+                  .filteredConstructorNameIterator(
                       includeDuplicates: false, includeAugmentations: true);
               while (iterator.moveNext()) {
                 constructors.add(iterator.name);
@@ -2087,8 +2087,9 @@ severity: $severity
 
   void _checkConstructorsForMixin(
       SourceClassBuilder cls, ClassBuilder builder) {
-    Iterator<MemberBuilder> iterator = builder.constructorScope
-        .filteredIterator(includeDuplicates: false, includeAugmentations: true);
+    Iterator<MemberBuilder> iterator = builder.nameSpace
+        .filteredConstructorIterator(
+            includeDuplicates: false, includeAugmentations: true);
     while (iterator.moveNext()) {
       MemberBuilder constructor = iterator.current;
       if (constructor.isConstructor && !constructor.isSynthetic) {
