@@ -141,6 +141,8 @@ class int {
       } else {
         const min = -9223372036854775808;
 
+        // We don't need to check `allowOverflow` as overflows are only allowed
+        // in positive numbers.
         if (result < (min + digit) ~/ radix) {
           return _handleFormatError(onError, source, null, radix,
               "Negative input exceeds the limit of integer");
