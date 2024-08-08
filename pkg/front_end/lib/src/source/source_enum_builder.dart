@@ -51,7 +51,6 @@ import '../kernel/internal_ast.dart';
 import '../kernel/kernel_helper.dart';
 import '../type_inference/inference_results.dart';
 import '../type_inference/type_schema.dart';
-import '../util/helpers.dart';
 import 'name_scheme.dart';
 import 'source_class_builder.dart' show SourceClassBuilder;
 import 'source_constructor_builder.dart';
@@ -83,8 +82,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
   final Set<SourceFieldBuilder> _builtElements =
       new Set<SourceFieldBuilder>.identity();
 
-  final List<DelayedActionPerformer> _delayedActionPerformers = [];
-
   SourceEnumBuilder.internal(
       List<MetadataBuilder>? metadata,
       String name,
@@ -92,8 +89,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       TypeBuilder supertypeBuilder,
       List<TypeBuilder>? interfaceBuilders,
       LookupScope typeParameterScope,
-      NameSpaceBuilder nameSpaceBuilder,
-      ConstructorScope constructors,
+      DeclarationNameSpaceBuilder nameSpaceBuilder,
       this.enumConstantInfos,
       SourceLibraryBuilder parent,
       List<ConstructorReferenceBuilder> constructorReferences,
@@ -111,7 +107,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
             /* onTypes = */ null,
             typeParameterScope,
             nameSpaceBuilder,
-            constructors,
             parent,
             constructorReferences,
             startCharOffset,
@@ -133,10 +128,10 @@ class SourceEnumBuilder extends SourceClassBuilder {
       int charEndOffset,
       IndexedClass? referencesFromIndexed,
       LookupScope typeParameterScope,
-      NameSpaceBuilder nameSpaceBuilder,
-      ConstructorScope constructorScope) {
+      DeclarationNameSpaceBuilder nameSpaceBuilder) {
     final int startCharOffsetComputed =
         metadata == null ? startCharOffset : metadata.first.charOffset;
+    // Coverage-ignore(suite): Not run.
     supertypeBuilder ??= new NamedTypeBuilderImpl(
         const PredefinedTypeName("_Enum"), const NullabilityBuilder.omitted(),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Unexpected);
@@ -148,7 +143,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
         interfaceBuilders,
         typeParameterScope,
         nameSpaceBuilder,
-        constructorScope,
         enumConstantInfos,
         libraryBuilder,
         constructorReferences,
@@ -163,6 +157,49 @@ class SourceEnumBuilder extends SourceClassBuilder {
   void buildScopes(LibraryBuilder coreLibrary) {
     _createSynthesizedMembers(coreLibrary);
     super.buildScopes(coreLibrary);
+
+    Iterator<MemberBuilder> iterator =
+        nameSpace.filteredConstructorNameIterator(
+            includeDuplicates: false, includeAugmentations: true);
+    while (iterator.moveNext()) {
+      MemberBuilder member = iterator.current;
+      if (member is DeclaredSourceConstructorBuilder) {
+        member.ensureGrowableFormals();
+        member.formals!.insert(
+            0,
+            new FormalParameterBuilder(
+                FormalParameterKind.requiredPositional,
+                /* modifiers = */ 0,
+                stringType,
+                "#name",
+                libraryBuilder,
+                charOffset,
+                fileUri: fileUri,
+                hasImmediatelyDeclaredInitializer: false));
+        member.formals!.insert(
+            0,
+            new FormalParameterBuilder(
+                FormalParameterKind.requiredPositional,
+                /* modifiers = */ 0,
+                intType,
+                "#index",
+                libraryBuilder,
+                charOffset,
+                fileUri: fileUri,
+                hasImmediatelyDeclaredInitializer: false));
+      }
+    }
+
+    Iterator<MemberBuilder> constructorIterator =
+        nameSpace.filteredConstructorIterator(
+            includeDuplicates: false, includeAugmentations: true);
+    while (constructorIterator.moveNext()) {
+      MemberBuilder constructorBuilder = constructorIterator.current;
+      if (!constructorBuilder.isFactory && !constructorBuilder.isConst) {
+        libraryBuilder.addProblem(messageEnumNonConstConstructor,
+            constructorBuilder.charOffset, noLength, fileUri);
+      }
+    }
   }
 
   void _createSynthesizedMembers(LibraryBuilder coreLibrary) {
@@ -189,7 +226,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
     objectType = new NamedTypeBuilderImpl(
         const PredefinedTypeName("Object"), const NullabilityBuilder.omitted(),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Unexpected);
-    // Coverage-ignore(suite): Not run.
     selfType = new NamedTypeBuilderImpl(new SyntheticTypeName(name, charOffset),
         const NullabilityBuilder.omitted(),
         instanceTypeVariableAccess: InstanceTypeVariableAccessState.Unexpected,
@@ -301,16 +337,12 @@ class SourceEnumBuilder extends SourceClassBuilder {
     // The default constructor is added if no generative or unnamed factory
     // constructors are declared.
     bool needsSynthesizedDefaultConstructor = true;
-    Iterator<MemberBuilder> iterator = constructorScope.filteredIterator(
-        includeDuplicates: false, includeAugmentations: true);
-    while (iterator.moveNext()) {
-      MemberBuilder constructorBuilder = iterator.current;
+    for (MemberBuilder constructorBuilder in nameSpaceBuilder.constructors) {
       if (!constructorBuilder.isFactory || constructorBuilder.name == "") {
         needsSynthesizedDefaultConstructor = false;
         break;
       }
     }
-
     if (needsSynthesizedDefaultConstructor) {
       synthesizedDefaultConstructorBuilder =
           new DeclaredSourceConstructorBuilder(
@@ -318,28 +350,9 @@ class SourceEnumBuilder extends SourceClassBuilder {
               constMask,
               /* returnType = */ libraryBuilder.loader.inferableTypes
                   .addInferableType(),
-              "",
+              /* name = */ "",
               /* typeParameters = */ null,
-              <FormalParameterBuilder>[
-                new FormalParameterBuilder(
-                    FormalParameterKind.requiredPositional,
-                    0,
-                    intType,
-                    "#index",
-                    libraryBuilder,
-                    charOffset,
-                    fileUri: fileUri,
-                    hasImmediatelyDeclaredInitializer: false),
-                new FormalParameterBuilder(
-                    FormalParameterKind.requiredPositional,
-                    0,
-                    stringType,
-                    "#name",
-                    libraryBuilder,
-                    charOffset,
-                    fileUri: fileUri,
-                    hasImmediatelyDeclaredInitializer: false)
-              ],
+              /* formals = */ [],
               libraryBuilder,
               fileUri,
               charOffset,
@@ -357,39 +370,8 @@ class SourceEnumBuilder extends SourceClassBuilder {
               isSynthetic: true);
       synthesizedDefaultConstructorBuilder!
           .registerInitializedField(valuesBuilder);
-      constructorScope.addLocalMember(
+      nameSpaceBuilder.addConstructor(
           "", synthesizedDefaultConstructorBuilder!);
-    } else {
-      Iterator<MemberBuilder> iterator = constructorScope.filteredNameIterator(
-          includeDuplicates: false, includeAugmentations: true);
-      while (iterator.moveNext()) {
-        MemberBuilder member = iterator.current;
-        if (member is DeclaredSourceConstructorBuilder) {
-          member.ensureGrowableFormals();
-          member.formals!.insert(
-              0,
-              new FormalParameterBuilder(
-                  FormalParameterKind.requiredPositional,
-                  /* modifiers = */ 0,
-                  stringType,
-                  "#name",
-                  libraryBuilder,
-                  charOffset,
-                  fileUri: fileUri,
-                  hasImmediatelyDeclaredInitializer: false));
-          member.formals!.insert(
-              0,
-              new FormalParameterBuilder(
-                  FormalParameterKind.requiredPositional,
-                  /* modifiers = */ 0,
-                  intType,
-                  "#index",
-                  libraryBuilder,
-                  charOffset,
-                  fileUri: fileUri,
-                  hasImmediatelyDeclaredInitializer: false));
-        }
-      }
     }
 
     ProcedureBuilder toStringBuilder = new SourceProcedureBuilder(
@@ -500,35 +482,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       }
     }
 
-    void setParent(MemberBuilder? builder) {
-      while (builder != null) {
-        builder.parent = this;
-        builder = builder.next as MemberBuilder?;
-      }
-    }
-
-    Map<String, NominalVariableBuilder>? typeVariablesByName;
-    if (typeVariables != null) {
-      typeVariablesByName = {};
-      for (NominalVariableBuilder typeVariable in typeVariables!) {
-        typeVariablesByName[typeVariable.name] = typeVariable;
-      }
-    }
-
-    constructorScope
-        .filteredIterator(includeDuplicates: false, includeAugmentations: true)
-        .forEach(setParent);
     selfType.bind(libraryBuilder, this);
-
-    Iterator<MemberBuilder> constructorIterator = constructorScope
-        .filteredIterator(includeDuplicates: false, includeAugmentations: true);
-    while (constructorIterator.moveNext()) {
-      MemberBuilder constructorBuilder = constructorIterator.current;
-      if (!constructorBuilder.isFactory && !constructorBuilder.isConst) {
-        libraryBuilder.addProblem(messageEnumNonConstConstructor,
-            constructorBuilder.charOffset, noLength, fileUri);
-      }
-    }
 
     if (name == "values") {
       libraryBuilder.addProblem(
@@ -659,7 +613,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
         enumConstantInfo.charOffset;
     constructorName = constructorName == "new" ? "" : constructorName;
     MemberBuilder? constructorBuilder =
-        constructorScope.lookupLocalMember(constructorName);
+        nameSpace.lookupConstructor(constructorName);
 
     ArgumentsImpl arguments;
     List<Expression> enumSyntheticArguments = <Expression>[
@@ -702,9 +656,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
         // redirecting factories can't be completed at this moment and
         // therefore should be delayed to another invocation of
         // [BodyBuilder.performBacklogComputations].
-        bodyBuilder.performBacklogComputations(
-            delayedActionPerformers: _delayedActionPerformers,
-            allowFurtherDelays: true);
+        bodyBuilder.performBacklogComputations();
 
         arguments.positional.insertAll(0, enumSyntheticArguments);
         arguments.argumentsOriginalOrder?.insertAll(0, enumSyntheticArguments);
@@ -778,9 +730,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     List<Expression> values = <Expression>[];
     if (enumConstantInfos != null) {
@@ -807,8 +757,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
       elementBuilder.type.registerInferredType(
           buildElement(elementBuilder, classHierarchy.coreTypes));
     }
-    delayedActionPerformers.addAll(_delayedActionPerformers);
-    _delayedActionPerformers.clear();
 
     SourceProcedureBuilder toStringBuilder =
         firstMemberNamed("_enumToString") as SourceProcedureBuilder;
@@ -846,8 +794,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       ]));
     }
 
-    super.buildOutlineExpressions(
-        classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+    super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
   }
 }
 

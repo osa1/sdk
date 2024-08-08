@@ -100,8 +100,8 @@ import '../type_inference/inference_results.dart'
 import '../type_inference/type_inferrer.dart'
     show TypeInferrer, InferredFunctionBody;
 import '../type_inference/type_schema.dart' show UnknownType;
-import '../util/local_stack.dart';
 import '../util/helpers.dart';
+import '../util/local_stack.dart';
 import 'benchmarker.dart' show Benchmarker;
 import 'body_builder_context.dart';
 import 'collections.dart';
@@ -126,7 +126,7 @@ enum JumpTargetKind {
 }
 
 class BodyBuilder extends StackListenerImpl
-    implements ExpressionGeneratorHelper, DelayedActionPerformer {
+    implements ExpressionGeneratorHelper {
   @override
   final Forest forest;
 
@@ -246,89 +246,6 @@ class BodyBuilder extends StackListenerImpl
   /// nominal correspondingly.
   bool _insideOfFormalParameterType = false;
 
-  /// True if the currently built part of the body is inside of a default value
-  /// of a formal parameter.
-  ///
-  /// Being inside of a default value is treated with regards to possible
-  /// nestedness of the default values. See the documentation on
-  /// [_defaultValueNestingLevel] for details.
-  bool get _insideOfFormalParameterDefaultValue {
-    return _defaultValueNestingLevel > 0;
-  }
-
-  /// True if the parser is between [beginMetadata] and [endMetadata].
-  bool _insideMetadataParsing = false;
-
-  /// Numeric nestedness of formal parameter default values.
-  ///
-  /// The value of 0 means that the currently built part is not within a default
-  /// value. Consider the following clarifying examples.
-  ///
-  ///   // `const Bar()` isn't within a default value.
-  ///   foo() => const Bar();
-  ///
-  ///   // `const Bar()` is at [_defaultValueNestingLevel] = 1.
-  ///   foo([dynamic x = const Bar()]) {}
-  ///
-  ///   // `const Bar()` is at [_defaultValueNestingLevel] = 2.
-  ///   // `const Baz()` is at [_defaultValueNestingLevel] = 1.
-  ///   foo([dynamic x = ([dynamic y = const Bar()]) => const Baz()]) {}
-  ///
-  ///  Since function expressions aren't const values, currently it's not
-  ///  possible to write a program with [_defaultValueNestingLevel] > 1 that
-  ///  doesn't contain a compile-time error. However, it's still necessary to
-  ///  track the nestedness level to avoid bad compiler states and compiler
-  ///  crashes.
-  int _defaultValueNestingLevel = 0;
-
-  /// Returns true if newly created aliased or redirecting invocations need
-  /// post-processing such as resolution or unaliasing.
-  ///
-  /// The need for the condition computed by the getter is due to some parts of
-  /// the AST being built twice. The first time they are built is during
-  /// outline expressions building. The second time they are built during the
-  /// function body building. However, they are fully processed only the first
-  /// time they are built, and the second time around they are discarded.
-  /// Additional complication arises due to some nodes, such as annotations,
-  /// being built only once. So we only need to add the nodes created for the
-  /// first time into the lists of nodes for post-processing.
-  ///
-  /// The invocations inside default values that need resolution or unaliasing
-  /// were already added to the post-processing lists during outline expression
-  /// building. Only those invocations that are built outside of the default
-  /// values or inside the default values that aren't built as outline
-  /// expressions need to be added during the second pass.
-  bool get _createdStaticInvocationsNeedPostProcessing {
-    return
-        // All invocations in outline building phase will be type-inferred, and
-        // they all should be added to the post-processing.
-        _context.inOutlineBuildingPhase ||
-
-            // Here we aren't in the outline mode, but rather in the
-            // body-building mode. If the current context has formal parameters
-            // and is a constructor context, their default values should be
-            // skipped because in the body-building mode they aren't passed
-            // through type inference.
-            (!_context.hasFormalParameters ||
-                    !_insideOfFormalParameterDefaultValue ||
-                    !_context.isConstructor) &&
-
-                // The invocations in the metadata should also be skipped in the
-                // body-building phase, since they aren't type-inferred. An
-                // exception here are the annotations within method bodies,
-                // field initializers, and on formal parameters.
-                !(_context.inMetadata ||
-                    _insideMetadataParsing &&
-                        !_inBody &&
-                        !inFormals &&
-                        !inFieldInitializer) &&
-
-                // Finally, the const fields in body-building phase aren't
-                // inferred and the invocations in them should be skipped during
-                // post-processing.
-                !_context.inConstFields;
-  }
-
   bool get inFunctionType =>
       _structuralParameterDepthLevel > 0 || _insideOfFormalParameterType;
 
@@ -345,10 +262,6 @@ class BodyBuilder extends StackListenerImpl
   bool inCatchBlock = false;
 
   int functionNestingLevel = 0;
-
-  int _inBodyCount = 0;
-
-  bool get _inBody => _inBodyCount > 0;
 
   Statement? problemInLoopOrSwitch;
 
@@ -370,41 +283,6 @@ class BodyBuilder extends StackListenerImpl
   /// If non-null, records instance fields which have already been initialized
   /// and where that was.
   Map<String, int>? initializedFields;
-
-  /// List of built redirecting factory invocations.  The targets of the
-  /// invocations are to be resolved in a separate step.
-  final List<FactoryConstructorInvocation> redirectingFactoryInvocations = [];
-
-  /// List of redirecting factory invocations delayed for resolution.
-  ///
-  /// A resolution of a redirecting factory invocation can be delayed because
-  /// the inference in the declaration of the redirecting factory isn't done
-  /// yet.
-  final List<FactoryConstructorInvocation>
-      delayedRedirectingFactoryInvocations = [];
-
-  /// List of built type aliased generative constructor invocations that
-  /// require unaliasing.
-  final List<TypeAliasedConstructorInvocation>
-      typeAliasedConstructorInvocations = [];
-
-  /// List of built type aliased factory constructor invocations that require
-  /// unaliasing.
-  final List<TypeAliasedFactoryInvocation> typeAliasedFactoryInvocations = [];
-
-  /// List of type aliased factory invocations delayed for resolution.
-  ///
-  /// A resolution of a type aliased factory invocation can be delayed because
-  /// the inference in the declaration of the target isn't done yet.
-  final List<TypeAliasedFactoryInvocation>
-      delayedTypeAliasedFactoryInvocations = [];
-
-  /// List of type aliased constructor invocations delayed for resolution.
-  ///
-  /// A resolution of a type aliased constructor invocation can be delayed
-  /// because the inference in the declaration of the target isn't done yet.
-  final List<TypeAliasedConstructorInvocation>
-      delayedTypeAliasedConstructorInvocations = [];
 
   /// Variables with metadata.  Their types need to be inferred late, for
   /// example, in [finishFunction].
@@ -538,9 +416,6 @@ class BodyBuilder extends StackListenerImpl
   void enterLocalScope(LocalScope localScope) {
     _localScopes.push(localScope);
     _labelScopes.push(new LabelScopeImpl(_labelScope));
-    if (_localScope.kind == ScopeKind.functionBody) {
-      _inBodyCount++;
-    }
   }
 
   void createAndEnterLocalScope(
@@ -548,9 +423,6 @@ class BodyBuilder extends StackListenerImpl
     _localScopes
         .push(_localScope.createNestedScope(debugName: debugName, kind: kind));
     _labelScopes.push(new LabelScopeImpl(_labelScope));
-    if (kind == ScopeKind.functionBody) {
-      _inBodyCount++;
-    }
   }
 
   void exitLocalScope({List<ScopeKind>? expectedScopeKinds}) {
@@ -570,9 +442,6 @@ class BodyBuilder extends StackListenerImpl
       if (declaredInCurrentGuard!.isEmpty) {
         declaredInCurrentGuard = null;
       }
-    }
-    if (_localScope.kind == ScopeKind.functionBody) {
-      _inBodyCount--;
     }
     _labelScopes.pop();
     _localScopes.pop();
@@ -849,7 +718,6 @@ class BodyBuilder extends StackListenerImpl
       switchScope.unclaimedForwardDeclarations!
           .forEach((String name, JumpTarget declaration) {
         if (outerSwitchScope == null) {
-          // Coverage-ignore-block(suite): Not run.
           for (Statement statement in declaration.users) {
             statement.parent!.replaceChild(
                 statement,
@@ -876,7 +744,6 @@ class BodyBuilder extends StackListenerImpl
           buildProblem(message, offset, name.length, context: context)
             ..parent = variable;
     } else {
-      // Coverage-ignore-block(suite): Not run.
       variable.initializer = wrapInLocatedProblem(
           variable.initializer!, message.withLocation(uri, offset, name.length),
           context: context)
@@ -939,7 +806,6 @@ class BodyBuilder extends StackListenerImpl
     super.push(constantContext);
     constantContext = ConstantContext.inferred;
     assert(checkState(token, [ValueKinds.ConstantContext]));
-    _insideMetadataParsing = true;
   }
 
   @override
@@ -1017,7 +883,6 @@ class BodyBuilder extends StackListenerImpl
       }
       constantContext = savedConstantContext;
     }
-    _insideMetadataParsing = false;
     assert(checkState(beginToken, [ValueKinds.Expression]));
   }
 
@@ -1101,21 +966,7 @@ class BodyBuilder extends StackListenerImpl
         continue;
       }
       if (initializer != null) {
-        if (fieldBuilder.hasBodyBeenBuilt) {
-          // The initializer was already compiled (e.g., if it appear in the
-          // outline, like constant field initializers) so we do not need to
-          // perform type inference or transformations.
-
-          // If the body is already built and it's a type aliased constructor or
-          // factory invocation, they shouldn't be checked or resolved the
-          // second time, so they are removed from the corresponding lists.
-          if (initializer is TypeAliasedConstructorInvocation) {
-            typeAliasedConstructorInvocations.remove(initializer);
-          }
-          if (initializer is TypeAliasedFactoryInvocation) {
-            typeAliasedFactoryInvocations.remove(initializer);
-          }
-        } else {
+        if (!fieldBuilder.hasBodyBeenBuilt) {
           initializer = typeInferrer
               .inferFieldInitializer(this, fieldBuilder.builtType, initializer)
               .expression;
@@ -1143,7 +994,7 @@ class BodyBuilder extends StackListenerImpl
     }
     pop(); // Annotations.
 
-    performBacklogComputations(allowFurtherDelays: false);
+    performBacklogComputations();
     assert(stack.length == 0);
   }
 
@@ -1152,40 +1003,13 @@ class BodyBuilder extends StackListenerImpl
   ///
   /// Back logged computations include resolution of redirecting factory
   /// invocations and checking of typedef types.
-  ///
-  /// If the parameter [allowFurtherDelays] is set to `true`, the backlog
-  /// computations are allowed to be delayed one more time if they can't be
-  /// completed in the current invocation of [performBacklogComputations] and
-  /// have a chance to be completed during the next invocation. If
-  /// [allowFurtherDelays] is set to `false`, the backlog computations are
-  /// assumed to be final and the function throws an internal exception in case
-  /// if any of the computations can't be completed.
-  void performBacklogComputations(
-      {List<DelayedActionPerformer>? delayedActionPerformers,
-      required bool allowFurtherDelays}) {
+  void performBacklogComputations() {
     _finishVariableMetadata();
-    _unaliasTypeAliasedConstructorInvocations(
-        typeAliasedConstructorInvocations);
-    _unaliasTypeAliasedFactoryInvocations(typeAliasedFactoryInvocations);
-    _resolveRedirectingFactoryTargets(redirectingFactoryInvocations,
-        allowFurtherDelays: allowFurtherDelays);
     libraryBuilder.checkPendingBoundsChecks(typeEnvironment);
-    if (hasDelayedActions) {
-      assert(
-          delayedActionPerformers != null,
-          // Coverage-ignore(suite): Not run.
-          "Body builder has delayed actions that cannot be performed: "
-          "${[
-            ...delayedRedirectingFactoryInvocations,
-            ...delayedTypeAliasedFactoryInvocations,
-            ...delayedTypeAliasedConstructorInvocations,
-          ]}");
-      delayedActionPerformers?.add(this);
-    }
   }
 
   void finishRedirectingFactoryBody() {
-    performBacklogComputations(allowFurtherDelays: false);
+    performBacklogComputations();
   }
 
   @override
@@ -1217,7 +1041,6 @@ class BodyBuilder extends StackListenerImpl
           if (formal.isInitializingFormal) {
             List<Initializer> initializers;
             if (_context.isExternalConstructor) {
-              // Coverage-ignore-block(suite): Not run.
               initializers = <Initializer>[
                 buildInvalidInitializer(
                     buildProblem(
@@ -1497,7 +1320,7 @@ class BodyBuilder extends StackListenerImpl
       _context.setBody(body);
     }
 
-    performBacklogComputations(allowFurtherDelays: false);
+    performBacklogComputations();
   }
 
   void checkAsyncReturnType(AsyncMarker asyncModifier, DartType returnType,
@@ -1615,7 +1438,8 @@ class BodyBuilder extends StackListenerImpl
   /// [target], `.arguments` is [arguments], `.fileOffset` is [fileOffset],
   /// and `.isConst` is [isConst].
   /// Returns null if the invocation can't be resolved.
-  Expression? _resolveRedirectingFactoryTarget(
+  @override
+  Expression? resolveRedirectingFactoryTarget(
       Procedure target, Arguments arguments, int fileOffset, bool isConst) {
     Procedure initialTarget = target;
     Expression replacementNode;
@@ -1662,195 +1486,49 @@ class BodyBuilder extends StackListenerImpl
     return replacementNode;
   }
 
-  /// If the parameter [allowFurtherDelays] is set to `true`, the resolution of
-  /// redirecting factories is allowed to be delayed one more time if it can't
-  /// be completed in the current invocation of
-  /// [_resolveRedirectingFactoryTargets] and has a chance to be completed
-  /// during the next invocation. If [allowFurtherDelays] is set to `false`,
-  /// the resolution of redirecting factories is assumed to be final and the
-  /// function throws an internal exception in case if any of the resolutions
-  /// can't be completed.
-  void _resolveRedirectingFactoryTargets(
-      List<FactoryConstructorInvocation> redirectingFactoryInvocations,
-      {required bool allowFurtherDelays}) {
-    List<FactoryConstructorInvocation> invocations =
-        redirectingFactoryInvocations.toList();
-    redirectingFactoryInvocations.clear();
-    for (FactoryConstructorInvocation invocation in invocations) {
-      // If the invocation was invalid, it or its parent has already been
-      // desugared into an exception throwing expression.  There is nothing to
-      // resolve anymore.  Note that in the case where the invocation's parent
-      // was invalid, type inference won't reach the invocation node and won't
-      // set its inferredType field.  If type inference is disabled, reach to
-      // the outermost parent to check if the node is a dead code.
-      if (invocation.parent == null) continue;
-      if (!invocation.hasBeenInferred) {
-        if (allowFurtherDelays) {
-          delayedRedirectingFactoryInvocations.add(invocation);
-        }
-        continue;
-      }
-      Expression? replacement = _resolveRedirectingFactoryTarget(
-          invocation.target,
-          invocation.arguments,
-          invocation.fileOffset,
-          invocation.isConst);
-      if (replacement == null) {
-        delayedRedirectingFactoryInvocations.add(invocation);
-      } else {
-        invocation.parent?.replaceChild(invocation, replacement);
-      }
-    }
-  }
-
-  void _unaliasTypeAliasedConstructorInvocations(
-      List<TypeAliasedConstructorInvocation>
-          typeAliasedConstructorInvocations) {
-    List<TypeAliasedConstructorInvocation> invocations = [
-      ...typeAliasedConstructorInvocations
-    ];
-    typeAliasedConstructorInvocations.clear();
-    for (TypeAliasedConstructorInvocation invocation in invocations) {
-      assert(
-          invocation.hasBeenInferred || isOrphaned(invocation),
-          // Coverage-ignore(suite): Not run.
-          "Node $invocation has not been inferred.");
-
-      Expression? replacement;
-      if (invocation.hasBeenInferred) {
-        bool inferred = !hasExplicitTypeArguments(invocation.arguments);
-        DartType aliasedType = new TypedefType(
-            invocation.typeAliasBuilder.typedef,
-            Nullability.nonNullable,
-            invocation.arguments.types);
-        libraryBuilder.checkBoundsInType(
-            aliasedType, typeEnvironment, uri, invocation.fileOffset,
-            allowSuperBounded: false, inferred: inferred);
-        DartType unaliasedType = aliasedType.unalias;
-        List<DartType>? invocationTypeArguments = null;
-        if (unaliasedType is InterfaceType) {
-          invocationTypeArguments = unaliasedType.typeArguments;
-        }
-        Arguments invocationArguments = forest.createArguments(
-            noLocation, invocation.arguments.positional,
-            types: invocationTypeArguments, named: invocation.arguments.named);
-        replacement = new ConstructorInvocation(
-            invocation.target, invocationArguments,
-            isConst: invocation.isConst);
-      }
-      if (replacement == null) {
-        delayedTypeAliasedConstructorInvocations.add(invocation);
-      } else {
-        invocation.parent?.replaceChild(invocation, replacement);
-      }
-    }
-    typeAliasedConstructorInvocations.clear();
-  }
-
-  void _unaliasTypeAliasedFactoryInvocations(
-      List<TypeAliasedFactoryInvocation> typeAliasedFactoryInvocations) {
-    List<TypeAliasedFactoryInvocation> invocations =
-        typeAliasedFactoryInvocations.toList();
-    typeAliasedFactoryInvocations.clear();
-    for (TypeAliasedFactoryInvocation invocation in invocations) {
-      assert(
-          invocation.hasBeenInferred || isOrphaned(invocation),
-          // Coverage-ignore(suite): Not run.
-          "Node $invocation has not been inferred.");
-
-      Expression? replacement;
-      if (invocation.hasBeenInferred) {
-        bool inferred = !hasExplicitTypeArguments(invocation.arguments);
-        DartType aliasedType = new TypedefType(
-            invocation.typeAliasBuilder.typedef,
-            Nullability.nonNullable,
-            invocation.arguments.types);
-        libraryBuilder.checkBoundsInType(
-            aliasedType, typeEnvironment, uri, invocation.fileOffset,
-            allowSuperBounded: false, inferred: inferred);
-        DartType unaliasedType = aliasedType.unalias;
-        List<DartType>? invocationTypeArguments = null;
-        if (unaliasedType is TypeDeclarationType) {
-          invocationTypeArguments = unaliasedType.typeArguments;
-        }
-        Arguments invocationArguments = forest.createArguments(
-            noLocation, invocation.arguments.positional,
-            types: invocationTypeArguments,
-            named: invocation.arguments.named,
-            hasExplicitTypeArguments:
-                hasExplicitTypeArguments(invocation.arguments));
-        replacement = _resolveRedirectingFactoryTarget(invocation.target,
-            invocationArguments, invocation.fileOffset, invocation.isConst);
-      }
-
-      if (replacement == null) {
-        delayedTypeAliasedFactoryInvocations.add(invocation);
-      } else {
-        invocation.parent?.replaceChild(invocation, replacement);
-      }
-    }
-    typeAliasedFactoryInvocations.clear();
-  }
-
-  /// Perform actions that were delayed
-  ///
-  /// An action can be delayed, for instance, because it depends on some
-  /// calculations in another library.  For example, a resolution of a
-  /// redirecting factory invocation depends on the type inference in the
-  /// redirecting factory.
   @override
-  void performDelayedActions({required bool allowFurtherDelays}) {
-    if (delayedRedirectingFactoryInvocations.isNotEmpty) {
-      _resolveRedirectingFactoryTargets(delayedRedirectingFactoryInvocations,
-          allowFurtherDelays: allowFurtherDelays);
-      if (delayedRedirectingFactoryInvocations.isNotEmpty) {
-        // Coverage-ignore-block(suite): Not run.
-        for (StaticInvocation invocation
-            in delayedRedirectingFactoryInvocations) {
-          internalProblem(
-              fasta.templateInternalProblemUnhandled.withArguments(
-                  invocation.target.name.text, 'performDelayedActions'),
-              invocation.fileOffset,
-              uri);
-        }
-      }
+  Expression unaliasSingleTypeAliasedConstructorInvocation(
+      TypeAliasedConstructorInvocation invocation) {
+    bool inferred = !hasExplicitTypeArguments(invocation.arguments);
+    DartType aliasedType = new TypedefType(invocation.typeAliasBuilder.typedef,
+        Nullability.nonNullable, invocation.arguments.types);
+    libraryBuilder.checkBoundsInType(
+        aliasedType, typeEnvironment, uri, invocation.fileOffset,
+        allowSuperBounded: false, inferred: inferred);
+    DartType unaliasedType = aliasedType.unalias;
+    List<DartType>? invocationTypeArguments = null;
+    if (unaliasedType is InterfaceType) {
+      invocationTypeArguments = unaliasedType.typeArguments;
     }
-    if (delayedTypeAliasedFactoryInvocations.isNotEmpty) {
-      _unaliasTypeAliasedFactoryInvocations(
-          delayedTypeAliasedFactoryInvocations);
-      if (delayedTypeAliasedFactoryInvocations.isNotEmpty) {
-        // Coverage-ignore-block(suite): Not run.
-        for (StaticInvocation invocation
-            in delayedTypeAliasedFactoryInvocations) {
-          internalProblem(
-              fasta.templateInternalProblemUnhandled.withArguments(
-                  invocation.target.name.text, 'performDelayedActions'),
-              invocation.fileOffset,
-              uri);
-        }
-      }
-    }
-    if (delayedTypeAliasedConstructorInvocations.isNotEmpty) {
-      _unaliasTypeAliasedConstructorInvocations(
-          delayedTypeAliasedConstructorInvocations);
-      if (delayedTypeAliasedConstructorInvocations.isNotEmpty) {
-        // Coverage-ignore-block(suite): Not run.
-        for (ConstructorInvocation invocation
-            in delayedTypeAliasedConstructorInvocations) {
-          internalProblem(
-              fasta.templateInternalProblemUnhandled.withArguments(
-                  invocation.target.name.text, 'performDelayedActions'),
-              invocation.fileOffset,
-              uri);
-        }
-      }
-    }
+    Arguments invocationArguments = forest.createArguments(
+        noLocation, invocation.arguments.positional,
+        types: invocationTypeArguments, named: invocation.arguments.named);
+    return new ConstructorInvocation(invocation.target, invocationArguments,
+        isConst: invocation.isConst);
   }
 
-  bool get hasDelayedActions {
-    return delayedRedirectingFactoryInvocations.isNotEmpty ||
-        delayedTypeAliasedFactoryInvocations.isNotEmpty ||
-        delayedTypeAliasedConstructorInvocations.isNotEmpty;
+  @override
+  Expression? unaliasSingleTypeAliasedFactoryInvocation(
+      TypeAliasedFactoryInvocation invocation) {
+    bool inferred = !hasExplicitTypeArguments(invocation.arguments);
+    DartType aliasedType = new TypedefType(invocation.typeAliasBuilder.typedef,
+        Nullability.nonNullable, invocation.arguments.types);
+    libraryBuilder.checkBoundsInType(
+        aliasedType, typeEnvironment, uri, invocation.fileOffset,
+        allowSuperBounded: false, inferred: inferred);
+    DartType unaliasedType = aliasedType.unalias;
+    List<DartType>? invocationTypeArguments = null;
+    if (unaliasedType is TypeDeclarationType) {
+      invocationTypeArguments = unaliasedType.typeArguments;
+    }
+    Arguments invocationArguments = forest.createArguments(
+        noLocation, invocation.arguments.positional,
+        types: invocationTypeArguments,
+        named: invocation.arguments.named,
+        hasExplicitTypeArguments:
+            hasExplicitTypeArguments(invocation.arguments));
+    return resolveRedirectingFactoryTarget(invocation.target,
+        invocationArguments, invocation.fileOffset, invocation.isConst);
   }
 
   void _finishVariableMetadata() {
@@ -1902,7 +1580,7 @@ class BodyBuilder extends StackListenerImpl
       // Coverage-ignore-block(suite): Not run.
       temporaryParent = new ListLiteral(expressions);
     }
-    performBacklogComputations(allowFurtherDelays: false);
+    performBacklogComputations();
     // Coverage-ignore(suite): Not run.
     return temporaryParent != null ? temporaryParent.expressions : expressions;
   }
@@ -1910,7 +1588,6 @@ class BodyBuilder extends StackListenerImpl
   // Coverage-ignore(suite): Not run.
   Expression parseSingleExpression(
       Parser parser, Token token, FunctionNode parameters) {
-    assert(redirectingFactoryInvocations.isEmpty);
     int fileOffset = offsetForToken(token);
     List<NominalVariableBuilder>? typeParameterBuilders;
     for (TypeParameter typeParameter in parameters.typeParameters) {
@@ -1988,7 +1665,7 @@ class BodyBuilder extends StackListenerImpl
         "Previously implicit assumption about inferFunctionBody "
         "not returning anything different.");
 
-    performBacklogComputations(allowFurtherDelays: false);
+    performBacklogComputations();
 
     return fakeReturn.expression!;
   }
@@ -2500,7 +2177,6 @@ class BodyBuilder extends StackListenerImpl
     debugEvent("ParenthesizedExpression");
     Expression value = popForValue();
     if (value is ShadowLargeIntLiteral) {
-      // Coverage-ignore-block(suite): Not run.
       // We need to know that the expression was parenthesized because we will
       // treat -n differently from -(n).  If the expression occurs in a double
       // context, -n is a double literal and -(n) is an application of unary- to
@@ -2996,7 +2672,6 @@ class BodyBuilder extends StackListenerImpl
               token.charOffset,
               token.length));
         } else {
-          // Coverage-ignore-block(suite): Not run.
           push(buildProblem(fasta.templateInvalidOperator.withArguments(token),
               token.charOffset, token.length));
         }
@@ -3615,7 +3290,6 @@ class BodyBuilder extends StackListenerImpl
       // Coverage-ignore-block(suite): Not run.
       push(qualifier);
     } else if (node is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       push(node);
     } else {
       Identifier identifier = node as Identifier;
@@ -3744,6 +3418,7 @@ class BodyBuilder extends StackListenerImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleLiteralIntWithSeparators(Token token) {
     debugEvent("LiteralIntWithSeparators");
 
@@ -3949,7 +3624,6 @@ class BodyBuilder extends StackListenerImpl
   void pushNewLocalVariable(Expression? initializer, {Token? equalsToken}) {
     Object? node = pop();
     if (node is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       push(node);
       return;
     }
@@ -4013,7 +3687,6 @@ class BodyBuilder extends StackListenerImpl
     debugEvent("NoFieldInitializer");
     constantContext = _context.constantContext;
     if (constantContext == ConstantContext.inferred) {
-      // Coverage-ignore-block(suite): Not run.
       // Creating a null value to prevent the Dart VM from crashing.
       push(forest.createNullLiteral(offsetForToken(token)));
     } else {
@@ -4028,7 +3701,6 @@ class BodyBuilder extends StackListenerImpl
     debugEvent("InitializedIdentifier");
     Object? node = pop();
     if (node is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       push(node);
       return;
     }
@@ -4076,7 +3748,6 @@ class BodyBuilder extends StackListenerImpl
       currentLocalVariableModifiers = pop() as int;
       List<Expression>? annotations = pop() as List<Expression>?;
       if (node is ParserRecovery) {
-        // Coverage-ignore-block(suite): Not run.
         push(node);
         return;
       }
@@ -4110,7 +3781,6 @@ class BodyBuilder extends StackListenerImpl
       currentLocalVariableModifiers = pop() as int;
       List<Expression>? annotations = pop() as List<Expression>?;
       if (variables == null) {
-        // Coverage-ignore-block(suite): Not run.
         push(new ParserRecovery(offsetForToken(endToken)));
         return;
       }
@@ -4240,7 +3910,6 @@ class BodyBuilder extends StackListenerImpl
 
   void exitLoopOrSwitch(Statement statement) {
     if (problemInLoopOrSwitch != null) {
-      // Coverage-ignore-block(suite): Not run.
       push(problemInLoopOrSwitch);
       problemInLoopOrSwitch = null;
     } else {
@@ -4283,7 +3952,6 @@ class BodyBuilder extends StackListenerImpl
       // Coverage-ignore-block(suite): Not run.
       return <VariableDeclaration>[];
     } else if (variableOrExpression is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       return <VariableDeclaration>[];
     } else if (variableOrExpression == null) {
       return <VariableDeclaration>[];
@@ -4478,7 +4146,7 @@ class BodyBuilder extends StackListenerImpl
       assert(conditionStatement is EmptyStatement);
     }
     if (entry is MapLiteralEntry) {
-      ForMapEntry result;
+      TreeNode result;
       if (variableOrExpression is PatternVariableDeclaration) {
         result = forest.createPatternForMapEntry(offsetForToken(forToken),
             patternVariableDeclaration: variableOrExpression,
@@ -4494,7 +4162,7 @@ class BodyBuilder extends StackListenerImpl
       typeInferrer.assignedVariables.endNode(result);
       push(result);
     } else {
-      ForElement result;
+      TreeNode result;
       if (variableOrExpression is PatternVariableDeclaration) {
         result = forest.createPatternForElement(offsetForToken(forToken),
             patternVariableDeclaration: variableOrExpression,
@@ -4599,7 +4267,6 @@ class BodyBuilder extends StackListenerImpl
           <Statement>[variableOrExpression, ...intermediateVariables!, result]);
     }
     if (variableOrExpression is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       problemInLoopOrSwitch ??= buildProblemStatement(
           fasta.messageSyntheticToken, variableOrExpression.charOffset,
           suppressMessage: true);
@@ -4669,7 +4336,6 @@ class BodyBuilder extends StackListenerImpl
     DartType typeArgument;
     if (typeArguments != null) {
       if (typeArguments.length > 1) {
-        // Coverage-ignore-block(suite): Not run.
         addProblem(
             fasta.messageListLiteralTooManyTypeArguments,
             offsetForToken(leftBracket),
@@ -4875,7 +4541,6 @@ class BodyBuilder extends StackListenerImpl
     if (setOrMapEntries != null) {
       for (dynamic entry in setOrMapEntries) {
         if (entry is MapLiteralEntry) {
-          // Coverage-ignore-block(suite): Not run.
           // TODO(danrubel): report the error on the colon
           addProblem(fasta.templateExpectedButGot.withArguments(','),
               entry.fileOffset, 1);
@@ -4973,11 +4638,9 @@ class BodyBuilder extends StackListenerImpl
       for (int i = 0; i < setOrMapEntries.length; ++i) {
         if (setOrMapEntries[i] is MapLiteralEntry) {
           mapEntries[i] = setOrMapEntries[i];
-        } else if (setOrMapEntries[i] is ControlFlowElement) {
+        } else {
           mapEntries[i] = convertToMapEntry(setOrMapEntries[i], this,
               typeInferrer.assignedVariables.reassignInfo);
-        } else {
-          mapEntries[i] = convertToErroneousMapEntry(setOrMapEntries[i], this);
         }
       }
       buildLiteralMap(typeArguments, constKeyword, leftBrace, mapEntries);
@@ -5073,6 +4736,7 @@ class BodyBuilder extends StackListenerImpl
   }
 
   @override
+  // Coverage-ignore(suite): Not run.
   void handleLiteralDoubleWithSeparators(Token token) {
     debugEvent("LiteralDoubleWithSeparators");
 
@@ -5169,7 +4833,6 @@ class BodyBuilder extends StackListenerImpl
     if (identifierCount == 1) {
       Object? part = pop();
       if (part is ParserRecovery) {
-        // Coverage-ignore-block(suite): Not run.
         push(new ParserErrorGenerator(
             this, hashToken, fasta.messageSyntheticToken));
       } else {
@@ -5575,7 +5238,6 @@ class BodyBuilder extends StackListenerImpl
     debugEvent("ThrowExpression");
     Expression expression = popForValue();
     if (constantContext != ConstantContext.none) {
-      // Coverage-ignore-block(suite): Not run.
       push(buildProblem(
           fasta.templateNotConstantExpression.withArguments('Throw'),
           throwToken.offset,
@@ -5764,7 +5426,6 @@ class BodyBuilder extends StackListenerImpl
     super.push(constantContext);
     _insideOfFormalParameterType = false;
     constantContext = ConstantContext.required;
-    _defaultValueNestingLevel++;
   }
 
   @override
@@ -5773,7 +5434,6 @@ class BodyBuilder extends StackListenerImpl
     Object? defaultValueExpression = pop();
     constantContext = pop() as ConstantContext;
     push(defaultValueExpression);
-    _defaultValueNestingLevel--;
   }
 
   @override
@@ -6253,17 +5913,12 @@ class BodyBuilder extends StackListenerImpl
         libraryBuilder.checkBoundsInConstructorInvocation(
             node, typeEnvironment, uri);
       } else {
-        TypeAliasedConstructorInvocation typeAliasedConstructorInvocation =
-            node = new TypeAliasedConstructorInvocation(
-                typeAliasBuilder, target, arguments,
-                isConst: isConst)
-              ..fileOffset = charOffset;
+        node = new TypeAliasedConstructorInvocation(
+            typeAliasBuilder, target, arguments,
+            isConst: isConst)
+          ..fileOffset = charOffset;
         // No type arguments were passed, so we need not check bounds.
         assert(arguments.types.isEmpty);
-        if (_createdStaticInvocationsNeedPostProcessing) {
-          typeAliasedConstructorInvocations
-              .add(typeAliasedConstructorInvocation);
-        }
       }
       return node;
     } else {
@@ -6295,9 +5950,6 @@ class BodyBuilder extends StackListenerImpl
           libraryBuilder.checkBoundsInFactoryInvocation(
               factoryConstructorInvocation, typeEnvironment, uri,
               inferred: !hasExplicitTypeArguments(arguments));
-          if (_createdStaticInvocationsNeedPostProcessing) {
-            redirectingFactoryInvocations.add(factoryConstructorInvocation);
-          }
           node = factoryConstructorInvocation;
         } else {
           TypeAliasedFactoryInvocation typeAliasedFactoryInvocation =
@@ -6307,9 +5959,6 @@ class BodyBuilder extends StackListenerImpl
                 ..fileOffset = charOffset;
           // No type arguments were passed, so we need not check bounds.
           assert(arguments.types.isEmpty);
-          if (_createdStaticInvocationsNeedPostProcessing) {
-            typeAliasedFactoryInvocations.add(typeAliasedFactoryInvocation);
-          }
           node = typeAliasedFactoryInvocation;
         }
         return node;
@@ -6555,7 +6204,6 @@ class BodyBuilder extends StackListenerImpl
     List<TypeBuilder>? typeArguments = pop() as List<TypeBuilder>?;
     if (inMetadata && typeArguments != null) {
       if (!libraryFeatures.genericMetadata.isEnabled) {
-        // Coverage-ignore-block(suite): Not run.
         handleRecoverableError(fasta.messageMetadataTypeArguments,
             nameLastToken.next!, nameLastToken.next!);
       }
@@ -6574,7 +6222,6 @@ class BodyBuilder extends StackListenerImpl
           typeArguments, name, arguments, nameToken, nameLastToken, constness,
           inImplicitCreationContext: inImplicitCreationContext));
     } else if (type is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
       push(new ParserErrorGenerator(
           this, nameToken, fasta.messageSyntheticToken));
     } else if (type is InvalidExpression) {
@@ -6692,7 +6339,6 @@ class BodyBuilder extends StackListenerImpl
       int numberOfTypeArguments = typeArguments?.length ?? 0;
       if (typeArguments != null &&
           numberOfTypeParameters != numberOfTypeArguments) {
-        // Coverage-ignore-block(suite): Not run.
         // TODO(eernst): Use position of type arguments, not nameToken.
         return evaluateArgumentsBefore(
             arguments,
@@ -6729,7 +6375,6 @@ class BodyBuilder extends StackListenerImpl
                 target = null;
               } else if (constructorBuilder.isConstructor) {
                 if (typeDeclarationBuilder.isAbstract) {
-                  // Coverage-ignore-block(suite): Not run.
                   return evaluateArgumentsBefore(
                       arguments,
                       buildAbstractClassInstantiationError(
@@ -6925,7 +6570,6 @@ class BodyBuilder extends StackListenerImpl
               forest.argumentsSetTypeArguments(arguments, []);
             } else {
               if (forest.argumentsTypeArguments(arguments).isEmpty) {
-                // Coverage-ignore-block(suite): Not run.
                 // No type arguments provided to unaliased class, use defaults.
                 List<DartType> result = new List<DartType>.generate(
                     typeVariables.length,
@@ -7328,7 +6972,6 @@ class BodyBuilder extends StackListenerImpl
     // TODO(cstefantsova): Replace the following no-op with the node for
     // handling null-aware elements.
     if (!libraryFeatures.nullAwareElements.isEnabled) {
-      // Coverage-ignore-block(suite): Not run.
       addProblem(
           templateExperimentNotEnabledOffByDefault
               .withArguments(ExperimentalFlag.nullAwareElements.name),
@@ -7964,7 +7607,6 @@ class BodyBuilder extends StackListenerImpl
     JumpTarget breakTarget = exitBreakTarget()!;
     List<BreakStatementImpl>? continueStatements;
     if (continueTarget.hasUsers) {
-      // Coverage-ignore-block(suite): Not run.
       LabeledStatement labeledStatement = forest.createLabeledStatement(body);
       continueStatements =
           continueTarget.resolveContinues(forest, labeledStatement);
@@ -7995,7 +7637,6 @@ class BodyBuilder extends StackListenerImpl
     typeInferrer.assignedVariables
         .storeInfo(forInStatement, assignedVariablesNodeInfo);
     if (continueStatements != null) {
-      // Coverage-ignore-block(suite): Not run.
       for (BreakStatementImpl continueStatement in continueStatements) {
         continueStatement.targetStatement = forInStatement;
       }
@@ -8088,7 +7729,6 @@ class BodyBuilder extends StackListenerImpl
       push(forest.createRethrowStatement(
           offsetForToken(rethrowToken), offsetForToken(endToken)));
     } else {
-      // Coverage-ignore-block(suite): Not run.
       push(new ExpressionStatement(buildProblem(fasta.messageRethrowNotCatch,
           offsetForToken(rethrowToken), lengthForToken(rethrowToken)))
         ..fileOffset = offsetForToken(rethrowToken));
@@ -8314,7 +7954,6 @@ class BodyBuilder extends StackListenerImpl
         if (_labelScope.hasLocalLabel(labelName)) {
           // TODO(ahe): Should validate this is a goto target.
           if (!_labelScope.claimLabel(labelName)) {
-            // Coverage-ignore-block(suite): Not run.
             addProblem(
                 fasta.templateDuplicateLabelInSwitchStatement
                     .withArguments(labelName),
@@ -8922,14 +8561,12 @@ class BodyBuilder extends StackListenerImpl
       push(problemInLoopOrSwitch = buildProblemStatement(
           fasta.messageBreakOutsideOfLoop, breakKeyword.charOffset));
     } else if (target == null || !target.isBreakTarget) {
-      // Coverage-ignore-block(suite): Not run.
       Token labelToken = breakKeyword.next!;
       push(problemInLoopOrSwitch = buildProblemStatement(
           fasta.templateInvalidBreakTarget.withArguments(name!),
           labelToken.charOffset,
           length: labelToken.length));
     } else if (target.functionNestingLevel != functionNestingLevel) {
-      // Coverage-ignore-block(suite): Not run.
       push(buildProblemTargetOutsideLocalFunction(name, breakKeyword));
     } else {
       Statement statement =
@@ -8939,7 +8576,6 @@ class BodyBuilder extends StackListenerImpl
     }
   }
 
-  // Coverage-ignore(suite): Not run.
   Statement buildProblemTargetOutsideLocalFunction(
       String? name, Token keyword) {
     Statement problem;
@@ -8994,19 +8630,16 @@ class BodyBuilder extends StackListenerImpl
       }
     }
     if (target == null) {
-      // Coverage-ignore-block(suite): Not run.
       push(problemInLoopOrSwitch = buildProblemStatement(
           fasta.messageContinueWithoutLabelInCase, continueKeyword.charOffset,
           length: continueKeyword.length));
     } else if (!target.isContinueTarget) {
-      // Coverage-ignore-block(suite): Not run.
       Token labelToken = continueKeyword.next!;
       push(problemInLoopOrSwitch = buildProblemStatement(
           fasta.templateInvalidContinueTarget.withArguments(name!),
           labelToken.charOffset,
           length: labelToken.length));
     } else if (target.functionNestingLevel != functionNestingLevel) {
-      // Coverage-ignore-block(suite): Not run.
       push(buildProblemTargetOutsideLocalFunction(name, continueKeyword));
     } else {
       Statement statement = forest.createContinueStatement(
@@ -9228,7 +8861,6 @@ class BodyBuilder extends StackListenerImpl
         context: context, suppressMessage: suppressMessage));
   }
 
-  // Coverage-ignore(suite): Not run.
   Statement wrapInProblemStatement(Statement statement, Message message) {
     // TODO(askesc): Produce explicit error statement wrapping the original.
     // See [issue 29717](https://github.com/dart-lang/sdk/issues/29717)
@@ -9353,7 +8985,6 @@ class BodyBuilder extends StackListenerImpl
           DartType fieldType = _context.substituteFieldType(builder.fieldType);
           if (!typeEnvironment.isSubtypeOf(
               formalType, fieldType, SubtypeCheckMode.withNullabilities)) {
-            // Coverage-ignore-block(suite): Not run.
             libraryBuilder.addProblem(
                 fasta.templateInitializingFormalTypeMismatch
                     .withArguments(name, formalType, builder.fieldType),
@@ -10519,25 +10150,21 @@ class _BodyBuilderCloner extends CloneVisitorNotMembers {
   _BodyBuilderCloner(this.bodyBuilder);
 
   @override
+  // Coverage-ignore(suite): Not run.
   TreeNode visitStaticInvocation(StaticInvocation node) {
     if (node is FactoryConstructorInvocation) {
       FactoryConstructorInvocation result = new FactoryConstructorInvocation(
           node.target, clone(node.arguments),
           isConst: node.isConst)
         ..hasBeenInferred = node.hasBeenInferred;
-      bodyBuilder.redirectingFactoryInvocations.add(result);
       return result;
-    }
-    // Coverage-ignore(suite): Not run.
-    else if (node is TypeAliasedFactoryInvocation) {
+    } else if (node is TypeAliasedFactoryInvocation) {
       TypeAliasedFactoryInvocation result = new TypeAliasedFactoryInvocation(
           node.typeAliasBuilder, node.target, clone(node.arguments),
           isConst: node.isConst)
         ..hasBeenInferred = node.hasBeenInferred;
-      bodyBuilder.typeAliasedFactoryInvocations.add(result);
       return result;
     }
-    // Coverage-ignore(suite): Not run.
     return super.visitStaticInvocation(node);
   }
 
@@ -10550,7 +10177,6 @@ class _BodyBuilderCloner extends CloneVisitorNotMembers {
               node.typeAliasBuilder, node.target, clone(node.arguments),
               isConst: node.isConst)
             ..hasBeenInferred = node.hasBeenInferred;
-      bodyBuilder.typeAliasedConstructorInvocations.add(result);
       return result;
     }
     return super.visitConstructorInvocation(node);
@@ -10567,6 +10193,7 @@ class _BodyBuilderCloner extends CloneVisitorNotMembers {
   }
 }
 
+// Coverage-ignore(suite): Not run.
 /// Returns `true` if [node] is not part of its parent member.
 ///
 /// This computation is costly and should only be used in assertions to verify
@@ -10584,7 +10211,6 @@ bool isOrphaned(TreeNode node) {
   if (member == null) {
     return true;
   }
-  // Coverage-ignore-block(suite): Not run.
   _FindChildVisitor visitor = new _FindChildVisitor(node);
   member.accept(visitor);
   return !visitor.foundNode;

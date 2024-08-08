@@ -97,12 +97,12 @@ vars = {
   ### /third_party/ dependencies
 
   # Prefer to use hashes of binaryen that have been reviewed & rolled into g3.
-  "binaryen_rev" : "654ee6e2504f11fb0e982a2cf276bafa750f694b",
+  "binaryen_rev" : "23a1a1aacc0dd14767ca8c53a034b7c6bb4acf52",
   "boringssl_gen_rev": "fef055e8d2749b82c79c8f043be1cbe5e8e4b40c",
   "boringssl_rev": "2db0eb3f96a5756298dcd7f9319e56a98585bd10",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "e77d6ce142b7bc737af3652f5727e449e84b7b03",
+  "devtools_rev": "14084d20946268f2d22c5ed55bd53e0176748368",
   "icu_rev": "43953f57b037778a1b8005564afabe214834f7bd",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -144,8 +144,8 @@ vars = {
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
   "dart_style_rev": "f7bd4c42ad6015143f08931540631448048f692d", # disable tools/rev_sdk_deps.dart
-  "dartdoc_rev": "5230f8fd10d51ef379993928ae5813bda103b78d",
-  "ecosystem_rev": "2635536f8fbb13ca8349e5e461a1b45320bc01ea",
+  "dartdoc_rev": "ce098154b16255bbc9ddfa89e3f6141262645513",
+  "ecosystem_rev": "f977423b1d9faa2afb34b805e9f28de0b2a657f1",
   "file_rev": "855831c242a17c2dee163828d52710d9043c7c8d",
   "fixnum_rev": "6c19e60366ce3d5edfaed51a7c12c98e7977977e",
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
@@ -182,7 +182,7 @@ vars = {
   "sync_http_rev": "ab8377eba79baff3d77e8c75d502efc2b85a9342",
   "tar_rev": "32ceb55e673141abff4e84b99483fe5eb881c291",
   "term_glyph_rev": "38a158f55006cf30942c928171ea601ee5e0308f",
-  "test_rev": "d0dc83372a65dffe164242213639a40d5bb7a9bb",
+  "test_rev": "9fbbfdbee18a686e3f84a386a01960ea0543ba01",
   "test_descriptor_rev": "90743bc16bc00526a1b9a64f813614be9b2479d9",
   "test_process_rev": "6223572ca16d7585d5f08d9281de6a5734e45150",
   "test_reflective_loader_rev": "6e648863b39aab8d0204e769d25805eea9db0ac4",
@@ -193,8 +193,8 @@ vars = {
   "web_rev": "e89fe49d8a86845e49686b4578c56b67bdd7ba49",
   "web_socket_channel_rev": "0e1d6e2eb5a0bfd62e45b772ac7107d796176cf6",
   "webdev_rev": "75417c09181c97786d9539a662834bed9d2f1e77",
-  "webdriver_rev": "718e4c37d004fceb9856de980782c46bf9576df5",
-  "webkit_inspection_protocol_rev": "32fffa53df3f54005c742ddf4f859fb585a6b254",
+  "webdriver_rev": "b181c9e5eca657ea4a12621332f47d9579106fda",
+  "webkit_inspection_protocol_rev": "119b877ae82bd2ca4cf7e5144d3a5ec104055164",
   "yaml_rev": "a645c3905fc3cc2bbd3def9879ba8dedd26e3aa5",
   "yaml_edit_rev": "5c54d455f272bbb83c948ac420c677371e69ae77",
 
@@ -207,9 +207,9 @@ vars = {
   # meant to be downloaded by users for local testing. You can self-service
   # update these by following the go/dart-engprod/browsers.md instructions.
   "download_chrome": False,
-  "chrome_tag": "127.0.6533.43",
+  "chrome_tag": "128.0.6613.5",
   "download_firefox": False,
-  "firefox_tag": "128.0",
+  "firefox_tag": "129.0",
 
   # Emscripten is used in dart2wasm tests.
   "download_emscripten": False,

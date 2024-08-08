@@ -29,7 +29,6 @@ import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/type_algorithms.dart';
 import '../type_inference/type_inference_engine.dart';
-import '../util/helpers.dart';
 import 'class_declaration.dart';
 import 'source_builder_mixins.dart';
 import 'source_constructor_builder.dart';
@@ -57,14 +56,13 @@ class SourceExtensionTypeDeclarationBuilder
 
   MergedClassMemberScope? _mergedScope;
 
-  final NameSpaceBuilder _nameSpaceBuilder;
+  final DeclarationNameSpaceBuilder _nameSpaceBuilder;
 
   late final LookupScope _scope;
 
-  late final NameSpace _nameSpace;
+  late final DeclarationNameSpace _nameSpace;
 
-  @override
-  final ConstructorScope constructorScope;
+  late final ConstructorScope _constructorScope;
 
   @override
   final List<NominalVariableBuilder>? typeParameters;
@@ -87,7 +85,6 @@ class SourceExtensionTypeDeclarationBuilder
       this.interfaceBuilders,
       this.typeParameterScope,
       this._nameSpaceBuilder,
-      this.constructorScope,
       SourceLibraryBuilder parent,
       this.constructorReferences,
       int startOffset,
@@ -108,14 +105,19 @@ class SourceExtensionTypeDeclarationBuilder
   LookupScope get scope => _scope;
 
   @override
-  NameSpace get nameSpace => _nameSpace;
+  DeclarationNameSpace get nameSpace => _nameSpace;
+
+  @override
+  ConstructorScope get constructorScope => _constructorScope;
 
   @override
   void buildScopes(LibraryBuilder coreLibrary) {
     _nameSpace = _nameSpaceBuilder.buildNameSpace(this);
     _scope = new NameSpaceLookupScope(
-        nameSpace, ScopeKind.declaration, "extension type $name",
+        _nameSpace, ScopeKind.declaration, "extension type $name",
         parent: typeParameterScope);
+    _constructorScope =
+        new DeclarationNameSpaceConstructorScope(name, _nameSpace);
   }
 
   @override
@@ -586,7 +588,7 @@ class SourceExtensionTypeDeclarationBuilder
 
   void checkRedirectingFactories(TypeEnvironment typeEnvironment) {
     Iterator<SourceFactoryBuilder> iterator =
-        constructorScope.filteredIterator<SourceFactoryBuilder>(
+        nameSpace.filteredConstructorIterator<SourceFactoryBuilder>(
             parent: this, includeDuplicates: true, includeAugmentations: true);
     while (iterator.moveNext()) {
       iterator.current.checkRedirectingFactories(typeEnvironment);
@@ -594,18 +596,16 @@ class SourceExtensionTypeDeclarationBuilder
   }
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
-    super.buildOutlineExpressions(
-        classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+    super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
 
-    Iterator<SourceMemberBuilder> iterator = constructorScope.filteredIterator(
-        parent: this, includeDuplicates: false, includeAugmentations: true);
+    Iterator<SourceMemberBuilder> iterator =
+        nameSpace.filteredConstructorIterator(
+            parent: this, includeDuplicates: false, includeAugmentations: true);
     while (iterator.moveNext()) {
-      iterator.current.buildOutlineExpressions(
-          classHierarchy, delayedActionPerformers, delayedDefaultValueCloners);
+      iterator.current
+          .buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
     }
   }
 
@@ -745,7 +745,7 @@ class SourceExtensionTypeDeclarationBuilder
       name = new Name("", name.library);
     }
 
-    Builder? builder = constructorScope.lookupLocalMember(name.text);
+    Builder? builder = nameSpace.lookupConstructor(name.text);
     if (builder is SourceExtensionTypeConstructorBuilder) {
       return builder;
     }

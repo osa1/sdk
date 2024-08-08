@@ -1816,6 +1816,8 @@ FfiCode.PACKED_ANNOTATION_ALIGNMENT:
   status: noFix
 FfiCode.SIZE_ANNOTATION_DIMENSIONS:
   status: noFix
+FfiCode.VARIABLE_LENGTH_ARRAY_NOT_LAST:
+  status: noFix
 FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_EXTENDS:
   status: hasFix
 FfiCode.SUBTYPE_OF_STRUCT_CLASS_IN_IMPLEMENTS:
@@ -1835,8 +1837,6 @@ HintCode.DEPRECATED_MEMBER_USE_FROM_SAME_PACKAGE_WITH_MESSAGE:
   notes: |-
     Should probably be able to use `DataDriven`.
 HintCode.DEPRECATED_MEMBER_USE_WITH_MESSAGE:
-  status: hasFix
-HintCode.DIVISION_OPTIMIZATION:
   status: hasFix
 HintCode.IMPORT_DEFERRED_LIBRARY_WITH_LOAD_FUNCTION:
   status: noFix
@@ -2485,6 +2485,8 @@ LintCode.use_to_and_as_if_applicable:
   status: noFix
   notes: |-
     This would require renaming the method, which is a refactoring.
+LintCode.use_truncating_division:
+  status: hasFix
 LintCode.valid_regexps:
   status: noFix
 LintCode.void_checks:

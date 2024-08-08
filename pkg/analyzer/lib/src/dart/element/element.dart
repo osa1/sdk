@@ -776,6 +776,9 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   /// A list containing all of the variables contained in this compilation unit.
   List<TopLevelVariableElementImpl> _variables = const [];
 
+  /// The scope of this fragment, `null` if it has not been created yet.
+  LibraryFragmentScope? _scope;
+
   ElementLinkedData? linkedData;
 
   /// Initialize a newly created compilation unit element to have the given
@@ -836,7 +839,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   List<ClassFragment> get classes2 => classes.cast<ClassFragment>();
 
   @override
-  LibraryElement2 get element => enclosingElement as LibraryElement2;
+  LibraryElement2 get element => library as LibraryElement2;
 
   @override
   LibraryOrAugmentationElement get enclosingElement =>
@@ -844,17 +847,12 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   @override
   CompilationUnitElementImpl? get enclosingElement3 {
-    switch (libraryOrAugmentationElement) {
-      case LibraryElementImpl library:
-        if (identical(library.definingCompilationUnit, this)) {
-          return null;
-        }
-        return library.definingCompilationUnit;
-      default:
-        return (libraryOrAugmentationElement.enclosingElement3
-                as LibraryOrAugmentationElementImpl)
-            .definingCompilationUnit;
+    if (libraryOrAugmentationElement is LibraryAugmentationElementImpl) {
+      return (libraryOrAugmentationElement.enclosingElement
+              as LibraryOrAugmentationElementImpl)
+          .definingCompilationUnit;
     }
+    return super.enclosingElement3 as CompilationUnitElementImpl?;
   }
 
   @override
@@ -1032,7 +1030,11 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   List<MixinFragment> get mixins2 => mixins.cast<MixinFragment>();
 
   @override
-  Fragment? get nextFragment => throw UnsupportedError('Not yet implemented');
+  LibraryFragment? get nextFragment {
+    var units = library.units;
+    var index = units.indexOf(this);
+    return units.elementAtOrNull(index + 1);
+  }
 
   @override
   List<PartInclude> get partIncludes =>
@@ -1044,12 +1046,12 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   set parts(List<PartElementImpl> parts) {
     for (var part in parts) {
       part.enclosingElement3 = this;
-      part.enclosingElement = this;
+      part.enclosingElement = library;
       var uri = part.uri;
       if (uri is DirectiveUriWithUnitImpl) {
-        uri.unit.libraryOrAugmentationElement = libraryOrAugmentationElement;
+        uri.unit.libraryOrAugmentationElement = library;
         uri.unit.enclosingElement3 = this;
-        uri.unit.enclosingElement = this;
+        uri.unit.enclosingElement = library;
       }
     }
     _parts = parts;
@@ -1060,11 +1062,19 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
       libraryImportPrefixes.cast<PrefixElement2>();
 
   @override
-  Fragment? get previousFragment =>
-      throw UnsupportedError('Not yet implemented');
+  LibraryFragment? get previousFragment {
+    var units = library.units;
+    var index = units.indexOf(this);
+    if (index >= 1) {
+      return units[index - 1];
+    }
+    return null;
+  }
 
   @override
-  Scope get scope => enclosingElement.scope;
+  LibraryFragmentScope get scope {
+    return _scope ??= LibraryFragmentScope(this);
+  }
 
   @override
   AnalysisSession get session => enclosingElement.session;
@@ -1276,8 +1286,16 @@ class ConstructorElementImpl extends ExecutableElementImpl
   }
 
   @override
+  ConstructorElement2 get element =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   InterfaceElement get enclosingElement =>
       super.enclosingElement as InterfaceElementImpl;
+
+  @override
+  InstanceFragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   bool get hasLiteral {
@@ -1322,9 +1340,17 @@ class ConstructorElementImpl extends ExecutableElementImpl
   }
 
   @override
+  ConstructorFragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   Element get nonSynthetic {
     return isSynthetic ? enclosingElement : this;
   }
+
+  @override
+  ConstructorFragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   ConstructorElement? get redirectedConstructor {
@@ -2824,7 +2850,7 @@ abstract class ElementImpl implements Element, Element2 {
   ) {
     Element? element = this;
     while (element != null && !predicate(element)) {
-      element = element.enclosingElement3;
+      element = (element as ElementImpl).enclosingElement3;
     }
     return element as E?;
   }
@@ -3578,6 +3604,13 @@ class FunctionElementImpl extends ExecutableElementImpl
   ExecutableElement get declaration => this;
 
   @override
+  Element2 get element => throw UnsupportedError('This is not a fragment');
+
+  @override
+  Fragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   bool get isDartCoreIdentical {
     return isStatic && name == 'identical' && library.isDartCore;
   }
@@ -3589,6 +3622,14 @@ class FunctionElementImpl extends ExecutableElementImpl
 
   @override
   ElementKind get kind => ElementKind.FUNCTION;
+
+  @override
+  Fragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  Fragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   bool get _includeNameOffsetInIdentifier {
@@ -3640,6 +3681,14 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
       ];
 
   @override
+  GenericFunctionTypeElement2 get element =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  LibraryFragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   String get identifier => '-';
 
   @override
@@ -3647,6 +3696,10 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
 
   @override
   ElementLinkedData<ElementImpl>? get linkedData => null;
+
+  @override
+  GenericFunctionTypeFragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   List<ParameterElement> get parameters {
@@ -3662,6 +3715,10 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
     }
     _parameters = parameters;
   }
+
+  @override
+  GenericFunctionTypeFragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   DartType get returnType {
@@ -3778,9 +3835,15 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
   InstanceElementImpl? get augmentationTarget;
 
   @override
+  InstanceElement2 get element => augmented as InstanceElement2;
+
+  @override
   CompilationUnitElementImpl get enclosingElement {
     return super.enclosingElement as CompilationUnitElementImpl;
   }
+
+  @override
+  LibraryFragment? get enclosingFragment => enclosingElement;
 
   @override
   List<FieldElementImpl> get fields {
@@ -3823,6 +3886,13 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
     }
     _methods = methods;
   }
+
+  @override
+  InstanceFragment? get nextFragment => augmentation as InstanceFragment?;
+
+  @override
+  InstanceFragment? get previousFragment =>
+      augmentationTarget as InstanceFragment?;
 
   void setLinkedData(Reference reference, ElementLinkedData linkedData) {
     this.reference = reference;
@@ -4474,9 +4544,6 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   /// an entry point.
   FunctionElement? _entryPoint;
 
-  /// The list of `part` directives of this library.
-  List<PartElementImpl> _parts = const <PartElementImpl>[];
-
   /// The element representing the synthetic function `loadLibrary` that is
   /// defined for this library, or `null` if the element has not yet been
   /// created.
@@ -4504,6 +4571,9 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 
   /// The cache for [augmentations].
   List<LibraryAugmentationElementImpl>? _augmentations;
+
+  /// The map of top-level declarations, from all units.
+  LibraryDeclarations? _libraryDeclarations;
 
   /// Initialize a newly created library element in the given [context] to have
   /// the given [name] and [offset].
@@ -4776,6 +4846,10 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   @override
   LibraryElement2 get library2 => this;
 
+  LibraryDeclarations get libraryDeclarations {
+    return _libraryDeclarations ??= LibraryDeclarations(this);
+  }
+
   @override
   FunctionElement get loadLibraryFunction {
     return _loadLibraryFunction;
@@ -4805,20 +4879,8 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   String get name => super.name!;
 
   @override
-  List<PartElementImpl> get parts => _parts;
-
-  set parts(List<PartElementImpl> parts) {
-    for (var part in parts) {
-      part.enclosingElement3 = this;
-      part.enclosingElement = this;
-      var uri = part.uri;
-      if (uri is DirectiveUriWithUnitImpl) {
-        uri.unit.libraryOrAugmentationElement = this;
-        uri.unit.enclosingElement3 = this;
-        uri.unit.enclosingElement = this;
-      }
-    }
-    _parts = parts;
+  List<PartElementImpl> get parts {
+    return definingCompilationUnit.parts;
   }
 
   @override
@@ -4891,11 +4953,20 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
   }
 
   List<CompilationUnitElementImpl> get _partUnits {
-    return parts
-        .map((e) => e.uri)
-        .whereType<DirectiveUriWithUnitImpl>()
-        .map((e) => e.unit)
-        .toList();
+    var result = <CompilationUnitElementImpl>[];
+
+    void visitParts(CompilationUnitElementImpl unit) {
+      for (var part in unit.parts) {
+        if (part.uri case DirectiveUriWithUnitImpl uri) {
+          var unit = uri.unit;
+          result.add(unit);
+          visitParts(unit);
+        }
+      }
+    }
+
+    visitParts(definingCompilationUnit);
+    return result;
   }
 
   @override
@@ -5090,7 +5161,7 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
 }
 
 class LibraryExportElementImpl extends _ExistingElementImpl
-    implements LibraryExportElement {
+    implements LibraryExportElement, LibraryExport {
   @override
   final List<NamespaceCombinator> combinators;
 
@@ -5114,6 +5185,9 @@ class LibraryExportElementImpl extends _ExistingElementImpl
     }
     return null;
   }
+
+  @override
+  LibraryElement2? get exportedLibrary2 => exportedLibrary;
 
   @override
   int get hashCode => identityHashCode(this);
@@ -5141,7 +5215,7 @@ class LibraryExportElementImpl extends _ExistingElementImpl
 }
 
 class LibraryImportElementImpl extends _ExistingElementImpl
-    implements LibraryImportElement {
+    implements LibraryImportElement, LibraryImport {
   @override
   final List<NamespaceCombinator> combinators;
 
@@ -5179,6 +5253,9 @@ class LibraryImportElementImpl extends _ExistingElementImpl
   }
 
   @override
+  LibraryElement2? get importedLibrary2 => importedLibrary;
+
+  @override
   ElementKind get kind => ElementKind.IMPORT;
 
   @override
@@ -5194,6 +5271,10 @@ class LibraryImportElementImpl extends _ExistingElementImpl
     }
     return Namespace.EMPTY;
   }
+
+  @override
+  PrefixFragment? get prefix2 =>
+      throw UnimplementedError('Prefix fragments are not yet supported');
 
   @override
   bool operator ==(Object other) {
@@ -5415,18 +5496,164 @@ mixin MaybeAugmentedExtensionTypeElementMixin
   ExtensionTypeElementImpl get declaration;
 }
 
-mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
+mixin MaybeAugmentedInstanceElementMixin
+    implements AugmentedInstanceElement, TypeParameterizedElement2 {
   @override
   List<PropertyAccessorElement> get accessors;
+
+  @override
+  Element2? get baseElement => declaration.baseElement;
+
+  @override
+  List<Element2> get children2 => declaration.children2;
 
   @override
   InstanceElementImpl get declaration;
 
   @override
+  String get displayName => declaration.displayName;
+
+  @override
+  String? get documentationComment => declaration.documentationComment;
+
+  @override
+  Element2? get enclosingElement2 => declaration.enclosingElement2;
+
+  @override
   List<FieldElement> get fields;
 
   @override
+  bool get hasAlwaysThrows => declaration.hasAlwaysThrows;
+
+  @override
+  bool get hasDeprecated => declaration.hasDeprecated;
+
+  @override
+  bool get hasDoNotStore => declaration.hasDoNotStore;
+
+  @override
+  bool get hasDoNotSubmit => declaration.hasDoNotSubmit;
+
+  @override
+  bool get hasFactory => declaration.hasFactory;
+
+  @override
+  bool get hasImmutable => declaration.hasImmutable;
+
+  @override
+  bool get hasInternal => declaration.hasInternal;
+
+  @override
+  bool get hasIsTest => declaration.hasIsTest;
+
+  @override
+  bool get hasIsTestGroup => declaration.hasIsTestGroup;
+
+  @override
+  bool get hasJS => declaration.hasJS;
+
+  @override
+  bool get hasLiteral => declaration.hasLiteral;
+
+  @override
+  bool get hasMustBeConst => declaration.hasMustBeConst;
+
+  @override
+  bool get hasMustBeOverridden => declaration.hasMustBeOverridden;
+
+  @override
+  bool get hasMustCallSuper => declaration.hasMustCallSuper;
+
+  @override
+  bool get hasNonVirtual => declaration.hasNonVirtual;
+
+  @override
+  bool get hasOptionalTypeArgs => declaration.hasOptionalTypeArgs;
+
+  @override
+  bool get hasOverride => declaration.hasOverride;
+
+  @override
+  bool get hasProtected => declaration.hasProtected;
+
+  @override
+  bool get hasRedeclare => declaration.hasRedeclare;
+
+  @override
+  bool get hasReopen => declaration.hasReopen;
+
+  @override
+  bool get hasRequired => declaration.hasRequired;
+
+  @override
+  bool get hasSealed => declaration.hasSealed;
+
+  @override
+  bool get hasUseResult => declaration.hasUseResult;
+
+  @override
+  bool get hasVisibleForOverriding => declaration.hasVisibleForOverriding;
+
+  @override
+  bool get hasVisibleForTemplate => declaration.hasVisibleForTemplate;
+
+  @override
+  bool get hasVisibleForTesting => declaration.hasVisibleForTesting;
+
+  @override
+  bool get hasVisibleOutsideTemplate => declaration.hasVisibleOutsideTemplate;
+
+  @override
+  int get id => declaration.id;
+
+  @override
+  bool get isPrivate => declaration.isPrivate;
+
+  @override
+  bool get isPublic => declaration.isPublic;
+
+  @override
+  bool get isSimplyBounded => declaration.isSimplyBounded;
+
+  @override
+  bool get isSynthetic => declaration.isSynthetic;
+
+  @override
+  ElementKind get kind => declaration.kind;
+
+  @override
+  LibraryElement2? get library2 => declaration.library2;
+
+  @override
+  ElementLocation? get location => declaration.location;
+
+  @override
+  List<ElementAnnotation> get metadata => declaration.metadata;
+
+  @override
   List<MethodElement> get methods;
+
+  @override
+  String? get name => declaration.name;
+
+  @override
+  Element2 get nonSynthetic2 => declaration.nonSynthetic2;
+
+  @override
+  AnalysisSession? get session => declaration.session;
+
+  @override
+  Version? get sinceSdkVersion => declaration.sinceSdkVersion;
+
+  @override
+  List<TypeParameterElement2> get typeParameters2 =>
+      declaration.typeParameters.cast<TypeParameterElement2>();
+
+  @override
+  String displayString2(
+          {bool multiline = false, bool preferTypeAlias = false}) =>
+      declaration.getDisplayString(
+          multiline: multiline, preferTypeAlias: preferTypeAlias);
 
   @override
   FieldElement? getField(String name) {
@@ -5474,6 +5701,10 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
   }
 
   @override
+  bool isAccessibleIn2(LibraryElement2 library) =>
+      declaration.isAccessibleIn(library as LibraryElement);
+
+  @override
   PropertyAccessorElement? lookUpGetter({
     required String name,
     required LibraryElement library,
@@ -5499,6 +5730,16 @@ mixin MaybeAugmentedInstanceElementMixin implements AugmentedInstanceElement {
     return _implementationsOfSetter(name).firstWhereOrNull(
         (PropertyAccessorElement setter) => setter.isAccessibleIn(library));
   }
+
+  @override
+  E? thisOrAncestorMatching2<E extends Element2>(
+    bool Function(Element2) predicate,
+  ) =>
+      declaration.thisOrAncestorMatching2(predicate);
+
+  @override
+  E? thisOrAncestorOfType2<E extends Element2>() =>
+      declaration.thisOrAncestorOfType2<E>();
 
   /// Return an iterable containing all of the implementations of a getter with
   /// the given [name] that are defined in this class and any superclass of this
@@ -5678,6 +5919,14 @@ class MethodElementImpl extends ExecutableElementImpl
     return displayName;
   }
 
+  @override
+  MethodElement2 get element =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  InstanceFragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
+
   /// Set whether this class is abstract.
   set isAbstract(bool isAbstract) {
     setModifier(Modifier.ABSTRACT, isAbstract);
@@ -5709,12 +5958,20 @@ class MethodElementImpl extends ExecutableElementImpl
   }
 
   @override
+  MethodFragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   Element get nonSynthetic {
     if (isSynthetic && enclosingElement is EnumElementImpl) {
       return enclosingElement;
     }
     return this;
   }
+
+  @override
+  MethodFragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) => visitor.visitMethodElement(this);
@@ -6658,7 +6915,8 @@ mixin ParameterElementMixin implements ParameterElement {
   }
 }
 
-class PartElementImpl extends _ExistingElementImpl implements PartElement {
+class PartElementImpl extends _ExistingElementImpl
+    implements PartElement, PartInclude {
   @override
   final DirectiveUri uri;
 
@@ -6705,7 +6963,8 @@ class PatternVariableElementImpl extends LocalVariableElementImpl
 }
 
 /// A concrete implementation of a [PrefixElement].
-class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
+class PrefixElementImpl extends _ExistingElementImpl
+    implements PrefixElement, PrefixElement2 {
   /// The scope of this prefix, `null` if it has not been created yet.
   PrefixScope? _scope;
 
@@ -6721,6 +6980,18 @@ class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
       super.enclosingElement as LibraryOrAugmentationElementImpl;
 
   @override
+  LibraryElement2 get enclosingElement2 => enclosingElement as LibraryElement2;
+
+  @override
+  CompilationUnitElementImpl get enclosingElement3 {
+    return _enclosingElement3 as CompilationUnitElementImpl;
+  }
+
+  @override
+  PrefixFragment get firstFragment =>
+      throw UnimplementedError('Prefix fragments are not yet supported');
+
+  @override
   List<LibraryImportElementImpl> get imports {
     return enclosingElement.libraryImports
         .where((import) => import.prefix?.element == this)
@@ -6728,7 +6999,13 @@ class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
   }
 
   @override
+  List<LibraryImport> get imports2 => imports.cast<LibraryImport>();
+
+  @override
   ElementKind get kind => ElementKind.PREFIX;
+
+  @override
+  LibraryElement2 get library2 => library as LibraryElement2;
 
   @override
   String get name {
@@ -6736,7 +7013,9 @@ class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
   }
 
   @override
-  Scope get scope => _scope ??= PrefixScope(enclosingElement, this);
+  Scope get scope {
+    return _scope ??= enclosingElement3.scope.getPrefixScope(this);
+  }
 
   @override
   T? accept<T>(ElementVisitor<T> visitor) => visitor.visitPrefixElement(this);
@@ -6803,6 +7082,14 @@ class PropertyAccessorElementImpl extends ExecutableElementImpl
   PropertyAccessorElement get declaration => prototype ?? this;
 
   @override
+  ExecutableElement2 get element =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  ExecutableFragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   String get identifier {
     String name = displayName;
     String suffix = isGetter ? "?" : "=";
@@ -6855,6 +7142,14 @@ class PropertyAccessorElementImpl extends ExecutableElementImpl
     }
     return super.name;
   }
+
+  @override
+  ExecutableFragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  ExecutableFragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   @Deprecated('Use variable2')
   @override
@@ -7328,8 +7623,16 @@ class TypeAliasElementImpl extends _ExistingElementImpl
   String get displayName => name;
 
   @override
+  TypeAliasElement2 get element =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
   CompilationUnitElement get enclosingElement =>
       super.enclosingElement as CompilationUnitElement;
+
+  @override
+  LibraryFragment? get enclosingFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   /// Returns whether this alias is a "proper rename" of [aliasedClass], as
   /// defined in the constructor-tearoffs specification.
@@ -7389,6 +7692,14 @@ class TypeAliasElementImpl extends _ExistingElementImpl
   String get name {
     return super.name!;
   }
+
+  @override
+  TypeAliasFragment? get nextFragment =>
+      throw UnsupportedError('This is not a fragment');
+
+  @override
+  TypeAliasFragment? get previousFragment =>
+      throw UnsupportedError('This is not a fragment');
 
   /// Instantiates this type alias with its type parameters as arguments.
   DartType get rawType {
@@ -7643,11 +7954,20 @@ class TypeParameterElementImpl extends ElementImpl
 
 /// Mixin representing an element which can have type parameters.
 mixin TypeParameterizedElementMixin on ElementImpl
-    implements _ExistingElementImpl, TypeParameterizedElement {
+    implements
+        _ExistingElementImpl,
+        TypeParameterizedElement,
+        TypeParameterizedFragment {
   List<TypeParameterElement> _typeParameters = const [];
 
   @override
+  List<Fragment> get children3 => children.whereType<Fragment>().toList();
+
+  @override
   bool get isSimplyBounded => true;
+
+  @override
+  LibraryFragment get libraryFragment => enclosingUnit;
 
   ElementLinkedData? get linkedData;
 

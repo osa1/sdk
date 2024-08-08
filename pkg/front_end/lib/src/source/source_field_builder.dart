@@ -37,7 +37,6 @@ import '../source/source_extension_builder.dart';
 import '../source/source_library_builder.dart' show SourceLibraryBuilder;
 import '../type_inference/type_inference_engine.dart'
     show IncludesTypeParametersNonCovariantly;
-import '../util/helpers.dart' show DelayedActionPerformer;
 import 'source_class_builder.dart';
 import 'source_extension_type_declaration_builder.dart';
 import 'source_member_builder.dart';
@@ -356,7 +355,6 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
     hasBodyBeenBuilt = true;
     if (!hasInitializer &&
         initializer != null &&
-        // Coverage-ignore(suite): Not run.
         initializer is! NullLiteral &&
         // Coverage-ignore(suite): Not run.
         !isConst &&
@@ -452,9 +450,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   Iterable<Annotatable> get annotatables => _fieldEncoding.annotatables;
 
   @override
-  void buildOutlineExpressions(
-      ClassHierarchy classHierarchy,
-      List<DelayedActionPerformer> delayedActionPerformers,
+  void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     for (Annotatable annotatable in annotatables) {
       MetadataBuilder.buildAnnotations(
@@ -495,9 +491,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
               bodyBuilder.parseFieldInitializer(_constInitializerToken!))
           .expression;
       buildBody(classHierarchy.coreTypes, initializer);
-      bodyBuilder.performBacklogComputations(
-          delayedActionPerformers: delayedActionPerformers,
-          allowFurtherDelays: false);
+      bodyBuilder.performBacklogComputations();
     }
     _constInitializerToken = null;
   }

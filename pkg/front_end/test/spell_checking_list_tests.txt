@@ -517,6 +517,7 @@ misses
 misspelled
 mistake
 mistakes
+mixture
 mixups
 ml
 mmethod
@@ -838,6 +839,7 @@ unassignment
 unawaited
 unbreak
 uncaught
+uncommitted
 uncompiled
 unconverted
 uncover
@@ -867,6 +869,7 @@ val
 verbatim
 versioned
 vf
+virtually
 visualization
 vp
 vt
