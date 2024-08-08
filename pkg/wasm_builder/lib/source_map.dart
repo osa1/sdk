@@ -126,15 +126,13 @@ String _serializeSourceMap(List<SourceMapping> mappings) {
   int lastSourceColumn = 0;
   int lastNameIndex = 0;
 
+  bool first = true;
+
   for (int i = 0; i < mappings.length; ++i) {
     final mapping = mappings[i];
-
-    lastTargetColumn =
-        _encodeVLQ(mappingsStr, mapping.instructionOffset, lastTargetColumn);
-
     final sourceInfo = mapping.sourceInfo;
 
-    if (sourceInfo == null && i == 0) {
+    if (sourceInfo == null && first) {
       // Initial parts of the code will be unmapped my default, we don't need to
       // explicitly unmap them. More importantly, current version of binaryen
       // cannot handle single-segment mappings at the beginning of the mappings.
@@ -142,6 +140,11 @@ String _serializeSourceMap(List<SourceMapping> mappings) {
       // https://github.com/WebAssembly/binaryen/pull/6794.
       continue;
     }
+
+    first = false;
+
+    lastTargetColumn =
+        _encodeVLQ(mappingsStr, mapping.instructionOffset, lastTargetColumn);
 
     if (sourceInfo != null) {
       final sourceIndex = sourceIndices[sourceInfo.fileUri]!;
