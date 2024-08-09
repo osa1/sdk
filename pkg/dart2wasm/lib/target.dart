@@ -478,7 +478,7 @@ class WasmTarget extends Target {
   @override
   Class concreteConstMapLiteralClass(CoreTypes coreTypes) {
     return _wasmImmutableMap ??=
-        coreTypes.index.getClass('dart:collection', '_WasmImmutableMap');
+        coreTypes.index.getClass('dart:_compact_hash', 'WasmImmutableMap');
   }
 
   @override
@@ -490,7 +490,7 @@ class WasmTarget extends Target {
   @override
   Class concreteConstSetLiteralClass(CoreTypes coreTypes) {
     return _wasmImmutableSet ??=
-        coreTypes.index.getClass('dart:collection', '_WasmImmutableSet');
+        coreTypes.index.getClass('dart:_compact_hash', 'WasmImmutableSet');
   }
 
   @override
