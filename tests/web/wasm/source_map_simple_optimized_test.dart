@@ -17,7 +17,7 @@ void main() {
 const List<(int?, int?)?> frameDetails = [
     (null, null), // _throwWithCurrentStackTrace
     (14, 3), // main
-    (12, 3), // _invokeMain
+    (null, null), // _invokeMain
 ];
 
 /*

@@ -18,7 +18,7 @@ const List<(int?, int?)?> frameDetails = [
   (null, null), // _throwWithCurrentStackTrace
   (16, 3), // g
   (12, 3), // f
-  (24, 5), // testMain
+  (34, 5), // testMain
   (14, 7), // main
   null, // main tear-off, compiler generated, not mapped
   (null, null), // _invokeMain
