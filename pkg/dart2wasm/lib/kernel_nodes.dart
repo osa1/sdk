@@ -204,12 +204,12 @@ mixin KernelNodes {
   // dart:collection procedures and fields
   late final Procedure mapFactory =
       index.getProcedure("dart:collection", "LinkedHashMap", "_default");
-  late final Procedure mapFromWasmArray =
-      index.getProcedure("dart:collection", "_WasmDefaultMap", "fromWasmArray");
+  late final Procedure mapFromWasmArray = index.getProcedure(
+      "dart:_compact_hash", "WasmDefaultMap", "fromWasmArray");
   late final Procedure setFactory =
       index.getProcedure("dart:collection", "LinkedHashSet", "_default");
-  late final Procedure setFromWasmArray =
-      index.getProcedure("dart:collection", "_WasmDefaultSet", "fromWasmArray");
+  late final Procedure setFromWasmArray = index.getProcedure(
+      "dart:_compact_hash", "WasmDefaultSet", "fromWasmArray");
   late final Procedure growableListEmpty =
       index.getProcedure("dart:_list", "GrowableList", "empty");
   late final Constructor growableListFromWasmArray =
