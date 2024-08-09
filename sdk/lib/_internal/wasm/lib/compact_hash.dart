@@ -9,7 +9,7 @@ import "dart:math" show max;
 
 // Hash table with open addressing that separates the index from keys/values.
 
-/// The object marking uninitialized [HashBaseData._index] fields.
+/// The object marking uninitialized [_HashBaseData._index] fields.
 ///
 /// This is used to allow uninitialized `_index` fields without making the
 /// field type nullable.
@@ -17,14 +17,14 @@ import "dart:math" show max;
 final WasmArray<WasmI32> _uninitializedHashBaseIndex =
     const WasmArray<WasmI32>.literal([const WasmI32(0)]);
 
-/// The object marking uninitialized [HashFieldBase._data] fields.
+/// The object marking uninitialized [_HashFieldBase._data] fields.
 ///
 /// This is used to allow uninitialized `_data` fields without making the field
 /// type nullable.
 final WasmArray<Object?> _uninitializedHashBaseData =
     const WasmArray<Object?>.literal([]);
 
-/// The object marking deleted data in [HashFieldBase._data] and absent values
+/// The object marking deleted data in [_HashFieldBase._data] and absent values
 /// in `_getValueOrData` methods.
 final Object _deletedDataMarker = Object();
 
@@ -35,7 +35,7 @@ final Object _deletedDataMarker = Object();
 /// `ConstantCreator.visitMapConstant` and `ConstantCreater.visitSetConstant`.
 /// Field indices of `_index` and `_data` are hard-coded in the compiler as
 /// `FieldIndex.hashBaseIndex` and `FieldIndex.hashBaseData`.
-abstract class HashFieldBase {
+abstract class _HashFieldBase {
   // Each occupied entry in _index is a fixed-size integer that encodes a pair:
   //   [ hash pattern for key | index of entry in _data ]
   // The hash pattern is based on hashCode, but is guaranteed to be non-zero.
@@ -63,12 +63,12 @@ abstract class HashFieldBase {
   // Number of deleted keys.
   int _deletedKeys = 0;
 
-  HashFieldBase();
+  _HashFieldBase();
 }
 
-// This mixin can be applied to HashFieldBase, which provide the actual
+// This mixin can be applied to _HashFieldBase, which provide the actual
 // fields/accessors that this mixin assumes.
-mixin _HashBase on HashFieldBase {
+mixin _HashBase on _HashFieldBase {
   // The number of bits used for each component is determined by table size.
   // If initialized, the length of _index is (at least) twice the number of
   // entries in _data, and both are doubled when _data is full. Thus, _index
@@ -183,7 +183,7 @@ mixin _CustomEqualsAndHashCode<K> implements _EqualsAndHashCode {
   bool _equals(Object? e1, Object? e2) => (_equality as Function)(e1, e2);
 }
 
-base class _Map<K, V> extends HashFieldBase
+base class _Map<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -204,7 +204,7 @@ base class _Map<K, V> extends HashFieldBase
 // This is essentially the same class as _Map, but it does
 // not permit any modification of map entries from Dart code. We use
 // this class for maps constructed from Dart constant maps.
-base class _ConstMap<K, V> extends HashFieldBase
+base class _ConstMap<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -220,7 +220,7 @@ base class _ConstMap<K, V> extends HashFieldBase
   }
 }
 
-mixin _MapCreateIndexMixin<K, V> on _LinkedHashMapMixin<K, V>, HashFieldBase {
+mixin _MapCreateIndexMixin<K, V> on _LinkedHashMapMixin<K, V>, _HashFieldBase {
   void _createIndex(bool canContainDuplicates) {
     assert(_index == _uninitializedHashBaseIndex);
     assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
@@ -525,7 +525,7 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   Iterable<V> get values => _CompactIterable<V>(this, -1, 2);
 }
 
-base class CompactLinkedIdentityHashMap<K, V> extends HashFieldBase
+base class CompactLinkedIdentityHashMap<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -543,7 +543,7 @@ base class CompactLinkedIdentityHashMap<K, V> extends HashFieldBase
   }
 }
 
-base class CompactLinkedCustomHashMap<K, V> extends HashFieldBase
+base class CompactLinkedCustomHashMap<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -825,7 +825,7 @@ mixin _LinkedHashSetMixin<E> on _HashBase, _EqualsAndHashCode {
 
 // Set implementation, analogous to _Map. Set literals create instances of this
 // class.
-base class _Set<E> extends HashFieldBase
+base class _Set<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
@@ -852,7 +852,7 @@ base class _Set<E> extends HashFieldBase
   }
 }
 
-base class _ConstSet<E> extends HashFieldBase
+base class _ConstSet<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
@@ -875,7 +875,7 @@ base class _ConstSet<E> extends HashFieldBase
   Set<E> toSet() => _Set<E>()..addAll(this);
 }
 
-mixin SetCreateIndexMixin<E> on Set<E>, _LinkedHashSetMixin<E>, HashFieldBase {
+mixin SetCreateIndexMixin<E> on Set<E>, _LinkedHashSetMixin<E>, _HashFieldBase {
   void _createIndex(bool canContainDuplicates) {
     assert(_index == _uninitializedHashBaseIndex);
     assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
@@ -950,7 +950,7 @@ mixin Immutable_LinkedHashSetMixin<E> on SetCreateIndexMixin<E> {
       _CompactIteratorImmutable<E>(this, _data, _usedData, -1, 1);
 }
 
-base class CompactLinkedIdentityHashSet<E> extends HashFieldBase
+base class CompactLinkedIdentityHashSet<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
@@ -973,7 +973,7 @@ base class CompactLinkedIdentityHashSet<E> extends HashFieldBase
   }
 }
 
-base class CompactLinkedCustomHashSet<E> extends HashFieldBase
+base class CompactLinkedCustomHashSet<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
@@ -1083,7 +1083,7 @@ class _TypeTest<T> {
 }
 
 @pragma("wasm:entry-point")
-base class WasmDefaultMap<K, V> extends HashFieldBase
+base class WasmDefaultMap<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -1111,7 +1111,7 @@ base class WasmDefaultMap<K, V> extends HashFieldBase
 }
 
 @pragma('wasm:entry-point')
-base class WasmDefaultSet<E> extends HashFieldBase
+base class WasmDefaultSet<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
@@ -1145,7 +1145,7 @@ base class WasmDefaultSet<E> extends HashFieldBase
 }
 
 @pragma("wasm:entry-point")
-base class WasmImmutableMap<K, V> extends HashFieldBase
+base class WasmImmutableMap<K, V> extends _HashFieldBase
     with
         MapMixin<K, V>,
         _HashBase,
@@ -1157,7 +1157,7 @@ base class WasmImmutableMap<K, V> extends HashFieldBase
     implements LinkedHashMap<K, V> {}
 
 @pragma("wasm:entry-point")
-base class WasmImmutableSet<E> extends HashFieldBase
+base class WasmImmutableSet<E> extends _HashFieldBase
     with
         SetMixin<E>,
         _HashBase,
