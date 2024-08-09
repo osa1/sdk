@@ -47,7 +47,7 @@ abstract class HashFieldBase {
   WasmArray<WasmI32> _index = _uninitializedHashBaseIndex;
 
   // Cached in-place mask for the hash pattern component.
-  int _hashMask = HashBase._UNINITIALIZED_HASH_MASK;
+  int _hashMask = _HashBase._UNINITIALIZED_HASH_MASK;
 
   // Fixed-length list of keys (set) or key/value at even/odd indices (map).
   //
@@ -68,7 +68,7 @@ abstract class HashFieldBase {
 
 // This mixin can be applied to HashFieldBase, which provide the actual
 // fields/accessors that this mixin assumes.
-mixin HashBase on HashFieldBase {
+mixin _HashBase on HashFieldBase {
   // The number of bits used for each component is determined by table size.
   // If initialized, the length of _index is (at least) twice the number of
   // entries in _data, and both are doubled when _data is full. Thus, _index
@@ -130,7 +130,7 @@ mixin HashBase on HashFieldBase {
   // efficiently by copying the Lists directly.
   //
   // Precondition: [this] and [other] must use the same hashcode and equality.
-  bool _quickCopy(HashBase other) {
+  bool _quickCopy(_HashBase other) {
     if (!identical(_index, _uninitializedHashBaseIndex)) return false;
     if (other._usedData == 0) return true; // [other] is empty, nothing to copy.
     if (other._deletedKeys != 0) return false;
@@ -151,7 +151,7 @@ abstract class _EqualsAndHashCode {
   bool _equals(Object? e1, Object? e2);
 }
 
-mixin OperatorEqualsAndHashCode implements _EqualsAndHashCode {
+mixin _OperatorEqualsAndHashCode implements _EqualsAndHashCode {
   int _hashCode(Object? e) => e.hashCode;
   bool _equals(Object? e1, Object? e2) => e1 == e2;
 }
@@ -186,9 +186,9 @@ mixin _CustomEqualsAndHashCode<K> implements _EqualsAndHashCode {
 base class _Map<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
-        OperatorEqualsAndHashCode,
-        LinkedHashMapMixin<K, V>
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {
   void addAll(Map<K, V> other) {
     if (other is _Map) {
@@ -207,12 +207,12 @@ base class _Map<K, V> extends HashFieldBase
 base class _ConstMap<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
+        _HashBase,
         _OperatorEqualsAndCanonicalHashCode,
-        LinkedHashMapMixin<K, V>,
-        UnmodifiableMapMixin<K, V>,
-        MapCreateIndexMixin<K, V>,
-        ImmutableLinkedHashMapMixin<K, V>
+        _LinkedHashMapMixin<K, V>,
+        _UnmodifiableMapMixin<K, V>,
+        _MapCreateIndexMixin<K, V>,
+        Immutable_LinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {
   factory _ConstMap._uninstantiable() {
     throw new UnsupportedError(
@@ -220,22 +220,22 @@ base class _ConstMap<K, V> extends HashFieldBase
   }
 }
 
-mixin MapCreateIndexMixin<K, V> on LinkedHashMapMixin<K, V>, HashFieldBase {
+mixin _MapCreateIndexMixin<K, V> on _LinkedHashMapMixin<K, V>, HashFieldBase {
   void _createIndex(bool canContainDuplicates) {
     assert(_index == _uninitializedHashBaseIndex);
-    assert(_hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
     assert(_deletedKeys == 0);
 
     final size =
-        _roundUpToPowerOfTwo(max(_data.length, HashBase._INITIAL_INDEX_SIZE));
+        _roundUpToPowerOfTwo(max(_data.length, _HashBase._INITIAL_INDEX_SIZE));
     final newIndex = WasmArray<WasmI32>.filled(size, const WasmI32(0));
-    final hashMask = _hashMask = HashBase._indexSizeToHashMask(size);
+    final hashMask = _hashMask = _HashBase._indexSizeToHashMask(size);
 
     for (int j = 0; j < _usedData; j += 2) {
       final key = _data[j] as K;
 
       final fullHash = _hashCode(key);
-      final hashPattern = HashBase._hashPattern(fullHash, hashMask, size);
+      final hashPattern = _HashBase._hashPattern(fullHash, hashMask, size);
       final d =
           _findValueOrInsertPoint(key, fullHash, hashPattern, size, newIndex);
 
@@ -244,8 +244,8 @@ mixin MapCreateIndexMixin<K, V> on LinkedHashMapMixin<K, V>, HashFieldBase {
         _data[d] = _data[j + 1];
 
         // Mark this as a free slot.
-        HashBase._setDeletedAt(_data, j);
-        HashBase._setDeletedAt(_data, j + 1);
+        _HashBase._setDeletedAt(_data, j);
+        _HashBase._setDeletedAt(_data, j + 1);
         _deletedKeys++;
         continue;
       }
@@ -266,7 +266,7 @@ mixin MapCreateIndexMixin<K, V> on LinkedHashMapMixin<K, V>, HashFieldBase {
   }
 }
 
-mixin ImmutableLinkedHashMapMixin<K, V> on MapCreateIndexMixin<K, V> {
+mixin Immutable_LinkedHashMapMixin<K, V> on _MapCreateIndexMixin<K, V> {
   bool containsKey(Object? key) {
     if (identical(_index, _uninitializedHashBaseIndex)) {
       _createIndex(false);
@@ -300,7 +300,7 @@ int _roundUpToPowerOfTwo(int x) {
   return x + 1;
 }
 
-mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
+mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   int get length => (_usedData >> 1) - _deletedKeys;
   bool get isEmpty => length == 0;
   bool get isNotEmpty => !isEmpty;
@@ -319,7 +319,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
   void clear() {
     if (!isEmpty) {
       _index = _uninitializedHashBaseIndex;
-      _hashMask = HashBase._UNINITIALIZED_HASH_MASK;
+      _hashMask = _HashBase._UNINITIALIZED_HASH_MASK;
       _data = _uninitializedHashBaseData;
       _usedData = 0;
       _deletedKeys = 0;
@@ -328,12 +328,12 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
 
   // Allocate _index and _data, and optionally copy existing contents.
   void _init(int size, int hashMask, WasmArray<Object?>? oldData, int oldUsed) {
-    if (size < HashBase._INITIAL_INDEX_SIZE) {
-      size = HashBase._INITIAL_INDEX_SIZE;
-      hashMask = HashBase._indexSizeToHashMask(size);
+    if (size < _HashBase._INITIAL_INDEX_SIZE) {
+      size = _HashBase._INITIAL_INDEX_SIZE;
+      hashMask = _HashBase._indexSizeToHashMask(size);
     }
     assert(size & (size - 1) == 0);
-    assert(HashBase._UNUSED_PAIR == 0);
+    assert(_HashBase._UNUSED_PAIR == 0);
     _index = WasmArray<WasmI32>.filled(size, const WasmI32(0));
     _hashMask = hashMask;
     _data = WasmArray<Object?>.filled(size, null);
@@ -342,7 +342,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
     if (oldData != null) {
       for (int i = 0; i < oldUsed; i += 2) {
         var key = oldData[i];
-        if (!HashBase._isDeleted(key)) {
+        if (!_HashBase._isDeleted(key)) {
           // TODO(koda): While there are enough hash bits, avoid hashCode calls.
           this[unsafeCast<K>(key)] = unsafeCast<V>(oldData[i + 1]);
         }
@@ -370,11 +370,11 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
       WasmArray<WasmI32> index) {
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int firstDeleted = -1;
     int pair = index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair == HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair == _HashBase._DELETED_PAIR) {
         if (firstDeleted < 0) {
           firstDeleted = i;
         }
@@ -387,7 +387,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
           }
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = index.readUnsigned(i);
     }
     return firstDeleted >= 0 ? -firstDeleted : -i;
@@ -400,7 +400,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
 
   void _set(K key, V value, int fullHash) {
     final int size = _index.length;
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
     final int d =
         _findValueOrInsertPoint(key, fullHash, hashPattern, size, _index);
     if (d > 0) {
@@ -414,7 +414,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
   V putIfAbsent(K key, V ifAbsent()) {
     final int size = _index.length;
     final int fullHash = _hashCode(key);
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
     final int d =
         _findValueOrInsertPoint(key, fullHash, hashPattern, size, _index);
     if (d > 0) {
@@ -438,25 +438,25 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
     final int fullHash = _hashCode(key);
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int pair = _index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair != HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair != _HashBase._DELETED_PAIR) {
         final int entry = hashPattern ^ pair;
         if (entry < maxEntries) {
           final int d = entry << 1;
           if (_equals(key, _data[d])) {
-            _index[i] = WasmI32.fromInt(HashBase._DELETED_PAIR);
-            HashBase._setDeletedAt(_data, d);
+            _index[i] = WasmI32.fromInt(_HashBase._DELETED_PAIR);
+            _HashBase._setDeletedAt(_data, d);
             V value = _data[d + 1] as V;
-            HashBase._setDeletedAt(_data, d + 1);
+            _HashBase._setDeletedAt(_data, d + 1);
             ++_deletedKeys;
             return value;
           }
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = _index.readUnsigned(i);
     }
     return null;
@@ -468,11 +468,11 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
     final int fullHash = _hashCode(key);
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int pair = _index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair != HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair != _HashBase._DELETED_PAIR) {
         final int entry = hashPattern ^ pair;
         if (entry < maxEntries) {
           final int d = entry << 1;
@@ -481,7 +481,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
           }
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = _index.readUnsigned(i);
     }
     return _deletedDataMarker;
@@ -511,7 +511,7 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
     final len = _usedData;
     for (int offset = 0; offset < len; offset += 2) {
       final current = data[offset];
-      if (HashBase._isDeleted(current)) continue;
+      if (_HashBase._isDeleted(current)) continue;
       final key = unsafeCast<K>(current);
       final value = unsafeCast<V>(data[offset + 1]);
       action(key, value);
@@ -528,9 +528,9 @@ mixin LinkedHashMapMixin<K, V> on HashBase, _EqualsAndHashCode {
 base class CompactLinkedIdentityHashMap<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
+        _HashBase,
         _IdenticalAndIdentityHashCode,
-        LinkedHashMapMixin<K, V>
+        _LinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {
   void addAll(Map<K, V> other) {
     if (other is CompactLinkedIdentityHashMap) {
@@ -546,9 +546,9 @@ base class CompactLinkedIdentityHashMap<K, V> extends HashFieldBase
 base class CompactLinkedCustomHashMap<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
+        _HashBase,
         _CustomEqualsAndHashCode<K>,
-        LinkedHashMapMixin<K, V>
+        _LinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {
   final bool Function(K, K) _equality;
   final int Function(K) _hasher;
@@ -566,7 +566,7 @@ base class CompactLinkedCustomHashMap<K, V> extends HashFieldBase
 // Iterates through _data[_offset + _step], _data[_offset + 2*_step], ...
 // and checks for concurrent modification.
 class _CompactIterable<E> extends Iterable<E> {
-  final HashBase _table;
+  final _HashBase _table;
   final int _offset;
   final int _step;
 
@@ -581,7 +581,7 @@ class _CompactIterable<E> extends Iterable<E> {
 }
 
 class _CompactIterator<E> implements Iterator<E> {
-  final HashBase _table;
+  final _HashBase _table;
 
   final WasmArray<Object?> _data;
   final int _len;
@@ -599,7 +599,7 @@ class _CompactIterator<E> implements Iterator<E> {
     }
     do {
       _offset += _step;
-    } while (_offset < _len && HashBase._isDeleted(_data[_offset]));
+    } while (_offset < _len && _HashBase._isDeleted(_data[_offset]));
     if (_offset < _len) {
       _current = unsafeCast<E>(_data[_offset]);
       return true;
@@ -617,7 +617,7 @@ class _CompactIterator<E> implements Iterator<E> {
 // Does not check for concurrent modification since the table
 // is known to be immutable.
 class _CompactIterableImmutable<E> extends Iterable<E> {
-  final HashBase _table;
+  final _HashBase _table;
 
   final WasmArray<Object?> _data;
   final int _len;
@@ -636,7 +636,7 @@ class _CompactIterableImmutable<E> extends Iterable<E> {
 }
 
 class _CompactIteratorImmutable<E> implements Iterator<E> {
-  final HashBase _table;
+  final _HashBase _table;
 
   final WasmArray<Object?> _data;
   final int _len;
@@ -661,7 +661,7 @@ class _CompactIteratorImmutable<E> implements Iterator<E> {
   E get current => _current as E;
 }
 
-mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
+mixin _LinkedHashSetMixin<E> on _HashBase, _EqualsAndHashCode {
   bool get isEmpty => length == 0;
   bool get isNotEmpty => !isEmpty;
   int get length => _usedData - _deletedKeys;
@@ -669,7 +669,7 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
   E get first {
     for (int offset = 0; offset < _usedData; offset++) {
       Object? current = _data[offset];
-      if (!HashBase._isDeleted(current)) {
+      if (!_HashBase._isDeleted(current)) {
         return current as E;
       }
     }
@@ -679,7 +679,7 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
   E get last {
     for (int offset = _usedData - 1; offset >= 0; offset--) {
       Object? current = _data[offset];
-      if (!HashBase._isDeleted(current)) {
+      if (!_HashBase._isDeleted(current)) {
         return current as E;
       }
     }
@@ -697,7 +697,7 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
   void clear() {
     if (!isEmpty) {
       _index = _uninitializedHashBaseIndex;
-      _hashMask = HashBase._UNINITIALIZED_HASH_MASK;
+      _hashMask = _HashBase._UNINITIALIZED_HASH_MASK;
       _data = _uninitializedHashBaseData;
       _usedData = 0;
       _deletedKeys = 0;
@@ -705,9 +705,9 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
   }
 
   void _init(int size, int hashMask, WasmArray<Object?>? oldData, int oldUsed) {
-    if (size < HashBase._INITIAL_INDEX_SIZE) {
-      size = HashBase._INITIAL_INDEX_SIZE;
-      hashMask = HashBase._indexSizeToHashMask(size);
+    if (size < _HashBase._INITIAL_INDEX_SIZE) {
+      size = _HashBase._INITIAL_INDEX_SIZE;
+      hashMask = _HashBase._indexSizeToHashMask(size);
     }
     _index = WasmArray<WasmI32>.filled(size, const WasmI32(0));
     _hashMask = hashMask;
@@ -717,7 +717,7 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
     if (oldData != null) {
       for (int i = 0; i < oldUsed; i += 1) {
         var key = oldData[i];
-        if (!HashBase._isDeleted(key)) {
+        if (!_HashBase._isDeleted(key)) {
           add(unsafeCast<E>(key));
         }
       }
@@ -733,12 +733,12 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
     final int size = _index.length;
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int firstDeleted = -1;
     int pair = _index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair == HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair == _HashBase._DELETED_PAIR) {
         if (firstDeleted < 0) {
           firstDeleted = i;
         }
@@ -748,7 +748,7 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
           return false;
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = _index.readUnsigned(i);
     }
     if (_usedData == _data.length) {
@@ -770,17 +770,17 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
     final int fullHash = _hashCode(key);
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int pair = _index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair != HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair != _HashBase._DELETED_PAIR) {
         final int d = hashPattern ^ pair;
         if (d < maxEntries && _equals(key, _data[d])) {
           return _data[d]; // Note: Must return the existing key.
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = _index.readUnsigned(i);
     }
     return _deletedDataMarker;
@@ -799,20 +799,20 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
     final int sizeMask = size - 1;
     final int maxEntries = size >> 1;
     final int fullHash = _hashCode(key);
-    final int hashPattern = HashBase._hashPattern(fullHash, _hashMask, size);
-    int i = HashBase._firstProbe(fullHash, sizeMask);
+    final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+    int i = _HashBase._firstProbe(fullHash, sizeMask);
     int pair = _index.readUnsigned(i);
-    while (pair != HashBase._UNUSED_PAIR) {
-      if (pair != HashBase._DELETED_PAIR) {
+    while (pair != _HashBase._UNUSED_PAIR) {
+      if (pair != _HashBase._DELETED_PAIR) {
         final int d = hashPattern ^ pair;
         if (d < maxEntries && _equals(key, _data[d])) {
-          _index[i] = WasmI32.fromInt(HashBase._DELETED_PAIR);
-          HashBase._setDeletedAt(_data, d);
+          _index[i] = WasmI32.fromInt(_HashBase._DELETED_PAIR);
+          _HashBase._setDeletedAt(_data, d);
           ++_deletedKeys;
           return true;
         }
       }
-      i = HashBase._nextProbe(i, sizeMask);
+      i = _HashBase._nextProbe(i, sizeMask);
       pair = _index.readUnsigned(i);
     }
 
@@ -826,7 +826,11 @@ mixin LinkedHashSetMixin<E> on HashBase, _EqualsAndHashCode {
 // Set implementation, analogous to _Map. Set literals create instances of this
 // class.
 base class _Set<E> extends HashFieldBase
-    with SetMixin<E>, HashBase, OperatorEqualsAndHashCode, LinkedHashSetMixin<E>
+    with
+        SetMixin<E>,
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   Set<R> cast<R>() => Set.castFrom<E, R>(this, newSet: _newEmpty);
 
@@ -851,12 +855,12 @@ base class _Set<E> extends HashFieldBase
 base class _ConstSet<E> extends HashFieldBase
     with
         SetMixin<E>,
-        HashBase,
+        _HashBase,
         _OperatorEqualsAndCanonicalHashCode,
-        LinkedHashSetMixin<E>,
+        _LinkedHashSetMixin<E>,
         UnmodifiableSetMixin<E>,
         SetCreateIndexMixin<E>,
-        ImmutableLinkedHashSetMixin<E>
+        Immutable_LinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   factory _ConstSet._uninstantiable() {
     throw new UnsupportedError(
@@ -871,16 +875,16 @@ base class _ConstSet<E> extends HashFieldBase
   Set<E> toSet() => _Set<E>()..addAll(this);
 }
 
-mixin SetCreateIndexMixin<E> on Set<E>, LinkedHashSetMixin<E>, HashFieldBase {
+mixin SetCreateIndexMixin<E> on Set<E>, _LinkedHashSetMixin<E>, HashFieldBase {
   void _createIndex(bool canContainDuplicates) {
     assert(_index == _uninitializedHashBaseIndex);
-    assert(_hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
     assert(_deletedKeys == 0);
 
     final size = _roundUpToPowerOfTwo(
-        max(_data.length * 2, HashBase._INITIAL_INDEX_SIZE));
+        max(_data.length * 2, _HashBase._INITIAL_INDEX_SIZE));
     final index = WasmArray<WasmI32>.filled(size, const WasmI32(0));
-    final hashMask = _hashMask = HashBase._indexSizeToHashMask(size);
+    final hashMask = _hashMask = _HashBase._indexSizeToHashMask(size);
 
     final sizeMask = size - 1;
     final maxEntries = size >> 1;
@@ -891,19 +895,19 @@ mixin SetCreateIndexMixin<E> on Set<E>, LinkedHashSetMixin<E>, HashFieldBase {
         final key = _data[j];
 
         final fullHash = _hashCode(key);
-        final hashPattern = HashBase._hashPattern(fullHash, hashMask, size);
+        final hashPattern = _HashBase._hashPattern(fullHash, hashMask, size);
 
-        int i = HashBase._firstProbe(fullHash, sizeMask);
+        int i = _HashBase._firstProbe(fullHash, sizeMask);
         int pair = index.readUnsigned(i);
-        while (pair != HashBase._UNUSED_PAIR) {
-          assert(pair != HashBase._DELETED_PAIR);
+        while (pair != _HashBase._UNUSED_PAIR) {
+          assert(pair != _HashBase._DELETED_PAIR);
 
           final int d = hashPattern ^ pair;
           if (d < maxEntries) {
             // We should not already find an entry in the index.
             if (canContainDuplicates && _equals(key, _data[d])) {
               // Exists already, skip this entry.
-              HashBase._setDeletedAt(_data, j);
+              _HashBase._setDeletedAt(_data, j);
               _deletedKeys++;
               break next;
             } else {
@@ -911,7 +915,7 @@ mixin SetCreateIndexMixin<E> on Set<E>, LinkedHashSetMixin<E>, HashFieldBase {
             }
           }
 
-          i = HashBase._nextProbe(i, sizeMask);
+          i = _HashBase._nextProbe(i, sizeMask);
           pair = index.readUnsigned(i);
         }
 
@@ -927,7 +931,7 @@ mixin SetCreateIndexMixin<E> on Set<E>, LinkedHashSetMixin<E>, HashFieldBase {
   }
 }
 
-mixin ImmutableLinkedHashSetMixin<E> on SetCreateIndexMixin<E> {
+mixin Immutable_LinkedHashSetMixin<E> on SetCreateIndexMixin<E> {
   E? lookup(Object? key) {
     if (identical(_index, _uninitializedHashBaseIndex)) {
       _createIndex(false);
@@ -949,9 +953,9 @@ mixin ImmutableLinkedHashSetMixin<E> on SetCreateIndexMixin<E> {
 base class CompactLinkedIdentityHashSet<E> extends HashFieldBase
     with
         SetMixin<E>,
-        HashBase,
+        _HashBase,
         _IdenticalAndIdentityHashCode,
-        LinkedHashSetMixin<E>
+        _LinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   Set<E> toSet() => CompactLinkedIdentityHashSet<E>()..addAll(this);
 
@@ -972,9 +976,9 @@ base class CompactLinkedIdentityHashSet<E> extends HashFieldBase
 base class CompactLinkedCustomHashSet<E> extends HashFieldBase
     with
         SetMixin<E>,
-        HashBase,
+        _HashBase,
         _CustomEqualsAndHashCode<E>,
-        LinkedHashSetMixin<E>
+        _LinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   final bool Function(E, E) _equality;
   final int Function(E) _hasher;
@@ -993,7 +997,7 @@ base class CompactLinkedCustomHashSet<E> extends HashFieldBase
     ..addAll(this);
 }
 
-mixin UnmodifiableMapMixin<K, V> implements Map<K, V> {
+mixin _UnmodifiableMapMixin<K, V> implements Map<K, V> {
   static Never _throwUnmodifiable() {
     throw UnsupportedError("Cannot change an unmodifiable set");
   }
@@ -1082,16 +1086,16 @@ class _TypeTest<T> {
 base class WasmDefaultMap<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
-        OperatorEqualsAndHashCode,
-        LinkedHashMapMixin<K, V>,
-        MapCreateIndexMixin<K, V>
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashMapMixin<K, V>,
+        _MapCreateIndexMixin<K, V>
     implements LinkedHashMap<K, V> {
   @pragma("wasm:entry-point")
   static WasmDefaultMap<K, V> fromWasmArray<K, V>(WasmArray<Object?> data) {
     final map = WasmDefaultMap<K, V>();
     assert(map._index == _uninitializedHashBaseIndex);
-    assert(map._hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(map._hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
     assert(map._data == _uninitializedHashBaseData);
     assert(map._usedData == 0);
     assert(map._deletedKeys == 0);
@@ -1110,16 +1114,16 @@ base class WasmDefaultMap<K, V> extends HashFieldBase
 base class WasmDefaultSet<E> extends HashFieldBase
     with
         SetMixin<E>,
-        HashBase,
-        OperatorEqualsAndHashCode,
-        LinkedHashSetMixin<E>,
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashSetMixin<E>,
         SetCreateIndexMixin<E>
     implements LinkedHashSet<E> {
   @pragma("wasm:entry-point")
   static WasmDefaultSet<E> fromWasmArray<E>(WasmArray<Object?> data) {
     final map = WasmDefaultSet<E>();
     assert(map._index == _uninitializedHashBaseIndex);
-    assert(map._hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(map._hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
     assert(map._data == _uninitializedHashBaseData);
     assert(map._usedData == 0);
     assert(map._deletedKeys == 0);
@@ -1144,24 +1148,24 @@ base class WasmDefaultSet<E> extends HashFieldBase
 base class WasmImmutableMap<K, V> extends HashFieldBase
     with
         MapMixin<K, V>,
-        HashBase,
-        OperatorEqualsAndHashCode,
-        LinkedHashMapMixin<K, V>,
-        MapCreateIndexMixin<K, V>,
-        UnmodifiableMapMixin<K, V>,
-        ImmutableLinkedHashMapMixin<K, V>
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashMapMixin<K, V>,
+        _MapCreateIndexMixin<K, V>,
+        _UnmodifiableMapMixin<K, V>,
+        Immutable_LinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {}
 
 @pragma("wasm:entry-point")
 base class WasmImmutableSet<E> extends HashFieldBase
     with
         SetMixin<E>,
-        HashBase,
-        OperatorEqualsAndHashCode,
-        LinkedHashSetMixin<E>,
+        _HashBase,
+        _OperatorEqualsAndHashCode,
+        _LinkedHashSetMixin<E>,
         SetCreateIndexMixin<E>,
         UnmodifiableSetMixin<E>,
-        ImmutableLinkedHashSetMixin<E>
+        Immutable_LinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   Set<R> cast<R>() => Set.castFrom<E, R>(this, newSet: _newEmpty);
 
