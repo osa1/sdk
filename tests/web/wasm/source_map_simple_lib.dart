@@ -16,12 +16,22 @@ void g() {
   throw 'hi';
 }
 
+runtimeFalse() => int.parse('1') == 0;
+
 // `frameDetails` is (line, column) of the frames we check.
 //
 // Information we don't check are "null": we don't want to check line/column
 // of standard library functions to avoid breaking the test with unrelated
 // changes to the standard library.
 void testMain(String testName, List<(int?, int?)?> frameDetails) {
+  // Use `f` and `g` in a few places to make sure wasm-opt won't inline them
+  // in the test.
+  final fTearOff = f;
+  final gTearOff = g;
+
+  if (runtimeFalse()) f();
+  if (runtimeFalse()) g();
+
   // Read source map of the current program.
   final compilationDir = const String.fromEnvironment("TEST_COMPILATION_DIR");
   final sourceMapFileContents =

@@ -12,16 +12,19 @@ void main() {
 
 const List<(int?, int?)?> frameDetails = [
   (null, null), // _throwWithCurrentStackTrace
-  (16, 3), // throw in g
+  (16, 3), // g
+  (12, 3), // f
+  (44, 5), // testMain
   (null, null), // _invokeMain
 ];
 
 /*
-at Error._throwWithCurrentStackTrace (wasm://wasm/0008d98a:wasm-function[129]:0xbf1d)
-at main (wasm://wasm/0008d98a:wasm-function[387]:0x117f1)
-at _invokeMain (wasm://wasm/0008d98a:wasm-function[96]:0xb22b)
+at Error._throwWithCurrentStackTrace (wasm://wasm/0011bbfa:wasm-function[130]:0x16b7a)
+at g (wasm://wasm/0011bbfa:wasm-function[766]:0x1fbaf)
+at f (wasm://wasm/0011bbfa:wasm-function[763]:0x1fb93)
+at testMain (wasm://wasm/0011bbfa:wasm-function[762]:0x1f8c7)
+at main (wasm://wasm/0011bbfa:wasm-function[759]:0x1f7f3)
+at main tear-off trampoline (wasm://wasm/0011bbfa:wasm-function[761]:0x1f806)
+at _invokeMain (wasm://wasm/0011bbfa:wasm-function[90]:0x156aa)
 at Module.invoke (...)
-at main (...)
-at async action (...)
-at async eventLoop (...)
 */
