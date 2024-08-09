@@ -1077,3 +1077,96 @@ mixin UnmodifiableSetMixin<E> implements Set<E> {
 class _TypeTest<T> {
   bool test(v) => v is T;
 }
+
+@pragma("wasm:entry-point")
+base class WasmDefaultMap<K, V> extends HashFieldBase
+    with
+        MapMixin<K, V>,
+        HashBase,
+        OperatorEqualsAndHashCode,
+        LinkedHashMapMixin<K, V>,
+        MapCreateIndexMixin<K, V>
+    implements LinkedHashMap<K, V> {
+  @pragma("wasm:entry-point")
+  static WasmDefaultMap<K, V> fromWasmArray<K, V>(WasmArray<Object?> data) {
+    final map = WasmDefaultMap<K, V>();
+    assert(map._index == _uninitializedHashBaseIndex);
+    assert(map._hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(map._data == _uninitializedHashBaseData);
+    assert(map._usedData == 0);
+    assert(map._deletedKeys == 0);
+
+    map._data = data;
+    map._usedData = data.length;
+    map._createIndex(true);
+
+    return map;
+  }
+
+  void operator []=(K key, V value);
+}
+
+@pragma('wasm:entry-point')
+base class WasmDefaultSet<E> extends HashFieldBase
+    with
+        SetMixin<E>,
+        HashBase,
+        OperatorEqualsAndHashCode,
+        LinkedHashSetMixin<E>,
+        SetCreateIndexMixin<E>
+    implements LinkedHashSet<E> {
+  @pragma("wasm:entry-point")
+  static WasmDefaultSet<E> fromWasmArray<E>(WasmArray<Object?> data) {
+    final map = WasmDefaultSet<E>();
+    assert(map._index == _uninitializedHashBaseIndex);
+    assert(map._hashMask == HashBase._UNINITIALIZED_HASH_MASK);
+    assert(map._data == _uninitializedHashBaseData);
+    assert(map._usedData == 0);
+    assert(map._deletedKeys == 0);
+
+    map._data = data;
+    map._usedData = data.length;
+    map._createIndex(true);
+
+    return map;
+  }
+
+  bool add(E key);
+
+  Set<R> cast<R>() => Set.castFrom<E, R>(this, newSet: _newEmpty);
+
+  static Set<R> _newEmpty<R>() => WasmDefaultSet<R>();
+
+  Set<E> toSet() => WasmDefaultSet<E>()..addAll(this);
+}
+
+@pragma("wasm:entry-point")
+base class WasmImmutableMap<K, V> extends HashFieldBase
+    with
+        MapMixin<K, V>,
+        HashBase,
+        OperatorEqualsAndHashCode,
+        LinkedHashMapMixin<K, V>,
+        MapCreateIndexMixin<K, V>,
+        UnmodifiableMapMixin<K, V>,
+        ImmutableLinkedHashMapMixin<K, V>
+    implements LinkedHashMap<K, V> {}
+
+@pragma("wasm:entry-point")
+base class WasmImmutableSet<E> extends HashFieldBase
+    with
+        SetMixin<E>,
+        HashBase,
+        OperatorEqualsAndHashCode,
+        LinkedHashSetMixin<E>,
+        SetCreateIndexMixin<E>,
+        UnmodifiableSetMixin<E>,
+        ImmutableLinkedHashSetMixin<E>
+    implements LinkedHashSet<E> {
+  Set<R> cast<R>() => Set.castFrom<E, R>(this, newSet: _newEmpty);
+
+  static Set<R> _newEmpty<R>() => WasmDefaultSet<R>();
+
+  // Returns a mutable set.
+  Set<E> toSet() => _newEmpty<E>()..addAll(this);
+}
