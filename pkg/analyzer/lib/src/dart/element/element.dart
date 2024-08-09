@@ -3799,13 +3799,15 @@ class ImportElementPrefixImpl implements ImportElementPrefix {
 
 abstract class InstanceElementImpl extends _ExistingElementImpl
     with TypeParameterizedElementMixin, MacroTargetElement
-    implements InstanceElement {
+    implements InstanceElement, InstanceFragment {
   @override
   ElementLinkedData? linkedData;
 
   List<FieldElementImpl> _fields = _Sentinel.fieldElement;
+
   List<PropertyAccessorElementImpl> _accessors =
       _Sentinel.propertyAccessorElement;
+
   List<MethodElementImpl> _methods = _Sentinel.methodElement;
 
   InstanceElementImpl(super.name, super.nameOffset);
@@ -3864,6 +3866,16 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
   }
 
   @override
+  List<FieldFragment> get fields2 => fields.cast<FieldFragment>();
+
+  @override
+  List<GetterFragment> get getters =>
+      accessors.where((e) => e.isGetter).cast<GetterFragment>().toList();
+
+  @override
+  bool get isAugmentation => augmentationTarget != null;
+
+  @override
   List<ElementAnnotationImpl> get metadata {
     linkedData?.read(this);
     return super.metadata;
@@ -3888,11 +3900,18 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
   }
 
   @override
+  List<MethodFragment> get methods2 => methods.cast<MethodFragment>();
+
+  @override
   InstanceFragment? get nextFragment => augmentation as InstanceFragment?;
 
   @override
   InstanceFragment? get previousFragment =>
       augmentationTarget as InstanceFragment?;
+
+  @override
+  List<SetterFragment> get setters =>
+      accessors.where((e) => e.isSetter).cast<SetterFragment>().toList();
 
   void setLinkedData(Reference reference, ElementLinkedData linkedData) {
     this.reference = reference;
@@ -3903,7 +3922,7 @@ abstract class InstanceElementImpl extends _ExistingElementImpl
 }
 
 abstract class InterfaceElementImpl extends InstanceElementImpl
-    implements InterfaceElement {
+    implements InterfaceElement, InterfaceFragment {
   /// A list containing all of the mixins that are applied to the class being
   /// extended in order to derive the superclass of this class.
   List<InterfaceType> _mixins = const [];
@@ -3981,6 +4000,10 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
     }
     _constructors = constructors;
   }
+
+  @override
+  List<ConstructorFragment> get constructors2 =>
+      constructors.cast<ConstructorFragment>();
 
   @override
   String get displayName => name;
@@ -4583,11 +4606,13 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
         super(name: name, nameOffset: offset);
 
   @override
-  List<ExtensionElement> get accessibleExtensions => scope.extensions;
+  List<ExtensionElement> get accessibleExtensions {
+    return scope.accessibleExtensions;
+  }
 
   @override
   List<ExtensionElement2> get accessibleExtensions2 {
-    return scope.extensions
+    return scope.accessibleExtensions
         .map((element) => element.augmentation as ExtensionElement2)
         .toList();
   }
@@ -5033,6 +5058,13 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
     return false;
   }
 
+  void resetScope() {
+    _libraryDeclarations = null;
+    for (var fragment in units) {
+      fragment._scope = null;
+    }
+  }
+
   /// Indicates whether it is unnecessary to report an undefined identifier
   /// error for an identifier reference with the given [name] and optional
   /// [prefix].
@@ -5301,9 +5333,6 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   List<AugmentationImportElementImpl> _augmentationImports =
       _Sentinel.augmentationImportElement;
 
-  /// The scope of this library, `null` if it has not been created yet.
-  LibraryOrAugmentationScope? _scope;
-
   LibraryOrAugmentationElementImpl({
     required String? name,
     required int nameOffset,
@@ -5372,8 +5401,8 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   }
 
   @override
-  LibraryOrAugmentationScope get scope {
-    return _scope ??= LibraryOrAugmentationScope(this);
+  LibraryFragmentScope get scope {
+    return definingCompilationUnit.scope;
   }
 
   @override
@@ -5382,10 +5411,6 @@ abstract class LibraryOrAugmentationElementImpl extends ElementImpl
   @override
   Source get source {
     return _definingCompilationUnit.source;
-  }
-
-  void resetScope() {
-    _scope = null;
   }
 
   void _readLinkedData();
@@ -5497,7 +5522,10 @@ mixin MaybeAugmentedExtensionTypeElementMixin
 }
 
 mixin MaybeAugmentedInstanceElementMixin
-    implements AugmentedInstanceElement, TypeParameterizedElement2 {
+    implements
+        AugmentedInstanceElement,
+        InstanceElement2,
+        TypeParameterizedElement2 {
   @override
   List<PropertyAccessorElement> get accessors;
 
@@ -5517,10 +5545,20 @@ mixin MaybeAugmentedInstanceElementMixin
   String? get documentationComment => declaration.documentationComment;
 
   @override
-  Element2? get enclosingElement2 => declaration.enclosingElement2;
+  LibraryElement2 get enclosingElement2 => declaration.library;
 
   @override
   List<FieldElement> get fields;
+
+  @override
+  List<FieldElement2> get fields2 => fields.cast<FieldElement2>();
+
+  @override
+  InstanceFragment get firstFragment => declaration;
+
+  @override
+  List<GetterElement> get getters2 =>
+      accessors.where((e) => e.isGetter).cast<GetterElement>().toList();
 
   @override
   bool get hasAlwaysThrows => declaration.hasAlwaysThrows;
@@ -5622,7 +5660,7 @@ mixin MaybeAugmentedInstanceElementMixin
   ElementKind get kind => declaration.kind;
 
   @override
-  LibraryElement2? get library2 => declaration.library2;
+  LibraryElement2 get library2 => declaration.library2!;
 
   @override
   ElementLocation? get location => declaration.location;
@@ -5634,6 +5672,9 @@ mixin MaybeAugmentedInstanceElementMixin
   List<MethodElement> get methods;
 
   @override
+  List<MethodElement2> get methods2 => methods.cast<MethodElement2>();
+
+  @override
   String? get name => declaration.name;
 
   @override
@@ -5641,6 +5682,10 @@ mixin MaybeAugmentedInstanceElementMixin
 
   @override
   AnalysisSession? get session => declaration.session;
+
+  @override
+  List<SetterElement> get setters2 =>
+      accessors.where((e) => e.isSetter).cast<SetterElement>().toList();
 
   @override
   Version? get sinceSdkVersion => declaration.sinceSdkVersion;
@@ -5841,11 +5886,27 @@ mixin MaybeAugmentedInstanceElementMixin
 }
 
 mixin MaybeAugmentedInterfaceElementMixin on MaybeAugmentedInstanceElementMixin
-    implements AugmentedInterfaceElement {
+    implements AugmentedInterfaceElement, InterfaceElement2 {
   InterfaceType? _thisType;
 
   @override
+  List<InterfaceType> get allSupertypes => declaration.allSupertypes;
+
+  @override
+  List<ConstructorElement2> get constructors2 =>
+      constructors.cast<ConstructorElement2>();
+
+  @override
   InterfaceElementImpl get declaration;
+
+  @override
+  List<InterfaceType> get interfaces => declaration.interfaces;
+
+  @override
+  List<InterfaceType> get mixins => declaration.mixins;
+
+  @override
+  InterfaceType? get supertype => declaration.supertype;
 
   @override
   InterfaceType get thisType {
@@ -5873,10 +5934,22 @@ mixin MaybeAugmentedInterfaceElementMixin on MaybeAugmentedInstanceElementMixin
   }
 
   @override
+  ConstructorElement2? get unnamedConstructor2 =>
+      unnamedConstructor as ConstructorElement2;
+
+  @override
   ConstructorElement? getNamedConstructor(String name) {
     name = name.ifEqualThen('new', '');
     return constructors.firstWhereOrNull((element) => element.name == name);
   }
+
+  @override
+  InterfaceType instantiate({
+    required List<DartType> typeArguments,
+    required NullabilitySuffix nullabilitySuffix,
+  }) =>
+      declaration.instantiate(
+          typeArguments: typeArguments, nullabilitySuffix: nullabilitySuffix);
 }
 
 mixin MaybeAugmentedMixinElementMixin on MaybeAugmentedInterfaceElementMixin
