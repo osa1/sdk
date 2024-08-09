@@ -217,15 +217,15 @@ mixin KernelNodes {
   late final Procedure hashImmutableIndexNullable = index.getProcedure(
       "dart:collection", "_HashAbstractImmutableBase", "get:_indexNullable");
   late final Field hashFieldBaseIndexField =
-      index.getField("dart:collection", "_HashFieldBase", "_index");
+      index.getField("dart:_compact_hash", "_HashFieldBase", "_index");
   late final Field hashFieldBaseHashMaskField =
-      index.getField("dart:collection", "_HashFieldBase", "_hashMask");
+      index.getField("dart:_compact_hash", "_HashFieldBase", "_hashMask");
   late final Field hashFieldBaseDataField =
-      index.getField("dart:collection", "_HashFieldBase", "_data");
+      index.getField("dart:_compact_hash", "_HashFieldBase", "_data");
   late final Field hashFieldBaseUsedDataField =
-      index.getField("dart:collection", "_HashFieldBase", "_usedData");
+      index.getField("dart:_compact_hash", "_HashFieldBase", "_usedData");
   late final Field hashFieldBaseDeletedKeysField =
-      index.getField("dart:collection", "_HashFieldBase", "_deletedKeys");
+      index.getField("dart:_compact_hash", "_HashFieldBase", "_deletedKeys");
 
   // dart:core various procedures
   late final Procedure boxedBoolEquals =
