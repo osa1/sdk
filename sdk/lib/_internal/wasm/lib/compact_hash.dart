@@ -212,7 +212,7 @@ base class _ConstMap<K, V> extends _HashFieldBase
         _LinkedHashMapMixin<K, V>,
         _UnmodifiableMapMixin<K, V>,
         _MapCreateIndexMixin<K, V>,
-        Immutable_LinkedHashMapMixin<K, V>
+        _ImmutableLinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {
   factory _ConstMap._uninstantiable() {
     throw new UnsupportedError(
@@ -266,7 +266,7 @@ mixin _MapCreateIndexMixin<K, V> on _LinkedHashMapMixin<K, V>, _HashFieldBase {
   }
 }
 
-mixin Immutable_LinkedHashMapMixin<K, V> on _MapCreateIndexMixin<K, V> {
+mixin _ImmutableLinkedHashMapMixin<K, V> on _MapCreateIndexMixin<K, V> {
   bool containsKey(Object? key) {
     if (identical(_index, _uninitializedHashBaseIndex)) {
       _createIndex(false);
@@ -858,9 +858,9 @@ base class _ConstSet<E> extends _HashFieldBase
         _HashBase,
         _OperatorEqualsAndCanonicalHashCode,
         _LinkedHashSetMixin<E>,
-        UnmodifiableSetMixin<E>,
-        SetCreateIndexMixin<E>,
-        Immutable_LinkedHashSetMixin<E>
+        _UnmodifiableSetMixin<E>,
+        _SetCreateIndexMixin<E>,
+        _ImmutableLinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   factory _ConstSet._uninstantiable() {
     throw new UnsupportedError(
@@ -875,7 +875,8 @@ base class _ConstSet<E> extends _HashFieldBase
   Set<E> toSet() => _Set<E>()..addAll(this);
 }
 
-mixin SetCreateIndexMixin<E> on Set<E>, _LinkedHashSetMixin<E>, _HashFieldBase {
+mixin _SetCreateIndexMixin<E>
+    on Set<E>, _LinkedHashSetMixin<E>, _HashFieldBase {
   void _createIndex(bool canContainDuplicates) {
     assert(_index == _uninitializedHashBaseIndex);
     assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
@@ -931,7 +932,7 @@ mixin SetCreateIndexMixin<E> on Set<E>, _LinkedHashSetMixin<E>, _HashFieldBase {
   }
 }
 
-mixin Immutable_LinkedHashSetMixin<E> on SetCreateIndexMixin<E> {
+mixin _ImmutableLinkedHashSetMixin<E> on _SetCreateIndexMixin<E> {
   E? lookup(Object? key) {
     if (identical(_index, _uninitializedHashBaseIndex)) {
       _createIndex(false);
@@ -1048,7 +1049,7 @@ mixin _UnmodifiableMapMixin<K, V> implements Map<K, V> {
   }
 }
 
-mixin UnmodifiableSetMixin<E> implements Set<E> {
+mixin _UnmodifiableSetMixin<E> implements Set<E> {
   static Never _throwUnmodifiable() {
     throw UnsupportedError("Cannot change an unmodifiable set");
   }
@@ -1117,7 +1118,7 @@ base class WasmDefaultSet<E> extends _HashFieldBase
         _HashBase,
         _OperatorEqualsAndHashCode,
         _LinkedHashSetMixin<E>,
-        SetCreateIndexMixin<E>
+        _SetCreateIndexMixin<E>
     implements LinkedHashSet<E> {
   @pragma("wasm:entry-point")
   static WasmDefaultSet<E> fromWasmArray<E>(WasmArray<Object?> data) {
@@ -1153,7 +1154,7 @@ base class WasmImmutableMap<K, V> extends _HashFieldBase
         _LinkedHashMapMixin<K, V>,
         _MapCreateIndexMixin<K, V>,
         _UnmodifiableMapMixin<K, V>,
-        Immutable_LinkedHashMapMixin<K, V>
+        _ImmutableLinkedHashMapMixin<K, V>
     implements LinkedHashMap<K, V> {}
 
 @pragma("wasm:entry-point")
@@ -1163,9 +1164,9 @@ base class WasmImmutableSet<E> extends _HashFieldBase
         _HashBase,
         _OperatorEqualsAndHashCode,
         _LinkedHashSetMixin<E>,
-        SetCreateIndexMixin<E>,
-        UnmodifiableSetMixin<E>,
-        Immutable_LinkedHashSetMixin<E>
+        _SetCreateIndexMixin<E>,
+        _UnmodifiableSetMixin<E>,
+        _ImmutableLinkedHashSetMixin<E>
     implements LinkedHashSet<E> {
   Set<R> cast<R>() => Set.castFrom<E, R>(this, newSet: _newEmpty);
 
