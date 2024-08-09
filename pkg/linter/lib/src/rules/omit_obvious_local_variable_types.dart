@@ -8,6 +8,7 @@ import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
+import '../linter_lint_codes.dart';
 
 const _desc = r'Omit obvious type annotations for local variables.';
 
@@ -73,11 +74,10 @@ or removed. Feedback on its behavior is welcome! The main issue is here:
 https://github.com/dart-lang/linter/issues/3480.
 ''';
 
-class OmitObviousLocalVariableTypes extends LintRule {
-  static const LintCode code = LintCode('omit_obvious_local_variable_types',
-      'Unnecessary and obvious type annotation on a local variable.',
-      correctionMessage: 'Try removing the type annotation.');
+bool _sameOrNull(DartType? t1, DartType? t2) =>
+    t1 == null || t2 == null || t1 == t2;
 
+class OmitObviousLocalVariableTypes extends LintRule {
   OmitObviousLocalVariableTypes()
       : super(
             name: 'omit_obvious_local_variable_types',
@@ -90,7 +90,7 @@ class OmitObviousLocalVariableTypes extends LintRule {
   List<String> get incompatibleRules => const ['always_specify_types'];
 
   @override
-  LintCode get lintCode => code;
+  LintCode get lintCode => LinterLintCode.omit_obvious_local_variable_types;
 
   @override
   void registerNodeProcessors(
@@ -194,6 +194,26 @@ extension on CollectionElement {
         return self.value.hasObviousType;
     }
   }
+
+  DartType? get keyType {
+    var self = this; // Enable promotion.
+    switch (self) {
+      case MapLiteralEntry():
+        return self.key.elementType;
+      default:
+        return null;
+    }
+  }
+
+  DartType? get valueType {
+    var self = this; // Enable promotion.
+    switch (self) {
+      case MapLiteralEntry():
+        return self.value.elementType;
+      default:
+        return null;
+    }
+  }
 }
 
 extension on DartType? {
@@ -221,26 +241,27 @@ extension on Expression {
           return true;
         }
         // A collection literal with no explicit type arguments.
-        var anyElementIsObvious = false;
-        DartType? theObviousType;
+        DartType? theObviousType, theObviousKeyType, theObviousValueType;
         NodeList<CollectionElement> elements = switch (self) {
           ListLiteral() => self.elements,
           SetOrMapLiteral() => self.elements
         };
         for (var element in elements) {
           if (element.hasObviousType) {
-            if (anyElementIsObvious) {
-              continue;
+            theObviousType ??= element.elementType;
+            theObviousKeyType ??= element.keyType;
+            theObviousValueType ??= element.valueType;
+            if (!_sameOrNull(theObviousType, element.elementType) ||
+                !_sameOrNull(theObviousKeyType, element.keyType) ||
+                !_sameOrNull(theObviousValueType, element.valueType)) {
+              return false;
             }
-            anyElementIsObvious = true;
-            theObviousType = element.elementType;
+          } else {
+            return false;
           }
         }
-        if (anyElementIsObvious) {
-          var theSelfElementType = self.staticType.elementTypeOfIterable;
-          return theSelfElementType == theObviousType;
-        }
-        return false;
+        var theSelfElementType = self.staticType.elementTypeOfIterable;
+        return theSelfElementType == theObviousType;
       case Literal():
         // An atomic literal: `Literal` and not `TypedLiteral`.
         if (self is IntegerLiteral &&
@@ -270,6 +291,8 @@ extension on Expression {
         }
       case CascadeExpression():
         return self.target.hasObviousType;
+      case AsExpression():
+        return true;
     }
     return false;
   }

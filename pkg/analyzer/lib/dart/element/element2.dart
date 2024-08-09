@@ -54,7 +54,6 @@ import 'package:analyzer/dart/element/element.dart'
         ElementAnnotation,
         ElementKind,
         ElementLocation,
-        ImportElementPrefix,
         LibraryLanguageVersion,
         NamespaceCombinator;
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -121,10 +120,26 @@ abstract class ConstructorElement2 implements ExecutableElement2, _Fragmented {
   ConstructorElement2? get superConstructor2;
 }
 
+/// The portion of a [ConstructorElement2] contributed by a single declaration.
 abstract class ConstructorFragment implements ExecutableFragment {
+  @override
+  ConstructorElement2 get element;
+
+  @override
+  InstanceFragment? get enclosingFragment;
+
+  /// The offset of the end of the name in this fragment.
+  ///
+  /// Returns `null` if the fragment has no name.
   int? get nameEnd;
 
+  @override
+  ConstructorFragment? get nextFragment;
+
   int? get periodOffset;
+
+  @override
+  ConstructorFragment? get previousFragment;
 }
 
 /// The base class for all of the elements in the element model.
@@ -458,7 +473,21 @@ abstract class FunctionTypedFragment implements TypeParameterizedFragment {
 abstract class GenericFunctionTypeElement2
     implements FunctionTypedElement2, _Fragmented {}
 
-abstract class GenericFunctionTypeFragment implements FunctionTypedFragment {}
+/// The portion of a [GenericFunctionTypeElement2] coming from a single
+/// declaration.
+abstract class GenericFunctionTypeFragment implements FunctionTypedFragment {
+  @override
+  GenericFunctionTypeElement2 get element;
+
+  @override
+  LibraryFragment? get enclosingFragment;
+
+  @override
+  GenericFunctionTypeFragment? get nextFragment;
+
+  @override
+  GenericFunctionTypeFragment? get previousFragment;
+}
 
 abstract class GetterElement implements ExecutableElement2, _Fragmented {
   @override
@@ -475,61 +504,149 @@ abstract class GetterFragment implements ExecutableFragment {
   PropertyInducingFragment? get variable;
 }
 
+/// An element whose instance members can refer to `this`.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class InstanceElement2
     implements TypeDefiningElement2, TypeParameterizedElement2 {
   @override
   LibraryElement2 get enclosingElement2;
 
-  List<FieldElement2> get fields;
+  /// The fields declared in this element.
+  List<FieldElement2> get fields2;
 
-  List<GetterElement> get getters;
+  @override
+  InstanceFragment get firstFragment;
 
-  List<MethodElement2> get methods;
+  /// The getters declared in this element.
+  List<GetterElement> get getters2;
 
-  List<SetterElement> get setters;
+  /// The methods declared in this element.
+  List<MethodElement2> get methods2;
 
+  /// The setters declared in this element.
+  List<SetterElement> get setters2;
+
+  /// The type of a `this` expression.
   DartType get thisType;
 }
 
+/// The portion of an [InstanceElement2] contributed by a single declaration.
 abstract class InstanceFragment
     implements TypeDefiningFragment, TypeParameterizedFragment {
+  @override
+  InstanceElement2 get element;
+
+  @override
+  LibraryFragment? get enclosingFragment;
+
+  /// The fields declared in this fragment.
   List<FieldFragment> get fields2;
 
+  /// The getters declared in this fragment.
   List<GetterFragment> get getters;
 
+  /// Whether the fragment is an augmentation.
+  ///
+  /// If `true`, the declaration has the explicit `augment` modifier.
   bool get isAugmentation;
 
+  /// The methods declared in this fragment.
   List<MethodFragment> get methods2;
 
+  @override
+  InstanceFragment? get nextFragment;
+
+  @override
+  InstanceFragment? get previousFragment;
+
+  /// The setters declared in this fragment.
   List<SetterFragment> get setters;
 }
 
+/// An element that defines an [InterfaceType].
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class InterfaceElement2 implements InstanceElement2 {
+  /// All the supertypes defined for this element and its supertypes.
+  ///
+  /// This includes superclasses, mixins, interfaces, and superclass
+  /// constraints.
   List<InterfaceType> get allSupertypes;
 
+  /// The constructors defined for this element.
+  ///
+  /// The list is empty for [MixinElement].
   List<ConstructorElement2> get constructors2;
 
+  /// The interfaces that are implemented by this class.
+  ///
+  /// <b>Note:</b> Because the element model represents the state of the code,
+  /// it is possible for it to be semantically invalid. In particular, it is not
+  /// safe to assume that the inheritance structure of a class does not contain
+  /// a cycle. Clients that traverse the inheritance structure must explicitly
+  /// guard against infinite loops.
   List<InterfaceType> get interfaces;
 
+  /// The mixins that are applied to the class being extended in order to
+  /// derive the superclass of this class.
+  ///
+  /// [ClassElement] and [EnumElement] can have mixins.
+  ///
+  /// [MixinElement] cannot have mixins, so an empty list is returned.
+  ///
+  /// <b>Note:</b> Because the element model represents the state of the code,
+  /// it is possible for it to be semantically invalid. In particular, it is not
+  /// safe to assume that the inheritance structure of a class does not contain
+  /// a cycle. Clients that traverse the inheritance structure must explicitly
+  /// guard against infinite loops.
   List<InterfaceType> get mixins;
 
+  /// The superclass of this element.
+  ///
+  /// For [ClassElement] returns `null` only if this class is `Object`. If the
+  /// superclass is not explicitly specified, or the superclass cannot be
+  /// resolved, then the implicit superclass `Object` is returned.
+  ///
+  /// For [EnumElement] returns `Enum` from `dart:core`.
+  ///
+  /// For [MixinElement] always returns `null`.
+  ///
+  /// <b>Note:</b> Because the element model represents the state of the code,
+  /// it is possible for it to be semantically invalid. In particular, it is not
+  /// safe to assume that the inheritance structure of a class does not contain
+  /// a cycle. Clients that traverse the inheritance structure must explicitly
+  /// guard against infinite loops.
   InterfaceType? get supertype;
 
   ConstructorElement2? get unnamedConstructor2;
 
+  /// Create the [InterfaceType] for this element with the given
+  /// [typeArguments] and [nullabilitySuffix].
   InterfaceType instantiate({
     required List<DartType> typeArguments,
     required NullabilitySuffix nullabilitySuffix,
   });
 }
 
+/// The portion of an [InterfaceElement2] contributed by a single declaration.
 abstract class InterfaceFragment implements InstanceFragment {
-  List<ConstructorFragment> get constructors;
+  /// The constructors declared in this fragment.
+  ///
+  /// The list is empty for [MixinFragment].
+  List<ConstructorFragment> get constructors2;
 
+  /// The interfaces that are implemented by this fragment.
   List<InterfaceType> get interfaces;
 
+  /// The mixins that are applied by this fragment.
+  ///
+  /// [ClassFragment] and [EnumFragment] can have mixins.
+  ///
+  /// [MixinFragment] cannot have mixins, so the empty list is returned.
   List<InterfaceType> get mixins;
 
+  /// The superclass declared by this fragment.
   InterfaceType? get supertype;
 }
 
@@ -680,13 +797,22 @@ abstract class LibraryElement2 implements Element2, _Annotatable, _Fragmented {
   TypeSystem get typeSystem;
 }
 
+/// An export directive within a library.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class LibraryExport {
+  /// The combinators that were specified as part of the `export` directive.
+  ///
+  /// The combinators are in the order in which they were specified.
   List<NamespaceCombinator> get combinators;
 
+  /// The [LibraryElement], if [uri] is a [DirectiveUriWithLibrary].
   LibraryElement2? get exportedLibrary2;
 
+  /// The offset of the `export` keyword.
   int get exportKeywordOffset;
 
+  /// The interpretation of the URI specified in the directive.
   DirectiveUri get uri;
 }
 
@@ -725,6 +851,9 @@ abstract class LibraryFragment implements Fragment, _Annotatable {
   /// The fragments of the mixins declared in this fragment.
   List<MixinFragment> get mixins2;
 
+  @override
+  LibraryFragment? get nextFragment;
+
   /// The parts included by this unit.
   List<PartInclude> get partIncludes;
 
@@ -732,6 +861,9 @@ abstract class LibraryFragment implements Fragment, _Annotatable {
   ///
   /// Each prefix can be used in more than one `import` directive.
   List<PrefixElement2> get prefixes;
+
+  @override
+  LibraryFragment? get previousFragment;
 
   /// The scope used to resolve names within the fragment.
   ///
@@ -742,25 +874,44 @@ abstract class LibraryFragment implements Fragment, _Annotatable {
   /// The fragments of the top-level setters declared in this fragment.
   List<SetterFragment> get setters;
 
-  /// The fragments of the top-level variables declared in this compilation
-  /// unit.
+  /// The fragments of the top-level variables declared in this fragment.
   List<TopLevelVariableFragment> get topLevelVariables2;
 
   /// The fragments of the type aliases declared in this fragment.
   List<TypeAliasFragment> get typeAliases2;
 }
 
+/// An import directive within a library.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class LibraryImport {
+  /// The combinators that were specified as part of the `import` directive.
+  ///
+  /// The combinators are in the order in which they were specified.
   List<NamespaceCombinator> get combinators;
 
+  /// The [LibraryElement], if [uri] is a [DirectiveUriWithLibrary].
   LibraryElement2? get importedLibrary2;
 
+  /// The offset of the `import` keyword.
   int get importKeywordOffset;
 
+  /// Whether this import is synthetic.
+  ///
+  /// A synthetic import is an import that is not represented in the source
+  /// code explicitly, but is implied by the source code. This only happens for
+  /// an implicit import of `dart:core`.
+  bool get isSynthetic;
+
+  /// The [Namespace] that this directive contributes to the containing library.
   Namespace get namespace;
 
-  ImportElementPrefix? get prefix;
+  /// The prefix fragment that was specified as part of the import directive.
+  ///
+  /// Returns `null` if there was no prefix specified.
+  PrefixFragment? get prefix2;
 
+  /// The interpretation of the URI specified in the directive.
   DirectiveUri get uri;
 }
 
@@ -784,7 +935,20 @@ abstract class MethodElement2 implements ExecutableElement2, _Fragmented {
   bool get isOperator;
 }
 
-abstract class MethodFragment implements ExecutableFragment {}
+/// The portion of a [MethodElement2] contributed by a single declaration.
+abstract class MethodFragment implements ExecutableFragment {
+  @override
+  MethodElement2 get element;
+
+  @override
+  InstanceFragment? get enclosingFragment;
+
+  @override
+  MethodFragment? get nextFragment;
+
+  @override
+  MethodFragment? get previousFragment;
+}
 
 abstract class MixinElement2 implements InterfaceElement2 {
   bool get isBase;
@@ -807,7 +971,11 @@ abstract class MultiplyInheritedExecutableElement2
   List<ExecutableElement2> get inheritedElements2;
 }
 
+/// A 'part' directive within a library fragment.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class PartInclude {
+  /// The interpretation of the URI specified in the directive.
   DirectiveUri get uri;
 }
 
@@ -815,16 +983,45 @@ abstract class PatternVariableElement2 implements LocalVariableElement2 {
   JoinPatternVariableElement2? get join2;
 }
 
-abstract class PrefixElement2 implements Element2 {
+/// A prefix used to import one or more libraries into another library.
+///
+/// Clients may not extend, implement or mix-in this class.
+abstract class PrefixElement2 implements Element2, _Fragmented {
   @override
   LibraryElement2 get enclosingElement2;
 
+  @override
+  PrefixFragment get firstFragment;
+
+  /// The imports that share this prefix.
   List<LibraryImport> get imports2;
 
   @override
   LibraryElement2 get library2;
 
+  /// The name lookup scope for this import prefix.
+  ///
+  /// It consists of elements imported into the enclosing library with this
+  /// prefix. The namespace combinators of the import directives are taken
+  /// into account.
   Scope get scope;
+}
+
+/// The portion of a [PrefixElement2] contributed by a single declaration.
+///
+/// Clients may not extend, implement or mix-in this class.
+abstract class PrefixFragment implements Fragment {
+  @override
+  PrefixElement2 get element;
+
+  @override
+  LibraryFragment? get enclosingFragment;
+
+  @override
+  PrefixFragment? get nextFragment;
+
+  @override
+  PrefixFragment? get previousFragment;
 }
 
 abstract class PromotableElement2 implements VariableElement2 {}
@@ -906,9 +1103,25 @@ abstract class TypeAliasElement2
   });
 }
 
+/// The portion of a [TypeAliasElement2] contributed by a single declaration.
 abstract class TypeAliasFragment
-    implements TypeParameterizedFragment, TypeDefiningFragment {}
+    implements TypeParameterizedFragment, TypeDefiningFragment {
+  @override
+  TypeAliasElement2 get element;
 
+  @override
+  LibraryFragment? get enclosingFragment;
+
+  @override
+  TypeAliasFragment? get nextFragment;
+
+  @override
+  TypeAliasFragment? get previousFragment;
+}
+
+/// An element that defines a type.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class TypeDefiningElement2
     implements Element2, _Annotatable, _Fragmented {
   // TODO(brianwilkerson): Evaluate to see whether this type is actually needed
@@ -918,6 +1131,7 @@ abstract class TypeDefiningElement2
   LibraryElement2 get library2;
 }
 
+/// The portion of a [TypeDefiningElement2] contributed by a single declaration.
 abstract class TypeDefiningFragment implements Fragment, _Annotatable {}
 
 abstract class TypeParameterElement2 implements TypeDefiningElement2 {
@@ -936,12 +1150,26 @@ abstract class TypeParameterElement2 implements TypeDefiningElement2 {
 
 abstract class TypeParameterFragment implements TypeDefiningFragment {}
 
+/// An element that has type parameters, such as a class, typedef, or method.
+///
+/// Clients may not extend, implement or mix-in this class.
 abstract class TypeParameterizedElement2 implements Element2, _Annotatable {
+  /// If the element defines a type, indicates whether the type may safely
+  /// appear without explicit type arguments as the bounds of a type parameter
+  /// declaration.
+  ///
+  /// If the element does not define a type, returns `true`.
   bool get isSimplyBounded;
 
+  /// The type parameters declared by this element directly.
+  ///
+  /// This does not include type parameters that are declared by any enclosing
+  /// elements.
   List<TypeParameterElement2> get typeParameters2;
 }
 
+/// The portion of a [TypeParameterizedElement2] contributed by a single
+/// declaration.
 abstract class TypeParameterizedFragment implements Fragment, _Annotatable {}
 
 abstract class UndefinedElement2 implements Element2 {}

@@ -31,10 +31,8 @@ abstract class CodeGenerator {
   //   * doesn't inline (i.e. makes new function with this code) it will provide
   //     the parameters of the function and no return label.
   //
-  void generate(List<w.Local> paramLocals, w.Label? returnLabel);
-
-  // TODO(kustermann): Remove this again.
-  Closures get closures;
+  void generate(
+      w.InstructionsBuilder b, List<w.Local> paramLocals, w.Label? returnLabel);
 }
 
 /// Main code generator for member bodies.
@@ -58,10 +56,10 @@ abstract class AstCodeGenerator
     implements InitializerVisitor<void>, StatementVisitor<void>, CodeGenerator {
   final Translator translator;
   final w.FunctionType functionType;
-  final w.InstructionsBuilder b;
   final Member enclosingMember;
 
   // To be initialized in `generate()`
+  late final w.InstructionsBuilder b;
   late final List<w.Local> paramLocals;
   late final w.Label? returnLabel;
 
@@ -69,7 +67,6 @@ abstract class AstCodeGenerator
   late final StaticTypeContext typeContext =
       StaticTypeContext(enclosingMember, translator.typeEnvironment);
 
-  @override
   late final Closures closures;
 
   bool exceptionLocationPrinted = false;
@@ -103,8 +100,7 @@ abstract class AstCodeGenerator
       {};
 
   /// Create a code generator for a member or one of its lambdas.
-  AstCodeGenerator(
-      this.translator, this.functionType, this.b, this.enclosingMember);
+  AstCodeGenerator(this.translator, this.functionType, this.enclosingMember);
 
   w.ModuleBuilder get m => translator.m;
 
@@ -208,7 +204,9 @@ abstract class AstCodeGenerator
 
   /// Generate code while preventing recursive inlining.
   @override
-  void generate(List<w.Local> paramLocals, w.Label? returnLabel) {
+  void generate(w.InstructionsBuilder b, List<w.Local> paramLocals,
+      w.Label? returnLabel) {
+    this.b = b;
     this.paramLocals = paramLocals;
     this.returnLabel = returnLabel;
 
@@ -217,6 +215,16 @@ abstract class AstCodeGenerator
     translator.membersBeingGenerated.remove(enclosingMember);
   }
 
+  void addNestedClosuresToCompilationQueue() {
+    for (Lambda lambda in closures.lambdas.values) {
+      translator.compilationQueue.add(CompilationTask(
+          lambda.function,
+          getLambdaCodeGenerator(
+              translator, lambda, enclosingMember, closures)));
+    }
+  }
+
+  // Generate the body.
   void generateInternal();
 
   void _setupLocalParameters(Member member, ParameterInfo paramInfo,
@@ -648,28 +656,7 @@ abstract class AstCodeGenerator
   }
 
   List<w.ValueType> call(Reference target) {
-    w.FunctionType targetFunctionType =
-        translator.signatureForDirectCall(target);
-    final inliningCodeGen =
-        translator.getInliningCodeGenerator(target, targetFunctionType, b);
-    if (inliningCodeGen != null) {
-      List<w.Local> inlinedLocals =
-          targetFunctionType.inputs.map((t) => addLocal(t)).toList();
-      for (w.Local local in inlinedLocals.reversed) {
-        b.local_set(local);
-      }
-      w.Label block = b.block(const [], targetFunctionType.outputs);
-      b.comment("Inlined ${target.asMember}");
-      inliningCodeGen.generate(inlinedLocals, block);
-      return targetFunctionType.outputs;
-    } else {
-      w.BaseFunction targetFunction = translator.functions.getFunction(target);
-      String access =
-          target.isGetter ? "get" : (target.isSetter ? "set" : "call");
-      b.comment("Direct $access of '${target.asMember}'");
-      b.call(targetFunction);
-      return targetFunction.type.outputs;
-    }
+    return b.invoke(translator.directCallTarget(target));
   }
 
   @override
@@ -1858,9 +1845,8 @@ abstract class AstCodeGenerator
     pushArguments(selector.signature, selector.paramInfo);
 
     if (selector.staticDispatchRanges.isNotEmpty) {
-      final polymorphicDispatcher =
-          translator.polymorphicDispatchers.getPolymorphicDispatcher(selector);
-      b.call(polymorphicDispatcher);
+      b.invoke(
+          translator.polymorphicDispatchers.getPolymorphicDispatcher(selector));
     } else {
       final offset = selector.offset!;
       b.comment("Instance $kind of '${selector.name}'");
@@ -3030,8 +3016,8 @@ CodeGenerator getMemberCodeGenerator(Translator translator,
     w.FunctionBuilder functionBuilder, Reference memberReference) {
   final member = memberReference.asMember;
   final asyncMarker = member.function?.asyncMarker ?? AsyncMarker.Sync;
-  final codeGen = getInlinableMemberCodeGenerator(translator, asyncMarker,
-      functionBuilder.type, functionBuilder.body, memberReference);
+  final codeGen = getInlinableMemberCodeGenerator(
+      translator, asyncMarker, functionBuilder.type, memberReference);
   if (codeGen != null) return codeGen;
 
   final procedure = member as Procedure;
@@ -3063,44 +3049,39 @@ CodeGenerator getLambdaCodeGenerator(Translator translator, Lambda lambda,
 
 /// Returns a [CodeGenerator] for the given member iff that member can be
 /// inlined.
-CodeGenerator? getInlinableMemberCodeGenerator(
-    Translator translator,
-    AsyncMarker asyncMarker,
-    w.FunctionType functionType,
-    w.InstructionsBuilder b,
-    Reference reference) {
+CodeGenerator? getInlinableMemberCodeGenerator(Translator translator,
+    AsyncMarker asyncMarker, w.FunctionType functionType, Reference reference) {
   final Member member = reference.asMember;
 
   if (reference.isTearOffReference) {
-    return TearOffCodeGenerator(translator, functionType, b, member);
+    return TearOffCodeGenerator(translator, functionType, member);
   }
   if (reference.isTypeCheckerReference) {
-    return TypeCheckerCodeGenerator(translator, functionType, b, member);
+    return TypeCheckerCodeGenerator(translator, functionType, member);
   }
 
   if (member is Constructor) {
     if (reference.isConstructorBodyReference) {
-      return ConstructorCodeGenerator(translator, functionType, b, member);
+      return ConstructorCodeGenerator(translator, functionType, member);
     } else if (reference.isInitializerReference) {
-      return InitializerListCodeGenerator(translator, functionType, b, member);
+      return InitializerListCodeGenerator(translator, functionType, member);
     } else {
       return ConstructorAllocatorCodeGenerator(
-          translator, functionType, b, member);
+          translator, functionType, member);
     }
   }
 
   if (member is Field) {
     if (member.isStatic) {
       return StaticFieldInitializerCodeGenerator(
-          translator, functionType, b, member);
+          translator, functionType, member);
     }
     return ImplicitFieldAccessorCodeGenerator(
-        translator, functionType, b, member, reference.isImplicitGetter);
+        translator, functionType, member, reference.isImplicitGetter);
   }
 
   if (member is Procedure && asyncMarker == AsyncMarker.Sync) {
-    return SynchronousProcedureCodeGenerator(
-        translator, functionType, b, member);
+    return SynchronousProcedureCodeGenerator(translator, functionType, member);
   }
   assert(
       asyncMarker == AsyncMarker.SyncStar || asyncMarker == AsyncMarker.Async);
@@ -3110,17 +3091,14 @@ CodeGenerator? getInlinableMemberCodeGenerator(
 class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
   final Procedure member;
 
-  SynchronousProcedureCodeGenerator(Translator translator,
-      w.FunctionType functionType, w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  SynchronousProcedureCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
     final source = member.enclosingComponent!.uriToSource[member.fileUri]!;
     setSourceMapSourceAndFileOffset(source, member.fileOffset);
-
-    // Build closure information.
-    closures = Closures(translator, member);
 
     if (intrinsifier.generateMemberIntrinsic(
         member.reference, functionType, paramLocals, returnLabel)) {
@@ -3134,6 +3112,8 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
       return;
     }
 
+    closures = Closures(translator, member);
+
     setupParametersAndContexts(member);
 
     Statement? body = member.function.body;
@@ -3143,27 +3123,21 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
 
     _implicitReturn();
     b.end();
+    addNestedClosuresToCompilationQueue();
   }
 }
 
 class TearOffCodeGenerator extends AstCodeGenerator {
   final Member member;
 
-  TearOffCodeGenerator(Translator translator, w.FunctionType functionType,
-      w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  TearOffCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
-    if (member is Constructor) {
-      // Closures are built when constructor functions are added to worklist.
-      closures = translator.constructorClosures[member.reference]!;
-    } else {
-      // Build closure information.
-      closures = Closures(translator, member);
-    }
-
-    return generateTearOffGetter(member as Procedure);
+    closures = Closures(translator, member);
+    generateTearOffGetter(member as Procedure);
   }
 
   void generateTearOffGetter(Procedure procedure) {
@@ -3188,25 +3162,18 @@ class TearOffCodeGenerator extends AstCodeGenerator {
 class TypeCheckerCodeGenerator extends AstCodeGenerator {
   final Member member;
 
-  TypeCheckerCodeGenerator(Translator translator, w.FunctionType functionType,
-      w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  TypeCheckerCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
-    if (member is Constructor) {
-      // Closures are built when constructor functions are added to worklist.
-      closures = translator.constructorClosures[member.reference]!;
-    } else {
-      // Build closure information.
-      closures = Closures(translator, member);
-    }
-
+    closures = Closures(translator, member);
     if (member is Field ||
         (member is Procedure && (member as Procedure).isSetter)) {
-      return _generateFieldSetterTypeCheckerMethod();
+      _generateFieldSetterTypeCheckerMethod();
     } else {
-      return _generateProcedureTypeCheckerMethod();
+      _generateProcedureTypeCheckerMethod();
     }
   }
 
@@ -3423,9 +3390,9 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
 class InitializerListCodeGenerator extends AstCodeGenerator {
   final Constructor member;
 
-  InitializerListCodeGenerator(Translator translator,
-      w.FunctionType functionType, w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  InitializerListCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
@@ -3437,11 +3404,11 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
 
     if (member.isExternal) {
       emitUnimplementedExternalError(member);
-      b.end();
-      return;
+    } else {
+      generateInitializerList();
     }
-
-    generateInitializerList();
+    b.end();
+    addNestedClosuresToCompilationQueue();
   }
 
   // Generates a constructor's initializer list method, and returns:
@@ -3475,7 +3442,6 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
       // throws an error
       if (!containsSuperInitializer) {
         b.unreachable();
-        b.end();
         return;
       }
 
@@ -3484,7 +3450,6 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
       for (Field field in info.cls!.fields) {
         if (field.isInstanceMember && !fieldLocals.containsKey(field)) {
           b.unreachable();
-          b.end();
           return;
         }
       }
@@ -3509,8 +3474,6 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
     for (w.Local field in initializedFields) {
       b.local_get(field);
     }
-
-    b.end();
   }
 
   void _setupInitializerListParametersAndContexts() {
@@ -3579,9 +3542,9 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
 class ConstructorAllocatorCodeGenerator extends AstCodeGenerator {
   final Constructor member;
 
-  ConstructorAllocatorCodeGenerator(Translator translator,
-      w.FunctionType functionType, w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  ConstructorAllocatorCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
@@ -3692,13 +3655,12 @@ class ConstructorAllocatorCodeGenerator extends AstCodeGenerator {
 class ConstructorCodeGenerator extends AstCodeGenerator {
   final Constructor member;
 
-  ConstructorCodeGenerator(Translator translator, w.FunctionType functionType,
-      w.InstructionsBuilder b, this.member)
-      : super(translator, functionType, b, member);
+  ConstructorCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.member)
+      : super(translator, functionType, member);
 
   @override
   void generateInternal() {
-    super.generate;
     // Closures are built when constructor functions are added to worklist.
     closures = translator.constructorClosures[member.reference]!;
 
@@ -3802,9 +3764,9 @@ class ConstructorCodeGenerator extends AstCodeGenerator {
 class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
   final Field field;
 
-  StaticFieldInitializerCodeGenerator(Translator translator,
-      w.FunctionType functionType, w.InstructionsBuilder b, this.field)
-      : super(translator, functionType, b, field);
+  StaticFieldInitializerCodeGenerator(
+      Translator translator, w.FunctionType functionType, this.field)
+      : super(translator, functionType, field);
 
   @override
   void generateInternal() {
@@ -3828,6 +3790,7 @@ class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
     b.global_get(global);
     translator.convertType(b, global.type.type, outputs.single);
     b.end();
+    addNestedClosuresToCompilationQueue();
   }
 }
 
@@ -3838,15 +3801,12 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
   ImplicitFieldAccessorCodeGenerator(
     Translator translator,
     w.FunctionType functionType,
-    w.InstructionsBuilder b,
     this.field,
     this.isImplicitGetter,
-  ) : super(translator, functionType, b, field);
+  ) : super(translator, functionType, field);
 
   @override
   void generateInternal() {
-    closures = Closures(translator, field);
-
     final source = field.enclosingComponent!.uriToSource[field.fileUri]!;
     setSourceMapSourceAndFileOffset(source, field.fileOffset);
 
@@ -3885,8 +3845,7 @@ class SynchronousLambdaCodeGenerator extends AstCodeGenerator {
 
   SynchronousLambdaCodeGenerator(Translator translator, Member enclosingMember,
       this.lambda, this.enclosingMemberClosures)
-      : super(translator, lambda.function.type, lambda.function.body,
-            enclosingMember);
+      : super(translator, lambda.function.type, enclosingMember);
 
   @override
   void generateInternal() {
@@ -4420,6 +4379,77 @@ extension MacroAssembler on w.InstructionsBuilder {
 
     return destContext;
   }
+
+  List<w.ValueType> invoke(CallTarget target, {bool forceInline = false}) {
+    if (target.supportsInlining && (target.shouldInline || forceInline)) {
+      final List<w.Local> inlinedLocals =
+          target.signature.inputs.map((t) => addLocal(t)).toList();
+      for (w.Local local in inlinedLocals.reversed) {
+        local_set(local);
+      }
+      final w.Label callBlock = block(const [], target.signature.outputs);
+      comment('Inlined ${target.name}');
+      target.inliningCodeGen.generate(this, inlinedLocals, callBlock);
+    } else {
+      comment('Direct call to ${target.name}');
+      call(target.function);
+    }
+
+    return target.signature.outputs;
+  }
+}
+
+/// A call target that may be called with a direct call or may be inlined.
+abstract class CallTarget {
+  /// The wasm signature of the call target (that may be called or inlined).
+  final w.FunctionType signature;
+
+  CallTarget(this.signature);
+
+  /// Whether this call target supports inlining.
+  bool get supportsInlining => false;
+
+  /// Whether we should inline (different call targets may have semantic
+  /// knowledge about how big the body would be and whether we should inline or
+  /// not).
+  bool get shouldInline => false;
+
+  /// The code generator to use for inlining the body.
+  CodeGenerator get inliningCodeGen => throw 'No inlining support (yet).';
+
+  /// The name of this target
+  ///
+  /// The inliner can use this to emit comments for the inlined target.
+  String get name;
+
+  /// The wasm target function to call.
+  ///
+  /// This should only be accessed if caller intents to call it, as it will
+  /// enqueue the function in the compilation queue.
+  w.BaseFunction get function;
+}
+
+class AstCallTarget extends CallTarget {
+  final Translator _translator;
+  final Reference _reference;
+
+  AstCallTarget(super.signature, this._translator, this._reference);
+
+  @override
+  String get name => _translator.functions.getFunctionName(_reference);
+
+  @override
+  bool get supportsInlining => _translator.supportsInlining(_reference);
+
+  @override
+  bool get shouldInline => _translator.shouldInline(_reference);
+
+  @override
+  CodeGenerator get inliningCodeGen => getInlinableMemberCodeGenerator(
+      _translator, AsyncMarker.Sync, signature, _reference)!;
+
+  @override
+  w.BaseFunction get function => _translator.functions.getFunction(_reference);
 }
 
 bool guardCanMatchJSException(Translator translator, DartType guard) {
