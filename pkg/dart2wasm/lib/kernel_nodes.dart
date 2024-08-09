@@ -178,8 +178,8 @@ mixin KernelNodes {
   late final Class wasmArrayClass = index.getClass("dart:_wasm", "WasmArray");
   late final Field wasmArrayValueField =
       index.getField("dart:_wasm", "WasmArray", "_value");
-  late final Field uninitializedHashBaseIndex =
-      index.getTopLevelField("dart:collection", "_uninitializedHashBaseIndex");
+  late final Field uninitializedHashBaseIndex = index.getTopLevelField(
+      "dart:_compact_hash", "_uninitializedHashBaseIndex");
   late final Field wasmI64ValueField =
       index.getField("dart:_wasm", "WasmI64", "_value");
 
