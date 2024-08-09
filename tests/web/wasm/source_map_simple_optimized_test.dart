@@ -4,10 +4,6 @@
 
 // dart2wasmOptions=-O4 --no-strip-wasm --extra-compiler-option=-DTEST_COMPILATION_DIR=$TEST_COMPILATION_DIR
 
-import 'dart:js_interop';
-import 'dart:typed_data';
-import 'dart:convert';
-
 import 'source_map_simple_lib.dart' as Lib;
 
 void main() {

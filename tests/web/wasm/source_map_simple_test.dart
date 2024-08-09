@@ -2,11 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-// dart2wasmOptions=--extra-compiler-option=-DTEST_COMPILATION_DIR=$TEST_COMPILATION_DIR
-
-import 'dart:js_interop';
-import 'dart:typed_data';
-import 'dart:convert';
+// dart2wasmOptions=--no-strip-wasm --extra-compiler-option=-DTEST_COMPILATION_DIR=$TEST_COMPILATION_DIR
 
 import 'source_map_simple_lib.dart' as Lib;
 
@@ -19,7 +15,7 @@ const List<(int?, int?)?> frameDetails = [
   (16, 3), // g
   (12, 3), // f
   (34, 5), // testMain
-  (14, 7), // main
+  (10, 7), // main
   null, // main tear-off, compiler generated, not mapped
   (null, null), // _invokeMain
 ];
