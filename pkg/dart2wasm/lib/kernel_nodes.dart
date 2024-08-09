@@ -21,11 +21,11 @@ mixin KernelNodes {
 
   // dart:collection classes
   late final Class hashFieldBaseClass =
-      index.getClass("dart:collection", "_HashFieldBase");
+      index.getClass("dart:_compact_hash", "_HashFieldBase");
   late final Class immutableMapClass =
-      index.getClass("dart:collection", "_WasmImmutableMap");
+      index.getClass("dart:_compact_hash", "WasmImmutableMap");
   late final Class immutableSetClass =
-      index.getClass("dart:collection", "_WasmImmutableSet");
+      index.getClass("dart:_compact_hash", "WasmImmutableSet");
 
   // dart:core various classes
   late final Class boxedBoolClass = index.getClass("dart:core", "_BoxedBool");

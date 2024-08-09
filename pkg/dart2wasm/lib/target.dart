@@ -167,6 +167,7 @@ class WasmTarget extends Target {
   List<String> get extraIndexedLibraries => [
         'dart:_boxed_double',
         'dart:_boxed_int',
+        'dart:_compact_hash',
         'dart:_js_helper',
         'dart:_js_types',
         'dart:_list',
