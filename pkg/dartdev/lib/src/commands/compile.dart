@@ -708,9 +708,10 @@ class CompileWasmCommand extends CompileSubcommandCommand {
         hide: !verbose,
       )
       ..addFlag(
-        'no-source-maps',
-        help: 'Do not generate a source map file.',
-        negatable: false,
+        'source-maps',
+        help: 'Generate a source map file.',
+        defaultsTo: true,
+        negatable: true,
       )
       ..addOption(
         packagesOption.flag,
@@ -849,7 +850,7 @@ class CompileWasmCommand extends CompileSubcommandCommand {
     }
 
     final bool strip = args.flag('strip-wasm');
-    final bool generateSourceMap = !args.flag('no-source-maps');
+    final bool generateSourceMap = args.flag('source-maps');
 
     if (runWasmOpt) {
       final unoptFile = '$outputFileBasename.unopt.wasm';
