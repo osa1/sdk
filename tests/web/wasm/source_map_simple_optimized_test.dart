@@ -15,17 +15,17 @@ void main() {
 }
 
 const List<(int?, int?)?> frameDetails = [
-    (null, null), // _throwWithCurrentStackTrace
-    (14, 3), // main
-    (null, null), // _invokeMain
+  (null, null), // _throwWithCurrentStackTrace
+  (16, 3), // throw in g
+  (null, null), // _invokeMain
 ];
 
 /*
 at Error._throwWithCurrentStackTrace (wasm://wasm/0008d98a:wasm-function[129]:0xbf1d)
 at main (wasm://wasm/0008d98a:wasm-function[387]:0x117f1)
 at _invokeMain (wasm://wasm/0008d98a:wasm-function[96]:0xb22b)
-at Module.invoke (/home/omer/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-d8/tests_web_wasm_source_map_simple_optimized_test/source_map_simple_optimized_test.mjs:317:26)
-at main (/home/omer/dart/sdk/sdk/pkg/dart2wasm/bin/run_wasm.js:421:21)
-at async action (/home/omer/dart/sdk/sdk/pkg/dart2wasm/bin/run_wasm.js:350:37)
-at async eventLoop (/home/omer/dart/sdk/sdk/pkg/dart2wasm/bin/run_wasm.js:327:9)
+at Module.invoke (...)
+at main (...)
+at async action (...)
+at async eventLoop (...)
 */

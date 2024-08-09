@@ -32,5 +32,5 @@ at testMain (wasm://wasm/00119ad6:wasm-function[804]:0x1f0d4)
 at main (wasm://wasm/00119ad6:wasm-function[801]:0x1f031)
 at main tear-off trampoline (wasm://wasm/00119ad6:wasm-function[803]:0x1f044)
 at _invokeMain (wasm://wasm/00119ad6:wasm-function[104]:0x1555b)
-at Module.invoke (/home/omer/dart/sdk/sdk/out/ReleaseX64/generated_compilations/dart2wasm-linux-d8/tests_web_wasm_source_map_simple_test/source_map_simple_test.mjs:317:26)
+at Module.invoke (...)
 */
