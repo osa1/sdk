@@ -144,6 +144,7 @@ class WasmTarget extends Target {
   List<String> get extraRequiredLibraries => [
         'dart:_boxed_double',
         'dart:_boxed_int',
+        'dart:_compact_hash',
         'dart:_http',
         'dart:_internal',
         'dart:_js_helper',
