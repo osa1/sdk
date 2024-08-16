@@ -203,8 +203,9 @@ class _JsonListener {
 
   void endObject() {
     popContainer();
+    final list = unsafeCast<GrowableList>(value);
     value = createMapFromKeyValueListUnsafe<String, dynamic>(
-        unsafeCast<GrowableList>(value));
+        list.data, list.length);
   }
 
   void beginArray() {
