@@ -80,47 +80,23 @@ class _JsonListener {
   /**
    * Stack used to handle nested containers.
    *
-   * The current container is pushed on the stack when a new one is
-   * started.
+   * The current container is pushed on the stack when a new one is started.
    */
-  WasmArray<GrowableList?> stack = WasmArray<GrowableList?>.filled(8, null);
+  WasmArray<GrowableList?> stack = WasmArray<GrowableList?>(0);
   int stackLength = 0;
 
-  /** Contents of the current container being built, or null if not building a
-  * container.
-  *
-  * When building [Map] this will contain array of key-value pairs.
-  */
-  WasmArray<Object?>? currentContainer = null;
-  int currentContainerLength = 0;
-
-  void currentContainerPush(Object? value) {
-    WasmArray<Object?> currentContainerNonNull =
-        unsafeCast<WasmArray<Object?>>(this.currentContainer);
-
-    if (currentContainerLength == currentContainerNonNull.length) {
-      final newContainer =
-          WasmArray<Object?>.filled(currentContainerLength * 2, null);
-      newContainer.copy(0, currentContainerNonNull, 0, currentContainerLength);
-      currentContainerNonNull = newContainer;
-      currentContainer = newContainer;
-    }
-
-    currentContainerNonNull[currentContainerLength] = value;
-    currentContainerLength += 1;
-  }
-
-  void stackPush(WasmArray<Object?>? value, int length) {
+  void stackPush(WasmArray<Object?>? value, int valueLength) {
     if (stackLength == stack.length) {
-      final newStack = WasmArray<GrowableList?>.filled(stackLength * 2, null);
-      newStack.copy(0, stack, 0, stack.length);
+      final newStack = WasmArray<GrowableList?>.filled(
+          GrowableList.nextCapacity(stackLength), null);
+      newStack.copy(0, stack, 0, stackLength);
       stack = newStack;
     }
 
     if (value == null) {
       stack[stackLength] = null;
     } else {
-      stack[stackLength] = GrowableList.withDataAndLength(value, length);
+      stack[stackLength] = GrowableList.withDataAndLength(value, valueLength);
     }
 
     stackLength += 1;
@@ -134,13 +110,37 @@ class _JsonListener {
     return value;
   }
 
+  /** Contents of the current container being built, or null if not building a
+   * container.
+   *
+   * When building a [Map] this will contain array of key-value pairs.
+   */
+  WasmArray<Object?>? currentContainer = null;
+  int currentContainerLength = 0;
+
+  void currentContainerPush(Object? value) {
+    WasmArray<Object?> currentContainerNonNull =
+        unsafeCast<WasmArray<Object?>>(this.currentContainer);
+
+    if (currentContainerLength == currentContainerNonNull.length) {
+      final newContainer = WasmArray<Object?>.filled(
+          GrowableList.nextCapacity(currentContainerLength), null);
+      newContainer.copy(0, currentContainerNonNull, 0, currentContainerLength);
+      currentContainerNonNull = newContainer;
+      currentContainer = newContainer;
+    }
+
+    currentContainerNonNull[currentContainerLength] = value;
+    currentContainerLength += 1;
+  }
+
   /** The most recently read value. */
   Object? value;
 
   /** Pushes the currently active container. */
   void beginContainer() {
     stackPush(currentContainer, currentContainerLength);
-    currentContainer = WasmArray<Object?>.filled(8, null);
+    currentContainer = WasmArray<Object?>(0);
     currentContainerLength = 0;
   }
 

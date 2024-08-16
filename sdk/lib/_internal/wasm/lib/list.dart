@@ -328,7 +328,7 @@ class GrowableList<E> extends _ModifiableList<E> {
 
     final WasmArray<Object?> data;
     if (length == _capacity) {
-      data = WasmArray<Object?>(_nextCapacity(_capacity));
+      data = WasmArray<Object?>(nextCapacity(_capacity));
       if (index != 0) {
         // Copy elements before the insertion point.
         data.copy(0, _data, 0, index);
@@ -386,7 +386,7 @@ class GrowableList<E> extends _ModifiableList<E> {
     int newLength = length + insertionLength;
     if (newLength > capacity) {
       do {
-        capacity = _nextCapacity(capacity);
+        capacity = nextCapacity(capacity);
       } while (newLength > capacity);
       _grow(capacity);
     }
@@ -457,7 +457,7 @@ class GrowableList<E> extends _ModifiableList<E> {
       var newLen = len + iterLen;
       if (newLen > cap) {
         do {
-          cap = _nextCapacity(cap);
+          cap = nextCapacity(cap);
         } while (newLen > cap);
         _grow(cap);
       }
@@ -499,7 +499,7 @@ class GrowableList<E> extends _ModifiableList<E> {
   }
 
   // Grow from 0 to 3, and then double + 1.
-  int _nextCapacity(int old_capacity) => (old_capacity * 2) | 3;
+  static int nextCapacity(int old_capacity) => (old_capacity * 2) | 3;
 
   void _grow(int new_capacity) {
     var newData = WasmArray<Object?>(new_capacity);
@@ -508,7 +508,7 @@ class GrowableList<E> extends _ModifiableList<E> {
   }
 
   void _growToNextCapacity() {
-    _grow(_nextCapacity(_capacity));
+    _grow(nextCapacity(_capacity));
   }
 
   void _shrink(int new_capacity, int new_length) {
