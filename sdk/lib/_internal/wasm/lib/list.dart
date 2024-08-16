@@ -553,7 +553,4 @@ class _GrowableListIterator<E> implements Iterator<E> {
 extension GrowableListUnsafeExtensions on GrowableList {
   @pragma('wasm:prefer-inline')
   WasmArray<Object?> get data => _data;
-
-  @pragma('wasm:prefer-inline')
-  int get length => _length;
 }
