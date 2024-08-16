@@ -140,7 +140,7 @@ class _JsonListener {
   /** Pushes the currently active container. */
   void beginContainer() {
     stackPush(currentContainer, currentContainerLength);
-    currentContainer = WasmArray<Object?>(0);
+    currentContainer = const WasmArray<Object?>.literal([]);
     currentContainerLength = 0;
   }
 
