@@ -4,7 +4,7 @@
 
 import "dart:_internal"
     show IterableElementError, ClassID, TypeTest, unsafeCast;
-import "dart:_list" show GrowableList;
+import "dart:_list" show GrowableList, GrowableListUnsafeExtensions;
 import "dart:_wasm";
 
 import "dart:collection";
@@ -445,24 +445,37 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   /// keys and values assuming that caller has ensured that types are
   /// correct.
   void _populateUnsafe(GrowableList<Object?> keyValuePairs) {
-    assert(keyValuePairs.length.isEven);
-    int size = _roundUpToPowerOfTwo(keyValuePairs.length);
-    if (size < _HashBase._INITIAL_INDEX_SIZE) {
-      size = _HashBase._INITIAL_INDEX_SIZE;
-    }
+    final data = keyValuePairs.data;
+    final size = data.length;
+    assert(size.isEven);
+    assert(size >= 8);
     final hashMask = _HashBase._indexSizeToHashMask(size);
 
     assert(size & (size - 1) == 0);
     assert(_HashBase._UNUSED_PAIR == 0);
     _index = WasmArray<WasmI32>.filled(size, const WasmI32(0));
     _hashMask = hashMask;
-    _data = WasmArray<Object?>.filled(size, null);
+    _data = keyValuePairs.data;
     _usedData = 0;
     _deletedKeys = 0;
+
     for (int i = 0; i < keyValuePairs.length; i += 2) {
-      final key = unsafeCast<K>(keyValuePairs[i]);
-      final value = unsafeCast<V>(keyValuePairs[i + 1]);
-      _set(key, value, _hashCode(key));
+      final key = unsafeCast<K>(_data[i]);
+      final value = unsafeCast<V>(_data[i + 1]);
+      final fullHash = _hashCode(key);
+
+      final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
+      final int d =
+          _findValueOrInsertPoint(key, fullHash, hashPattern, size, _index);
+      if (d > 0) {
+        _data[d] = value;
+      } else {
+        final int i = -d;
+        final int index = _usedData >> 1;
+        _index[i] = WasmI32.fromInt(hashPattern | index);
+        _data[_usedData++] = key;
+        _data[_usedData++] = value;
+      }
     }
   }
 
