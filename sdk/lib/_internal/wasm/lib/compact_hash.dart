@@ -448,7 +448,7 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
     final data = keyValuePairs.data;
     final size = data.length;
     assert(size.isEven);
-    assert(size >= 8);
+    assert(size >= _HashBase._INITIAL_INDEX_SIZE);
     final hashMask = _HashBase._indexSizeToHashMask(size);
 
     assert(size & (size - 1) == 0);
