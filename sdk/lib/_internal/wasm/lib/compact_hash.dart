@@ -445,9 +445,12 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   /// keys and values assuming that caller has ensured that types are
   /// correct.
   void _populateUnsafe(GrowableList<Object?> keyValuePairs) {
+    assert(keyValuePairs.length.isEven);
     final data = keyValuePairs.data;
-    final size = data.length;
-    assert(size.isEven);
+    int size = data.length;
+    if (size == 0) {
+      size = _HashBase._INITIAL_INDEX_SIZE;
+    }
     assert(size >= _HashBase._INITIAL_INDEX_SIZE);
     final hashMask = _HashBase._indexSizeToHashMask(size);
 
@@ -455,14 +458,14 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
     assert(_HashBase._UNUSED_PAIR == 0);
     _index = WasmArray<WasmI32>.filled(size, const WasmI32(0));
     _hashMask = hashMask;
-    _data = keyValuePairs.data;
+    _data = data;
     _usedData = 0;
     _deletedKeys = 0;
 
     final length = keyValuePairs.length;
     for (int i = 0; i < length; i += 2) {
-      final key = unsafeCast<K>(_data[i]);
-      final value = unsafeCast<V>(_data[i + 1]);
+      final key = unsafeCast<K>(data[i]);
+      final value = unsafeCast<V>(data[i + 1]);
       _set(key, value, _hashCode(key));
     }
   }

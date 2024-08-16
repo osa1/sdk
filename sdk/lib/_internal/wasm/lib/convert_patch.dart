@@ -124,7 +124,7 @@ class _JsonListener {
 
     if (currentContainerLength == currentContainerNonNull.length) {
       final newContainer = WasmArray<Object?>.filled(
-          GrowableList.nextCapacity(currentContainerLength), null);
+          currentContainerLength == 0 ? 8 : (currentContainerLength * 2), null);
       newContainer.copy(0, currentContainerNonNull, 0, currentContainerLength);
       currentContainerNonNull = newContainer;
       currentContainer = newContainer;
