@@ -459,23 +459,11 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
     _usedData = 0;
     _deletedKeys = 0;
 
-    for (int i = 0; i < keyValuePairs.length; i += 2) {
+    final length = keyValuePairs.length;
+    for (int i = 0; i < length; i += 2) {
       final key = unsafeCast<K>(_data[i]);
       final value = unsafeCast<V>(_data[i + 1]);
-      final fullHash = _hashCode(key);
-
-      final int hashPattern = _HashBase._hashPattern(fullHash, _hashMask, size);
-      final int d =
-          _findValueOrInsertPoint(key, fullHash, hashPattern, size, _index);
-      if (d > 0) {
-        _data[d] = value;
-      } else {
-        final int i = -d;
-        final int index = _usedData >> 1;
-        _index[i] = WasmI32.fromInt(hashPattern | index);
-        _data[_usedData++] = key;
-        _data[_usedData++] = value;
-      }
+      _set(key, value, _hashCode(key));
     }
   }
 
