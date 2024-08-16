@@ -85,7 +85,7 @@ class _JsonListener {
   WasmArray<GrowableList?> stack = WasmArray<GrowableList?>(0);
   int stackLength = 0;
 
-  void stackPush(WasmArray<Object?>? value) {
+  void stackPush(WasmArray<Object?>? value, int valueLength) {
     if (stackLength == stack.length) {
       final newStack = WasmArray<GrowableList?>.filled(
           GrowableList.nextCapacity(stackLength), null);
@@ -96,7 +96,7 @@ class _JsonListener {
     if (value == null) {
       stack[stackLength] = null;
     } else {
-      stack[stackLength] = GrowableList.withDataAndLength(value, length);
+      stack[stackLength] = GrowableList.withDataAndLength(value, valueLength);
     }
 
     stackLength += 1;
@@ -139,7 +139,7 @@ class _JsonListener {
 
   /** Pushes the currently active container. */
   void beginContainer() {
-    stackPush(currentContainer);
+    stackPush(currentContainer, currentContainerLength);
     currentContainer = WasmArray<Object?>(0);
     currentContainerLength = 0;
   }
