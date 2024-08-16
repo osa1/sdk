@@ -445,7 +445,8 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   /// keys and values assuming that caller has ensured that types are
   /// correct.
   void _populateUnsafe(GrowableList<Object?> keyValuePairs) {
-    assert(keyValuePairs.length.isEven);
+    final length = keyValuePairs.length;
+    assert(length.isEven);
     final data = keyValuePairs.data;
     int size = data.length;
     if (size == 0) {
@@ -462,7 +463,6 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
     _usedData = 0;
     _deletedKeys = 0;
 
-    final length = keyValuePairs.length;
     for (int i = 0; i < length; i += 2) {
       final key = unsafeCast<K>(data[i]);
       final value = unsafeCast<V>(data[i + 1]);
