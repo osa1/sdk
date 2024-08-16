@@ -7,7 +7,7 @@ import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
 import "dart:_js_string_convert";
 import "dart:_js_types";
 import "dart:_js_helper" show jsStringToDartString;
-import "dart:_list" show GrowableList;
+import "dart:_list" show GrowableList, GrowableListUnsafeExtensions;
 import "dart:_string";
 import "dart:_typed_data";
 import "dart:_wasm";
@@ -83,28 +83,85 @@ class _JsonListener {
    * The current container is pushed on the stack when a new one is
    * started.
    */
-  final List<Object?> stack = [];
+  WasmArray<GrowableList?> stack = WasmArray<GrowableList?>.filled(8, null);
+  int stackLength = 0;
 
   /** Contents of the current container being built, or null if not building a
   * container.
   *
   * When building [Map] this will contain array of key-value pairs.
   */
-  GrowableList<dynamic>? currentContainer;
+  WasmArray<Object?>? currentContainer = null;
+  int currentContainerLength = 0;
+
+  void currentContainerPush(Object? value) {
+    WasmArray<Object?> currentContainerNonNull =
+        unsafeCast<WasmArray<Object?>>(this.currentContainer);
+
+    if (currentContainerLength == currentContainerNonNull.length) {
+      final newContainer =
+          WasmArray<Object?>.filled(currentContainerLength * 2, null);
+      newContainer.copy(0, currentContainerNonNull, 0, currentContainerLength);
+      currentContainerNonNull = newContainer;
+      currentContainer = newContainer;
+    }
+
+    currentContainerNonNull[currentContainerLength] = value;
+    currentContainerLength += 1;
+  }
+
+  void stackPush(WasmArray<Object?>? value, int length) {
+    if (stackLength == stack.length) {
+      final newStack = WasmArray<GrowableList?>.filled(stackLength * 2, null);
+      newStack.copy(0, stack, 0, stack.length);
+      stack = newStack;
+    }
+
+    if (value == null) {
+      stack[stackLength] = null;
+    } else {
+      stack[stackLength] = GrowableList.withDataAndLength(value, length);
+    }
+
+    stackLength += 1;
+  }
+
+  GrowableList<dynamic>? stackPop() {
+    assert(stackLength != 0);
+    stackLength -= 1;
+    final value = stack[stackLength];
+    stack[stackLength] = null;
+    return value;
+  }
 
   /** The most recently read value. */
   Object? value;
 
   /** Pushes the currently active container. */
   void beginContainer() {
-    stack.add(currentContainer);
-    currentContainer = GrowableList.empty();
+    stackPush(currentContainer, currentContainerLength);
+    currentContainer = WasmArray<Object?>.filled(8, null);
+    currentContainerLength = 0;
   }
 
   /** Pops the top container from the [stack]. */
   void popContainer() {
-    value = currentContainer;
-    currentContainer = unsafeCast<GrowableList?>(stack.removeLast());
+    final currentContainerLocal = currentContainer;
+    if (currentContainerLocal == null) {
+      value = null;
+    } else {
+      value = GrowableList.withDataAndLength(
+          currentContainerLocal, currentContainerLength);
+    }
+
+    final currentContainerList = stackPop();
+    if (currentContainerList == null) {
+      currentContainer = null;
+      currentContainerLength = 0;
+    } else {
+      currentContainer = currentContainerList.data;
+      currentContainerLength = currentContainerList.length;
+    }
   }
 
   void handleString(String value) {
@@ -128,17 +185,18 @@ class _JsonListener {
   }
 
   void propertyName() {
-    unsafeCast<GrowableList>(currentContainer).add(value);
+    currentContainerPush(value);
     value = null;
   }
 
   void propertyValue() {
-    final keyValuePairs = unsafeCast<GrowableList>(currentContainer);
+    final keyValuePairs =
+        unsafeCast<WasmArray<Object?>>(currentContainer); // null deref
     if (reviver case final reviver?) {
-      final key = keyValuePairs.last;
-      keyValuePairs.add(reviver(key, value));
+      final key = keyValuePairs[currentContainerLength - 1];
+      currentContainerPush(reviver(key, value));
     } else {
-      keyValuePairs.add(value);
+      currentContainerPush(value);
     }
     value = null;
   }
@@ -154,12 +212,11 @@ class _JsonListener {
   }
 
   void arrayElement() {
-    var list = unsafeCast<List>(currentContainer);
     var reviver = this.reviver;
     if (reviver != null) {
-      value = reviver(list.length, value);
+      value = reviver(currentContainerLength, value);
     }
-    list.add(value);
+    currentContainerPush(value);
     value = null;
   }
 
