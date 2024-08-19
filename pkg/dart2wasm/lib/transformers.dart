@@ -844,19 +844,18 @@ class PushWasmArrayTransformer {
     // newArray.copy(...)
     final wasmArrayCopyType = _wasmArrayCopy.signatureType ??
         _wasmArrayCopy.function.computeFunctionType(Nullability.nonNullable);
-    final newArrayCopy = InstanceInvocation(
-      InstanceAccessKind.Instance,
-      VariableGet(newArrayVariable),
-      Name('copy'),
-      Arguments([
-        IntLiteral(0),
-        array,
-        IntLiteral(0),
-        length,
-      ]),
-      interfaceTarget: _wasmArrayCopy,
-      functionType: wasmArrayCopyType,
-    );
+
+    final newArrayCopy = StaticInvocation(
+        _wasmArrayCopy,
+        Arguments([
+          VariableGet(newArrayVariable),
+          IntLiteral(0),
+          array,
+          IntLiteral(0),
+          length,
+        ], types: [
+          elementType
+        ]));
 
     // a.array = newArray
     final Statement arrayFieldUpdate;
@@ -877,8 +876,8 @@ class PushWasmArrayTransformer {
     ];
 
     // a.array[a.length] = elem
-    final arrayPush = ExpressionStatement(
-        StaticInvocation(_wasmArrayElementSet, Arguments([length, elem])));
+    final arrayPush = ExpressionStatement(StaticInvocation(
+        _wasmArrayElementSet, Arguments([length, elem], types: [elementType])));
 
     // a.length + 1
     final intAddType = _intAdd.signatureType ??
