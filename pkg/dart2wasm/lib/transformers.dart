@@ -776,6 +776,7 @@ class PushWasmArrayTransformer {
   final Procedure _wasmArrayCopy;
   final Procedure _wasmArrayElementSet;
   final Procedure _intAdd;
+  final Class _wasmArrayClass;
 
   PushWasmArrayTransformer(this._coreTypes)
       : _pushWasmArray = _coreTypes.index
@@ -789,7 +790,8 @@ class PushWasmArrayTransformer {
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy'),
         _wasmArrayElementSet =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', '[]='),
-        _intAdd = _coreTypes.index.getProcedure('dart:core', 'num', '+');
+        _intAdd = _coreTypes.index.getProcedure('dart:core', 'num', '+'),
+        _wasmArrayClass = _coreTypes.index.getClass('dart:_wasm', 'WasmArray');
 
   List<Statement>? transformStaticInvocation(StaticInvocation invocation) {
     if (invocation.target != _pushWasmArray) {
@@ -834,8 +836,10 @@ class PushWasmArrayTransformer {
         _wasmArrayFactory, Arguments([newCapacity], types: [elementType]));
 
     // var newArray = WasmArray<T>(newCapacity)
-    final newArrayVariable =
-        VariableDeclaration('newArray', initializer: arrayAllocation);
+    final newArrayVariable = VariableDeclaration('newArray',
+        initializer: arrayAllocation,
+        type: InterfaceType(
+            _wasmArrayClass, Nullability.nonNullable, [elementType]));
 
     // newArray.copy(...)
     final wasmArrayCopyType = _wasmArrayCopy.signatureType ??
@@ -844,7 +848,12 @@ class PushWasmArrayTransformer {
       InstanceAccessKind.Instance,
       VariableGet(newArrayVariable),
       Name('copy'),
-      Arguments([]),
+      Arguments([
+        IntLiteral(0),
+        array,
+        IntLiteral(0),
+        length,
+      ]),
       interfaceTarget: _wasmArrayCopy,
       functionType: wasmArrayCopyType,
     );
