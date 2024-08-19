@@ -5023,6 +5023,7 @@ class SuperPropertyGet extends Expression {
 ///
 /// In this setting, the target is looked up on the types in the mixin 'on'
 /// clause and are therefore not necessary the runtime targets of the
+
 /// assignment. An [AbstractSuperPropertySet] must be converted into a
 /// [SuperPropertySet] to statically bind the target.
 ///

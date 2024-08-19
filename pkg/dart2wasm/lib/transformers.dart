@@ -758,6 +758,8 @@ class PushWasmArrayTransformer {
   final Procedure _intEquals;
   final Procedure _wasmArrayFactory;
   final Procedure _wasmArrayCopy;
+  final Procedure _wasmArrayElementSet;
+  final Procedure _intAdd;
 
   PushWasmArrayTransformer(this._coreTypes)
       : _pushWasmArray = _coreTypes.index
@@ -769,7 +771,11 @@ class PushWasmArrayTransformer {
         _wasmArrayFactory =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
         _wasmArrayCopy =
-            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy');
+            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy'),
+        _wasmArrayElementSet =
+            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', '[]='),
+        _intAdd =
+            _coreTypes.index.getProcedure('dart:core', 'int', 'operator +');
 
   TreeNode transformStaticInvocation(StaticInvocation invocation) {
     if (invocation.target != _pushWasmArray) {
@@ -824,15 +830,15 @@ class PushWasmArrayTransformer {
     );
 
     // a.array = newArray
-    final arrayFieldUpdate;
+    final Statement arrayFieldUpdate;
     if (array is InstanceGet) {
-      arrayFieldUpdate = InstanceSet(
+      arrayFieldUpdate = ExpressionStatement(InstanceSet(
           array.kind, array.receiver, array.name, VariableGet(newArrayVariable),
-          interfaceTarget: array.interfaceTarget);
+          interfaceTarget: array.interfaceTarget));
     } else {
       final arrayVariableGet = array as VariableGet;
-      arrayFieldUpdate =
-          VariableSet(arrayVariableGet.variable, VariableGet(newArrayVariable));
+      arrayFieldUpdate = ExpressionStatement(VariableSet(
+          arrayVariableGet.variable, VariableGet(newArrayVariable)));
     }
 
     final List<Statement> arrayGrowStatements = [
@@ -840,6 +846,22 @@ class PushWasmArrayTransformer {
       ExpressionStatement(newArrayCopy),
       arrayFieldUpdate
     ];
+
+    // a.array[a.length] = elem
+    final arrayPush =
+        StaticInvocation(_wasmArrayElementSet, Arguments([length, elem]));
+
+    // a.length += 1
+    final Statement arrayLengthUpdate;
+    if (length is InstanceGet) {
+      arrayLengthUpdate = ExpressionStatement(InstanceSet(
+          length.kind, length.receiver, length.name, (),
+          interfaceTarget: length.interfaceTarget));
+    } else {
+      final lengthVariableGet = length as VariableGet;
+      arrayLengthUpdate =
+          ExpressionStatement(VariableSet(lengthVariableGet.variable, ()));
+    }
 
     throw '';
   }
