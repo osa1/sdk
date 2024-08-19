@@ -188,3 +188,16 @@ void indexCheckWithName(int index, int length, String name) {
 @patch
 Future<Object?> loadDynamicModule({Uri? uri, Uint8List? bytes}) =>
     throw 'Unsupported operation';
+
+/// Compiler intrinsic to push an element to a Wasm array in a class field or
+/// variable.
+///
+/// The `array` and `length` arguments need to be `InstanceGet`s or
+/// `VariableGet`s. This function will update the class field (when the argument
+/// is `InstanceGet`) or the variable (when the argument is `InstanceGet`).
+///
+/// `elem` and `nextCapacity` can have any shape. `elem` is the element to be
+/// pushed onto the array. `nextCapacity` is used to calculate the next capacity
+/// when the array is full.
+external void pushWasmArray<T>(WasmArray<T> array, int length, T elem,
+    int Function(int currentCapacity) nextCapacity);

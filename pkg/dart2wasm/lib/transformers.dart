@@ -718,7 +718,7 @@ class _WasmTransformer extends Transformer {
   }
 
   @override
-  visitFunctionTearOff(FunctionTearOff node) {
+  TreeNode visitFunctionTearOff(FunctionTearOff node) {
     node.transformChildren(this);
     return node.receiver;
   }
@@ -736,4 +736,111 @@ class _AsyncStarFrame {
   final DartType emittedValueType;
 
   _AsyncStarFrame(this.controllerVar, this.pausedVar, this.emittedValueType);
+}
+
+/// Converts `pushWasmArray<T>(a.array, a.length, elem, grow)` to:
+///
+///   if (a.array.length == a.length) {
+///     final newCapacity = grow(a.length);
+///     final newArray = WasmArray<T>(newCapacity);
+///     newArray.copy(0, a.array, 0, a.length);
+///     a.array = newArray;
+///   }
+///   a.array[a.length] = elem;
+///   a.length += 1;
+///
+/// This allows unboxing growable list in class fields.
+class PushWasmArrayTransformer {
+  final CoreTypes _coreTypes;
+  final Procedure _pushWasmArray;
+  final Member _wasmArrayLength;
+  final InterfaceType _intType;
+  final Procedure _intEquals;
+  final Procedure _wasmArrayFactory;
+  final Procedure _wasmArrayCopy;
+
+  PushWasmArrayTransformer(this._coreTypes)
+      : _pushWasmArray = _coreTypes.index
+            .getTopLevelProcedure('dart:_internal', 'pushWasmArray'),
+        _wasmArrayLength = _coreTypes.index
+            .getProcedure('dart:_wasm', 'WasmArrayRef', 'get:length'),
+        _intType = _coreTypes.intLegacyRawType,
+        _intEquals = _coreTypes.index.getProcedure('dart:core', 'int', '=='),
+        _wasmArrayFactory =
+            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
+        _wasmArrayCopy =
+            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy');
+
+  TreeNode transformStaticInvocation(StaticInvocation invocation) {
+    if (invocation.target != _pushWasmArray) {
+      return invocation;
+    }
+
+    final elementType = invocation.arguments.types[0];
+
+    final positionalArguments = invocation.arguments.positional;
+    assert(positionalArguments.length == 4);
+
+    final array = positionalArguments[0];
+    final length = positionalArguments[1];
+    final elem = positionalArguments[2];
+    final nextCapacity = positionalArguments[3];
+
+    assert(array is InstanceGet || array is VariableGet);
+    assert(length is InstanceGet || length is VariableGet);
+
+    // a.array.length == a.length
+    final lengthCheck = EqualsCall(
+        InstanceGet(InstanceAccessKind.Instance, array, Name('length'),
+            interfaceTarget: _wasmArrayLength, resultType: _intType),
+        length,
+        functionType: _intEquals.signatureType!,
+        interfaceTarget: _intEquals);
+
+    // grow(a.length)
+    final pushWasmArrayType = _pushWasmArray.signatureType!;
+    final nextCapacityType =
+        pushWasmArrayType.positionalParameters[3] as FunctionType;
+    final newCapacity = FunctionInvocation(
+        FunctionAccessKind.FunctionType, nextCapacity, Arguments([length]),
+        functionType: nextCapacityType);
+
+    // WasmArray<T>(newCapacity)
+    final arrayAllocation = StaticInvocation(
+        _wasmArrayFactory, Arguments([newCapacity], types: [elementType]));
+
+    // var newArray = WasmArray<T>(newCapacity)
+    final newArrayVariable =
+        VariableDeclaration('newArray', initializer: arrayAllocation);
+
+    // newArray.copy(...)
+    final newArrayCopy = InstanceInvocation(
+      InstanceAccessKind.Instance,
+      VariableGet(newArrayVariable),
+      Name('copy'),
+      Arguments([]),
+      interfaceTarget: _wasmArrayCopy,
+      functionType: _wasmArrayCopy.signatureType!,
+    );
+
+    // a.array = newArray
+    final arrayFieldUpdate;
+    if (array is InstanceGet) {
+      arrayFieldUpdate = InstanceSet(
+          array.kind, array.receiver, array.name, VariableGet(newArrayVariable),
+          interfaceTarget: array.interfaceTarget);
+    } else {
+      final arrayVariableGet = array as VariableGet;
+      arrayFieldUpdate =
+          VariableSet(arrayVariableGet.variable, VariableGet(newArrayVariable));
+    }
+
+    final List<Statement> arrayGrowStatements = [
+      newArrayVariable,
+      ExpressionStatement(newArrayCopy),
+      arrayFieldUpdate
+    ];
+
+    throw '';
+  }
 }
