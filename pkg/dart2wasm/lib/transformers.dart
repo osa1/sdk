@@ -810,15 +810,19 @@ class PushWasmArrayTransformer {
     assert(length is InstanceGet || length is VariableGet);
 
     // a.array.length == a.length
+    final objectEqualsType = _coreTypes.objectEquals.signatureType ??
+        _coreTypes.objectEquals.function
+            .computeFunctionType(Nullability.nonNullable);
     final lengthCheck = EqualsCall(
         InstanceGet(InstanceAccessKind.Instance, array, Name('length'),
             interfaceTarget: _wasmArrayLength, resultType: _intType),
         length,
-        functionType: _coreTypes.objectEquals.signatureType!,
+        functionType: objectEqualsType,
         interfaceTarget: _coreTypes.objectEquals);
 
     // grow(a.length)
-    final pushWasmArrayType = _pushWasmArray.signatureType!;
+    final pushWasmArrayType = _pushWasmArray.signatureType ??
+        _pushWasmArray.function.computeFunctionType(Nullability.nonNullable);
     final nextCapacityType =
         pushWasmArrayType.positionalParameters[3] as FunctionType;
     final newCapacity = FunctionInvocation(
@@ -834,13 +838,15 @@ class PushWasmArrayTransformer {
         VariableDeclaration('newArray', initializer: arrayAllocation);
 
     // newArray.copy(...)
+    final wasmArrayCopyType = _wasmArrayCopy.signatureType ??
+        _wasmArrayCopy.function.computeFunctionType(Nullability.nonNullable);
     final newArrayCopy = InstanceInvocation(
       InstanceAccessKind.Instance,
       VariableGet(newArrayVariable),
       Name('copy'),
       Arguments([]),
       interfaceTarget: _wasmArrayCopy,
-      functionType: _wasmArrayCopy.signatureType!,
+      functionType: wasmArrayCopyType,
     );
 
     // a.array = newArray
@@ -866,9 +872,11 @@ class PushWasmArrayTransformer {
         StaticInvocation(_wasmArrayElementSet, Arguments([length, elem])));
 
     // a.length + 1
+    final intAddType = _intAdd.signatureType ??
+        _intAdd.function.computeFunctionType(Nullability.nonNullable);
     final lengthPlusOne = InstanceInvocation(InstanceAccessKind.Instance,
         length, Name('+'), Arguments([IntLiteral(1)]),
-        interfaceTarget: _intAdd, functionType: _intAdd.signatureType!);
+        interfaceTarget: _intAdd, functionType: intAddType);
 
     // a.length = a.length + 1
     final Statement arrayLengthUpdate;
