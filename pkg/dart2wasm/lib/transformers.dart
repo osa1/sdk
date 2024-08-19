@@ -848,21 +848,30 @@ class PushWasmArrayTransformer {
     ];
 
     // a.array[a.length] = elem
-    final arrayPush =
-        StaticInvocation(_wasmArrayElementSet, Arguments([length, elem]));
+    final arrayPush = ExpressionStatement(
+        StaticInvocation(_wasmArrayElementSet, Arguments([length, elem])));
 
-    // a.length += 1
+    // a.length + 1
+    final lengthPlusOne = InstanceInvocation(InstanceAccessKind.Instance,
+        length, Name('operator +'), Arguments([IntLiteral(1)]),
+        interfaceTarget: _intAdd, functionType: _intAdd.signatureType!);
+
+    // a.length = a.length + 1
     final Statement arrayLengthUpdate;
     if (length is InstanceGet) {
       arrayLengthUpdate = ExpressionStatement(InstanceSet(
-          length.kind, length.receiver, length.name, (),
+          length.kind, length.receiver, length.name, lengthPlusOne,
           interfaceTarget: length.interfaceTarget));
     } else {
       final lengthVariableGet = length as VariableGet;
-      arrayLengthUpdate =
-          ExpressionStatement(VariableSet(lengthVariableGet.variable, ()));
+      arrayLengthUpdate = ExpressionStatement(
+          VariableSet(lengthVariableGet.variable, lengthPlusOne));
     }
 
-    throw '';
+    return Block([
+      IfStatement(lengthCheck, Block(arrayGrowStatements), null),
+      arrayPush,
+      arrayLengthUpdate
+    ]);
   }
 }
