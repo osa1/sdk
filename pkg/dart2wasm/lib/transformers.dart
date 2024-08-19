@@ -876,8 +876,8 @@ class PushWasmArrayTransformer {
     ];
 
     // a.array[a.length] = elem
-    final arrayPush = ExpressionStatement(StaticInvocation(
-        _wasmArrayElementSet, Arguments([length, elem], types: [elementType])));
+    final arrayPush = ExpressionStatement(StaticInvocation(_wasmArrayElementSet,
+        Arguments([array, length, elem], types: [elementType])));
 
     // a.length + 1
     final intAddType = _intAdd.signatureType ??
