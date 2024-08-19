@@ -59,6 +59,8 @@ class _WasmTransformer extends Transformer {
 
   final ListFactorySpecializer _listFactorySpecializer;
 
+  final PushWasmArrayTransformer _pushWasmArrayTransformer;
+
   StaticTypeContext get typeContext =>
       _cachedTypeContext ??= StaticTypeContext(_currentMember!, env);
 
@@ -103,7 +105,8 @@ class _WasmTransformer extends Transformer {
             .getProcedure('dart:async', 'StreamController', 'set:onListen'),
         _streamControllerSetOnResume = coreTypes.index
             .getProcedure('dart:async', 'StreamController', 'set:onResume'),
-        _listFactorySpecializer = ListFactorySpecializer(coreTypes);
+        _listFactorySpecializer = ListFactorySpecializer(coreTypes),
+        _pushWasmArrayTransformer = PushWasmArrayTransformer(coreTypes);
 
   @override
   defaultMember(Member node) {
@@ -728,6 +731,20 @@ class _WasmTransformer extends Transformer {
     node.transformChildren(this);
     return typeCastsOptimizer.transformAsExpression(node, typeContext);
   }
+
+  @override
+  TreeNode visitExpressionStatement(ExpressionStatement node) {
+    node.transformChildren(this);
+    final expression = node.expression;
+    if (expression is StaticInvocation) {
+      final transformed =
+          _pushWasmArrayTransformer.transformStaticInvocation(expression);
+      if (transformed != null) {
+        return Block(transformed);
+      }
+    }
+    return node;
+  }
 }
 
 class _AsyncStarFrame {
@@ -755,7 +772,6 @@ class PushWasmArrayTransformer {
   final Procedure _pushWasmArray;
   final Member _wasmArrayLength;
   final InterfaceType _intType;
-  final Procedure _intEquals;
   final Procedure _wasmArrayFactory;
   final Procedure _wasmArrayCopy;
   final Procedure _wasmArrayElementSet;
@@ -767,19 +783,17 @@ class PushWasmArrayTransformer {
         _wasmArrayLength = _coreTypes.index
             .getProcedure('dart:_wasm', 'WasmArrayRef', 'get:length'),
         _intType = _coreTypes.intLegacyRawType,
-        _intEquals = _coreTypes.index.getProcedure('dart:core', 'int', '=='),
         _wasmArrayFactory =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
         _wasmArrayCopy =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy'),
         _wasmArrayElementSet =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', '[]='),
-        _intAdd =
-            _coreTypes.index.getProcedure('dart:core', 'int', 'operator +');
+        _intAdd = _coreTypes.index.getProcedure('dart:core', 'num', '+');
 
-  TreeNode transformStaticInvocation(StaticInvocation invocation) {
+  List<Statement>? transformStaticInvocation(StaticInvocation invocation) {
     if (invocation.target != _pushWasmArray) {
-      return invocation;
+      return null;
     }
 
     final elementType = invocation.arguments.types[0];
@@ -800,8 +814,8 @@ class PushWasmArrayTransformer {
         InstanceGet(InstanceAccessKind.Instance, array, Name('length'),
             interfaceTarget: _wasmArrayLength, resultType: _intType),
         length,
-        functionType: _intEquals.signatureType!,
-        interfaceTarget: _intEquals);
+        functionType: _coreTypes.objectEquals.signatureType!,
+        interfaceTarget: _coreTypes.objectEquals);
 
     // grow(a.length)
     final pushWasmArrayType = _pushWasmArray.signatureType!;
@@ -853,7 +867,7 @@ class PushWasmArrayTransformer {
 
     // a.length + 1
     final lengthPlusOne = InstanceInvocation(InstanceAccessKind.Instance,
-        length, Name('operator +'), Arguments([IntLiteral(1)]),
+        length, Name('+'), Arguments([IntLiteral(1)]),
         interfaceTarget: _intAdd, functionType: _intAdd.signatureType!);
 
     // a.length = a.length + 1
@@ -868,10 +882,10 @@ class PushWasmArrayTransformer {
           VariableSet(lengthVariableGet.variable, lengthPlusOne));
     }
 
-    return Block([
+    return [
       IfStatement(lengthCheck, Block(arrayGrowStatements), null),
       arrayPush,
       arrayLengthUpdate
-    ]);
+    ];
   }
 }
