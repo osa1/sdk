@@ -837,7 +837,7 @@ class PushWasmArrayTransformer {
         procedure.signatureType ??
         procedure.function.computeFunctionType(Nullability.nonNullable);
 
-    // a.array.length == a.length
+    // array.length == length
     final objectEqualsType = procedureType(_coreTypes.objectEquals);
     final lengthCheck = EqualsCall(
         InstanceGet(InstanceAccessKind.Instance, array, Name('length'),
@@ -869,7 +869,7 @@ class PushWasmArrayTransformer {
           elementType
         ]));
 
-    // a.array = newArray
+    // array = newArray
     final Statement arrayFieldUpdate;
     if (array is InstanceGet) {
       arrayFieldUpdate = ExpressionStatement(InstanceSet(array.kind,
@@ -887,17 +887,17 @@ class PushWasmArrayTransformer {
       arrayFieldUpdate
     ];
 
-    // a.array[a.length] = elem
+    // array[length] = elem
     final arrayPush = ExpressionStatement(StaticInvocation(_wasmArrayElementSet,
         Arguments([clone(array), clone(length), elem], types: [elementType])));
 
-    // a.length + 1
+    // length + 1
     final intAddType = procedureType(_intAdd);
     final lengthPlusOne = InstanceInvocation(InstanceAccessKind.Instance,
         clone(length), Name('+'), Arguments([IntLiteral(1)]),
         interfaceTarget: _intAdd, functionType: intAddType);
 
-    // a.length = a.length + 1
+    // length = length + 1
     final Statement arrayLengthUpdate;
     if (length is InstanceGet) {
       arrayLengthUpdate = ExpressionStatement(InstanceSet(
