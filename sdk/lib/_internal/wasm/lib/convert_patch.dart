@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_compact_hash" show createMapFromKeyValueListUnsafe;
-import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
+import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast, pushWasmArray;
 import "dart:_js_string_convert";
 import "dart:_js_types";
 import "dart:_js_helper" show jsStringToDartString;
@@ -86,20 +86,15 @@ class _JsonListener {
   int stackLength = 0;
 
   void stackPush(WasmArray<Object?>? value, int valueLength) {
-    if (stackLength == stack.length) {
-      final newStack = WasmArray<GrowableList?>.filled(
-          GrowableList.nextCapacity(stackLength), null);
-      newStack.copy(0, stack, 0, stackLength);
-      stack = newStack;
-    }
+    final GrowableList<Object?>? valueAsList = value == null
+        ? null
+        : GrowableList.withDataAndLength(value, valueLength);
 
-    if (value == null) {
-      stack[stackLength] = null;
-    } else {
-      stack[stackLength] = GrowableList.withDataAndLength(value, valueLength);
-    }
-
-    stackLength += 1;
+    // `GrowableList._nextCapacity` is copied here as the next capacity. We
+    // can't use `GrowableList._nextCapacity` as tear-off as it's difficult to
+    // inline tear-offs manually in the `pushWasmArray` compiler.
+    pushWasmArray<GrowableList<Object?>?>(
+        this.stack, this.stackLength, valueAsList, (stackLength * 2) | 3);
   }
 
   GrowableList<dynamic>? stackPop() {
@@ -121,17 +116,10 @@ class _JsonListener {
   void currentContainerPush(Object? value) {
     WasmArray<Object?> currentContainerNonNull =
         unsafeCast<WasmArray<Object?>>(this.currentContainer);
-
-    if (currentContainerLength == currentContainerNonNull.length) {
-      final newContainer = WasmArray<Object?>.filled(
-          currentContainerLength == 0 ? 8 : (currentContainerLength * 2), null);
-      newContainer.copy(0, currentContainerNonNull, 0, currentContainerLength);
-      currentContainerNonNull = newContainer;
-      currentContainer = newContainer;
-    }
-
-    currentContainerNonNull[currentContainerLength] = value;
-    currentContainerLength += 1;
+    // Per `_HashBase` invariant capacity needs to be a power of two.
+    pushWasmArray<Object?>(currentContainerNonNull, this.currentContainerLength,
+        value, currentContainerLength == 0 ? 8 : (currentContainerLength * 2));
+    currentContainer = currentContainerNonNull;
   }
 
   /** The most recently read value. */
@@ -140,7 +128,7 @@ class _JsonListener {
   /** Pushes the currently active container. */
   void beginContainer() {
     stackPush(currentContainer, currentContainerLength);
-    currentContainer = WasmArray<Object?>(0);
+    currentContainer = const WasmArray<Object?>.literal([]);
     currentContainerLength = 0;
   }
 

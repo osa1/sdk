@@ -25,7 +25,8 @@ DECLARE_FLAG(bool, trace_service);
 
 JSONStream::JSONStream(intptr_t buf_size)
     : writer_(buf_size),
-      default_id_zone_(nullptr),
+      default_id_zone_(),
+      id_zone_(&default_id_zone_),
       reply_port_(ILLEGAL_PORT),
       seq_(nullptr),
       parameter_keys_(nullptr),
@@ -38,10 +39,12 @@ JSONStream::JSONStream(intptr_t buf_size)
       count_(-1),
       include_private_members_(true),
       ignore_object_depth_(0) {
+  ObjectIdRing* ring = nullptr;
   Isolate* isolate = Isolate::Current();
   if (isolate != nullptr) {
-    default_id_zone_ = &isolate->GetDefaultServiceIdZone();
+    ring = isolate->EnsureObjectIdRing();
   }
+  default_id_zone_.Init(ring, ObjectIdRing::kAllocateId);
 }
 
 void JSONStream::Setup(Zone* zone,
@@ -203,7 +206,7 @@ void JSONStream::PostReply() {
     PrintProperty("id", str.ToCString());
   } else if (seq_->IsInteger()) {
     const Integer& integer = Integer::Cast(*seq_);
-    PrintProperty64("id", integer.AsInt64Value());
+    PrintProperty64("id", integer.Value());
   } else if (seq_->IsDouble()) {
     const Double& dbl = Double::Cast(*seq_);
     PrintProperty("id", dbl.value());
@@ -350,8 +353,8 @@ void JSONStream::PrintValueVM(bool ref) {
 }
 
 void JSONStream::PrintServiceId(const Object& o) {
-  ASSERT(default_id_zone_ != nullptr);
-  PrintProperty("id", default_id_zone_->GetServiceId(o));
+  ASSERT(id_zone_ != nullptr);
+  PrintProperty("id", id_zone_->GetServiceId(o));
 }
 
 #define PRIVATE_NAME_CHECK()                                                   \

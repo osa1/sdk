@@ -51,8 +51,10 @@ import '../base/identifiers.dart'
         Identifier,
         InitializedIdentifier,
         QualifiedName,
-        SimpleIdentifier,
-        flattenName;
+        QualifiedNameBuilder,
+        QualifiedNameGenerator,
+        QualifiedNameIdentifier,
+        SimpleIdentifier;
 import '../base/label_scope.dart';
 import '../base/local_scope.dart';
 import '../base/modifier.dart'
@@ -1951,22 +1953,46 @@ class BodyBuilder extends StackListenerImpl
         ]);
       }
 
+      int argumentsOffset = -1;
+      if (superParametersAsArguments != null) {
+        for (Object argument in superParametersAsArguments) {
+          assert(argument is Expression || argument is NamedExpression);
+          int currentArgumentOffset;
+          if (argument is Expression) {
+            currentArgumentOffset = argument.fileOffset;
+          } else {
+            currentArgumentOffset = (argument as NamedExpression).fileOffset;
+          }
+          argumentsOffset = argumentsOffset <= currentArgumentOffset
+              ? argumentsOffset
+              : currentArgumentOffset;
+        }
+      }
+      SuperInitializer? explicitSuperInitializer;
+      if (_initializers case [..., SuperInitializer superInitializer]
+          when argumentsOffset == // Coverage-ignore(suite): Not run.
+              -1) {
+        // Coverage-ignore-block(suite): Not run.
+        argumentsOffset = superInitializer.fileOffset;
+        explicitSuperInitializer = superInitializer;
+      }
+      if (argumentsOffset == -1) {
+        argumentsOffset = _context.memberCharOffset;
+      }
+
       if (positionalArguments != null || namedArguments != null) {
         arguments = forest.createArguments(
-            noLocation, positionalArguments ?? <Expression>[],
+            argumentsOffset, positionalArguments ?? <Expression>[],
             named: namedArguments);
       } else {
-        arguments = forest.createArgumentsEmpty(noLocation);
+        arguments = forest.createArgumentsEmpty(argumentsOffset);
       }
 
       arguments.positionalAreSuperParameters =
           positionalSuperParametersAsArguments != null;
       arguments.namedSuperParameterNames = namedSuperParameterNames;
 
-      if (superTarget == null ||
-          checkArgumentsForFunction(superTarget.function, arguments,
-                  _context.memberCharOffset, const <TypeParameter>[]) !=
-              null) {
+      if (superTarget == null) {
         String superclass = _context.superClassName;
         int length = _context.memberName.length;
         if (length == 0) {
@@ -1979,6 +2005,78 @@ class BodyBuilder extends StackListenerImpl
                 _context.memberCharOffset,
                 length),
             _context.memberCharOffset);
+      } else if (checkArgumentsForFunction(superTarget.function, arguments,
+              _context.memberCharOffset, const <TypeParameter>[])
+          case LocatedMessage argumentIssue) {
+        List<int>? positionalSuperParametersIssueOffsets;
+        if (positionalSuperParametersAsArguments != null) {
+          for (int positionalSuperParameterIndex =
+                  superTarget.function.positionalParameters.length;
+              positionalSuperParameterIndex <
+                  positionalSuperParametersAsArguments.length;
+              positionalSuperParameterIndex++) {
+            (positionalSuperParametersIssueOffsets ??= []).add(
+                positionalSuperParametersAsArguments[
+                        positionalSuperParameterIndex]
+                    .fileOffset);
+          }
+        }
+
+        List<int>? namedSuperParametersIssueOffsets;
+        if (namedSuperParametersAsArguments != null) {
+          Set<String> superTargetNamedParameterNames = {
+            for (VariableDeclaration namedParameter
+                in superTarget.function.namedParameters)
+              if (namedParameter // Coverage-ignore(suite): Not run.
+                      .name !=
+                  null)
+                // Coverage-ignore(suite): Not run.
+                namedParameter.name!
+          };
+          for (NamedExpression namedSuperParameter
+              in namedSuperParametersAsArguments) {
+            if (!superTargetNamedParameterNames
+                .contains(namedSuperParameter.name)) {
+              (namedSuperParametersIssueOffsets ??= [])
+                  .add(namedSuperParameter.fileOffset);
+            }
+          }
+        }
+
+        Initializer? errorMessageInitializer;
+        if (positionalSuperParametersIssueOffsets != null) {
+          for (int issueOffset in positionalSuperParametersIssueOffsets) {
+            Expression errorMessageExpression = buildProblem(
+                fasta.messageMissingPositionalSuperConstructorParameter,
+                issueOffset,
+                noLength);
+            errorMessageInitializer ??=
+                buildInvalidInitializer(errorMessageExpression);
+          }
+        }
+        if (namedSuperParametersIssueOffsets != null) {
+          for (int issueOffset in namedSuperParametersIssueOffsets) {
+            Expression errorMessageExpression = buildProblem(
+                fasta.messageMissingNamedSuperConstructorParameter,
+                issueOffset,
+                noLength);
+            errorMessageInitializer ??=
+                buildInvalidInitializer(errorMessageExpression);
+          }
+        }
+        if (explicitSuperInitializer == null) {
+          errorMessageInitializer ??= buildInvalidInitializer(buildProblem(
+              fasta.templateImplicitSuperInitializerMissingArguments
+                  .withArguments(superTarget.enclosingClass.name),
+              argumentIssue.charOffset,
+              argumentIssue.length));
+        }
+        // Coverage-ignore-block(suite): Not run.
+        errorMessageInitializer ??= buildInvalidInitializer(buildProblem(
+            argumentIssue.messageObject,
+            argumentIssue.charOffset,
+            argumentIssue.length));
+        initializer = errorMessageInitializer;
       } else {
         initializer = buildSuperInitializer(
             true, superTarget, arguments, _context.memberCharOffset);
@@ -3272,11 +3370,24 @@ class BodyBuilder extends StackListenerImpl
 
   @override
   void handleQualified(Token period) {
+    // handleQualified is called after two handleIdentifier calls.
+    // This happens via one of these:
+    // * ComplexTypeInfo.parseType (with context prefixedTypeReference)
+    // * parseLibraryName (with context libraryName)
+    // * parsePartOf (with context partName)
+    // * parseMetadata (with context metadataReference)
+    // * parseMethod (with context methodDeclaration)
+    // * parseFactoryMethod (with context methodDeclaration)
+    // * parseConstructorReference (with context constructorReference)
+    // Of these ComplexTypeInfo.parseType, parseMetadata, parseFactoryMethod and
+    // parseConstructorReference has a context where isScopeReference is true,
+    // meaning handleIdentifier pushes a scopeLookup which returns either a
+    // Generator or a Builder. In the below we thus assume those are the two
+    // prefixes we'll have.
     debugEvent("handleQualified");
     assert(checkState(period, [
       /* suffix */ ValueKinds.IdentifierOrParserRecovery,
       /* prefix */ unionOfKinds([
-        ValueKinds.IdentifierOrParserRecovery,
         ValueKinds.Generator,
         ValueKinds.ProblemBuilder,
       ]),
@@ -3284,14 +3395,18 @@ class BodyBuilder extends StackListenerImpl
 
     Object? node = pop();
     Object? qualifier = pop();
-    if (qualifier is ParserRecovery) {
-      // Coverage-ignore-block(suite): Not run.
-      push(qualifier);
-    } else if (node is ParserRecovery) {
+    if (node is ParserRecovery) {
       push(node);
     } else {
-      Identifier identifier = node as Identifier;
-      push(identifier.withQualifier(qualifier!));
+      SimpleIdentifier identifier = node as SimpleIdentifier;
+      if (qualifier is Generator) {
+        push(identifier.withGeneratorQualifier(qualifier));
+      } else if (qualifier is Builder) {
+        push(identifier.withBuilderQualifier(qualifier));
+      } else {
+        unhandled("qualifier is ${qualifier.runtimeType}", "handleQualified",
+            period.charOffset, uri);
+      }
     }
   }
 
@@ -4882,34 +4997,44 @@ class BodyBuilder extends StackListenerImpl
     bool isMarkedAsNullable = questionMark != null;
     List<TypeBuilder>? arguments = pop() as List<TypeBuilder>?;
     Object? name = pop();
+
+    void errorCase(String name, Token suffix) {
+      String displayName = debugName(name, suffix.lexeme);
+      int offset = offsetForToken(beginToken);
+      Message message = fasta.templateNotAType.withArguments(displayName);
+      libraryBuilder.addProblem(
+          message, offset, lengthOfSpan(beginToken, suffix), uri);
+      push(new NamedTypeBuilderImpl.forInvalidType(
+          name,
+          isMarkedAsNullable
+              ? const NullabilityBuilder.nullable()
+              : const NullabilityBuilder.omitted(),
+          message.withLocation(uri, offset, lengthOfSpan(beginToken, suffix))));
+    }
+
     if (name is QualifiedName) {
       QualifiedName qualified = name;
-      Object prefix = qualified.qualifier;
-      Token suffix = qualified.suffix;
-      if (prefix is ParserErrorGenerator) {
-        // An error have already been issued.
-        push(prefix.buildTypeWithResolvedArgumentsDoNotAddProblem(
-            isMarkedAsNullable
-                ? const NullabilityBuilder.nullable()
-                : const NullabilityBuilder.omitted()));
-        return;
-      } else if (prefix is Generator) {
-        name = prefix.qualifiedLookup(suffix);
-      } else {
-        String name = getNodeName(prefix);
-        String displayName = debugName(name, suffix.lexeme);
-        int offset = offsetForToken(beginToken);
-        Message message = fasta.templateNotAType.withArguments(displayName);
-        libraryBuilder.addProblem(
-            message, offset, lengthOfSpan(beginToken, suffix), uri);
-        push(new NamedTypeBuilderImpl.forInvalidType(
-            name,
-            isMarkedAsNullable
-                ? const NullabilityBuilder.nullable()
-                : const NullabilityBuilder.omitted(),
-            message.withLocation(
-                uri, offset, lengthOfSpan(beginToken, suffix))));
-        return;
+      switch (qualified) {
+        case QualifiedNameGenerator():
+          Generator prefix = qualified.qualifier;
+          Token suffix = qualified.suffix;
+          if (prefix is ParserErrorGenerator) {
+            // An error have already been issued.
+            push(prefix.buildTypeWithResolvedArgumentsDoNotAddProblem(
+                isMarkedAsNullable
+                    ? const NullabilityBuilder.nullable()
+                    : const NullabilityBuilder.omitted()));
+            return;
+          } else {
+            name = prefix.qualifiedLookup(suffix);
+          }
+        case QualifiedNameBuilder():
+          errorCase(qualified.qualifier.fullNameForErrors, qualified.suffix);
+          return;
+        // Coverage-ignore(suite): Not run.
+        case QualifiedNameIdentifier():
+          unhandled("qualified is ${qualified.runtimeType}", "handleType",
+              qualified.charOffset, uri);
       }
     }
     TypeBuilder result;
@@ -5804,35 +5929,41 @@ class BodyBuilder extends StackListenerImpl
     if (type is QualifiedName) {
       identifier = type;
       QualifiedName qualified = type;
-      Object qualifier = qualified.qualifier;
-      assert(checkValue(
-          start,
-          unionOfKinds([ValueKinds.Generator, ValueKinds.ProblemBuilder]),
-          qualifier));
-      if (qualifier is TypeUseGenerator && suffix == null) {
-        type = qualifier;
-        if (typeArguments != null) {
-          // TODO(ahe): Point to the type arguments instead.
-          addProblem(fasta.messageConstructorWithTypeArguments,
-              identifier.nameOffset, identifier.name.length);
-        }
-      } else if (qualifier is Generator) {
-        if (constructorReferenceContext !=
-            ConstructorReferenceContext.Implicit) {
-          type = qualifier.qualifiedLookup(qualified.token);
-        } else {
-          type = qualifier.buildSelectorAccess(
-              new PropertySelector(this, qualified.token,
-                  new Name(qualified.name, libraryBuilder.nameOrigin)),
-              qualified.token.charOffset,
-              false);
-        }
-        identifier = null;
-      } else if (qualifier is ProblemBuilder) {
-        type = qualifier;
-      } else {
-        unhandled("${qualifier.runtimeType}", "pushQualifiedReference",
-            start.charOffset, uri);
+      switch (qualified) {
+        case QualifiedNameGenerator():
+          Generator qualifier = qualified.qualifier;
+          if (qualifier is TypeUseGenerator && suffix == null) {
+            type = qualifier;
+            if (typeArguments != null) {
+              // TODO(ahe): Point to the type arguments instead.
+              addProblem(fasta.messageConstructorWithTypeArguments,
+                  identifier.nameOffset, identifier.name.length);
+            }
+          } else {
+            if (constructorReferenceContext !=
+                ConstructorReferenceContext.Implicit) {
+              type = qualifier.qualifiedLookup(qualified.token);
+            } else {
+              type = qualifier.buildSelectorAccess(
+                  new PropertySelector(this, qualified.token,
+                      new Name(qualified.name, libraryBuilder.nameOrigin)),
+                  qualified.token.charOffset,
+                  false);
+            }
+            identifier = null;
+          }
+        case QualifiedNameBuilder():
+          Builder qualifier = qualified.qualifier;
+          if (qualifier is ProblemBuilder) {
+            type = qualifier;
+          } else {
+            unhandled("${qualifier.runtimeType}", "pushQualifiedReference",
+                start.charOffset, uri);
+          }
+        // Coverage-ignore(suite): Not run.
+        case QualifiedNameIdentifier():
+          unhandled("${qualified.runtimeType}", "pushQualifiedReference",
+              start.charOffset, uri);
       }
     }
     String name;
@@ -10081,23 +10212,6 @@ Block combineStatements(Statement statement, Statement body) {
 /// )
 String debugName(String className, String name) {
   return name.isEmpty ? className : "$className.$name";
-}
-
-// TODO(johnniwinther): This is a bit ad hoc. Call sites should know what kind
-// of objects can be anticipated and handle these directly.
-String getNodeName(Object node) {
-  if (node is Identifier) {
-    // Coverage-ignore-block(suite): Not run.
-    return node.name;
-  } else if (node is Builder) {
-    return node.fullNameForErrors;
-  }
-  // Coverage-ignore(suite): Not run.
-  else if (node is QualifiedName) {
-    return flattenName(node, node.charOffset, null);
-  } else {
-    return unhandled("${node.runtimeType}", "getNodeName", -1, null);
-  }
 }
 
 /// A data holder used to hold the information about a label that is pushed on
