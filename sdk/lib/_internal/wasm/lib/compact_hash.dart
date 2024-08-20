@@ -444,13 +444,20 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
   /// This function is unsafe: it does not perform any type checking on
   /// keys and values assuming that caller has ensured that types are
   /// correct.
-  void _populateUnsafe(WasmArray<Object?> data, int length) {
-    assert(length.isEven);
+  void _populateUnsafe(WasmArray<Object?> data, int usedData) {
+    assert(usedData.isEven);
     int size = data.length;
     if (size == 0) {
-      size = _HashBase._INITIAL_INDEX_SIZE;
+      // Initial state setup by constructor.
+      assert(_index == _uninitializedHashBaseIndex);
+      assert(_hashMask == _HashBase._UNINITIALIZED_HASH_MASK);
+      assert(_data == _uninitializedHashBaseData);
+      assert(_usedData == 0);
+      assert(_deletedKeys == 0);
+      return;
     }
     assert(size >= _HashBase._INITIAL_INDEX_SIZE);
+    assert(size == _roundUpToPowerOfTwo(size));
     final hashMask = _HashBase._indexSizeToHashMask(size);
 
     assert(size & (size - 1) == 0);
@@ -461,7 +468,7 @@ mixin _LinkedHashMapMixin<K, V> on _HashBase, _EqualsAndHashCode {
     _usedData = 0;
     _deletedKeys = 0;
 
-    for (int i = 0; i < length; i += 2) {
+    for (int i = 0; i < usedData; i += 2) {
       final key = unsafeCast<K>(data[i]);
       final value = unsafeCast<V>(data[i + 1]);
       _set(key, value, _hashCode(key));
@@ -1134,5 +1141,5 @@ base class CompactLinkedCustomHashSet<E> extends _HashFieldBase
 
 @pragma('wasm:prefer-inline')
 Map<K, V> createMapFromKeyValueListUnsafe<K, V>(
-        WasmArray<Object?> keyValuePairs, int length) =>
-    DefaultMap<K, V>().._populateUnsafe(keyValuePairs, length);
+        WasmArray<Object?> keyValuePairData, int usedData) =>
+    DefaultMap<K, V>().._populateUnsafe(keyValuePairData, usedData);
