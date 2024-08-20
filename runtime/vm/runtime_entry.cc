@@ -395,7 +395,7 @@ DEFINE_RUNTIME_ENTRY(AllocateArray, 2) {
     args.SetAt(2, String::Handle(zone, String::New("is not an integer")));
     Exceptions::ThrowByType(Exceptions::kArgumentValue, args);
   }
-  const int64_t len = Integer::Cast(length).AsInt64Value();
+  const int64_t len = Integer::Cast(length).Value();
   if (len < 0) {
     // Throw: new RangeError.range(length, 0, Array::kMaxElements, "length");
     Exceptions::ThrowRangeError("length", Integer::Cast(length), 0,
@@ -498,7 +498,7 @@ DEFINE_RUNTIME_ENTRY(AllocateTypedData, 2) {
     args.SetAt(0, length);
     Exceptions::ThrowByType(Exceptions::kArgument, args);
   }
-  const int64_t len = Integer::Cast(length).AsInt64Value();
+  const int64_t len = Integer::Cast(length).Value();
   const intptr_t max = TypedData::MaxElements(cid);
   if (len < 0) {
     Exceptions::ThrowRangeError("length", Integer::Cast(length), 0, max);
@@ -824,7 +824,13 @@ DEFINE_RUNTIME_ENTRY_NO_LAZY_DEOPT(AllocateSuspendState, 2) {
       // Reset _AsyncStarStreamController.asyncStarBody to null in order
       // to create a new callback closure during next yield.
       // The new callback closure will capture the reallocated SuspendState.
-      function_data.SetField(
+      //
+      // Caveat: can't use [SetField] here because it will try to take program
+      // lock (to update the state of guarded cid) and that requires us to
+      // be at safepoint which permits lazy deopt. Instead bypass
+      // field guard by making sure that guarded_cid allows our store here.
+      // (See ObjectStore::InitKnownObjects which initializes it).
+      function_data.SetFieldWithoutFieldGuard(
           Field::Handle(
               zone,
               object_store->async_star_stream_controller_async_star_body()),
@@ -835,7 +841,13 @@ DEFINE_RUNTIME_ENTRY_NO_LAZY_DEOPT(AllocateSuspendState, 2) {
     if (function_data.GetClassId() ==
         Class::Handle(zone, object_store->sync_star_iterator_class()).id()) {
       // Refresh _SyncStarIterator._state with the new SuspendState object.
-      function_data.SetField(
+      //
+      // Caveat: can't use [SetField] here because it will try to take program
+      // lock (to update the state of guarded cid) and that requires us to
+      // be at safepoint which permits lazy deopt. Instead bypass
+      // field guard by making sure that guarded_cid allows our store here.
+      // (See ObjectStore::InitKnownObjects which initializes it).
+      function_data.SetFieldWithoutFieldGuard(
           Field::Handle(zone, object_store->sync_star_iterator_state()),
           result);
     }
