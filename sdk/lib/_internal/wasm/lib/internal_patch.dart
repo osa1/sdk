@@ -200,6 +200,9 @@ Future<Object?> loadDynamicModule({Uri? uri, Uint8List? bytes}) =>
 /// `elem` is the element to be pushed onto the array and can have any shape.
 ///
 /// `nextCapacity` is the capacity to be used when growing the array. It can
-/// have any shape, and it will be only evaluated when the array is full.
+/// have any shape, and it will be evaluated only when the array is full.
 external void pushWasmArray<T>(
     WasmArray<T> array, int length, T elem, int nextCapacity);
+
+/// Similar to `pushWasmArray`, but for popping.
+external T? popWasmArray<T>(WasmArray<T?> array, int length);

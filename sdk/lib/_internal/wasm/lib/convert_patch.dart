@@ -3,7 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:_compact_hash" show createMapFromKeyValueListUnsafe;
-import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast, pushWasmArray;
+import "dart:_internal"
+    show patch, POWERS_OF_TEN, unsafeCast, pushWasmArray, popWasmArray;
 import "dart:_js_string_convert";
 import "dart:_js_types";
 import "dart:_js_helper" show jsStringToDartString;
@@ -99,10 +100,7 @@ class _JsonListener {
 
   GrowableList<dynamic>? stackPop() {
     assert(stackLength != 0);
-    stackLength -= 1;
-    final value = stack[stackLength];
-    stack[stackLength] = null;
-    return value;
+    return popWasmArray<GrowableList<dynamic>>(stack, stackLength);
   }
 
   /** Contents of the current container being built, or null if not building a
@@ -142,7 +140,7 @@ class _JsonListener {
           currentContainerLocal, currentContainerLength);
     }
 
-    final currentContainerList = stackPop();
+    final GrowableList<dynamic>? currentContainerList = stackPop();
     if (currentContainerList == null) {
       currentContainer = null;
       currentContainerLength = 0;
@@ -178,9 +176,9 @@ class _JsonListener {
   }
 
   void propertyValue() {
-    final keyValuePairs =
-        unsafeCast<WasmArray<Object?>>(currentContainer); // null deref
     if (reviver case final reviver?) {
+      final keyValuePairs =
+          unsafeCast<WasmArray<Object?>>(currentContainer); // null deref
       final key = keyValuePairs[currentContainerLength - 1];
       currentContainerPush(reviver(key, value));
     } else {
