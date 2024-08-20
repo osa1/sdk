@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:kernel/ast.dart';
+import 'package:kernel/clone.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
 import 'package:kernel/type_algebra.dart';
@@ -783,7 +784,7 @@ class PushWasmArrayTransformer {
             .getTopLevelProcedure('dart:_internal', 'pushWasmArray'),
         _wasmArrayLength = _coreTypes.index
             .getProcedure('dart:_wasm', 'WasmArrayRef', 'get:length'),
-        _intType = _coreTypes.intLegacyRawType,
+        _intType = _coreTypes.intNonNullableRawType,
         _wasmArrayFactory =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
         _wasmArrayCopy =
@@ -811,10 +812,31 @@ class PushWasmArrayTransformer {
     assert(array is InstanceGet || array is VariableGet);
     assert(length is InstanceGet || length is VariableGet);
 
+    // Collect variables referenced in `VariableGet`s. These will be passed to
+    // the cloner as "already cloned" to avoid cloning them.
+    final variableCollector = _VariableCollector();
+    array.accept(variableCollector);
+    length.accept(variableCollector);
+    elem.accept(variableCollector);
+    nextCapacity.accept(variableCollector);
+
+    final variables = variableCollector.variables;
+
+    // Clone an expression.
+    Expression clone(Expression node) {
+      final cloner = CloneVisitorNotMembers();
+      for (final variable in variables) {
+        cloner.setVariableClone(variable, variable);
+      }
+      return cloner.clone(node);
+    }
+
+    FunctionType procedureType(Procedure procedure) =>
+        procedure.signatureType ??
+        procedure.function.computeFunctionType(Nullability.nonNullable);
+
     // a.array.length == a.length
-    final objectEqualsType = _coreTypes.objectEquals.signatureType ??
-        _coreTypes.objectEquals.function
-            .computeFunctionType(Nullability.nonNullable);
+    final objectEqualsType = procedureType(_coreTypes.objectEquals);
     final lengthCheck = EqualsCall(
         InstanceGet(InstanceAccessKind.Instance, array, Name('length'),
             interfaceTarget: _wasmArrayLength, resultType: _intType),
@@ -823,12 +845,11 @@ class PushWasmArrayTransformer {
         interfaceTarget: _coreTypes.objectEquals);
 
     // grow(a.length)
-    final pushWasmArrayType = _pushWasmArray.signatureType ??
-        _pushWasmArray.function.computeFunctionType(Nullability.nonNullable);
+    final pushWasmArrayType = procedureType(_pushWasmArray);
     final nextCapacityType =
         pushWasmArrayType.positionalParameters[3] as FunctionType;
-    final newCapacity = FunctionInvocation(
-        FunctionAccessKind.FunctionType, nextCapacity, Arguments([length]),
+    final newCapacity = FunctionInvocation(FunctionAccessKind.FunctionType,
+        nextCapacity, Arguments([clone(length)]),
         functionType: nextCapacityType);
 
     // WasmArray<T>(newCapacity)
@@ -842,17 +863,14 @@ class PushWasmArrayTransformer {
             _wasmArrayClass, Nullability.nonNullable, [elementType]));
 
     // newArray.copy(...)
-    final wasmArrayCopyType = _wasmArrayCopy.signatureType ??
-        _wasmArrayCopy.function.computeFunctionType(Nullability.nonNullable);
-
     final newArrayCopy = StaticInvocation(
         _wasmArrayCopy,
         Arguments([
           VariableGet(newArrayVariable),
           IntLiteral(0),
-          array,
+          clone(array),
           IntLiteral(0),
-          length,
+          clone(length),
         ], types: [
           elementType
         ]));
@@ -860,8 +878,8 @@ class PushWasmArrayTransformer {
     // a.array = newArray
     final Statement arrayFieldUpdate;
     if (array is InstanceGet) {
-      arrayFieldUpdate = ExpressionStatement(InstanceSet(
-          array.kind, array.receiver, array.name, VariableGet(newArrayVariable),
+      arrayFieldUpdate = ExpressionStatement(InstanceSet(array.kind,
+          clone(array.receiver), array.name, VariableGet(newArrayVariable),
           interfaceTarget: array.interfaceTarget));
     } else {
       final arrayVariableGet = array as VariableGet;
@@ -877,20 +895,19 @@ class PushWasmArrayTransformer {
 
     // a.array[a.length] = elem
     final arrayPush = ExpressionStatement(StaticInvocation(_wasmArrayElementSet,
-        Arguments([array, length, elem], types: [elementType])));
+        Arguments([clone(array), clone(length), elem], types: [elementType])));
 
     // a.length + 1
-    final intAddType = _intAdd.signatureType ??
-        _intAdd.function.computeFunctionType(Nullability.nonNullable);
+    final intAddType = procedureType(_intAdd);
     final lengthPlusOne = InstanceInvocation(InstanceAccessKind.Instance,
-        length, Name('+'), Arguments([IntLiteral(1)]),
+        clone(length), Name('+'), Arguments([IntLiteral(1)]),
         interfaceTarget: _intAdd, functionType: intAddType);
 
     // a.length = a.length + 1
     final Statement arrayLengthUpdate;
     if (length is InstanceGet) {
       arrayLengthUpdate = ExpressionStatement(InstanceSet(
-          length.kind, length.receiver, length.name, lengthPlusOne,
+          length.kind, clone(length.receiver), length.name, lengthPlusOne,
           interfaceTarget: length.interfaceTarget));
     } else {
       final lengthVariableGet = length as VariableGet;
@@ -903,5 +920,14 @@ class PushWasmArrayTransformer {
       arrayPush,
       arrayLengthUpdate
     ];
+  }
+}
+
+class _VariableCollector extends RecursiveVisitor {
+  Set<VariableDeclaration> variables = {};
+
+  @override
+  void visitVariableGet(VariableGet node) {
+    variables.add(node.variable);
   }
 }
