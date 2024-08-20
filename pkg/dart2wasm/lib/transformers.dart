@@ -756,43 +756,46 @@ class _AsyncStarFrame {
   _AsyncStarFrame(this.controllerVar, this.pausedVar, this.emittedValueType);
 }
 
-/// Converts `pushWasmArray<T>(a.array, a.length, elem, grow)` to:
+/// Converts `pushWasmArray<T>(array, length, elem, grow)` to:
 ///
-///   if (a.array.length == a.length) {
-///     final newCapacity = grow(a.length);
+///   if (array.length == length) {
+///     final newCapacity = grow(length);
 ///     final newArray = WasmArray<T>(newCapacity);
-///     newArray.copy(0, a.array, 0, a.length);
-///     a.array = newArray;
+///     newArray.copy(0, array, 0, length);
+///     array = newArray;
 ///   }
-///   a.array[a.length] = elem;
-///   a.length += 1;
+///   array[length] = elem;
+///   length += 1;
 ///
 /// This allows unboxing growable list in class fields.
+///
+/// `array` and `length` arguments need to be either `VariableGet` or
+/// `InstanceGet`.
 class PushWasmArrayTransformer {
   final CoreTypes _coreTypes;
-  final Procedure _pushWasmArray;
-  final Member _wasmArrayLength;
+  final Procedure _intAdd;
   final InterfaceType _intType;
-  final Procedure _wasmArrayFactory;
+  final Procedure _pushWasmArray;
+  final Class _wasmArrayClass;
   final Procedure _wasmArrayCopy;
   final Procedure _wasmArrayElementSet;
-  final Procedure _intAdd;
-  final Class _wasmArrayClass;
+  final Procedure _wasmArrayFactory;
+  final Member _wasmArrayLength;
 
   PushWasmArrayTransformer(this._coreTypes)
-      : _pushWasmArray = _coreTypes.index
-            .getTopLevelProcedure('dart:_internal', 'pushWasmArray'),
-        _wasmArrayLength = _coreTypes.index
-            .getProcedure('dart:_wasm', 'WasmArrayRef', 'get:length'),
+      : _intAdd = _coreTypes.index.getProcedure('dart:core', 'num', '+'),
         _intType = _coreTypes.intNonNullableRawType,
-        _wasmArrayFactory =
-            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
+        _pushWasmArray = _coreTypes.index
+            .getTopLevelProcedure('dart:_internal', 'pushWasmArray'),
+        _wasmArrayClass = _coreTypes.index.getClass('dart:_wasm', 'WasmArray'),
         _wasmArrayCopy =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', 'copy'),
         _wasmArrayElementSet =
             _coreTypes.index.getProcedure('dart:_wasm', 'WasmArrayExt', '[]='),
-        _intAdd = _coreTypes.index.getProcedure('dart:core', 'num', '+'),
-        _wasmArrayClass = _coreTypes.index.getClass('dart:_wasm', 'WasmArray');
+        _wasmArrayFactory =
+            _coreTypes.index.getProcedure('dart:_wasm', 'WasmArray', ''),
+        _wasmArrayLength = _coreTypes.index
+            .getProcedure('dart:_wasm', 'WasmArrayRef', 'get:length');
 
   List<Statement>? transformStaticInvocation(StaticInvocation invocation) {
     if (invocation.target != _pushWasmArray) {
