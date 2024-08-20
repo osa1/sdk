@@ -90,8 +90,11 @@ class _JsonListener {
         ? null
         : GrowableList.withDataAndLength(value, valueLength);
 
+    // `GrowableList._nextCapacity` is copied here as the next capacity. We
+    // can't use `GrowableList._nextCapacity` as tear-off as it's difficult to
+    // inline tear-offs manually in the `pushWasmArray` compiler.
     pushWasmArray<GrowableList<Object?>?>(
-        this.stack, this.stackLength, valueAsList, GrowableList.nextCapacity);
+        this.stack, this.stackLength, valueAsList, (stackLength * 2) | 3);
   }
 
   GrowableList<dynamic>? stackPop() {
@@ -113,8 +116,10 @@ class _JsonListener {
   void currentContainerPush(Object? value) {
     WasmArray<Object?> currentContainerNonNull =
         unsafeCast<WasmArray<Object?>>(this.currentContainer);
+    // Same as above, this copies `GrowableList._nextCapacity` as the next
+    // capacity.
     pushWasmArray<Object?>(currentContainerNonNull, this.currentContainerLength,
-        value, GrowableList.nextCapacity);
+        value, (currentContainerLength * 2) | 3);
     currentContainer = currentContainerNonNull;
   }
 

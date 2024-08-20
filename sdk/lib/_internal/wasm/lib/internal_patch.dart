@@ -197,8 +197,9 @@ Future<Object?> loadDynamicModule({Uri? uri, Uint8List? bytes}) =>
 /// (when the argument is `InstanceGet`) or the variable (when the argument is
 /// `InstanceGet`).
 ///
-/// `elem` and `nextCapacity` can have any shape. `elem` is the element to be
-/// pushed onto the array. `nextCapacity` is used to calculate the next capacity
-/// when the array is full.
-external void pushWasmArray<T>(WasmArray<T> array, int length, T elem,
-    int Function(int currentCapacity) nextCapacity);
+/// `elem` is the element to be pushed onto the array and can have any shape.
+///
+/// `nextCapacity` is the capacity to be used when growing the array. It can
+/// have any shape, and it will be only evaluated when the array is full.
+external void pushWasmArray<T>(
+    WasmArray<T> array, int length, T elem, int nextCapacity);

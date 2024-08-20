@@ -3,8 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:kernel/ast.dart';
-import 'package:kernel/clone.dart';
 import 'package:kernel/class_hierarchy.dart';
+import 'package:kernel/clone.dart';
 import 'package:kernel/core_types.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
@@ -756,11 +756,10 @@ class _AsyncStarFrame {
   _AsyncStarFrame(this.controllerVar, this.pausedVar, this.emittedValueType);
 }
 
-/// Converts `pushWasmArray<T>(array, length, elem, grow)` to:
+/// Converts `pushWasmArray<T>(array, length, elem, nextCapacity)` to:
 ///
 ///   if (array.length == length) {
-///     final newCapacity = grow(length);
-///     final newArray = WasmArray<T>(newCapacity);
+///     final newArray = WasmArray<T>(nextCapacity);
 ///     newArray.copy(0, array, 0, length);
 ///     array = newArray;
 ///   }
@@ -847,19 +846,11 @@ class PushWasmArrayTransformer {
         functionType: objectEqualsType,
         interfaceTarget: _coreTypes.objectEquals);
 
-    // grow(a.length)
-    final pushWasmArrayType = procedureType(_pushWasmArray);
-    final nextCapacityType =
-        pushWasmArrayType.positionalParameters[3] as FunctionType;
-    final newCapacity = FunctionInvocation(FunctionAccessKind.FunctionType,
-        nextCapacity, Arguments([clone(length)]),
-        functionType: nextCapacityType);
-
-    // WasmArray<T>(newCapacity)
+    // WasmArray<T>(nextCapacity)
     final arrayAllocation = StaticInvocation(
-        _wasmArrayFactory, Arguments([newCapacity], types: [elementType]));
+        _wasmArrayFactory, Arguments([nextCapacity], types: [elementType]));
 
-    // var newArray = WasmArray<T>(newCapacity)
+    // var newArray = WasmArray<T>(nextCapacity)
     final newArrayVariable = VariableDeclaration('newArray',
         initializer: arrayAllocation,
         type: InterfaceType(
