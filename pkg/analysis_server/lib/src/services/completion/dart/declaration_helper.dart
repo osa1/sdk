@@ -10,6 +10,7 @@ import 'package:analysis_server/src/services/completion/dart/completion_state.da
 import 'package:analysis_server/src/services/completion/dart/not_imported_completion_pass.dart';
 import 'package:analysis_server/src/services/completion/dart/suggestion_collector.dart';
 import 'package:analysis_server/src/services/completion/dart/visibility_tracker.dart';
+import 'package:analysis_server/src/utilities/extensions/flutter.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -1662,6 +1663,19 @@ class DeclarationHelper {
       }
       var matcherScore = state.matcher.score(method.displayName);
       if (matcherScore != -1) {
+        var enclosingElement = method.enclosingElement;
+        if (method.name == 'setState' &&
+            enclosingElement is ClassElement &&
+            enclosingElement.isExactState) {
+          var suggestion = SetStateMethodSuggestion(
+              element: method,
+              importData: importData,
+              referencingInterface: referencingInterface,
+              matcherScore: matcherScore,
+              indent: state.indent);
+          collector.addSuggestion(suggestion);
+          return;
+        }
         var suggestion = MethodSuggestion(
             kind: _executableSuggestionKind,
             element: method,
@@ -1788,11 +1802,24 @@ class DeclarationHelper {
       } else {
         var matcherScore = state.matcher.score(element.displayName);
         if (matcherScore != -1) {
-          var suggestion = StaticFieldSuggestion(
-              importData: importData,
-              element: element,
-              matcherScore: matcherScore);
-          collector.addSuggestion(suggestion);
+          if (element.isSynthetic) {
+            var getter = element.getter;
+            if (getter != null) {
+              var suggestion = PropertyAccessSuggestion(
+                  element: getter,
+                  importData: importData,
+                  referencingInterface: null,
+                  matcherScore: matcherScore,
+                  withEnclosingName: true);
+              collector.addSuggestion(suggestion);
+            }
+          } else {
+            var suggestion = StaticFieldSuggestion(
+                importData: importData,
+                element: element,
+                matcherScore: matcherScore);
+            collector.addSuggestion(suggestion);
+          }
         }
       }
     }
@@ -1917,7 +1944,9 @@ class DeclarationHelper {
   /// Adds a suggestion for each of the [typeParameters].
   void _suggestTypeParameters(List<TypeParameterElement> typeParameters) {
     for (var parameter in typeParameters) {
-      _suggestTypeParameter(parameter);
+      if (!_isWildcard(parameter.name)) {
+        _suggestTypeParameter(parameter);
+      }
     }
   }
 
@@ -2166,7 +2195,9 @@ class DeclarationHelper {
     for (var typeParameter in typeParameters.typeParameters) {
       var element = typeParameter.declaredElement;
       if (element != null) {
-        _suggestTypeParameter(element);
+        if (!_isWildcard(element.name)) {
+          _suggestTypeParameter(element);
+        }
       }
     }
   }

@@ -443,6 +443,9 @@ library
           reference: <testLibraryFragment>::@class::X::@def::0
         class X @48
           reference: <testLibraryFragment>::@class::X::@def::1
+      mixins
+        mixin M @68
+          reference: <testLibraryFragment>::@mixin::M
   classes
     class A
       reference: <testLibraryFragment>::@class::A
@@ -462,6 +465,13 @@ library
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::X::@def::1
       supertype: B
+  mixins
+    mixin M
+      reference: <testLibraryFragment>::@mixin::M
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M
+      superclassConstraints
+        Object
 ''');
   }
 
@@ -657,6 +667,22 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E::@def::0
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E::@def::1
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E::@def::0
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E::@def::0
+      supertype: Enum
+    enum E
+      reference: <testLibraryFragment>::@enum::E::@def::1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E::@def::1
+      supertype: Enum
 ''');
   }
 
@@ -731,6 +757,13 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      extensions
+        extension E @10
+          reference: <testLibraryFragment>::@extension::E::@def::0
+        extension E @32
+          reference: <testLibraryFragment>::@extension::E::@def::1
+        extension E @71
+          reference: <testLibraryFragment>::@extension::E::@def::2
 ''');
   }
 
@@ -801,6 +834,11 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      extensionTypes
+        extension type E @15
+          reference: <testLibraryFragment>::@extensionType::E::@def::0
+        extension type E @43
+          reference: <testLibraryFragment>::@extensionType::E::@def::1
 ''');
   }
 
@@ -999,6 +1037,32 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      mixins
+        mixin A @6
+          reference: <testLibraryFragment>::@mixin::A::@def::0
+        mixin A @17
+          reference: <testLibraryFragment>::@mixin::A::@def::1
+        mixin A @38
+          reference: <testLibraryFragment>::@mixin::A::@def::2
+  mixins
+    mixin A
+      reference: <testLibraryFragment>::@mixin::A::@def::0
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::A::@def::0
+      superclassConstraints
+        Object
+    mixin A
+      reference: <testLibraryFragment>::@mixin::A::@def::1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::A::@def::1
+      superclassConstraints
+        Object
+    mixin A
+      reference: <testLibraryFragment>::@mixin::A::@def::2
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::A::@def::2
+      superclassConstraints
+        Object
 ''');
   }
 

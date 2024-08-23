@@ -8,6 +8,7 @@ import 'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart';
 import 'package:_fe_analyzer_shared/src/parser/util.dart' as shared;
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer_operations.dart'
     show Variance;
+import 'package:_fe_analyzer_shared/src/types/shared_type.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -327,7 +328,7 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
   @override
   List<DiagnosticMessage> computeWhyNotPromotedMessages(
       SyntacticEntity errorEntity,
-      Map<DartType, NonPromotionReason>? whyNotPromoted) {
+      Map<SharedTypeView<DartType>, NonPromotionReason>? whyNotPromoted) {
     return [];
   }
 
@@ -2595,6 +2596,8 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     ExtensionTypeElementImpl element,
   ) {
     for (var typeParameter in element.typeParameters) {
+      if (typeParameter.isWildcardVariable) continue;
+
       var name = typeParameter.name;
       // name is same as the name of the enclosing class
       if (element.name == name) {
@@ -6228,15 +6231,17 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
                       .MISSING_DEFAULT_VALUE_FOR_PARAMETER_WITH_ANNOTATION,
                 );
               } else {
-                errorReporter.atEntity(
-                  errorTarget,
-                  parameterElement.isPositional
-                      ? CompileTimeErrorCode
-                          .MISSING_DEFAULT_VALUE_FOR_PARAMETER_POSITIONAL
-                      : CompileTimeErrorCode
-                          .MISSING_DEFAULT_VALUE_FOR_PARAMETER,
-                  arguments: [parameterName?.lexeme ?? '?'],
-                );
+                if (!_isWildcardSuperFormalPositionalParameter(parameter)) {
+                  errorReporter.atEntity(
+                    errorTarget,
+                    parameterElement.isPositional
+                        ? CompileTimeErrorCode
+                            .MISSING_DEFAULT_VALUE_FOR_PARAMETER_POSITIONAL
+                        : CompileTimeErrorCode
+                            .MISSING_DEFAULT_VALUE_FOR_PARAMETER,
+                    arguments: [parameterName?.lexeme ?? '?'],
+                  );
+                }
               }
             }
           }
@@ -6378,6 +6383,13 @@ class ErrorVerifier extends RecursiveAstVisitor<void>
     }
     return false;
   }
+
+  bool _isWildcardSuperFormalPositionalParameter(
+          DefaultFormalParameter parameter) =>
+      parameter.parameter is SuperFormalParameter &&
+      parameter.isPositional &&
+      parameter.name?.lexeme == '_' &&
+      _currentLibrary.featureSet.isEnabled(Feature.wildcard_variables);
 
   /// Checks whether a `final`, `base` or `interface` modifier can be ignored.
   ///

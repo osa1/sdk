@@ -156,7 +156,6 @@ class WasmTarget extends Target {
         'dart:developer',
         'dart:ffi',
         'dart:io',
-        'dart:js',
         'dart:js_interop',
         'dart:js_interop_unsafe',
         'dart:js_util',
@@ -202,7 +201,7 @@ class WasmTarget extends Target {
     // Flutter's dart:ui is also package:ui (in test mode)
     if (importerString.startsWith('package:ui/')) return true;
 
-    // package:js can import dart:js* & dart:_js_*
+    // package:js can import dart:js_util & dart:_js_*
     if (importerString.startsWith('package:js/')) return true;
 
     return false;
@@ -473,25 +472,25 @@ class WasmTarget extends Target {
   @override
   Class concreteMapLiteralClass(CoreTypes coreTypes) {
     return _wasmDefaultMap ??=
-        coreTypes.index.getClass('dart:_compact_hash', 'WasmDefaultMap');
+        coreTypes.index.getClass('dart:_compact_hash', 'DefaultMap');
   }
 
   @override
   Class concreteConstMapLiteralClass(CoreTypes coreTypes) {
     return _wasmImmutableMap ??=
-        coreTypes.index.getClass('dart:_compact_hash', 'WasmImmutableMap');
+        coreTypes.index.getClass('dart:_compact_hash', '_ConstMap');
   }
 
   @override
   Class concreteSetLiteralClass(CoreTypes coreTypes) {
     return _wasmDefaultSet ??=
-        coreTypes.index.getClass('dart:_compact_hash', 'WasmDefaultSet');
+        coreTypes.index.getClass('dart:_compact_hash', 'DefaultSet');
   }
 
   @override
   Class concreteConstSetLiteralClass(CoreTypes coreTypes) {
     return _wasmImmutableSet ??=
-        coreTypes.index.getClass('dart:_compact_hash', 'WasmImmutableSet');
+        coreTypes.index.getClass('dart:_compact_hash', '_ConstSet');
   }
 
   @override

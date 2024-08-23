@@ -2,13 +2,17 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_internal" show patch, POWERS_OF_TEN, unsafeCast;
+import "dart:_compact_hash" show createMapFromKeyValueListUnsafe;
+import "dart:_internal"
+    show patch, POWERS_OF_TEN, unsafeCast, pushWasmArray, popWasmArray;
 import "dart:_js_string_convert";
 import "dart:_js_types";
+import "dart:_js_helper" show jsStringToDartString;
+import "dart:_list" show GrowableList, GrowableListUnsafeExtensions;
 import "dart:_string";
 import "dart:_typed_data";
 import "dart:_wasm";
-import "dart:typed_data" show Uint8List, Uint16List;
+import "dart:typed_data" show Uint8List;
 
 /// This patch library has no additional parts.
 
@@ -19,7 +23,8 @@ dynamic _parseJson(
     String source, Object? Function(Object? key, Object? value)? reviver) {
   _JsonListener listener = new _JsonListener(reviver);
   var parser = new _JsonStringParser(listener);
-  parser.chunk = source;
+  parser.chunk = unsafeCast<StringBase>(
+      source is JSStringImpl ? jsStringToDartString(source) : source);
   parser.chunkEnd = source.length;
   parser.parse(0);
   parser.close();
@@ -76,34 +81,73 @@ class _JsonListener {
   /**
    * Stack used to handle nested containers.
    *
-   * The current container is pushed on the stack when a new one is
-   * started. If the container is a [Map], there is also a current [key]
-   * which is also stored on the stack.
+   * The current container is pushed on the stack when a new one is started.
    */
-  final List<Object?> stack = [];
+  WasmArray<GrowableList?> stack = WasmArray<GrowableList?>(0);
+  int stackLength = 0;
 
-  /** The current [Map] or [List] being built, or null if not building a
-  * container.
-  */
-  Object? currentContainer;
+  void stackPush(WasmArray<Object?>? value, int valueLength) {
+    final GrowableList<Object?>? valueAsList = value == null
+        ? null
+        : GrowableList.withDataAndLength(value, valueLength);
 
-  /** The most recently read property key. */
-  String key = '';
+    // `GrowableList._nextCapacity` is copied here as the next capacity. We
+    // can't use `GrowableList._nextCapacity` as tear-off as it's difficult to
+    // inline tear-offs manually in the `pushWasmArray` compiler.
+    pushWasmArray<GrowableList<Object?>?>(
+        this.stack, this.stackLength, valueAsList, (stackLength * 2) | 3);
+  }
+
+  GrowableList<dynamic>? stackPop() {
+    assert(stackLength != 0);
+    return popWasmArray<GrowableList<dynamic>>(stack, stackLength);
+  }
+
+  /** Contents of the current container being built, or null if not building a
+   * container.
+   *
+   * When building a [Map] this will contain array of key-value pairs.
+   */
+  WasmArray<Object?>? currentContainer = null;
+  int currentContainerLength = 0;
+
+  void currentContainerPush(Object? value) {
+    WasmArray<Object?> currentContainerNonNull =
+        unsafeCast<WasmArray<Object?>>(this.currentContainer);
+    // Per `_HashBase` invariant capacity needs to be a power of two.
+    pushWasmArray<Object?>(currentContainerNonNull, this.currentContainerLength,
+        value, currentContainerLength == 0 ? 8 : (currentContainerLength * 2));
+    currentContainer = currentContainerNonNull;
+  }
 
   /** The most recently read value. */
   Object? value;
 
-  /** Pushes the currently active container (and key, if a [Map]). */
-  void pushContainer() {
-    if (currentContainer is Map) stack.add(key);
-    stack.add(currentContainer);
+  /** Pushes the currently active container. */
+  void beginContainer() {
+    stackPush(currentContainer, currentContainerLength);
+    currentContainer = const WasmArray<Object?>.literal([]);
+    currentContainerLength = 0;
   }
 
-  /** Pops the top container from the [stack], including a key if applicable. */
+  /** Pops the top container from the [stack]. */
   void popContainer() {
-    value = currentContainer;
-    currentContainer = stack.removeLast();
-    if (currentContainer is Map) key = unsafeCast<String>(stack.removeLast());
+    final currentContainerLocal = currentContainer;
+    if (currentContainerLocal == null) {
+      value = null;
+    } else {
+      value = GrowableList.withDataAndLength(
+          currentContainerLocal, currentContainerLength);
+    }
+
+    final GrowableList<dynamic>? currentContainerList = stackPop();
+    if (currentContainerList == null) {
+      currentContainer = null;
+      currentContainerLength = 0;
+    } else {
+      currentContainer = currentContainerList.data;
+      currentContainerLength = currentContainerList.length;
+    }
   }
 
   void handleString(String value) {
@@ -123,42 +167,43 @@ class _JsonListener {
   }
 
   void beginObject() {
-    pushContainer();
-    currentContainer = <String, dynamic>{};
+    beginContainer();
   }
 
   void propertyName() {
-    key = unsafeCast<String>(value);
+    currentContainerPush(value);
     value = null;
   }
 
   void propertyValue() {
-    var map = unsafeCast<Map>(currentContainer);
-    var reviver = this.reviver;
-    if (reviver != null) {
-      value = reviver(key, value);
+    if (reviver case final reviver?) {
+      final keyValuePairs =
+          unsafeCast<WasmArray<Object?>>(currentContainer); // null deref
+      final key = keyValuePairs[currentContainerLength - 1];
+      currentContainerPush(reviver(key, value));
+    } else {
+      currentContainerPush(value);
     }
-    map[key] = value;
-    key = '';
     value = null;
   }
 
   void endObject() {
     popContainer();
+    final list = unsafeCast<GrowableList>(value);
+    value = createMapFromKeyValueListUnsafe<String, dynamic>(
+        list.data, list.length);
   }
 
   void beginArray() {
-    pushContainer();
-    currentContainer = <dynamic>[];
+    beginContainer();
   }
 
   void arrayElement() {
-    var list = unsafeCast<List>(currentContainer);
     var reviver = this.reviver;
     if (reviver != null) {
-      value = reviver(list.length, value);
+      value = reviver(currentContainerLength, value);
     }
-    list.add(value);
+    currentContainerPush(value);
     value = null;
   }
 
@@ -1461,8 +1506,8 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
  * Chunked JSON parser that parses [String] chunks.
  */
 class _JsonStringParser extends _JsonParserWithListener
-    with _ChunkedJsonParser<String> {
-  String chunk = '';
+    with _ChunkedJsonParser<StringBase> {
+  StringBase chunk = unsafeCast<StringBase>('');
   int chunkEnd = 0;
 
   _JsonStringParser(_JsonListener listener) : super(listener);
@@ -1535,7 +1580,8 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   }
 
   void addSlice(String chunk, int start, int end, bool isLast) {
-    _parser.chunk = chunk;
+    _parser.chunk = unsafeCast<StringBase>(
+        chunk is JSStringImpl ? jsStringToDartString(chunk) : chunk);
     _parser.chunkEnd = end;
     _parser.parse(start);
     if (isLast) _parser.close();

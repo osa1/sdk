@@ -41,7 +41,12 @@ number, like `.`, `x`, or the `e` in scientific notation.
 - **Breaking Change** [#52444][]: Removed the `Platform()` constructor, which
   has been deprecated since Dart 3.1.
 
+- **Breaking Change** [#53618][]: `HttpClient` now responds to a redirect
+  that is missing a "Location" header by throwing `RedirectException`, instead
+  of `StateError`.
+
 [#52444]: https://github.com/dart-lang/sdk/issues/52444
+[#53618]: https://github.com/dart-lang/sdk/issues/53618
 
 #### `dart:js_interop`
 
@@ -50,6 +55,16 @@ number, like `.`, `x`, or the `e` in scientific notation.
 - Added `length` and `[]`/`[]=` operators to `JSArray`.
 - Added `toJSCaptureThis` so `this` is passed in from JavaScript to the
   callback as the first parameter.
+
+### Tools
+
+#### Wasm compiler (dart2wasm)
+
+- The condition `dart.library.js` is now false on conditional imports in
+  dart2wasm. Note that it was already a static error to import `dart:js`
+  directly (see [#55266][]).
+
+[#55266]: https://github.com/dart-lang/sdk/issues/55266
 
 ## 3.5.0
 

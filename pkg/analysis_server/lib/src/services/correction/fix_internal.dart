@@ -612,6 +612,9 @@ final _builtInLintProducers = <LintCode, List<ProducerGenerator>>{
   LinterLintCode.sort_unnamed_constructors_first: [
     SortUnnamedConstructorFirst.new,
   ],
+  LinterLintCode.specify_nonobvious_local_variable_types: [
+    AddTypeAnnotation.bulkFixable,
+  ],
   LinterLintCode.type_annotate_public_apis: [
     AddTypeAnnotation.bulkFixable,
   ],
@@ -1794,10 +1797,16 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     RemoveComparison.new,
     ReplaceWithIsNan.new,
   ],
-  WarningCode.UNNECESSARY_NULL_COMPARISON_FALSE: [
+  WarningCode.UNNECESSARY_NULL_COMPARISON_ALWAYS_NULL_FALSE: [
     RemoveComparison.new,
   ],
-  WarningCode.UNNECESSARY_NULL_COMPARISON_TRUE: [
+  WarningCode.UNNECESSARY_NULL_COMPARISON_ALWAYS_NULL_TRUE: [
+    RemoveComparison.new,
+  ],
+  WarningCode.UNNECESSARY_NULL_COMPARISON_NEVER_NULL_FALSE: [
+    RemoveComparison.new,
+  ],
+  WarningCode.UNNECESSARY_NULL_COMPARISON_NEVER_NULL_TRUE: [
     RemoveComparison.new,
   ],
   WarningCode.UNNECESSARY_QUESTION_MARK: [

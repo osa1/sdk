@@ -147,6 +147,17 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      codeOffset: 0
+      codeLength: 26
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -261,6 +272,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -333,6 +353,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -425,6 +454,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -496,6 +534,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -573,6 +620,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -645,6 +701,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -733,6 +798,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -828,6 +902,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -904,6 +987,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1002,6 +1094,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1087,6 +1188,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1172,6 +1282,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1257,6 +1376,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1343,6 +1471,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1422,6 +1559,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1536,6 +1682,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1609,6 +1764,16 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @65
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      documentationComment: /**\n * Docs\n */
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1694,6 +1859,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1731,6 +1905,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1811,6 +1994,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1896,11 +2088,20 @@ library
       classes
         class I @6
           reference: <testLibraryFragment>::@class::I
+      enums
+        enum E @16
+          reference: <testLibraryFragment>::@enum::E
   classes
     class I
       reference: <testLibraryFragment>::@class::I
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::I
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -1982,6 +2183,12 @@ library
           reference: <testLibraryFragment>::@class::A
         class C @45
           reference: <testLibraryFragment>::@class::C
+      enums
+        enum E @55
+          reference: <testLibraryFragment>::@enum::E
+      extensionTypes
+        extension type B @26
+          reference: <testLibraryFragment>::@extensionType::B
   classes
     class A
       reference: <testLibraryFragment>::@class::A
@@ -1991,6 +2198,12 @@ library
       reference: <testLibraryFragment>::@class::C
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::C
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2084,11 +2297,20 @@ library
       classes
         class I @6
           reference: <testLibraryFragment>::@class::I
+      enums
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E
   classes
     class I
       reference: <testLibraryFragment>::@class::I
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::I
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2185,6 +2407,9 @@ library
           reference: <testLibraryFragment>::@class::X
         class Z @17
           reference: <testLibraryFragment>::@class::Z
+      enums
+        enum E @27
+          reference: <testLibraryFragment>::@enum::E
   classes
     class X
       reference: <testLibraryFragment>::@class::X
@@ -2194,6 +2419,12 @@ library
       reference: <testLibraryFragment>::@class::Z
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::Z
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2284,6 +2515,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2361,6 +2601,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2441,6 +2690,25 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @16
+          reference: <testLibraryFragment>::@enum::E
+      mixins
+        mixin M @6
+          reference: <testLibraryFragment>::@mixin::M
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
+  mixins
+    mixin M
+      reference: <testLibraryFragment>::@mixin::M
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M
+      superclassConstraints
+        Object
 ''');
   }
 
@@ -2522,6 +2790,12 @@ library
           reference: <testLibraryFragment>::@class::A
         class C @45
           reference: <testLibraryFragment>::@class::C
+      enums
+        enum E @55
+          reference: <testLibraryFragment>::@enum::E
+      extensionTypes
+        extension type B @26
+          reference: <testLibraryFragment>::@extensionType::B
   classes
     class A
       reference: <testLibraryFragment>::@class::A
@@ -2531,6 +2805,12 @@ library
       reference: <testLibraryFragment>::@class::C
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::C
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2624,6 +2904,33 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @44
+          reference: <testLibraryFragment>::@enum::E
+      mixins
+        mixin M1 @6
+          reference: <testLibraryFragment>::@mixin::M1
+        mixin M2 @21
+          reference: <testLibraryFragment>::@mixin::M2
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
+  mixins
+    mixin M1
+      reference: <testLibraryFragment>::@mixin::M1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M1
+      superclassConstraints
+        Object
+    mixin M2
+      reference: <testLibraryFragment>::@mixin::M2
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M2
+      superclassConstraints
+        M1<T>
 ''');
   }
 
@@ -2707,6 +3014,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2783,6 +3099,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2863,6 +3188,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2910,6 +3244,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -2963,6 +3306,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3010,6 +3362,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3056,6 +3417,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3102,6 +3472,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3148,6 +3527,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3198,6 +3586,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3300,6 +3697,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3438,6 +3844,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3530,6 +3945,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3646,6 +4070,22 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E1 @5
+          reference: <testLibraryFragment>::@enum::E1
+        enum E2 @20
+          reference: <testLibraryFragment>::@enum::E2
+  enums
+    enum E1
+      reference: <testLibraryFragment>::@enum::E1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E1
+      supertype: Enum
+    enum E2
+      reference: <testLibraryFragment>::@enum::E2
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E2
+      supertype: Enum
 ''');
   }
 
@@ -3858,6 +4298,9 @@ library
           reference: <testLibraryFragment>::@class::C
         class D @159
           reference: <testLibraryFragment>::@class::D
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
   classes
     class M
       reference: <testLibraryFragment>::@class::M
@@ -3881,6 +4324,12 @@ library
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::D
       supertype: Object
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -3971,6 +4420,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4154,11 +4612,20 @@ library
       classes
         class A @6
           reference: <testLibraryFragment>::@class::A
+      enums
+        enum E @64
+          reference: <testLibraryFragment>::@enum::E
   classes
     class A
       reference: <testLibraryFragment>::@class::A
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::A
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4239,6 +4706,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @5
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4336,6 +4812,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4438,6 +4923,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4577,6 +5071,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @26
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4677,6 +5180,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @19
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 
@@ -4767,6 +5279,15 @@ library
   reference: <testLibrary>
   fragments
     <testLibraryFragment>
+      enums
+        enum E @22
+          reference: <testLibraryFragment>::@enum::E
+  enums
+    enum E
+      reference: <testLibraryFragment>::@enum::E
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::E
+      supertype: Enum
 ''');
   }
 }
@@ -4871,6 +5392,19 @@ library
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @35
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+        enum A @76
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+  enums
+    enum A
+      reference: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -5057,23 +5591,62 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a1.dart
+      enums
+        enum A @57
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a1.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a1.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a11.dart
+      enums
+        enum A @96
+          reference: <testLibrary>::@fragment::package:test/a1.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a11.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a11.dart
       previousFragment: <testLibrary>::@fragment::package:test/a1.dart
       nextFragment: <testLibrary>::@fragment::package:test/a12.dart
+      enums
+        enum A @40
+          reference: <testLibrary>::@fragment::package:test/a11.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a1.dart::@enumAugmentation::A
+          nextFragment: <testLibrary>::@fragment::package:test/a12.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a12.dart
       previousFragment: <testLibrary>::@fragment::package:test/a11.dart
       nextFragment: <testLibrary>::@fragment::package:test/a2.dart
+      enums
+        enum A @40
+          reference: <testLibrary>::@fragment::package:test/a12.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a11.dart::@enumAugmentation::A
+          nextFragment: <testLibrary>::@fragment::package:test/a2.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a2.dart
       previousFragment: <testLibrary>::@fragment::package:test/a12.dart
       nextFragment: <testLibrary>::@fragment::package:test/a21.dart
+      enums
+        enum A @96
+          reference: <testLibrary>::@fragment::package:test/a2.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a12.dart::@enumAugmentation::A
+          nextFragment: <testLibrary>::@fragment::package:test/a21.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a21.dart
       previousFragment: <testLibrary>::@fragment::package:test/a2.dart
       nextFragment: <testLibrary>::@fragment::package:test/a22.dart
+      enums
+        enum A @40
+          reference: <testLibrary>::@fragment::package:test/a21.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a2.dart::@enumAugmentation::A
+          nextFragment: <testLibrary>::@fragment::package:test/a22.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a22.dart
       previousFragment: <testLibrary>::@fragment::package:test/a21.dart
+      enums
+        enum A @40
+          reference: <testLibrary>::@fragment::package:test/a22.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a21.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
   exportedReferences
     declared <testLibraryFragment>::@enum::A
   exportNamespace
@@ -5206,6 +5779,26 @@ library
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @43
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
+        enum A @73
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::1
+        enum A @115
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::1
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+  enums
+    enum A
+      reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
+      supertype: Enum
+    enum A
+      reference: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -5310,8 +5903,22 @@ library
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @67
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @39
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+      supertype: Enum
 ''');
   }
 
@@ -5461,8 +6068,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -5667,11 +6288,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -5842,8 +6482,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6044,8 +6698,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6230,8 +6898,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6340,8 +7022,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6429,8 +7125,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6529,8 +7239,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6624,8 +7348,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6711,8 +7449,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6806,8 +7558,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -6910,8 +7676,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7020,8 +7800,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7142,8 +7936,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7294,11 +8102,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7449,11 +8276,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7607,11 +8453,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7732,8 +8597,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7874,8 +8753,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -7997,8 +8890,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8127,8 +9034,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8265,8 +9186,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8369,8 +9304,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8479,8 +9428,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8607,8 +9570,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8745,8 +9722,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -8867,8 +9858,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9019,11 +10024,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9158,8 +10182,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9288,8 +10326,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9439,11 +10491,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9542,8 +10613,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9655,11 +10740,19 @@ library
       classes
         class I1 @60
           reference: <testLibraryFragment>::@class::I1
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       classes
         class I2 @67
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
   classes
     class I1
       reference: <testLibraryFragment>::@class::I1
@@ -9669,6 +10762,12 @@ library
       reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9812,17 +10911,30 @@ library
       classes
         class I1 @60
           reference: <testLibraryFragment>::@class::I1
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       classes
         class I2 @92
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+      enums
+        enum A @67
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       classes
         class I3 @64
           reference: <testLibrary>::@fragment::package:test/b.dart::@class::I3
+      enums
+        enum A @39
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
   classes
     class I1
       reference: <testLibraryFragment>::@class::I1
@@ -9836,6 +10948,12 @@ library
       reference: <testLibrary>::@fragment::package:test/b.dart::@class::I3
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/b.dart::@class::I3
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -9956,11 +11074,19 @@ library
       classes
         class I1 @70
           reference: <testLibraryFragment>::@class::I1
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       classes
         class I2 @75
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
   classes
     class I1
       reference: <testLibraryFragment>::@class::I1
@@ -9970,6 +11096,12 @@ library
       reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10091,11 +11223,19 @@ library
       classes
         class I1 @63
           reference: <testLibraryFragment>::@class::I1
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       classes
         class I2 @79
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
   classes
     class I1
       reference: <testLibraryFragment>::@class::I1
@@ -10105,6 +11245,12 @@ library
       reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@class::I2
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10204,8 +11350,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10326,8 +11486,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10434,8 +11608,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10543,8 +11731,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10660,8 +11862,26 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::1
+        enum A @86
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::1
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A::@def::0
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10791,11 +12011,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @67
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @39
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -10903,8 +12142,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11013,8 +12266,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11119,8 +12386,41 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+      mixins
+        mixin M1 @54
+          reference: <testLibraryFragment>::@mixin::M1
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+      mixins
+        mixin M2 @61
+          reference: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
+  mixins
+    mixin M1
+      reference: <testLibraryFragment>::@mixin::M1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M1
+      superclassConstraints
+        Object
+    mixin M2
+      reference: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
+      superclassConstraints
+        Object
 ''');
   }
 
@@ -11272,11 +12572,58 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+      mixins
+        mixin M1 @94
+          reference: <testLibraryFragment>::@mixin::M1
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+      mixins
+        mixin M2 @65
+          reference: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+      mixins
+        mixin M3 @65
+          reference: <testLibrary>::@fragment::package:test/b.dart::@mixin::M3
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
+  mixins
+    mixin M1
+      reference: <testLibraryFragment>::@mixin::M1
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@mixin::M1
+      superclassConstraints
+        Object
+    mixin M2
+      reference: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixin::M2
+      superclassConstraints
+        M1<U2>
+    mixin M3
+      reference: <testLibrary>::@fragment::package:test/b.dart::@mixin::M3
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibrary>::@fragment::package:test/b.dart::@mixin::M3
+      superclassConstraints
+        M2<U3>
 ''');
   }
 
@@ -11409,8 +12756,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11534,8 +12895,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11642,8 +13017,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11787,8 +13176,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11877,6 +13280,9 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @56
+          reference: <testLibraryFragment>::@enum::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
@@ -11897,6 +13303,12 @@ library
       reference: <testLibrary>::@fragment::package:test/b.dart::@classAugmentation::A
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/b.dart::@classAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -11995,6 +13407,10 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @56
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
@@ -12003,11 +13419,21 @@ library
           reference: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @43
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
   classes
     class A
       reference: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A
       enclosingElement2: <testLibrary>
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -12133,11 +13559,30 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @55
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::A
+          previousFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -12260,8 +13705,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -12375,8 +13834,22 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 
@@ -12494,8 +13967,22 @@ library
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       libraryImports
         package:test/a.dart
+      enums
+        enum B @48
+          reference: <testLibraryFragment>::@enum::B
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum B @42
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
+          previousFragment: <testLibraryFragment>::@enum::B
+  enums
+    enum B
+      reference: <testLibraryFragment>::@enum::B
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::B
+      supertype: Enum
 ''');
   }
 
@@ -12610,10 +14097,24 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum B @31
+          reference: <testLibraryFragment>::@enum::B
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibraryFragment>
       libraryImports
         package:test/a.dart
+      enums
+        enum B @59
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
+          previousFragment: <testLibraryFragment>::@enum::B
+  enums
+    enum B
+      reference: <testLibraryFragment>::@enum::B
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::B
+      supertype: Enum
 ''');
   }
 
@@ -12728,10 +14229,24 @@ library
   fragments
     <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
+      enums
+        enum B @31
+          reference: <testLibraryFragment>::@enum::B
+          nextFragment: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
     <testLibrary>::@fragment::package:test/b.dart
       previousFragment: <testLibraryFragment>
       libraryImports
         package:test/a.dart
+      enums
+        enum B @59
+          reference: <testLibrary>::@fragment::package:test/b.dart::@enumAugmentation::B
+          previousFragment: <testLibraryFragment>::@enum::B
+  enums
+    enum B
+      reference: <testLibraryFragment>::@enum::B
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::B
+      supertype: Enum
 ''');
   }
 
@@ -12835,13 +14350,27 @@ library
       classes
         class B @59
           reference: <testLibraryFragment>::@class::B
+      enums
+        enum A @30
+          reference: <testLibraryFragment>::@enum::A
+          nextFragment: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibraryFragment>
+      enums
+        enum A @42
+          reference: <testLibrary>::@fragment::package:test/a.dart::@enumAugmentation::A
+          previousFragment: <testLibraryFragment>::@enum::A
   classes
     class B
       reference: <testLibraryFragment>::@class::B
       enclosingElement2: <testLibrary>
       firstFragment: <testLibraryFragment>::@class::B
+  enums
+    enum A
+      reference: <testLibraryFragment>::@enum::A
+      enclosingElement2: <testLibrary>
+      firstFragment: <testLibraryFragment>::@enum::A
+      supertype: Enum
 ''');
   }
 }

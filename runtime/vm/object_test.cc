@@ -369,11 +369,14 @@ ISOLATE_UNIT_TEST_CASE(Smi) {
   Object& smi_object = Object::Handle(smi.ptr());
   EXPECT(smi.IsSmi());
   EXPECT(smi_object.IsSmi());
+  EXPECT(smi_object.ptr()->IsSmi());
   EXPECT_EQ(5, smi.Value());
   const Object& object = Object::Handle();
   EXPECT(!object.IsSmi());
+  EXPECT(!object.ptr()->IsSmi());
   smi_object = Object::null();
   EXPECT(!smi_object.IsSmi());
+  EXPECT(!smi_object.ptr()->IsSmi());
 
   EXPECT(smi.Equals(Smi::Handle(Smi::New(5))));
   EXPECT(!smi.Equals(Smi::Handle(Smi::New(6))));
@@ -395,8 +398,9 @@ ISOLATE_UNIT_TEST_CASE(Smi) {
   EXPECT(!Smi::IsValid(0xFFFFFFFFu));
 #endif
 
-  EXPECT_EQ(5, smi.AsInt64Value());
-  EXPECT_EQ(5.0, smi.AsDoubleValue());
+  EXPECT_EQ(5, smi.Value());
+  EXPECT_EQ(5.0, smi.ToDouble());
+  EXPECT_EQ(5, Integer::Value(smi.ptr()));
 
   Smi& a = Smi::Handle(Smi::New(5));
   Smi& b = Smi::Handle(Smi::New(3));
@@ -518,32 +522,35 @@ ISOLATE_UNIT_TEST_CASE(Mint) {
     EXPECT(med.IsNull());
     int64_t v = DART_2PART_UINT64_C(1, 0);
     med ^= Integer::New(v);
-    EXPECT_EQ(v, med.value());
+    EXPECT_EQ(v, med.Value());
+    EXPECT_EQ(v, Integer::Value(med.ptr()));
     const String& smi_str = String::Handle(String::New("1"));
     const String& mint1_str = String::Handle(String::New("2147419168"));
     const String& mint2_str = String::Handle(String::New("-2147419168"));
     Integer& i = Integer::Handle(Integer::NewCanonical(smi_str));
     EXPECT(i.IsSmi());
+    EXPECT_EQ(1, i.Value());
     i = Integer::NewCanonical(mint1_str);
     EXPECT(i.IsMint());
-    EXPECT(!i.IsZero());
-    EXPECT(!i.IsNegative());
+    EXPECT_EQ(2147419168, i.Value());
     i = Integer::NewCanonical(mint2_str);
     EXPECT(i.IsMint());
-    EXPECT(!i.IsZero());
-    EXPECT(i.IsNegative());
+    EXPECT_EQ(-2147419168, i.Value());
   }
   Integer& i = Integer::Handle(Integer::New(DART_2PART_UINT64_C(1, 0)));
   EXPECT(i.IsMint());
-  EXPECT(!i.IsZero());
-  EXPECT(!i.IsNegative());
+  EXPECT(i.ptr()->IsMint());
+  EXPECT(!i.IsSmi());
+  EXPECT(!i.ptr()->IsSmi());
+  EXPECT(i.Value() != 0);
   Integer& i1 = Integer::Handle(Integer::New(DART_2PART_UINT64_C(1010, 0)));
   Mint& i2 = Mint::Handle();
   i2 ^= Integer::New(DART_2PART_UINT64_C(1010, 0));
   EXPECT(i1.Equals(i2));
   EXPECT(!i.Equals(i1));
   int64_t test = DART_2PART_UINT64_C(1010, 0);
-  EXPECT_EQ(test, i2.value());
+  EXPECT_EQ(test, i2.Value());
+  EXPECT_EQ(test, Integer::Value(i2.ptr()));
 
   Mint& a = Mint::Handle();
   a ^= Integer::New(DART_2PART_UINT64_C(5, 0));
@@ -568,8 +575,8 @@ ISOLATE_UNIT_TEST_CASE(Mint) {
   mint1 ^= Integer::NewCanonical(mint_string);
   Mint& mint2 = Mint::Handle();
   mint2 ^= Integer::NewCanonical(mint_string);
-  EXPECT_EQ(mint1.value(), mint_value);
-  EXPECT_EQ(mint2.value(), mint_value);
+  EXPECT_EQ(mint1.Value(), mint_value);
+  EXPECT_EQ(mint2.Value(), mint_value);
   EXPECT_EQ(mint1.ptr(), mint2.ptr());
 #endif
 }
@@ -5727,7 +5734,7 @@ class ToggleBreakpointTask : public ThreadPool::Task {
         TransitionNativeToVM transition(t);
         Integer& breakpoint_id_handle = Integer::Handle();
         breakpoint_id_handle ^= Api::UnwrapHandle(result);
-        breakpoint_id = breakpoint_id_handle.AsInt64Value();
+        breakpoint_id = breakpoint_id_handle.Value();
       }
       result = Dart_RemoveBreakpoint(Dart_NewInteger(breakpoint_id));
       EXPECT_VALID(result);
@@ -6215,14 +6222,15 @@ ISOLATE_UNIT_TEST_CASE(PrintJSONPrimitives) {
     ElideJSONSubstring("_TypeParameter@", buffer, buffer);
     EXPECT_SUBSTRING(
         "{\"type\":\"@Instance\",\"_vmType\":\"Map\",\"class\":{"
-        "\"type\":\"@Class\",\"fixedId\":true,\"id\":\"\",\"name\":\"_"
-        "Map\",\"_vmName\":\"\",\"location\":{\"type\":"
+        "\"type\":\"@Class\",\"fixedId\":true,\"id\":\"\",\"name\":\""
+        "_Map\",\"_vmName\":\"\",\"location\":{\"type\":"
         "\"SourceLocation\",\"script\":{\"type\":\"@Script\",\"fixedId\":true,"
-        "\"id\":\"\",\"uri\":\"dart:collection-patch\\/"
-        "compact_hash.dart\",\"_kind\":\"kernel\"}"
+        "\"id\":\"\",\"uri\":\"dart:_compact_hash\","
+        "\"_kind\":\"kernel\"}"
         "},\"library\":{\"type\":\"@Library\",\"fixedId\":"
-        "true,\"id\":\"\",\"name\":\"dart.collection\",\"uri\":\"dart:"
-        "collection\"},\"typeParameters\":[{\"type\":\"@Instance\",\"_vmType\":"
+        "true,\"id\":\"\",\"name\":\"dart._compact_hash\","
+        "\"uri\":\"dart:_compact_hash\"},"
+        "\"typeParameters\":[{\"type\":\"@Instance\",\"_vmType\":"
         "\"TypeParameter\",\"class\":{\"type\":\"@Class\",\"fixedId\":true,"
         "\"id\":\"\",\"name\":\"_TypeParameter\",\"_vmName\":\""
         "\",\"location\":{\"type\":\"SourceLocation\",\"script\":{"
@@ -6469,11 +6477,11 @@ static bool HashCodeEqualsCanonicalizeHash(
   if (check_hashcode) {
     hashcode_dart =
         Integer::Cast(Object::Handle(Api::UnwrapHandle(hashcode_result)))
-            .AsInt64Value();
+            .Value();
   }
   const int64_t identity_hashcode_dart =
       Integer::Cast(Object::Handle(Api::UnwrapHandle(identity_hashcode_result)))
-          .AsInt64Value();
+          .Value();
   if (hashcode_canonicalize_vm == 0) {
     hashcode_canonicalize_vm = Instance::Cast(value_dart).CanonicalizeHash();
   }
@@ -8139,8 +8147,7 @@ static void SubtypeTestCacheCheckContents(Zone* zone,
     const intptr_t entry_start = i * SubtypeTestCache::kTestEntryLength;
     {
       const intptr_t cid =
-          array.At(entry_start + SubtypeTestCache::kTestResult)
-              ->GetClassIdMayBeSmi();
+          array.At(entry_start + SubtypeTestCache::kTestResult)->GetClassId();
       EXPECT(cid == kNullCid || cid == kBoolCid);
     }
 
@@ -8151,8 +8158,7 @@ static void SubtypeTestCacheCheckContents(Zone* zone,
 #define USED_INPUT_CASE(Input, ExpectedCids)                                   \
   case (Input) + 1: {                                                          \
     RELEASE_ASSERT((Input) + 1 == check_ordering);                             \
-    const intptr_t cid =                                                       \
-        array.At(entry_start + (Input))->GetClassIdMayBeSmi();                 \
+    const intptr_t cid = array.At(entry_start + (Input))->GetClassId();        \
     if (!(ExpectedCids)) {                                                     \
       FAIL("expected: " #ExpectedCids ", got: cid %" Pd "", cid);              \
     }                                                                          \
@@ -8194,7 +8200,7 @@ static void SubtypeTestCacheCheckContents(Zone* zone,
       // STCs and never set unused inputs, the only thing we know is that the
       // entry is GC-safe. Since we don't expect valid values for unused inputs,
       // we just check if it's either a Smi or null.
-      const intptr_t cid = array.At(entry_start + i)->GetClassIdMayBeSmi();
+      const intptr_t cid = array.At(entry_start + i)->GetClassId();
       EXPECT(cid == kSmiCid || cid == kNullCid);
     }
   }

@@ -732,7 +732,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   final LibraryElementImpl library;
 
   // TODO(scheglov): Remove after removing [LibraryAugmentationElementImpl].
-  late final LibraryOrAugmentationElementImpl libraryOrAugmentationElement;
+  late LibraryOrAugmentationElementImpl libraryOrAugmentationElement;
 
   /// The libraries exported by this unit.
   List<LibraryExportElementImpl> _libraryExports =
@@ -778,6 +778,8 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
 
   /// The scope of this fragment, `null` if it has not been created yet.
   LibraryFragmentScope? _scope;
+
+  MacroGeneratedLibraryFragment? macroGenerated;
 
   ElementLinkedData? linkedData;
 
@@ -917,6 +919,10 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
       extensionTypes.cast<ExtensionTypeFragment>();
 
   @override
+  List<LibraryFragmentInclude> get fragmentIncludes =>
+      libraryImportPrefixes.cast<LibraryFragmentInclude>();
+
+  @override
   List<FunctionElementImpl> get functions {
     return _functions;
   }
@@ -1035,10 +1041,6 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
     var index = units.indexOf(this);
     return units.elementAtOrNull(index + 1);
   }
-
-  @override
-  List<PartInclude> get partIncludes =>
-      libraryImportPrefixes.cast<PartInclude>();
 
   @override
   List<PartElementImpl> get parts => _parts;
@@ -3042,7 +3044,7 @@ class ElementLocationImpl implements ElementLocation {
 /// An [InterfaceElementImpl] which is an enum.
 class EnumElementImpl extends InterfaceElementImpl
     with AugmentableElement<EnumElementImpl>
-    implements EnumElement {
+    implements EnumElement, EnumFragment {
   late MaybeAugmentedEnumElementMixin augmentedInternal =
       NotAugmentedEnumElementImpl(this);
 
@@ -3074,6 +3076,9 @@ class EnumElementImpl extends InterfaceElementImpl
   List<FieldElementImpl> get constants {
     return fields.where((field) => field.isEnumConstant).toList();
   }
+
+  @override
+  List<FieldElement2> get constants2 => constants.cast<FieldElement2>();
 
   @override
   ElementKind get kind => ElementKind.ENUM;
@@ -3289,7 +3294,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
 /// A concrete implementation of an [ExtensionElement].
 class ExtensionElementImpl extends InstanceElementImpl
     with AugmentableElement<ExtensionElementImpl>
-    implements ExtensionElement {
+    implements ExtensionElement, ExtensionFragment {
   late MaybeAugmentedExtensionElementMixin augmentedInternal =
       NotAugmentedExtensionElementImpl(this);
 
@@ -3410,7 +3415,7 @@ class ExtensionElementImpl extends InstanceElementImpl
 
 class ExtensionTypeElementImpl extends InterfaceElementImpl
     with AugmentableElement<ExtensionTypeElementImpl>
-    implements ExtensionTypeElement {
+    implements ExtensionTypeElement, ExtensionTypeFragment {
   late MaybeAugmentedExtensionTypeElementMixin augmentedInternal =
       NotAugmentedExtensionTypeElementImpl(this);
 
@@ -3456,9 +3461,16 @@ class ExtensionTypeElementImpl extends InterfaceElementImpl
   }
 
   @override
+  ConstructorFragment get primaryConstructor2 =>
+      primaryConstructor as ConstructorFragment;
+
+  @override
   FieldElementImpl get representation {
     return augmented.representation;
   }
+
+  @override
+  FieldFragment get representation2 => representation as FieldFragment;
 
   @override
   DartType get typeErasure {
@@ -4470,8 +4482,6 @@ class LibraryAugmentationElementImpl extends LibraryOrAugmentationElementImpl
   @override
   final LibraryOrAugmentationElementImpl augmentationTarget;
 
-  MacroGeneratedAugmentationLibrary? macroGenerated;
-
   LibraryAugmentationElementLinkedData? linkedData;
 
   LibraryAugmentationElementImpl({
@@ -4678,7 +4688,7 @@ class LibraryElementImpl extends LibraryOrAugmentationElementImpl
     var declarations = <EnumElement2>{};
     for (var unit in units) {
       declarations.addAll(
-          unit._classes.map((element) => element.augmented as EnumElement2));
+          unit._enums.map((element) => element.augmented as EnumElement2));
     }
     return declarations.toList();
   }
@@ -5444,12 +5454,12 @@ class LocalVariableElementImpl extends NonParameterVariableElementImpl
       visitor.visitLocalVariableElement(this);
 }
 
-/// Additional information for a macro generated augmentation library.
-class MacroGeneratedAugmentationLibrary {
+/// Additional information for a macro generated fragment.
+class MacroGeneratedLibraryFragment {
   final String code;
   final Uint8List informativeBytes;
 
-  MacroGeneratedAugmentationLibrary({
+  MacroGeneratedLibraryFragment({
     required this.code,
     required this.informativeBytes,
   });
@@ -5534,18 +5544,21 @@ mixin MaybeAugmentedClassElementMixin on MaybeAugmentedInterfaceElementMixin
 }
 
 mixin MaybeAugmentedEnumElementMixin on MaybeAugmentedInterfaceElementMixin
-    implements AugmentedEnumElement {
+    implements AugmentedEnumElement, EnumElement2 {
   @override
   List<FieldElement> get constants {
     return fields.where((field) => field.isEnumConstant).toList();
   }
 
   @override
+  List<FieldElement2> get constants2 => constants.cast<FieldElement2>();
+
+  @override
   EnumElementImpl get declaration;
 }
 
 mixin MaybeAugmentedExtensionElementMixin on MaybeAugmentedInstanceElementMixin
-    implements AugmentedExtensionElement {
+    implements AugmentedExtensionElement, ExtensionElement2 {
   @override
   DartType extendedType = InvalidTypeImpl.instance;
 
@@ -5558,7 +5571,7 @@ mixin MaybeAugmentedExtensionElementMixin on MaybeAugmentedInstanceElementMixin
 
 mixin MaybeAugmentedExtensionTypeElementMixin
     on MaybeAugmentedInterfaceElementMixin
-    implements AugmentedExtensionTypeElement {
+    implements AugmentedExtensionTypeElement, ExtensionTypeElement2 {
   @override
   late ConstructorElementImpl primaryConstructor;
 
@@ -5570,6 +5583,13 @@ mixin MaybeAugmentedExtensionTypeElementMixin
 
   @override
   ExtensionTypeElementImpl get declaration;
+
+  @override
+  ConstructorElement2 get primaryConstructor2 =>
+      representation as ConstructorElement2;
+
+  @override
+  FieldElement2 get representation2 => representation as FieldElement2;
 }
 
 mixin MaybeAugmentedInstanceElementMixin
@@ -6005,9 +6025,16 @@ mixin MaybeAugmentedInterfaceElementMixin on MaybeAugmentedInstanceElementMixin
 }
 
 mixin MaybeAugmentedMixinElementMixin on MaybeAugmentedInterfaceElementMixin
-    implements AugmentedMixinElement {
+    implements AugmentedMixinElement, MixinElement2 {
   @override
   MixinElementImpl get declaration;
+
+  @override
+  bool get isBase => declaration.isBase;
+
+  @override
+  bool isImplementableIn2(LibraryElement2 library) =>
+      declaration.isImplementableIn(library as LibraryElement);
 }
 
 /// A concrete implementation of a [MethodElement].
@@ -6105,7 +6132,7 @@ class MethodElementImpl extends ExecutableElementImpl
 /// A [ClassElementImpl] representing a mixin declaration.
 class MixinElementImpl extends ClassOrMixinElementImpl
     with AugmentableElement<MixinElementImpl>
-    implements MixinElement {
+    implements MixinElement, MixinFragment {
   List<InterfaceType> _superclassConstraints = const [];
 
   /// Names of methods, getters, setters, and operators that this mixin
@@ -7041,7 +7068,7 @@ mixin ParameterElementMixin implements ParameterElement {
 }
 
 class PartElementImpl extends _ExistingElementImpl
-    implements PartElement, PartInclude {
+    implements PartElement, LibraryFragmentInclude {
   @override
   final DirectiveUri uri;
 

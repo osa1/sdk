@@ -424,7 +424,7 @@ void MemoryCopyInstr::EmitComputeStartPointer(FlowGraphCompiler* compiler,
   if (start_loc.IsConstant()) {
     const auto& constant = start_loc.constant();
     ASSERT(constant.IsInteger());
-    const int64_t start_value = Integer::Cast(constant).AsInt64Value();
+    const int64_t start_value = Integer::Cast(constant).Value();
     const intx_t add_value = Utils::AddWithWrapAround<intx_t>(
         Utils::MulWithWrapAround<intx_t>(start_value, element_size_), offset);
     __ AddImmediate(payload_reg, array_reg, add_value);
@@ -700,6 +700,11 @@ void ClosureCallInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
     // T0: Closure with a cached entry point.
     __ LoadFieldFromOffset(A1, T0,
                            compiler::target::Closure::entry_point_offset());
+#if defined(DART_DYNAMIC_MODULES)
+    ASSERT(FUNCTION_REG != A1);
+    __ LoadCompressedFieldFromOffset(
+        FUNCTION_REG, T0, compiler::target::Closure::function_offset());
+#endif
   } else {
     ASSERT(locs()->in(0).reg() == FUNCTION_REG);
     // FUNCTION_REG: Function.
@@ -820,7 +825,7 @@ void ConstantInstr::EmitMoveToLocation(FlowGraphCompiler* compiler,
     const intptr_t dest_offset = destination.ToStackSlotOffset();
     compiler::OperandSize operand_size = compiler::kWordBytes;
     if (RepresentationUtils::IsUnboxedInteger(representation())) {
-      int64_t val = Integer::Cast(value_).AsInt64Value();
+      int64_t val = Integer::Cast(value_).Value();
 #if XLEN == 32
       val = pair_index == 0 ? Utils::Low32Bits(val) : Utils::High32Bits(val);
 #else
@@ -1077,7 +1082,7 @@ static Condition EmitWordComparisonOp(FlowGraphCompiler* compiler,
     }
     __ CompareImmediate(
         left.reg(),
-        static_cast<uword>(Integer::Cast(right.constant()).AsInt64Value()));
+        static_cast<uword>(Integer::Cast(right.constant()).Value()));
   } else {
     __ CompareRegisters(left.reg(), right.reg());
   }
@@ -5806,7 +5811,7 @@ static void EmitShiftInt64ByConstant(FlowGraphCompiler* compiler,
                                      Register left_lo,
                                      Register left_hi,
                                      const Object& right) {
-  const int64_t shift = Integer::Cast(right).AsInt64Value();
+  const int64_t shift = Integer::Cast(right).Value();
   ASSERT(shift >= 0);
 
   switch (op_kind) {
@@ -5873,7 +5878,7 @@ static void EmitShiftInt64ByConstant(FlowGraphCompiler* compiler,
                                      Register out,
                                      Register left,
                                      const Object& right) {
-  const int64_t shift = Integer::Cast(right).AsInt64Value();
+  const int64_t shift = Integer::Cast(right).Value();
   ASSERT(shift >= 0);
   switch (op_kind) {
     case Token::kSHR: {
@@ -6006,7 +6011,7 @@ static void EmitShiftUint32ByConstant(FlowGraphCompiler* compiler,
                                       Register out,
                                       Register left,
                                       const Object& right) {
-  const int64_t shift = Integer::Cast(right).AsInt64Value();
+  const int64_t shift = Integer::Cast(right).Value();
   ASSERT(shift >= 0);
   if (shift >= 32) {
     __ li(out, 0);

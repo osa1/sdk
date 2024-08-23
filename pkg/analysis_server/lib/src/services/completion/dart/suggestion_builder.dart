@@ -347,69 +347,22 @@ class SuggestionBuilder {
     );
   }
 
-  /// Add a suggestion to insert a closure matching the given function [type].
-  /// If [includeTrailingComma] is `true` then the completion text will include
-  /// a trailing comma, such as when the closure is part of an argument list.
-  void suggestClosure(FunctionType type, {bool includeTrailingComma = false}) {
-    var includeTypes =
-        request.fileState.analysisOptions.codeStyleOptions.specifyTypes;
-    var indent = getRequestLineIndent(request);
-    var parametersString = buildClosureParameters(type,
-        includeTypes: includeTypes, includeKeywords: true);
-    // Build a short version of the parameter string without keywords or types
-    // for the completion label because they're less useful there and may push
-    // the end of the completion (`=>` vs `() {}`) off the end.
-    var parametersDisplayString = buildClosureParameters(type,
-        includeKeywords: false, includeTypes: false);
-
-    var blockBuffer = StringBuffer(parametersString);
-    blockBuffer.writeln(' {');
-    blockBuffer.write('$indent  ');
-    var blockSelectionOffset = blockBuffer.length;
-    blockBuffer.writeln();
-    blockBuffer.write('$indent}');
-
-    var expressionBuffer = StringBuffer(parametersString);
-    expressionBuffer.write(' => ');
-    var expressionSelectionOffset = expressionBuffer.length;
-
-    if (includeTrailingComma) {
-      blockBuffer.write(',');
-      expressionBuffer.write(',');
-    }
-
-    CompletionSuggestion createSuggestion({
-      required String completion,
+  /// Add a suggestion to insert a closure.
+  void suggestClosure(
+      {required String completion,
       required String displayText,
-      required int selectionOffset,
-    }) {
-      return DartCompletionSuggestion(
-        CompletionSuggestionKind.INVOCATION,
-        Relevance.closure,
-        completion,
-        selectionOffset,
-        0,
-        false,
-        false,
-        displayText: displayText,
-        elementLocation: null, // type.element is Null for FunctionType.
-      );
-    }
-
-    _addSuggestion(
-      createSuggestion(
-        completion: blockBuffer.toString(),
-        displayText: '$parametersDisplayString {}',
-        selectionOffset: blockSelectionOffset,
-      ),
-    );
-    _addSuggestion(
-      createSuggestion(
-        completion: expressionBuffer.toString(),
-        displayText: '$parametersDisplayString =>',
-        selectionOffset: expressionSelectionOffset,
-      ),
-    );
+      required int selectionOffset}) {
+    _addSuggestion(DartCompletionSuggestion(
+      CompletionSuggestionKind.INVOCATION,
+      Relevance.closure,
+      completion,
+      selectionOffset,
+      0,
+      false,
+      false,
+      displayText: displayText,
+      elementLocation: null, // type.element is Null for FunctionType.
+    ));
   }
 
   /// Add a suggestion for a [constructor]. If a [kind] is provided it will be
@@ -425,32 +378,34 @@ class SuggestionBuilder {
     bool hasClassName = false,
     String? prefix,
     int? relevance,
+    String? completion,
   }) {
     // If the class name is already in the text, then we don't support
     // prepending a prefix.
     assert(!hasClassName || prefix == null);
-
     var enclosingClass = constructor.enclosingElement.augmented.declaration;
 
-    var className = enclosingClass.name;
-    if (className.isEmpty) {
-      return;
-    }
-
-    var completion = constructor.name;
-    if (completion.isEmpty && suggestUnnamedAsNew) {
-      completion = 'new';
-    }
-
-    if (!hasClassName) {
-      if (completion.isEmpty) {
-        completion = className;
-      } else {
-        completion = '$className.$completion';
+    if (completion == null) {
+      var className = enclosingClass.name;
+      if (className.isEmpty) {
+        return;
       }
-    }
-    if (completion.isEmpty) {
-      return;
+
+      completion = constructor.name;
+      if (completion.isEmpty && suggestUnnamedAsNew) {
+        completion = 'new';
+      }
+
+      if (!hasClassName) {
+        if (completion.isEmpty) {
+          completion = className;
+        } else {
+          completion = '$className.$completion';
+        }
+      }
+      if (completion.isEmpty) {
+        return;
+      }
     }
 
     if (_couldMatch(completion, prefix)) {
@@ -791,41 +746,6 @@ class SuggestionBuilder {
       inheritanceDistance: inheritanceDistance,
     );
 
-    var enclosingElement = method.enclosingElement;
-    if (method.name == 'setState' &&
-        enclosingElement is ClassElement &&
-        enclosingElement.isExactState) {
-      // TODO(brianwilkerson): Make this more efficient by creating the correct
-      //  suggestion in the first place.
-      // Find the line indentation.
-      var indent = getRequestLineIndent(request);
-
-      // Build the completion and the selection offset.
-      var buffer = StringBuffer();
-      buffer.writeln('setState(() {');
-      buffer.write('$indent  ');
-      var selectionOffset = buffer.length;
-      buffer.writeln();
-      buffer.write('$indent});');
-
-      _addSuggestion(
-        DartCompletionSuggestion(
-          kind,
-          relevance,
-          buffer.toString(),
-          selectionOffset,
-          0,
-          false,
-          false,
-          // Let the user know that we are going to insert a complete statement.
-          displayText: 'setState(() {});',
-          elementLocation: method.location,
-        ),
-        textToMatchOverride: 'setState',
-      );
-      return;
-    }
-
     _addBuilder(
       _createCompletionSuggestionBuilder(
         method,
@@ -1085,6 +1005,31 @@ class SuggestionBuilder {
     );
   }
 
+  /// Add a suggestion for the Flutter's `setState` method.
+  void suggestSetStateMethod(MethodElement method,
+      {required CompletionSuggestionKind kind,
+      required String completion,
+      required String displayText,
+      required int selectionOffset,
+      required double inheritanceDistance,
+      required int relevance}) {
+    _addSuggestion(
+      DartCompletionSuggestion(
+        kind,
+        relevance,
+        completion,
+        selectionOffset,
+        0,
+        false,
+        false,
+        // Let the user know that we are going to insert a complete statement.
+        displayText: displayText,
+        elementLocation: method.location,
+      ),
+      textToMatchOverride: 'setState',
+    );
+  }
+
   /// Add a suggestion for a static field declared within a class or extension.
   /// If the field is synthetic, add the corresponding getter instead.
   ///
@@ -1093,37 +1038,26 @@ class SuggestionBuilder {
   void suggestStaticField(FieldElement element,
       {String? prefix, int? relevance}) {
     assert(element.isStatic);
-    if (element.isSynthetic) {
-      var getter = element.getter;
-      if (getter != null) {
-        suggestAccessor(
-          getter,
-          inheritanceDistance: 0.0,
-          withEnclosingName: true,
-        );
-      }
-    } else {
-      var enclosingPrefix = '';
-      var enclosingName = _enclosingClassOrExtensionName(element);
-      if (enclosingName != null) {
-        enclosingPrefix = '$enclosingName.';
-      }
-      var completion = enclosingPrefix + element.name;
-      if (_couldMatch(completion, prefix)) {
-        relevance ??= relevanceComputer.computeTopLevelRelevance(element,
-            elementType: element.type,
-            isNotImportedLibrary: isNotImportedLibrary);
-        _addBuilder(
-          _createCompletionSuggestionBuilder(
-            element,
-            completion: completion,
-            kind: CompletionSuggestionKind.IDENTIFIER,
-            prefix: prefix,
-            relevance: relevance,
-            isNotImported: isNotImportedLibrary,
-          ),
-        );
-      }
+    var enclosingPrefix = '';
+    var enclosingName = _enclosingClassOrExtensionName(element);
+    if (enclosingName != null) {
+      enclosingPrefix = '$enclosingName.';
+    }
+    var completion = enclosingPrefix + element.name;
+    if (_couldMatch(completion, prefix)) {
+      relevance ??= relevanceComputer.computeTopLevelRelevance(element,
+          elementType: element.type,
+          isNotImportedLibrary: isNotImportedLibrary);
+      _addBuilder(
+        _createCompletionSuggestionBuilder(
+          element,
+          completion: completion,
+          kind: CompletionSuggestionKind.IDENTIFIER,
+          prefix: prefix,
+          relevance: relevance,
+          isNotImported: isNotImportedLibrary,
+        ),
+      );
     }
   }
 

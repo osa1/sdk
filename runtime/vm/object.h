@@ -56,6 +56,7 @@ CLASS_LIST(DEFINE_FORWARD_DECLARATION)
 #undef DEFINE_FORWARD_DECLARATION
 class Api;
 class ArgumentsDescriptor;
+class BitVector;
 class Closure;
 class Code;
 class DeoptInstr;
@@ -338,10 +339,7 @@ class Object {
   bool IsImmutable() const { return ptr()->untag()->IsImmutable(); }
   void SetImmutable() const { ptr()->untag()->SetImmutable(); }
   void ClearImmutable() const { ptr()->untag()->ClearImmutable(); }
-  intptr_t GetClassId() const {
-    return !ptr()->IsHeapObject() ? static_cast<intptr_t>(kSmiCid)
-                                  : ptr()->untag()->GetClassId();
-  }
+  intptr_t GetClassId() const { return ptr()->GetClassId(); }
   inline ClassPtr clazz() const;
   static intptr_t tags_offset() { return OFFSET_OF(UntaggedObject, tags_); }
 
@@ -476,6 +474,17 @@ class Object {
   V(ExceptionHandlers, empty_async_exception_handlers)                         \
   V(Array, synthetic_getter_parameter_types)                                   \
   V(Array, synthetic_getter_parameter_names)                                   \
+  V(Bytecode, implicit_getter_bytecode)                                        \
+  V(Bytecode, implicit_setter_bytecode)                                        \
+  V(Bytecode, implicit_static_getter_bytecode)                                 \
+  V(Bytecode, method_extractor_bytecode)                                       \
+  V(Bytecode, invoke_closure_bytecode)                                         \
+  V(Bytecode, invoke_field_bytecode)                                           \
+  V(Bytecode, nsm_dispatcher_bytecode)                                         \
+  V(Bytecode, dynamic_invocation_forwarder_bytecode)                           \
+  V(Bytecode, implicit_static_closure_bytecode)                                \
+  V(Bytecode, implicit_instance_closure_bytecode)                              \
+  V(Bytecode, implicit_constructor_closure_bytecode)                           \
   V(Sentinel, sentinel)                                                        \
   V(Sentinel, unknown_constant)                                                \
   V(Sentinel, non_constant)                                                    \
@@ -545,6 +554,7 @@ class Object {
   }
   static ClassPtr context_class() { return context_class_; }
   static ClassPtr context_scope_class() { return context_scope_class_; }
+  static ClassPtr bytecode_class() { return bytecode_class_; }
   static ClassPtr sentinel_class() { return sentinel_class_; }
   static ClassPtr api_error_class() { return api_error_class_; }
   static ClassPtr language_error_class() { return language_error_class_; }
@@ -992,6 +1002,7 @@ class Object {
   static ClassPtr exception_handlers_class_;
   static ClassPtr context_class_;
   static ClassPtr context_scope_class_;
+  static ClassPtr bytecode_class_;
   static ClassPtr sentinel_class_;
   static ClassPtr singletargetcache_class_;
   static ClassPtr unlinkedcall_class_;
@@ -1015,6 +1026,7 @@ class Object {
   friend void UntaggedObject::Validate(IsolateGroup* isolate_group) const;
   friend class Closure;
   friend class InstanceDeserializationCluster;
+  friend class Interpreter;
   friend class ObjectGraphCopier;  // For Object::InitializeObject
   friend class Simd128MessageDeserializationCluster;
   friend class OneByteString;
@@ -1790,6 +1802,15 @@ class Class : public Object {
   bool is_loaded() const { return IsLoadedBit::decode(state_bits()); }
   void set_is_loaded(bool value) const;
 
+#if defined(DART_DYNAMIC_MODULES)
+  bool is_declared_in_bytecode() const {
+    return IsDeclaredInBytecodeBit::decode(state_bits());
+  }
+  void set_is_declared_in_bytecode(bool value) const;
+#else
+  bool is_declared_in_bytecode() const { return false; }
+#endif  // defined(DART_DYNAMIC_MODULES)
+
   uint16_t num_native_fields() const { return untag()->num_native_fields_; }
   void set_num_native_fields(uint16_t value) const {
     StoreNonPointer(&untag()->num_native_fields_, value);
@@ -2078,6 +2099,8 @@ class Class : public Object {
     kIsDynamicallyExtendableBit,
     // This class has a dynamically extendable subtype.
     kHasDynamicallyExtendableSubtypesBit,
+    // This class was loaded from bytecode at runtime.
+    kIsDeclaredInBytecodeBit,
   };
   class ConstBit : public BitField<uint32_t, bool, kConstBit, 1> {};
   class ImplementedBit : public BitField<uint32_t, bool, kImplementedBit, 1> {};
@@ -2123,6 +2146,8 @@ class Class : public Object {
                         bool,
                         kHasDynamicallyExtendableSubtypesBit,
                         1> {};
+  class IsDeclaredInBytecodeBit
+      : public BitField<uint32_t, bool, kIsDeclaredInBytecodeBit, 1> {};
 
   void set_name(const String& value) const;
   void set_user_name(const String& value) const;
@@ -2243,6 +2268,7 @@ class Class : public Object {
   friend class Instance;
   friend class Object;
   friend class Type;
+  friend class InterpreterHelpers;
   friend class Intrinsifier;
   friend class ProgramWalker;
   friend class Precompiler;
@@ -2923,6 +2949,7 @@ class ICData : public CallSiteData {
   friend class Class;
   friend class VMDeserializationRoots;
   friend class ICDataTestTask;
+  friend class Interpreter;
   friend class VMSerializationRoots;
 };
 
@@ -3233,6 +3260,16 @@ class Function : public Object {
   static intptr_t unchecked_entry_point_offset() {
     return OFFSET_OF(UntaggedFunction, unchecked_entry_point_);
   }
+
+#if defined(DART_DYNAMIC_MODULES)
+  void AttachBytecode(const Bytecode& bytecode) const;
+  inline BytecodePtr GetBytecode() const;
+  static inline BytecodePtr GetBytecode(FunctionPtr function);
+  inline bool HasBytecode() const;
+  static inline bool HasBytecode(FunctionPtr function);
+#else
+  inline bool HasBytecode() const { return false; }
+#endif
 
   virtual uword Hash() const;
 
@@ -3564,6 +3601,12 @@ class Function : public Object {
   JIT_FUNCTION_COUNTERS(DEFINE_GETTERS_AND_SETTERS)
 
 #undef DEFINE_GETTERS_AND_SETTERS
+
+#if defined(DART_DYNAMIC_MODULES)
+  bool is_declared_in_bytecode() const;
+#else
+  bool is_declared_in_bytecode() const { return false; }
+#endif  // defined(DART_DYNAMIC_MODULES)
 
   intptr_t kernel_offset() const {
 #if defined(DART_PRECOMPILED_RUNTIME)
@@ -4045,11 +4088,19 @@ class Function : public Object {
 
   static StringPtr CreateDynamicInvocationForwarderName(const String& name);
 
-#if !defined(DART_PRECOMPILED_RUNTIME)
+#if !defined(DART_PRECOMPILED_RUNTIME) || defined(DART_DYNAMIC_MODULES)
   FunctionPtr CreateDynamicInvocationForwarder(
       const String& mangled_name) const;
 
   FunctionPtr GetDynamicInvocationForwarder(const String& mangled_name) const;
+
+  // Fills in [is_covariant] and [is_generic_covariant_impl] vectors
+  // according to covariance attributes of function parameters.
+  //
+  // [is_covariant] and [is_generic_covariant_impl] should contain bitvectors
+  // of function.NumParameters() length.
+  void ReadParameterCovariance(BitVector* is_covariant,
+                               BitVector* is_generic_covariant_impl) const;
 #endif
 
   // Slow function, use in asserts to track changes in important library
@@ -4510,6 +4561,12 @@ class Field : public Object {
   }
   bool is_shared() const { return SharedBit::decode(kind_bits()); }
 
+#if defined(DART_DYNAMIC_MODULES)
+  bool is_declared_in_bytecode() const;
+#else
+  bool is_declared_in_bytecode() const { return false; }
+#endif  // defined(DART_DYNAMIC_MODULES)
+
   intptr_t kernel_offset() const {
 #if defined(DART_PRECOMPILED_RUNTIME)
     return 0;
@@ -4822,11 +4879,15 @@ class Field : public Object {
   FunctionPtr InitializerFunction() const {
     return untag()->initializer_function<std::memory_order_acquire>();
   }
-  void SetInitializerFunction(const Function& initializer) const;
   bool HasInitializerFunction() const;
   static intptr_t initializer_function_offset() {
     return OFFSET_OF(UntaggedField, initializer_function_);
   }
+
+#if !defined(DART_PRECOMPILED_RUNTIME) || defined(DART_DYNAMIC_MODULES)
+  FunctionPtr CreateFieldInitializerFunction(Thread* thread) const;
+  void SetInitializerFunction(const Function& initializer) const;
+#endif  // !defined(DART_PRECOMPILED_RUNTIME) || defined(DART_DYNAMIC_MODULES)
 
   // For static fields only. Constructs a closure that gets/sets the
   // field value.
@@ -4861,6 +4922,7 @@ class Field : public Object {
                             const Object& owner,
                             TokenPosition token_pos,
                             TokenPosition end_token_pos);
+  friend class Interpreter;      // Access to bit field.
   friend class StoreFieldInstr;  // Generated code access to bit field.
 
   enum {
@@ -5353,6 +5415,7 @@ class Library : public Object {
   static LibraryPtr ConvertLibrary();
   static LibraryPtr CoreLibrary();
   static LibraryPtr CollectionLibrary();
+  static LibraryPtr CompactHashLibrary();
   static LibraryPtr DeveloperLibrary();
   static LibraryPtr FfiLibrary();
   static LibraryPtr InternalLibrary();
@@ -7162,7 +7225,7 @@ class Code : public Object {
     if (!owner->IsHeapObject()) {
       return RawSmiValue(static_cast<SmiPtr>(owner));
     }
-    return owner->GetClassId();
+    return owner->GetClassIdOfHeapObject();
   }
 
   static intptr_t owner_offset() { return OFFSET_OF(UntaggedCode, owner_); }
@@ -7418,6 +7481,109 @@ class Code : public Object {
   friend class InstanceCall;       // for StorePointerUnaligned
   friend class StaticCall;         // for StorePointerUnaligned
   friend void DumpStackFrame(intptr_t frame_index, uword pc, uword fp);
+};
+
+class Bytecode : public Object {
+ public:
+  uword instructions() const { return untag()->instructions_; }
+
+  uword PayloadStart() const { return instructions(); }
+  intptr_t Size() const { return untag()->instructions_size_; }
+
+  ObjectPoolPtr object_pool() const { return untag()->object_pool(); }
+
+  bool ContainsInstructionAt(uword addr) const {
+    return UntaggedBytecode::ContainsPC(ptr(), addr);
+  }
+
+  PcDescriptorsPtr pc_descriptors() const { return untag()->pc_descriptors(); }
+  void set_pc_descriptors(const PcDescriptors& descriptors) const {
+    ASSERT(descriptors.IsOld());
+    untag()->set_pc_descriptors(descriptors.ptr());
+  }
+
+  void Disassemble(DisassemblyFormatter* formatter = NULL) const;
+
+  ExceptionHandlersPtr exception_handlers() const {
+    return untag()->exception_handlers();
+  }
+  void set_exception_handlers(const ExceptionHandlers& handlers) const {
+    ASSERT(handlers.IsOld());
+    untag()->set_exception_handlers(handlers.ptr());
+  }
+
+  FunctionPtr function() const { return untag()->function(); }
+
+  void set_function(const Function& function) const {
+    ASSERT(function.IsOld());
+    untag()->set_function(function.ptr());
+  }
+
+  TypedDataBasePtr binary() const { return untag()->binary(); }
+
+  static intptr_t InstanceSize() {
+    return RoundedAllocationSize(sizeof(UntaggedBytecode));
+  }
+  static BytecodePtr New(uword instructions,
+                         intptr_t instructions_size,
+                         intptr_t instructions_offset,
+                         const TypedDataBase& binary,
+                         const ObjectPool& object_pool);
+
+  TokenPosition GetTokenIndexOfPC(uword return_address) const;
+  intptr_t GetTryIndexAtPc(uword return_address) const;
+
+  // Return the pc of the first 'DebugCheck' opcode of the bytecode.
+  // Return 0 if none is found.
+  uword GetFirstDebugCheckOpcodePc() const;
+
+  // Return the pc after the first 'debug checked' opcode in the range.
+  // Return 0 if none is found.
+  uword GetDebugCheckedOpcodeReturnAddress(uword from_offset,
+                                           uword to_offset) const;
+
+  intptr_t instructions_binary_offset() const {
+    return untag()->instructions_binary_offset_;
+  }
+  void set_instructions_binary_offset(intptr_t value) const {
+    StoreNonPointer(&untag()->instructions_binary_offset_, value);
+  }
+
+  intptr_t code_offset() const { return untag()->code_offset_; }
+  void set_code_offset(intptr_t value) const {
+    StoreNonPointer(&untag()->code_offset_, value);
+  }
+
+  intptr_t source_positions_binary_offset() const {
+    return untag()->source_positions_binary_offset_;
+  }
+  void set_source_positions_binary_offset(intptr_t value) const {
+    StoreNonPointer(&untag()->source_positions_binary_offset_, value);
+  }
+  bool HasSourcePositions() const {
+    return (source_positions_binary_offset() != 0);
+  }
+
+  const char* Name() const;
+  const char* QualifiedName() const;
+  const char* FullyQualifiedName() const;
+
+ private:
+  void set_instructions(uword instructions) const {
+    StoreNonPointer(&untag()->instructions_, instructions);
+  }
+  void set_instructions_size(intptr_t size) const {
+    StoreNonPointer(&untag()->instructions_size_, size);
+  }
+  void set_object_pool(const ObjectPool& object_pool) const {
+    untag()->set_object_pool(object_pool.ptr());
+  }
+  void set_binary(const TypedDataBase& binary) const;
+
+  FINAL_HEAP_OBJECT_IMPLEMENTATION(Bytecode, Object);
+  friend class BytecodeDeserializationCluster;
+  friend class Class;
+  friend class SnapshotWriter;
 };
 
 class Context : public Object {
@@ -8248,6 +8414,7 @@ class Instance : public Object {
   ObjectPtr GetField(const Field& field) const;
 
   void SetField(const Field& field, const Object& value) const;
+  void SetFieldWithoutFieldGuard(const Field& field, const Object& value) const;
 
   AbstractTypePtr GetType(Heap::Space space) const;
 
@@ -8457,6 +8624,7 @@ class Instance : public Object {
   friend class TypedDataView;
   friend class InstanceSerializationCluster;
   friend class InstanceDeserializationCluster;
+  friend class Interpreter;
   friend class ClassDeserializationCluster;  // vtable
   friend class InstanceMorpher;
   friend class Obfuscator;  // RawGetFieldAtOffset, RawSetFieldAtOffset
@@ -9953,24 +10121,16 @@ class Integer : public Number {
 
   virtual ObjectPtr HashCode() const { return ptr(); }
 
-  virtual bool IsZero() const;
-  virtual bool IsNegative() const;
+  int64_t Value() const { return Value(ptr()); }
+  static int64_t Value(IntegerPtr obj);
 
-  virtual double AsDoubleValue() const;
-  virtual int64_t AsInt64Value() const;
-  virtual int64_t AsTruncatedInt64Value() const { return AsInt64Value(); }
-  virtual uint32_t AsTruncatedUint32Value() const;
-
-  virtual bool FitsIntoSmi() const;
+  double ToDouble() const { return static_cast<double>(Value()); }
 
   // Returns 0, -1 or 1.
-  virtual int CompareWith(const Integer& other) const;
+  int CompareWith(const Integer& other) const;
 
   // Converts integer to hex string.
   const char* ToHexCString(Zone* zone) const;
-
-  // Return the most compact presentation of an integer.
-  IntegerPtr AsValidInteger() const;
 
   // Returns null to indicate that a bigint operation is required.
   IntegerPtr ArithmeticOp(Token::Kind operation,
@@ -9982,15 +10142,6 @@ class Integer : public Number {
   IntegerPtr ShiftOp(Token::Kind operation,
                      const Integer& other,
                      Heap::Space space = Heap::kNew) const;
-
-  static int64_t GetInt64Value(const IntegerPtr obj) {
-    if (obj->IsSmi()) {
-      return RawSmiValue(static_cast<const SmiPtr>(obj));
-    } else {
-      ASSERT(obj->IsMint());
-      return static_cast<const MintPtr>(obj)->untag()->value_;
-    }
-  }
 
  private:
   OBJECT_IMPLEMENTATION(Integer, Number);
@@ -10006,16 +10157,6 @@ class Smi : public Integer {
   intptr_t Value() const { return RawSmiValue(ptr()); }
 
   virtual bool Equals(const Instance& other) const;
-  virtual bool IsZero() const { return Value() == 0; }
-  virtual bool IsNegative() const { return Value() < 0; }
-
-  virtual double AsDoubleValue() const;
-  virtual int64_t AsInt64Value() const;
-  virtual uint32_t AsTruncatedUint32Value() const;
-
-  virtual bool FitsIntoSmi() const { return true; }
-
-  virtual int CompareWith(const Integer& other) const;
 
   static intptr_t InstanceSize() { return 0; }
 
@@ -10086,22 +10227,12 @@ class Mint : public Integer {
   static constexpr int64_t kMinValue =
       static_cast<int64_t>(DART_2PART_UINT64_C(0x80000000, 00000000));
 
-  int64_t value() const { return untag()->value_; }
   static intptr_t value_offset() { return OFFSET_OF(UntaggedMint, value_); }
+
+  int64_t Value() const { return untag()->value_; }
   static int64_t Value(MintPtr mint) { return mint->untag()->value_; }
 
-  virtual bool IsZero() const { return value() == 0; }
-  virtual bool IsNegative() const { return value() < 0; }
-
   virtual bool Equals(const Instance& other) const;
-
-  virtual double AsDoubleValue() const;
-  virtual int64_t AsInt64Value() const;
-  virtual uint32_t AsTruncatedUint32Value() const;
-
-  virtual bool FitsIntoSmi() const;
-
-  virtual int CompareWith(const Integer& other) const;
 
   static intptr_t InstanceSize() {
     return RoundedAllocationSize(sizeof(UntaggedMint));
@@ -10123,6 +10254,14 @@ class Mint : public Integer {
   friend class Class;
   friend class Number;
 };
+
+inline int64_t Integer::Value(IntegerPtr obj) {
+  if (obj->IsSmi()) {
+    return Smi::Value(Smi::RawCast(obj));
+  } else {
+    return Mint::Value(Mint::RawCast(obj));
+  }
+}
 
 // Class Double represents class Double in corelib_impl, which implements
 // abstract class double in corelib.
@@ -10325,11 +10464,11 @@ class String : public Instance {
   bool IsSymbol() const { return ptr()->untag()->IsCanonical(); }
 
   bool IsOneByteString() const {
-    return ptr()->GetClassId() == kOneByteStringCid;
+    return ptr()->GetClassIdOfHeapObject() == kOneByteStringCid;
   }
 
   bool IsTwoByteString() const {
-    return ptr()->GetClassId() == kTwoByteStringCid;
+    return ptr()->GetClassIdOfHeapObject() == kTwoByteStringCid;
   }
 
   char* ToMallocCString() const;
@@ -10913,7 +11052,9 @@ class Array : public Instance {
     untag()->set_element<std::memory_order_release>(index, value.ptr());
   }
 
-  bool IsImmutable() const { return ptr()->GetClassId() == kImmutableArrayCid; }
+  bool IsImmutable() const {
+    return ptr()->GetClassIdOfHeapObject() == kImmutableArrayCid;
+  }
 
   // Position of element type in type arguments.
   static constexpr intptr_t kElementTypeTypeArgPos = 0;
@@ -11044,6 +11185,7 @@ class Array : public Instance {
   FINAL_HEAP_OBJECT_IMPLEMENTATION(Array, Instance);
   friend class Class;
   friend class ImmutableArray;
+  friend class Interpreter;
   friend class Object;
   friend class String;
   friend class MessageDeserializer;
@@ -11537,15 +11679,15 @@ class TypedDataBase : public PointerBase {
   }
 
   intptr_t LengthInBytes() const {
-    return ElementSizeInBytes(ptr()->GetClassId()) * Length();
+    return ElementSizeInBytes(ptr()->GetClassIdOfHeapObject()) * Length();
   }
 
   TypedDataElementType ElementType() const {
-    return ElementType(ptr()->GetClassId());
+    return ElementType(ptr()->GetClassIdOfHeapObject());
   }
 
   intptr_t ElementSizeInBytes() const {
-    return element_size(ElementType(ptr()->GetClassId()));
+    return element_size(ElementType(ptr()->GetClassIdOfHeapObject()));
   }
 
   static intptr_t ElementSizeInBytes(classid_t cid) {
@@ -11820,7 +11962,7 @@ class TypedDataView : public TypedDataBase {
 
   static bool IsExternalTypedDataView(const TypedDataView& view_obj) {
     const auto& data = Instance::Handle(Data(view_obj));
-    intptr_t cid = data.ptr()->GetClassId();
+    intptr_t cid = data.ptr()->GetClassIdOfHeapObject();
     ASSERT(IsTypedDataClassId(cid) || IsExternalTypedDataClassId(cid));
     return IsExternalTypedDataClassId(cid);
   }
@@ -12118,7 +12260,7 @@ class ImmutableLinkedHashBase : public AllStatic {
 };
 
 // Corresponds to
-// - _Map in dart:collection
+// - _Map in dart:_compact_hash
 // - "new Map()",
 // - non-const map literals, and
 // - the default constructor of LinkedHashMap in dart:collection.
@@ -12191,7 +12333,7 @@ class Map : public LinkedHashBase {
 };
 
 // Corresponds to
-// - _ConstMap in dart:collection
+// - _ConstMap in dart:_compact_hash
 // - const map literals
 class ConstMap : public AllStatic {
  public:
@@ -12221,7 +12363,7 @@ class ConstMap : public AllStatic {
 };
 
 // Corresponds to
-// - _Set in dart:collection,
+// - _Set in dart:_compact_hash,
 // - "new Set()",
 // - non-const set literals, and
 // - the default constructor of LinkedHashSet in dart:collection.
@@ -12292,7 +12434,7 @@ class Set : public LinkedHashBase {
 };
 
 // Corresponds to
-// - _ConstSet in dart:collection
+// - _ConstSet in dart:_compact_hash
 // - const set literals
 class ConstSet : public AllStatic {
  public:
@@ -13236,13 +13378,14 @@ ClassPtr Object::clazz() const {
   if ((raw_value & kSmiTagMask) == kSmiTag) {
     return Smi::Class();
   }
-  return IsolateGroup::Current()->class_table()->At(ptr()->GetClassId());
+  return IsolateGroup::Current()->class_table()->At(
+      ptr()->GetClassIdOfHeapObject());
 }
 
 DART_FORCE_INLINE
 void Object::setPtr(ObjectPtr value, intptr_t default_cid) {
   ptr_ = value;
-  intptr_t cid = value->GetClassIdMayBeSmi();
+  intptr_t cid = value->GetClassId();
   // Free-list elements cannot be wrapped in a handle.
   ASSERT(cid != kFreeListElement);
   ASSERT(cid != kForwardingCorpse);
@@ -13253,6 +13396,24 @@ void Object::setPtr(ObjectPtr value, intptr_t default_cid) {
   }
   set_vtable(builtin_vtables_[cid]);
 }
+
+#if defined(DART_DYNAMIC_MODULES)
+BytecodePtr Function::GetBytecode() const {
+  return GetBytecode(ptr());
+}
+
+BytecodePtr Function::GetBytecode(FunctionPtr function) {
+  return Bytecode::RawCast(function.untag()->ic_data_array_or_bytecode());
+}
+
+bool Function::HasBytecode() const {
+  return HasBytecode(ptr());
+}
+
+bool Function::HasBytecode(FunctionPtr function) {
+  return function.untag()->ic_data_array_or_bytecode()->IsBytecode();
+}
+#endif  // defined(DART_DYNAMIC_MODULES)
 
 intptr_t Field::HostOffset() const {
   ASSERT(is_instance());  // Valid only for dart instance fields.
@@ -13425,7 +13586,7 @@ inline void TypeArguments::SetHash(intptr_t value) const {
 }
 
 inline uint16_t String::CharAt(StringPtr str, intptr_t index) {
-  switch (str->GetClassId()) {
+  switch (str->GetClassIdOfHeapObject()) {
     case kOneByteStringCid:
       return OneByteString::CharAt(static_cast<OneByteStringPtr>(str), index);
     case kTwoByteStringCid:

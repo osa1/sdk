@@ -14,11 +14,11 @@ namespace dart {
 class ObjectPointerVisitor;
 class JSONStream;
 
-// A ring buffer of object pointers that have been given an id. An object
-// may be pointed to by multiple ids. Objects contained in the ring will
-// be preserved across scavenges but not old space collections.
-// When the ring buffer wraps around older objects will be replaced and their
-// ids will be invalidated.
+// A ring buffer of object pointers that have been given temporary Service IDs.
+// An object may be pointed to by multiple IDs. The objects associated with the
+// pointers in the ring will be preserved across garbage collections. When the
+// ring buffer wraps around, older objects will be replaced and their IDs will
+// become expired.
 class ObjectIdRing {
  public:
   enum LookupResult {
@@ -49,7 +49,7 @@ class ObjectIdRing {
   // Returns Object::null() when the result is not kValid.
   ObjectPtr GetObjectForId(int32_t id, LookupResult* kind);
 
-  void VisitPointers(ObjectPointerVisitor* visitor);
+  void VisitPointers(ObjectPointerVisitor* visitor) const;
 
   void PrintJSON(JSONStream* js);
 
@@ -72,7 +72,7 @@ class ObjectIdRing {
   int32_t AllocateNewId(ObjectPtr object);
   int32_t IndexOfId(int32_t id);
   int32_t IdOfIndex(int32_t index);
-  bool IsValidContiguous(int32_t id);
+  bool IsValidContiguous(int32_t id) const;
   bool IsValidId(int32_t id);
 
   DISALLOW_COPY_AND_ASSIGN(ObjectIdRing);

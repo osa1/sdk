@@ -9,6 +9,7 @@
 #include "vm/debugger.h"
 #include "vm/dispatch_table.h"
 #include "vm/heap/safepoint.h"
+#include "vm/interpreter.h"
 #include "vm/object_store.h"
 #include "vm/resolver.h"
 #include "vm/runtime_entry.h"
@@ -119,6 +120,17 @@ ObjectPtr DartEntry::InvokeFunction(const Function& function,
   Thread* thread = Thread::Current();
   ASSERT(thread->IsDartMutatorThread());
   ASSERT(!function.IsNull());
+
+#if defined(DART_DYNAMIC_MODULES)
+  if (function.HasBytecode()) {
+    // SuspendLongJumpScope suspend_long_jump_scope(thread);
+    TransitionToGenerated transition(thread);
+    return Interpreter::Current()->Call(function, arguments_descriptor,
+                                        arguments, thread);
+  } else {
+    ASSERT(!function.is_declared_in_bytecode());
+  }
+#endif  // defined(DART_DYNAMIC_MODULES)
 
 #if !defined(DART_PRECOMPILED_RUNTIME)
   if (!function.HasCode()) {
@@ -778,13 +790,13 @@ static ObjectPtr RehashObjects(Zone* zone,
   return DartEntry::InvokeFunction(rehashing_function, arguments);
 }
 
-ObjectPtr DartLibraryCalls::RehashObjectsInDartCollection(
+ObjectPtr DartLibraryCalls::RehashObjectsInDartCompactHash(
     Thread* thread,
     const Object& array_or_growable_array) {
   auto zone = thread->zone();
-  const auto& collections_lib =
-      Library::Handle(zone, Library::CollectionLibrary());
-  return RehashObjects(zone, collections_lib, array_or_growable_array);
+  const auto& compact_hash_lib =
+      Library::Handle(zone, Library::CompactHashLibrary());
+  return RehashObjects(zone, compact_hash_lib, array_or_growable_array);
 }
 
 ObjectPtr DartLibraryCalls::RehashObjectsInDartCore(

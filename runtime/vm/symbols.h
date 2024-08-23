@@ -33,6 +33,7 @@ class ObjectPointerVisitor;
   V(BooleanExpression, "boolean expression")                                   \
   V(BoundsCheckForPartialInstantiation, "_boundsCheckForPartialInstantiation") \
   V(ByteData, "ByteData")                                                      \
+  V(Bytecode, "Bytecode")                                                      \
   V(Capability, "Capability")                                                  \
   V(CheckLoaded, "_checkLoaded")                                               \
   V(Class, "Class")                                                            \
@@ -54,6 +55,7 @@ class ObjectPointerVisitor;
   V(CurrentContextVar, ":current_context_var")                                 \
   V(DartAsync, "dart:async")                                                   \
   V(DartCollection, "dart:collection")                                         \
+  V(DartCompactHash, "dart:_compact_hash")                                     \
   V(DartConcurrent, "dart:concurrent")                                         \
   V(DartCore, "dart:core")                                                     \
   V(DartDeveloper, "dart:developer")                                           \
