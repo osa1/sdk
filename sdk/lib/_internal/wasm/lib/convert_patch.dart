@@ -1522,7 +1522,7 @@ class _JsonStringParser extends _JsonParserWithListener
   }
 
   void beginString() {
-    stringBuffer.clear();
+    assert(stringBuffer.isEmpty);
   }
 
   void addSliceToString(int start, int end) {
