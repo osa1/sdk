@@ -184,9 +184,14 @@ class ClassInfo {
       : nullableType = w.RefType.def(struct, nullable: true),
         nonNullableType = w.RefType.def(struct, nullable: false);
 
-  void _addField(w.FieldType fieldType, [int? expectedIndex]) {
+  void _addField(w.FieldType fieldType,
+      {int? expectedIndex, String? fieldName}) {
     assert(expectedIndex == null || expectedIndex == struct.fields.length);
     struct.fields.add(fieldType);
+    if (fieldName != null) {
+      final fieldIndex = struct.fields.length - 1;
+      struct.fieldNames[fieldIndex] = fieldName;
+    }
   }
 
   // This returns the types of all the class's fields (including
@@ -280,7 +285,7 @@ class ClassInfoCollector {
 
   TranslatorOptions get options => translator.options;
 
-  void _createStructForClassTop(int classCount) {
+  void _createStructForClassTop() {
     final w.StructType struct = m.types.defineStruct("#Top");
     topInfo = ClassInfo(null, 0, 0, struct, null);
     translator.classForHeapType[struct] = topInfo;
@@ -378,16 +383,20 @@ class ClassInfoCollector {
     ClassInfo? superInfo = info.superInfo;
     if (superInfo == null) {
       // Top - add class id field
-      info._addField(
-          w.FieldType(w.NumType.i32, mutable: false), FieldIndex.classId);
+      info._addField(w.FieldType(w.NumType.i32, mutable: false),
+          expectedIndex: FieldIndex.classId);
     } else {
       // Copy fields from superclass
+      int superFieldIndex = 0;
       for (w.FieldType fieldType in superInfo.struct.fields) {
-        info._addField(fieldType);
+        info._addField(fieldType,
+            fieldName: superInfo.struct.fieldNames[superFieldIndex]);
+        superFieldIndex += 1;
       }
       if (info.cls!.superclass == null) {
         // Object - add identity hash code field
-        info._addField(w.FieldType(w.NumType.i32), FieldIndex.identityHash);
+        info._addField(w.FieldType(w.NumType.i32),
+            expectedIndex: FieldIndex.identityHash);
       }
       // Add fields for type variables
       for (TypeParameter parameter in info.cls!.typeParameters) {
@@ -406,7 +415,8 @@ class ClassInfoCollector {
         if (field.isInstanceMember) {
           final w.ValueType wasmType = translator.translateTypeOfField(field);
           translator.fieldIndex[field] = info.struct.fields.length;
-          info._addField(w.FieldType(wasmType, mutable: !field.isFinal));
+          info._addField(w.FieldType(wasmType, mutable: !field.isFinal),
+              fieldName: field.name.text);
         }
       }
     }
@@ -421,12 +431,16 @@ class ClassInfoCollector {
     // is already initialized
     if (struct.fields.isEmpty) {
       // Copy fields from superclass
+      int superFieldIndex = 0;
       for (w.FieldType fieldType in superInfo.struct.fields) {
-        info._addField(fieldType);
+        info._addField(fieldType,
+            fieldName: superInfo.struct.fieldNames[superFieldIndex]);
+        superFieldIndex += 1;
       }
 
-      for (Field _ in info.cls!.fields) {
-        info._addField(w.FieldType(topInfo.nullableType));
+      for (Field field in info.cls!.fields) {
+        info._addField(w.FieldType(topInfo.nullableType),
+            fieldName: field.name.text);
       }
     }
 
@@ -446,7 +460,7 @@ class ClassInfoCollector {
     final classIds = translator.classIdNumbering.classIds;
     final dfsOrder = translator.classIdNumbering.dfsOrder;
 
-    _createStructForClassTop(dfsOrder.length);
+    _createStructForClassTop();
 
     // Class infos by class-id, will be populated by the calls to
     // [_createStructForClass] and [_createStructForRecordClass] below.
@@ -479,8 +493,8 @@ class ClassInfoCollector {
       }
     }
 
-    // Create representations of the classes (i.e. wasm representation used to
-    // represent objects of that dart type).
+    // Create representations of the classes (i.e. Wasm representation used to
+    // represent objects of that Dart type).
     for (final cls in dfsOrder) {
       ClassInfo? representation;
       for (final range in classIdNumbering.getConcreteClassIdRanges(cls)) {

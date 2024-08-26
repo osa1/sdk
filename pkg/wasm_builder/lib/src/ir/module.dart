@@ -62,12 +62,13 @@ class Module implements Serializable {
         globals.namedCount > 0) {
       NameSection(
               <BaseFunction>[...functions.imported, ...functions.defined],
-              [for (final t in types.recursionGroups) ...t],
+              types.recursionGroups,
               <Global>[...globals.imported, ...globals.defined],
               watchPoints,
               functionNameCount: functions.namedCount,
               typeNameCount: types.namedCount,
-              globalNameCount: globals.namedCount)
+              globalNameCount: globals.namedCount,
+              typesWithNamedFieldsCount: types.typesWithNamedFieldsCount)
           .serialize(s);
     }
   }
