@@ -770,7 +770,8 @@ class Translator with KernelNodes {
         if (cls == boxedBoolClass) {
           final boxedTrueGlobal = globals.getGlobal(boxedTrue);
           final boxedFalseGlobal = globals.getGlobal(boxedFalse);
-          b.if_();
+          b.if_([],
+              [w.RefType(classInfo[boxedBoolClass]!.struct, nullable: false)]);
           b.global_get(boxedTrueGlobal);
           b.else_();
           b.global_get(boxedFalseGlobal);
