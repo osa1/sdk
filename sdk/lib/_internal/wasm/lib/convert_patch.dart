@@ -864,8 +864,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
       position = parsePartial(position);
       if (position == length) return;
     }
-    final OneByteString charAttributes =
-        unsafeCast<OneByteString>(_characterAttributes);
 
     int state = this.state;
     outer:
@@ -876,7 +874,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           break;
         }
-        if ((charAttributes.codeUnitAtUnchecked(char) & CHAR_WHITESPACE) == 0) {
+        if ((_characterAttributes.readUnsigned(char) & CHAR_WHITESPACE) == 0) {
           break;
         }
         position++;
@@ -1050,8 +1048,8 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
 
   /**
    * [_characterAttributes] string was generated using the following code:
-   *
-   * ```
+   * 
+   * ```dart
    * int $(String ch) => ch.codeUnitAt(0);
    * final list = Uint8List(256);
    * for (var i = 0; i < $(' '); i++) {
@@ -1064,17 +1062,30 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * list[$('\n')] |= CHAR_WHITESPACE;
    * list[$('\t')] |= CHAR_WHITESPACE;
    * for (var i = 0; i < 256; i += 64) {
-   *   print("'${String.fromCharCodes([
-   *         for (var v in list.skip(i).take(64)) v + $(' '),
-   *       ])}'");
+   *   for (var v in list.skip(i).take(64)) {
+   *     print('${v + $(' ')},');
+   *   }
    * }
    * ```
    */
-  static const String _characterAttributes =
-      '!!!!!!!!!##!!#!!!!!!!!!!!!!!!!!!" !                             '
-      '                            !                                   '
-      '                                                                '
-      '                                                                ';
+  static const WasmArray<WasmI8> _characterAttributes =
+      WasmArray<WasmI8>.literal([
+    33, 33, 33, 33, 33, 33, 33, 33, 33, 35, 35, 33, 33, 35, 33, 33, 33, 33, //
+    33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 34, 32, 33, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
+    32, 32, 32, 32,
+  ]);
 
   /**
    * Parses a string value.
@@ -1083,9 +1094,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * Returned position right after the final quote.
    */
   int parseString(int position) {
-    final OneByteString charAttributes =
-        unsafeCast<OneByteString>(_characterAttributes);
-
     // Format: '"'([^\x00-\x1f\\\"]|'\\'[bfnrt/\\"])*'"'
     // Initial position is right after first '"'.
     int start = position;
@@ -1103,7 +1111,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           continue;
         }
-        if ((charAttributes.codeUnitAtUnchecked(char) &
+        if ((_characterAttributes.readUnsigned(char) &
                 CHAR_SIMPLE_STRING_END) !=
             0) {
           break;
@@ -1169,9 +1177,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * slices of non-escape characters using [addSliceToString].
    */
   int parseStringToBuffer(int position) {
-    final OneByteString charAttributes =
-        unsafeCast<OneByteString>(_characterAttributes);
-
     int end = chunkEnd;
     int start = position;
     while (true) {
@@ -1189,7 +1194,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         if (isUtf16Input && char > 0xFF) {
           continue;
         }
-        if ((charAttributes.codeUnitAtUnchecked(char) &
+        if ((_characterAttributes.readUnsigned(char) &
                 CHAR_SIMPLE_STRING_END) !=
             0) {
           break;
