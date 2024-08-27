@@ -261,6 +261,10 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:core", "_runtimeTypeEquals");
   late final Procedure runtimeTypeHashCode =
       index.getTopLevelProcedure("dart:core", "_runtimeTypeHashCode");
+  late final Field boxedFalse =
+      index.getTopLevelField("dart:_boxed_bool", "boxedFalse");
+  late final Field boxedTrue =
+      index.getTopLevelField("dart:_boxed_bool", "boxedTrue");
 
   // dart:core invocation/exception procedures
   late final Procedure invocationGetterFactory =

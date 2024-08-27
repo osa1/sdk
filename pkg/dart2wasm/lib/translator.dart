@@ -765,7 +765,20 @@ class Translator with KernelNodes {
         }
       } else if (to is w.RefType) {
         // Boxing
-        ClassInfo info = classInfo[boxedClasses[from]!]!;
+        Class cls = boxedClasses[from]!;
+
+        if (cls == boxedBoolClass) {
+          final boxedTrueGlobal = globals.getGlobal(boxedTrue);
+          final boxedFalseGlobal = globals.getGlobal(boxedFalse);
+          b.if_();
+          b.global_get(boxedTrueGlobal);
+          b.else_();
+          b.global_get(boxedFalseGlobal);
+          b.end();
+          return;
+        }
+
+        ClassInfo info = classInfo[cls]!;
         assert(info.struct.isSubtypeOf(to.heapType));
         w.Local temp = b.addLocal(from);
         b.local_set(temp);

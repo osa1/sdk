@@ -22,3 +22,9 @@ final class BoxedBool extends bool {
   bool operator ^(bool other) => this ^ other; // Intrinsic ^
   bool operator |(bool other) => this | other; // Intrinsic |
 }
+
+@pragma("wasm:entry-point")
+BoxedBool boxedFalse = BoxedBool(); // intrinsic
+
+@pragma("wasm:entry-point")
+BoxedBool boxedTrue = BoxedBool(); // intrinsic

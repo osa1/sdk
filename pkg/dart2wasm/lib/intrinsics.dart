@@ -566,6 +566,25 @@ class Intrinsifier {
       }
     }
 
+    if (node.target.enclosingLibrary.name == 'dart._boxed_bool') {
+      switch (target.name.text) {
+        case "globalFalse":
+          final boxedBoolClassInfo =
+              translator.classInfo[translator.coreTypes.boolClass]!;
+          b.i32_const(boxedBoolClassInfo.classId);
+          b.i32_const(0);
+          b.struct_new(boxedBoolClassInfo.struct);
+          return w.RefType(boxedBoolClassInfo.struct, nullable: false);
+        case "globalTrue":
+          final boxedBoolClassInfo =
+              translator.classInfo[translator.coreTypes.boolClass]!;
+          b.i32_const(boxedBoolClassInfo.classId);
+          b.i32_const(0);
+          b.struct_new(boxedBoolClassInfo.struct);
+          return w.RefType(boxedBoolClassInfo.struct, nullable: false);
+      }
+    }
+
     return null;
   }
 
