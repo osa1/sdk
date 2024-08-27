@@ -1049,7 +1049,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   /**
    * [_characterAttributes] string was generated using the following code:
    *
-   * ```dart
+   * ```
    * int $(String ch) => ch.codeUnitAt(0);
    * final list = Uint8List(256);
    * for (var i = 0; i < $(' '); i++) {
