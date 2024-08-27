@@ -1777,16 +1777,39 @@ class _Utf8Decoder {
   // Non-BMP   'R' = 64 + (2 | flagNonLatin1);
   // Illegal   'a' = 64 + (1 | flagIllegal);
   // Illegal   'b' = 64 + (2 | flagIllegal);
-  static const String scanTable = ""
-      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" // 00-1F
-      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" // 20-3F
-      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" // 40-5F
-      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" // 60-7F
-      "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" // 80-9F
-      "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" // A0-BF
-      "aaIIQQQQQQQQQQQQQQQQQQQQQQQQQQQQ" // C0-DF
-      "QQQQQQQQQQQQQQQQRRRRRbbbbbbbbbbb" // E0-FF
-      ;
+  static const WasmArray<WasmI8> scanTable = WasmArray<WasmI8>.literal([
+    // 00-1F
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+
+    // 20-3F
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+
+    // 40-5F
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+
+    // 60-7F
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+
+    // 80-9F
+    68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68,
+    68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68,
+
+    // A0-BF
+    68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68,
+    68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68, 68,
+
+    // C0-DF
+    97, 97, 73, 73, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81,
+    81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81,
+
+    // E0-FF
+    81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 81, 82, 82, 82,
+    82, 82, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98, 98,
+  ]);
 
   /// Max chunk to scan at a time.
   ///
@@ -1820,7 +1843,7 @@ class _Utf8Decoder {
     int size = 0;
     int flags = 0;
     for (int i = start; i < end; i++) {
-      int t = scanTable.codeUnitAtUnchecked(bytes[i]);
+      int t = scanTable.readUnsigned(bytes[i]);
       size += t & sizeMask;
       flags |= t;
     }
