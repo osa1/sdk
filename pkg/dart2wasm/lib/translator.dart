@@ -766,10 +766,11 @@ class Translator with KernelNodes {
       } else if (to is w.RefType) {
         // Boxing
         Class cls = boxedClasses[from]!;
+        ClassInfo info = classInfo[cls]!;
+        assert(info.struct.isSubtypeOf(to.heapType));
 
         if (cls == boxedBoolClass) {
-          final constantType =
-              w.RefType(classInfo[boxedBoolClass]!.struct, nullable: false);
+          final constantType = w.RefType(info.struct, nullable: false);
           b.if_([], [constantType]);
           constants.instantiateConstant(b, BoolConstant(true), constantType);
           b.else_();
@@ -778,8 +779,6 @@ class Translator with KernelNodes {
           return;
         }
 
-        ClassInfo info = classInfo[cls]!;
-        assert(info.struct.isSubtypeOf(to.heapType));
         w.Local temp = b.addLocal(from);
         b.local_set(temp);
         b.i32_const(info.classId);
