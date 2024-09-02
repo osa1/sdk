@@ -593,6 +593,7 @@ class CompileWasmCommand extends CompileSubcommandCommand {
       --type-merging
       -Os
       --type-finalizing
+      --minimize-rec-groups
     '''); // end of binaryenFlags
 
   final List<String> optimizationLevel0Flags = _flagList('''
@@ -620,7 +621,6 @@ class CompileWasmCommand extends CompileSubcommandCommand {
       --inlining
       --minify
       --omit-implicit-checks
-      --omit-explicit-checks
       --omit-bounds-checks
     '''); // end of optimizationLevel4Flags
 

@@ -348,10 +348,6 @@ namespace dart {
 //
 //    Instance remains on stack. Other arguments are consumed.
 //
-//  - AssertBoolean A
-//
-//    Assert that TOS is a boolean (A = 1) or that TOS is not null (A = 0).
-//
 //  - AssertSubtype
 //
 //    Assert that one type is a subtype of another.  Throws a TypeError
@@ -445,9 +441,16 @@ namespace dart {
 //    Receiver and argument should have static type double.
 //    Check SP[-1] and SP[0] for null; push SP[-1] <op> SP[0] ? true : false.
 //
-//  - AllocateClosure D
+//  - AllocateClosure
 //
-//    Allocate closure object for closure function ConstantPool[D].
+//    Allocate closure object and initialize its fields:
+//
+//      SP[-2] closure function
+//      SP[-1] context
+//      SP[0]  instantiator type arguments
+//
+//    These arguments are consumed from the stack and allocated
+//    object is pushed.
 //
 // BYTECODE LIST FORMAT
 //
@@ -494,8 +497,8 @@ namespace dart {
   V(Allocate_Wide,                         D, WIDE, lit, ___, ___)             \
   V(AllocateT,                             0, ORDN, ___, ___, ___)             \
   V(CreateArrayTOS,                        0, ORDN, ___, ___, ___)             \
-  V(AllocateClosure,                       D, ORDN, lit, ___, ___)             \
-  V(AllocateClosure_Wide,                  D, WIDE, lit, ___, ___)             \
+  V(AllocateClosure,                       0, ORDN, ___, ___, ___)             \
+  V(Unused03,                              0, RESV, ___, ___, ___)             \
   V(AllocateContext,                     A_E, ORDN, num, num, ___)             \
   V(AllocateContext_Wide,                A_E, WIDE, num, num, ___)             \
   V(CloneContext,                        A_E, ORDN, num, num, ___)             \
@@ -590,10 +593,8 @@ namespace dart {
   V(Unused25,                              0, RESV, ___, ___, ___)             \
   V(AssertAssignable,                    A_E, ORDN, num, lit, ___)             \
   V(AssertAssignable_Wide,               A_E, WIDE, num, lit, ___)             \
-  V(Unused30,                              0, RESV, ___, ___, ___)             \
-  V(Unused31,                              0, RESV, ___, ___, ___)             \
-  V(AssertBoolean,                         A, ORDN, num, ___, ___)             \
   V(AssertSubtype,                         0, ORDN, ___, ___, ___)             \
+  V(Unused30,                              0, RESV, ___, ___, ___)             \
   V(LoadTypeArgumentsField,                D, ORDN, lit, ___, ___)             \
   V(LoadTypeArgumentsField_Wide,           D, WIDE, lit, ___, ___)             \
   V(InstantiateType,                       D, ORDN, lit, ___, ___)             \
@@ -638,6 +639,10 @@ namespace dart {
   V(CompareDoubleLt,                       0, ORDN, ___, ___, ___)             \
   V(CompareDoubleGe,                       0, ORDN, ___, ___, ___)             \
   V(CompareDoubleLe,                       0, ORDN, ___, ___, ___)             \
+  V(AllocateRecord,                        D, ORDN, lit, ___, ___)             \
+  V(AllocateRecord_Wide,                   D, WIDE, lit, ___, ___)             \
+  V(LoadRecordField,                       D, ORDN, num, ___, ___)             \
+  V(LoadRecordField_Wide,                  D, WIDE, num, ___, ___)             \
 
   // These bytecodes are only generated within the VM. Reassigning their
   // opcodes is not a breaking change.

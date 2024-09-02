@@ -1621,11 +1621,11 @@ class BytecodeGenerator extends RecursiveVisitor {
     _genPrologue(node, node.function);
     _setupInitialContext(node.function);
     _emitFirstDebugCheck(node.function);
+    _genEqualsOperatorNullHandling(node);
     if (node is Procedure && node.isInstanceMember) {
       _checkArguments(node.function);
     }
     _initSuspendableFunction(node.function);
-    _genEqualsOperatorNullHandling(node);
   }
 
   // Generate additional code for 'operator ==' to handle nulls.
@@ -2445,19 +2445,13 @@ class BytecodeGenerator extends RecursiveVisitor {
 
   void _genAllocateClosureInstance(
       TreeNode node, int closureFunctionIndex, FunctionNode function) {
-    asm.emitAllocateClosure(closureFunctionIndex);
+    asm.emitPushConstant(closureFunctionIndex);
+    asm.emitPush(locals.contextVarIndexInFrame);
+    _genPushInstantiatorTypeArguments();
+    asm.emitAllocateClosure();
 
     final int temp = locals.tempIndexInFrame(node);
     asm.emitStoreLocal(temp);
-
-    // TODO(alexmarkov): We need to fill _instantiator_type_arguments field
-    // only if function signature uses instantiator type arguments.
-    if (instantiatorTypeArguments != null) {
-      asm.emitPush(temp);
-      _genPushInstantiatorTypeArguments();
-      asm.emitStoreFieldTOS(
-          cp.addInstanceField(closureInstantiatorTypeArguments));
-    }
 
     if (locals.hasFunctionTypeArgsVar) {
       asm.emitPush(temp);
@@ -2471,14 +2465,6 @@ class BytecodeGenerator extends RecursiveVisitor {
       asm.emitPushConstant(cp.addEmptyTypeArguments());
       asm.emitStoreFieldTOS(cp.addInstanceField(closureDelayedTypeArguments));
     }
-
-    asm.emitPush(temp);
-    asm.emitPushConstant(closureFunctionIndex);
-    asm.emitStoreFieldTOS(cp.addInstanceField(closureFunction));
-
-    asm.emitPush(temp);
-    asm.emitPush(locals.contextVarIndexInFrame);
-    asm.emitStoreFieldTOS(cp.addInstanceField(closureContext));
   }
 
   void _genClosure(LocalFunction node, String name, FunctionNode function) {
@@ -2782,28 +2768,24 @@ class BytecodeGenerator extends RecursiveVisitor {
         boundsCheckForPartialInstantiation, objectTable.getArgDescHandle(2), 2);
     asm.emitDrop1();
 
-    assert(closureClass.typeParameters.isEmpty);
-    asm.emitAllocate(cp.addClass(closureClass));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureFunction));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureContext));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureInstantiatorTypeArguments));
+    asm.emitAllocateClosure();
     asm.emitStoreLocal(newClosure);
 
     asm.emitPush(typeArguments);
     asm.emitStoreFieldTOS(cp.addInstanceField(closureDelayedTypeArguments));
 
-    // Copy the rest of the fields from old closure to a new closure.
-    final fieldsToCopy = <Field>[
-      closureInstantiatorTypeArguments,
-      closureFunctionTypeArguments,
-      closureFunction,
-      closureContext,
-    ];
-
-    for (Field field in fieldsToCopy) {
-      final fieldOffsetCpIndex = cp.addInstanceField(field);
-      asm.emitPush(newClosure);
-      asm.emitPush(oldClosure);
-      asm.emitLoadFieldTOS(fieldOffsetCpIndex);
-      asm.emitStoreFieldTOS(fieldOffsetCpIndex);
-    }
+    asm.emitPush(newClosure);
+    asm.emitPush(oldClosure);
+    final closureFunctionTypeArgumentsCpIndex =
+        cp.addInstanceField(closureFunctionTypeArguments);
+    asm.emitLoadFieldTOS(closureFunctionTypeArgumentsCpIndex);
+    asm.emitStoreFieldTOS(closureFunctionTypeArgumentsCpIndex);
 
     asm.emitPush(newClosure);
   }
@@ -4252,17 +4234,39 @@ class BytecodeGenerator extends RecursiveVisitor {
 
   @override
   void visitRecordIndexGet(RecordIndexGet node) {
-    _unimplemented(node, 'RecordIndexGet');
+    _generateNode(node.receiver);
+    asm.emitLoadRecordField(node.index);
   }
 
   @override
   void visitRecordNameGet(RecordNameGet node) {
-    _unimplemented(node, 'RecordNameGet');
+    final type = node.receiverType;
+    final namedFields = type.named;
+    final name = node.name;
+    int fieldIndex = -1;
+    for (int i = 0; i < namedFields.length; ++i) {
+      if (namedFields[i].name == name) {
+        fieldIndex = type.positional.length + i;
+        break;
+      }
+    }
+    if (fieldIndex < 0) {
+      throw 'Unable to find record field "$name" in $type';
+    }
+    _generateNode(node.receiver);
+    asm.emitLoadRecordField(fieldIndex);
   }
 
   @override
   void visitRecordLiteral(RecordLiteral node) {
-    _unimplemented(node, 'RecordLiteral');
+    assert(!node.isConst);
+    for (final expr in node.positional) {
+      _generateNode(expr);
+    }
+    for (final expr in node.named) {
+      _generateNode(expr.value);
+    }
+    asm.emitAllocateRecord(cp.addType(node.recordType));
   }
 
   @override

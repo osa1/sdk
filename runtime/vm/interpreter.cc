@@ -1413,6 +1413,33 @@ bool Interpreter::AllocateArray(Thread* thread,
   return InvokeRuntime(thread, this, DRT_AllocateArray, args);
 }
 
+// Allocate a Record with the given shape and put it into SP[0].
+// Returns false on exception.
+bool Interpreter::AllocateRecord(Thread* thread,
+                                 RecordShape shape,
+                                 const KBCInstr* pc,
+                                 ObjectPtr* FP,
+                                 ObjectPtr* SP) {
+  const intptr_t num_fields = shape.num_fields();
+  RecordPtr result;
+  if (TryAllocate(thread, kRecordCid, Record::InstanceSize(num_fields),
+                  reinterpret_cast<ObjectPtr*>(&result))) {
+    result->untag()->set_shape(shape.AsSmi());
+    ObjectPtr null_value = Object::null();
+    for (intptr_t i = 0; i < num_fields; i++) {
+      result->untag()->set_field(i, null_value, thread);
+    }
+    SP[0] = result;
+    return true;
+  } else {
+    SP[0] = 0;  // Space for the result.
+    SP[1] = shape.AsSmi();
+    Exit(thread, FP, SP + 2, pc);
+    NativeArguments args(thread, 1, SP + 1, SP);
+    return InvokeRuntime(thread, this, DRT_AllocateRecord, args);
+  }
+}
+
 // Allocate a _Context with the given length and put it into SP[0].
 // Returns false on exception.
 bool Interpreter::AllocateContext(Thread* thread,
@@ -2294,6 +2321,14 @@ SwitchDispatch:
   }
 
   {
+    BYTECODE(LoadRecordField, D);
+    const intptr_t field_index = rD;
+    RecordPtr record = Record::RawCast(SP[0]);
+    SP[0] = record->untag()->field(field_index);
+    DISPATCH();
+  }
+
+  {
     BYTECODE(AllocateContext, A_E);
     ++SP;
     const uint32_t num_context_variables = rE;
@@ -2412,20 +2447,31 @@ SwitchDispatch:
   }
 
   {
+    BYTECODE(AllocateRecord, D);
+    RecordTypePtr type = RecordType::RawCast(LOAD_CONSTANT(rD));
+    RecordShape shape(Smi::RawCast(type->untag()->shape()));
+    ++SP;
+    if (!AllocateRecord(thread, shape, pc, FP, SP)) {
+      HANDLE_EXCEPTION;
+    }
+    RecordPtr record = Record::RawCast(SP[0]);
+    const intptr_t num_fields = shape.num_fields();
+    for (intptr_t i = 0; i < num_fields; ++i) {
+      record->untag()->set_field(i, SP[-num_fields + i], thread);
+    }
+    SP -= num_fields;
+    SP[0] = record;
+    DISPATCH();
+  }
+
+  {
     BYTECODE(AssertAssignable, A_E);
     // Stack: instance, type, instantiator type args, function type args, name
     ObjectPtr* args = SP - 4;
-    const bool may_be_smi = (rA == 1);
-    const bool is_smi =
-        ((static_cast<intptr_t>(args[0]) & kSmiTagMask) == kSmiTag);
-    const bool smi_ok = is_smi && may_be_smi;
-    if (!smi_ok && (args[0] != null_value)) {
-      SubtypeTestCachePtr cache =
-          static_cast<SubtypeTestCachePtr>(LOAD_CONSTANT(rE));
+    SubtypeTestCachePtr cache = SubtypeTestCache::RawCast(LOAD_CONSTANT(rE));
 
-      if (!AssertAssignable(thread, pc, FP, SP, args, cache)) {
-        HANDLE_EXCEPTION;
-      }
+    if (!AssertAssignable(thread, pc, FP, SP, args, cache)) {
+      HANDLE_EXCEPTION;
     }
 
     SP -= 4;  // Instance remains on stack.
@@ -2456,29 +2502,6 @@ SwitchDispatch:
     // Drop result slot and all arguments.
     SP -= 6;
 
-    DISPATCH();
-  }
-
-  {
-    BYTECODE(AssertBoolean, A);
-    ObjectPtr value = SP[0];
-    if (rA != 0u) {  // Should we perform type check?
-      if ((value == true_value) || (value == false_value)) {
-        goto AssertBooleanOk;
-      }
-    } else if (value != null_value) {
-      goto AssertBooleanOk;
-    }
-
-    // Assertion failed.
-    {
-      SP[1] = SP[0];  // instance
-      Exit(thread, FP, SP + 2, pc);
-      INVOKE_RUNTIME(DRT_NonBoolTypeError,
-                     NativeArguments(thread, 1, SP + 1, SP));
-    }
-
-  AssertBooleanOk:
     DISPATCH();
   }
 
@@ -2996,17 +3019,28 @@ SwitchDispatch:
   }
 
   {
-    BYTECODE(AllocateClosure, D);
+    BYTECODE(AllocateClosure, 0);
     ++SP;
     if (!AllocateClosure(thread, pc, FP, SP)) {
       HANDLE_EXCEPTION;
     }
-    FunctionPtr function = Function::RawCast(LOAD_CONSTANT(rD));
-    ASSERT(Function::KindOf(function) == UntaggedFunction::kClosureFunction);
     ClosurePtr closure = Closure::RawCast(SP[0]);
+    FunctionPtr function = Function::RawCast(SP[-3]);
+    ObjectPtr context = SP[-2];
+    TypeArgumentsPtr instantiator_type_arguments =
+        TypeArguments::RawCast(SP[-1]);
+
+    ASSERT((Function::KindOf(function) == UntaggedFunction::kClosureFunction) ||
+           (Function::KindOf(function) ==
+            UntaggedFunction::kImplicitClosureFunction));
     closure->untag()->set_function(function);
     ONLY_IN_PRECOMPILED(closure->untag()->entry_point_ =
                             function->untag()->entry_point_);
+    closure->untag()->set_context(context);
+    closure->untag()->set_instantiator_type_arguments(
+        instantiator_type_arguments);
+    SP -= 3;
+    SP[0] = closure;
     DISPATCH();
   }
 
@@ -3477,8 +3511,49 @@ SwitchDispatch:
     FunctionPtr function = FrameFunction(FP);
     ASSERT(Function::KindOf(function) ==
            UntaggedFunction::kImplicitClosureFunction);
-    UNIMPLEMENTED();
-    DISPATCH();
+    ClosureDataPtr data = ClosureData::RawCast(function->untag()->data());
+    FunctionPtr target = Function::RawCast(data->untag()->parent_function());
+    ASSERT(Function::KindOf(target) == UntaggedFunction::kConstructor);
+
+    const intptr_t type_args_len =
+        InterpreterHelpers::ArgDescTypeArgsLen(argdesc_);
+    const intptr_t receiver_idx = type_args_len > 0 ? 1 : 0;
+    const intptr_t argc =
+        InterpreterHelpers::ArgDescArgCount(argdesc_) + receiver_idx;
+    ObjectPtr* argv = FrameArguments(FP, argc);
+
+    ClassPtr cls = Function::Owner(target);
+    TypeParametersPtr type_params = cls->untag()->type_parameters();
+    TypeArgumentsPtr type_args =
+        (type_params == null_value)
+            ? TypeArguments::null()
+            : ((type_args_len > 0) ? TypeArguments::RawCast(argv[0])
+                                   : type_params->untag()->defaults());
+
+    SP[1] = target;    // Save target.
+    SP[2] = argdesc_;  // Save arguments descriptor.
+
+    // Allocate instance and put it into the receiver slot.
+    SP[3] = cls;
+    SP[4] = type_args;
+    Exit(thread, FP, SP + 5, pc);
+    INVOKE_RUNTIME(DRT_AllocateObject,
+                   NativeArguments(thread, 2, SP + 3, argv + receiver_idx));
+
+    argdesc_ = Array::RawCast(SP[2]);
+
+    if (type_args_len > 0) {
+      // Need to adjust arguments descriptor in order to drop type arguments.
+      SP[2] = 0;  // Space for result.
+      SP[3] = argdesc_;
+      SP[4] = SP[1];  // Target.
+      Exit(thread, FP, SP + 5, pc);
+      INVOKE_RUNTIME(DRT_AdjustArgumentsDesciptorForImplicitClosure,
+                     NativeArguments(thread, 2, SP + 3, SP + 2));
+      argdesc_ = Array::RawCast(SP[2]);
+    }
+
+    goto TailCallSP1;
   }
 
   {

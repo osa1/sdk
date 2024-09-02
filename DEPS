@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "b68706957297de92e936c4339d327cffc187b30e",
+  "co19_rev": "767bb1f623a4f005072224cd7a49726a5b644296",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "3bd6bc6d207dfb7cf687537e819863cf9a8f2470",
@@ -97,12 +97,12 @@ vars = {
   ### /third_party/ dependencies
 
   # Prefer to use hashes of binaryen that have been reviewed & rolled into g3.
-  "binaryen_rev" : "9ce4b8a47b15c324b170f7572829532b7e5bfe47",
+  "binaryen_rev" : "459bc0797f67cb2a8fd4598bb7143b34036608d9",
   "boringssl_gen_rev": "fef055e8d2749b82c79c8f043be1cbe5e8e4b40c",
   "boringssl_rev": "2db0eb3f96a5756298dcd7f9319e56a98585bd10",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "6390e5ddf69c836c530256891405e0cb3319b604",
+  "devtools_rev": "25053ae4af8f162188388c6f3786e03349652e51",
   "icu_rev": "43953f57b037778a1b8005564afabe214834f7bd",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -164,7 +164,7 @@ vars = {
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   "mime_rev": "11fec7d6df509a4efd554051cc27e3bf82df9c96",
   "mockito_rev": "eb4d1daa20c105c94ac29689c1975f0850fa18f2",
-  "native_rev": "7efefec16509ed38544a8af999b9e85694586bc7", # mosum@ and dacoharkes@ are rolling breaking changes manually while the assets features are in experimental.
+  "native_rev": "5e9e4795d1faa39efeb92ae42fc0fa353778308f", # dart-native-interop-team@ is rolling breaking changes manually while the assets features are in experimental.
   "package_config_rev": "76934c2ca25922ec72909bbff7dfbddaf0d02bd9",
   "path_rev": "e969f42ed112dd702a9453beb9df6c12ae2d3805",
   "pool_rev": "924fb04353cec915d927f9f1aed88e2eda92b98a",

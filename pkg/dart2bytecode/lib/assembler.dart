@@ -695,12 +695,6 @@ class BytecodeAssembler {
   }
 
   @pragma('vm:prefer-inline')
-  void emitAssertBoolean(int ra) {
-    emitSourcePosition();
-    _emitInstructionA(Opcode.kAssertBoolean, ra);
-  }
-
-  @pragma('vm:prefer-inline')
   void emitCheckStack(int ra) {
     emitSourcePosition();
     _emitInstructionA(Opcode.kCheckStack, ra);
@@ -729,9 +723,9 @@ class BytecodeAssembler {
   }
 
   @pragma('vm:prefer-inline')
-  void emitAllocateClosure(int rd) {
+  void emitAllocateClosure() {
     emitSourcePosition();
-    _emitInstructionD(Opcode.kAllocateClosure, rd);
+    _emitInstruction0(Opcode.kAllocateClosure);
   }
 
   @pragma('vm:prefer-inline')
@@ -754,5 +748,15 @@ class BytecodeAssembler {
   @pragma('vm:prefer-inline')
   void emitJumpIfInitialized(Label label) {
     _emitJumpInstruction(Opcode.kJumpIfInitialized, label);
+  }
+
+  @pragma('vm:prefer-inline')
+  void emitAllocateRecord(int rd) {
+    _emitInstructionD(Opcode.kAllocateRecord, rd);
+  }
+
+  @pragma('vm:prefer-inline')
+  void emitLoadRecordField(int rd) {
+    _emitInstructionD(Opcode.kLoadRecordField, rd);
   }
 }
