@@ -141,30 +141,6 @@ class Globals {
   w.Global getGlobal(Field field) {
     assert(!field.isLate);
     return _globals.putIfAbsent(field, () {
-      if (field == translator.boxedTrue) {
-        final boxedBoolClassInfo =
-            translator.classInfo[translator.boxedBoolClass]!;
-        w.ValueType type =
-            w.RefType(boxedBoolClassInfo.struct, nullable: false);
-        final global = m.globals.define(w.GlobalType(type, mutable: false));
-        global.initializer.i32_const(boxedBoolClassInfo.classId);
-        global.initializer.i32_const(1);
-        global.initializer.struct_new(boxedBoolClassInfo.struct);
-        global.initializer.end();
-        return global;
-      } else if (field == translator.boxedFalse) {
-        final boxedBoolClassInfo =
-            translator.classInfo[translator.boxedBoolClass]!;
-        w.ValueType type =
-            w.RefType(boxedBoolClassInfo.struct, nullable: false);
-        final global = m.globals.define(w.GlobalType(type, mutable: false));
-        global.initializer.i32_const(boxedBoolClassInfo.classId);
-        global.initializer.i32_const(0);
-        global.initializer.struct_new(boxedBoolClassInfo.struct);
-        global.initializer.end();
-        return global;
-      }
-
       final Constant? init = _getConstantInitializer(field);
       w.ValueType type = translator.translateTypeOfField(field);
       if (init != null &&

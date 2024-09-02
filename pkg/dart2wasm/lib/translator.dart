@@ -768,13 +768,12 @@ class Translator with KernelNodes {
         Class cls = boxedClasses[from]!;
 
         if (cls == boxedBoolClass) {
-          final boxedTrueGlobal = globals.getGlobal(boxedTrue);
-          final boxedFalseGlobal = globals.getGlobal(boxedFalse);
-          b.if_([],
-              [w.RefType(classInfo[boxedBoolClass]!.struct, nullable: false)]);
-          b.global_get(boxedTrueGlobal);
+          final constantType =
+              w.RefType(classInfo[boxedBoolClass]!.struct, nullable: false);
+          b.if_([], [constantType]);
+          constants.instantiateConstant(b, BoolConstant(true), constantType);
           b.else_();
-          b.global_get(boxedFalseGlobal);
+          constants.instantiateConstant(b, BoolConstant(false), constantType);
           b.end();
           return;
         }
