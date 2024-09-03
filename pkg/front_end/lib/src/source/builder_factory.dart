@@ -127,7 +127,7 @@ abstract class BuilderFactory {
 
   void beginEnumBody();
 
-  TypeParameterScopeBuilder endEnumDeclaration(String name);
+  void endEnumDeclaration(String name);
 
   void endEnumDeclarationForParserRecovery(
       List<NominalVariableBuilder>? typeVariables);
@@ -139,7 +139,7 @@ abstract class BuilderFactory {
   void beginExtensionDeclaration(String? name, int charOffset,
       List<NominalVariableBuilder>? typeVariables);
 
-  void beginExtensionBody();
+  void beginExtensionBody(TypeBuilder? extensionThisType);
 
   TypeParameterScopeBuilder endExtensionDeclaration(String? name);
 
@@ -353,6 +353,30 @@ abstract class BuilderFactory {
       TypeBuilder type,
       int charOffset);
 
+  void addClassMethod(
+      {required OffsetMap offsetMap,
+      required List<MetadataBuilder>? metadata,
+      required Identifier identifier,
+      required String name,
+      required TypeBuilder? returnType,
+      required List<FormalParameterBuilder>? formals,
+      required List<NominalVariableBuilder>? typeVariables,
+      required Token? beginInitializers,
+      required int startCharOffset,
+      required int endCharOffset,
+      required int charOffset,
+      required int formalsOffset,
+      required int modifiers,
+      required bool inConstructor,
+      required bool isStatic,
+      required bool isConstructor,
+      required bool forAbstractClassOrMixin,
+      required bool isExtensionMember,
+      required bool isExtensionTypeMember,
+      required AsyncMarker asyncModifier,
+      required String? nativeMethodName,
+      required ProcedureKind? kind});
+
   void addConstructor(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
@@ -373,7 +397,6 @@ abstract class BuilderFactory {
       {required OffsetMap offsetMap,
       required Token beginToken,
       required String constructorName,
-      required List<NominalVariableBuilder>? typeVariables,
       required List<FormalParameterBuilder>? formals,
       required int charOffset,
       required bool isConst});
@@ -444,6 +467,9 @@ abstract class BuilderFactory {
 
   ConstructorReferenceBuilder addConstructorReference(TypeName name,
       List<TypeBuilder>? typeArguments, String? suffix, int charOffset);
+
+  ConstructorReferenceBuilder? addUnnamedConstructorReference(
+      List<TypeBuilder>? typeArguments, Identifier? suffix, int charOffset);
 
   TypeBuilder addNamedType(
       TypeName typeName,

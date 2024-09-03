@@ -27,7 +27,6 @@ import 'package:kernel/ast.dart'
     show AsyncMarker, InvalidType, Nullability, ProcedureKind, TreeNode;
 
 import '../api_prototype/experimental_flags.dart';
-import '../api_prototype/lowering_predicates.dart';
 import '../base/combinator.dart' show CombinatorBuilder;
 import '../base/configuration.dart' show Configuration;
 import '../base/identifiers.dart'
@@ -49,7 +48,6 @@ import '../base/modifier.dart'
         constMask,
         covariantMask,
         externalMask,
-        finalMask,
         lateMask,
         requiredMask,
         staticMask;
@@ -65,7 +63,6 @@ import '../builder/named_type_builder.dart';
 import '../builder/nullability_builder.dart';
 import '../builder/omitted_type_builder.dart';
 import '../builder/record_type_builder.dart';
-import '../builder/synthesized_type_builder.dart';
 import '../builder/type_builder.dart';
 import '../base/operator.dart' show Operator;
 import '../base/problems.dart' show unhandled;
@@ -75,7 +72,6 @@ import 'builder_factory.dart';
 import 'offset_map.dart';
 import 'source_enum_builder.dart';
 import 'stack_listener_impl.dart';
-import 'type_parameter_scope_builder.dart';
 import 'value_kinds.dart';
 
 enum MethodBody {
@@ -1134,7 +1130,14 @@ class OutlineBuilder extends StackListenerImpl {
         break;
       case DeclarationKind.Extension:
         declarationContext = DeclarationContext.ExtensionBody;
-        _builderFactory.beginExtensionBody();
+        assert(checkState(token, [
+          unionOfKinds([ValueKinds.ParserRecovery, ValueKinds.TypeBuilder])
+        ]));
+
+        Object? extensionThisType = peek();
+        // TODO(johnniwinther): Supply an invalid type as the extension on type.
+        _builderFactory.beginExtensionBody(
+            extensionThisType is TypeBuilder ? extensionThisType : null);
         break;
       case DeclarationKind.ExtensionType:
         declarationContext = DeclarationContext.ExtensionTypeBody;
@@ -1147,20 +1150,6 @@ class OutlineBuilder extends StackListenerImpl {
         break;
     }
     pushDeclarationContext(declarationContext);
-    if (kind == DeclarationKind.Extension) {
-      assert(checkState(token, [
-        unionOfKinds([ValueKinds.ParserRecovery, ValueKinds.TypeBuilder])
-      ]));
-
-      Object? extensionThisType = peek();
-
-      if (extensionThisType is TypeBuilder) {
-        _builderFactory.currentTypeParameterScopeBuilder
-            .registerExtensionThisType(extensionThisType);
-      } else {
-        // TODO(johnniwinther): Supply an invalid type as the extension on type.
-      }
-    }
     debugEvent("beginClassOrMixinBody");
   }
 
@@ -1744,24 +1733,12 @@ class OutlineBuilder extends StackListenerImpl {
       }
     }
 
-    _builderFactory.beginConstructor();
-    _builderFactory.endConstructor();
-    NominalVariableCopy? nominalVariableCopy =
-        _builderFactory.copyTypeVariables(
-            _builderFactory.currentTypeParameterScopeBuilder.typeVariables,
-            kind: TypeVariableKind.extensionSynthesized,
-            instanceTypeVariableAccess:
-                declarationContext.instanceTypeVariableAccessState);
-    List<NominalVariableBuilder>? typeVariables =
-        nominalVariableCopy?.newVariableBuilders;
-
     _builderFactory.addPrimaryConstructor(
         offsetMap: _offsetMap,
         beginToken: beginToken,
         constructorName: constructorName == "new" ? "" : constructorName,
         charOffset: charOffset,
         formals: formals,
-        typeVariables: typeVariables,
         isConst: constKeyword != null);
   }
 
@@ -2138,22 +2115,15 @@ class OutlineBuilder extends StackListenerImpl {
       return;
     }
 
-    if (inConstructor) {
-      _builderFactory.endConstructor();
-    } else if ((modifiers & staticMask) != 0) {
-      _builderFactory.endStaticMethod();
-    } else {
-      _builderFactory.endInstanceMethod();
-    }
-
     Operator? operator = identifier.operator;
     // TODO(johnniwinther): Find a uniform way to compute this.
     bool hasNoFormals = formals == null;
     if (Operator.subtract == operator && hasNoFormals) {
       operator = Operator.unaryMinus;
     }
+
     String name;
-    ProcedureKind kind;
+    ProcedureKind? kind;
     int charOffset = identifier.qualifierOffset;
     if (operator != null) {
       name = operator.text;
@@ -2203,6 +2173,7 @@ class OutlineBuilder extends StackListenerImpl {
       name = identifier.name;
       kind = computeProcedureKind(getOrSet);
     }
+
     bool isAbstract = bodyKind == MethodBody.Abstract;
     if (isAbstract) {
       // An error has been reported if this wasn't already sync.
@@ -2240,115 +2211,23 @@ class OutlineBuilder extends StackListenerImpl {
     if (nativeMethodName != null) {
       modifiers |= externalMask;
     }
+
     bool isConst = (modifiers & constMask) != 0;
-
-    String? constructorName;
-    switch (methodKind) {
-      case _MethodKind.classConstructor:
-      case _MethodKind.mixinConstructor:
-      case _MethodKind.extensionConstructor:
-      case _MethodKind.extensionTypeConstructor:
-      case _MethodKind.enumConstructor:
-        constructorName = _builderFactory.computeAndValidateConstructorName(
-                _builderFactory.currentTypeParameterScopeBuilder, identifier) ??
-            name;
-        break;
-      case _MethodKind.classMethod:
-      case _MethodKind.mixinMethod:
-      case _MethodKind.extensionMethod:
-      case _MethodKind.extensionTypeMethod:
-      case _MethodKind.enumMethod:
-        break;
-    }
     bool isStatic = (modifiers & staticMask) != 0;
-    bool isConstructor = constructorName != null;
-    bool cloneTypeVariablesFromEnclosingDeclaration;
-    switch (_builderFactory.currentTypeParameterScopeBuilder.kind) {
-      case TypeParameterScopeKind.extensionDeclaration:
-      case TypeParameterScopeKind.extensionTypeDeclaration:
-        cloneTypeVariablesFromEnclosingDeclaration = !isStatic;
-      case TypeParameterScopeKind.library:
-      case TypeParameterScopeKind.classOrNamedMixinApplication:
-      case TypeParameterScopeKind.classDeclaration:
-      case TypeParameterScopeKind.mixinDeclaration:
-      case TypeParameterScopeKind.unnamedMixinApplication:
-      case TypeParameterScopeKind.namedMixinApplication:
-      case TypeParameterScopeKind.extensionOrExtensionTypeDeclaration:
-      case TypeParameterScopeKind.typedef:
-      case TypeParameterScopeKind.staticMethod:
-      case TypeParameterScopeKind.instanceMethod:
-      case TypeParameterScopeKind.constructor:
-      case TypeParameterScopeKind.topLevelMethod:
-      case TypeParameterScopeKind.factoryMethod:
-      case TypeParameterScopeKind.functionType:
-      case TypeParameterScopeKind.enumDeclaration:
-        cloneTypeVariablesFromEnclosingDeclaration = false;
-    }
-    if (cloneTypeVariablesFromEnclosingDeclaration) {
-      TypeParameterScopeBuilder declaration =
-          _builderFactory.currentTypeParameterScopeBuilder;
-      NominalVariableCopy? nominalVariableCopy =
-          _builderFactory.copyTypeVariables(declaration.typeVariables,
-              kind: TypeVariableKind.extensionSynthesized,
-              instanceTypeVariableAccess:
-                  declarationContext.instanceTypeVariableAccessState);
 
-      if (nominalVariableCopy != null) {
-        if (typeVariables != null) {
-          typeVariables = nominalVariableCopy.newVariableBuilders
-            ..addAll(typeVariables);
-        } else {
-          typeVariables = nominalVariableCopy.newVariableBuilders;
-        }
-      }
-
-      if (!isConstructor) {
-        List<FormalParameterBuilder> synthesizedFormals = [];
-        TypeBuilder thisType;
-        if (declaration.kind == TypeParameterScopeKind.extensionDeclaration) {
-          thisType = declaration.extensionThisType;
-        } else {
-          thisType = _builderFactory.addNamedType(
-              new SyntheticTypeName(declaration.name, charOffset),
-              const NullabilityBuilder.omitted(),
-              declaration.typeVariables != null
-                  ? new List<TypeBuilder>.generate(
-                      declaration.typeVariables!.length,
-                      (int index) =>
-                          new NamedTypeBuilderImpl.fromTypeDeclarationBuilder(
-                              typeVariables![index],
-                              const NullabilityBuilder.omitted(),
-                              instanceTypeVariableAccess:
-                                  InstanceTypeVariableAccessState.Allowed))
-                  : null,
-              charOffset,
-              instanceTypeVariableAccess:
-                  InstanceTypeVariableAccessState.Allowed);
-        }
-        if (nominalVariableCopy != null) {
-          thisType = new SynthesizedTypeBuilder(
-              thisType,
-              nominalVariableCopy.newToOldVariableMap,
-              nominalVariableCopy.substitutionMap);
-        }
-        synthesizedFormals.add(new FormalParameterBuilder(
-            FormalParameterKind.requiredPositional,
-            finalMask,
-            thisType,
-            syntheticThisName,
-            null,
-            charOffset,
-            fileUri: uri,
-            isExtensionThis: true,
-            hasImmediatelyDeclaredInitializer: false));
-        if (formals != null) {
-          synthesizedFormals.addAll(formals);
-        }
-        formals = synthesizedFormals;
-      }
-    }
-
-    if (constructorName != null) {
+    bool isConstructor = switch (methodKind) {
+      _MethodKind.classConstructor => true,
+      _MethodKind.mixinConstructor => true,
+      _MethodKind.extensionConstructor => true,
+      _MethodKind.extensionTypeConstructor => true,
+      _MethodKind.enumConstructor => true,
+      _MethodKind.classMethod => false,
+      _MethodKind.mixinMethod => false,
+      _MethodKind.extensionMethod => false,
+      _MethodKind.extensionTypeMethod => false,
+      _MethodKind.enumMethod => false,
+    };
+    if (isConstructor) {
       if (isConst &&
           bodyKind != MethodBody.Abstract &&
           !libraryFeatures.constFunctions.isEnabled) {
@@ -2363,24 +2242,6 @@ class OutlineBuilder extends StackListenerImpl {
             noLength);
         returnType = null;
       }
-      final int startCharOffset =
-          metadata == null ? beginToken.charOffset : metadata.first.charOffset;
-      _builderFactory.addConstructor(
-          _offsetMap,
-          metadata,
-          modifiers,
-          identifier,
-          constructorName,
-          typeVariables,
-          formals,
-          startCharOffset,
-          charOffset,
-          formalsOffset,
-          endToken.charOffset,
-          nativeMethodName,
-          beginInitializers: beginInitializers,
-          forAbstractClassOrMixin: inAbstractOrSealedClass ||
-              methodKind == _MethodKind.mixinConstructor);
     } else {
       if (isConst) {
         // Coverage-ignore-block(suite): Not run.
@@ -2388,31 +2249,43 @@ class OutlineBuilder extends StackListenerImpl {
         // because it is an error to have a const method.
         modifiers &= ~constMask;
       }
-      final int startCharOffset =
-          metadata == null ? beginToken.charOffset : metadata.first.charOffset;
-      bool isExtensionMember = methodKind == _MethodKind.extensionMethod;
-      bool isExtensionTypeMember =
-          methodKind == _MethodKind.extensionTypeMethod;
-      _builderFactory.addProcedure(
-          _offsetMap,
-          metadata,
-          modifiers,
-          returnType,
-          identifier,
-          name,
-          typeVariables,
-          formals,
-          kind,
-          startCharOffset,
-          charOffset,
-          formalsOffset,
-          endToken.charOffset,
-          nativeMethodName,
-          asyncModifier,
-          isInstanceMember: !isStatic,
-          isExtensionMember: isExtensionMember,
-          isExtensionTypeMember: isExtensionTypeMember);
     }
+
+    int startCharOffset =
+        metadata == null ? beginToken.charOffset : metadata.first.charOffset;
+
+    int endCharOffset = endToken.charOffset;
+
+    bool forAbstractClassOrMixin =
+        inAbstractOrSealedClass || methodKind == _MethodKind.mixinConstructor;
+
+    bool isExtensionMember = methodKind == _MethodKind.extensionMethod;
+    bool isExtensionTypeMember = methodKind == _MethodKind.extensionTypeMethod;
+
+    _builderFactory.addClassMethod(
+        offsetMap: _offsetMap,
+        metadata: metadata,
+        identifier: identifier,
+        name: name,
+        returnType: returnType,
+        formals: formals,
+        typeVariables: typeVariables,
+        beginInitializers: beginInitializers,
+        startCharOffset: startCharOffset,
+        endCharOffset: endCharOffset,
+        charOffset: charOffset,
+        formalsOffset: formalsOffset,
+        modifiers: modifiers,
+        inConstructor: inConstructor,
+        isStatic: isStatic,
+        isConstructor: isConstructor,
+        isExtensionMember: isExtensionMember,
+        isExtensionTypeMember: isExtensionTypeMember,
+        forAbstractClassOrMixin: forAbstractClassOrMixin,
+        asyncModifier: asyncModifier,
+        nativeMethodName: nativeMethodName,
+        kind: kind);
+
     nativeMethodName = null;
     inConstructor = false;
     popDeclarationContext();
@@ -3724,7 +3597,6 @@ class OutlineBuilder extends StackListenerImpl {
 
     Identifier? suffix = popIfNotNull(periodBeforeName) as Identifier?;
     List<TypeBuilder>? typeArguments = pop() as List<TypeBuilder>?;
-    int charOffset = start.charOffset;
     Object? name = pop();
     if (name is ParserRecovery) {
       push(name);
@@ -3733,35 +3605,9 @@ class OutlineBuilder extends StackListenerImpl {
           name.typeName, typeArguments, suffix?.name, name.qualifierOffset));
     } else {
       assert(name == null);
-      // At the moment, the name of the type in a constructor reference can be
-      // omitted only within an enum element declaration.
-      if (_builderFactory.currentTypeParameterScopeBuilder.kind ==
-          TypeParameterScopeKind.enumDeclaration) {
-        if (libraryFeatures.enhancedEnums.isEnabled) {
-          int constructorNameOffset = suffix?.nameOffset ?? charOffset;
-          push(_builderFactory.addConstructorReference(
-              new SyntheticTypeName(
-                  _builderFactory.currentTypeParameterScopeBuilder.name,
-                  constructorNameOffset),
-              typeArguments,
-              suffix?.name,
-              constructorNameOffset));
-        } else {
-          // For entries that consist of their name only, all of the elements
-          // of the constructor reference should be null.
-          if (typeArguments != null || suffix != null) {
-            // Coverage-ignore-block(suite): Not run.
-            _compilationUnit.reportFeatureNotEnabled(
-                libraryFeatures.enhancedEnums, uri, charOffset, noLength);
-          }
-          push(NullValues.ConstructorReference);
-        }
-      } else {
-        internalProblem(
-            messageInternalProblemOmittedTypeNameInConstructorReference,
-            charOffset,
-            uri);
-      }
+      push(_builderFactory.addUnnamedConstructorReference(
+              typeArguments, suffix, start.charOffset) ??
+          NullValues.ConstructorReference);
     }
   }
 
