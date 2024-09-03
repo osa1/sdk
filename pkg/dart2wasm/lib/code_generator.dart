@@ -308,7 +308,7 @@ abstract class AstCodeGenerator
         if (!local.type.isSubtypeOf(incomingArgumentType)) {
           final newLocal = addLocal(incomingArgumentType);
           b.local_get(local);
-          translator.convertType(b, local.type, newLocal.type);
+          translator.convertType(b, local.type, newLocal.type, variable.type);
           b.local_set(newLocal);
           local = newLocal;
         }
@@ -325,7 +325,8 @@ abstract class AstCodeGenerator
           if (!operand.type.isSubtypeOf(boxedType)) {
             final boxedOperand = addLocal(boxedType);
             b.local_get(operand);
-            translator.convertType(b, operand.type, boxedOperand.type);
+            translator.convertType(
+                b, operand.type, boxedOperand.type, variable.type);
             b.local_set(boxedOperand);
             operand = boxedOperand;
           }
@@ -346,7 +347,7 @@ abstract class AstCodeGenerator
         if (!variableType.isSubtypeOf(local.type)) {
           w.Local newLocal = addLocal(variableType);
           b.local_get(local);
-          translator.convertType(b, local.type, newLocal.type);
+          translator.convertType(b, local.type, newLocal.type, variable.type);
           b.local_set(newLocal);
           local = newLocal;
         }
@@ -379,7 +380,7 @@ abstract class AstCodeGenerator
               parameterType.classNode == translator.wasmExternRefClass)) {
         w.Local newLocal = addLocal(translateType(parameterType));
         b.local_get(local);
-        translator.convertType(b, local.type, newLocal.type);
+        translator.convertType(b, local.type, newLocal.type, parameterType);
         b.local_set(newLocal);
         locals[parameter] = newLocal;
       }
@@ -519,7 +520,8 @@ abstract class AstCodeGenerator
       if (translator.needsConversion(thisLocal!.type, preciseThisType)) {
         preciseThisLocal = addLocal(preciseThisType);
         b.local_get(thisLocal!);
-        translator.convertType(b, thisLocal!.type, preciseThisType);
+        translator.convertType(
+            b, thisLocal!.type, preciseThisType, dartTypeOf(ThisExpression()));
         b.local_set(preciseThisLocal!);
       } else {
         preciseThisLocal = thisLocal!;
@@ -627,7 +629,7 @@ abstract class AstCodeGenerator
       if (capture != null) {
         b.local_get(capture.context.currentLocal);
         b.local_get(local);
-        translator.convertType(b, local.type, capture.type);
+        translator.convertType(b, local.type, capture.type, variable.type);
         b.struct_set(capture.context.struct, capture.fieldIndex);
       }
     });
@@ -636,7 +638,7 @@ abstract class AstCodeGenerator
       if (capture != null) {
         b.local_get(capture.context.currentLocal);
         b.local_get(local);
-        translator.convertType(b, local.type, capture.type);
+        translator.convertType(b, local.type, capture.type, null);
         b.struct_set(capture.context.struct, capture.fieldIndex);
       }
     });
@@ -665,7 +667,7 @@ abstract class AstCodeGenerator
     final oldFileOffset = setSourceMapFileOffset(node.fileOffset);
     try {
       w.ValueType resultType = node.accept1(this, expectedType);
-      translator.convertType(b, resultType, expectedType);
+      translator.convertType(b, resultType, expectedType, dartTypeOf(node));
       return expectedType;
     } catch (_) {
       _printLocation(node);
@@ -978,6 +980,7 @@ abstract class AstCodeGenerator
             b,
             thrownException.type,
             translator.translateType(exceptionDeclaration.type),
+            exceptionDeclaration.type,
           );
         });
       }
@@ -1127,7 +1130,8 @@ abstract class AstCodeGenerator
       } else {
         if (returnValueLocal != null) {
           b.local_get(returnValueLocal!);
-          translator.convertType(b, returnValueLocal!.type, returnType);
+          translator.convertType(b, returnValueLocal!.type, returnType,
+              null); // TODO: pass dart type here
         }
         _returnFromFunction();
       }
@@ -1316,7 +1320,9 @@ abstract class AstCodeGenerator
     if (expression != null) {
       wrap(expression, returnType);
     } else {
-      translator.convertType(b, voidMarker, returnType);
+      final returnExpression = node.expression;
+      translator.convertType(b, voidMarker, returnType,
+          returnExpression == null ? null : dartTypeOf(returnExpression));
     }
 
     // If we are wrapped in a [TryFinally] node then we have to run finalizers
@@ -1396,7 +1402,7 @@ abstract class AstCodeGenerator
       b.local_get(switchValueNullableLocal!);
       b.br_on_null(nullLabel);
       translator.convertType(b, switchInfo.nullableType.withNullability(false),
-          switchInfo.nonNullableType);
+          switchInfo.nonNullableType, dartTypeOf(node.expression));
       b.local_set(switchValueNonNullableLocal);
     }
 
@@ -1525,7 +1531,8 @@ abstract class AstCodeGenerator
     // A user of `this` may have more precise type information, in which case
     // we downcast it here.
     b.local_get(thisLocal!);
-    translator.convertType(b, thisType, expectedType);
+    translator.convertType(
+        b, thisType, expectedType, dartTypeOf(ThisExpression()));
     return expectedType;
   }
 
@@ -2206,8 +2213,8 @@ abstract class AstCodeGenerator
         w.Label nullLabel = b.block();
         wrap(node.receiver, translator.topInfo.nullableType);
         b.br_on_null(nullLabel);
-        translator.convertType(
-            b, translator.topInfo.nullableType, signature.inputs[0]);
+        translator.convertType(b, translator.topInfo.nullableType,
+            signature.inputs[0], dartTypeOf(node.receiver).toNonNull());
       }, (_, __) {});
       b.br(doneLabel);
       b.end(); // nullLabel
@@ -2880,7 +2887,7 @@ abstract class AstCodeGenerator
       resultType = info.struct.fields[fieldIndex].type.unpacked;
     }
 
-    translator.convertType(b, resultType, types.nonNullableTypeType);
+    translator.convertType(b, resultType, types.nonNullableTypeType, null);
     return types.nonNullableTypeType;
   }
 
@@ -3342,7 +3349,8 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
     final List<w.ValueType> memberWasmInputs = memberWasmFunctionType.inputs;
 
     b.local_get(receiverLocal);
-    translator.convertType(b, receiverLocal.type, memberWasmInputs[0]);
+    translator.convertType(b, receiverLocal.type, memberWasmInputs[0],
+        dartTypeOf(ThisExpression()));
 
     for (final typeParam in memberTypeParams) {
       b.local_get(typeLocals[typeParam]!);
@@ -3355,8 +3363,8 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
       b.local_get(listLocal);
       b.i32_const(listIdx);
       b.array_get(translator.nullableObjectArrayType);
-      translator.convertType(
-          b, translator.topInfo.nullableType, memberWasmInputs[wasmInputIdx]);
+      translator.convertType(b, translator.topInfo.nullableType,
+          memberWasmInputs[wasmInputIdx], null);
     }
 
     for (int positionalParamIdx = 0;
@@ -3378,7 +3386,8 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
     translator.convertType(
         b,
         translator.outputOrVoid(memberWasmFunctionType.outputs),
-        translator.topInfo.nullableType);
+        translator.topInfo.nullableType,
+        procedure.computeSignatureOrFunctionType().returnType);
 
     b.return_();
     b.end();
@@ -3415,10 +3424,10 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
     if (member_ is Field) {
       int fieldIndex = translator.fieldIndex[member_]!;
       b.local_get(receiverLocal);
-      translator.convertType(b, receiverLocal.type, info.nonNullableType);
+      translator.convertType(b, receiverLocal.type, info.nonNullableType, null);
       b.local_get(positionalArgLocal);
       translator.convertType(b, positionalArgLocal.type,
-          info.struct.fields[fieldIndex].type.unpacked);
+          info.struct.fields[fieldIndex].type.unpacked, null);
       b.struct_set(info.struct, fieldIndex);
     } else {
       final setterProcedure = member_ as Procedure;
@@ -3427,9 +3436,10 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
       final setterWasmInputs = setterProcedureWasmType.inputs;
       assert(setterWasmInputs.length == 2);
       b.local_get(receiverLocal);
-      translator.convertType(b, receiverLocal.type, setterWasmInputs[0]);
+      translator.convertType(b, receiverLocal.type, setterWasmInputs[0], null);
       b.local_get(positionalArgLocal);
-      translator.convertType(b, positionalArgLocal.type, setterWasmInputs[1]);
+      translator.convertType(
+          b, positionalArgLocal.type, setterWasmInputs[1], null);
       call(setterProcedure.reference);
     }
 
@@ -3839,7 +3849,7 @@ class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
       b.global_set(flag);
     }
     b.global_get(global);
-    translator.convertType(b, global.type.type, outputs.single);
+    translator.convertType(b, global.type.type, outputs.single, null);
     b.end();
     addNestedClosuresToCompilationQueue();
   }
@@ -3880,14 +3890,15 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
       w.Local thisLocal = paramLocals[0];
       w.RefType structType = w.RefType.def(struct, nullable: false);
       b.local_get(thisLocal);
-      translator.convertType(b, thisLocal.type, structType);
+      translator.convertType(
+          b, thisLocal.type, structType, dartTypeOf(ThisExpression()));
     }
 
     if (isImplicitGetter) {
       // Implicit getter
       getThis();
       b.struct_get(struct, fieldIndex);
-      translator.convertType(b, fieldType, returnType);
+      translator.convertType(b, fieldType, returnType, null);
     } else {
       // Implicit setter
       w.Local valueLocal = paramLocals[1];
@@ -3903,7 +3914,7 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
           if (!operand.type.isSubtypeOf(boxedType)) {
             final boxedOperand = addLocal(boxedType);
             b.local_get(operand);
-            translator.convertType(b, operand.type, boxedOperand.type);
+            translator.convertType(b, operand.type, boxedOperand.type, null);
             b.local_set(boxedOperand);
             operand = boxedOperand;
           }
@@ -3917,7 +3928,7 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
       }
 
       b.local_get(valueLocal);
-      translator.convertType(b, valueLocal.type, fieldType);
+      translator.convertType(b, valueLocal.type, fieldType, null);
       b.struct_set(struct, fieldIndex);
       assert(functionType.outputs.isEmpty);
     }
@@ -4063,14 +4074,23 @@ class SwitchInfo {
       // add missing optional parameters.
       assert(equalsMemberSignature.inputs.length == 2);
 
+      final equalsFunctionType =
+          (equalsMember as Procedure).computeSignatureOrFunctionType();
+
       compare = (switchExprLocal, pushCaseExpr) {
         final caseExprType = pushCaseExpr();
         translator.convertType(
-            codeGen.b, caseExprType, equalsMemberSignature.inputs[0]);
+            codeGen.b,
+            caseExprType,
+            equalsMemberSignature.inputs[0],
+            equalsFunctionType.positionalParameters[0]);
 
         codeGen.b.local_get(switchExprLocal);
         translator.convertType(
-            codeGen.b, switchExprLocal.type, equalsMemberSignature.inputs[1]);
+            codeGen.b,
+            switchExprLocal.type,
+            equalsMemberSignature.inputs[1],
+            equalsFunctionType.positionalParameters[1]);
 
         codeGen.call(equalsMember.reference);
       };

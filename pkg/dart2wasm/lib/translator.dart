@@ -739,7 +739,8 @@ class Translator with KernelNodes {
     return (from == voidMarker) ^ (to == voidMarker) || !from.isSubtypeOf(to);
   }
 
-  void convertType(w.InstructionsBuilder b, w.ValueType from, w.ValueType to) {
+  void convertType(w.InstructionsBuilder b, w.ValueType from, w.ValueType to,
+      DartType? toDartType) {
     if (from == voidMarker || to == voidMarker) {
       if (from != voidMarker) {
         b.drop();
@@ -1310,7 +1311,7 @@ class _ClosureTrampolineGenerator implements CodeGenerator {
       w.Local receiver = trampoline.locals[0];
       b.local_get(receiver);
       translator.convertType(
-          b, receiver.type, target.type.inputs[targetIndex++]);
+          b, receiver.type, target.type.inputs[targetIndex++], null);
     }
     int argIndex = 1;
     for (int i = 0; i < typeCount; i++) {
@@ -1321,7 +1322,8 @@ class _ClosureTrampolineGenerator implements CodeGenerator {
       if (i < posArgCount) {
         w.Local arg = trampoline.locals[argIndex++];
         b.local_get(arg);
-        translator.convertType(b, arg.type, target.type.inputs[targetIndex++]);
+        translator.convertType(
+            b, arg.type, target.type.inputs[targetIndex++], null);
       } else {
         translator.constants.instantiateConstant(
             b, paramInfo.positional[i]!, target.type.inputs[targetIndex++]);
@@ -1333,7 +1335,8 @@ class _ClosureTrampolineGenerator implements CodeGenerator {
       if (argNameIndex < argNames.length && argNames[argNameIndex] == argName) {
         w.Local arg = trampoline.locals[argIndex++];
         b.local_get(arg);
-        translator.convertType(b, arg.type, target.type.inputs[targetIndex++]);
+        translator.convertType(
+            b, arg.type, target.type.inputs[targetIndex++], null);
         argNameIndex++;
       } else {
         translator.constants.instantiateConstant(
@@ -1347,7 +1350,7 @@ class _ClosureTrampolineGenerator implements CodeGenerator {
     b.call(target);
 
     translator.convertType(b, translator.outputOrVoid(target.type.outputs),
-        translator.outputOrVoid(trampoline.type.outputs));
+        translator.outputOrVoid(trampoline.type.outputs), null);
     b.end();
   }
 }
@@ -1402,10 +1405,11 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
 
       // Get context, downcast it to expected type
       b.local_get(closureLocal);
-      translator.convertType(b, closureLocal.type, closureBaseType);
+      translator.convertType(b, closureLocal.type, closureBaseType, null);
       b.struct_get(translator.closureLayouter.closureBaseStruct,
           FieldIndex.closureContext);
-      translator.convertType(b, closureContextType, targetInputs[inputIdx]);
+      translator.convertType(
+          b, closureContextType, targetInputs[inputIdx], null);
       inputIdx += 1;
     }
 
@@ -1415,7 +1419,7 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
       b.i32_const(typeIdx);
       b.array_get(translator.typeArrayType);
       translator.convertType(
-          b, translator.topInfo.nullableType, targetInputs[inputIdx]);
+          b, translator.topInfo.nullableType, targetInputs[inputIdx], null);
       inputIdx += 1;
     }
 
@@ -1442,7 +1446,7 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
         b.end();
       }
       translator.convertType(
-          b, translator.topInfo.nullableType, targetInputs[inputIdx]);
+          b, translator.topInfo.nullableType, targetInputs[inputIdx], null);
       inputIdx += 1;
     }
 
@@ -1479,13 +1483,15 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
         // Shape check passed, parameter must be passed
         b.local_get(namedArgsListLocal);
         b.local_get(namedArgValueIndexLocal);
-        translator.convertType(b, namedArgValueIndexLocal.type, w.NumType.i64);
+        translator.convertType(
+            b, namedArgValueIndexLocal.type, w.NumType.i64, null);
         b.i32_wrap_i64();
         b.array_get(translator.nullableObjectArrayType);
         translator.convertType(
             b,
             translator.nullableObjectArrayType.elementType.type.unpacked,
-            target.type.inputs[inputIdx]);
+            target.type.inputs[inputIdx],
+            null);
       } else {
         // Parameter may not be passed.
         b.local_get(namedArgValueIndexLocal);
@@ -1508,12 +1514,13 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
         b.else_(); // value index not null
         b.local_get(namedArgsListLocal);
         b.local_get(namedArgValueIndexLocal);
-        translator.convertType(b, namedArgValueIndexLocal.type, w.NumType.i64);
+        translator.convertType(
+            b, namedArgValueIndexLocal.type, w.NumType.i64, null);
         b.i32_wrap_i64();
         b.array_get(translator.nullableObjectArrayType);
         b.end();
         translator.convertType(
-            b, translator.topInfo.nullableType, targetInputs[inputIdx]);
+            b, translator.topInfo.nullableType, targetInputs[inputIdx], null);
       }
       inputIdx += 1;
     }
@@ -1521,7 +1528,7 @@ class _ClosureDynamicEntryGenerator implements CodeGenerator {
     b.call(target);
 
     translator.convertType(b, translator.outputOrVoid(target.type.outputs),
-        translator.outputOrVoid(function.type.outputs));
+        translator.outputOrVoid(function.type.outputs), null);
 
     b.end(); // end function
   }

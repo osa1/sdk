@@ -70,7 +70,8 @@ mixin AsyncCodeGeneratorMixin on StateMachineEntryAstCodeGenerator {
     translator.convertType(
         b,
         asyncSuspendStateInfo.struct.fields[5].type.unpacked,
-        completerFutureGetterType.inputs[0]);
+        completerFutureGetterType.inputs[0],
+        null);
     call(translator.completerFuture.getterReference);
     b.return_();
     b.end();
@@ -391,8 +392,8 @@ class AsyncStateMachineCodeGenerator extends StateMachineCodeGenerator {
 
     setVariable(awaitValueVar, () {
       b.local_get(_awaitValueLocal);
-      translator.convertType(
-          b, _awaitValueLocal.type, translateType(awaitValueVar.type));
+      translator.convertType(b, _awaitValueLocal.type,
+          translateType(awaitValueVar.type), awaitValueVar.type);
     });
   }
 }

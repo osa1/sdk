@@ -888,7 +888,10 @@ abstract class StateMachineCodeGenerator extends AstCodeGenerator {
       b.ref_as_non_null();
       // Unbox if necessary
       translator.convertType(
-          b, switchValueNullableLocal.type, switchValueNonNullableLocal.type);
+          b,
+          switchValueNullableLocal.type,
+          switchValueNonNullableLocal.type,
+          dartTypeOf(node.expression).toNonNull());
       b.local_set(switchValueNonNullableLocal);
     }
 
@@ -1005,8 +1008,11 @@ abstract class StateMachineCodeGenerator extends AstCodeGenerator {
       setVariable(catch_.exception!, () {
         getSuspendStateCurrentException();
         // Type test already passed, convert the exception.
-        translator.convertType(b, translator.topInfo.nullableType,
-            translator.translateType(catch_.exception!.type));
+        translator.convertType(
+            b,
+            translator.topInfo.nullableType,
+            translator.translateType(catch_.exception!.type),
+            catch_.exception!.type);
       });
       setVariable(catch_.stackTrace!, () => getSuspendStateCurrentStackTrace());
 
@@ -1270,6 +1276,7 @@ abstract class StateMachineCodeGenerator extends AstCodeGenerator {
   /// Same as [_getVariable], but boxes the value if it's not already boxed.
   void _getVariableBoxed(VariableDeclaration variable) {
     final varType = _getVariable(variable);
-    translator.convertType(b, varType, translator.topInfo.nullableType);
+    translator.convertType(
+        b, varType, translator.topInfo.nullableType, variable.type);
   }
 }
