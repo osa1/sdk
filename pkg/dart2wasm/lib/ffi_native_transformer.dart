@@ -372,6 +372,7 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
       case NativeType.kInt32:
       case NativeType.kUint32:
       case NativeType.kBool:
+      case NativeType.kPointer:
         return InterfaceType(wasmI32Class, Nullability.nonNullable);
 
       case NativeType.kInt64:
@@ -383,9 +384,6 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
 
       case NativeType.kDouble:
         return InterfaceType(wasmF64Class, Nullability.nonNullable);
-
-      case NativeType.kPointer:
-        return InterfaceType(wasmI32Class, Nullability.nonNullable);
 
       case NativeType.kStruct:
         return ffiType;
