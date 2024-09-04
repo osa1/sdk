@@ -75,6 +75,8 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
   final Procedure wasmF32ToDouble;
   final Procedure wasmF64FromDouble;
   final Procedure wasmF64ToDouble;
+  final Procedure pointerFromAddressI32;
+  final Field pointerAddressField;
 
   WasmFfiNativeTransformer(super.index, super.coreTypes, super.hierarchy,
       super.diagnosticReporter, super.referenceFromIndex)
@@ -108,7 +110,10 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
         wasmF64FromDouble =
             index.getProcedure('dart:_wasm', 'WasmF64', 'fromDouble'),
         wasmF64ToDouble =
-            index.getProcedure('dart:_wasm', 'WasmF64', 'toDouble');
+            index.getProcedure('dart:_wasm', 'WasmF64', 'toDouble'),
+        pointerFromAddressI32 =
+            index.getProcedure('dart:ffi', 'Pointer', '_fromAddressI32'),
+        pointerAddressField = index.getField('dart:ffi', 'Pointer', '_address');
 
   @override
   visitProcedure(Procedure node) {
@@ -256,7 +261,13 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
         StaticInvocation(wasmF32FromDouble, Arguments([expr])),
       NativeType.kDouble =>
         StaticInvocation(wasmF64FromDouble, Arguments([expr])),
-      NativeType.kPointer => expr,
+      NativeType.kPointer => InstanceGet(
+          InstanceAccessKind.Instance,
+          expr,
+          pointerAddressField.name,
+          interfaceTarget: pointerAddressField,
+          resultType: InterfaceType(wasmI32Class, Nullability.nonNullable),
+        ),
       NativeType.kBool => StaticInvocation(wasmI32FromBool, Arguments([expr])),
       NativeType.kVoid => null,
       _ => throw '_dartValueToFfiValue: $abiTypeNativeType cannot be converted'
@@ -295,6 +306,9 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
         return instanceInvocation(wasmI32ToIntUnsigned, expr);
 
       case NativeType.kPointer:
+        return StaticInvocation(
+            pointerFromAddressI32, Arguments([expr], types: [DynamicType()]));
+
       case NativeType.kVoid:
         return expr;
 
@@ -371,6 +385,8 @@ class WasmFfiNativeTransformer extends FfiNativeTransformer {
         return InterfaceType(wasmF64Class, Nullability.nonNullable);
 
       case NativeType.kPointer:
+        return InterfaceType(wasmI32Class, Nullability.nonNullable);
+
       case NativeType.kStruct:
         return ffiType;
 
