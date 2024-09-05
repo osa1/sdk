@@ -299,14 +299,15 @@ class TypesBuilder with Builder<ir.Types> {
   ir.Types forceBuild() {
     final usedTypes = _collectUsedTypes();
     final types = _recGroupBuilder.createGroupsForModule(usedTypes);
-    final nameCount =
-        types.fold(0, (p, e) => p + e.whereType<ir.DataType>().length);
 
+    int nameCount = 0;
     int typesWithNamedFieldsCount = 0;
+
     for (final recursionGroup in types) {
       for (final defType in recursionGroup) {
-        if (defType is ir.StructType) {
-          if (defType.fieldNames.isNotEmpty) {
+        if (defType is ir.DataType) {
+          nameCount += 1;
+          if (defType is ir.StructType && defType.fieldNames.isNotEmpty) {
             typesWithNamedFieldsCount += 1;
           }
         }
