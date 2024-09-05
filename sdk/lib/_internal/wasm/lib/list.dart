@@ -108,16 +108,29 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
   }
 
   void setAll(int index, Iterable<E> iterable) {
+    final length = this.length;
+
     // index < 0 || index > length
     if (index.gtU(length)) {
-      throw RangeError.range(index, 0, this.length, "index");
+      throw RangeError.range(index, 0, length, "index");
     }
 
     if (iterable is WasmListBase) {
       final iterableWasmList = unsafeCast<WasmListBase>(iterable);
-      for (int i = 0; i < iterableWasmList.length; i += 1) {
-        this[index + i] = unsafeCast<E>(iterableWasmList._data[i]);
+      final numElements = iterableWasmList.length;
+
+      // elements to copy = min(length - index, numElements)
+      int numElementsToCopy = length - index;
+      if (numElementsToCopy > numElements) {
+        numElementsToCopy = numElements;
       }
+
+      _data.copy(index, iterableWasmList._data, 0, numElementsToCopy);
+
+      if (numElements > numElementsToCopy) {
+        throw IndexError.withLength(length, length);
+      }
+
       return;
     }
 
