@@ -21,7 +21,6 @@ import 'package:analyzer/src/dart/element/member.dart';
 import 'package:analyzer/src/dart/element/name_union.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
 import 'package:analyzer/src/summary2/ast_binary_reader.dart';
 import 'package:analyzer/src/summary2/ast_binary_tag.dart';
@@ -208,6 +207,12 @@ class CompilationUnitElementLinkedData
       }
     }
 
+    for (var part in element.parts) {
+      part.metadata = reader._readAnnotationList(
+        unitElement: unitElement,
+      );
+    }
+
     applyConstantOffsets?.perform();
   }
 }
@@ -292,7 +297,7 @@ abstract class ElementLinkedData<E extends ElementImpl> {
     ResolutionReader reader,
     ElementImpl element,
   ) {
-    var enclosing = element.enclosingElement;
+    var enclosing = element.enclosingElement3;
     if (enclosing is InstanceElement) {
       reader._addTypeParameters(enclosing.typeParameters);
     } else if (enclosing is CompilationUnitElement) {
@@ -371,7 +376,7 @@ class EnumElementLinkedData extends ElementLinkedData<EnumElementImpl> {
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement,
+      unitElement: element.enclosingElement3,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.supertype = reader._readOptionalInterfaceType();
@@ -414,7 +419,7 @@ class ExtensionElementLinkedData
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement,
+      unitElement: element.enclosingElement3,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.augmentationTargetAny = reader.readElement() as ElementImpl?;
@@ -454,7 +459,7 @@ class ExtensionTypeElementLinkedData
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement,
+      unitElement: element.enclosingElement3,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.interfaces = reader._readInterfaceTypeList();
@@ -1957,7 +1962,7 @@ class MixinElementLinkedData extends ElementLinkedData<MixinElementImpl> {
   @override
   void _read(element, reader) {
     element.metadata = reader._readAnnotationList(
-      unitElement: element.enclosingElement,
+      unitElement: element.enclosingElement3,
     );
     _readTypeParameters(reader, element.typeParameters);
     element.macroDiagnostics = reader.readMacroDiagnostics();
@@ -2070,7 +2075,7 @@ class ResolutionReader {
     }
 
     if (memberFlags == Tag.MemberWithTypeArguments) {
-      var enclosing = element.enclosingElement as InstanceElement;
+      var enclosing = element.enclosingElement3 as InstanceElement;
 
       var declaration = enclosing.augmented.declaration;
       var declarationTypeParameters = declaration.typeParameters;

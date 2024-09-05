@@ -187,7 +187,25 @@ final class ConstructorSuggestion extends ImportableSuggestion
   }) : assert((isTearOff ? 1 : 0) | (isRedirect ? 1 : 0) < 2);
 
   @override
-  String get completion => '$completionPrefix${element.displayName}';
+  String get completion {
+    var enclosingClass = element.enclosingElement3.augmented.declaration;
+
+    var className = enclosingClass.name;
+
+    var completion = element.name;
+    if (completion.isEmpty && suggestUnnamedAsNew) {
+      completion = 'new';
+    }
+
+    if (!hasClassName) {
+      if (completion.isEmpty) {
+        completion = className;
+      } else {
+        completion = '$className.$completion';
+      }
+    }
+    return completion;
+  }
 }
 
 abstract interface class ElementBasedSuggestion {
@@ -216,7 +234,7 @@ final class EnumConstantSuggestion extends ImportableSuggestion
   @override
   String get completion {
     if (includeEnumName) {
-      var enclosingElement = element.enclosingElement;
+      var enclosingElement = element.enclosingElement3;
       return '$completionPrefix${enclosingElement.name}.${element.name}';
     } else {
       return element.name;
@@ -578,7 +596,7 @@ mixin MemberSuggestion implements ElementBasedSuggestion {
     var inheritanceDistance = 0.0;
     var element = this.element;
     if (!(element is FieldElement && element.isEnumConstant)) {
-      var declaringClass = element.enclosingElement;
+      var declaringClass = element.enclosingElement3;
       var referencingInterface = this.referencingInterface;
       if (referencingInterface != null && declaringClass is InterfaceElement) {
         inheritanceDistance = featureComputer.inheritanceDistanceFeature(
@@ -711,15 +729,49 @@ final class PropertyAccessSuggestion extends ImportableSuggestion
   @override
   final InterfaceElement? referencingInterface;
 
+  /// Whether the accessor is being invoked with a target.
+  final bool withEnclosingName;
+
   /// Initialize a newly created candidate suggestion to suggest the [element].
   PropertyAccessSuggestion(
       {required this.element,
       required super.importData,
       required this.referencingInterface,
-      required super.matcherScore});
+      required super.matcherScore,
+      this.withEnclosingName = false});
 
   @override
-  String get completion => element.name;
+  String get completion {
+    var prefix = _enclosingPrefix;
+    if (prefix.isNotEmpty) {
+      return '$prefix${element.displayName}';
+    }
+    return element.displayName;
+  }
+
+  /// Return the name of the enclosing class or extension.
+  ///
+  /// The enclosing element must be either a class, or extension; otherwise
+  /// we either fail with assertion, or return `null`.
+  String? get _enclosingClassOrExtensionName {
+    var enclosing = element.enclosingElement3;
+    if (enclosing is InterfaceElement) {
+      return enclosing.name;
+    } else if (enclosing is ExtensionElement) {
+      return enclosing.name;
+    } else {
+      assert(false, 'Expected ClassElement or ExtensionElement');
+      return null;
+    }
+  }
+
+  String get _enclosingPrefix {
+    if (withEnclosingName) {
+      var enclosingName = _enclosingClassOrExtensionName;
+      return enclosingName != null ? '$enclosingName.' : '';
+    }
+    return '';
+  }
 }
 
 /// The information about a candidate suggestion based on a field in a record
@@ -848,7 +900,7 @@ final class StaticFieldSuggestion extends ImportableSuggestion
 
   @override
   String get completion {
-    var enclosingElement = element.enclosingElement;
+    var enclosingElement = element.enclosingElement3;
     return '$completionPrefix${enclosingElement.name}.${element.name}';
   }
 }
@@ -1009,8 +1061,13 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
             displayText: suggestion.displayText,
             selectionOffset: suggestion.selectionOffset);
       case ConstructorSuggestion():
+        var completion = suggestion.completion;
+        if (completion.isEmpty) {
+          break;
+        }
         suggestConstructor(suggestion.element,
             hasClassName: suggestion.hasClassName,
+            completion: completion,
             kind: suggestion.isRedirect || suggestion.isTearOff
                 ? CompletionSuggestionKind.IDENTIFIER
                 : CompletionSuggestionKind.INVOCATION,
@@ -1123,6 +1180,7 @@ extension SuggestionBuilderExtension on SuggestionBuilder {
           suggestion.element,
           inheritanceDistance: inheritanceDistance,
           relevance: relevance,
+          completion: suggestion.completion,
         );
       case RecordFieldSuggestion():
         suggestRecordField(

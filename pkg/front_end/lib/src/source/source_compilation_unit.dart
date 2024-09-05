@@ -83,7 +83,7 @@ class SourceCompilationUnitImpl
   final bool isUnsupported;
 
   SourceCompilationUnitImpl(this._sourceLibraryBuilder,
-      TypeParameterScopeBuilder libraryTypeParameterScopeBuilder,
+      LibraryNameSpaceBuilder libraryNameSpaceBuilder,
       {required this.importUri,
       required this.fileUri,
       required Uri? packageUri,
@@ -107,10 +107,9 @@ class SourceCompilationUnitImpl
         compilationUnit: this,
         augmentationRoot: _sourceLibraryBuilder,
         parent: _sourceLibraryBuilder,
-        libraryTypeParameterScopeBuilder: libraryTypeParameterScopeBuilder,
+        libraryNameSpaceBuilder: libraryNameSpaceBuilder,
         problemReporting: this,
         scope: _scope,
-        nameSpace: _nameSpace,
         libraryName: _libraryName,
         indexedLibrary: indexedLibrary,
         omittedTypeDeclarationBuilders: omittedTypeDeclarationBuilders);
@@ -301,7 +300,6 @@ class SourceCompilationUnitImpl
   @override
   bool get isSynthetic => accessProblem != null;
 
-  @override
   NameIterator<Builder> get localMembersNameIterator =>
       _sourceLibraryBuilder.localMembersNameIterator;
 
@@ -324,7 +322,7 @@ class SourceCompilationUnitImpl
         _offsetMap == null, // Coverage-ignore(suite): Not run.
         "OffsetMap has already been set for $this");
     return new OutlineBuilder(
-        this, this, _builderFactory, _offsetMap = new OffsetMap(fileUri));
+        this, _builderFactory, _offsetMap = new OffsetMap(fileUri));
   }
 
   @override
@@ -416,10 +414,6 @@ class SourceCompilationUnitImpl
       Map<SourceClassBuilder, TypeBuilder> mixinApplications) {
     _builderFactoryResult.takeMixinApplications(mixinApplications);
   }
-
-  @override
-  List<NamedTypeBuilder> get unresolvedNamedTypes =>
-      _builderFactoryResult.unresolvedNamedTypes;
 
   @override
   void includeParts(SourceLibraryBuilder libraryBuilder,
@@ -622,7 +616,6 @@ class SourceCompilationUnitImpl
         libraryBuilder.addBuilder(name, declaration, declaration.charOffset);
       }
     }
-    libraryBuilder.unresolvedNamedTypes.addAll(unresolvedNamedTypes);
     _libraryName.reference = libraryBuilder.libraryName.reference;
 
     // TODO(johnniwinther): Avoid these. The compilation unit should not have
@@ -652,6 +645,11 @@ class SourceCompilationUnitImpl
       // (anymore).
       library.isSynthetic = true;
     }
+  }
+
+  @override
+  int resolveTypes(ProblemReporting problemReporting) {
+    return _builderFactoryResult.typeScope.resolveTypes(problemReporting);
   }
 
   @override
@@ -1052,17 +1050,8 @@ class SourceCompilationUnitImpl
       }
     }
 
-    for (Builder declaration in _builderFactoryResult.members) {
+    for (Builder declaration in _builderFactoryResult.builders) {
       computeDefaultValuesForDeclaration(declaration);
-    }
-    for (Builder declaration in _builderFactoryResult.setters) {
-      computeDefaultValuesForDeclaration(declaration);
-    }
-    for (ExtensionBuilder declaration in _builderFactoryResult.extensions) {
-      if (declaration is SourceExtensionBuilder &&
-          declaration.isUnnamedExtension) {
-        computeDefaultValuesForDeclaration(declaration);
-      }
     }
     return count;
   }
@@ -1138,17 +1127,15 @@ class SourceCompilationUnitImpl
         bound.typeVariables != null &&
         bound.typeVariables!.isNotEmpty;
     bool isAliasedGenericFunctionType = false;
-    if (bound is NamedTypeBuilder) {
-      TypeDeclarationBuilder? declaration = bound.declaration;
-      // TODO(cstefantsova): Unalias beyond the first layer for the check.
-      if (declaration is TypeAliasBuilder) {
-        // Coverage-ignore-block(suite): Not run.
-        TypeBuilder? rhsType = declaration.type;
-        if (rhsType is FunctionTypeBuilder &&
-            rhsType.typeVariables != null &&
-            rhsType.typeVariables!.isNotEmpty) {
-          isAliasedGenericFunctionType = true;
-        }
+    TypeDeclarationBuilder? declaration = bound?.declaration;
+    // TODO(cstefantsova): Unalias beyond the first layer for the check.
+    if (declaration is TypeAliasBuilder) {
+      // Coverage-ignore-block(suite): Not run.
+      TypeBuilder? rhsType = declaration.type;
+      if (rhsType is FunctionTypeBuilder &&
+          rhsType.typeVariables != null &&
+          rhsType.typeVariables!.isNotEmpty) {
+        isAliasedGenericFunctionType = true;
       }
     }
 
@@ -1164,14 +1151,14 @@ class SourceCompilationUnitImpl
   int computeVariances() {
     int count = 0;
 
-    for (Builder? declaration in _builderFactoryResult.members) {
+    for (Builder? declaration in _builderFactoryResult.builders) {
       while (declaration != null) {
         if (declaration is TypeAliasBuilder &&
             declaration.typeVariablesCount > 0) {
           for (NominalVariableBuilder typeParameter
               in declaration.typeVariables!) {
-            typeParameter.variance = computeTypeVariableBuilderVariance(
-                    typeParameter, declaration.type,
+            typeParameter.variance = declaration.type
+                .computeTypeVariableBuilderVariance(typeParameter,
                     sourceLoader: libraryBuilder.loader)
                 .variance!;
             ++count;

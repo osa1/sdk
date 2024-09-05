@@ -449,7 +449,8 @@ class AstBuilder extends StackListener {
       Token? covariantToken,
       Token? varFinalOrConst,
       Token? getOrSet,
-      Token name) {
+      Token name,
+      String? enclosingDeclarationName) {
     _Modifiers modifiers = _Modifiers();
     if (augmentToken != null) {
       assert(augmentToken.isModifier);
@@ -2742,7 +2743,7 @@ class AstBuilder extends StackListener {
 
   @override
   void endOptionalFormalParameters(
-      int count, Token leftDelimiter, Token rightDelimiter) {
+      int count, Token leftDelimiter, Token rightDelimiter, MemberKind kind) {
     assert((optional('[', leftDelimiter) && optional(']', rightDelimiter)) ||
         (optional('{', leftDelimiter) && optional('}', rightDelimiter)));
     debugEvent("OptionalFormalParameters");

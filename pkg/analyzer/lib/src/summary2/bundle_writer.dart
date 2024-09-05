@@ -632,6 +632,16 @@ class BundleWriter {
     _writeDirectiveUri(element.uri);
   }
 
+  /// We write metadata here, to keep it inside [unitElement] resolution
+  /// data, because [_writePartElement] recursively writes included unit
+  /// elements. But the bundle reader wants all metadata for `parts`
+  /// sequentially.
+  void _writePartElementsMetadata(CompilationUnitElementImpl unitElement) {
+    for (var element in unitElement.parts) {
+      _resolutionSink._writeAnnotationList(element.metadata);
+    }
+  }
+
   /// Write information to update `getter` and `setter` properties of
   /// augmented variables to use the corresponding augmentations.
   void _writePropertyAccessorAugmentations() {
@@ -731,6 +741,8 @@ class BundleWriter {
 
     _writeList(unitElement.libraryImports, _writeImportElement);
     _writeList(unitElement.libraryExports, _writeExportElement);
+
+    _writePartElementsMetadata(unitElement);
     _writeList(unitElement.parts, _writePartElement);
 
     _writeList(unitElement.classes, _writeClassElement);
@@ -1139,7 +1151,7 @@ class ResolutionSink extends _SummaryDataWriter {
       return const [];
     }
 
-    var enclosing = declaration.enclosingElement;
+    var enclosing = declaration.enclosingElement3;
     if (enclosing is InstanceElement) {
       var typeParameters = enclosing.typeParameters;
       if (typeParameters.isEmpty) {

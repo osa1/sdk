@@ -148,7 +148,6 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:async", "_newAsyncSuspendState");
 
   // dart:ffi classes
-  late final Class ffiCompoundClass = index.getClass("dart:ffi", "_Compound");
   late final Class ffiPointerClass = index.getClass("dart:ffi", "Pointer");
 
   // dart:_wasm classes
@@ -188,6 +187,8 @@ mixin KernelNodes {
       index.getTopLevelProcedure("dart:_internal", "loadLibrary");
   late final Procedure checkLibraryIsLoaded =
       index.getTopLevelProcedure("dart:_internal", "checkLibraryIsLoaded");
+  late final Procedure loadLibraryImportMap =
+      index.getTopLevelProcedure("dart:_internal", "get:_importMapping");
 
   // dart:_js_helper procedures
   late final Procedure getInternalizedString =
@@ -312,6 +313,8 @@ mixin KernelNodes {
       index.getProcedure("dart:core", '_Closure', "_getClosureRuntimeType");
   late final Procedure getMasqueradedRuntimeType =
       index.getTopLevelProcedure("dart:core", "_getMasqueradedRuntimeType");
+  late final Procedure isNullabilityCheck =
+      index.getTopLevelProcedure("dart:core", "_isNullabilityCheck");
   late final Procedure isSubtype =
       index.getTopLevelProcedure("dart:core", "_isSubtype");
   late final Procedure isInterfaceSubtype =

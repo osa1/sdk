@@ -235,14 +235,6 @@ void StubCodeCompiler::GenerateReThrowStub() {
   __ Breakpoint();
 }
 
-void StubCodeCompiler::GenerateAssertBooleanStub() {
-  __ EnterStubFrame();
-  __ PushObject(NullObject());  // Make room for (unused) result.
-  __ PushRegister(AssertBooleanABI::kObjectReg);
-  __ CallRuntime(kNonBoolTypeErrorRuntimeEntry, /*argument_count=*/1);
-  __ Breakpoint();
-}
-
 void StubCodeCompiler::GenerateAssertSubtypeStub() {
   __ EnterStubFrame();
   __ PushRegistersInOrder({AssertSubtypeABI::kInstantiatorTypeArgumentsReg,
@@ -2583,6 +2575,29 @@ void StubCodeCompiler::GenerateCloneSuspendStateStub() {
   __ Drop(1);                                      // Drop argument
   __ PopRegister(CallingConventions::kReturnReg);  // Get result.
   __ LeaveStubFrame();
+  __ Ret();
+}
+
+void StubCodeCompiler::GenerateResumeInterpreterStub() {
+#if defined(TARGET_ARCH_X64) || defined(TARGET_ARCH_IA32)
+  // On X64/IA32 execution is resumed at PC + kResumePcDistance.
+  const intptr_t start = __ CodeSize();
+  for (intptr_t i = 0; i < SuspendStubABI::kResumePcDistance; ++i) {
+    __ nop();
+  }
+  RELEASE_ASSERT(__ CodeSize() - start == SuspendStubABI::kResumePcDistance);
+#endif
+
+#if defined(TARGET_ARCH_ARM) || defined(TARGET_ARCH_ARM64)
+  SPILLS_LR_TO_FRAME({});  // Simulate entering the caller (Dart) frame.
+#endif
+
+  __ PushObject(NullObject());  // Make room for result.
+  __ PushRegister(CallingConventions::kReturnReg);
+  __ CallRuntime(kResumeInterpreterRuntimeEntry, /*argument_count=*/1);
+  __ Drop(1);                                      // Drop argument.
+  __ PopRegister(CallingConventions::kReturnReg);  // Get result.
+  __ LeaveDartFrame();
   __ Ret();
 }
 

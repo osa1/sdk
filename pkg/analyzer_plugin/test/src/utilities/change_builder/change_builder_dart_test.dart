@@ -11,7 +11,6 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart';
-import 'package:analyzer/src/generated/source.dart';
 import 'package:analyzer/src/test_utilities/find_node.dart';
 import 'package:analyzer/src/test_utilities/package_config_file_builder.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' hide Element;
@@ -2581,6 +2580,32 @@ class B {}
           '''import 'package:test/a.dart' show A, B;
 ''',
         ));
+  }
+
+  /// Ensure that trying to add an import to show a symbol works with an
+  /// explicit empty prefix (to ensure an import with a prefix is not reused nor
+  /// a prefix generated).
+  Future<void> test_importLibrary_showName_emptyPrefix() async {
+    var aPath = convertPath('/home/test/lib/test_a.dart');
+    var aContent = 'class A {} class Other {}';
+    addSource(aPath, aContent);
+    var bPath = convertPath('/home/test/lib/test_b.dart');
+    var bContent = "import 'package:test/test_a.dart' show Other; A";
+    addSource(bPath, bContent);
+
+    var builder = await newBuilder();
+    await builder.addDartFileEdit(bPath, (builder) {
+      // Add an import to ensure 'A' is visible without a prefix.
+      builder.importLibrary(Uri.parse('package:test/test_a.dart'),
+          showName: 'A', prefix: '');
+    });
+    var edits = getEdits(builder);
+    expect(edits, hasLength(1));
+    var edited = SourceEdit.applySequence(bContent, edits);
+    expect(
+        edited,
+        equalsIgnoringWhitespace(
+            "import 'package:test/test_a.dart' show A, Other; A"));
   }
 
   Future<void> test_multipleEdits_concurrently() async {

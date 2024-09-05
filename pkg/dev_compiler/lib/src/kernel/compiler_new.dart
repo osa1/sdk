@@ -274,6 +274,10 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// The current function being compiled, if any.
   FunctionNode? _currentFunction;
 
+  /// Statements in order they should be inserted into the body of the link
+  /// method for the current library.
+  final List<js_ast.Statement> _currentLibraryLinkFunctionBody = [];
+
   /// Whether the current function needs to insert parameter checks.
   ///
   /// Used to avoid adding checks for formal parameters inside a synthetic
@@ -867,15 +871,33 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // Emit the hoisted instantiated generic class table cache variables
     items.addAll(_genericClassTable.dischargeBoundTypes());
     _ticker?.logMs('Emitted instantiated generic class table');
-
-    var module = _finishLibrary(
-        items, _jsLibraryName(library), _emitLibraryName(library));
+    var compiledLibrary = _finishLibrary(
+        items, '${library.importUri}', _emitLibraryName(library));
     _ticker?.logMs('Finished emitting module');
 
     // Mark as finished for incremental mode, so it is safe to
     // switch to the incremental mode for expression compilation.
     _moduleEmitted = true;
-    return module;
+    return compiledLibrary;
+  }
+
+  /// Returns a method that will perform all class hierarchy operations for the
+  /// classes defined in this module.
+  ///
+  /// At a high level this method performs the prototype stitching for all
+  /// `class A extends B` relationships but in practice will also include the
+  /// operations that implicitly depend on those relationships to be established
+  /// so they can walk the prototype chain.
+  js_ast.Statement _emitLibraryLinkMethod(Library library) {
+    var libraryName = _emitLibraryName(library);
+    var nameExpr = js_ast.PropertyAccess.field(libraryName, 'link');
+    var functionName = _emitTemporaryId('link__${_jsLibraryName(library)}');
+
+    var parameters = const <js_ast.Parameter>[];
+    var body = js_ast.Block(_currentLibraryLinkFunctionBody);
+    var function =
+        js_ast.NamedFunction(functionName, js_ast.Fun(parameters, body));
+    return js.statement('# = #', [nameExpr, function]);
   }
 
   /// Choose a canonical name from the [library] element.
@@ -999,7 +1021,8 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       _emitLibraryProcedures(library);
       _emitTopLevelFields(library.fields);
     }
-
+    // Additional method used by the module system to link class hierarchies.
+    _moduleItems.add(_emitLibraryLinkMethod(library));
     _staticTypeContext.leaveLibrary(_currentLibrary!);
   }
 
@@ -1031,6 +1054,12 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// Because D depends on B, we'll emit B first if needed. However C is not
   /// used by top-level JavaScript code, so we can ignore that dependency.
   void _emitClass(Class c) {
+    // Avoid attempting to compile classes we reach through emitting class
+    // extends supertypes when they are not members of the library being
+    // compiled.
+    // TODO(nshahan): Once `_declareBeforeUse` is removed this escape hatch will
+    // no longer be necessary.
+    if (c.enclosingLibrary != _currentLibrary) return;
     var savedClass = _currentClass;
     var savedLibrary = _currentLibrary;
     var savedUri = _currentUri;
@@ -1177,6 +1206,8 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     _emitClassSignature(c, className, body);
     _initExtensionSymbols(c);
     if (!c.isMixinDeclaration) {
+      // TODO(55547): Move "Extension member" manipulations to the library link
+      // method.
       _defineExtensionMembers(className, body);
     }
 
@@ -1270,8 +1301,47 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       js_ast.Expression? heritage, List<js_ast.Method> methods) {
     var classIdentifier = _emitTemporaryId(getLocalClassName(c));
     if (_options.emitDebugSymbols) classIdentifiers[c] = classIdentifier;
+    if (!requiresJsExtends(c)) {
+      if (heritage != null) {
+        _currentLibraryLinkFunctionBody.add(
+            _runtimeStatement('classExtends(#, #)', [className, heritage]));
+      }
+      heritage = null;
+    }
     var classExpr = js_ast.ClassExpression(classIdentifier, heritage, methods);
     return js.statement('# = #;', [className, classExpr]);
+  }
+
+  /// Returns `true` when the compiled representation of [cls] still needs
+  /// an `extends` clause in it.
+  ///
+  /// Eventually there should be no classes that require the use of the
+  /// JavaScript `extends` keyword and this test will be unnecessary.
+  bool requiresJsExtends(Class cls) {
+    // TODO(55545): Stop emitting `extends baseClass` when mixin applications
+    // classes can be linked in the library link method.
+    if (cls.isAnonymousMixin ||
+        cls.isMixinApplication ||
+        cls.isMixinDeclaration ||
+        cls.isMixinClass) {
+      return true;
+    }
+    if (_classProperties != null &&
+        (_classProperties!.extensionAccessors.isNotEmpty ||
+            _classProperties!.extensionMethods.isNotEmpty)) {
+      // TODO(55547): Stop emitting `extends baseClass` when classes with
+      // overrides of extension members added to native peers can be linked in
+      // the library link method.
+      return true;
+    }
+    // TODO(55547): Stop emitting `extends baseClass` when classes with native
+    // peers can be linked in the library link method.
+    return _extensionTypes.getNativePeers(cls).isNotEmpty ||
+        // The entire class hierarchy of classes with native peers must be
+        // available too.
+        _isDartLibrary(_currentLibrary!, '_interceptors') ||
+        _isDartLibrary(_currentLibrary!, 'typed_data') ||
+        _isDartLibrary(_currentLibrary!, '_native_typed_data');
   }
 
   /// Like [_emitClassStatement] but emits a Dart 2.1 mixin represented by
@@ -1518,7 +1588,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
       emitMixinConstructors(mixinId, superclass, mixinClass, mixinType);
       hasUnnamedSuper = hasUnnamedSuper || _hasUnnamedConstructor(mixinClass);
-
+      // TODO(55545): Move these operations to the library link method.
       if (shouldDefer(mixinType)) {
         deferredSupertypes.add(() => _runtimeStatement('applyMixin(#, #)', [
               getBaseClass(mixinApplications.length - i),
@@ -2711,6 +2781,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   void _registerExtensionType(
       Class c, String jsPeerName, List<js_ast.Statement> body) {
     var className = _emitTopLevelName(c);
+    // TODO(55547): Move these operations to the library link method.
     if (_typeRep.isPrimitive(_coreTypes.nonNullableRawType(c))) {
       body.add(_runtimeStatement(
           'definePrimitiveHashCode(#.prototype)', [className]));
@@ -8023,35 +8094,37 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         //     import {foo} from 'foo';         // if no rename needed
         //     import {foo as foo$} from 'foo'; // if rename was needed
         //
-        var imports = <js_ast.NameSpecifier>[];
         for (var library in libraries) {
           if (!_incrementalMode ||
               usedLibraries!.contains(_jsLibraryName(library))) {
             var alias = _jsLibraryAlias(library);
             if (alias != null) {
               var aliasId = js_ast.TemporaryId(alias);
-              imports.add(
-                  js_ast.NameSpecifier(aliasId, asName: _imports[library]));
+              items.add(js_ast.ImportDeclaration(
+                  from: js.string('${library.importUri}'),
+                  namedImports: [
+                    js_ast.NameSpecifier(aliasId, asName: _imports[library])
+                  ]));
             } else {
-              imports.add(js_ast.NameSpecifier(_imports[library]));
+              items.add(js_ast.ImportDeclaration(
+                  from: js.string('${library.importUri}'),
+                  namedImports: [js_ast.NameSpecifier(_imports[library])]));
             }
           }
         }
-
         if (module == coreModuleName) {
           if (!_incrementalMode ||
               usedLibraries!.contains(_runtimeModule.name)) {
-            imports.add(js_ast.NameSpecifier(_runtimeModule));
+            items.add(js_ast.ImportDeclaration(
+                from: js.string('dart:_runtime'),
+                namedImports: [js_ast.NameSpecifier(_runtimeModule)]));
           }
           if (!_incrementalMode ||
               usedLibraries!.contains(_extensionSymbolsModule.name)) {
-            imports.add(js_ast.NameSpecifier(_extensionSymbolsModule));
+            items.add(js_ast.ImportDeclaration(
+                from: js.string('dartx'),
+                namedImports: [js_ast.NameSpecifier(_extensionSymbolsModule)]));
           }
-        }
-
-        if (!_incrementalMode || imports.isNotEmpty) {
-          items.add(js_ast.ImportDeclaration(
-              namedImports: imports, from: js.string(module, "'")));
         }
       }
     });

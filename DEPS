@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "0125db9a5b7246fd4f796d9f539c3ebe25f8610c",
+  "co19_rev": "767bb1f623a4f005072224cd7a49726a5b644296",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "3bd6bc6d207dfb7cf687537e819863cf9a8f2470",
@@ -76,7 +76,7 @@ vars = {
   "jsc_tag": "version:282418",
 
   # https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/clang
-  "clang_version": "git_revision:3809e20afc68d7d03821f0ec59b928dcf9befbf4",
+  "clang_version": "git_revision:0cfd03ac0d3f9713090a581bda07584754c73a49",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
   "gn_version": "git_revision:05eed8f6252e2dd6b555e0b65192ef03e2c4a276",
@@ -97,12 +97,12 @@ vars = {
   ### /third_party/ dependencies
 
   # Prefer to use hashes of binaryen that have been reviewed & rolled into g3.
-  "binaryen_rev" : "654ee6e2504f11fb0e982a2cf276bafa750f694b",
+  "binaryen_rev" : "459bc0797f67cb2a8fd4598bb7143b34036608d9",
   "boringssl_gen_rev": "fef055e8d2749b82c79c8f043be1cbe5e8e4b40c",
   "boringssl_rev": "2db0eb3f96a5756298dcd7f9319e56a98585bd10",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "6390e5ddf69c836c530256891405e0cb3319b604",
+  "devtools_rev": "25053ae4af8f162188388c6f3786e03349652e51",
   "icu_rev": "43953f57b037778a1b8005564afabe214834f7bd",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -125,7 +125,7 @@ vars = {
   "bazel_worker_rev": "02f190b88df771fc8e05c07d4b64ae942c02f456",
   "benchmark_harness_rev": "a06785cdfc51538e3556c1d59bb4f03426e9e1c5",
   "boolean_selector_rev": "c5468f44fd9ca0ea3435e1a0a84ff9b6fac38261",
-  "browser_launcher_rev": "fe7ffa13ba59ec6f7d56256f79059344555fdaf2",
+  "browser_launcher_rev": "fa98c77e7a2fee21a4ad3528dd79da0f4df6bd0f",
   "characters_rev": "7633a16a22c626e19ca750223237396315268a06",
   "cli_util_rev": "6a0bb9292ea4bb2c9e547af03da4c9948f9556a1",
   "clock_rev": "6e43768a0b135a0d36fc886907b70c4bf27117e6",
@@ -162,9 +162,8 @@ vars = {
   "markdown_rev": "f6eaea38146d8901756418c4e7123eb7bd77249e",
   "matcher_rev": "d6d573d0f8d65b36550ce62aad3ce6b5e987b642",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
-  "mime_rev": "11fec7d6df509a4efd554051cc27e3bf82df9c96",
   "mockito_rev": "eb4d1daa20c105c94ac29689c1975f0850fa18f2",
-  "native_rev": "b01a3f3ef5e3a219fefb182d4cfc41d2895f32ca", # mosum@ and dacoharkes@ are rolling breaking changes manually while the assets features are in experimental.
+  "native_rev": "05cdcbecb3efc83cf9c41eced2ad7cad6c55e2d6", # dart-native-interop-team@ is rolling breaking changes manually while the assets features are in experimental.
   "package_config_rev": "76934c2ca25922ec72909bbff7dfbddaf0d02bd9",
   "path_rev": "e969f42ed112dd702a9453beb9df6c12ae2d3805",
   "pool_rev": "924fb04353cec915d927f9f1aed88e2eda92b98a",
@@ -172,7 +171,6 @@ vars = {
   "pub_rev": "31fa75baa5872e7f094a554c0ec7741742889530", # disable tools/rev_sdk_deps.dart
   "pub_semver_rev": "d9e5ee68a350fbf4319bd4dfcb895fc016337d3a",
   "shelf_rev": "9f2dffecbe8f219146a077e401758602752d486a",
-  "source_map_stack_trace_rev": "741b6ceb4b6cdb8ff620664337d7ecc63ca52cc1",
   "source_maps_rev": "5f82c613664ade03c7a6d0e6c59687c69dec894b",
   "source_span_rev": "f81cd4a2df630a97264fb4015fb93944b5b98b11",
   "sse_rev": "af2c5c572a8da6d2f7551b80d75121f2a38a4c79",
@@ -186,7 +184,7 @@ vars = {
   "test_descriptor_rev": "90743bc16bc00526a1b9a64f813614be9b2479d9",
   "test_process_rev": "6223572ca16d7585d5f08d9281de6a5734e45150",
   "test_reflective_loader_rev": "6e648863b39aab8d0204e769d25805eea9db0ac4",
-  "tools_rev": "5b15f8b60bf950a2f06dad3258dee61c153fdb44",
+  "tools_rev": "b98c535537101eff0484ba279bd4090a5b9ac2ad",
   "typed_data_rev": "365468a74251c930a463daf5b8f13227e269111a",
   "vector_math_rev": "2cfbe2c115a57b368ccbc3c89ebd38a06764d3d1",
   "watcher_rev": "0484625589d8512b36a7ad898a6cc6351d24c556",
@@ -207,7 +205,7 @@ vars = {
   # meant to be downloaded by users for local testing. You can self-service
   # update these by following the go/dart-engprod/browsers.md instructions.
   "download_chrome": False,
-  "chrome_tag": "128.0.6613.5",
+  "chrome_tag": "128.0.6613.36",
   "download_firefox": False,
   "firefox_tag": "129.0",
 
@@ -458,8 +456,6 @@ deps = {
            "@" + Var("material_color_utilities_rev"),
     "condition": "checkout_flute",
   },
-  Var("dart_root") + "/third_party/pkg/mime":
-      Var("dart_git") + "mime.git" + "@" + Var("mime_rev"),
   Var("dart_root") + "/third_party/pkg/mockito":
       Var("dart_git") + "mockito.git" + "@" + Var("mockito_rev"),
   Var("dart_root") + "/third_party/pkg/native":
@@ -483,9 +479,6 @@ deps = {
       Var("dart_git") + "source_maps.git" + "@" + Var("source_maps_rev"),
   Var("dart_root") + "/third_party/pkg/source_span":
       Var("dart_git") + "source_span.git" + "@" + Var("source_span_rev"),
-  Var("dart_root") + "/third_party/pkg/source_map_stack_trace":
-      Var("dart_git") + "source_map_stack_trace.git" +
-      "@" + Var("source_map_stack_trace_rev"),
   Var("dart_root") + "/third_party/pkg/sse":
       Var("dart_git") + "sse.git" + "@" + Var("sse_rev"),
   Var("dart_root") + "/third_party/pkg/stack_trace":
@@ -701,7 +694,7 @@ Var("dart_root") + "/third_party/pkg/tar":
     "packages": [
       {
       "package": "chromium/fuchsia/test-scripts",
-      "version": "8WCo7tLjg_GoImlj5eax_w-wxsvRPnmaChqN4ok-5rYC",
+      "version": "oGxqx29_HA1eEBnt9pRiZYDa_BkzACC6l3_3xYYKLjYC",
       }
     ],
     "condition": 'download_fuchsia_deps',
@@ -712,7 +705,7 @@ Var("dart_root") + "/third_party/pkg/tar":
     "packages": [
       {
       "package": "chromium/fuchsia/gn-sdk",
-      "version": "sbh76PYVTMxav4ACTgA-TXWcbZTZcWWjsqATCxrGIvwC",
+      "version": "OKGFjciA5Vd0TQks4ow7-ppfxy_Y6v5hSjjn2w6LWjwC",
       }
     ],
     "condition": 'download_fuchsia_deps',

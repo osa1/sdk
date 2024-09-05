@@ -862,19 +862,23 @@ class BytecodeGenerator extends RecursiveVisitor {
   }
 
   bool _needsSetter(Field field) {
-    // Late fields always need a setter, unless they're static and non-final, or
-    // final with an initializer.
-    if (field.isLate) {
-      if (field.isStatic && !field.isFinal) return false;
-      if (field.isFinal && field.initializer != null) return false;
-      return true;
+    // Final fields don't have a setter, except late final fields
+    // without initializer.
+    if (field.isFinal) {
+      // Late final fields without initializer always need a setter to check
+      // if they are already initialized.
+      if (field.isLate && (field.initializer == null)) {
+        return true;
+      }
+      return false;
     }
 
-    // Non-late static fields never need a setter.
-    if (field.isStatic) return false;
+    // Instance non-final fields always need a setter.
+    if (!field.isStatic) return true;
 
-    // Otherwise, the field only needs a setter if it isn't final.
-    return !field.isFinal;
+    // Otherwise, setters for static fields can be omitted
+    // and fields can be accessed directly.
+    return false;
   }
 
   LibraryIndex get libraryIndex => coreTypes.index;
@@ -930,6 +934,10 @@ class BytecodeGenerator extends RecursiveVisitor {
   late Procedure throwLocalAlreadyInitialized = libraryIndex.getProcedure(
       'dart:_internal', 'LateError', '_throwLocalAlreadyInitialized');
 
+  late Procedure throwLocalAssignedDuringInitialization =
+      libraryIndex.getProcedure('dart:_internal', 'LateError',
+          '_throwLocalAssignedDuringInitialization');
+
   late Procedure throwNewAssertionError =
       libraryIndex.getProcedure('dart:core', '_AssertionError', '_throwNew');
 
@@ -957,11 +965,46 @@ class BytecodeGenerator extends RecursiveVisitor {
   late Procedure initAsync =
       libraryIndex.getProcedure('dart:async', '_SuspendState', '_initAsync');
 
+  late Procedure suspendStateFunctionData = libraryIndex.getProcedure(
+      'dart:async',
+      '_SuspendState',
+      LibraryIndex.getterPrefix + '_functionData');
+
   late Procedure initAsyncStar = libraryIndex.getProcedure(
       'dart:async', '_SuspendState', '_initAsyncStar');
 
   late Procedure initSyncStar =
       libraryIndex.getProcedure('dart:async', '_SuspendState', '_initSyncStar');
+
+  late Procedure _await =
+      libraryIndex.getProcedure('dart:async', '_SuspendState', '_await');
+
+  late Procedure _awaitWithTypeCheck = libraryIndex.getProcedure(
+      'dart:async', '_SuspendState', '_awaitWithTypeCheck');
+
+  late Procedure yieldAsyncStar = libraryIndex.getProcedure(
+      'dart:async', '_SuspendState', '_yieldAsyncStar');
+
+  late Procedure suspendSyncStarAtStart = libraryIndex.getProcedure(
+      'dart:async', '_SuspendState', '_suspendSyncStarAtStart');
+
+  late Procedure returnAsync =
+      libraryIndex.getProcedure('dart:async', '_SuspendState', '_returnAsync');
+
+  late Procedure returnAsyncStar = libraryIndex.getProcedure(
+      'dart:async', '_SuspendState', '_returnAsyncStar');
+
+  late Procedure asyncStarStreamControllerAdd = libraryIndex.getProcedure(
+      'dart:async', '_AsyncStarStreamController', 'add');
+
+  late Procedure asyncStarStreamControllerAddStream = libraryIndex.getProcedure(
+      'dart:async', '_AsyncStarStreamController', 'addStream');
+
+  late Field syncStarIteratorCurrent =
+      libraryIndex.getField('dart:async', '_SyncStarIterator', '_current');
+
+  late Field syncStarIteratorYieldStarIterable = libraryIndex.getField(
+      'dart:async', '_SyncStarIterator', '_yieldStarIterable');
 
   late Library? dartFfiLibrary = libraryIndex.tryGetLibrary('dart:ffi');
 
@@ -1144,18 +1187,28 @@ class BytecodeGenerator extends RecursiveVisitor {
   void _genReturnTOS() {
     final enclosingFunction = this.enclosingFunction;
     if (enclosingFunction != null) {
+      Procedure? returnMethod;
       switch (enclosingFunction.dartAsyncMarker) {
         case AsyncMarker.Async:
-          asm.emitReturnAsync();
-          return;
+          returnMethod = returnAsync;
+          break;
         case AsyncMarker.AsyncStar:
-          asm.emitReturnAsyncStar();
-          return;
+          returnMethod = returnAsyncStar;
+          break;
         case AsyncMarker.SyncStar:
-          asm.emitReturnSyncStar();
-          return;
+          asm.emitDrop1();
+          asm.emitPushFalse();
+          break;
         case AsyncMarker.Sync:
           break;
+      }
+      if (returnMethod != null) {
+        asm.emitPopLocal(locals.returnVarIndexInFrame);
+        asm.emitPush(locals.suspendStateVarIndexInFrame);
+        asm.emitPush(locals.returnVarIndexInFrame);
+        asm.emitPushNull();
+        asm.emitPopLocal(locals.suspendStateVarIndexInFrame);
+        _genDirectCall(returnMethod, objectTable.getArgDescHandle(2), 2);
       }
     }
     asm.emitReturnTOS();
@@ -1576,11 +1629,11 @@ class BytecodeGenerator extends RecursiveVisitor {
     _genPrologue(node, node.function);
     _setupInitialContext(node.function);
     _emitFirstDebugCheck(node.function);
+    _genEqualsOperatorNullHandling(node);
     if (node is Procedure && node.isInstanceMember) {
       _checkArguments(node.function);
     }
     _initSuspendableFunction(node.function);
-    _genEqualsOperatorNullHandling(node);
   }
 
   // Generate additional code for 'operator ==' to handle nulls.
@@ -1625,8 +1678,20 @@ class BytecodeGenerator extends RecursiveVisitor {
     asm.emitPopLocal(locals.suspendStateVarIndexInFrame);
 
     if (function.dartAsyncMarker != AsyncMarker.Async) {
-      // TODO(alexmarkov): suspend at start for async* and sync*
-      _unimplemented(function, '${function.dartAsyncMarker}');
+      // Suspend async* and sync* functions after prologue is finished.
+      Label done = Label();
+      asm.emitSuspend(done);
+
+      final suspendMethod = (function.dartAsyncMarker == AsyncMarker.AsyncStar)
+          ? yieldAsyncStar
+          : suspendSyncStarAtStart;
+      asm.emitPush(locals.suspendStateVarIndexInFrame);
+      asm.emitPushNull();
+      _genDirectCall(suspendMethod, objectTable.getArgDescHandle(2), 2);
+      asm.emitReturnTOS();
+
+      asm.bind(done);
+      asm.emitDrop1(); // Discard result of Suspend.
     }
 
     if (function.dartAsyncMarker == AsyncMarker.SyncStar &&
@@ -2388,19 +2453,13 @@ class BytecodeGenerator extends RecursiveVisitor {
 
   void _genAllocateClosureInstance(
       TreeNode node, int closureFunctionIndex, FunctionNode function) {
-    asm.emitAllocateClosure(closureFunctionIndex);
+    asm.emitPushConstant(closureFunctionIndex);
+    asm.emitPush(locals.contextVarIndexInFrame);
+    _genPushInstantiatorTypeArguments();
+    asm.emitAllocateClosure();
 
     final int temp = locals.tempIndexInFrame(node);
     asm.emitStoreLocal(temp);
-
-    // TODO(alexmarkov): We need to fill _instantiator_type_arguments field
-    // only if function signature uses instantiator type arguments.
-    if (instantiatorTypeArguments != null) {
-      asm.emitPush(temp);
-      _genPushInstantiatorTypeArguments();
-      asm.emitStoreFieldTOS(
-          cp.addInstanceField(closureInstantiatorTypeArguments));
-    }
 
     if (locals.hasFunctionTypeArgsVar) {
       asm.emitPush(temp);
@@ -2414,14 +2473,6 @@ class BytecodeGenerator extends RecursiveVisitor {
       asm.emitPushConstant(cp.addEmptyTypeArguments());
       asm.emitStoreFieldTOS(cp.addInstanceField(closureDelayedTypeArguments));
     }
-
-    asm.emitPush(temp);
-    asm.emitPushConstant(closureFunctionIndex);
-    asm.emitStoreFieldTOS(cp.addInstanceField(closureFunction));
-
-    asm.emitPush(temp);
-    asm.emitPush(locals.contextVarIndexInFrame);
-    asm.emitStoreFieldTOS(cp.addInstanceField(closureContext));
   }
 
   void _genClosure(LocalFunction node, String name, FunctionNode function) {
@@ -2725,28 +2776,24 @@ class BytecodeGenerator extends RecursiveVisitor {
         boundsCheckForPartialInstantiation, objectTable.getArgDescHandle(2), 2);
     asm.emitDrop1();
 
-    assert(closureClass.typeParameters.isEmpty);
-    asm.emitAllocate(cp.addClass(closureClass));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureFunction));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureContext));
+    asm.emitPush(oldClosure);
+    asm.emitLoadFieldTOS(cp.addInstanceField(closureInstantiatorTypeArguments));
+    asm.emitAllocateClosure();
     asm.emitStoreLocal(newClosure);
 
     asm.emitPush(typeArguments);
     asm.emitStoreFieldTOS(cp.addInstanceField(closureDelayedTypeArguments));
 
-    // Copy the rest of the fields from old closure to a new closure.
-    final fieldsToCopy = <Field>[
-      closureInstantiatorTypeArguments,
-      closureFunctionTypeArguments,
-      closureFunction,
-      closureContext,
-    ];
-
-    for (Field field in fieldsToCopy) {
-      final fieldOffsetCpIndex = cp.addInstanceField(field);
-      asm.emitPush(newClosure);
-      asm.emitPush(oldClosure);
-      asm.emitLoadFieldTOS(fieldOffsetCpIndex);
-      asm.emitStoreFieldTOS(fieldOffsetCpIndex);
-    }
+    asm.emitPush(newClosure);
+    asm.emitPush(oldClosure);
+    final closureFunctionTypeArgumentsCpIndex =
+        cp.addInstanceField(closureFunctionTypeArguments);
+    asm.emitLoadFieldTOS(closureFunctionTypeArgumentsCpIndex);
+    asm.emitStoreFieldTOS(closureFunctionTypeArgumentsCpIndex);
 
     asm.emitPush(newClosure);
   }
@@ -3423,6 +3470,23 @@ class BytecodeGenerator extends RecursiveVisitor {
             init.arguments.positional.isEmpty);
         locals.withTemp(
             init, locals.tempIndexInFrame(node), () => _generateNode(init));
+        if (v.isFinal) {
+          // Check that variable was not assigned during initialization.
+          _genLoadVar(v);
+
+          final error = Label();
+          final store = Label();
+          asm.emitJumpIfInitialized(error);
+          asm.emitJump(store);
+
+          asm.bind(error);
+          asm.emitPushConstant(cp.addName(v.name!));
+          _genDirectCall(throwLocalAssignedDuringInitialization,
+              objectTable.getArgDescHandle(1), 1);
+          asm.emitDrop1();
+
+          asm.bind(store);
+        }
         _genStoreVar(v);
       } else {
         asm.emitPushConstant(cp.addName(v.name!));
@@ -4195,27 +4259,116 @@ class BytecodeGenerator extends RecursiveVisitor {
 
   @override
   void visitRecordIndexGet(RecordIndexGet node) {
-    _unimplemented(node, 'RecordIndexGet');
+    _generateNode(node.receiver);
+    asm.emitLoadRecordField(node.index);
   }
 
   @override
   void visitRecordNameGet(RecordNameGet node) {
-    _unimplemented(node, 'RecordNameGet');
+    final type = node.receiverType;
+    final namedFields = type.named;
+    final name = node.name;
+    int fieldIndex = -1;
+    for (int i = 0; i < namedFields.length; ++i) {
+      if (namedFields[i].name == name) {
+        fieldIndex = type.positional.length + i;
+        break;
+      }
+    }
+    if (fieldIndex < 0) {
+      throw 'Unable to find record field "$name" in $type';
+    }
+    _generateNode(node.receiver);
+    asm.emitLoadRecordField(fieldIndex);
   }
 
   @override
   void visitRecordLiteral(RecordLiteral node) {
-    _unimplemented(node, 'RecordLiteral');
+    assert(!node.isConst);
+    for (final expr in node.positional) {
+      _generateNode(expr);
+    }
+    for (final expr in node.named) {
+      _generateNode(expr.value);
+    }
+    asm.emitAllocateRecord(cp.addType(node.recordType));
   }
 
   @override
   void visitAwaitExpression(AwaitExpression node) {
-    _unimplemented(node, 'AwaitExpression');
+    _generateNode(node.operand);
+
+    final int temp = locals.tempIndexInFrame(node);
+    asm.emitPopLocal(temp);
+
+    Label done = Label();
+    asm.emitSuspend(done);
+
+    final runtimeCheckType = node.runtimeCheckType;
+    if (runtimeCheckType != null) {
+      assert((runtimeCheckType as InterfaceType).classNode ==
+          coreTypes.futureClass);
+      _genTypeArguments((runtimeCheckType as InterfaceType).typeArguments);
+      asm.emitPush(locals.suspendStateVarIndexInFrame);
+      asm.emitPush(temp);
+      _genDirectCall(
+          _awaitWithTypeCheck, objectTable.getArgDescHandle(2, 1), 3);
+    } else {
+      asm.emitPush(locals.suspendStateVarIndexInFrame);
+      asm.emitPush(temp);
+      _genDirectCall(_await, objectTable.getArgDescHandle(2), 2);
+    }
+    asm.emitReturnTOS();
+
+    asm.bind(done);
   }
 
   @override
   void visitYieldStatement(YieldStatement node) {
-    _unimplemented(node, 'YieldStatement');
+    asm.emitPush(locals.suspendStateVarIndexInFrame);
+    _genDirectCall(
+        suspendStateFunctionData, objectTable.getArgDescHandle(1), 1);
+
+    _generateNode(node.expression);
+
+    if (enclosingFunction!.dartAsyncMarker == AsyncMarker.AsyncStar) {
+      Procedure addMethod = node.isYieldStar
+          ? asyncStarStreamControllerAddStream
+          : asyncStarStreamControllerAdd;
+      _genDirectCall(addMethod, objectTable.getArgDescHandle(2), 2);
+
+      Label ret = Label(allowsBackwardJumps: true);
+      asm.emitJumpIfTrue(ret);
+
+      Label resume = Label();
+      asm.emitSuspend(resume);
+      asm.emitPush(locals.suspendStateVarIndexInFrame);
+      asm.emitPushNull();
+      _genDirectCall(yieldAsyncStar, objectTable.getArgDescHandle(2), 2);
+      asm.emitDrop1();
+
+      asm.bind(ret);
+      asm.emitPushNull();
+      asm.emitReturnTOS();
+
+      asm.bind(resume);
+      asm.emitJumpIfTrue(ret);
+    } else if (enclosingFunction!.dartAsyncMarker == AsyncMarker.SyncStar) {
+      Field field = node.isYieldStar
+          ? syncStarIteratorYieldStarIterable
+          : syncStarIteratorCurrent;
+      asm.emitStoreFieldTOS(cp.addInstanceField(field));
+
+      Label done = Label();
+      asm.emitSuspend(done);
+      asm.emitPushTrue();
+      asm.emitReturnTOS();
+
+      asm.bind(done);
+      asm.emitDrop1();
+    } else {
+      throw 'Unexpected ${enclosingFunction!.dartAsyncMarker}';
+    }
   }
 
   void _unimplemented(TreeNode node, String what) {

@@ -681,7 +681,7 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
 
   @override
   void writeReference(Element element) {
-    if (element.enclosingElement is CompilationUnitElement) {
+    if (element.enclosingElement3 is CompilationUnitElement) {
       _writeLibraryReference(element);
     }
     write(element.displayName);
@@ -1092,10 +1092,10 @@ class DartEditBuilderImpl extends EditBuilderImpl implements DartEditBuilder {
     if (type is TypeParameterType) {
       _initializeEnclosingElements();
       var element = type.element;
-      var enclosing = element.enclosingElement;
+      var enclosing = element.enclosingElement3;
       while (enclosing is GenericFunctionTypeElement ||
           enclosing is ParameterElement) {
-        enclosing = enclosing!.enclosingElement;
+        enclosing = enclosing!.enclosingElement3;
       }
       if (enclosing == _enclosingExecutable ||
           enclosing == _enclosingClass ||
@@ -2226,16 +2226,16 @@ class DartFileEditBuilderImpl extends FileEditBuilderImpl
       // the URI and prefix we care about.
       for (var element in resolvedUnit.libraryElement.libraryImports) {
         var library = element.importedLibrary;
-        if (library == null || element.prefix?.element.name != prefix) {
+        if (library == null) {
+          continue;
+        }
+        if ((element.prefix?.element.name ?? '') != (prefix ?? '')) {
+          // Imports need to have the same prefix to be replaced.
           continue;
         }
         var elementUrlText = _getLibraryUriText(library.source.uri,
             forceAbsolute: forceAbsolute, forceRelative: forceRelative);
         if (uriText != elementUrlText) {
-          continue;
-        }
-        if ((element.prefix?.element.name ?? '') != (prefix ?? '')) {
-          // Imports need to have the same prefix to be replaced.
           continue;
         }
         for (var combinator in element.combinators) {

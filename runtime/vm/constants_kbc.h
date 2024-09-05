@@ -290,6 +290,16 @@ namespace dart {
 //
 //    Jump to the given target if SP[0] is true/false/null/not null.
 //
+//  - Suspend target
+//
+//    Create a snapshot of the current frame and store it in the suspend
+//    state object. Execution can be resumed from the suspend state
+//    at the given target PC.
+//    Target is specified as offset from the PC of the suspend instruction.
+//    The filled suspend state object is stored into the reserved suspend
+//    state local variable. Current function frame should be created with
+//    EntrySuspendable instruction.
+//
 //  - IndirectStaticCall ArgC, D
 //
 //    Invoke the function given by the ICData in SP[0] with arguments
@@ -329,21 +339,6 @@ namespace dart {
 //    stack because it can look at the call instruction at caller's PC and
 //    take argument count from it.
 //
-//  - ReturnAsync
-//
-//    Return to the caller from async function using a value from
-//    the top-of-stack as a result.
-//
-//  - ReturnAsyncStar
-//
-//    Return to the caller from async* function using a value from
-//    the top-of-stack as a result.
-//
-//  - ReturnSyncStar
-//
-//    Return to the caller from sync* function using a value from
-//    the top-of-stack as a result.
-//
 //  - AssertAssignable A, D
 //
 //    Assert that instance SP[-4] is assignable to variable named SP[0] of
@@ -352,10 +347,6 @@ namespace dart {
 //    If A is 1, then the instance may be a Smi.
 //
 //    Instance remains on stack. Other arguments are consumed.
-//
-//  - AssertBoolean A
-//
-//    Assert that TOS is a boolean (A = 1) or that TOS is not null (A = 0).
 //
 //  - AssertSubtype
 //
@@ -450,9 +441,16 @@ namespace dart {
 //    Receiver and argument should have static type double.
 //    Check SP[-1] and SP[0] for null; push SP[-1] <op> SP[0] ? true : false.
 //
-//  - AllocateClosure D
+//  - AllocateClosure
 //
-//    Allocate closure object for closure function ConstantPool[D].
+//    Allocate closure object and initialize its fields:
+//
+//      SP[-2] closure function
+//      SP[-1] context
+//      SP[0]  instantiator type arguments
+//
+//    These arguments are consumed from the stack and allocated
+//    object is pushed.
 //
 // BYTECODE LIST FORMAT
 //
@@ -499,8 +497,8 @@ namespace dart {
   V(Allocate_Wide,                         D, WIDE, lit, ___, ___)             \
   V(AllocateT,                             0, ORDN, ___, ___, ___)             \
   V(CreateArrayTOS,                        0, ORDN, ___, ___, ___)             \
-  V(AllocateClosure,                       D, ORDN, lit, ___, ___)             \
-  V(AllocateClosure_Wide,                  D, WIDE, lit, ___, ___)             \
+  V(AllocateClosure,                       0, ORDN, ___, ___, ___)             \
+  V(Unused03,                              0, RESV, ___, ___, ___)             \
   V(AllocateContext,                     A_E, ORDN, num, num, ___)             \
   V(AllocateContext_Wide,                A_E, WIDE, num, num, ___)             \
   V(CloneContext,                        A_E, ORDN, num, num, ___)             \
@@ -573,6 +571,8 @@ namespace dart {
   V(JumpIfNull_Wide,                       T, WIDE, tgt, ___, ___)             \
   V(JumpIfNotNull,                         T, ORDN, tgt, ___, ___)             \
   V(JumpIfNotNull_Wide,                    T, WIDE, tgt, ___, ___)             \
+  V(Suspend,                               T, ORDN, tgt, ___, ___)             \
+  V(Suspend_Wide,                          T, WIDE, tgt, ___, ___)             \
   V(DirectCall,                          D_F, ORDN, num, num, ___)             \
   V(DirectCall_Wide,                     D_F, WIDE, num, num, ___)             \
   V(UncheckedDirectCall,                 D_F, ORDN, num, num, ___)             \
@@ -590,15 +590,11 @@ namespace dart {
   V(DynamicCall,                         D_F, ORDN, num, num, ___)             \
   V(DynamicCall_Wide,                    D_F, WIDE, num, num, ___)             \
   V(ReturnTOS,                             0, ORDN, ___, ___, ___)             \
-  V(ReturnAsync,                           0, ORDN, ___, ___, ___)             \
-  V(ReturnAsyncStar,                       0, ORDN, ___, ___, ___)             \
-  V(ReturnSyncStar,                        0, ORDN, ___, ___, ___)             \
+  V(Unused25,                              0, RESV, ___, ___, ___)             \
   V(AssertAssignable,                    A_E, ORDN, num, lit, ___)             \
   V(AssertAssignable_Wide,               A_E, WIDE, num, lit, ___)             \
-  V(Unused30,                              0, RESV, ___, ___, ___)             \
-  V(Unused31,                              0, RESV, ___, ___, ___)             \
-  V(AssertBoolean,                         A, ORDN, num, ___, ___)             \
   V(AssertSubtype,                         0, ORDN, ___, ___, ___)             \
+  V(Unused30,                              0, RESV, ___, ___, ___)             \
   V(LoadTypeArgumentsField,                D, ORDN, lit, ___, ___)             \
   V(LoadTypeArgumentsField_Wide,           D, WIDE, lit, ___, ___)             \
   V(InstantiateType,                       D, ORDN, lit, ___, ___)             \
@@ -643,6 +639,10 @@ namespace dart {
   V(CompareDoubleLt,                       0, ORDN, ___, ___, ___)             \
   V(CompareDoubleGe,                       0, ORDN, ___, ___, ___)             \
   V(CompareDoubleLe,                       0, ORDN, ___, ___, ___)             \
+  V(AllocateRecord,                        D, ORDN, lit, ___, ___)             \
+  V(AllocateRecord_Wide,                   D, WIDE, lit, ___, ___)             \
+  V(LoadRecordField,                       D, ORDN, num, ___, ___)             \
+  V(LoadRecordField_Wide,                  D, WIDE, num, ___, ___)             \
 
   // These bytecodes are only generated within the VM. Reassigning their
   // opcodes is not a breaking change.
@@ -650,6 +650,7 @@ namespace dart {
   V(VMInternal_ImplicitGetter,             0, ORDN, ___, ___, ___)             \
   V(VMInternal_ImplicitSetter,             0, ORDN, ___, ___, ___)             \
   V(VMInternal_ImplicitStaticGetter,       0, ORDN, ___, ___, ___)             \
+  V(VMInternal_ImplicitStaticSetter,       0, ORDN, ___, ___, ___)             \
   V(VMInternal_MethodExtractor,            0, ORDN, ___, ___, ___)             \
   V(VMInternal_InvokeClosure,              0, ORDN, ___, ___, ___)             \
   V(VMInternal_InvokeField,                0, ORDN, ___, ___, ___)             \
@@ -789,47 +790,6 @@ class KernelBytecode {
                     reinterpret_cast<const KBCInstr*>(pc))];
   }
 
-  DART_FORCE_INLINE static bool IsJumpOpcode(const KBCInstr* instr) {
-    switch (DecodeOpcode(instr)) {
-      case KernelBytecode::kJump:
-      case KernelBytecode::kJump_Wide:
-      case KernelBytecode::kJumpIfNoAsserts:
-      case KernelBytecode::kJumpIfNoAsserts_Wide:
-      case KernelBytecode::kJumpIfNotZeroTypeArgs:
-      case KernelBytecode::kJumpIfNotZeroTypeArgs_Wide:
-      case KernelBytecode::kJumpIfEqStrict:
-      case KernelBytecode::kJumpIfEqStrict_Wide:
-      case KernelBytecode::kJumpIfNeStrict:
-      case KernelBytecode::kJumpIfNeStrict_Wide:
-      case KernelBytecode::kJumpIfTrue:
-      case KernelBytecode::kJumpIfTrue_Wide:
-      case KernelBytecode::kJumpIfFalse:
-      case KernelBytecode::kJumpIfFalse_Wide:
-      case KernelBytecode::kJumpIfNull:
-      case KernelBytecode::kJumpIfNull_Wide:
-      case KernelBytecode::kJumpIfNotNull:
-      case KernelBytecode::kJumpIfNotNull_Wide:
-      case KernelBytecode::kJumpIfUnchecked:
-      case KernelBytecode::kJumpIfUnchecked_Wide:
-      case KernelBytecode::kJumpIfInitialized:
-      case KernelBytecode::kJumpIfInitialized_Wide:
-        return true;
-
-      default:
-        return false;
-    }
-  }
-
-  DART_FORCE_INLINE static bool IsJumpIfUncheckedOpcode(const KBCInstr* instr) {
-    switch (DecodeOpcode(instr)) {
-      case KernelBytecode::kJumpIfUnchecked:
-      case KernelBytecode::kJumpIfUnchecked_Wide:
-        return true;
-      default:
-        return false;
-    }
-  }
-
   DART_FORCE_INLINE static bool IsLoadConstantOpcode(const KBCInstr* instr) {
     switch (DecodeOpcode(instr)) {
       case KernelBytecode::kLoadConstant:
@@ -910,9 +870,6 @@ class KernelBytecode {
       case KernelBytecode::kDynamicCall:
       case KernelBytecode::kDynamicCall_Wide:
       case KernelBytecode::kReturnTOS:
-      case KernelBytecode::kReturnAsync:
-      case KernelBytecode::kReturnAsyncStar:
-      case KernelBytecode::kReturnSyncStar:
       case KernelBytecode::kEqualsNull:
       case KernelBytecode::kNegateInt:
       case KernelBytecode::kNegateDouble:
