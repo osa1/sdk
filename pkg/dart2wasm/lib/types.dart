@@ -93,7 +93,7 @@ class Types {
   Types(this.translator);
 
   w.ValueType classAndFieldToType(Class cls, int fieldIndex) =>
-      translator.classInfo[cls]!.struct.fields[fieldIndex].type.unpacked;
+      translator.classInfo[cls]!.struct.fields[fieldIndex].type.type.unpacked;
 
   /// Wasm value type for non-nullable `_Type` values
   w.ValueType get nonNullableTypeType => typeClassInfo.nonNullableType;

@@ -189,18 +189,14 @@ class ClassInfo {
   void _addField(w.FieldType fieldType,
       {int? expectedIndex, String? fieldName}) {
     assert(expectedIndex == null || expectedIndex == struct.fields.length);
-    struct.fields.add(fieldType);
-    if (fieldName != null) {
-      final fieldIndex = struct.fields.length - 1;
-      struct.fieldNames[fieldIndex] = fieldName;
-    }
+    struct.fields.add(w.StructField(fieldType, fieldName));
   }
 
   // This returns the types of all the class's fields (including
   // superclass fields), except for the class id and the identity hash
   List<w.ValueType> getClassFieldTypes() => [
         for (var fieldType in struct.fields.skip(FieldIndex.objectFieldBase))
-          fieldType.type.unpacked
+          fieldType.type.type.unpacked
       ];
 }
 
@@ -388,9 +384,8 @@ class ClassInfoCollector {
     } else {
       // Copy fields from superclass
       int superFieldIndex = 0;
-      for (w.FieldType fieldType in superInfo.struct.fields) {
-        info._addField(fieldType,
-            fieldName: superInfo.struct.fieldNames[superFieldIndex]);
+      for (w.StructField fieldType in superInfo.struct.fields) {
+        info._addField(fieldType.type, fieldName: fieldType.name);
         superFieldIndex += 1;
       }
       if (info.cls!.superclass == null) {
@@ -432,9 +427,8 @@ class ClassInfoCollector {
     if (struct.fields.isEmpty) {
       // Copy fields from superclass
       int superFieldIndex = 0;
-      for (w.FieldType fieldType in superInfo.struct.fields) {
-        info._addField(fieldType,
-            fieldName: superInfo.struct.fieldNames[superFieldIndex]);
+      for (w.StructField fieldType in superInfo.struct.fields) {
+        info._addField(fieldType.type, fieldName: fieldType.name);
         superFieldIndex += 1;
       }
 

@@ -225,29 +225,29 @@ class ClosureLayouter extends RecursiveVisitor {
   late final w.StructType instantiationContextBaseStruct = translator
       .typesBuilder
       .defineStruct("#InstantiationClosureContextBase", fields: [
-    w.FieldType(w.RefType.def(closureBaseStruct, nullable: false),
-        mutable: false),
+    w.StructField(w.FieldType(w.RefType.def(closureBaseStruct, nullable: false),
+        mutable: false)),
   ]);
 
   /// Base struct for non-generic closure vtables.
   late final w.StructType vtableBaseStruct = _vtableBaseStructBare
-    ..fields.add(w.FieldType(
+    ..fields.add(w.StructField(w.FieldType(
         w.RefType.def(translator.dynamicCallVtableEntryFunctionType,
             nullable: false),
-        mutable: false));
+        mutable: false)));
 
   /// Base struct for generic closure vtables.
   late final w.StructType genericVtableBaseStruct = translator.typesBuilder
       .defineStruct("#GenericVtableBase",
           fields: vtableBaseStruct.fields.toList()
-            ..add(w.FieldType(
+            ..add(w.StructField(w.FieldType(
                 w.RefType.def(instantiationClosureTypeComparisonFunctionType,
                     nullable: false),
-                mutable: false))
-            ..add(w.FieldType(
+                mutable: false)))
+            ..add(w.StructField(w.FieldType(
                 w.RefType.def(instantiationClosureTypeHashFunctionType,
                     nullable: false),
-                mutable: false)),
+                mutable: false))),
           superType: vtableBaseStruct);
 
   /// Type of [ClosureRepresentation._instantiationTypeComparisonFunction].
@@ -280,14 +280,16 @@ class ClosureLayouter extends RecursiveVisitor {
   w.StructType _getInstantiationContextBaseStruct(int numTypes) =>
       _instantiationContextBaseStructs.putIfAbsent(
           numTypes,
-          () => translator.typesBuilder.defineStruct(
-              "#InstantiationClosureContextBase-$numTypes",
-              fields: [
-                w.FieldType(w.RefType.def(closureBaseStruct, nullable: false),
-                    mutable: false),
-                ...List.filled(numTypes, w.FieldType(typeType, mutable: false))
-              ],
-              superType: instantiationContextBaseStruct));
+          () => translator.typesBuilder
+              .defineStruct("#InstantiationClosureContextBase-$numTypes",
+                  fields: [
+                    w.StructField(w.FieldType(
+                        w.RefType.def(closureBaseStruct, nullable: false),
+                        mutable: false)),
+                    ...List.filled(numTypes,
+                        w.StructField(w.FieldType(typeType, mutable: false)))
+                  ],
+                  superType: instantiationContextBaseStruct));
 
   final Map<int, w.BaseFunction> _instantiationTypeComparisonFunctions = {};
 
@@ -311,12 +313,13 @@ class ClosureLayouter extends RecursiveVisitor {
     //  - A `_FunctionType`
     return translator.typesBuilder.defineStruct(name,
         fields: [
-          w.FieldType(w.NumType.i32, mutable: false),
-          w.FieldType(w.NumType.i32),
-          w.FieldType(w.RefType.struct(nullable: false)),
-          w.FieldType(w.RefType.def(vtableStruct, nullable: false),
-              mutable: false),
-          w.FieldType(functionTypeType, mutable: false)
+          w.StructField(w.FieldType(w.NumType.i32, mutable: false)),
+          w.StructField(w.FieldType(w.NumType.i32)),
+          w.StructField(w.FieldType(w.RefType.struct(nullable: false))),
+          w.StructField(w.FieldType(
+              w.RefType.def(vtableStruct, nullable: false),
+              mutable: false)),
+          w.StructField(w.FieldType(functionTypeType, mutable: false))
         ],
         superType: superType);
   }
@@ -422,9 +425,9 @@ class ClosureLayouter extends RecursiveVisitor {
           .defineFunction(
               [inputType, ...List.filled(typeCount, typeType)], [outputType],
               superType: parent?.instantiationFunctionType);
-      w.FieldType functionFieldType = w.FieldType(
+      w.StructField functionFieldType = w.StructField(w.FieldType(
           w.RefType.def(instantiationFunctionType, nullable: false),
-          mutable: false);
+          mutable: false));
       if (parent == null) {
         assert(vtableStruct.fields.length ==
             FieldIndex.vtableInstantiationFunction);
@@ -441,9 +444,11 @@ class ClosureLayouter extends RecursiveVisitor {
       instantiationContextStruct =
           translator.typesBuilder.defineStruct(instantiationContextName,
               fields: [
-                w.FieldType(w.RefType.def(closureStruct, nullable: false),
-                    mutable: false),
-                ...List.filled(typeCount, w.FieldType(typeType, mutable: false))
+                w.StructField(w.FieldType(
+                    w.RefType.def(closureStruct, nullable: false),
+                    mutable: false)),
+                ...List.filled(typeCount,
+                    w.StructField(w.FieldType(typeType, mutable: false)))
               ],
               superType: _getInstantiationContextBaseStruct(typeCount));
     }
@@ -457,8 +462,8 @@ class ClosureLayouter extends RecursiveVisitor {
       ], [
         topType
       ]);
-      vtableStruct.fields.add(
-          w.FieldType(w.RefType.def(entry, nullable: false), mutable: false));
+      vtableStruct.fields.add(w.StructField(
+          w.FieldType(w.RefType.def(entry, nullable: false), mutable: false)));
     }
 
     ClosureRepresentation representation = ClosureRepresentation(
@@ -1083,7 +1088,7 @@ class Capture {
 
   Capture(this.variable);
 
-  w.ValueType get type => context.struct.fields[fieldIndex].type.unpacked;
+  w.ValueType get type => context.struct.fields[fieldIndex].type.type.unpacked;
 }
 
 /// Compiler passes to find all captured variables and construct the context
@@ -1156,23 +1161,24 @@ class Closures {
         w.StructType struct = context.struct;
         if (context.parent != null) {
           assert(!context.parent!.isEmpty);
-          struct.fields.add(w.FieldType(
-              w.RefType.def(context.parent!.struct, nullable: true)));
+          struct.fields.add(w.StructField(w.FieldType(
+              w.RefType.def(context.parent!.struct, nullable: true))));
         }
         if (context.containsThis) {
           assert(enclosingClass != null);
-          struct.fields.add(w.FieldType(nullableThisType!));
+          struct.fields.add(w.StructField(w.FieldType(nullableThisType!)));
         }
         for (VariableDeclaration variable in context.variables) {
           int index = struct.fields.length;
-          struct.fields.add(w.FieldType(translator
+          struct.fields.add(w.StructField(w.FieldType(translator
               .translateTypeOfLocalVariable(variable)
-              .withNullability(true)));
+              .withNullability(true))));
           captures[variable]!.fieldIndex = index;
         }
         for (TypeParameter parameter in context.typeParameters) {
           int index = struct.fields.length;
-          struct.fields.add(w.FieldType(typeType.withNullability(true)));
+          struct.fields
+              .add(w.StructField(w.FieldType(typeType.withNullability(true))));
           captures[parameter]!.fieldIndex = index;
         }
       }

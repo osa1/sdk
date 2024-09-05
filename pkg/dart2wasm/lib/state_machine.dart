@@ -1256,7 +1256,8 @@ abstract class StateMachineCodeGenerator extends AstCodeGenerator {
       } else {
         b.local_get(capture.context.currentLocal);
         b.struct_get(capture.context.struct, capture.fieldIndex);
-        return capture.context.struct.fields[capture.fieldIndex].type.unpacked;
+        return capture
+            .context.struct.fields[capture.fieldIndex].type.type.unpacked;
       }
     } else {
       if (local == null) {

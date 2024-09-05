@@ -66,14 +66,14 @@ class Globals {
       return _dummyValues.putIfAbsent(heapType, () {
         if (heapType is w.DefType) {
           if (heapType is w.StructType) {
-            for (w.FieldType field in heapType.fields) {
-              _prepareDummyValue(module, field.type.unpacked);
+            for (w.StructField field in heapType.fields) {
+              _prepareDummyValue(module, field.type.type.unpacked);
             }
             final global =
                 module.globals.define(w.GlobalType(type, mutable: false));
             final ib = global.initializer;
-            for (w.FieldType field in heapType.fields) {
-              instantiateDummyValue(ib, field.type.unpacked);
+            for (w.StructField field in heapType.fields) {
+              instantiateDummyValue(ib, field.type.type.unpacked);
             }
             ib.struct_new(heapType);
             ib.end();

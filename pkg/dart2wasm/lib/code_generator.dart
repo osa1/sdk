@@ -437,9 +437,11 @@ abstract class AstCodeGenerator
             setSourceMapSourceAndFileOffset(source, field.fileOffset);
 
         int fieldIndex = translator.fieldIndex[field]!;
-        w.Local local = addLocal(info.struct.fields[fieldIndex].type.unpacked);
+        w.Local local =
+            addLocal(info.struct.fields[fieldIndex].type.type.unpacked);
 
-        wrap(field.initializer!, info.struct.fields[fieldIndex].type.unpacked);
+        wrap(field.initializer!,
+            info.struct.fields[fieldIndex].type.type.unpacked);
         b.local_set(local);
         fieldLocals[field] = local;
 
@@ -561,7 +563,7 @@ abstract class AstCodeGenerator
 
         if (context.containsThis) {
           thisLocal = addLocal(context
-              .struct.fields[context.thisFieldIndex].type.unpacked
+              .struct.fields[context.thisFieldIndex].type.type.unpacked
               .withNullability(false));
           preciseThisLocal = thisLocal;
 
@@ -738,9 +740,9 @@ abstract class AstCodeGenerator
 
     w.Local? local = fieldLocals[field];
 
-    local ??= addLocal(struct.fields[fieldIndex].type.unpacked);
+    local ??= addLocal(struct.fields[fieldIndex].type.type.unpacked);
 
-    wrap(node.value, struct.fields[fieldIndex].type.unpacked);
+    wrap(node.value, struct.fields[fieldIndex].type.type.unpacked);
     b.local_set(local);
     fieldLocals[field] = local;
   }
@@ -2166,7 +2168,7 @@ abstract class AstCodeGenerator
       ClassInfo info = translator.classInfo[target.enclosingClass]!;
       int fieldIndex = translator.fieldIndex[target]!;
       w.ValueType receiverType = info.nonNullableType;
-      w.ValueType fieldType = info.struct.fields[fieldIndex].type.unpacked;
+      w.ValueType fieldType = info.struct.fields[fieldIndex].type.type.unpacked;
       wrap(receiver, receiverType);
       b.struct_get(info.struct, fieldIndex);
       return fieldType;
@@ -2867,7 +2869,7 @@ abstract class AstCodeGenerator
       int fieldIndex = translator.typeParameterIndex[parameter]!;
       visitThis(info.nonNullableType);
       b.struct_get(info.struct, fieldIndex);
-      resultType = info.struct.fields[fieldIndex].type.unpacked;
+      resultType = info.struct.fields[fieldIndex].type.type.unpacked;
     }
 
     translator.convertType(b, resultType, types.nonNullableTypeType);
@@ -3412,7 +3414,7 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
       translator.convertType(b, receiverLocal.type, info.nonNullableType);
       b.local_get(positionalArgLocal);
       translator.convertType(b, positionalArgLocal.type,
-          info.struct.fields[fieldIndex].type.unpacked);
+          info.struct.fields[fieldIndex].type.type.unpacked);
       b.struct_set(info.struct, fieldIndex);
     } else {
       final setterProcedure = member_ as Procedure;
@@ -3626,13 +3628,13 @@ class ConstructorAllocatorCodeGenerator extends AstCodeGenerator {
     // Add evaluated fields to locals
     List<w.Local> orderedFieldLocals = [];
 
-    List<w.FieldType> fieldTypes = info.struct.fields
+    List<w.StructField> fieldTypes = info.struct.fields
         .sublist(FieldIndex.objectFieldBase)
         .reversed
         .toList();
 
-    for (w.FieldType field in fieldTypes) {
-      w.Local local = addLocal(field.type.unpacked);
+    for (w.StructField field in fieldTypes) {
+      w.Local local = addLocal(field.type.type.unpacked);
       orderedFieldLocals.add(local);
       b.local_set(local);
     }
@@ -3926,7 +3928,7 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
     // Implicit getter or setter
     w.StructType struct = translator.classInfo[field.enclosingClass!]!.struct;
     int fieldIndex = translator.fieldIndex[field]!;
-    w.ValueType fieldType = struct.fields[fieldIndex].type.unpacked;
+    w.ValueType fieldType = struct.fields[fieldIndex].type.type.unpacked;
 
     void getThis() {
       w.Local thisLocal = paramLocals[0];

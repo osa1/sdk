@@ -268,7 +268,7 @@ class TypesBuilder with Builder<ir.Types> {
   /// Fields can be added later, by adding to the [fields] list. This enables
   /// struct types to be recursive.
   ir.StructType defineStruct(String name,
-      {Iterable<ir.FieldType>? fields, ir.DefType? superType}) {
+      {Iterable<ir.StructField>? fields, ir.DefType? superType}) {
     final type = ir.StructType(name, fields: fields, superType: superType);
     _recGroupBuilder.addDefinedType(type);
     return type;
@@ -307,8 +307,13 @@ class TypesBuilder with Builder<ir.Types> {
       for (final defType in recursionGroup) {
         if (defType is ir.DataType) {
           nameCount += 1;
-          if (defType is ir.StructType && defType.fieldNames.isNotEmpty) {
-            typesWithNamedFieldsCount += 1;
+          if (defType is ir.StructType) {
+            for (w.StructField field in defType) {
+              if (field.name != null) {
+                typesWithNamedFieldsCount += 1;
+                break;
+              }
+            }
           }
         }
       }

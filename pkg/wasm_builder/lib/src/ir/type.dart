@@ -738,10 +738,9 @@ abstract class DataType extends DefType {
 
 /// A custom `struct` type.
 class StructType extends DataType {
-  final List<FieldType> fields = [];
-  final Map<int, String> fieldNames = {};
+  final List<StructField> fields = [];
 
-  StructType(super.name, {Iterable<FieldType>? fields, super.superType}) {
+  StructType(super.name, {Iterable<StructField>? fields, super.superType}) {
     if (fields != null) this.fields.addAll(fields);
   }
 
@@ -750,7 +749,7 @@ class StructType extends DataType {
 
   @override
   Iterable<StorageType> get constituentTypes =>
-      [for (FieldType f in fields) f.type];
+      [for (StructType f in fields) f.type.type.type];
 
   @override
   bool isStructuralSubtypeOf(HeapType other) {
@@ -868,6 +867,15 @@ class FieldType extends _WithMutability<StorageType> {
       return type.isSubtypeOf(other.type);
     }
   }
+}
+
+/// A struct field, with an optional debug name of the field to be put in the
+/// names section of the Wasm module.
+class StructField {
+  final FieldType type;
+  final String? name;
+
+  StructField(this.type, [this.name]);
 }
 
 enum PackedTypeKind { i8, i16 }

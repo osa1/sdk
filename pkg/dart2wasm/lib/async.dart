@@ -70,7 +70,7 @@ mixin AsyncCodeGeneratorMixin on StateMachineEntryAstCodeGenerator {
         asyncSuspendStateInfo.struct, FieldIndex.asyncSuspendStateCompleter);
     translator.convertType(
         b,
-        asyncSuspendStateInfo.struct.fields[5].type.unpacked,
+        asyncSuspendStateInfo.struct.fields[5].type.type.unpacked,
         completerFutureGetterType.inputs[0]);
     call(translator.completerFuture.getterReference);
     b.return_();
@@ -200,7 +200,7 @@ class AsyncStateMachineCodeGenerator extends StateMachineCodeGenerator {
         if (localContext.containsThis) {
           assert(thisLocal == null);
           thisLocal = b.addLocal(localContext
-              .struct.fields[localContext.thisFieldIndex].type.unpacked
+              .struct.fields[localContext.thisFieldIndex].type.type.unpacked
               .withNullability(false));
           translator.globals.instantiateDummyValue(b, thisLocal!.type);
           b.local_set(thisLocal!);

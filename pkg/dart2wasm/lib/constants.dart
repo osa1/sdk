@@ -622,7 +622,7 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
       for (int i = baseFieldCount; i < fieldCount; i++) {
         Constant subConstant = subConstants[i]!;
         constants.instantiateConstant(
-            b, subConstant, info.struct.fields[i].type.unpacked);
+            b, subConstant, info.struct.fields[i].type.type.unpacked);
       }
       b.struct_new(info.struct);
     });

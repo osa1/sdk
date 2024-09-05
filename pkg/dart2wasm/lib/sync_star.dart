@@ -175,7 +175,7 @@ class SyncStarStateMachineCodeGenerator extends StateMachineCodeGenerator {
         if (localContext.containsThis) {
           assert(thisLocal == null);
           thisLocal = b.addLocal(localContext
-              .struct.fields[localContext.thisFieldIndex].type.unpacked
+              .struct.fields[localContext.thisFieldIndex].type.type.unpacked
               .withNullability(false));
           translator.globals.instantiateDummyValue(b, thisLocal!.type);
           b.local_set(thisLocal!);

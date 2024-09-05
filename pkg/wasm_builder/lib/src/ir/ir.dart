@@ -31,6 +31,7 @@ export 'types.dart'
         PackedType,
         RefType,
         StorageType,
+        StructField,
         StructType,
         Types,
         ValueType;
