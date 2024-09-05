@@ -89,7 +89,10 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
     }
 
     if (iterable is List) {
-      Lists.copy(iterable, skipCount, this, start, length);
+      final iterableList = unsafeCast<List<E>>(iterable);
+      for (int i = skipCount, j = start; i < skipCount + length; i++, j++) {
+        _data[j] = iterableList[i];
+      }
       return;
     }
 
