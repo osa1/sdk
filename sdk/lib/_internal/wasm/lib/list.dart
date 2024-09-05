@@ -80,6 +80,9 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
     RangeError.checkNotNegative(skipCount, "skipCount");
     if (iterable is WasmListBase) {
       final iterableWasmList = unsafeCast<WasmListBase>(iterable);
+      if (skipCount + length > iterableWasmList.length) {
+        throw IterableElementError.tooFew();
+      }
       _data.copy(start, iterableWasmList._data, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);

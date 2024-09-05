@@ -31,6 +31,10 @@ main() {
   Expect.equals(1, list.length);
   Expect.equals(1, list[0]);
 
+  Expect.throwsStateError(() => list.setRange(0, 1, list, 2));
+  Expect.equals(1, list.length);
+  Expect.equals(1, list[0]);
+
   list.setRange(0, 1, [2], 0);
   Expect.equals(1, list.length);
   Expect.equals(2, list[0]);
