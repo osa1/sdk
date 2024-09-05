@@ -98,7 +98,7 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
 
   void setAll(int index, Iterable<E> iterable) {
     // index < 0 || index > length
-    if (index < 0 || index > this.length) {
+    if (index.gtU(length)) {
       throw RangeError.range(index, 0, this.length, "index");
     }
 
