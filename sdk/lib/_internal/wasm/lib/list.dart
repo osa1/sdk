@@ -78,8 +78,9 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
     int length = end - start;
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
-    if (identical(this, iterable)) {
-      _data.copy(start, _data, skipCount, length);
+    if (iterable is WasmListBase) {
+      final iterableWasmList = unsafeCast<WasmListBase>(iterable);
+      _data.copy(start, iterableWasmList._data, skipCount, length);
     } else if (iterable is List<E>) {
       Lists.copy(iterable, skipCount, this, start, length);
     } else {
@@ -96,25 +97,31 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
   }
 
   void setAll(int index, Iterable<E> iterable) {
+    // index < 0 || index > length
     if (index < 0 || index > this.length) {
       throw RangeError.range(index, 0, this.length, "index");
     }
-    List<E> iterableAsList;
-    if (identical(this, iterable)) {
-      iterableAsList = this;
-    } else if (iterable is List<E>) {
-      iterableAsList = iterable;
-    } else {
-      for (var value in iterable) {
-        this[index++] = value;
+
+    if (iterable is WasmListBase) {
+      final iterableWasmList = unsafeCast<WasmListBase>(iterable);
+      for (int i = 0; i < iterableWasmList.length; i += 1) {
+        this[index + i] = unsafeCast<E>(iterableWasmList._data[i]);
       }
       return;
     }
-    int length = iterableAsList.length;
-    if (index + length > this.length) {
-      throw RangeError.range(index + length, 0, this.length);
+
+    if (iterable is List) {
+      final iterableList = unsafeCast<List>(iterable);
+      final length = iterableList.length;
+      if (index + length > this.length) {
+        throw RangeError.range(index + length, 0, this.length);
+      }
+      Lists.copy(iterableList, 0, this, index, length);
     }
-    Lists.copy(iterableAsList, 0, this, index, length);
+
+    for (var value in iterable) {
+      this[index++] = value;
+    }
   }
 }
 
