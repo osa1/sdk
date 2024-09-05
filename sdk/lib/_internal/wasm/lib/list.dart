@@ -78,24 +78,29 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
     int length = end - start;
     if (length == 0) return;
     RangeError.checkNotNegative(skipCount, "skipCount");
+
     if (iterable is WasmListBase) {
       final iterableWasmList = unsafeCast<WasmListBase>(iterable);
       if (skipCount + length > iterableWasmList.length) {
         throw IterableElementError.tooFew();
       }
       _data.copy(start, iterableWasmList._data, skipCount, length);
-    } else if (iterable is List<E>) {
+      return;
+    }
+
+    if (iterable is List) {
       Lists.copy(iterable, skipCount, this, start, length);
-    } else {
-      Iterator<E> it = iterable.iterator;
-      while (skipCount > 0) {
-        if (!it.moveNext()) return;
-        skipCount--;
-      }
-      for (int i = start; i < end; i++) {
-        if (!it.moveNext()) return;
-        _data[i] = it.current;
-      }
+      return;
+    }
+
+    Iterator<E> it = iterable.iterator;
+    while (skipCount > 0) {
+      if (!it.moveNext()) return;
+      skipCount--;
+    }
+    for (int i = start; i < end; i++) {
+      if (!it.moveNext()) return;
+      _data[i] = it.current;
     }
   }
 
@@ -120,6 +125,7 @@ abstract class _ModifiableList<E> extends WasmListBase<E> {
         throw RangeError.range(index + length, 0, this.length);
       }
       Lists.copy(iterableList, 0, this, index, length);
+      return;
     }
 
     for (var value in iterable) {
