@@ -15,13 +15,8 @@ main() {
 @reflectiveTest
 class AnnotateOverridesTest extends LintRuleTest {
   @override
-  String get lintRule => 'annotate_overrides';
+  String get lintRule => LintNames.annotate_overrides;
 
-  @FailingTest(
-    reason:
-        '`augmented.hasOverride` not implemented yet (https://github.com/dart-lang/sdk/issues/55579)',
-    issue: 'https://github.com/dart-lang/linter/issues/4925',
-  )
   test_augmentationClass_implementsInterface() async {
     var a = newFile('$testPackageLibPath/a.dart', r'''
 part 'b.dart';

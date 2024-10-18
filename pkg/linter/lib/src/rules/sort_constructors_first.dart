@@ -6,39 +6,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Sort constructor declarations before other members.';
-
-const _details = r'''
-**DO** sort constructor declarations before other members.
-
-**BAD:**
-```dart
-abstract class Visitor {
-  double value;
-  visitSomething(Something s);
-  Visitor();
-}
-```
-
-**GOOD:**
-```dart
-abstract class Animation<T> {
-  const Animation(this.value);
-  double value;
-  void addListener(VoidCallback listener);
-}
-```
-
-''';
 
 class SortConstructorsFirst extends LintRule {
   SortConstructorsFirst()
       : super(
-          name: 'sort_constructors_first',
+          name: LintNames.sort_constructors_first,
           description: _desc,
-          details: _details,
         );
 
   @override

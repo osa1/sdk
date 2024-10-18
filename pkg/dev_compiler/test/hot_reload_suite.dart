@@ -13,6 +13,7 @@ import 'package:collection/collection.dart';
 import 'package:dev_compiler/dev_compiler.dart' as ddc_names
     show libraryUriToJsIdentifier;
 import 'package:front_end/src/api_unstable/ddc.dart' as fe;
+import 'package:path/path.dart' as p;
 import 'package:reload_test/ddc_helpers.dart' as ddc_helpers;
 import 'package:reload_test/frontend_server_controller.dart';
 import 'package:reload_test/hot_reload_memory_filesystem.dart';
@@ -29,6 +30,7 @@ final testTimeoutSeconds = 10;
 final testDiffSeparator = '/** DIFF **/';
 
 final argParser = ArgParser()
+  ..addFlag('help', abbr: 'h', help: 'Display this message.', negatable: false)
   ..addOption('runtime',
       abbr: 'r',
       defaultsTo: 'd8',
@@ -71,6 +73,10 @@ late final bool debug;
 
 Future<void> main(List<String> args) async {
   final argResults = argParser.parse(args);
+  if (argResults['help'] as bool) {
+    print(argParser.usage);
+    return;
+  }
   final runtimePlatform =
       RuntimePlatforms.values.byName(argResults['runtime'] as String);
   final testNameFilter = RegExp(argResults['filter'] as String);
@@ -227,9 +233,10 @@ Future<void> main(List<String> args) async {
     // Report results for this test's sources' diff validations.
     void reportDiffOutcome(Uri fileUri, String testOutput, bool testPassed) {
       final filePath = fileUri.path;
+      final relativeFilePath = p.relative(filePath, from: allTestsUri.path);
       var outcome = TestResultOutcome(
         configuration: argResults['named-configuration'] as String,
-        testName: '$filePath-diff',
+        testName: '$relativeFilePath-diff',
         testOutput: testOutput,
       );
       outcome.elapsedTime = stopwatch.elapsed;
@@ -421,7 +428,7 @@ Future<void> main(List<String> args) async {
     }
 
     // Skip this test directory if this platform is excluded.
-    if (testConfig.excludedPlaforms.contains(runtimePlatform)) {
+    if (testConfig.excludedPlatforms.contains(runtimePlatform)) {
       _print('Skipping test on platform: ${runtimePlatform.text}',
           label: testName);
       continue;
@@ -714,7 +721,8 @@ Future<void> main(List<String> args) async {
     failedTests.forEach((outcome) {
       print('${outcome.testName} failed with:\n  ${outcome.testOutput}');
     });
-    exit(1);
+    // Exit cleanly after writing test results.
+    exit(0);
   }
 }
 

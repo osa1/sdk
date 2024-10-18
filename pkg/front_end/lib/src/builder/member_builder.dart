@@ -6,39 +6,32 @@ library fasta.member_builder;
 
 import 'package:kernel/ast.dart';
 
-import '../base/modifier.dart';
 import '../kernel/hierarchy/class_member.dart';
 import '../kernel/hierarchy/members_builder.dart';
 import 'builder.dart';
 import 'declaration_builders.dart';
 import 'library_builder.dart';
-import 'modifier_builder.dart';
 
 abstract class MemberBuilder implements Builder {
   String get name;
 
   bool get isAssignable;
 
-  void set parent(Builder? value);
-
   LibraryBuilder get libraryBuilder;
 
   /// The declared name of this member;
   Name get memberName;
 
-  /// The [Member] built by this builder;
-  Member get member;
-
   /// The [Member] to use when reading from this member builder.
   ///
-  /// For a field, a getter or a regular method this is the [member] itself.
+  /// For a field, a getter or a regular method this is the member itself.
   /// For an instance extension method this is special tear-off function. For
   /// a constructor, an operator, a factory or a setter this is `null`.
   Member? get readTarget;
 
   /// The [Member] to use when write to this member builder.
   ///
-  /// For an assignable field or a setter this is the [member] itself. For
+  /// For an assignable field or a setter this is the member itself. For
   /// a constructor, a non-assignable field, a getter, an operator or a regular
   /// method this is `null`.
   Member? get writeTarget;
@@ -46,7 +39,7 @@ abstract class MemberBuilder implements Builder {
   /// The [Member] to use when invoking this member builder.
   ///
   /// For a constructor, a field, a regular method, a getter, an operator or
-  /// a factory this is the [member] itself. For a setter this is `null`.
+  /// a factory this is the member itself. For a setter this is `null`.
   Member? get invokeTarget;
 
   /// The members from this builder that are accessible in exports through
@@ -95,49 +88,14 @@ abstract class MemberBuilder implements Builder {
   Iterable<Annotatable> get annotatables;
 }
 
-abstract class MemberBuilderImpl extends ModifierBuilderImpl
-    implements MemberBuilder {
+abstract class MemberBuilderImpl extends BuilderImpl implements MemberBuilder {
   @override
-  String get name;
-
-  /// For top-level members, the parent is set correctly during
-  /// construction. However, for class members, the parent is initially the
-  /// library and updated later.
-  @override
-  Builder? parent;
+  Uri get fileUri;
 
   @override
-  final Uri fileUri;
-
-  MemberBuilderImpl(this.parent, this.fileUri, int charOffset)
-      : super(parent, charOffset);
-
-  @override
-  DeclarationBuilder? get declarationBuilder =>
-      parent is DeclarationBuilder ? parent as DeclarationBuilder : null;
-
-  @override
-  ClassBuilder? get classBuilder =>
-      parent is ClassBuilder ? parent as ClassBuilder : null;
-
-  @override
-  // Coverage-ignore(suite): Not run.
-  LibraryBuilder get libraryBuilder {
-    if (parent is LibraryBuilder) {
-      LibraryBuilder library = parent as LibraryBuilder;
-      return library.partOfLibrary ?? library;
-    } else if (parent is ExtensionBuilder) {
-      ExtensionBuilder extension = parent as ExtensionBuilder;
-      return extension.libraryBuilder;
-    } else if (parent is ExtensionTypeDeclarationBuilder) {
-      ExtensionTypeDeclarationBuilder extensionTypeDeclaration =
-          parent as ExtensionTypeDeclarationBuilder;
-      return extensionTypeDeclaration.libraryBuilder;
-    } else {
-      ClassBuilder cls = parent as ClassBuilder;
-      return cls.libraryBuilder;
-    }
-  }
+  ClassBuilder? get classBuilder => declarationBuilder is ClassBuilder
+      ? declarationBuilder as ClassBuilder
+      : null;
 
   @override
   bool get isDeclarationInstanceMember => isDeclarationMember && !isStatic;
@@ -165,12 +123,6 @@ abstract class MemberBuilderImpl extends ModifierBuilderImpl
 
   @override
   bool get isTopLevel => !isDeclarationMember;
-
-  @override
-  bool get isExternal => (modifiers & externalMask) != 0;
-
-  @override
-  bool get isAbstract => (modifiers & abstractMask) != 0;
 
   @override
   bool get isConflictingSetter => false;
@@ -230,7 +182,7 @@ abstract class BuilderClassMember implements ClassMember {
   }
 
   @override
-  bool get isAbstract => memberBuilder.member.isAbstract;
+  bool get isAbstract => memberBuilder.isAbstract;
 
   @override
   bool get isSynthesized => false;

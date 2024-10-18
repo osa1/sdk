@@ -2,58 +2,23 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/type.dart';
+import 'package:analyzer/src/dart/ast/ast.dart'; // ignore: implementation_imports
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc =
     r'Avoid returning this from methods just to enable a fluent interface.';
-
-const _details = r'''
-From [Effective Dart](https://dart.dev/effective-dart/design#avoid-returning-this-from-methods-just-to-enable-a-fluent-interface):
-
-**AVOID** returning this from methods just to enable a fluent interface.
-
-Returning `this` from a method is redundant; Dart has a cascade operator which
-allows method chaining universally.
-
-Returning `this` is allowed for:
-
-- operators
-- methods with a return type different of the current class
-- methods defined in parent classes / mixins or interfaces
-- methods defined in extensions
-
-**BAD:**
-```dart
-var buffer = StringBuffer()
-  .write('one')
-  .write('two')
-  .write('three');
-```
-
-**GOOD:**
-```dart
-var buffer = StringBuffer()
-  ..write('one')
-  ..write('two')
-  ..write('three');
-```
-
-''';
 
 bool _returnsThis(ReturnStatement node) => node.expression is ThisExpression;
 
 class AvoidReturningThis extends LintRule {
   AvoidReturningThis()
       : super(
-          name: 'avoid_returning_this',
+          name: LintNames.avoid_returning_this,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -67,7 +32,7 @@ class AvoidReturningThis extends LintRule {
   }
 }
 
-class _BodyVisitor extends RecursiveAstVisitor {
+class _BodyVisitor extends RecursiveAstVisitor<void> {
   List<ReturnStatement> returnStatements = [];
 
   bool foundNonThisReturn = false;
@@ -114,10 +79,11 @@ class _Visitor extends SimpleAstVisitor<void> {
         return;
       }
 
-      var returnType = node.declaredElement?.returnType;
+      var returnType = node.declaredFragment?.element.returnType;
       if (returnType is InterfaceType &&
-          // ignore: cast_nullable_to_non_nullable
-          returnType.element == (parent as Declaration).declaredElement) {
+          returnType.element3 ==
+              // ignore: cast_nullable_to_non_nullable
+              (parent as FragmentDeclaration).declaredFragment?.element) {
       } else {
         return;
       }

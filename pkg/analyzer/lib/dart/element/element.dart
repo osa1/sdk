@@ -36,9 +36,11 @@
 /// represented by an element.
 library;
 
+import 'package:_fe_analyzer_shared/src/types/shared_type.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/constant/value.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/scope.dart';
 import 'package:analyzer/dart/element/type.dart';
@@ -416,6 +418,12 @@ abstract class CompilationUnitElement implements UriReferencedElement {
 
   /// The parts included by this unit.
   List<PartElement> get parts;
+
+  /// The scope used to resolve names within this compilation unit.
+  ///
+  /// It includes all of the elements that are declared in the library, and all
+  /// of the elements imported into this unit or parent units.
+  Scope get scope;
 
   @override
   AnalysisSession get session;
@@ -888,6 +896,16 @@ abstract class ElementAnnotation implements ConstantEvaluationTarget {
   /// In invalid code this element can be `null`, or a reference to any
   /// other element.
   Element? get element;
+
+  /// Returns the element referenced by this annotation.
+  ///
+  /// In valid code this element can be a [GetterElement] of a constant
+  /// top-level variable, or a constant static field of a class; or a
+  /// constant [ConstructorElement].
+  ///
+  /// In invalid code this element can be `null`, or a reference to any
+  /// other element.
+  Element2? get element2;
 
   /// Whether the annotation marks the associated function as always throwing.
   bool get isAlwaysThrows;
@@ -1924,6 +1942,7 @@ abstract class LibraryElement
   List<LibraryElement> get importedLibraries;
 
   /// Whether the library is an application that can be run in the browser.
+  @Deprecated('Not used anymore')
   bool get isBrowserApplication;
 
   /// Whether the library is the `dart:async` library.
@@ -1946,6 +1965,7 @@ abstract class LibraryElement
   String get name;
 
   /// The list of `part` directives of this library.
+  @Deprecated('Use CompilationUnitElement.parts')
   List<PartElement> get parts;
 
   /// The public [Namespace] of this library.
@@ -2003,6 +2023,9 @@ abstract class LibraryImportElement implements _ExistingElement {
   /// The combinators that were specified as part of the `import` directive in
   /// the order in which they were specified.
   List<NamespaceCombinator> get combinators;
+
+  @override
+  CompilationUnitElement get enclosingElement3;
 
   /// The [LibraryElement], if [uri] is a [DirectiveUriWithLibrary].
   LibraryElement? get importedLibrary;
@@ -2068,20 +2091,24 @@ abstract class LibraryOrAugmentationElement implements Element {
   LibraryElement get library;
 
   /// The exports defined in this library.
+  @Deprecated('Use CompilationUnitElement.libraryExports')
   List<LibraryExportElement> get libraryExports;
 
   /// The imports defined in this library.
+  @Deprecated('Use CompilationUnitElement.libraryImports')
   List<LibraryImportElement> get libraryImports;
 
   /// The prefixes used to `import` libraries into this library.
   ///
   /// Each prefix can be used in more than one `import` directive.
+  @Deprecated('Use CompilationUnitElement.libraryImportPrefixes')
   List<PrefixElement> get prefixes;
 
   /// The name lookup scope for this library.
   ///
   /// It consists of elements that are either declared in the library, or
   /// imported into it.
+  @Deprecated('Use CompilationUnitElement.scope')
   Scope get scope;
 
   @override
@@ -2196,12 +2223,18 @@ sealed class NamespaceCombinator {}
 ///
 /// Clients may not extend, implement or mix-in this class.
 abstract class ParameterElement
-    implements PromotableElement, ConstantEvaluationTarget {
+    implements
+        PromotableElement,
+        ConstantEvaluationTarget,
+        SharedNamedFunctionParameterStructure<DartType> {
   @override
   ParameterElement get declaration;
 
   /// The code of the default value, or `null` if no default value.
   String? get defaultValueCode;
+
+  @experimental
+  FormalParameterElement get element;
 
   /// Whether the parameter has a default value.
   bool get hasDefaultValue;
@@ -2250,6 +2283,7 @@ abstract class ParameterElement
   /// change the meaning of this getter. The parameter `{@required int x}`
   /// will return `false` and the parameter `{@required required int x}`
   /// will return `true`.
+  @override
   bool get isRequired;
 
   /// Whether the parameter is both a required and named parameter.
@@ -2570,7 +2604,9 @@ abstract class TypeAliasElement
   /// Note that this always instantiates the typedef itself, so for a
   /// [TypeAliasElement] the returned [DartType] might still be a generic
   /// type, with type formals. For example, if the typedef is:
+  ///
   ///     typedef F<T> = void Function<U>(T, U);
+  ///
   /// then `F<int>` will produce `void Function<U>(int, U)`.
   DartType instantiate({
     required List<DartType> typeArguments,
@@ -2586,7 +2622,8 @@ abstract class TypeDefiningElement implements Element {}
 /// A type parameter.
 ///
 /// Clients may not extend, implement or mix-in this class.
-abstract class TypeParameterElement implements TypeDefiningElement {
+abstract class TypeParameterElement
+    implements TypeDefiningElement, SharedTypeParameterStructure<DartType> {
   /// The type representing the bound associated with this parameter, or `null`
   /// if this parameter does not have an explicit bound. Being able to
   /// distinguish between an implicit and explicit bound is needed by the

@@ -67,11 +67,6 @@ class ExpressionInfo<Type extends Object> {
   final Type _type;
 
   /// The flow model representing execution state after the expression is
-  /// evaluated, assuming nothing about the result of the evaluation.
-  @visibleForTesting
-  final FlowModel<Type> after;
-
-  /// The flow model representing execution state after the expression is
   /// evaluated, if the expression evaluates to `true`.
   @visibleForTesting
   final FlowModel<Type> ifTrue;
@@ -86,31 +81,27 @@ class ExpressionInfo<Type extends Object> {
   /// target, which causes a promotion if it evaluates to `true`).
   @visibleForTesting
   ExpressionInfo(
-      {required Type type,
-      required this.after,
-      required this.ifTrue,
-      required this.ifFalse})
+      {required Type type, required this.ifTrue, required this.ifFalse})
       : _type = type;
 
   /// Creates an [ExpressionInfo] for an expression whose value doesn't
   /// influence the flow model.
   @visibleForTesting
-  ExpressionInfo.trivial({required Type type, required this.after})
+  ExpressionInfo.trivial({required Type type, required FlowModel<Type> model})
       : _type = type,
-        ifTrue = after,
-        ifFalse = after;
+        ifTrue = model,
+        ifFalse = model;
 
   /// Determines if the value of the expression represented by `this` influences
   /// the flow model.
-  bool get isNonTrivial =>
-      !identical(after, ifTrue) || !identical(after, ifFalse);
+  bool get isNonTrivial => !identical(ifTrue, ifFalse);
 
   /// Indicates whether the expression represented by `this` is a `null`
   /// literal.
   bool get isNull => false;
 
   @override
-  String toString() => 'ExpressionInfo(type: $_type, after: $after, '
+  String toString() => 'ExpressionInfo(type: $_type, '
       '_ifTrue: $ifTrue, ifFalse: $ifFalse)';
 
   /// Creates an [ExpressionInfo] containing information about the logical
@@ -119,8 +110,7 @@ class ExpressionInfo<Type extends Object> {
   /// produces an [ExpressionInfo] containing information about the expression
   /// `x != null`.
   ExpressionInfo<Type> _invert() => isNonTrivial
-      ? new ExpressionInfo<Type>(
-          type: _type, after: after, ifTrue: ifFalse, ifFalse: ifTrue)
+      ? new ExpressionInfo<Type>(type: _type, ifTrue: ifFalse, ifFalse: ifTrue)
       : this;
 }
 
@@ -148,16 +138,72 @@ class ExpressionPropertyTarget<Expression extends Object>
 /// The client should create one instance of this class for every method, field,
 /// or top level variable to be analyzed, and call the appropriate methods
 /// while visiting the code for type inference.
+///
+/// The API for flow analysis is event-based, consisting of methods that are
+/// intended to be called during a single-pass depth-first pre-order* traversal
+/// of the AST of the code being analyzed. The client only needs to make calls
+/// into flow analysis when this traversal visits "flow-relevant" AST nodes
+/// (i.e. statements and expressions that influence flow control, such as loops,
+/// return statements, etc., expressions that reference something potentially
+/// promotable, such as a variable and property gets, and anything that performs
+/// a type test). Other AST nodes (known as "flow-irrelevant" AST nodes) don't
+/// require calls to the flow analysis API on their own, but calls to flow
+/// analysis may still be required when visiting their children.
+///
+/// *Where child nodes are ordered according to when they first execute. Note
+/// that for most constructs this matches the order in which the nodes appear in
+/// the source text, but there are a small number of exceptions. For example, in
+/// `for (INITIALIZERS; CONDITION; UPDATERS) BODY;`, `UPDATERS` is executed
+/// after `BODY`, so `UPDATERS` should be visited after `BODY`. Also, in
+/// `PATTERN = EXPRESSION;`, `PATTERN` is executed after `EXPRESSION`, so
+/// `PATTERN` should be visited after `EXPRESSION`.
+///
+/// With a few exceptions, the methods in this class are named after a kind of
+/// AST node, followed by an underscore, followed by a brief phrase indicating
+/// when the method should be called during the visit of that kind of AST node.
+/// For example, when visiting an `if` statement, the client should call
+/// [ifStatement_thenBegin] after visiting its condition expression but before
+/// visiting its "then" block. The precise order for visiting any given AST node
+/// is described in comments below.
+///
+/// Some API calls have arguments representing either the AST node being visited
+/// or one of its child nodes. For example, [isExpression_end] has an argument
+/// `isExpression` representing the entire "is" expression, and
+/// [ifStatement_thenBegin] has an argument `condition` representing the
+/// "condition" part of the "if" statement.
+///
+/// Among other things, these arguments allow flow analysis to recognize
+/// parent/child relationships between parts of the syntax tree. For example,
+/// when analyzing `if (x is T)`, the AST node for `x is T` is passed first to
+/// [isExpression_end]'s `isExpression` argument and then, immediately
+/// afterwards, to [ifStatement_thenBegin]'s `condition` argument; this tells
+/// flow analysis that the "is" expression is an immediate child of the "if"
+/// statement, and therefore a type promotion should occur.
+///
+/// Whereas when analyzing `if (f(x is T))`, the same sequence of calls is made
+/// to flow analysis (since the AST node for the invocation of `f` is
+/// flow-irrelevant). But the node passed to [isExpression_end]'s `isExpression`
+/// argument is `x is T`, whereas the node passed to [ifStatement_thenBegin]'s
+/// `condition` argument is `f(x is T)`. Since these nodes are different, flow
+/// analysis knows that the "is" expression is *not* an immediate child of the
+/// "if" statement, so therefore no type promotion should occur.
 abstract class FlowAnalysis<Node extends Object, Statement extends Node,
     Expression extends Node, Variable extends Object, Type extends Object> {
-  factory FlowAnalysis(FlowAnalysisOperations<Variable, Type> operations,
-      AssignedVariables<Node, Variable> assignedVariables,
-      {required bool respectImplicitlyTypedVarInitializers,
-      required bool fieldPromotionEnabled}) {
-    return new _FlowAnalysisImpl(operations, assignedVariables,
-        respectImplicitlyTypedVarInitializers:
-            respectImplicitlyTypedVarInitializers,
-        fieldPromotionEnabled: fieldPromotionEnabled);
+  factory FlowAnalysis(
+    FlowAnalysisOperations<Variable, Type> operations,
+    AssignedVariables<Node, Variable> assignedVariables, {
+    required bool respectImplicitlyTypedVarInitializers,
+    required bool fieldPromotionEnabled,
+    required bool inferenceUpdate4Enabled,
+  }) {
+    return new _FlowAnalysisImpl(
+      operations,
+      assignedVariables,
+      respectImplicitlyTypedVarInitializers:
+          respectImplicitlyTypedVarInitializers,
+      fieldPromotionEnabled: fieldPromotionEnabled,
+      inferenceUpdate4Enabled: inferenceUpdate4Enabled,
+    );
   }
 
   factory FlowAnalysis.legacy(FlowAnalysisOperations<Variable, Type> operations,
@@ -460,6 +506,9 @@ abstract class FlowAnalysis<Node extends Object, Statement extends Node,
   /// Call this method to forward information on [oldExpression] to
   /// [newExpression].
   ///
+  /// This method must be called immediately after visiting the expression, and
+  /// before continuing to visit its parent.
+  ///
   /// This can be used to preserve promotions through a replacement from
   /// [oldExpression] to [newExpression]. For instance when rewriting
   ///
@@ -702,6 +751,13 @@ abstract class FlowAnalysis<Node extends Object, Statement extends Node,
   /// be called once upon reaching each `?.`, but [nullAwareAccess_end] should
   /// not be called until after processing the method call to `z(x)`.
   void nullAwareAccess_rightBegin(Expression? target, Type targetType);
+
+  /// Call this method after visiting the value of a null-aware map entry.
+  void nullAwareMapEntry_end({required bool isKeyNullAware});
+
+  /// Call this method after visiting the key of a null-aware map entry.
+  void nullAwareMapEntry_valueBegin(Expression key, Type keyType,
+      {required bool isKeyNullAware});
 
   /// Call this method before visiting the subpattern of a null-check or a
   /// null-assert pattern. [isAssert] indicates whether the pattern is a
@@ -1165,13 +1221,17 @@ class FlowAnalysisDebug<Node extends Object, Statement extends Node,
   factory FlowAnalysisDebug(FlowAnalysisOperations<Variable, Type> operations,
       AssignedVariables<Node, Variable> assignedVariables,
       {required bool respectImplicitlyTypedVarInitializers,
-      required bool fieldPromotionEnabled}) {
+      required bool fieldPromotionEnabled,
+      required bool inferenceUpdate4Enabled}) {
     print('FlowAnalysisDebug()');
     return new FlowAnalysisDebug._(new _FlowAnalysisImpl(
-        operations, assignedVariables,
-        respectImplicitlyTypedVarInitializers:
-            respectImplicitlyTypedVarInitializers,
-        fieldPromotionEnabled: fieldPromotionEnabled));
+      operations,
+      assignedVariables,
+      respectImplicitlyTypedVarInitializers:
+          respectImplicitlyTypedVarInitializers,
+      fieldPromotionEnabled: fieldPromotionEnabled,
+      inferenceUpdate4Enabled: inferenceUpdate4Enabled,
+    ));
   }
 
   factory FlowAnalysisDebug.legacy(
@@ -1653,6 +1713,22 @@ class FlowAnalysisDebug<Node extends Object, Statement extends Node,
   void nullAwareAccess_rightBegin(Expression? target, Type targetType) {
     _wrap('nullAwareAccess_rightBegin($target, $targetType)',
         () => _wrapped.nullAwareAccess_rightBegin(target, targetType));
+  }
+
+  @override
+  void nullAwareMapEntry_end({required bool isKeyNullAware}) {
+    return _wrap('nullAwareMapEntry_end(isKeyNullAware: $isKeyNullAware)',
+        () => _wrapped.nullAwareMapEntry_end(isKeyNullAware: isKeyNullAware));
+  }
+
+  @override
+  void nullAwareMapEntry_valueBegin(Expression key, Type keyType,
+      {required bool isKeyNullAware}) {
+    _wrap(
+        'nullAwareMapEntry_valueBegin($key, $keyType, '
+        'isKeyNullAware: $isKeyNullAware)',
+        () => _wrapped.nullAwareMapEntry_valueBegin(key, keyType,
+            isKeyNullAware: isKeyNullAware));
   }
 
   @override
@@ -2455,14 +2531,14 @@ class FlowModel<Type extends Object> {
         infoFor(helper, reference.promotionKey, ssaNode: reference.ssaNode);
     if (info.writeCaptured) {
       return new ExpressionInfo<Type>.trivial(
-          after: this, type: helper.boolType);
+          model: this, type: helper.boolType);
     }
 
     Type previousType = reference._type;
     Type newType = helper.typeOperations.promoteToNonNull(previousType);
     if (newType == previousType) {
       return new ExpressionInfo<Type>.trivial(
-          after: this, type: helper.boolType);
+          model: this, type: helper.boolType);
     }
     assert(helper.typeOperations.isSubtypeOf(newType, previousType));
 
@@ -2470,7 +2546,7 @@ class FlowModel<Type extends Object> {
         _finishTypeTest(helper, reference, info, null, newType);
 
     return new ExpressionInfo<Type>(
-        type: helper.boolType, after: this, ifTrue: ifTrue, ifFalse: this);
+        type: helper.boolType, ifTrue: ifTrue, ifFalse: this);
   }
 
   /// Returns an [ExpressionInfo] indicating the result of casting the given
@@ -2515,7 +2591,7 @@ class FlowModel<Type extends Object> {
         infoFor(helper, reference.promotionKey, ssaNode: reference.ssaNode);
     if (info.writeCaptured) {
       return new ExpressionInfo<Type>.trivial(
-          after: this, type: helper.boolType);
+          model: this, type: helper.boolType);
     }
 
     Type previousType = reference._type;
@@ -2544,7 +2620,7 @@ class FlowModel<Type extends Object> {
         _finishTypeTest(helper, reference, info, type, typeIfFalse);
 
     return new ExpressionInfo<Type>(
-        type: helper.boolType, after: this, ifTrue: ifTrue, ifFalse: ifFalse);
+        type: helper.boolType, ifTrue: ifTrue, ifFalse: ifFalse);
   }
 
   /// Returns a [FlowModel] indicating the result of removing a control flow
@@ -4041,13 +4117,13 @@ class ThisPropertyTarget extends PropertyTarget<Never> {
 
 /// Specialization of [ExpressionInfo] for the case where the expression is a
 /// reference to a variable, and the information we have about the expression is
-/// trivial (meaning we know by construction that the expression's [after],
-/// [ifTrue], and [ifFalse] models are all the same).
+/// trivial (meaning we know by construction that the expression's [ifTrue] and
+/// [ifFalse] models are the same).
 @visibleForTesting
 class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
   TrivialVariableReference(
       {required super.type,
-      required super.after,
+      required super.model,
       required super.promotionKey,
       required super.isThisOrSuper,
       required super.ssaNode})
@@ -4070,13 +4146,9 @@ class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
       FlowModelHelper<Type> helper, FlowModel<Type> current) {
     if (previousExpressionInfo != null && previousExpressionInfo.isNonTrivial) {
       // [previousExpression] contained non-trivial flow analysis information,
-      // so we need to rebase its [ifTrue] and [ifFalse] flow models. We don't
-      // need to rebase its [after] model, since that just represents the flow
-      // state after reading the variable (without regard to the value read), so
-      // that's just the same as [current].
+      // so we need to rebase its [ifTrue] and [ifFalse] flow models.
       return new _Reference(
           promotionKey: promotionKey,
-          after: current,
           type: _type,
           isThisOrSuper: isThisOrSuper,
           ifTrue: previousExpressionInfo.ifTrue.rebaseForward(helper, current),
@@ -4091,7 +4163,7 @@ class TrivialVariableReference<Type extends Object> extends _Reference<Type> {
   }
 
   @override
-  String toString() => 'TrivialVariableReference(type: $_type, after: $after, '
+  String toString() => 'TrivialVariableReference(type: $_type, '
       'promotionKey: $promotionKey, isThisOrSuper: $isThisOrSuper)';
 }
 
@@ -4160,15 +4232,29 @@ class _BranchTargetContext<Type extends Object> extends _FlowContext {
 
 /// [_FlowContext] representing a conditional expression.
 class _ConditionalContext<Type extends Object> extends _BranchContext<Type> {
-  /// Flow models associated with the value of the conditional expression in the
-  /// circumstance where the "then" branch is taken.
+  /// Expression info for the "then" expression, or `null` if the "then"
+  /// expression hasn't been analyzed yet.
+  ///
+  /// This object records flow-analysis-related information about the value of
+  /// the "then" expression, such as whether it refers to a promotable value,
+  /// and if it's a boolean expression, whether anything should be promoted
+  /// in flow control paths where it evaluates to true or false.
   ExpressionInfo<Type>? _thenInfo;
+
+  /// Flow model leaving the "then" expression, or `null` if the "then"
+  /// expression hasn't been analyzed yet.
+  ///
+  /// This object records flow-analysis-related information about the state of
+  /// the program in the flow control path leaving the "then" expression, such
+  /// as whether anything is promoted after the "then" expression executes.
+  FlowModel<Type>? _thenModel;
 
   _ConditionalContext(super._branchModel);
 
   @override
-  Map<String, Object?> get _debugFields =>
-      super._debugFields..['thenInfo'] = _thenInfo;
+  Map<String, Object?> get _debugFields => super._debugFields
+    ..['thenInfo'] = _thenInfo
+    ..['thenModel'] = _thenModel;
 
   @override
   String get _debugType => '_ConditionalContext';
@@ -4251,18 +4337,57 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   /// The most recently visited expression for which an [ExpressionInfo] object
   /// exists, or `null` if no expression has been visited that has a
   /// corresponding [ExpressionInfo] object.
+  ///
+  /// This field, along with [_expressionInfo], establishes a mechanism to allow
+  /// a flow analysis method that's handling a given AST node to retrieve an
+  /// [ExpressionInfo] that was previously created during the handling of one of
+  /// that node's children. The mechanism works as follows:
+  ///
+  /// While visiting the child, [_storeExpressionInfo] is called (passing in the
+  /// child node and the [ExpressionInfo]). It stores the child node in
+  /// [_expressionWithInfo] and the info in [_expressionInfo].
+  ///
+  /// While visiting the parent, [_getExpressionInfo] is called (passing in the
+  /// child node). It checks whether [_expressionWithInfo] matches the child
+  /// node; if it does match, that means there are no intervening
+  /// flow-irrelevant nodes, and so it returns [_expressionInfo]. If it doesn't
+  /// match, that means that some other flow-irrelevant was visited since the
+  /// last time [_storeExpressionInfo] was called, and so the info in
+  /// [_expressionInfo] is no longer relevant, and so it returns `null`.
+  ///
+  /// Note that if [_storeExpressionInfo] is called once for expression `e1` and
+  /// then again for expression `e2`, the second call will overwrite the info
+  /// stored by the first call. So if this is followed by a [_getExpressionInfo]
+  /// call for `e1`, `null` will be returned. In principle this situation should
+  /// never arise, since the client is expected to visit AST nodes in a
+  /// single-pass depth-first pre-order fashion. However, in practice, it
+  /// happens sometimes (see https://github.com/dart-lang/sdk/issues/56887).
   Expression? _expressionWithInfo;
 
   /// If [_expressionWithInfo] is not `null`, the [ExpressionInfo] object
   /// corresponding to it.  Otherwise `null`.
+  ///
+  /// See [_expressionWithInfo] for a detailed explanation.
   ExpressionInfo<Type>? _expressionInfo;
 
   /// The most recently visited expression which was a reference, or `null` if
   /// no such expression has been visited.
+  ///
+  /// This field serves the same role as [_expressionWithInfo], except that it
+  /// is only updated for expressions that might refer to something promotable
+  /// (a get of a local variable or a property), so it is less likely to have
+  /// trouble if the client doesn't visit AST nodes in the proper order (see
+  /// https://github.com/dart-lang/sdk/issues/56887).
   Expression? _expressionWithReference;
 
   /// If [_expressionWithReference] is not `null`, the reference corresponding
   /// to it. Otherwise `null`.
+  ///
+  /// This field serves the same role as [_expressionInfo], except that it is
+  /// only updated for expressions that might refer to something promotable (a
+  /// get of a local variable or a property), so it is less likely to have
+  /// trouble if the client doesn't visit AST nodes in the proper order (see
+  /// https://github.com/dart-lang/sdk/issues/56887).
   _Reference<Type>? _expressionReference;
 
   final AssignedVariables<Node, Variable> _assignedVariables;
@@ -4275,6 +4400,8 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   final bool respectImplicitlyTypedVarInitializers;
 
   final bool fieldPromotionEnabled;
+
+  final bool inferenceUpdate4Enabled;
 
   @override
   final PromotionKeyStore<Variable> promotionKeyStore;
@@ -4292,10 +4419,13 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   @override
   final List<_Reference<Type>> _cascadeTargetStack = [];
 
-  _FlowAnalysisImpl(this.operations, this._assignedVariables,
-      {required this.respectImplicitlyTypedVarInitializers,
-      required this.fieldPromotionEnabled})
-      : promotionKeyStore = _assignedVariables.promotionKeyStore {
+  _FlowAnalysisImpl(
+    this.operations,
+    this._assignedVariables, {
+    required this.respectImplicitlyTypedVarInitializers,
+    required this.fieldPromotionEnabled,
+    required this.inferenceUpdate4Enabled,
+  }) : promotionKeyStore = _assignedVariables.promotionKeyStore {
     if (!_assignedVariables.isFinished) {
       _assignedVariables.finish();
     }
@@ -4367,15 +4497,9 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         expression,
         value
             ? new ExpressionInfo(
-                type: boolType,
-                after: _current,
-                ifTrue: _current,
-                ifFalse: unreachable)
+                type: boolType, ifTrue: _current, ifFalse: unreachable)
             : new ExpressionInfo(
-                type: boolType,
-                after: _current,
-                ifTrue: unreachable,
-                ifFalse: _current));
+                type: boolType, ifTrue: unreachable, ifFalse: _current));
   }
 
   @override
@@ -4436,6 +4560,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
     _ConditionalContext<Type> context =
         _stack.last as _ConditionalContext<Type>;
     context._thenInfo = _expressionEnd(thenExpression, thenType);
+    context._thenModel = _current;
     _current = context._branchModel;
   }
 
@@ -4448,12 +4573,14 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
     _ConditionalContext<Type> context =
         _stack.removeLast() as _ConditionalContext<Type>;
     ExpressionInfo<Type> thenInfo = context._thenInfo!;
+    FlowModel<Type> thenModel = context._thenModel!;
     ExpressionInfo<Type> elseInfo = _expressionEnd(elseExpression, elseType);
+    FlowModel<Type> elseModel = _current;
+    _current = _join(thenModel, elseModel).unsplit();
     _storeExpressionInfo(
         conditionalExpression,
         new ExpressionInfo(
             type: conditionalExpressionType,
-            after: _join(thenInfo.after, elseInfo.after).unsplit(),
             ifTrue: _join(thenInfo.ifTrue, elseInfo.ifTrue).unsplit(),
             ifFalse: _join(thenInfo.ifFalse, elseInfo.ifFalse).unsplit()));
   }
@@ -4555,7 +4682,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   @override
   ExpressionInfo<Type> equalityOperand_end(Expression operand, Type type) =>
       _getExpressionInfo(operand) ??
-      new ExpressionInfo<Type>.trivial(after: _current, type: type);
+      new ExpressionInfo<Type>.trivial(model: _current, type: type);
 
   @override
   void equalityOperation_end(
@@ -4626,7 +4753,6 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
     ExpressionInfo<Type> conditionInfo = condition == null
         ? new ExpressionInfo(
             type: boolType,
-            after: _current,
             ifTrue: _current,
             ifFalse: _current.setUnreachable())
         : _expressionEnd(condition, boolType);
@@ -4931,11 +5057,11 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
       trueResult = _join(context._branchModel, rhsInfo.ifTrue);
       falseResult = rhsInfo.ifFalse;
     }
+    _current = _join(trueResult, falseResult).unsplit();
     _storeExpressionInfo(
         wholeExpression,
         new ExpressionInfo(
             type: boolType,
-            after: _join(trueResult, falseResult).unsplit(),
             ifTrue: trueResult.unsplit(),
             ifFalse: falseResult.unsplit()));
   }
@@ -5007,8 +5133,6 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
     if (operandReference != null) {
       _current = _current.tryMarkNonNullable(this, operandReference).ifTrue;
     }
-    // Invalidate any expression info that was associated with [operand].
-    _getExpressionInfo(operand);
   }
 
   @override
@@ -5030,6 +5154,35 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         TypeClassification.nullOrEquivalent) {
       _current = _current.setUnreachable();
     }
+  }
+
+  @override
+  void nullAwareMapEntry_end({required bool isKeyNullAware}) {
+    if (!isKeyNullAware) return;
+    _NullAwareMapEntryContext<Type> context =
+        _stack.removeLast() as _NullAwareMapEntryContext<Type>;
+    _current = _join(_current, context._shortcutState).unsplit();
+  }
+
+  @override
+  void nullAwareMapEntry_valueBegin(Expression key, Type keyType,
+      {required bool isKeyNullAware}) {
+    if (!isKeyNullAware) return;
+    _Reference<Type>? keyReference = _getExpressionReference(key);
+    FlowModel<Type> shortcutState;
+    _current = _current.split();
+    if (keyReference != null) {
+      ExpressionInfo<Type> expressionInfo =
+          _current.tryMarkNonNullable(this, keyReference);
+      _current = expressionInfo.ifTrue;
+      shortcutState = expressionInfo.ifFalse;
+    } else {
+      shortcutState = _current;
+    }
+    if (operations.classifyType(keyType) == TypeClassification.nonNullable) {
+      shortcutState = shortcutState.setUnreachable();
+    }
+    _stack.add(new _NullAwareMapEntryContext<Type>(shortcutState));
   }
 
   @override
@@ -5063,7 +5216,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   @override
   void nullLiteral(Expression expression, Type type) {
     _storeExpressionInfo(
-        expression, new _NullInfo(after: _current, type: type));
+        expression, new _NullInfo(model: _current, type: type));
   }
 
   @override
@@ -5225,7 +5378,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         propertyName: propertyName,
         propertyMember: propertyMember,
         promotionKey: propertySsaNode.promotionKey,
-        after: _current,
+        model: _current,
         type: unpromotedType,
         ssaNode: propertySsaNode);
     if (wholeExpression != null) {
@@ -5247,7 +5400,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
         propertyName: propertyName,
         propertyMember: propertyMember,
         promotionKey: propertySsaNode.promotionKey,
-        after: _current,
+        model: _current,
         type: unpromotedType,
         ssaNode: propertySsaNode);
     _stack.add(new _PropertyPatternContext<Type>(
@@ -5630,7 +5783,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   /// [ExpressionInfo] is created recording the current flow analysis state.
   ExpressionInfo<Type> _expressionEnd(Expression? expression, Type type) =>
       _getExpressionInfo(expression) ??
-      new ExpressionInfo<Type>.trivial(after: _current, type: type);
+      new ExpressionInfo<Type>.trivial(model: _current, type: type);
 
   void _forwardExpression(Expression newExpression, Expression oldExpression) {
     if (identical(_expressionWithInfo, oldExpression)) {
@@ -5661,6 +5814,15 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   /// be the last expression that was traversed).  If there is no
   /// [ExpressionInfo] associated with the [expression], then `null` is
   /// returned.
+  ///
+  /// See [_expressionWithInfo] for details about how this works.
+  ///
+  /// To reduce GC pressure, if this method returns a non-null value, it resets
+  /// [_expressionInfo] to `null` as a side effect. This means that if
+  /// [_getExpressionInfo] is called twice for the same [expression] (without
+  /// an intervening call to [_storeExpressionInfo]), the second call will
+  /// return `null`. This should not be a problem because the client is expected
+  /// to visit AST nodes in a single-pass depth-first pre-order fashion.
   ExpressionInfo<Type>? _getExpressionInfo(Expression? expression) {
     if (identical(expression, _expressionWithInfo)) {
       ExpressionInfo<Type>? expressionInfo = _expressionInfo;
@@ -5757,7 +5919,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
           Map<Type, NonPromotionReason> result = <Type, NonPromotionReason>{};
           Type currentType = currentPromotionInfo.promotedTypes?.last ??
               operations.variableType(variable);
-          NonPromotionHistory? nonPromotionHistory =
+          NonPromotionHistory<Type>? nonPromotionHistory =
               currentPromotionInfo.nonPromotionHistory;
           while (nonPromotionHistory != null) {
             Type nonPromotedType = nonPromotionHistory.type;
@@ -5935,7 +6097,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
             ssaNode: ssaNode));
     return new TrivialVariableReference(
         promotionKey: promotionKey,
-        after: _current,
+        model: _current,
         type: type,
         isThisOrSuper: false,
         ssaNode: ssaNode);
@@ -6046,15 +6208,22 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
   /// Associates [expression], which should be the most recently visited
   /// expression, with the given [expressionInfo] object, and updates the
   /// current flow model state to correspond to it.
+  ///
+  /// See [_expressionWithInfo] for details about how this works.
   void _storeExpressionInfo(
       Expression expression, ExpressionInfo<Type> expressionInfo) {
     _expressionWithInfo = expression;
     _expressionInfo = expressionInfo;
-    _current = expressionInfo.after;
   }
 
   /// Associates [expression], which should be the most recently visited
   /// expression, with the given [expressionReference] object.
+  ///
+  /// This method serves the same role as [_storeExpressionInfo], but it only
+  /// handles expressions that might refer to something promotable (a get of a
+  /// local variable or a property), so it is less likely to have trouble if the
+  /// client doesn't visit AST nodes in the proper order (see
+  /// https://github.com/dart-lang/sdk/issues/56887).
   void _storeExpressionReference(
       Expression expression, _Reference<Type> expressionReference) {
     _expressionWithReference = expression;
@@ -6065,7 +6234,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
           {required bool isSuper}) =>
       new TrivialVariableReference<Type>(
           promotionKey: promotionKeyStore.thisPromotionKey,
-          after: _current,
+          model: _current,
           type: staticType,
           isThisOrSuper: true,
           ssaNode: isSuper ? _superSsaNode : _thisSsaNode);
@@ -6075,7 +6244,7 @@ class _FlowAnalysisImpl<Node extends Object, Statement extends Node,
     PromotionModel<Type> info = _current.promotionInfo!.get(this, variableKey)!;
     return new TrivialVariableReference<Type>(
         promotionKey: variableKey,
-        after: _current,
+        model: _current,
         type: info.promotedTypes?.last ?? unpromotedType,
         isThisOrSuper: false,
         ssaNode: info.ssaNode ?? new SsaNode<Type>(null));
@@ -6641,6 +6810,13 @@ class _LegacyTypePromotion<Node extends Object, Statement extends Node,
   void nullAwareAccess_rightBegin(Expression? target, Type targetType) {}
 
   @override
+  void nullAwareMapEntry_end({required bool isKeyNullAware}) {}
+
+  @override
+  void nullAwareMapEntry_valueBegin(Expression key, Type keyType,
+      {required bool isKeyNullAware}) {}
+
+  @override
   bool nullCheckOrAssertPattern_begin(
           {required bool isAssert, required Type matchedValueType}) =>
       false;
@@ -6922,16 +7098,35 @@ class _NullAwareAccessContext<Type extends Object>
   String get _debugType => '_NullAwareAccessContext';
 }
 
+/// [_FlowContext] representing a null-aware map entry (`{?a: ?b}`).
+///
+/// This context should only be created for a null-aware map entry that has a
+/// null-aware key.
+class _NullAwareMapEntryContext<Type extends Object> extends _FlowContext {
+  /// The state if the operation short-cuts (i.e. if the key expression was
+  /// `null`.
+  final FlowModel<Type> _shortcutState;
+
+  _NullAwareMapEntryContext(this._shortcutState);
+
+  @override
+  Map<String, Object?> get _debugFields =>
+      super._debugFields..['shortcutState'] = _shortcutState;
+
+  @override
+  String get _debugType => '_NullAwareMapEntryContext';
+}
+
 /// Specialization of [ExpressionInfo] for the case where the expression is a
 /// `null` literal.
 class _NullInfo<Type extends Object> extends ExpressionInfo<Type> {
-  _NullInfo({required super.type, required super.after}) : super.trivial();
+  _NullInfo({required super.type, required super.model}) : super.trivial();
 
   @override
   bool get isNull => true;
 
   @override
-  String toString() => '_NullInfo(type: $_type, after: $after)';
+  String toString() => '_NullInfo(type: $_type)';
 }
 
 /// [_FlowContext] representing a logical-or pattern.
@@ -6976,7 +7171,7 @@ class _PatternContext<Type extends Object> extends _FlowContext {
           Type matchedType, FlowModel<Type> current) =>
       new TrivialVariableReference(
           promotionKey: _matchedValueInfo.promotionKey,
-          after: current,
+          model: current,
           type: matchedType,
           isThisOrSuper: false,
           ssaNode: new SsaNode<Type>(null));
@@ -7012,7 +7207,7 @@ class _PropertyReference<Type extends Object> extends _Reference<Type> {
 
   _PropertyReference(
       {required super.type,
-      required super.after,
+      required super.model,
       required this.propertyName,
       required this.propertyMember,
       required super.promotionKey,
@@ -7021,7 +7216,7 @@ class _PropertyReference<Type extends Object> extends _Reference<Type> {
 
   @override
   String toString() => '_PropertyReference('
-      'type: $_type, after: $after, propertyName: $propertyName, '
+      'type: $_type, propertyName: $propertyName, '
       'propertyMember: $propertyMember, promotionKey: $promotionKey)';
 }
 
@@ -7063,6 +7258,13 @@ abstract class _PropertyTargetHelper<Expression extends Object,
   /// Gets the [_Reference] associated with the [expression] (which should be
   /// the last expression that was traversed).  If there is no [_Reference]
   /// associated with the [expression], then `null` is returned.
+  ///
+  /// This method serves the same role as
+  /// [_FlowAnalysisImpl._getExpressionInfo], but it only handles expressions
+  /// that might refer to something promotable (a get of a local variable or a
+  /// property), so it is less likely to have trouble if the client doesn't
+  /// visit AST nodes in the proper order (see
+  /// https://github.com/dart-lang/sdk/issues/56887).
   _Reference<Type>? _getExpressionReference(Expression? expression);
 }
 
@@ -7082,7 +7284,6 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
 
   _Reference(
       {required super.type,
-      required super.after,
       required super.ifTrue,
       required super.ifFalse,
       required this.promotionKey,
@@ -7091,14 +7292,14 @@ class _Reference<Type extends Object> extends ExpressionInfo<Type> {
 
   _Reference.trivial(
       {required super.type,
-      required super.after,
+      required super.model,
       required this.promotionKey,
       required this.isThisOrSuper,
       required this.ssaNode})
       : super.trivial();
 
   @override
-  String toString() => '_Reference(type: $_type, after: $after, '
+  String toString() => '_Reference(type: $_type, '
       'ifTrue: $ifTrue, ifFalse: $ifFalse, promotionKey: $promotionKey, '
       'isThisOrSuper: $isThisOrSuper, ssaNode: $ssaNode)';
 }

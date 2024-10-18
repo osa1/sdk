@@ -4,44 +4,17 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Property getter recursively returns itself.';
-
-const _details = r'''
-**DON'T** create recursive getters.
-
-Recursive getters are getters which return themselves as a value.  This is
-usually a typo.
-
-**BAD:**
-```dart
-int get field => field; // LINT
-```
-
-**BAD:**
-```dart
-int get otherField {
-  return otherField; // LINT
-}
-```
-
-**GOOD:**
-```dart
-int get field => _field;
-```
-
-''';
 
 class RecursiveGetters extends LintRule {
   RecursiveGetters()
       : super(
-          name: 'recursive_getters',
+          name: LintNames.recursive_getters,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -56,13 +29,13 @@ class RecursiveGetters extends LintRule {
   }
 }
 
-class _BodyVisitor extends RecursiveAstVisitor {
+class _BodyVisitor extends RecursiveAstVisitor<void> {
   final LintRule rule;
-  final ExecutableElement element;
+  final ExecutableElement2 element;
   _BodyVisitor(this.element, this.rule);
 
   bool isSelfReference(SimpleIdentifier node) {
-    if (node.staticElement != element) return false;
+    if (node.element != element) return false;
     var parent = node.parent;
     if (parent is PrefixedIdentifier) return false;
     if (parent is PropertyAccess && parent.target is! ThisExpression) {
@@ -72,19 +45,19 @@ class _BodyVisitor extends RecursiveAstVisitor {
   }
 
   @override
-  visitListLiteral(ListLiteral node) {
-    if (node.isConst) return null;
+  void visitListLiteral(ListLiteral node) {
+    if (node.isConst) return;
     return super.visitListLiteral(node);
   }
 
   @override
-  visitSetOrMapLiteral(SetOrMapLiteral node) {
-    if (node.isConst) return null;
+  void visitSetOrMapLiteral(SetOrMapLiteral node) {
+    if (node.isConst) return;
     return super.visitSetOrMapLiteral(node);
   }
 
   @override
-  visitSimpleIdentifier(SimpleIdentifier node) {
+  void visitSimpleIdentifier(SimpleIdentifier node) {
     if (isSelfReference(node)) {
       rule.reportLint(node, arguments: [node.name]);
     }
@@ -103,7 +76,7 @@ class _Visitor extends SimpleAstVisitor<void> {
     // getters have null arguments, methods have parameters, could be empty.
     if (node.functionExpression.parameters != null) return;
 
-    _verifyElement(node.functionExpression, node.declaredElement);
+    _verifyElement(node.functionExpression, node.declaredFragment?.element);
   }
 
   @override
@@ -111,10 +84,10 @@ class _Visitor extends SimpleAstVisitor<void> {
     // getters have null arguments, methods have parameters, could be empty.
     if (node.parameters != null) return;
 
-    _verifyElement(node.body, node.declaredElement);
+    _verifyElement(node.body, node.declaredFragment?.element);
   }
 
-  void _verifyElement(AstNode node, ExecutableElement? element) {
+  void _verifyElement(AstNode node, ExecutableElement2? element) {
     if (element == null) return;
     node.accept(_BodyVisitor(element, rule));
   }

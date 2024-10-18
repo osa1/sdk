@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:analyzer/dart/element/element.dart';
 import 'package:test/test.dart';
 import 'package:test_reflective_loader/test_reflective_loader.dart';
 
@@ -131,8 +130,6 @@ library
   exportNamespace
     A: package:test/foo.dart::<fragment>::@class::A
 ''');
-    expect(library.libraryExports[0].exportedLibrary!.source.shortName,
-        'foo.dart');
   }
 
   test_export_configurations_useFirst() async {
@@ -177,8 +174,6 @@ library
   exportNamespace
     A: package:test/foo_io.dart::<fragment>::@class::A
 ''');
-    expect(library.libraryExports[0].exportedLibrary!.source.shortName,
-        'foo_io.dart');
   }
 
   test_export_configurations_useSecond() async {
@@ -223,8 +218,6 @@ library
   exportNamespace
     A: package:test/foo_html.dart::<fragment>::@class::A
 ''');
-    var export = library.libraryExports[0];
-    expect(export.exportedLibrary!.source.shortName, 'foo_html.dart');
   }
 
   test_export_cycle() async {
@@ -276,7 +269,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
   classes
@@ -517,7 +510,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
   classes
@@ -706,8 +699,26 @@ library
 export 'foo.dart';
 ''');
 
-    var uri = library.libraryExports[0].uri as DirectiveUriWithLibrary;
-    expect(uri.relativeUriString, 'foo.dart');
+    checkElementText(library, r'''
+library
+  reference: <testLibrary>
+  libraryExports
+    package:test/foo.dart
+      enclosingElement3: <testLibraryFragment>
+  definingUnit: <testLibraryFragment>
+  units
+    <testLibraryFragment>
+      enclosingElement3: <null>
+      libraryExports
+        package:test/foo.dart
+          enclosingElement3: <testLibraryFragment>
+----------------------------------------
+library
+  reference: <testLibrary>
+  fragments
+    <testLibraryFragment>
+      element: <testLibrary>
+''');
   }
 
   test_export_variable() async {
@@ -868,7 +879,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibraryFragment>::@class::B#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
               superConstructor: package:test/foo.dart::<fragment>::@class::A::@constructor::new
@@ -938,7 +949,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibraryFragment>::@class::B#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
               superConstructor: package:test/foo_io.dart::<fragment>::@class::A::@constructor::new
@@ -1008,7 +1019,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibraryFragment>::@class::B#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
               superConstructor: package:test/foo_html.dart::<fragment>::@class::A::@constructor::new
@@ -1132,7 +1143,7 @@ library
           element: <testLibraryFragment>::@class::A#element
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/a.dart
@@ -1147,7 +1158,7 @@ library
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::B
           element: <testLibrary>::@fragment::package:test/a.dart::@class::B#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::B::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::B::@constructor::new#element
   classes
@@ -1265,7 +1276,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
     <testLibrary>::@fragment::package:test/d.dart
@@ -1364,7 +1375,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
     <testLibrary>::@fragment::package:test/b.dart
@@ -1454,7 +1465,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
     <testLibrary>::@fragment::package:test/b.dart
@@ -1658,7 +1669,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibraryFragment>::@class::C#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
     <testLibrary>::@fragment::package:test/a.dart
@@ -1670,7 +1681,7 @@ library
           reference: <testLibrary>::@fragment::package:test/a.dart::@class::A
           element: <testLibrary>::@fragment::package:test/a.dart::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::A::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/b.dart
@@ -1681,7 +1692,7 @@ library
           reference: <testLibrary>::@fragment::package:test/b.dart::@class::B
           element: <testLibrary>::@fragment::package:test/b.dart::@class::B#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/b.dart::@class::B::@constructor::new
               element: <testLibrary>::@fragment::package:test/b.dart::@class::B::@constructor::new#element
   classes
@@ -1794,7 +1805,7 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibraryFragment>::@class::X#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
     <testLibrary>::@fragment::package:test/c.dart
@@ -1889,15 +1900,15 @@ library
           getter2: <testLibrary>::@fragment::package:test/a.dart::@getter::a
           setter2: <testLibrary>::@fragment::package:test/a.dart::@setter::a
       getters
-        get a @-1
+        get <null-name>
           reference: <testLibrary>::@fragment::package:test/a.dart::@getter::a
           element: <testLibrary>::@fragment::package:test/a.dart::@getter::a#element
       setters
-        set a= @-1
+        set <null-name>
           reference: <testLibrary>::@fragment::package:test/a.dart::@setter::a
           element: <testLibrary>::@fragment::package:test/a.dart::@setter::a#element
-          parameters
-            _a @-1
+          formalParameters
+            <null-name>
               element: <testLibrary>::@fragment::package:test/a.dart::@setter::a::@parameter::_a#element
   topLevelVariables
     a
@@ -1911,7 +1922,7 @@ library
   setters
     synthetic static set a=
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@setter::a
-      parameters
+      formalParameters
         requiredPositional _a
           type: int
   exportedReferences
@@ -1985,7 +1996,7 @@ library
           element: <testLibrary>::@fragment::package:test/a.dart::@topLevelVariable::a#element
           getter2: <testLibrary>::@fragment::package:test/a.dart::@getter::a
       getters
-        get a @-1
+        get <null-name>
           reference: <testLibrary>::@fragment::package:test/a.dart::@getter::a
           element: <testLibrary>::@fragment::package:test/a.dart::@getter::a#element
   topLevelVariables

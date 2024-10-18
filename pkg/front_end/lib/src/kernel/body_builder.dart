@@ -15,9 +15,7 @@ import 'package:_fe_analyzer_shared/src/parser/parser.dart'
         MemberKind,
         Parser,
         lengthForToken,
-        lengthOfSpan,
-        optional,
-        optional2;
+        lengthOfSpan;
 import 'package:_fe_analyzer_shared/src/parser/quote.dart'
     show
         Quote,
@@ -30,7 +28,7 @@ import 'package:_fe_analyzer_shared/src/parser/stack_listener.dart'
     show FixedNullableList, GrowableList, NullValues, ParserRecovery;
 import 'package:_fe_analyzer_shared/src/parser/util.dart' show stripSeparators;
 import 'package:_fe_analyzer_shared/src/scanner/token.dart'
-    show Token, TokenType;
+    show Keyword, Token, TokenIsAExtension, TokenType;
 import 'package:_fe_analyzer_shared/src/scanner/token_impl.dart'
     show isBinaryOperator, isMinusOperator, isUserDefinableOperator;
 import 'package:_fe_analyzer_shared/src/type_inference/assigned_variables.dart';
@@ -60,8 +58,7 @@ import '../base/identifiers.dart'
         SimpleIdentifier;
 import '../base/label_scope.dart';
 import '../base/local_scope.dart';
-import '../base/modifier.dart'
-    show Modifier, constMask, covariantMask, finalMask, lateMask, requiredMask;
+import '../base/modifiers.dart' show Modifiers;
 import '../base/problems.dart' show internalProblem, unhandled, unsupported;
 import '../base/scope.dart';
 import '../builder/builder.dart';
@@ -281,9 +278,9 @@ class BodyBuilder extends StackListenerImpl
 
   DartType? currentLocalVariableType;
 
-  // Using non-null value to initialize this field based on performance advice
-  // from VM engineers. TODO(ahe): Does this still apply?
-  int currentLocalVariableModifiers = -1;
+  static const Modifiers noCurrentLocalVariableModifiers = const Modifiers(-1);
+
+  Modifiers currentLocalVariableModifiers = noCurrentLocalVariableModifiers;
 
   /// If non-null, records instance fields which have already been initialized
   /// and where that was.
@@ -1618,7 +1615,7 @@ class BodyBuilder extends StackListenerImpl
                 }
                 return new FormalParameterBuilder(
                     FormalParameterKind.requiredPositional,
-                    /* modifiers = */ 0,
+                    Modifiers.empty,
                     const ImplicitTypeBuilder(),
                     formalName,
                     formal.fileOffset,
@@ -2416,7 +2413,7 @@ class BodyBuilder extends StackListenerImpl
       push(_createReadOnlyVariableAccess(expression.variable, token,
           expression.fileOffset, null, ReadOnlyAccessKind.LetVariable));
     } else {
-      bool isNullAware = optional('?..', token);
+      bool isNullAware = token.isA(TokenType.QUESTION_PERIOD_PERIOD);
       VariableDeclaration variable =
           createVariableDeclarationForValue(expression);
       push(new Cascade(variable, isNullAware: isNullAware)
@@ -2519,8 +2516,8 @@ class BodyBuilder extends StackListenerImpl
         ValueKinds.ProblemBuilder,
       ]),
     ]));
-    bool isAnd = optional("&&", token);
-    if (isAnd || optional("||", token)) {
+    bool isAnd = token.isA2(TokenType.AMPERSAND_AMPERSAND);
+    if (isAnd || token.isA2(TokenType.BAR_BAR)) {
       Expression lhs = popForValue();
       // This is matched by the call to [endNode] in
       // [doLogicalExpression].
@@ -2549,15 +2546,16 @@ class BodyBuilder extends StackListenerImpl
       ]),
     ]));
     debugEvent("BinaryExpression");
-    if (optional2(TokenType.PERIOD, token) ||
-        optional("..", token) ||
-        optional("?..", token)) {
+    if (token.isA2(TokenType.PERIOD) ||
+        token.isA2(TokenType.PERIOD_PERIOD) ||
+        token.isA2(TokenType.QUESTION_PERIOD_PERIOD)) {
       doDotOrCascadeExpression(token);
-    } else if (optional("&&", token) || optional("||", token)) {
+    } else if (token.isA2(TokenType.AMPERSAND_AMPERSAND) ||
+        token.isA2(TokenType.BAR_BAR)) {
       doLogicalExpression(token);
-    } else if (optional("??", token)) {
+    } else if (token.isA2(TokenType.QUESTION_QUESTION)) {
       doIfNull(token);
-    } else if (optional("?.", token)) {
+    } else if (token.isA2(TokenType.QUESTION_PERIOD)) {
       doIfNotNull(token);
     } else {
       doBinaryExpression(token);
@@ -2810,7 +2808,7 @@ class BodyBuilder extends StackListenerImpl
     Expression logicalExpression = forest.createLogicalExpression(
         offsetForToken(token), receiver, token.stringValue!, argument);
     push(logicalExpression);
-    if (optional("&&", token)) {
+    if (token.isA(TokenType.AMPERSAND_AMPERSAND)) {
       // This is matched by the call to [beginNode] in
       // [beginBinaryExpression].
       typeInferrer.assignedVariables.endNode(logicalExpression);
@@ -2891,8 +2889,7 @@ class BodyBuilder extends StackListenerImpl
     ]));
     Object? send = pop();
     if (send is Selector) {
-      Object? receiver =
-          optional2(TokenType.PERIOD, token) ? pop() : popForValue();
+      Object? receiver = token.isA(TokenType.PERIOD) ? pop() : popForValue();
       push(send.withReceiver(receiver, token.charOffset));
     } else if (send is IncompleteErrorGenerator) {
       // Pop the "receiver" and push the error.
@@ -3315,8 +3312,13 @@ class BodyBuilder extends StackListenerImpl
     } else if (declaration.isRegularMethod) {
       assert(declaration.isStatic || declaration.isTopLevel);
       MemberBuilder memberBuilder = declaration as MemberBuilder;
-      return new StaticAccessGenerator(this, nameToken, name,
-          memberBuilder.parent, memberBuilder.member, null);
+      return new StaticAccessGenerator(
+          this,
+          nameToken,
+          name,
+          memberBuilder.readTarget,
+          memberBuilder.invokeTarget,
+          memberBuilder.writeTarget);
     } else if (declaration is PrefixBuilder) {
       assert(prefix == null);
       // Wildcard import prefixes are non-binding and cannot be used.
@@ -3689,7 +3691,7 @@ class BodyBuilder extends StackListenerImpl
 
   @override
   void beginVariableInitializer(Token token) {
-    if ((currentLocalVariableModifiers & lateMask) != 0) {
+    if (currentLocalVariableModifiers.isLate) {
       // This is matched by the call to [endNode] in [endVariableInitializer].
       typeInferrer.assignedVariables.beginNode();
     }
@@ -3700,7 +3702,7 @@ class BodyBuilder extends StackListenerImpl
     debugEvent("VariableInitializer");
     assert(assignmentOperator.stringValue == "=");
     AssignedVariablesNodeInfo? assignedVariablesInfo;
-    bool isLate = (currentLocalVariableModifiers & lateMask) != 0;
+    bool isLate = currentLocalVariableModifiers.isLate;
     Expression initializer = popForValue();
     if (isLate) {
       assignedVariablesInfo = typeInferrer.assignedVariables
@@ -3718,9 +3720,9 @@ class BodyBuilder extends StackListenerImpl
   @override
   void handleNoVariableInitializer(Token token) {
     debugEvent("NoVariableInitializer");
-    bool isConst = (currentLocalVariableModifiers & constMask) != 0;
+    bool isConst = currentLocalVariableModifiers.isConst;
     Expression? initializer;
-    if (!optional("in", token.next!)) {
+    if (!token.next!.isA(Keyword.IN)) {
       // A for-in loop-variable can't have an initializer. So let's remain
       // silent if the next token is `in`. Since a for-in loop can only have
       // one variable it must be followed by `in`.
@@ -3745,11 +3747,11 @@ class BodyBuilder extends StackListenerImpl
       return;
     }
     Identifier identifier = node as Identifier;
-    assert(currentLocalVariableModifiers != -1);
-    bool isConst = (currentLocalVariableModifiers & constMask) != 0;
-    bool isFinal = (currentLocalVariableModifiers & finalMask) != 0;
-    bool isLate = (currentLocalVariableModifiers & lateMask) != 0;
-    bool isRequired = (currentLocalVariableModifiers & requiredMask) != 0;
+    assert(currentLocalVariableModifiers != noCurrentLocalVariableModifiers);
+    bool isConst = currentLocalVariableModifiers.isConst;
+    bool isFinal = currentLocalVariableModifiers.isFinal;
+    bool isLate = currentLocalVariableModifiers.isLate;
+    bool isRequired = currentLocalVariableModifiers.isRequired;
     assert(isConst == (constantContext == ConstantContext.inferred));
     String name = identifier.name;
     bool isWildcard =
@@ -3842,17 +3844,16 @@ class BodyBuilder extends StackListenerImpl
         ? buildDartType(unresolvedType, TypeUse.variableType,
             allowPotentiallyConstantType: false)
         : null;
-    int modifiers = (lateToken != null ? lateMask : 0) |
-        Modifier.validateVarFinalOrConst(varFinalOrConst?.lexeme);
+    Modifiers modifiers =
+        Modifiers.from(lateToken: lateToken, varFinalOrConst: varFinalOrConst);
     _enterLocalState(inLateLocalInitializer: lateToken != null);
     super.push(currentLocalVariableModifiers);
     super.push(currentLocalVariableType ?? NullValues.Type);
     currentLocalVariableType = type;
     currentLocalVariableModifiers = modifiers;
     super.push(constantContext);
-    constantContext = ((modifiers & constMask) != 0)
-        ? ConstantContext.inferred
-        : ConstantContext.none;
+    constantContext =
+        modifiers.isConst ? ConstantContext.inferred : ConstantContext.none;
   }
 
   @override
@@ -3862,7 +3863,7 @@ class BodyBuilder extends StackListenerImpl
       Object? node = pop();
       constantContext = pop() as ConstantContext;
       currentLocalVariableType = pop(NullValues.Type) as DartType?;
-      currentLocalVariableModifiers = pop() as int;
+      currentLocalVariableModifiers = pop() as Modifiers;
       List<Expression>? annotations = pop() as List<Expression>?;
       if (node is ParserRecovery) {
         push(node);
@@ -3882,7 +3883,7 @@ class BodyBuilder extends StackListenerImpl
               .popNonNullable(stack, count, dummyVariableDeclaration);
       constantContext = pop() as ConstantContext;
       currentLocalVariableType = pop(NullValues.Type) as DartType?;
-      currentLocalVariableModifiers = pop() as int;
+      currentLocalVariableModifiers = pop() as Modifiers;
       List<Expression>? annotations = pop() as List<Expression>?;
       if (variables == null) {
         push(new ParserRecovery(offsetForToken(endToken)));
@@ -4794,8 +4795,8 @@ class BodyBuilder extends StackListenerImpl
   @override
   void handleLiteralBool(Token token) {
     debugEvent("LiteralBool");
-    bool value = optional("true", token);
-    assert(value || optional("false", token));
+    bool value = token.isA(Keyword.TRUE);
+    assert(value || token.isA(Keyword.FALSE));
     push(forest.createBoolLiteral(offsetForToken(token), value));
   }
 
@@ -5323,9 +5324,10 @@ class BodyBuilder extends StackListenerImpl
   void beginFormalParameter(Token token, MemberKind kind, Token? requiredToken,
       Token? covariantToken, Token? varFinalOrConst) {
     _insideOfFormalParameterType = true;
-    push((covariantToken != null ? covariantMask : 0) |
-        (requiredToken != null ? requiredMask : 0) |
-        Modifier.validateVarFinalOrConst(varFinalOrConst?.lexeme));
+    push(Modifiers.from(
+        requiredToken: requiredToken,
+        covariantToken: covariantToken,
+        varFinalOrConst: varFinalOrConst));
     push(varFinalOrConst ?? NullValues.Token);
   }
 
@@ -5364,15 +5366,15 @@ class BodyBuilder extends StackListenerImpl
     Token? varOrFinalOrConst = pop(NullValues.Token) as Token?;
     if (superKeyword != null &&
         varOrFinalOrConst != null &&
-        optional('var', varOrFinalOrConst)) {
+        varOrFinalOrConst.isA(Keyword.VAR)) {
       handleRecoverableError(
           fasta.templateExtraneousModifier.withArguments(varOrFinalOrConst),
           varOrFinalOrConst,
           varOrFinalOrConst);
     }
-    int modifiers = pop() as int;
+    Modifiers modifiers = pop() as Modifiers;
     if (inCatchClause) {
-      modifiers |= finalMask;
+      modifiers |= Modifiers.Final;
     }
     List<Expression>? annotations = pop() as List<Expression>?;
     if (nameNode is ParserRecovery) {
@@ -5811,11 +5813,11 @@ class BodyBuilder extends StackListenerImpl
     ]));
     debugEvent("UnaryPrefixExpression");
     Object? receiver = pop();
-    if (optional("!", token)) {
+    if (token.isA(TokenType.BANG)) {
       push(forest.createNot(offsetForToken(token), toValue(receiver)));
     } else {
       String operator = token.stringValue!;
-      if (optional("-", token)) {
+      if (token.isA(TokenType.MINUS)) {
         operator = "unary-";
       }
       int fileOffset = offsetForToken(token);
@@ -5830,8 +5832,8 @@ class BodyBuilder extends StackListenerImpl
   }
 
   Name incrementOperator(Token token) {
-    if (optional("++", token)) return plusName;
-    if (optional("--", token)) return minusName;
+    if (token.isA(TokenType.PLUS_PLUS)) return plusName;
+    if (token.isA(TokenType.MINUS_MINUS)) return minusName;
     return unhandled(token.lexeme, "incrementOperator", token.charOffset, uri);
   }
 
@@ -6518,9 +6520,9 @@ class BodyBuilder extends StackListenerImpl
                           typeDeclarationBuilder.name,
                           nameToken.charOffset));
                 }
-                target = constructorBuilder.member;
+                target = constructorBuilder.invokeTarget;
               } else {
-                target = constructorBuilder.member;
+                target = constructorBuilder.invokeTarget;
               }
               if (target is Constructor ||
                   (target is Procedure &&
@@ -6763,9 +6765,9 @@ class BodyBuilder extends StackListenerImpl
                     typeDeclarationBuilder.name,
                     nameToken.charOffset));
           }
-          target = constructorBuilder.member;
+          target = constructorBuilder.invokeTarget;
         } else {
-          target = constructorBuilder.member;
+          target = constructorBuilder.invokeTarget;
         }
         if (typeDeclarationBuilder.isEnum &&
             !(libraryFeatures.enhancedEnums.isEnabled &&
@@ -6799,7 +6801,7 @@ class BodyBuilder extends StackListenerImpl
           message = constructorBuilder.message
               .withLocation(uri, charOffset, noLength);
         } else {
-          target = constructorBuilder.member;
+          target = constructorBuilder.invokeTarget;
         }
         if (target != null) {
           return buildStaticInvocation(target, arguments,
@@ -7971,7 +7973,7 @@ class BodyBuilder extends StackListenerImpl
         Token nextToken = conditionLastToken.next!;
         if (nextToken == conditionBoundary) {
           break;
-        } else if (optional(',', nextToken) &&
+        } else if (nextToken.isA(TokenType.COMMA) &&
             nextToken.next == conditionBoundary) {
           // The next token is trailing comma, which means current token is
           // the last token of the condition.
@@ -8709,7 +8711,7 @@ class BodyBuilder extends StackListenerImpl
   Statement buildProblemTargetOutsideLocalFunction(
       String? name, Token keyword) {
     Statement problem;
-    bool isBreak = optional("break", keyword);
+    bool isBreak = keyword.isA(Keyword.BREAK);
     if (name != null) {
       Template<Message Function(String)> template = isBreak
           ? fasta.templateBreakTargetOutsideFunction
@@ -9092,7 +9094,7 @@ class BodyBuilder extends StackListenerImpl
         MemberBuilder constructor =
             libraryBuilder.loader.getDuplicatedFieldInitializerError();
         Expression invocation = buildStaticInvocation(
-            constructor.member,
+            constructor.invokeTarget!,
             forest.createArguments(assignmentOffset, <Expression>[
               forest.createStringLiteral(assignmentOffset, name)
             ]),
@@ -9786,8 +9788,7 @@ class BodyBuilder extends StackListenerImpl
       VariableDeclaration declaredVariable = forest.createVariableDeclaration(
           variable.charOffset, variable.lexeme,
           type: patternType,
-          isFinal:
-              Modifier.validateVarFinalOrConst(keyword?.lexeme) == finalMask);
+          isFinal: Modifiers.from(varFinalOrConst: keyword).isFinal);
       pattern = forest.createVariablePattern(
           variable.charOffset, patternType, declaredVariable);
       declareVariable(declaredVariable, _localScope);

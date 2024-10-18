@@ -37,7 +37,6 @@ import '../base/problems.dart';
 import '../base/scope.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
-import '../builder/library_builder.dart';
 import '../builder/member_builder.dart';
 import '../builder/named_type_builder.dart';
 import '../builder/nullability_builder.dart';
@@ -1389,13 +1388,20 @@ class StaticAccessGenerator extends Generator {
   /// The name of the original target;
   final String targetName;
 
-  /// The static [Member] used for performing a read or invocation on this
-  /// subexpression.
+  /// The static [Member] used for performing a read on this subexpression.
   ///
   /// This can be `null` if the subexpression doesn't have a readable target.
   /// For instance if the subexpression is a setter without a corresponding
   /// getter.
   final Member? readTarget;
+
+  /// The static [Member] used for performing an invocation on this
+  /// subexpression.
+  ///
+  /// This can be `null` if the subexpression doesn't have an invokable target.
+  /// For instance if the subexpression is a setter without a corresponding
+  /// getter.
+  final Member? invokeTarget;
 
   /// The static [Member] used for performing a write on this subexpression.
   ///
@@ -1408,16 +1414,11 @@ class StaticAccessGenerator extends Generator {
   final int? typeOffset;
   final bool isNullAware;
 
-  /// The builder for the parent of [readTarget] and [writeTarget]. This is
-  /// either the builder for the enclosing library,  class, or extension.
-  final Builder? parentBuilder;
-
   StaticAccessGenerator(ExpressionGeneratorHelper helper, Token token,
-      this.targetName, this.parentBuilder, this.readTarget, this.writeTarget,
+      this.targetName, this.readTarget, this.invokeTarget, this.writeTarget,
       {this.typeOffset, this.isNullAware = false})
-      : assert(readTarget != null || writeTarget != null),
-        assert(parentBuilder is DeclarationBuilder ||
-            parentBuilder is LibraryBuilder),
+      : assert(
+            readTarget != null || invokeTarget != null || writeTarget != null),
         super(helper, token);
 
   factory StaticAccessGenerator.fromBuilder(
@@ -1433,15 +1434,13 @@ class StaticAccessGenerator extends Generator {
     // class/extension.
     assert(getterBuilder == null ||
         setterBuilder == null ||
-        (getterBuilder.parent is LibraryBuilder &&
-            setterBuilder.parent is LibraryBuilder) ||
-        getterBuilder.parent == setterBuilder.parent);
+        getterBuilder.declarationBuilder == setterBuilder.declarationBuilder);
     return new StaticAccessGenerator(
         helper,
         token,
         targetName,
-        getterBuilder?.parent ?? setterBuilder?.parent,
         getterBuilder?.readTarget,
+        getterBuilder?.invokeTarget,
         setterBuilder?.writeTarget,
         typeOffset: typeOffset,
         isNullAware: isNullAware);
@@ -1530,20 +1529,21 @@ class StaticAccessGenerator extends Generator {
       int offset, List<TypeBuilder>? typeArguments, Arguments arguments,
       {bool isTypeArgumentsInForest = false}) {
     if (_helper.constantContext != ConstantContext.none &&
-        !_helper.isIdentical(readTarget) &&
+        !_helper.isIdentical(invokeTarget) &&
         !_helper.libraryFeatures.constFunctions.isEnabled) {
       return _helper.buildProblem(
           templateNotConstantExpression.withArguments('Method invocation'),
           offset,
-          readTarget?.name.text.length ?? 0);
+          invokeTarget?.name.text.length ?? 0);
     }
-    if (readTarget == null || isFieldOrGetter(readTarget!)) {
+    if (invokeTarget == null ||
+        (readTarget != null && isFieldOrGetter(readTarget!))) {
       return _helper.forest.createExpressionInvocation(
           offset + (readTarget?.name.text.length ?? 0),
           buildSimpleRead(),
           arguments);
     } else {
-      return _helper.buildStaticInvocation(readTarget as Procedure, arguments,
+      return _helper.buildStaticInvocation(invokeTarget as Procedure, arguments,
           charOffset: offset, isConstructorInvocation: false);
     }
   }
@@ -2347,7 +2347,7 @@ class ExplicitExtensionIndexedAccessGenerator extends Generator {
         assert(getterBuilder is MemberBuilder);
       } else if (getterBuilder is MemberBuilder) {
         MemberBuilder procedureBuilder = getterBuilder;
-        readTarget = procedureBuilder.member as Procedure?;
+        readTarget = procedureBuilder.invokeTarget as Procedure?;
       } else {
         return unhandled(
             "${getterBuilder.runtimeType}",
@@ -2359,7 +2359,7 @@ class ExplicitExtensionIndexedAccessGenerator extends Generator {
     Procedure? writeTarget;
     if (setterBuilder is MemberBuilder) {
       MemberBuilder memberBuilder = setterBuilder;
-      writeTarget = memberBuilder.member as Procedure?;
+      writeTarget = memberBuilder.invokeTarget as Procedure?;
     }
     return new ExplicitExtensionIndexedAccessGenerator(
         helper,
@@ -4156,7 +4156,7 @@ class PrefixUseGenerator extends Generator {
           fileOffset,
           lengthForToken(token));
     }
-    Object result = _helper.scopeLookup(prefix.exportScope, nameToken,
+    Object result = _helper.scopeLookup(prefix.prefixScope, nameToken,
         prefix: prefix, prefixToken: token);
     if (prefix.deferred) {
       if (result is Generator) {

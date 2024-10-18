@@ -280,6 +280,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
 
   final bool genericMetadataIsEnabled;
 
+  final bool inferenceUsingBoundsIsEnabled;
+
   /// Stack for obtaining rewritten expressions.  Prior to visiting an
   /// expression, a caller may push the expression on this stack; if
   /// [replaceExpression] is later called, it will update the top of the stack
@@ -348,6 +350,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         _featureSet = featureSet,
         genericMetadataIsEnabled =
             definingLibrary.featureSet.isEnabled(Feature.generic_metadata),
+        inferenceUsingBoundsIsEnabled = definingLibrary.featureSet
+            .isEnabled(Feature.inference_using_bounds),
         options = TypeAnalyzerOptions(
             nullSafetyEnabled: true,
             patternsEnabled:
@@ -1194,6 +1198,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
       // If the constructor-tearoffs feature is enabled, then so is
       // generic-metadata.
       genericMetadataIsEnabled: true,
+      inferenceUsingBoundsIsEnabled:
+          _featureSet.isEnabled(Feature.inference_using_bounds),
       strictInference: analysisOptions.strictInference,
       strictCasts: analysisOptions.strictCasts,
       typeSystemOperations: flowAnalysis.typeOperations,
@@ -1232,16 +1238,27 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
 
   /// If we reached a null-shorting termination, and the [node] has null
   /// shorting, make the type of the [node] nullable.
+  ///
+  /// [node] should be the original expression node (before resolution). If the
+  /// resolution process rewrote [node] to some other expression, that
+  /// expression should be passed in as [rewrittenExpression].
   void nullShortingTermination(ExpressionImpl node,
-      {bool discardType = false}) {
+      {ExpressionImpl? rewrittenExpression}) {
+    // Verify that `rewrittenExpression` properly reflects any rewrites that
+    // were performed on `node`.
+    assert(identical(rewrittenExpression ?? node, _replacements[node] ?? node));
+
     if (identical(_unfinishedNullShorts.last, node)) {
       do {
         _unfinishedNullShorts.removeLast();
         flowAnalysis.flow!.nullAwareAccess_end();
       } while (identical(_unfinishedNullShorts.last, node));
-      if (node is! CascadeExpression && !discardType) {
-        node.setPseudoExpressionStaticType(
-            typeSystem.makeNullable(node.staticType as TypeImpl));
+      if (node is! CascadeExpression) {
+        // Make the static type of `node` (or whatever it was rewritten to)
+        // nullable.
+        rewrittenExpression ??= node;
+        rewrittenExpression.setPseudoExpressionStaticType(typeSystem
+            .makeNullable(rewrittenExpression.staticType as TypeImpl));
       }
     }
   }
@@ -3028,7 +3045,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     var replacement =
         insertGenericFunctionInstantiation(node, contextType: contextType);
 
-    nullShortingTermination(node);
+    nullShortingTermination(node, rewrittenExpression: replacement);
     _insertImplicitCallReference(replacement, contextType: contextType);
     nullSafetyDeadCodeVerifier.verifyIndexExpression(node);
     inferenceLogWriter?.exitExpression(node);
@@ -3122,14 +3139,32 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
       {CollectionLiteralContext? context}) {
     inferenceLogWriter?.enterElement(node);
     checkUnreachableNode(node);
-    analyzeExpression(node.key,
-        SharedTypeSchemaView(context?.keyType ?? UnknownInferredType.instance));
+
+    // If the key is null-aware, the context of the expression under `?` should
+    // be changed to the nullable version of the downwards context.
+    var keyTypeContext = context?.keyType;
+    if (keyTypeContext != null && node.keyQuestion != null) {
+      keyTypeContext = typeSystem.makeNullable(keyTypeContext);
+    }
+    var keyType = analyzeExpression(node.key,
+        SharedTypeSchemaView(keyTypeContext ?? UnknownInferredType.instance));
     popRewrite();
-    analyzeExpression(
-        node.value,
-        SharedTypeSchemaView(
-            context?.valueType ?? UnknownInferredType.instance));
+
+    flowAnalysis.flow?.nullAwareMapEntry_valueBegin(node.key, keyType,
+        isKeyNullAware: node.keyQuestion != null);
+
+    // If the value is null-aware, the context of the expression under `?`
+    // should be changed to the nullable version of the downwards context.
+    var valueTypeContext = context?.valueType;
+    if (valueTypeContext != null && node.valueQuestion != null) {
+      valueTypeContext = typeSystem.makeNullable(valueTypeContext);
+    }
+    analyzeExpression(node.value,
+        SharedTypeSchemaView(valueTypeContext ?? UnknownInferredType.instance));
     popRewrite();
+
+    flowAnalysis.flow
+        ?.nullAwareMapEntry_end(isKeyNullAware: node.keyQuestion != null);
     inferenceLogWriter?.exitElement(node);
   }
 
@@ -3212,10 +3247,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
       _resolveRewrittenFunctionExpressionInvocation(
           functionRewrite, whyNotPromotedList,
           contextType: contextType);
-      nullShortingTermination(node, discardType: true);
-    } else {
-      nullShortingTermination(node);
     }
+    nullShortingTermination(node, rewrittenExpression: functionRewrite);
     var replacement =
         insertGenericFunctionInstantiation(node, contextType: contextType);
     checkForArgumentTypesNotAssignableInList(
@@ -3301,6 +3334,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
 
     analyzeExpression(node.value,
         SharedTypeSchemaView(elementType ?? UnknownInferredType.instance));
+    popRewrite();
 
     inferenceLogWriter?.exitElement(node);
   }
@@ -3490,7 +3524,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     var replacement =
         insertGenericFunctionInstantiation(node, contextType: contextType);
 
-    nullShortingTermination(node);
+    nullShortingTermination(node, rewrittenExpression: replacement);
     _insertImplicitCallReference(replacement, contextType: contextType);
     nullSafetyDeadCodeVerifier.verifyPropertyAccess(node);
     inferenceLogWriter?.exitExpression(node);
@@ -4045,6 +4079,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
       typeParameters,
       errorEntity: errorNode,
       genericMetadataIsEnabled: genericMetadataIsEnabled,
+      inferenceUsingBoundsIsEnabled: inferenceUsingBoundsIsEnabled,
       strictInference: analysisOptions.strictInference,
       typeSystemOperations: flowAnalysis.typeOperations,
       dataForTesting: inferenceHelper.dataForTesting,
@@ -4093,6 +4128,8 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
         // If the constructor-tearoffs feature is enabled, then so is
         // generic-metadata.
         genericMetadataIsEnabled: true,
+        inferenceUsingBoundsIsEnabled:
+            _featureSet.isEnabled(Feature.inference_using_bounds),
         strictInference: analysisOptions.strictInference,
         strictCasts: analysisOptions.strictCasts,
         typeSystemOperations: flowAnalysis.typeOperations,

@@ -3,9 +3,9 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analysis_server/src/services/correction/assist.dart';
-import 'package:analysis_server/src/utilities/extensions/flutter.dart';
 import 'package:analysis_server_plugin/edit/dart/correction_producer.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
+import 'package:analyzer/src/utilities/extensions/flutter.dart';
 import 'package:analyzer_plugin/utilities/assist/assist.dart';
 import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
 import 'package:analyzer_plugin/utilities/range_factory.dart';
@@ -33,14 +33,14 @@ class FlutterWrapStreamBuilder extends ResolvedCorrectionProducer {
     var widgetSrc = utils.getNodeText(widgetExpr);
 
     var streamBuilderElement =
-        await sessionHelper.getFlutterClass('StreamBuilder');
+        await sessionHelper.getFlutterClass2('StreamBuilder');
     if (streamBuilderElement == null) {
       return;
     }
 
     await builder.addDartFileEdit(file, (builder) {
       builder.addReplacement(range.node(widgetExpr), (builder) {
-        builder.writeReference(streamBuilderElement);
+        builder.writeReference2(streamBuilderElement);
 
         builder.write('<');
         builder.addSimpleLinkedEdit('type', 'Object');

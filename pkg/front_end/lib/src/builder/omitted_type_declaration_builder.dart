@@ -11,11 +11,19 @@ part of 'declaration_builders.dart';
 /// inferred types in the original code.
 class OmittedTypeDeclarationBuilder extends TypeDeclarationBuilderImpl
     implements TypeDeclarationBuilder {
+  @override
+  final SourceLibraryBuilder parent;
+
+  @override
+  final String name;
+
   final OmittedTypeBuilder omittedTypeBuilder;
 
   OmittedTypeDeclarationBuilder(
-      String name, this.omittedTypeBuilder, SourceLibraryBuilder parent)
-      : super(null, 0, name, parent, TreeNode.noOffset);
+      this.name, this.omittedTypeBuilder, this.parent);
+
+  @override
+  int get charOffset => TreeNode.noOffset;
 
   @override
   DartType buildAliasedType(
@@ -55,8 +63,5 @@ class OmittedTypeDeclarationBuilder extends TypeDeclarationBuilderImpl
   }
 
   @override
-  String get debugName => 'OmittedTypeDeclarationBuilder';
-
-  @override
-  Uri? get fileUri => parent!.fileUri;
+  Uri? get fileUri => parent.fileUri;
 }

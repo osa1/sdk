@@ -219,7 +219,7 @@ class ElementResolver {
     var prefixNode = node.prefix;
     if (prefixNode != null) {
       String prefixName = prefixNode.name;
-      List<PrefixElement> prefixes = _definingLibrary.prefixes;
+      var prefixes = _resolver.libraryFragment.libraryImportPrefixes;
       int count = prefixes.length;
       for (int i = 0; i < count; i++) {
         PrefixElement prefixElement = prefixes[i];
@@ -263,7 +263,7 @@ class ElementResolver {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? visitMethodInvocation(MethodInvocation node,
+  FunctionExpressionInvocationImpl? visitMethodInvocation(MethodInvocation node,
       {List<WhyNotPromotedGetter>? whyNotPromotedList,
       required DartType contextType}) {
     whyNotPromotedList ??= [];
@@ -386,7 +386,7 @@ class ElementResolver {
     var declaration = node.thisOrAncestorOfType<ClassDeclaration>();
     var extendedNamedType = declaration?.extendsClause?.superclass;
     if (extendedNamedType != null &&
-        _resolver.definingLibrary
+        _resolver.libraryFragment
             .shouldIgnoreUndefinedNamedType(extendedNamedType)) {
       return;
     }

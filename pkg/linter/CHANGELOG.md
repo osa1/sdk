@@ -1,9 +1,15 @@
-# 3.6.0-wip
+# 3.7.0-wip
+
+- deprecated lint: `package_api_docs`
+
+# 3.6.0
 
 - new lint: `use_truncating_division`
 - new _(experimental)_ lint: `omit_obvious_local_variable_types`
 - new _(experimental)_ lint: `specify_nonobvious_local_variable_types`
 - new _(experimental)_ lint: `avoid_futureor_void`
+- update `avoid_dynamic_calls` to allow method invocations on a cast to
+  dynamic.
 
 # 3.5.0
 

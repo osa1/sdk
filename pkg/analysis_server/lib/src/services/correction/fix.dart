@@ -821,7 +821,7 @@ abstract final class DartFixKind {
   );
   static const IMPORT_LIBRARY_PREFIX = FixKind(
     'dart.fix.import.libraryPrefix',
-    49,
+    DartFixKindPriority.standard + 5,
     "Use imported library '{0}' with prefix '{1}'",
   );
   static const IMPORT_LIBRARY_PROJECT1 = FixKind(
@@ -1968,6 +1968,11 @@ abstract final class DartFixKind {
     'dart.fix.updateSdkConstraints',
     DartFixKindPriority.standard,
     'Update the SDK constraints',
+  );
+  static const USE_DIVISION = FixKind(
+    'dart.fix.use.division',
+    DartFixKindPriority.standard,
+    'Use / instead of undefined ~/',
   );
   static const USE_EFFECTIVE_INTEGER_DIVISION = FixKind(
     'dart.fix.use.effectiveIntegerDivision',

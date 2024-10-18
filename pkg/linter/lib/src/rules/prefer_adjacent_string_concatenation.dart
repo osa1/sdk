@@ -6,35 +6,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Use adjacent strings to concatenate string literals.';
-
-const _details = r'''
-**DO** use adjacent strings to concatenate string literals.
-
-**BAD:**
-```dart
-raiseAlarm(
-    'ERROR: Parts of the spaceship are on fire. Other ' +
-    'parts are overrun by martians. Unclear which are which.');
-```
-
-**GOOD:**
-```dart
-raiseAlarm(
-    'ERROR: Parts of the spaceship are on fire. Other '
-    'parts are overrun by martians. Unclear which are which.');
-```
-
-''';
 
 class PreferAdjacentStringConcatenation extends LintRule {
   PreferAdjacentStringConcatenation()
       : super(
-          name: 'prefer_adjacent_string_concatenation',
+          name: LintNames.prefer_adjacent_string_concatenation,
           description: _desc,
-          details: _details,
         );
 
   @override

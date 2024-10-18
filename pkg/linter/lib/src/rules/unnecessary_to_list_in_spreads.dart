@@ -7,35 +7,14 @@ import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Unnecessary `toList()` in spreads.';
-
-const _details = r'''
-Unnecessary `toList()` in spreads.
-
-**BAD:**
-```dart
-children: <Widget>[
-  ...['foo', 'bar', 'baz'].map((String s) => Text(s)).toList(),
-]
-```
-
-**GOOD:**
-```dart
-children: <Widget>[
-  ...['foo', 'bar', 'baz'].map((String s) => Text(s)),
-]
-```
-
-''';
 
 class UnnecessaryToListInSpreads extends LintRule {
   UnnecessaryToListInSpreads()
       : super(
-          name: 'unnecessary_to_list_in_spreads',
+          name: LintNames.unnecessary_to_list_in_spreads,
           description: _desc,
-          details: _details,
         );
 
   @override

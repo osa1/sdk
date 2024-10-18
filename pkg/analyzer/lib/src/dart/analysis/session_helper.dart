@@ -5,6 +5,7 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 
 /// A wrapper around [AnalysisSession] that provides additional utilities.
 ///
@@ -32,6 +33,20 @@ class AnalysisSessionHelper {
     return null;
   }
 
+  /// Returns the [ClassElement] with the given [className] that is exported
+  /// from the library with the given [libraryUri], or `null` if the library
+  /// does not export a class with such name.
+  Future<ClassElement2?> getClass2(String libraryUri, String className) async {
+    var libraryResult = await session.getLibraryByUri(libraryUri);
+    if (libraryResult is LibraryElementResult) {
+      var element = libraryResult.element2.exportNamespace.get2(className);
+      if (element is ClassElement2) {
+        return element;
+      }
+    }
+    return null;
+  }
+
   /// Return the declaration of the [element], or `null` is the [element]
   /// is synthetic, or is declared in a file that is not a part of a library.
   Future<ElementDeclarationResult?> getElementDeclaration(
@@ -39,6 +54,17 @@ class AnalysisSessionHelper {
     var libraryPath = element.library!.source.fullName;
     var resolvedLibrary = await _getResolvedLibrary(libraryPath);
     return resolvedLibrary?.getElementDeclaration(element);
+  }
+
+  /// Returns the declaration of the [fragment].
+  ///
+  /// Returns `null` if the [fragment] is synthetic, or is declared in a file
+  /// that is not a part of a library.
+  Future<ElementDeclarationResult?> getElementDeclaration2(
+      Fragment fragment) async {
+    var libraryPath = fragment.libraryFragment.source.fullName;
+    var resolvedLibrary = await _getResolvedLibrary(libraryPath);
+    return resolvedLibrary?.getElementDeclaration2(fragment);
   }
 
   /// Return the [EnumElement] with the given [className] that is exported
@@ -61,6 +87,12 @@ class AnalysisSessionHelper {
   Future<ClassElement?> getFlutterClass(String className) =>
       getClass('package:flutter/widgets.dart', className);
 
+  /// Returns the [ClassElement2] with the given [className] that is exported
+  /// from the Flutter widgets library, or `null` if the library does not export
+  /// a class with such name.
+  Future<ClassElement2?> getFlutterClass2(String className) =>
+      getClass2('package:flutter/widgets.dart', className);
+
   /// Return the [MixinElement] with the given [name] that is exported
   /// from the library with the given [libraryUri], or `null` if the library
   /// does not export a class with such name.
@@ -69,6 +101,20 @@ class AnalysisSessionHelper {
     if (libraryResult is LibraryElementResult) {
       var element = libraryResult.element.exportNamespace.get(name);
       if (element is MixinElement) {
+        return element;
+      }
+    }
+    return null;
+  }
+
+  /// Return the [MixinElement] with the given [name] that is exported
+  /// from the library with the given [libraryUri], or `null` if the library
+  /// does not export a class with such name.
+  Future<MixinElement2?> getMixin2(String libraryUri, String name) async {
+    var libraryResult = await session.getLibraryByUri(libraryUri);
+    if (libraryResult is LibraryElementResult) {
+      var element = libraryResult.element2.exportNamespace.get2(name);
+      if (element is MixinElement2) {
         return element;
       }
     }

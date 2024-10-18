@@ -8,33 +8,15 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Use a non-nullable type for a final variable initialized '
     'with a non-nullable value.';
 
-const _details = r'''
-Use a non-nullable type for a final variable initialized with a non-nullable
-value.
-
-**BAD:**
-```dart
-final int? i = 1;
-```
-
-**GOOD:**
-```dart
-final int i = 1;
-```
-
-''';
-
 class UnnecessaryNullableForFinalVariableDeclarations extends LintRule {
   UnnecessaryNullableForFinalVariableDeclarations()
       : super(
-          name: 'unnecessary_nullable_for_final_variable_declarations',
+          name: LintNames.unnecessary_nullable_for_final_variable_declarations,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -60,7 +42,7 @@ class _Visitor extends SimpleAstVisitor<void> {
 
   void check(AstNode node) {
     if (node is! DeclaredVariablePattern) return;
-    var type = node.declaredElement?.type;
+    var type = node.declaredElement2?.type;
     if (type == null) return;
     if (type is DynamicType) return;
     var valueType = node.matchedValueType;
@@ -106,17 +88,14 @@ class _Visitor extends SimpleAstVisitor<void> {
   }
 
   void _visit(VariableDeclaration variable) {
-    if (!variable.isFinal && !variable.isConst) {
-      return;
-    }
-    if (variable.isSynthetic) {
-      return;
-    }
+    if (!variable.isFinal && !variable.isConst) return;
+    if (variable.isSynthetic) return;
+
     var initializerType = variable.initializer?.staticType;
-    if (initializerType == null) {
-      return;
-    }
-    var declaredElement = variable.declaredElement;
+    if (initializerType == null) return;
+
+    var declaredElement =
+        variable.declaredElement2 ?? variable.declaredFragment?.element;
     if (declaredElement == null || declaredElement.type is DynamicType) {
       return;
     }

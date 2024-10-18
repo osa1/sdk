@@ -6,74 +6,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Test type of argument in `operator ==(Object other)`.';
-
-const _details = r'''
-**DO** test type of argument in `operator ==(Object other)`.
-
-Not testing the type might result in runtime type errors which will be
-unexpected for consumers of your class.
-
-**BAD:**
-```dart
-class Field {
-}
-
-class Bad {
-  final Field someField;
-
-  Bad(this.someField);
-
-  @override
-  bool operator ==(Object other) {
-    Bad otherBad = other as Bad; // LINT
-    bool areEqual = otherBad != null && otherBad.someField == someField;
-    return areEqual;
-  }
-
-  @override
-  int get hashCode {
-    return someField.hashCode;
-  }
-}
-```
-
-**GOOD:**
-```dart
-class Field {
-}
-
-class Good {
-  final Field someField;
-
-  Good(this.someField);
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    return other is Good &&
-        this.someField == other.someField;
-  }
-
-  @override
-  int get hashCode {
-    return someField.hashCode;
-  }
-}
-```
-
-''';
 
 class TestTypesInEquals extends LintRule {
   TestTypesInEquals()
       : super(
-          name: 'test_types_in_equals',
+          name: LintNames.test_types_in_equals,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -101,7 +41,7 @@ class _Visitor extends SimpleAstVisitor<void> {
     }
 
     var parameters = declaration?.parameters;
-    var parameterName = parameters?.parameterElements.first?.name;
+    var parameterName = parameters?.parameterFragments.first?.name;
     if (expression.name == parameterName) {
       var typeName = _getTypeName(declaration!);
       rule.reportLint(node, arguments: [typeName]);
@@ -128,5 +68,5 @@ class _Visitor extends SimpleAstVisitor<void> {
       declaration != null &&
       declaration.isOperator &&
       declaration.name.lexeme == '==' &&
-      declaration.parameters?.parameterElements.length == 1;
+      declaration.parameters?.parameterFragments.length == 1;
 }

@@ -6,33 +6,8 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Prefer using `///` for doc comments.';
-
-const _details = r'''
-From [Effective Dart](https://dart.dev/effective-dart/documentation#do-use--doc-comments-to-document-members-and-types):
-
-**DO** use `///` for documentation comments.
-
-Although Dart supports two syntaxes of doc comments (`///` and `/**`), we
-prefer using `///` for doc comments.
-
-**GOOD:**
-```dart
-/// Parses a set of option strings. For each option:
-///
-/// * If it is `null`, then it is ignored.
-/// * If it is a string, then [validate] is called on it.
-/// * If it is any other type, it is *not* validated.
-void parse(List options) {
-  // ...
-}
-```
-
-Within a doc comment, you can use markdown for formatting.
-
-''';
 
 bool isJavaStyle(Comment comment) {
   var tokens = comment.tokens;
@@ -46,9 +21,8 @@ bool isJavaStyle(Comment comment) {
 class SlashForDocComments extends LintRule {
   SlashForDocComments()
       : super(
-          name: 'slash_for_doc_comments',
+          name: LintNames.slash_for_doc_comments,
           description: _desc,
-          details: _details,
         );
 
   @override

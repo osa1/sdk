@@ -6,6 +6,7 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
+import '../base/modifiers.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/formal_parameter_builder.dart';
@@ -33,6 +34,9 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     implements ProcedureBuilder {
   @override
   final SourceLibraryBuilder libraryBuilder;
+
+  @override
+  final DeclarationBuilder? declarationBuilder;
 
   final int charOpenParenOffset;
 
@@ -79,19 +83,25 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
 
   final MemberName _memberName;
 
+  @override
+  final int charOffset;
+
+  @override
+  final Uri fileUri;
+
   SourceProcedureBuilder(
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       this.returnType,
       String name,
       List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
       this.kind,
       this.libraryBuilder,
-      DeclarationBuilder? declarationBuilder,
-      Uri fileUri,
+      this.declarationBuilder,
+      this.fileUri,
       int startCharOffset,
-      int charOffset,
+      this.charOffset,
       this.charOpenParenOffset,
       int charEndOffset,
       Reference? procedureReference,
@@ -106,15 +116,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
         this.isExtensionTypeInstanceMember =
             nameScheme.isInstanceMember && nameScheme.isExtensionTypeMember,
         _memberName = nameScheme.getDeclaredName(name),
-        super(
-            metadata,
-            modifiers,
-            name,
-            typeVariables,
-            formals,
-            declarationBuilder ?? libraryBuilder,
-            fileUri,
-            charOffset,
+        super(metadata, modifiers, name, typeVariables, formals,
             nativeMethodName) {
     _procedure = new Procedure(
         dummyName,
@@ -146,6 +148,9 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   }
 
   @override
+  Builder get parent => declarationBuilder ?? libraryBuilder;
+
+  @override
   Name get memberName => _memberName.name;
 
   // Coverage-ignore(suite): Not run.
@@ -175,9 +180,6 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   bool get isExtensionTypeMethod {
     return parent is SourceExtensionTypeDeclarationBuilder;
   }
-
-  @override
-  Member get member => procedure;
 
   @override
   SourceProcedureBuilder get origin => _origin ?? this;
@@ -248,10 +250,12 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     switch (kind) {
       case ProcedureKind.Setter:
         return procedure;
-      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Method:
+      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Getter:
+      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Operator:
+      // Coverage-ignore(suite): Not run.
       case ProcedureKind.Factory:
         return null;
     }
@@ -330,7 +334,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
           break;
       }
     } else {
-      f(member: member, kind: BuiltMemberKind.Method);
+      f(member: _procedure, kind: BuiltMemberKind.Method);
     }
   }
 
@@ -679,7 +683,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       {required bool inOutlineBuildingPhase,
       required bool inMetadata,
       required bool inConstFields}) {
-    return new ProcedureBodyBuilderContext(this,
+    return new ProcedureBodyBuilderContext(this, procedure,
         inOutlineBuildingPhase: inOutlineBuildingPhase,
         inMetadata: inMetadata,
         inConstFields: inConstFields);
@@ -726,7 +730,7 @@ class SourceProcedureMember extends BuilderClassMember {
   @override
   Member getMember(ClassMembersBuilder membersBuilder) {
     memberBuilder._ensureTypes(membersBuilder);
-    return memberBuilder.member;
+    return memberBuilder._procedure;
   }
 
   @override

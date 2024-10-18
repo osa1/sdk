@@ -4,41 +4,19 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 import '../util/ascii_utils.dart';
 
 const _desc = r'Avoid defining unused parameters in constructors.';
 
-const _details = r'''
-**AVOID** defining unused parameters in constructors.
-
-**BAD:**
-```dart
-class BadOne {
-  BadOne(int unusedParameter, [String unusedPositional]);
-}
-
-class BadTwo {
-  int c;
-
-  BadTwo(int a, int b, int x) {
-    c = a + b;
-  }
-}
-```
-
-''';
-
 class AvoidUnusedConstructorParameters extends LintRule {
   AvoidUnusedConstructorParameters()
       : super(
-          name: 'avoid_unused_constructor_parameters',
+          name: LintNames.avoid_unused_constructor_parameters,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -52,24 +30,24 @@ class AvoidUnusedConstructorParameters extends LintRule {
   }
 }
 
-class _ConstructorVisitor extends RecursiveAstVisitor {
+class _ConstructorVisitor extends RecursiveAstVisitor<void> {
   final ConstructorDeclaration element;
   final Set<FormalParameter> unusedParameters;
 
   _ConstructorVisitor(this.element)
       : unusedParameters = element.parameters.parameters.where((p) {
-          var element = p.declaredElement;
+          var element = p.declaredFragment?.element;
           return element != null &&
-              element is! FieldFormalParameterElement &&
-              element is! SuperFormalParameterElement &&
-              !element.hasDeprecated &&
+              element is! FieldFormalParameterElement2 &&
+              element is! SuperFormalParameterElement2 &&
+              !element.metadata2.hasDeprecated &&
               !element.name.isJustUnderscores;
         }).toSet();
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
     unusedParameters
-        .removeWhere((p) => node.staticElement == p.declaredElement);
+        .removeWhere((p) => node.element == p.declaredFragment?.element);
   }
 }
 

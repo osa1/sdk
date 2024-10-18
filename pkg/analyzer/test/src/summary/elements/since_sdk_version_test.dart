@@ -168,17 +168,17 @@ library
               getter2: dart:foo::<fragment>::@class::A::@getter::foo
               setter2: dart:foo::<fragment>::@class::A::@setter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@class::A::@getter::foo
               element: dart:foo::<fragment>::@class::A::@getter::foo#element
               sinceSdkVersion: 2.15.0
           setters
-            set foo= @-1
+            set <null-name>
               reference: dart:foo::<fragment>::@class::A::@setter::foo
               element: dart:foo::<fragment>::@class::A::@setter::foo#element
               sinceSdkVersion: 2.15.0
-              parameters
-                _foo @-1
+              formalParameters
+                <null-name>
                   element: dart:foo::<fragment>::@class::A::@setter::foo::@parameter::_foo#element
   classes
     class A
@@ -196,7 +196,7 @@ library
       setters
         synthetic set foo=
           firstFragment: dart:foo::<fragment>::@class::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional _foo
               type: int
 ''');
@@ -483,11 +483,11 @@ library
               element: dart:foo::<fragment>::@class::A::@field::foo#element
               setter2: dart:foo::<fragment>::@class::A::@setter::foo
           setters
-            set foo= @57
+            set foo @57
               reference: dart:foo::<fragment>::@class::A::@setter::foo
               element: dart:foo::<fragment>::@class::A::@setter::foo#element
               sinceSdkVersion: 2.15.0
-              parameters
+              formalParameters
                 _ @65
                   element: dart:foo::<fragment>::@class::A::@setter::foo::@parameter::_#element
   classes
@@ -502,7 +502,7 @@ library
       setters
         set foo=
           firstFragment: dart:foo::<fragment>::@class::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional _
               type: int
 ''');
@@ -585,14 +585,14 @@ library
               element: dart:foo::<fragment>::@enum::E::@field::values#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::values
           getters
-            get v1 @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@enum::E::@getter::v1
               element: dart:foo::<fragment>::@enum::E::@getter::v1#element
-            get v2 @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@enum::E::@getter::v2
               element: dart:foo::<fragment>::@enum::E::@getter::v2#element
               sinceSdkVersion: 2.15.0
-            get values @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@enum::E::@getter::values
               element: dart:foo::<fragment>::@enum::E::@getter::values#element
   enums
@@ -693,11 +693,11 @@ library
               element: dart:foo::<fragment>::@enum::E::@field::values#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::values
           getters
-            get v @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@enum::E::@getter::v
               element: dart:foo::<fragment>::@enum::E::@getter::v#element
               sinceSdkVersion: 2.15.0
-            get values @-1
+            get <null-name>
               reference: dart:foo::<fragment>::@enum::E::@getter::values
               element: dart:foo::<fragment>::@enum::E::@getter::values#element
           methods
@@ -1089,7 +1089,7 @@ library
         f @31
           reference: dart:foo::<fragment>::@function::f
           element: dart:foo::<fragment>::@function::f#element
-          parameters
+          formalParameters
             p1 @37
               element: dart:foo::<fragment>::@function::f::@parameter::p1#element
             default p2 @67
@@ -1099,7 +1099,7 @@ library
   functions
     f
       firstFragment: dart:foo::<fragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional p1
           type: int
         optionalNamed p2
@@ -1147,7 +1147,7 @@ library
         f @31
           reference: dart:foo::<fragment>::@function::f
           element: dart:foo::<fragment>::@function::f#element
-          parameters
+          formalParameters
             p1 @37
               element: dart:foo::<fragment>::@function::f::@parameter::p1#element
             default p2 @67
@@ -1156,7 +1156,7 @@ library
   functions
     f
       firstFragment: dart:foo::<fragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional p1
           type: int
         optionalPositional p2
@@ -1244,7 +1244,7 @@ library
           sinceSdkVersion: 2.15.0
           getter2: dart:foo::<fragment>::@getter::foo
       getters
-        get foo @-1
+        get <null-name>
           reference: dart:foo::<fragment>::@getter::foo
           element: dart:foo::<fragment>::@getter::foo#element
           sinceSdkVersion: 2.15.0

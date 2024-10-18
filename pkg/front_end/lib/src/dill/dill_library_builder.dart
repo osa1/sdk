@@ -24,7 +24,6 @@ import '../builder/name_iterator.dart';
 import '../builder/never_type_declaration_builder.dart';
 import '../codes/cfe_codes.dart'
     show LocatedMessage, Message, Severity, noLength, templateUnspecified;
-import '../fragment/fragment.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/utils.dart';
 import 'dill_class_builder.dart' show DillClassBuilder;
@@ -129,6 +128,9 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   bool isBuilt = false;
   bool isBuiltAndMarked = false;
 
+  @override
+  bool mayImplementRestrictedTypes = false;
+
   DillLibraryBuilder(this.library, this.loader) : super(library.fileUri) {
     _nameSpace = new DillLibraryNameSpace(this);
     _scope = new NameSpaceLookupScope(_nameSpace, ScopeKind.library, 'top');
@@ -139,7 +141,7 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   LookupScope get scope => _scope;
 
   @override
-  NameSpace get nameSpace => _nameSpace;
+  NameSpace get libraryNameSpace => _nameSpace;
 
   @override
   NameSpace get exportNameSpace => _exportScope;
@@ -218,25 +220,21 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   Uri get fileUri => library.fileUri;
 
   @override
-  // Coverage-ignore(suite): Not run.
-  String? get name => library.name;
-
-  @override
   LibraryBuilder get nameOriginBuilder => this;
 
   @override
   void becomeCoreLibrary() {
-    if (nameSpace.lookupLocalMember("dynamic", setter: false) == null) {
+    if (libraryNameSpace.lookupLocalMember("dynamic", setter: false) == null) {
       _addBuilder("dynamic",
           new DynamicTypeDeclarationBuilder(const DynamicType(), this, -1));
     }
-    if (nameSpace.lookupLocalMember("Never", setter: false) == null) {
+    if (libraryNameSpace.lookupLocalMember("Never", setter: false) == null) {
       _addBuilder(
           "Never",
           new NeverTypeDeclarationBuilder(
               const NeverType.nonNullable(), this, -1));
     }
-    assert(nameSpace.lookupLocalMember("Null", setter: false) != null,
+    assert(libraryNameSpace.lookupLocalMember("Null", setter: false) != null,
         "No class 'Null' found in dart:core.");
   }
 
@@ -337,13 +335,13 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
 
     bool isSetter = declaration.isSetter;
     if (isSetter) {
-      nameSpace.addLocalMember(name, declaration as MemberBuilder,
+      libraryNameSpace.addLocalMember(name, declaration as MemberBuilder,
           setter: true);
     } else {
-      nameSpace.addLocalMember(name, declaration, setter: false);
+      libraryNameSpace.addLocalMember(name, declaration, setter: false);
     }
     if (declaration.isExtension) {
-      nameSpace.addExtension(declaration as ExtensionBuilder);
+      libraryNameSpace.addExtension(declaration as ExtensionBuilder);
     }
     if (!name.startsWith("_") && !name.contains('#')) {
       if (isSetter) {
@@ -401,14 +399,9 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
 
     Map<Reference, Builder>? sourceBuildersMap =
         loader.currentSourceLoader?.buildersCreatedWithReferences;
-    Map<Reference, Fragment>? fragmentMap =
-        loader.currentSourceLoader?.fragmentsCreatedWithReferences;
     for (Reference reference in library.additionalExports) {
       NamedNode node = reference.node as NamedNode;
-      Builder? declaration = sourceBuildersMap?[reference] ??
-          fragmentMap?[reference]
-              // Coverage-ignore(suite): Not run.
-              ?.builder;
+      Builder? declaration = sourceBuildersMap?[reference];
       String name;
       if (declaration != null) {
         // Coverage-ignore-block(suite): Not run.
@@ -477,10 +470,13 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
       assert(
           (declaration is ClassBuilder && node == declaration.cls) ||
               (declaration is TypeAliasBuilder &&
-                  node == declaration.typedef) ||
-              (declaration is MemberBuilder && node == declaration.member) ||
+                  reference == declaration.reference) ||
+              (declaration is MemberBuilder &&
+                  (node == declaration.readTarget ||
+                      node == declaration.invokeTarget ||
+                      node == declaration.writeTarget)) ||
               (declaration is ExtensionBuilder &&
-                  node == declaration.extension) ||
+                  reference == declaration.reference) ||
               (declaration is ExtensionTypeDeclarationBuilder &&
                   node == declaration.extensionTypeDeclaration),
           "Unexpected declaration ${declaration} (${declaration.runtimeType}) "
@@ -491,14 +487,14 @@ class DillLibraryBuilder extends LibraryBuilderImpl {
   @override
   // Coverage-ignore(suite): Not run.
   Iterator<T> fullMemberIterator<T extends Builder>() {
-    return nameSpace.filteredIterator<T>(
+    return libraryNameSpace.filteredIterator<T>(
         includeDuplicates: false, includeAugmentations: false);
   }
 
   @override
   // Coverage-ignore(suite): Not run.
   NameIterator<T> fullMemberNameIterator<T extends Builder>() {
-    return nameSpace.filteredNameIterator(
+    return libraryNameSpace.filteredNameIterator(
         includeDuplicates: false, includeAugmentations: false);
   }
 

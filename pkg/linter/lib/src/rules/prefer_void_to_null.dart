@@ -8,51 +8,15 @@ import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc =
     r"Don't use the Null type, unless you are positive that you don't want void.";
 
-const _details = r'''
-**DON'T** use the type Null where void would work.
-
-**BAD:**
-```dart
-Null f() {}
-Future<Null> f() {}
-Stream<Null> f() {}
-f(Null x) {}
-```
-
-**GOOD:**
-```dart
-void f() {}
-Future<void> f() {}
-Stream<void> f() {}
-f(void x) {}
-```
-
-Some exceptions include formulating special function types:
-
-```dart
-Null Function(Null, Null);
-```
-
-and for making empty literals which are safe to pass into read-only locations
-for any type of map or list:
-
-```dart
-<Null>[];
-<int, Null>{};
-```
-''';
-
 class PreferVoidToNull extends LintRule {
   PreferVoidToNull()
       : super(
-          name: 'prefer_void_to_null',
+          name: LintNames.prefer_void_to_null,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -81,8 +45,8 @@ class _Visitor extends SimpleAstVisitor<void> {
     // Make sure we're checking a return type.
     if (parent.returnType?.offset != node.offset) return false;
 
-    var member =
-        context.inheritanceManager.overriddenMember(parent.declaredElement);
+    var member = context.inheritanceManager
+        .overriddenMember2(parent.declaredFragment?.element);
     if (member == null) return false;
 
     var returnType = member.returnType;

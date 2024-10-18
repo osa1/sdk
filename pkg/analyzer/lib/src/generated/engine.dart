@@ -9,6 +9,7 @@ import 'package:analyzer/dart/analysis/analysis_options.dart';
 import 'package:analyzer/dart/analysis/code_style_options.dart';
 import 'package:analyzer/dart/analysis/declared_variables.dart';
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/analysis/formatter_options.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/instrumentation/instrumentation.dart';
@@ -40,9 +41,9 @@ typedef AnalyzeFunctionBodiesPredicate = bool Function(Source source);
 /// An analysis context also represents the state of the analysis, which includes
 /// knowing which sources have been included in the analysis (either directly or
 /// indirectly) and the results of the analysis. Sources must be added and
-/// removed from the context using the method [applyChanges], which is also used
-/// to notify the context when sources have been modified and, consequently,
-/// previously known results might have been invalidated.
+/// removed from the context, which is also used to notify the context when
+/// sources have been modified and, consequently, previously known results might
+/// have been invalidated.
 ///
 /// There are two ways to access the results of the analysis. The most common is
 /// to use one of the 'get' methods to access the results. The 'get' methods have
@@ -61,8 +62,7 @@ typedef AnalyzeFunctionBodiesPredicate = bool Function(Source source);
 /// However, this is not always acceptable. Some clients need to keep the
 /// analysis results up-to-date. For such clients there is a mechanism that
 /// allows them to incrementally perform needed analysis and get notified of the
-/// consequent changes to the analysis results. This mechanism is realized by the
-/// method [performAnalysisTask].
+/// consequent changes to the analysis results.
 ///
 /// Analysis engine allows for having more than one context. This can be used,
 /// for example, to perform one analysis based on the state of files on disk and
@@ -194,12 +194,11 @@ class AnalysisOptionsImpl implements AnalysisOptions {
   /// Return `true` if timing data should be gathered during execution.
   bool enableTiming = false;
 
-  /// A list of error processors that are to be used when reporting errors in
-  /// some analysis context.
-  List<ErrorProcessor>? _errorProcessors;
+  @override
+  List<ErrorProcessor> errorProcessors = [];
 
-  /// A list of exclude patterns used to exclude some sources from analysis.
-  List<String>? _excludePatterns;
+  @override
+  List<String> excludePatterns = [];
 
   /// The associated `analysis_options.yaml` file (or `null` if there is none).
   File? file;
@@ -210,12 +209,11 @@ class AnalysisOptionsImpl implements AnalysisOptions {
   @override
   bool warning = true;
 
-  /// The lint rules that are to be run in an analysis context if [lint] returns
-  /// `true`.
-  List<LintRule>? _lintRules;
+  @override
+  List<LintRule> lintRules = [];
 
   /// Indicates whether linter exceptions should be propagated to the caller (by
-  /// re-throwing them)
+  /// re-throwing them).
   bool propagateLinterExceptions = false;
 
   /// Whether implicit casts should be reported as potential problems.
@@ -239,36 +237,17 @@ class AnalysisOptionsImpl implements AnalysisOptions {
   @override
   late CodeStyleOptions codeStyleOptions;
 
-  /// The set of "un-ignorable" error names, as parsed in [AnalyzerOptions] from
-  /// an analysis options file.
+  @override
+  FormatterOptions formatterOptions = FormatterOptions();
+
+  /// The set of "un-ignorable" error names, as parsed from an analysis options
+  /// file.
   Set<String> unignorableNames = {};
 
   /// Initialize a newly created set of analysis options to have their default
   /// values.
   AnalysisOptionsImpl({this.file}) {
     codeStyleOptions = CodeStyleOptionsImpl(this, useFormatter: false);
-  }
-
-  /// Initialize a newly created set of analysis options to have the same values
-  /// as those in the given set of analysis [options].
-  AnalysisOptionsImpl.from(AnalysisOptions options) {
-    codeStyleOptions = options.codeStyleOptions;
-    contextFeatures = options.contextFeatures;
-    enabledLegacyPluginNames = options.enabledLegacyPluginNames;
-    errorProcessors = options.errorProcessors;
-    excludePatterns = options.excludePatterns;
-    lint = options.lint;
-    warning = options.warning;
-    lintRules = options.lintRules;
-    if (options is AnalysisOptionsImpl) {
-      file = options.file;
-      enableTiming = options.enableTiming;
-      propagateLinterExceptions = options.propagateLinterExceptions;
-      strictInference = options.strictInference;
-      strictRawTypes = options.strictRawTypes;
-    }
-    // ignore: deprecated_member_use_from_same_package
-    sdkVersionConstraint = options.sdkVersionConstraint;
   }
 
   @override
@@ -284,42 +263,11 @@ class AnalysisOptionsImpl implements AnalysisOptions {
   List<String> get enabledPluginNames => enabledLegacyPluginNames;
 
   @override
-  List<ErrorProcessor> get errorProcessors =>
-      _errorProcessors ??= const <ErrorProcessor>[];
-
-  /// Set the list of error [processors] that are to be used when reporting
-  /// errors in some analysis context.
-  set errorProcessors(List<ErrorProcessor> processors) {
-    _errorProcessors = processors;
-  }
-
-  @override
-  List<String> get excludePatterns => _excludePatterns ??= const <String>[];
-
-  /// Set the exclude patterns used to exclude some sources from analysis to
-  /// those in the given list of [patterns].
-  set excludePatterns(List<String> patterns) {
-    _excludePatterns = patterns;
-  }
-
-  /// The set of enabled experiments.
-  ExperimentStatus get experimentStatus => _contextFeatures;
-
-  @override
   bool get hint => warning;
 
   /// The implementation-specific setter for [hint].
   @Deprecated("Use 'warning=' instead")
   set hint(bool value) => warning = value;
-
-  @override
-  List<LintRule> get lintRules => _lintRules ??= const [];
-
-  /// Set the lint rules that are to be run in an analysis context if [lint]
-  /// returns `true`.
-  set lintRules(List<LintRule> rules) {
-    _lintRules = rules;
-  }
 
   Uint32List get signature {
     if (_signature == null) {
@@ -385,9 +333,7 @@ class AnalysisOptionsImpl implements AnalysisOptions {
     return _signatureForElements!;
   }
 
-  /// Return the opaque signature of the options that affect unlinked data.
-  ///
-  /// The length of the list is guaranteed to equal [unlinkedSignatureLength].
+  /// The opaque signature of the options that affect unlinked data.
   Uint32List get unlinkedSignature {
     if (_unlinkedSignature == null) {
       ApiSignature buffer = ApiSignature();

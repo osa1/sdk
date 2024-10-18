@@ -51,16 +51,11 @@ abstract class IDeclarationBuilder implements ITypeDeclarationBuilder {
 abstract class DeclarationBuilderImpl extends TypeDeclarationBuilderImpl
     implements IDeclarationBuilder {
   @override
-  final Uri fileUri;
-
-  DeclarationBuilderImpl(List<MetadataBuilder>? metadata, int modifiers,
-      String name, LibraryBuilder parent, this.fileUri, int fileOffset)
-      : super(metadata, modifiers, name, parent, fileOffset);
+  LibraryBuilder get parent;
 
   @override
   LibraryBuilder get libraryBuilder {
-    LibraryBuilder library = parent as LibraryBuilder;
-    return library.partOfLibrary ?? library;
+    return parent.partOfLibrary ?? parent;
   }
 
   @override

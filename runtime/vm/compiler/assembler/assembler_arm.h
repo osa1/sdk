@@ -863,20 +863,44 @@ class Assembler : public AssemblerBase {
   void MulImmediate(Register reg,
                     int32_t imm,
                     OperandSize width = kFourBytes) override {
+    MulImmediate(reg, reg, imm, width);
+  }
+  void MulImmediate(Register rd,
+                    Register rn,
+                    int32_t imm,
+                    OperandSize width = kFourBytes) {
     ASSERT(width == kFourBytes);
     if (Utils::IsPowerOfTwo(imm)) {
-      LslImmediate(reg, Utils::ShiftForPowerOfTwo(imm));
+      LslImmediate(rd, rn, Utils::ShiftForPowerOfTwo(imm));
     } else {
       LoadImmediate(TMP, imm);
-      mul(reg, reg, TMP);
+      mul(rd, rn, TMP);
     }
   }
-  void AndImmediate(Register rd, Register rs, int32_t imm, Condition cond = AL);
-  void AndImmediate(Register rd, int32_t imm, Condition cond) {
-    AndImmediate(rd, rd, imm, cond);
+  void AndImmediate(Register rd,
+                    Register rs,
+                    int32_t imm,
+                    OperandSize sz,
+                    Condition cond);
+  void AndImmediate(Register rd, Register rs, int32_t imm, Condition cond) {
+    AndImmediate(rd, rs, imm, kFourBytes, cond);
   }
-  void AndImmediate(Register rd, int32_t imm) override {
-    AndImmediate(rd, rd, imm, AL);
+  void AndImmediate(Register rd,
+                    Register rs,
+                    int32_t imm,
+                    OperandSize sz = kFourBytes) override {
+    AndImmediate(rd, rs, imm, sz, AL);
+  }
+  void AndImmediate(Register rd, int32_t imm, OperandSize sz, Condition cond) {
+    AndImmediate(rd, rd, imm, sz, cond);
+  }
+  void AndImmediate(Register rd, int32_t imm, Condition cond) {
+    AndImmediate(rd, rd, imm, kFourBytes, cond);
+  }
+  void AndImmediate(Register rd,
+                    int32_t imm,
+                    OperandSize sz = kFourBytes) override {
+    AndImmediate(rd, imm, sz, AL);
   }
   void AndImmediateSetFlags(Register rd,
                             Register rn,
@@ -895,17 +919,34 @@ class Assembler : public AssemblerBase {
   void OrImmediate(Register rd, int32_t imm, Condition cond = AL) {
     OrImmediate(rd, rd, imm, cond);
   }
-  void LslImmediate(Register rd, Register rn, int32_t shift) {
-    ASSERT((shift >= 0) && (shift < kBitsPerInt32));
-    Lsl(rd, rn, Operand(shift));
+  void XorImmediate(Register rd, Register rn, int32_t imm, Condition cond = AL);
+  void LslImmediate(Register rd,
+                    Register rn,
+                    int32_t shift,
+                    OperandSize sz = kFourBytes) override {
+    ASSERT(sz == kFourBytes || sz == kUnsignedFourBytes);
+    ASSERT((shift >= 0) && (shift < OperandSizeInBits(sz)));
+    if (shift != 0) {
+      Lsl(rd, rn, Operand(shift));
+    } else {
+      MoveRegister(rd, rn);
+    }
   }
-  void LslImmediate(Register rd, int32_t shift) { LslImmediate(rd, rd, shift); }
+  void LslImmediate(Register rd,
+                    int32_t shift,
+                    OperandSize sz = kFourBytes) override {
+    LslImmediate(rd, rd, shift, sz);
+  }
   void LslRegister(Register dst, Register shift) override {
     Lsl(dst, dst, shift);
   }
   void LsrImmediate(Register rd, Register rn, int32_t shift) {
     ASSERT((shift >= 0) && (shift < kBitsPerInt32));
-    Lsr(rd, rn, Operand(shift));
+    if (shift != 0) {
+      Lsr(rd, rn, Operand(shift));
+    } else {
+      MoveRegister(rd, rn);
+    }
   }
   void LsrImmediate(Register rd, int32_t shift) override {
     LsrImmediate(rd, rd, shift);
@@ -1375,7 +1416,15 @@ class Assembler : public AssemblerBase {
 
   void CheckCodePointer();
 
-  void ArithmeticShiftRightImmediate(Register reg, intptr_t shift) override;
+  void ArithmeticShiftRightImmediate(Register dst,
+                                     Register src,
+                                     int32_t shift,
+                                     OperandSize sz = kFourBytes) override;
+  void ArithmeticShiftRightImmediate(Register reg,
+                                     int32_t shift,
+                                     OperandSize sz = kFourBytes) override {
+    ArithmeticShiftRightImmediate(reg, reg, shift, sz);
+  }
   void CompareWords(Register reg1,
                     Register reg2,
                     intptr_t offset,

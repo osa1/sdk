@@ -44,10 +44,10 @@
 #   issue created for it.
 #
 # Stats:
-# -  42 "needsEvaluation"
-# - 306 "needsFix"
-# - 442 "hasFix"
-# - 517 "noFix"
+# -  54 "needsEvaluation"
+# - 308 "needsFix"
+# - 465 "hasFix"
+# - 514 "noFix"
 
 AnalysisOptionsErrorCode.INCLUDED_FILE_PARSE_ERROR:
   status: noFix
@@ -151,7 +151,9 @@ CompileTimeErrorCode.AMBIGUOUS_EXPORT:
   status: needsFix
   notes: |-
     For each exported name, add a fix to hide the name.
-CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS:
+CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS_THREE_OR_MORE:
+  status: hasFix
+CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS_TWO:
   status: hasFix
 CompileTimeErrorCode.AMBIGUOUS_IMPORT:
   status: needsFix
@@ -1850,6 +1852,8 @@ LintCode.always_specify_types_split_to_types:
   status: hasFix
 LintCode.always_use_package_imports:
   status: hasFix
+LintCode.analyzer_use_new_elements:
+  status: noFix
 LintCode.annotate_overrides:
   status: hasFix
 LintCode.annotate_redeclares:
@@ -2202,8 +2206,6 @@ LintCode.one_member_abstracts:
 LintCode.only_throw_errors:
   status: noFix
 LintCode.overridden_fields:
-  status: noFix
-LintCode.package_api_docs:
   status: noFix
 LintCode.package_names:
   status: noFix

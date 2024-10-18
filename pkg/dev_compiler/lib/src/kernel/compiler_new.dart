@@ -22,13 +22,13 @@ import 'package:kernel/type_environment.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_span/source_span.dart' show SourceLocation;
 
+import '../command/options.dart' show Options;
 import '../compiler/js_names.dart' as js_ast;
 import '../compiler/js_utils.dart' as js_ast;
 import '../compiler/module_builder.dart'
     show isSdkInternalRuntimeUri, libraryUriToJsIdentifier;
 import '../compiler/module_containers.dart' show ModuleItemContainer;
 import '../compiler/rewrite_async.dart';
-import '../compiler/shared_command.dart' show SharedCompilerOptions;
 import '../js_ast/js_ast.dart' as js_ast;
 import '../js_ast/js_ast.dart' show ModuleItem, js;
 import '../js_ast/source_map_printer.dart'
@@ -46,6 +46,10 @@ import 'target.dart' show allowedNativeTest;
 import 'type_environment.dart';
 import 'type_recipe_generator.dart';
 import 'type_table.dart';
+
+/// Name used as a prefix for extension symbols and the identifier of the object
+/// used to store them.
+final _extensionSymbolHolderName = 'dartx';
 
 /// Symbol data used to map library members kernel nodes to identifiers used
 /// in the compiled JavaScript.
@@ -84,7 +88,7 @@ class SymbolData {
 /// Compiles a kernel [Component] to a bundle of individual libraries.
 class LibraryBundleCompiler implements old.Compiler {
   final ClassHierarchy _hierarchy;
-  final SharedCompilerOptions _options;
+  final Options _options;
   final Map<Library, Component> _importToSummary;
   final Map<Component, String> _summaryToModule;
   final CoreTypes _coreTypes;
@@ -117,10 +121,11 @@ class LibraryBundleCompiler implements old.Compiler {
 
   @override
   js_ast.Program emitModule(Component component) {
+    assert(_options.emitLibraryBundle);
     _ticker?.logMs('Emitting library bundle');
     var compiledLibraries = <js_ast.Program>[];
     for (var library in component.libraries) {
-      var compiler = LibraryCompiler(
+      var libraryCompiler = LibraryCompiler(
         component,
         _hierarchy,
         _options,
@@ -130,8 +135,38 @@ class LibraryBundleCompiler implements old.Compiler {
         ticker: _ticker,
         symbolData: _symbolData,
       );
-      _libraryCompilers[library] = compiler;
-      compiledLibraries.add(compiler.emitLibrary(library));
+      _libraryCompilers[library] = libraryCompiler;
+      compiledLibraries.add(libraryCompiler.emitLibrary(library));
+    }
+    // TODO(nshahan): Nothing about these symbols requires them to be
+    // represented in a library. These could be moved to a construct outside
+    // of the language that is provided to libraries that need it.
+    if (component.libraries.contains(_coreTypes.coreLibrary)) {
+      // Collect all extension symbols from all SDK libraries.
+      var allSymbols = {
+        for (var compiler in _libraryCompilers.values)
+          ...compiler._extensionSymbols
+      };
+      // Create dartx library
+      var id = js_ast.Identifier(_extensionSymbolHolderName);
+      var statements = [
+        for (var entry in allSymbols.entries)
+          js.statement('# = Symbol(#);', [
+            js_ast.PropertyAccess(id, js.string(entry.key)),
+            js.string('$_extensionSymbolHolderName.${entry.key}')
+          ]),
+        js.statement('# = #', [
+          js_ast.PropertyAccess.field(id, 'link'),
+          js_ast.NamedFunction(
+              js_ast.TemporaryId('link__$_extensionSymbolHolderName'),
+              js_ast.Fun(const [], js_ast.Block(const [])))
+        ]),
+      ];
+
+      compiledLibraries.insert(
+          0,
+          js_ast.Program(statements,
+              name: _extensionSymbolHolderName, librarySelfVar: id));
     }
     return js_ast.LibraryBundle(compiledLibraries,
         header: _generateCompilationHeader());
@@ -174,7 +209,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     implements
         StatementVisitor<js_ast.Statement>,
         ExpressionVisitor<js_ast.Expression> {
-  final SharedCompilerOptions _options;
+  final Options _options;
   final SymbolData _symbolData;
 
   /// Maps each `Class` node compiled in the module to the `Identifier`s used to
@@ -251,9 +286,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// The class that is emitting its signature information, otherwise null.
   Class? _classEmittingSignatures;
 
-  /// True when a class is emitting a deferred class hierarchy.
-  bool _emittingDeferredType = false;
-
   /// The current type environment of type parameters introduced to the scope
   /// via generic classes and functions.
   DDCTypeEnvironment _currentTypeEnvironment = const EmptyTypeEnvironment();
@@ -282,9 +314,25 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// The current function being compiled, if any.
   FunctionNode? _currentFunction;
 
-  /// Statements in order they should be inserted into the body of the link
-  /// method for the current library.
-  final List<js_ast.Statement> _currentLibraryLinkFunctionBody = [];
+  /// Library link method statements that perform class hierarchy connections
+  /// like `class C extends E`.
+  final List<js_ast.Statement> _classExtendsLinks = [];
+
+  /// Library link method statements that define extension members on mixin
+  /// classes.
+  final List<js_ast.Statement> _mixinClassDefineExtensionMemberLinks = [];
+
+  /// Library link method statements that define extension members on classes.
+  final List<js_ast.Statement> _defineExtensionMemberLinks = [];
+
+  /// Library link method statements that apply mixins.
+  final List<js_ast.Statement> _mixinApplicationLinks = [];
+
+  /// Library link method statements that apply extensions on native types.
+  final List<js_ast.Statement> _nativeExtensionLinks = [];
+
+  /// Library link method statements that create type rules.
+  final List<js_ast.Statement> _typeRuleLinks = [];
 
   /// Whether the current function needs to insert parameter checks.
   ///
@@ -299,11 +347,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   /// Table of named and possibly hoisted types.
   late TypeTable _typeTable;
-
-  /// Table of instantiated generic class references.
-  ///
-  /// Provides a cache for the instantiated generic types local to a module.
-  late TypeTable _genericClassTable;
 
   /// The global extension type table.
   // TODO(jmesserly): rename to `_nativeTypes`
@@ -433,7 +476,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   /// Extension member symbols for adding Dart members to JS types.
   ///
-  /// These are added to the [_extensionSymbolsModule]; see that field for more
+  /// These are added to the [_extensionSymbolsLibraryId]; see that field for more
   /// information.
   final _extensionSymbols = <String, js_ast.TemporaryId>{};
 
@@ -442,7 +485,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   final _libraries = <Library, js_ast.Identifier>{};
 
   /// Imported libraries, and the temporaries used to refer to them.
-  final _imports = <Library, js_ast.TemporaryId>{};
+  final _imports = <Library, js_ast.Identifier>{};
 
   /// Incremental mode for expression compilation.
   ///
@@ -455,12 +498,15 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   /// The identifier used to reference DDC's core "dart:_runtime" library from
   /// generated JS code, typically called "dart" e.g. `dart.dcall`.
-  late final js_ast.Identifier _runtimeModule;
+  late final js_ast.Identifier _runtimeLibraryId;
+
+  /// The library referred to by [_runtimeLibraryId].
+  final Library _runtimeLibrary;
 
   /// The identifier used to reference DDC's "extension method" symbols, used to
   /// safely add Dart-specific member names to JavaScript classes, such as
   /// primitive types (e.g. String) or DOM types in "dart:html".
-  late final js_ast.Identifier _extensionSymbolsModule;
+  late final js_ast.Identifier _extensionSymbolsLibraryId;
 
   /// The identifier used to reference DDC's core "dart:_rti" library from
   /// generated JS code.
@@ -480,9 +526,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   ///
   /// This is initialized by [emitModule], which must be called before
   /// accessing this field.
-  // TODO(nshahan): Set to true if needed when the SDK can be compiled with this
-  // compiler.
-  final bool _isBuildingSdk = false;
+  late final bool _isBuildingSdk;
 
   /// Whether or not to move top level symbols into top-level containers.
   ///
@@ -547,7 +591,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   factory LibraryCompiler(
     Component component,
     ClassHierarchy hierarchy,
-    SharedCompilerOptions options,
+    Options options,
     Map<Library, Component> importToSummary,
     Map<Component, String> summaryToModule, {
     CoreTypes? coreTypes,
@@ -640,6 +684,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         _extensionIndex =
             ExtensionIndex(_coreTypes, _staticTypeContext.typeEnvironment),
         _inlineTester = BasicInlineTester(_constants),
+        _runtimeLibrary = sdk.getLibrary('dart:_runtime'),
         _rtiLibrary = sdk.getLibrary('dart:_rti'),
         _rtiClass = sdk.getClass('dart:_rti', 'Rti');
 
@@ -665,6 +710,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     _ticker?.logMs('Emitting library');
     _currentLibrary = library;
     _component = library.enclosingComponent!;
+    _isBuildingSdk = library.importUri.scheme == 'dart';
 
     // For runtime performance reasons, we only containerize SDK symbols in web
     // libraries. Otherwise, we use a 600-member cutoff before a module is
@@ -686,11 +732,9 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       });
       _containerizeSymbols = uniqueNames.length > 600;
     }
-    // TODO(nshahan): Refactor to use a single library.
-    var items = _startLibrary([library]);
+    var items = _startLibrary(library);
     _nullableInference.allowNotNullDeclarations = _isBuildingSdk;
     _typeTable = TypeTable('T', _runtimeCall);
-    _genericClassTable = TypeTable('G', _runtimeCall);
     // Insert a circular reference so neither the constant table or its cache
     // are optimized away by V8. Required for expression evaluation.
     var constTableDeclaration =
@@ -718,9 +762,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     // NOTE: classes are not necessarily emitted in this order.
     // Order will be changed as needed so the resulting code can execute.
     // This is done by forward declaring items.
-    if (!_isBuildingSdk) {
-      _forceLibraryImport(_rtiLibrary, _rtiLibraryId);
-    }
     _emitLibrary(library);
     _ticker?.logMs('Emitted library: ${library.importUri}');
 
@@ -731,7 +772,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     if (_constLazyAccessors.isNotEmpty) {
       var constTableBody = _runtimeStatement(
-          'defineLazy(#, { # }, false)', [_constTable, _constLazyAccessors]);
+          'defineLazy(#, { # })', [_constTable, _constLazyAccessors]);
       _moduleItems.insert(_constTableInsertionIndex, constTableBody);
       _constLazyAccessors.clear();
     }
@@ -772,7 +813,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         _runtimeCall('typeUniverse'),
         js.string(jsonEncode(typeRules), "'")
       ]).toStatement();
-      _moduleItems.add(addRulesStatement);
+      _typeRuleLinks.add(addRulesStatement);
     }
     // Update type rules for `LegacyJavaScriptObject` to add all interop
     // types in this module as a supertype.
@@ -790,7 +831,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         _runtimeCall('typeUniverse'),
         js.string(jsonEncode(updateRules), "'")
       ]);
-      _moduleItems.add(updateRulesStatement);
+      _typeRuleLinks.add(updateRulesStatement);
     }
     var jsInteropTypeRecipes = _typeRecipeGenerator.visitedJsInteropTypeRecipes;
     if (jsInteropTypeRecipes.isNotEmpty) {
@@ -808,7 +849,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       ]);
       var jsInteropRules = _runtimeStatement('addRtiResources(#, #)',
           [legacyJavaScriptObjectClassRef, interopRecipesArray]);
-      _moduleItems.add(jsInteropRules);
+      _typeRuleLinks.add(jsInteropRules);
     }
 
     // Annotates the type parameter variances for each interface.
@@ -823,7 +864,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         _runtimeCall('typeUniverse'),
         js.string(jsonEncode(typeVariances), "'")
       ]).toStatement();
-      _moduleItems.add(addTypeParameterVariancesStatement);
+      _typeRuleLinks.add(addTypeParameterVariancesStatement);
     }
 
     // Certain RTIs must be emitted during RTI normalization. We cache these
@@ -839,18 +880,10 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         var recipe = _typeRecipeGenerator
             .recipeInEnvironment(type, EmptyTypeEnvironment())
             .recipe;
-        _currentLibraryLinkFunctionBody.add(js.call('#.findType("$recipe")',
+        _typeRuleLinks.add(js.call('#.findType("$recipe")',
             [_emitLibraryName(_rtiLibrary)]).toStatement());
       });
     }
-    // Visit directives (for exports)
-    _emitExports(library);
-    _ticker?.logMs('Emitted exports');
-
-    // Declare imports and extension symbols
-    _emitImportsAndExtensionSymbols(items,
-        forceExtensionSymbols: allowedNativeTest(library.importUri));
-    _ticker?.logMs('Emitted imports and extension symbols');
 
     // Insert a check that runs when loading this module to verify that the null
     // safety mode it was compiled in matches the mode used when compiling the
@@ -876,13 +909,23 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
           '_checkModuleNullSafetyMode(#)', [soundNullSafety]));
     }
 
+    // Additional method used by the module system to link class hierarchies.
+    _moduleItems.add(_emitLibraryLinkMethod(_currentLibrary!));
+    _ticker?.logMs('Emitted library link method');
+
+    // Visit directives (for exports)
+    _emitExports(library);
+    _ticker?.logMs('Emitted exports');
+
+    // Declare imports and extension symbols
+    _emitImportsAndExtensionSymbols(items,
+        forceExtensionSymbols: allowedNativeTest(library.importUri));
+    _ticker?.logMs('Emitted imports and extension symbols');
+
     // Emit the hoisted type table cache variables
     items.addAll(_typeTable.dischargeBoundTypes());
     _ticker?.logMs('Emitted type table');
 
-    // Emit the hoisted instantiated generic class table cache variables
-    items.addAll(_genericClassTable.dischargeBoundTypes());
-    _ticker?.logMs('Emitted instantiated generic class table');
     var compiledLibrary = _finishLibrary(
         items, '${library.importUri}', _emitLibraryName(library));
     _ticker?.logMs('Finished emitting module');
@@ -906,7 +949,21 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     var functionName = _emitTemporaryId('link__${_jsLibraryName(library)}');
 
     var parameters = const <js_ast.Parameter>[];
-    var body = js_ast.Block(_currentLibraryLinkFunctionBody);
+    var body = js_ast.Block([
+      ..._classExtendsLinks,
+      // The ordering of extensions member definition and mixin applications
+      // is fragile but important for the correct functionality of the html and
+      // friends libraries. All mixins should have extension members defined
+      // before being applied. Mixin classes are handled here, regular mixins
+      // are handled inside the mixin application closure.
+      ..._mixinClassDefineExtensionMemberLinks,
+      ..._mixinApplicationLinks,
+      // Extension members defined and mixed in above will be discovered during
+      // the prototype walk during these extension member definitions.
+      ..._defineExtensionMemberLinks,
+      ..._nativeExtensionLinks,
+      ..._typeRuleLinks,
+    ]);
     var function =
         js_ast.NamedFunction(functionName, js_ast.Fun(parameters, body));
     return js.statement('# = #', [nameExpr, function]);
@@ -998,11 +1055,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   }
 
   void _emitLibrary(Library library) {
-    // NOTE: this method isn't the right place to initialize per-library state.
-    // Classes can be visited out of order, so this is only to catch things that
-    // haven't been emitted yet.
-    //
-    // See _emitClass.
     _staticTypeContext.enterLibrary(_currentLibrary!);
 
     if (_isBuildingSdk) {
@@ -1033,8 +1085,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       _emitLibraryProcedures(library);
       _emitTopLevelFields(library.fields);
     }
-    // Additional method used by the module system to link class hierarchies.
-    _moduleItems.add(_emitLibraryLinkMethod(library));
     _staticTypeContext.leaveLibrary(_currentLibrary!);
   }
 
@@ -1059,12 +1109,9 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   /// Called to emit class declarations.
   ///
-  /// During the course of emitting one item, we may emit another. For example
-  ///
-  ///     class D extends B { C m() { ... } }
-  ///
-  /// Because D depends on B, we'll emit B first if needed. However C is not
-  /// used by top-level JavaScript code, so we can ignore that dependency.
+  /// Class hierarchy links are collected but not emitted as part of the
+  /// declaration. Those operations will be contained in the link method for the
+  /// library.
   void _emitClass(Class c) {
     // Avoid attempting to compile classes we reach through emitting class
     // extends supertypes when they are not members of the library being
@@ -1106,22 +1153,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     _currentLibrary = savedLibrary;
     _currentUri = savedUri;
     _currentTypeEnvironment = savedTypeEnvironment;
-  }
-
-  /// To emit top-level classes, we sometimes need to reorder them.
-  ///
-  /// This function takes care of that, and also detects cases where reordering
-  /// failed, and we need to resort to lazy loading, by marking the element as
-  /// lazy. All elements need to be aware of this possibility and generate code
-  /// accordingly.
-  ///
-  /// If we are not emitting top-level code, this does nothing, because all
-  /// declarations are assumed to be available before we start execution.
-  /// See [startTopLevel].
-  void _declareBeforeUse(Class? c) {
-    if (c != null && _emittingClassExtends) {
-      _emitClass(c);
-    }
   }
 
   static js_ast.Identifier _emitIdentifier(String name) =>
@@ -1209,10 +1240,10 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         [className, js_ast.stringArray(implementedRecipes)]));
     _emitClassSignature(c, className, body);
     _initExtensionSymbols(c);
-    if (!c.isMixinDeclaration) {
-      // TODO(55547): Move "Extension member" manipulations to the library link
-      // method.
-      _defineExtensionMembers(className, body);
+    if (c.isMixinClass || c.isLegacyMixinEligible(_coreTypes)) {
+      _defineExtensionMembers(className, _mixinClassDefineExtensionMemberLinks);
+    } else if (!c.isMixinDeclaration) {
+      _defineExtensionMembers(className, _defineExtensionMemberLinks);
     }
 
     var typeFormals = c.typeParameters;
@@ -1231,7 +1262,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       // Avoid polluting the native JavaScript Object prototype with the members
       // of the Dart Core Object class.
       // Instead, just assign the identity equals method.
-      body.add(_runtimeStatement('_installIdentityEquals()'));
+      _nativeExtensionLinks.add(_runtimeStatement('_installIdentityEquals()'));
     } else {
       for (var peer in _extensionTypes.getNativePeers(c)) {
         _registerExtensionType(c, peer, body);
@@ -1305,47 +1336,12 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       js_ast.Expression? heritage, List<js_ast.Method> methods) {
     var classIdentifier = _emitTemporaryId(getLocalClassName(c));
     if (_options.emitDebugSymbols) classIdentifiers[c] = classIdentifier;
-    if (!requiresJsExtends(c)) {
-      if (heritage != null) {
-        _currentLibraryLinkFunctionBody.add(
-            _runtimeStatement('classExtends(#, #)', [className, heritage]));
-      }
-      heritage = null;
+    if (heritage != null) {
+      _classExtendsLinks
+          .add(_runtimeStatement('classExtends(#, #)', [className, heritage]));
     }
-    var classExpr = js_ast.ClassExpression(classIdentifier, heritage, methods);
+    var classExpr = js_ast.ClassExpression(classIdentifier, null, methods);
     return js.statement('# = #;', [className, classExpr]);
-  }
-
-  /// Returns `true` when the compiled representation of [cls] still needs
-  /// an `extends` clause in it.
-  ///
-  /// Eventually there should be no classes that require the use of the
-  /// JavaScript `extends` keyword and this test will be unnecessary.
-  bool requiresJsExtends(Class cls) {
-    // TODO(55545): Stop emitting `extends baseClass` when mixin applications
-    // classes can be linked in the library link method.
-    if (cls.isAnonymousMixin ||
-        cls.isMixinApplication ||
-        cls.isMixinDeclaration ||
-        cls.isMixinClass) {
-      return true;
-    }
-    if (_classProperties != null &&
-        (_classProperties!.extensionAccessors.isNotEmpty ||
-            _classProperties!.extensionMethods.isNotEmpty)) {
-      // TODO(55547): Stop emitting `extends baseClass` when classes with
-      // overrides of extension members added to native peers can be linked in
-      // the library link method.
-      return true;
-    }
-    // TODO(55547): Stop emitting `extends baseClass` when classes with native
-    // peers can be linked in the library link method.
-    return _extensionTypes.getNativePeers(cls).isNotEmpty ||
-        // The entire class hierarchy of classes with native peers must be
-        // available too.
-        _isDartLibrary(_currentLibrary!, '_interceptors') ||
-        _isDartLibrary(_currentLibrary!, 'typed_data') ||
-        _isDartLibrary(_currentLibrary!, '_native_typed_data');
   }
 
   /// Like [_emitClassStatement] but emits a Dart 2.1 mixin represented by
@@ -1395,6 +1391,10 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
     js_ast.Node arrowFnBody = mixinMemberClass;
     var extensionInit = <js_ast.Statement>[];
+    // The extension members need to be defined here when the class is created
+    // inside the `mixinOn` closure. The prototype chain is connected in this
+    // closure as well so it is safe to perform this operation here instead of
+    // the link method.
     _defineExtensionMembers(classId, extensionInit);
     if (extensionInit.isNotEmpty) {
       extensionInit.insert(0, mixinMemberClass.toStatement());
@@ -1420,42 +1420,10 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       return;
     }
 
-    js_ast.Expression emitDeferredClassRef(InterfaceType type) {
-      var savedEmittingDeferredType = _emittingDeferredType;
-      _emittingDeferredType = true;
-      _declareBeforeUse(type.classNode);
-      var deferredClassRef = _emitClassRef(type);
-      _emittingDeferredType = savedEmittingDeferredType;
-      return deferredClassRef;
-    }
-
-    bool shouldDefer(InterfaceType type) {
-      var visited = <DartType>{};
-      bool defer(InterfaceType t) {
-        var tc = t.classNode;
-        if (c == tc) return true;
-        if (tc == _coreTypes.objectClass || !visited.add(t)) return false;
-        var mixin = tc.mixedInType;
-        return mixin != null && defer(mixin.asInterfaceType) ||
-            defer(tc.supertype!.asInterfaceType);
-      }
-
-      return defer(type);
-    }
-
     js_ast.Expression emitClassRef(InterfaceType t) {
       // TODO(jmesserly): investigate this. It seems like `lazyJSType` is
       // invalid for use in an `extends` clause, hence this workaround.
       return _emitJSInterop(t.classNode) ?? _emitClassRef(t);
-    }
-
-    js_ast.Expression getBaseClass(int count) {
-      var base = emitDeferredClassRef(
-          c.getThisType(_coreTypes, c.enclosingLibrary.nonNullable));
-      while (--count >= 0) {
-        base = _emitJSObjectGetPrototypeOf(base, fullyQualifiedName: true);
-      }
-      return base;
     }
 
     // Find the real (user declared) superclass and the list of mixins.
@@ -1526,9 +1494,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     _classEmittingExtends = c;
 
     // Unroll mixins.
-    var baseClass = shouldDefer(supertype)
-        ? emitDeferredClassRef(supertype)
-        : emitClassRef(supertype);
+    var baseClass = emitClassRef(supertype);
 
     // TODO(jmesserly): we need to unroll kernel mixins because the synthetic
     // classes lack required synthetic members, such as constructors.
@@ -1537,7 +1503,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     for (var i = 0; i < mixinApplications.length; i++) {
       var m = mixinApplications[i]!;
       var mixinClass = m.isAnonymousMixin ? m.mixedInClass! : m;
-      _declareBeforeUse(mixinClass);
       var mixinType =
           _hierarchy.getClassAsInstanceOf(c, mixinClass)!.asInterfaceType;
       var mixinName =
@@ -1587,22 +1552,14 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       body.add(js.statement('const # = #', [
         mixinId,
         js_ast.ClassExpression(
-            _emitTemporaryId(mixinName), baseClass, forwardingMethodStubs)
+            _emitTemporaryId(mixinName), null, forwardingMethodStubs)
       ]));
-
+      _classExtendsLinks
+          .add(_runtimeStatement('classExtends(#, #)', [mixinId, baseClass]));
       emitMixinConstructors(mixinId, superclass, mixinClass, mixinType);
       hasUnnamedSuper = hasUnnamedSuper || _hasUnnamedConstructor(mixinClass);
-      // TODO(55545): Move these operations to the library link method.
-      if (shouldDefer(mixinType)) {
-        deferredSupertypes.add(() => _runtimeStatement('applyMixin(#, #)', [
-              getBaseClass(mixinApplications.length - i),
-              emitDeferredClassRef(mixinType)
-            ]));
-      } else {
-        body.add(_runtimeStatement(
-            'applyMixin(#, #)', [mixinId, emitClassRef(mixinType)]));
-      }
-
+      _mixinApplicationLinks.add(_runtimeStatement(
+          'applyMixin(#, #)', [mixinId, emitClassRef(mixinType)]));
       baseClass = mixinId;
     }
 
@@ -1670,7 +1627,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// if possible, otherwise define them as lazy properties.
   void _emitStaticFieldsAndAccessors(Class c, List<js_ast.Statement> body) {
     var fields = c.fields.where((f) => f.isStatic && !f.isExternal).toList();
-    var fieldNames = Set.from(fields.map((f) => f.name));
+    var fieldNames = Set.of(fields.map((f) => f.name));
     var staticSetters = c.procedures.where(
         (p) => p.isStatic && p.isAccessor && fieldNames.contains(p.name));
     var members = [...fields, ...staticSetters];
@@ -2777,7 +2734,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         // TODO(nshahan) Don't access values in `runtimeModule` outside of
         // `runtimeCall`.
         js.call('function() { return new #.JsIterator(this.#); }', [
-          _runtimeModule,
+          _emitLibraryName(_runtimeLibrary),
           _emitMemberName('iterator', memberClass: _coreTypes.iterableClass)
         ]) as js_ast.Fun);
   }
@@ -2790,7 +2747,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       body.add(_runtimeStatement(
           'definePrimitiveHashCode(#.prototype)', [className]));
     }
-    body.add(_runtimeStatement(
+    _nativeExtensionLinks.add(_runtimeStatement(
         'registerExtension(#, #)', [js.string(jsPeerName), className]));
   }
 
@@ -2892,8 +2849,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     }
     _currentUri = savedUri;
 
-    return _runtimeStatement(
-        'defineLazy(#, { # }, #)', [objExpr, accessors, js.boolean(false)]);
+    return _runtimeStatement('defineLazy(#, { # })', [objExpr, accessors]);
   }
 
   js_ast.Fun _emitStaticFieldInitializer(Field field) {
@@ -3543,8 +3499,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// using `_emitJSInteropClassNonExternalMembers`, and not the runtime type
   /// that we synthesize for `package:js` types.
   js_ast.Expression _emitClassRef(InterfaceType type) {
-    var cls = type.classNode;
-    _declareBeforeUse(cls);
     if (!_emittingClassExtends && type.typeArguments.isNotEmpty) {
       var genericName = _emitTopLevelNameNoExternalInterop(type.classNode);
       return js.call('#', [genericName]);
@@ -3579,7 +3533,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   ///
   /// If [isExternal] is false, emits the non-external name.
   js_ast.Expression _emitStaticClassName(Class c, bool isExternal) {
-    _declareBeforeUse(c);
     return isExternal
         ? _emitTopLevelName(c)
         : _emitTopLevelNameNoExternalInterop(c);
@@ -3618,7 +3571,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     _uriContainer = ModuleItemContainer<String>.asArray('I');
 
     _typeTable.typeContainer.setIncrementalMode();
-    _genericClassTable.typeContainer.setIncrementalMode();
   }
 
   /// Emits function after initial compilation.
@@ -3665,7 +3617,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     var body = js_ast.Block([
       ...extensionSymbols,
       ..._typeTable.dischargeBoundTypes(),
-      ..._genericClassTable.dischargeBoundTypes(),
       ..._symbolContainer.emit(),
       ..._emitConstTable(),
       ..._uriContainer.emit(),
@@ -3690,7 +3641,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
           .add(js.statement('const # = Object.create(null);', [_constTable]));
 
       constTable.add(_runtimeStatement(
-          'defineLazy(#, { # }, false)', [_constTable, _constLazyAccessors]));
+          'defineLazy(#, { # })', [_constTable, _constLazyAccessors]));
 
       constTable.addAll(_constTableCache.emit());
     }
@@ -6215,16 +6166,20 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       var typeArgs = node.arguments.types;
       var name = target.name.text;
 
-      if (args.isEmpty && typeArgs.length == 1) {
-        if (name == 'TYPE_REF') {
-          return _emitType(typeArgs.single);
+      if (args.isEmpty) {
+        if (typeArgs.isEmpty && name == 'DART_RUNTIME_LIBRARY') {
+          return _emitLibraryName(_runtimeLibrary);
         }
-        if (name == 'LEGACY_TYPE_REF') {
-          return _emitType(
-              typeArgs.single.withDeclaredNullability(Nullability.legacy));
+        if (typeArgs.length == 1) {
+          if (name == 'TYPE_REF') {
+            return _emitType(typeArgs.single);
+          }
+          if (name == 'LEGACY_TYPE_REF') {
+            return _emitType(
+                typeArgs.single.withDeclaredNullability(Nullability.legacy));
+          }
         }
       }
-
       if (args.length == 1) {
         if (name == 'getInterceptor') {
           var argExpression = args.single.accept(this);
@@ -7168,8 +7123,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   js_ast.Expression _emitConstList(
       DartType elementType, List<js_ast.Expression> elements) {
-    // dart.constList helper internally depends on _interceptors.JSArray.
-    _declareBeforeUse(_jsArrayClass);
     return _runtimeCall(
         'constList(#, [#])', [_emitType(elementType), elements]);
   }
@@ -7632,7 +7585,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   @override
   js_ast.Expression visitInstanceConstant(InstanceConstant node) {
-    _declareBeforeUse(node.classNode);
     var savedTypeEnvironment = _currentTypeEnvironment;
     if (node.classNode.typeParameters.isNotEmpty) {
       _currentTypeEnvironment =
@@ -7693,7 +7645,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
 
   @override
   js_ast.Expression visitStaticTearOffConstant(StaticTearOffConstant node) {
-    _declareBeforeUse(node.target.enclosingClass);
     return _emitStaticGet(node.target);
   }
 
@@ -7780,14 +7731,6 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
         'Unsupported auxiliary statement $node (${node.runtimeType}).');
   }
 
-  /// Adds an import mapping from [library] to [id].
-  ///
-  /// This is a temporary work around until imports can be manually added in
-  /// [_startLibrary].
-  void _forceLibraryImport(Library library, js_ast.TemporaryId id) {
-    _imports[library] = id;
-  }
-
   void _setEmitIfIncrementalLibrary(Library library) {
     if (_incrementalMode) {
       _setEmitIfIncremental(_libraryToModule(library), _jsLibraryName(library));
@@ -7871,8 +7814,8 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   ///     dart.asInt(<expr>)
   ///
   js_ast.Expression _runtimeCall(String code, [List<Object>? args]) {
-    _setEmitIfIncremental(_libraryToModule(_coreLibrary), _runtimeModule.name);
-    return js.call('#.$code', <Object>[_runtimeModule, ...?args]);
+    return js
+        .call('#.$code', <Object>[_emitLibraryName(_runtimeLibrary), ...?args]);
   }
 
   /// Calls [_runtimeCall] and uses `toStatement()` to convert the resulting
@@ -7915,14 +7858,14 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       _addSymbol(
           identifier,
           _runtimeCall('privateName(#, #)',
-              [_emitLibraryName(library), js.string(name)]));
+              [js.string('${library.importUri}'), js.string(name)]));
       if (!_containerizeSymbols) {
         // TODO(vsm): Change back to `const`.
         // See https://github.com/dart-lang/sdk/issues/40380.
         _moduleItems.add(js.statement('var # = #', [
           identifier,
-          _runtimeCall(
-              'privateName(#, #)', [_emitLibraryName(library), js.string(name)])
+          _runtimeCall('privateName(#, #)',
+              [js.string('${library.importUri}'), js.string(name)])
         ]));
       }
       return identifier;
@@ -7932,7 +7875,8 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     var symbolId = privateNames.putIfAbsent(name, initPrivateNameSymbol);
 
     _setEmitIfIncrementalLibrary(library);
-    _setEmitIfIncremental(_libraryToModule(_coreLibrary), _runtimeModule.name);
+    _setEmitIfIncremental(
+        _libraryToModule(_coreLibrary), _runtimeLibraryId.name);
     _symbolContainer.setEmitIfIncremental(symbolId);
 
     return symbolId;
@@ -7998,40 +7942,29 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   /// symbols into the list returned by this method. Finally, [_finishLibrary]
   /// can be called to complete the module and return the resulting JS AST.
   ///
-  /// This also initializes several fields: [_runtimeModule],
-  /// [_extensionSymbolsModule], and the [_libraries] map needed by
+  /// This also initializes several fields: [_runtimeLibraryId],
+  /// [_extensionSymbolsLibraryId], and the [_libraries] map needed by
   /// [_emitLibraryName].
-  List<js_ast.ModuleItem> _startLibrary(Iterable<Library> libraries) {
-    if (_isBuildingSdk) {
+  List<js_ast.ModuleItem> _startLibrary(Library library) {
+    if (_isSdkInternalRuntime(library)) {
       // Don't allow these to be renamed when we're building the SDK.
       // There is JS code in dart:* that depends on their names.
-      _runtimeModule = js_ast.Identifier('dart');
-      _extensionSymbolsModule = js_ast.Identifier('dartx');
+      _runtimeLibraryId = js_ast.Identifier('dart');
+      _extensionSymbolsLibraryId =
+          js_ast.Identifier(_extensionSymbolHolderName);
     } else {
       // Otherwise allow these to be renamed so users can write them.
-      _runtimeModule = js_ast.TemporaryId('dart');
-      _extensionSymbolsModule = js_ast.TemporaryId('dartx');
+      _runtimeLibraryId = js_ast.TemporaryId('dart');
+      _extensionSymbolsLibraryId =
+          js_ast.TemporaryId(_extensionSymbolHolderName);
     }
 
     // Initialize our library variables.
     var items = <js_ast.ModuleItem>[];
     var exports = <js_ast.NameSpecifier>[];
-
-    if (_isBuildingSdk) {
-      // Bootstrap the ability to create Dart library objects.
-      var libraryProto = js_ast.TemporaryId('_library');
-      items.add(js.statement('const # = Object.create(null)', libraryProto));
-      items.add(js.statement(
-          'const # = Object.create(#)', [_runtimeModule, libraryProto]));
-      items.add(js.statement('#.library = #', [_runtimeModule, libraryProto]));
-      exports.add(js_ast.NameSpecifier(_runtimeModule));
-    }
-
-    for (var library in libraries) {
-      if (_isBuildingSdk && _isSdkInternalRuntime(library)) {
-        _libraries[library] = _runtimeModule;
-        continue;
-      }
+    if (_isSdkInternalRuntime(library)) {
+      _libraries[library] = _runtimeLibraryId;
+    } else {
       var libraryId = _isBuildingSdk && _isDartLibrary(library, '_rti')
           ? _rtiLibraryId
           : js_ast.TemporaryId(_jsLibraryName(library));
@@ -8041,33 +7974,22 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       var aliasId = alias == null ? null : js_ast.TemporaryId(alias);
       exports.add(js_ast.NameSpecifier(libraryId, asName: aliasId));
     }
-
-    // dart:_runtime has a magic module that holds extension method symbols.
-    // TODO(jmesserly): find a cleaner design for this.
-    if (_isBuildingSdk) {
-      var id = _extensionSymbolsModule;
-      // TODO(vsm): Change back to `const`.
-      // See https://github.com/dart-lang/sdk/issues/40380.
-      items.add(js
-          .statement('var # = Object.create(#.library)', [id, _runtimeModule]));
-      exports.add(js_ast.NameSpecifier(id));
-    }
     items.add(js_ast.ExportDeclaration(js_ast.ExportClause(exports)));
 
-    if (_isBuildingSdk) {
+    if (_isSdkInternalRuntime(library)) {
       // Initialize the private name function.
       // To bootstrap the SDK, this needs to be emitted before other code.
-      var symbol = js_ast.TemporaryId('_privateNames');
-      items.add(js.statement('const # = Symbol("_privateNames")', symbol));
+      var privateNamesId = _emitTemporaryId('privateNames');
+      items.add(js.statement('const # = new Map()', privateNamesId));
       items.add(_runtimeStatement(r'''
-        privateName = function(library, name) {
-          let names = library[#];
-          if (names == null) names = library[#] = new Map();
+        privateName = function privateName(libraryUri, name) {
+          let names = #.get(libraryUri);
+          if (names == null) #.set(libraryUri, names = new Map());
           let symbol = names.get(name);
           if (symbol == null) names.set(name, symbol = Symbol(name));
           return symbol;
         }
-      ''', [symbol, symbol]));
+      ''', [privateNamesId, privateNamesId]));
     }
 
     return items;
@@ -8077,14 +7999,13 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
   js_ast.Identifier _emitLibraryName(Library library) {
     _setEmitIfIncrementalLibrary(library);
 
-    // Avoid adding the dart:_runtime to _imports when our runtime unit tests
-    // import it explicitly. It will always be implicitly imported.
-    if (_isSdkInternalRuntime(library)) return _runtimeModule;
-
     // It's either one of the libraries in this module, or it's an import.
     return _libraries[library] ??
-        _imports.putIfAbsent(
-            library, () => js_ast.TemporaryId(_jsLibraryName(library)));
+        _imports.putIfAbsent(library, () {
+          if (_isSdkInternalRuntime(library)) return _runtimeLibraryId;
+          if (_isDartLibrary(library, '_rti')) return _rtiLibraryId;
+          return js_ast.TemporaryId(_jsLibraryName(library));
+        });
   }
 
   /// Emits imports into [items].
@@ -8093,12 +8014,8 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
     for (var import in _imports.keys) {
       modules.putIfAbsent(_libraryToModule(import), () => []).add(import);
     }
-
-    String? coreModuleName;
-    if (!_libraries.containsKey(_coreLibrary)) {
-      coreModuleName = _libraryToModule(_coreLibrary);
-    }
-
+    // TODO(nshahan): Update this code and the representation of
+    // `ImportDeclaration`s when other module formats are no longer supported.
     modules.forEach((module, libraries) {
       if (!_incrementalMode || _incrementalModules.containsKey(module)) {
         var usedLibraries = _incrementalModules[module];
@@ -8130,22 +8047,11 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
             }
           }
         }
-        if (module == coreModuleName) {
-          if (!_incrementalMode ||
-              usedLibraries!.contains(_runtimeModule.name)) {
-            items.add(js_ast.ImportDeclaration(
-                from: js.string('dart:_runtime'),
-                namedImports: [js_ast.NameSpecifier(_runtimeModule)]));
-          }
-          if (!_incrementalMode ||
-              usedLibraries!.contains(_extensionSymbolsModule.name)) {
-            items.add(js_ast.ImportDeclaration(
-                from: js.string('dartx'),
-                namedImports: [js_ast.NameSpecifier(_extensionSymbolsModule)]));
-          }
-        }
       }
     });
+    items.add(js_ast.ImportDeclaration(
+        from: js.string(_extensionSymbolHolderName),
+        namedImports: [js_ast.NameSpecifier(_extensionSymbolsLibraryId)]));
   }
 
   /// Emits extension methods into [items].
@@ -8153,13 +8059,11 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       {bool forceExtensionSymbols = false}) {
     // Initialize extension symbols
     _extensionSymbols.forEach((name, id) {
-      js_ast.Expression value =
-          js_ast.PropertyAccess(_extensionSymbolsModule, _propertyName(name));
-      if (_isBuildingSdk) {
-        value = js.call('# = Symbol(#)', [value, js.string('dartx.$name')]);
-      } else if (forceExtensionSymbols) {
-        value = js.call(
-            '# || (# = Symbol(#))', [value, value, js.string('dartx.$name')]);
+      js_ast.Expression value = js_ast.PropertyAccess(
+          _extensionSymbolsLibraryId, _propertyName(name));
+      if (forceExtensionSymbols) {
+        value = js.call('# || (# = Symbol(#))',
+            [value, value, js.string('$_extensionSymbolHolderName.$name')]);
       }
       // Emit hoisted extension symbols that are marked as noEmit in regular as
       // well as incremental mode (if needed) since they are going to be
@@ -8175,7 +8079,7 @@ class LibraryCompiler extends ComputeOnceConstantVisitor<js_ast.Expression>
       }
       if (_symbolContainer.incrementalModuleItems.contains(id)) {
         _setEmitIfIncremental(
-            _libraryToModule(_coreLibrary), _extensionSymbolsModule.name);
+            _libraryToModule(_coreLibrary), _extensionSymbolsLibraryId.name);
       }
       _symbolContainer[id] = value;
     });

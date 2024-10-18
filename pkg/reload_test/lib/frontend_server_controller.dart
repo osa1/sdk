@@ -45,9 +45,11 @@ enum FrontendServerState {
   finished,
 }
 
-/// Controls and synchronizes the Frontend Server during hot reloaad tests.
+/// Controls and synchronizes the Frontend Server during hot reload tests.
 ///
 /// The Frontend Server accepts the following instructions:
+///
+/// ```
 /// > compile <input.dart>
 ///
 /// > recompile [<input.dart>] <boundary-key>
@@ -65,6 +67,7 @@ enum FrontendServerState {
 ///   <boundary-key>
 ///   [<error text or modified files prefixed by '-' or '+'>]
 ///   <boundary-key> [<output.dill>] <error-count>
+/// ```
 class HotReloadFrontendServerController {
   final List<String> frontendServerArgs;
 

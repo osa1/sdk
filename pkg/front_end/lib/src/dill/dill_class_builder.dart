@@ -8,7 +8,6 @@ import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
 import '../base/loader.dart';
-import '../base/modifier.dart' show abstractMask, namedMixinApplicationMask;
 import '../base/name_space.dart';
 import '../base/problems.dart' show unimplemented;
 import '../base/scope.dart';
@@ -50,6 +49,9 @@ mixin DillClassMemberAccessMixin implements ClassMemberAccess {
 class DillClassBuilder extends ClassBuilderImpl
     with DillClassMemberAccessMixin {
   @override
+  final DillLibraryBuilder parent;
+
+  @override
   final Class cls;
 
   late final LookupScope _scope;
@@ -64,16 +66,23 @@ class DillClassBuilder extends ClassBuilderImpl
 
   List<TypeBuilder>? _interfaceBuilders;
 
-  DillClassBuilder(this.cls, DillLibraryBuilder parent)
-      : _nameSpace = new DeclarationNameSpaceImpl(),
-        super(/*metadata builders*/ null, computeModifiers(cls), cls.name,
-            parent, cls.fileUri, cls.fileOffset) {
+  DillClassBuilder(this.cls, this.parent)
+      : _nameSpace = new DeclarationNameSpaceImpl() {
     _scope = new NameSpaceLookupScope(
         _nameSpace, ScopeKind.declaration, "class ${cls.name}",
         parent: parent.scope);
     _constructorScope =
         new DeclarationNameSpaceConstructorScope(cls.name, _nameSpace);
   }
+
+  @override
+  int get charOffset => cls.fileOffset;
+
+  @override
+  String get name => cls.name;
+
+  @override
+  Uri get fileUri => cls.fileUri;
 
   @override
   // Coverage-ignore(suite): Not run.
@@ -117,6 +126,12 @@ class DillClassBuilder extends ClassBuilderImpl
   bool get isFinal => cls.isFinal;
 
   @override
+  bool get isAbstract => cls.isAbstract;
+
+  @override
+  bool get isNamedMixinApplication => cls.isMixinApplication;
+
+  @override
   List<NominalVariableBuilder>? get typeVariables {
     List<NominalVariableBuilder>? typeVariables = _typeVariables;
     if (typeVariables == null && cls.typeParameters.isNotEmpty) {
@@ -125,9 +140,6 @@ class DillClassBuilder extends ClassBuilderImpl
     }
     return typeVariables;
   }
-
-  @override
-  Uri get fileUri => cls.fileUri;
 
   @override
   TypeBuilder? get supertypeBuilder {
@@ -146,22 +158,23 @@ class DillClassBuilder extends ClassBuilderImpl
   List<TypeBuilder>? get onTypes => null;
 
   void addField(Field field) {
-    DillFieldBuilder builder = new DillFieldBuilder(field, this);
+    DillFieldBuilder builder =
+        new DillFieldBuilder(field, libraryBuilder, this);
     String name = field.name.text;
     nameSpace.addLocalMember(name, builder, setter: false);
   }
 
   void addConstructor(Constructor constructor, Procedure? constructorTearOff) {
-    DillConstructorBuilder builder =
-        new DillConstructorBuilder(constructor, constructorTearOff, this);
+    DillConstructorBuilder builder = new DillConstructorBuilder(
+        constructor, constructorTearOff, libraryBuilder, this);
     String name = constructor.name.text;
     nameSpace.addConstructor(name, builder);
   }
 
   void addFactory(Procedure factory, Procedure? factoryTearOff) {
     String name = factory.name.text;
-    nameSpace.addConstructor(
-        name, new DillFactoryBuilder(factory, factoryTearOff, this));
+    nameSpace.addConstructor(name,
+        new DillFactoryBuilder(factory, factoryTearOff, libraryBuilder, this));
   }
 
   void addProcedure(Procedure procedure) {
@@ -171,19 +184,23 @@ class DillClassBuilder extends ClassBuilderImpl
         // Coverage-ignore(suite): Not run.
         throw new UnsupportedError("Use addFactory for adding factories");
       case ProcedureKind.Setter:
-        nameSpace.addLocalMember(name, new DillSetterBuilder(procedure, this),
+        nameSpace.addLocalMember(
+            name, new DillSetterBuilder(procedure, libraryBuilder, this),
             setter: true);
         break;
       case ProcedureKind.Getter:
-        nameSpace.addLocalMember(name, new DillGetterBuilder(procedure, this),
+        nameSpace.addLocalMember(
+            name, new DillGetterBuilder(procedure, libraryBuilder, this),
             setter: false);
         break;
       case ProcedureKind.Operator:
-        nameSpace.addLocalMember(name, new DillOperatorBuilder(procedure, this),
+        nameSpace.addLocalMember(
+            name, new DillOperatorBuilder(procedure, libraryBuilder, this),
             setter: false);
         break;
       case ProcedureKind.Method:
-        nameSpace.addLocalMember(name, new DillMethodBuilder(procedure, this),
+        nameSpace.addLocalMember(
+            name, new DillMethodBuilder(procedure, libraryBuilder, this),
             setter: false);
         break;
     }
@@ -252,17 +269,6 @@ class DillClassBuilder extends ClassBuilderImpl
     _interfaceBuilders = null;
     _typeVariables = null;
   }
-}
-
-int computeModifiers(Class cls) {
-  int modifiers = 0;
-  if (cls.isAbstract) {
-    modifiers |= abstractMask;
-  }
-  if (cls.isMixinApplication) {
-    modifiers |= namedMixinApplicationMask;
-  }
-  return modifiers;
 }
 
 TypeBuilder? computeTypeBuilder(

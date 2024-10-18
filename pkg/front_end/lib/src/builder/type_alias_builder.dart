@@ -9,7 +9,13 @@ abstract class TypeAliasBuilder implements TypeDeclarationBuilder {
   TypeBuilder get type;
 
   /// The [Typedef] built by this builder.
+  ///
+  /// For a typedef built from source, this is only available after AST nodes
+  /// have been built in [SourceLoader.buildOutlineNodes].
   Typedef get typedef;
+
+  /// Reference for the typedef built by this builder.
+  Reference get reference;
 
   DartType? thisType;
 
@@ -123,25 +129,15 @@ abstract class TypeAliasBuilder implements TypeDeclarationBuilder {
 
 abstract class TypeAliasBuilderImpl extends TypeDeclarationBuilderImpl
     implements TypeAliasBuilder {
-  @override
-  final Uri fileUri;
-
   TypeBuilder? _unaliasedRhsType;
 
   List<TypeAliasBuilder> _typeAliasesUsedInUnaliasing = [];
-
-  TypeAliasBuilderImpl(List<MetadataBuilder>? metadata, String name,
-      LibraryBuilder parent, this.fileUri, int fileOffset)
-      : super(metadata, 0, name, parent, fileOffset);
 
   @override
   String get debugName => "TypeAliasBuilder";
 
   @override
-  LibraryBuilder get parent => super.parent as LibraryBuilder;
-
-  @override
-  LibraryBuilder get libraryBuilder => super.parent as LibraryBuilder;
+  LibraryBuilder get libraryBuilder => parent;
 
   /// [arguments] have already been built.
   @override

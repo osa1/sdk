@@ -7,37 +7,14 @@ import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Unnecessary new keyword.';
-
-const _details = r'''
-**AVOID** new keyword to create instances.
-
-**BAD:**
-```dart
-class A { A(); }
-m(){
-  final a = new A();
-}
-```
-
-**GOOD:**
-```dart
-class A { A(); }
-m(){
-  final a = A();
-}
-```
-
-''';
 
 class UnnecessaryNew extends LintRule {
   UnnecessaryNew()
       : super(
-          name: 'unnecessary_new',
+          name: LintNames.unnecessary_new,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -54,7 +31,7 @@ class UnnecessaryNew extends LintRule {
   }
 }
 
-class _Visitor extends SimpleAstVisitor {
+class _Visitor extends SimpleAstVisitor<void> {
   final LintRule rule;
   _Visitor(this.rule);
 

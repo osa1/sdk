@@ -5,6 +5,7 @@
 library fasta.test.textual_outline_test;
 
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:_fe_analyzer_shared/src/scanner/abstract_scanner.dart'
     show ScannerConfiguration;
@@ -110,7 +111,7 @@ class TextualOutline extends Step<TestDescription, TestDescription, Context> {
     Map<ExperimentalFlag, bool> experimentalFlagsExplicit =
         folderOptions.computeExplicitExperimentalFlags(const {});
 
-    List<int> bytes = new File.fromUri(description.uri).readAsBytesSync();
+    Uint8List bytes = new File.fromUri(description.uri).readAsBytesSync();
     for (bool modelled in [false, true]) {
       TextualOutlineInfoForTesting info = new TextualOutlineInfoForTesting();
       String? result = textualOutline(
@@ -157,7 +158,13 @@ class TextualOutline extends Step<TestDescription, TestDescription, Context> {
               experimentFlags.add(entry.key.name);
             }
           }
-          result = new DartFormatter(experimentFlags: experimentFlags)
+
+          // Default to the latest language version. If the test should be at
+          // an older language version, it will contain a `// @dart=x.y`
+          // comment, which takes precedence over this argument.
+          result = new DartFormatter(
+                  languageVersion: DartFormatter.latestLanguageVersion,
+                  experimentFlags: experimentFlags)
               .format(result);
         } catch (e, st) {
           formatterException = e;

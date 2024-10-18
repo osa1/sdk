@@ -9,10 +9,14 @@ import 'package:analysis_server/protocol/protocol.dart';
 import 'package:analysis_server/protocol/protocol_generated.dart';
 import 'package:analysis_server/src/legacy_analysis_server.dart';
 import 'package:analysis_server/src/protocol/protocol_internal.dart';
+import 'package:analyzer/dart/analysis/results.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/src/dart/error/syntactic_errors.g.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
 import 'package:analyzer/src/utilities/cancellation.dart';
+import 'package:dart_style/dart_style.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 /// A request handler for the completion domain.
 abstract class CompletionHandler extends LegacyHandler {
@@ -94,5 +98,23 @@ abstract class LegacyHandler {
   void sendSearchResults(SearchResultsParams params) {
     server.sendNotification(
         params.toNotification(clientUriConverter: server.uriConverter));
+  }
+}
+
+extension LibraryElement2Extension on LibraryElement2 {
+  // TODO(dantup): Remove this once we can use `languageVersion.effective`
+  //  in element-model-migrated files without triggering the lint.
+  Version get effectiveLanguageVersion {
+    return languageVersion.effective;
+  }
+}
+
+extension SomeResolvedLibraryResultExtension on SomeResolvedLibraryResult? {
+  Version get effectiveLanguageVersion {
+    var self = this;
+    if (self is ResolvedLibraryResult) {
+      return self.element.languageVersion.effective;
+    }
+    return DartFormatter.latestLanguageVersion;
   }
 }

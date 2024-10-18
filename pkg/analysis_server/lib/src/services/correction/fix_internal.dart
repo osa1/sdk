@@ -233,6 +233,7 @@ import 'package:analysis_server/src/services/correction/dart/split_multiple_decl
 import 'package:analysis_server/src/services/correction/dart/surround_with_parentheses.dart';
 import 'package:analysis_server/src/services/correction/dart/update_sdk_constraints.dart';
 import 'package:analysis_server/src/services/correction/dart/use_curly_braces.dart';
+import 'package:analysis_server/src/services/correction/dart/use_different_division_operator.dart';
 import 'package:analysis_server/src/services/correction/dart/use_effective_integer_division.dart';
 import 'package:analysis_server/src/services/correction/dart/use_eq_eq_null.dart';
 import 'package:analysis_server/src/services/correction/dart/use_is_not_empty.dart';
@@ -246,7 +247,7 @@ import 'package:analyzer/error/error.dart';
 import 'package:analyzer/src/dart/error/ffi_code.g.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/generated/parser.dart';
-import 'package:linter/src/linter_lint_codes.dart';
+import 'package:linter/src/lint_codes.dart';
 
 final _builtInLintMultiProducers = {
   LinterLintCode.comment_references: [
@@ -747,7 +748,10 @@ final _builtInLintProducers = <LintCode, List<ProducerGenerator>>{
 };
 
 final _builtInNonLintMultiProducers = {
-  CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS: [
+  CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS_TWO: [
+    AddExtensionOverride.new,
+  ],
+  CompileTimeErrorCode.AMBIGUOUS_EXTENSION_MEMBER_ACCESS_THREE_OR_MORE: [
     AddExtensionOverride.new,
   ],
   CompileTimeErrorCode.ARGUMENT_TYPE_NOT_ASSIGNABLE: [
@@ -881,6 +885,7 @@ final _builtInNonLintMultiProducers = {
   ],
   CompileTimeErrorCode.UNDEFINED_OPERATOR: [
     ImportLibrary.forExtensionMember,
+    UseDifferentDivisionOperator.new,
   ],
   CompileTimeErrorCode.UNDEFINED_PREFIXED_NAME: [
     DataDriven.new,
@@ -939,6 +944,7 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     AddExplicitCast.new,
     AddNullCheck.new,
     WrapInText.new,
+    AddAwait.argumentType,
   ],
   CompileTimeErrorCode.ASYNC_FOR_IN_WRONG_CONTEXT: [
     AddAsync.new,
@@ -1102,6 +1108,7 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     AddNullCheck.new,
     ChangeTypeAnnotation.new,
     MakeVariableNullable.new,
+    AddAwait.assignment,
   ],
   CompileTimeErrorCode.INVALID_CONSTANT: [
     RemoveConst.new,

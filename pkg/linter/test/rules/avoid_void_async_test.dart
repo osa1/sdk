@@ -15,7 +15,7 @@ main() {
 @reflectiveTest
 class AvoidVoidAsyncTest extends LintRuleTest {
   @override
-  String get lintRule => 'avoid_void_async';
+  String get lintRule => LintNames.avoid_void_async;
 
   test_function_async_futureVoidReturnType_arrow() async {
     await assertNoDiagnostics(r'''
@@ -112,7 +112,6 @@ void f() {
     ]);
   }
 
-  @FailingTest(issue: 'https://github.com/dart-lang/linter/issues/4941')
   test_functionLocal_main_async_arrow() async {
     await assertDiagnostics(r'''
 void f() {

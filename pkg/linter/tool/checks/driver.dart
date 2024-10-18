@@ -22,6 +22,7 @@ import 'package:path/path.dart' as path;
 
 import '../../test/mocks.dart';
 import 'rules/no_solo_tests.dart';
+import 'rules/no_trailing_spaces.dart';
 import 'rules/visit_registered_nodes.dart';
 
 Future<void> main() async {
@@ -31,7 +32,11 @@ Future<void> main() async {
   }
 }
 
-var customChecks = [VisitRegisteredNodes(), NoSoloTests()];
+var customChecks = [
+  VisitRegisteredNodes(),
+  NoSoloTests(),
+  NoTrailingSpaces(),
+];
 
 Future<List<AnalysisError>> runChecks() async {
   var rules =
@@ -108,9 +113,7 @@ class Driver {
           }
         }
       }
-      ReportFormatter(
-              errors, null /*_TodoFilter()*/, silent ? MockIOSink() : io.stdout)
-          .write();
+      ReportFormatter(errors, silent ? MockIOSink() : io.stdout).write();
 
       for (var info in errors) {
         failedChecks.addAll(info.errors);

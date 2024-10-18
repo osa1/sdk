@@ -10,6 +10,7 @@ import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
 import '../base/messages.dart';
+import '../base/modifiers.dart';
 import '../base/name_space.dart';
 import '../base/problems.dart';
 import '../base/scope.dart';
@@ -30,6 +31,7 @@ import '../kernel/hierarchy/hierarchy_builder.dart';
 import '../kernel/kernel_helper.dart';
 import '../type_inference/type_inference_engine.dart';
 import 'class_declaration.dart';
+import 'name_scheme.dart';
 import 'source_builder_mixins.dart';
 import 'source_constructor_builder.dart';
 import 'source_factory_builder.dart';
@@ -48,9 +50,23 @@ class SourceExtensionTypeDeclarationBuilder
         Comparable<SourceExtensionTypeDeclarationBuilder>,
         ClassDeclaration {
   @override
+  final SourceLibraryBuilder parent;
+
+  @override
+  final int charOffset;
+
+  @override
+  final String name;
+
+  @override
+  final Uri fileUri;
+
+  final Modifiers _modifiers;
+
+  @override
   final List<ConstructorReferenceBuilder>? constructorReferences;
 
-  final ExtensionTypeDeclaration _extensionTypeDeclaration;
+  late final ExtensionTypeDeclaration _extensionTypeDeclaration;
 
   SourceExtensionTypeDeclarationBuilder? _origin;
 
@@ -73,6 +89,8 @@ class SourceExtensionTypeDeclarationBuilder
   @override
   List<TypeBuilder>? interfaceBuilders;
 
+  final ExtensionTypeFragment _introductory;
+
   FieldFragment? _representationFieldFragment;
 
   SourceFieldBuilder? _representationFieldBuilder;
@@ -82,32 +100,43 @@ class SourceExtensionTypeDeclarationBuilder
   Nullability? _nullability;
 
   SourceExtensionTypeDeclarationBuilder(
-      {required List<MetadataBuilder>? metadata,
-      required int modifiers,
-      required String name,
-      required this.typeParameters,
-      required this.interfaceBuilders,
-      required this.typeParameterScope,
-      required DeclarationNameSpaceBuilder nameSpaceBuilder,
+      {required this.name,
       required SourceLibraryBuilder enclosingLibraryBuilder,
       required this.constructorReferences,
-      required Uri fileUri,
+      required this.fileUri,
       required int startOffset,
       required int nameOffset,
       required int endOffset,
+      required ExtensionTypeFragment fragment,
       required this.indexedContainer,
       required FieldFragment? representationFieldFragment})
-      : _extensionTypeDeclaration = new ExtensionTypeDeclaration(
-            name: name,
-            fileUri: fileUri,
-            typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
-                typeParameters),
-            reference: indexedContainer?.reference)
-          ..fileOffset = nameOffset,
-        _nameSpaceBuilder = nameSpaceBuilder,
-        _representationFieldFragment = representationFieldFragment,
-        super(metadata, modifiers, name, enclosingLibraryBuilder, fileUri,
-            nameOffset);
+      : parent = enclosingLibraryBuilder,
+        charOffset = nameOffset,
+        _modifiers = fragment.modifiers,
+        typeParameters = fragment.typeParameters,
+        interfaceBuilders = fragment.interfaces,
+        typeParameterScope = fragment.typeParameterScope,
+        _introductory = fragment,
+        _nameSpaceBuilder = fragment.toDeclarationNameSpaceBuilder(),
+        _representationFieldFragment = representationFieldFragment {
+    _introductory.builder = this;
+    _introductory.bodyScope.declarationBuilder = this;
+
+    // TODO(johnniwinther): Move this to the [build] once augmentations are
+    // handled through fragments.
+    _extensionTypeDeclaration = new ExtensionTypeDeclaration(
+        name: name,
+        fileUri: fileUri,
+        typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
+            fragment.typeParameters),
+        reference: indexedContainer?.reference)
+      ..fileOffset = nameOffset;
+  }
+
+  // Coverage-ignore(suite): Not run.
+  // TODO(johnniwinther): Avoid exposing this. Annotations for macros and
+  //  patches should be computing from within the builder.
+  List<MetadataBuilder>? get metadata => _introductory.metadata;
 
   @override
   LookupScope get scope => _scope;
@@ -117,6 +146,21 @@ class SourceExtensionTypeDeclarationBuilder
 
   @override
   ConstructorScope get constructorScope => _constructorScope;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isConst => _modifiers.isConst;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isFinal => _modifiers.isFinal;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isStatic => _modifiers.isStatic;
+
+  @override
+  bool get isAugment => _modifiers.isAugment;
 
   SourceFieldBuilder? get representationFieldBuilder {
     if (_representationFieldBuilder == null) {
@@ -132,7 +176,11 @@ class SourceExtensionTypeDeclarationBuilder
         loader: libraryBuilder.loader,
         problemReporting: libraryBuilder,
         enclosingLibraryBuilder: libraryBuilder,
-        declarationBuilder: this);
+        declarationBuilder: this,
+        indexedLibrary: libraryBuilder.indexedLibrary,
+        indexedContainer: indexedContainer,
+        containerType: ContainerType.ExtensionType,
+        containerName: new ClassName(name));
     _scope = new NameSpaceLookupScope(
         _nameSpace, ScopeKind.declaration, "extension type $name",
         parent: typeParameterScope);
@@ -683,6 +731,17 @@ class SourceExtensionTypeDeclarationBuilder
   @override
   void buildOutlineExpressions(ClassHierarchy classHierarchy,
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
+    MetadataBuilder.buildAnnotations(
+        annotatable,
+        _introductory.metadata,
+        createBodyBuilderContext(
+            inOutlineBuildingPhase: true,
+            inMetadata: true,
+            inConstFields: false),
+        libraryBuilder,
+        _introductory.fileUri,
+        libraryBuilder.scope);
+
     super.buildOutlineExpressions(classHierarchy, delayedDefaultValueCloners);
 
     Iterator<SourceMemberBuilder> iterator =

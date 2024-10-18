@@ -9,7 +9,6 @@ import 'package:analysis_server/src/services/refactoring/legacy/naming_conventio
 import 'package:analysis_server/src/services/refactoring/legacy/refactoring.dart';
 import 'package:analysis_server/src/services/search/hierarchy.dart';
 import 'package:analysis_server/src/utilities/change_builder.dart';
-import 'package:analysis_server/src/utilities/extensions/flutter.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/source/line_info.dart';
@@ -18,6 +17,7 @@ import 'package:analyzer/src/dart/micro/resolve_file.dart';
 import 'package:analyzer/src/dart/micro/utils.dart';
 import 'package:analyzer/src/generated/java_core.dart';
 import 'package:analyzer/src/utilities/extensions/collection.dart';
+import 'package:analyzer/src/utilities/extensions/flutter.dart';
 
 class CanRenameResponse {
   final LineInfo lineInfo;
@@ -217,7 +217,7 @@ class CheckNameResponse {
       }
     } else if (element is LibraryImportElement) {
       var unit = (await canRename._fileResolver.resolve(path: sourcePath)).unit;
-      var index = element.library.libraryImports.indexOf(element);
+      var index = element.enclosingElement3.libraryImports.indexOf(element);
       var node = unit.directives.whereType<ImportDirective>().elementAt(index);
       var prefixNode = node.prefix;
       if (newName.isEmpty) {

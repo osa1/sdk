@@ -4,50 +4,20 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 // ignore: implementation_imports
 import 'package:analyzer/src/dart/element/extensions.dart';
 import 'package:meta/meta_meta.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Attach library annotations to library directives.';
-
-const _details = r'''
-Attach library annotations to library directives, rather than
-some other library-level element.
-
-**BAD:**
-```dart
-@TestOn('browser')
-
-import 'package:test/test.dart';
-
-void main() {}
-```
-
-**GOOD:**
-```dart
-@TestOn('browser')
-library;
-
-import 'package:test/test.dart';
-
-void main() {}
-```
-
-**NOTE:** An unnamed library, like `library;` above, is only supported in Dart
-2.19 and later. Code which might run in earlier versions of Dart will need to
-provide a name in the `library` directive.
-''';
 
 class LibraryAnnotations extends LintRule {
   LibraryAnnotations()
       : super(
-          name: 'library_annotations',
+          name: LintNames.library_annotations,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -118,9 +88,9 @@ extension on ElementAnnotation {
     required String libraryName,
     required String className,
   }) {
-    var element = this.element;
-    return element is ConstructorElement &&
-        element.enclosingElement3.name == className &&
-        element.library.name == libraryName;
+    var element = element2;
+    return element is ConstructorElement2 &&
+        element.enclosingElement2.name == className &&
+        element.library2?.name == libraryName;
   }
 }

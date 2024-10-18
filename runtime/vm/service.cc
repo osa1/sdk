@@ -445,7 +445,7 @@ void RingServiceIdZone::VisitPointers(ObjectPointerVisitor& visitor) const {
 
 void RingServiceIdZone::PrintJSON(JSONStream& js) const {
   JSONObject jsobj(&js);
-  jsobj.AddProperty("type", "_IdZone");
+  jsobj.AddProperty("type", "IdZone");
   jsobj.AddPropertyF("id", "zones/%" Pd, id());
   jsobj.AddProperty("backingBufferKind", "Ring");
   switch (policy()) {
@@ -1042,7 +1042,7 @@ ErrorPtr Service::InvokeMethod(Isolate* I,
     // are about to create, meaning that it is where temporary Service IDs may
     // be allocated by the RPC currently being handled.
     RingServiceIdZone* id_zone = &isolate.EnsureDefaultServiceIdZone();
-    const char* id_zone_id_arg = js.LookupParam("_idZoneId");
+    const char* id_zone_id_arg = js.LookupParam("idZoneId");
     if (id_zone_id_arg != nullptr) {
       intptr_t id_zone_id = ServiceIdZone::StringIdToInt(id_zone_id_arg);
       if (id_zone_id != -1) {
@@ -1053,7 +1053,7 @@ ErrorPtr Service::InvokeMethod(Isolate* I,
     }
 
     if (id_zone == nullptr) {
-      PrintInvalidParamError(&js, "_idZoneId");
+      PrintInvalidParamError(&js, "idZoneId");
       js.PostReply();
       return T->StealStickyError();
     }
@@ -2991,8 +2991,35 @@ static void CollectStringifiedType(Thread* thread,
     return;
   }
   if (type.IsRecordType()) {
-    // _Record class is not useful for the CFE. We use null instead.
+    const auto& record = RecordType::Cast(type);
+    const intptr_t num_fields = record.NumFields();
+    const Array& field_names =
+        Array::Handle(zone, record.GetFieldNames(thread));
+    const intptr_t num_positional_fields = num_fields - field_names.Length();
+
+    // Records have their own encoding:
+    // "record" <nullability> <num fields> <num positional fields>
+    // <field names> <encoding of field>
+    instance ^= String::New("record");
     output.Add(instance);
+    instance ^= Smi::New((intptr_t)type.nullability());
+    output.Add(instance);
+    instance ^= Smi::New(num_fields);
+    output.Add(instance);
+    instance ^= Smi::New(num_positional_fields);
+    output.Add(instance);
+
+    String& name = String::Handle(zone);
+    for (intptr_t i = 0, n = field_names.Length(); i < n; ++i) {
+      name ^= field_names.At(i);
+      output.Add(name);
+    }
+
+    AbstractType& field_type = AbstractType::Handle(zone);
+    for (intptr_t i = 0, n = num_fields; i < n; ++i) {
+      field_type = record.FieldTypeAt(i);
+      CollectStringifiedType(thread, zone, field_type, output);
+    }
     return;
   }
   if (type.IsDynamicType()) {
@@ -4015,10 +4042,18 @@ static void AddBreakpointCommon(Thread* thread,
       Error::Handle(thread->isolate()->debugger()->SetBreakpointAtLineCol(
           script_uri, line, col, &bpt));
   if (!error.IsNull()) {
-    js->PrintError(kCannotAddBreakpoint,
-                   "%s: Cannot add breakpoint at line %s. Error occurred "
-                   "when resolving breakpoint location: %s.",
-                   js->method(), line_param, error.ToErrorCString());
+    if (col_param != nullptr) {
+      js->PrintError(
+          kCannotAddBreakpoint,
+          "%s: Cannot add breakpoint at %s:%s. Error occurred when resolving "
+          "breakpoint location: %s.",
+          js->method(), line_param, col_param, error.ToErrorCString());
+    } else {
+      js->PrintError(kCannotAddBreakpoint,
+                     "%s: Cannot add breakpoint at line %s. Error occurred "
+                     "when resolving breakpoint location: %s.",
+                     js->method(), line_param, error.ToErrorCString());
+    }
     return;
   }
   ASSERT(bpt != nullptr);
@@ -5178,7 +5213,7 @@ static void CreateIdZone(Thread* thread, JSONStream* js) {
     return;
   }
 
-  int32_t capacity = RingServiceIdZone::kDefaultCapacity;
+  int32_t capacity = RingServiceIdZone::kFallbackCapacityForCreateIdZone;
   if (js->HasParam("capacity")) {
     intptr_t value = UIntParameter::Parse(js->LookupParam("capacity"));
     if (value < 0 || value > INT32_MAX) {
@@ -5203,15 +5238,15 @@ static void DeleteIdZone(Thread* thread, JSONStream* js) {
   Isolate* isolate = thread->isolate();
   ASSERT(isolate != nullptr);
 
-  const char* id_zone_id_arg = js->LookupParam("_idZoneId");
+  const char* id_zone_id_arg = js->LookupParam("idZoneId");
   if (id_zone_id_arg == nullptr) {
-    PrintMissingParamError(js, "_idZoneId");
+    PrintMissingParamError(js, "idZoneId");
   }
 
-  // If the `_idZoneId` argument is not missing, we know that the some
-  // properties of |id_zone_id| have already been checked in |InvokeMethod|
-  // (search for `js.set_id_zone(*id_zone)` to find the checks), so we can
-  // assert these properties to be true below.
+  // If the `idZoneId` argument is not missing, we know that some properties of
+  // |id_zone_id| have already been checked in |InvokeMethod| (search for
+  // `js.set_id_zone(*id_zone)` to find the checks), so we can assert these
+  // properties to be true below.
 
   intptr_t id_zone_id = ServiceIdZone::StringIdToInt(id_zone_id_arg);
   ASSERT(id_zone_id != -1);
@@ -6056,9 +6091,9 @@ static const ServiceMethodDescriptor service_methods_[] = {
   { "clearVMTimeline", ClearVMTimeline,
     clear_vm_timeline_params, },
   { "_compileExpression", CompileExpression, compile_expression_params },
-  { "_createIdZone", CreateIdZone,
+  { "createIdZone", CreateIdZone,
     create_id_zone_params },
-  { "_deleteIdZone", DeleteIdZone,
+  { "deleteIdZone", DeleteIdZone,
     delete_id_zone_params },
   { "_enableProfiler", EnableProfiler,
     enable_profiler_params, },
@@ -6152,7 +6187,7 @@ static const ServiceMethodDescriptor service_methods_[] = {
     get_vm_timeline_flags_params },
   { "getVMTimelineMicros", GetVMTimelineMicros,
     get_vm_timeline_micros_params },
-  { "_invalidateIdZone", InvalidateIdZone,
+  { "invalidateIdZone", InvalidateIdZone,
     invalidate_id_zone_params },
   { "invoke", Invoke, invoke_params },
   { "kill", Kill, kill_params },

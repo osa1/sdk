@@ -10,39 +10,8 @@ import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Use string buffers to compose strings.';
-
-const _details = r'''
-**DO** use string buffers to compose strings.
-
-In most cases, using a string buffer is preferred for composing strings due to
-its improved performance.
-
-**BAD:**
-```dart
-String foo() {
-  final buffer = '';
-  for (int i = 0; i < 10; i++) {
-    buffer += 'a'; // LINT
-  }
-  return buffer;
-}
-```
-
-**GOOD:**
-```dart
-String foo() {
-  final buffer = StringBuffer();
-  for (int i = 0; i < 10; i++) {
-    buffer.write('a');
-  }
-  return buffer.toString();
-}
-```
-
-''';
 
 bool _isEmptyInterpolationString(AstNode node) =>
     node is InterpolationString && node.value == '';
@@ -56,9 +25,8 @@ bool _isEmptyInterpolationString(AstNode node) =>
 class UseStringBuffers extends LintRule {
   UseStringBuffers()
       : super(
-          name: 'use_string_buffers',
+          name: LintNames.use_string_buffers,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -74,7 +42,7 @@ class UseStringBuffers extends LintRule {
   }
 }
 
-class _IdentifierIsPrefixVisitor extends SimpleAstVisitor {
+class _IdentifierIsPrefixVisitor extends SimpleAstVisitor<void> {
   final LintRule rule;
   SimpleIdentifier identifier;
 
@@ -113,7 +81,7 @@ class _IdentifierIsPrefixVisitor extends SimpleAstVisitor {
   }
 }
 
-class _UseStringBufferVisitor extends SimpleAstVisitor {
+class _UseStringBufferVisitor extends SimpleAstVisitor<void> {
   final LintRule rule;
   final localElements = <Element?>{};
 

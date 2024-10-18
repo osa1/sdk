@@ -20,6 +20,7 @@ acn
 acr
 adapter
 adaptor
+adequately
 adopted
 advantages
 aei
@@ -436,6 +437,7 @@ ing
 inhibit
 inlinable
 inlineable
+inoperable
 insights
 instrument
 instrumenter

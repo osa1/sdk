@@ -28,6 +28,8 @@ import 'package:analyzer/src/fasta/token_utils.dart' as util show findPrevious;
 import 'package:analyzer/src/generated/inference_log.dart';
 import 'package:analyzer/src/generated/resolver.dart';
 import 'package:analyzer/src/generated/utilities_dart.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
+import 'package:analyzer/src/utilities/extensions/object.dart';
 import 'package:collection/collection.dart';
 import 'package:meta/meta.dart';
 
@@ -800,13 +802,7 @@ final class AssignedVariablePatternImpl extends VariablePatternImpl
   @experimental
   @override
   Element2? get element2 {
-    var element = this.element;
-    if (element case Fragment fragment) {
-      return fragment.element;
-    } else if (element case Element2 element) {
-      return element;
-    }
-    return null;
+    return element.asElement2;
   }
 
   @override
@@ -1874,7 +1870,7 @@ final class BinaryExpressionImpl extends ExpressionImpl
 
   @experimental
   @override
-  MethodElement2? get element => (staticElement as MethodFragment?)?.element;
+  MethodElement2? get element => staticElement?.asElement2 as MethodElement2?;
 
   @override
   Token get endToken => _rightOperand.endToken;
@@ -2627,10 +2623,7 @@ final class CatchClauseParameterImpl extends AstNodeImpl
   @experimental
   @override
   LocalVariableElement2? get declaredElement2 {
-    if (declaredElement case LocalVariableElementImpl element) {
-      return LocalVariableElementImpl2(element);
-    }
-    return null;
+    return declaredElement.asElement2 as LocalVariableElementImpl2?;
   }
 
   @override
@@ -2738,7 +2731,7 @@ class ChildEntity {
 ///      | 'abstract'? ('base' | 'interface' | 'final')?
 ///      | 'abstract'? 'base'? 'mixin'
 abstract final class ClassDeclaration
-    implements NamedCompilationUnitMember, _FragmentDeclaration {
+    implements NamedCompilationUnitMember, FragmentDeclaration {
   /// The `abstract` keyword, or `null` if the keyword was absent.
   Token? get abstractKeyword;
 
@@ -2974,7 +2967,7 @@ sealed class ClassMemberImpl extends DeclarationImpl implements ClassMember {
 ///
 ///    mixinApplication ::=
 ///        [NamedType] [WithClause] [ImplementsClause]? ';'
-abstract final class ClassTypeAlias implements TypeAlias, _FragmentDeclaration {
+abstract final class ClassTypeAlias implements TypeAlias, FragmentDeclaration {
   /// The token for the `abstract` keyword, or `null` if this isn't defining an
   /// abstract class.
   Token? get abstractKeyword;
@@ -3772,14 +3765,7 @@ base mixin CompoundAssignmentExpressionImpl
 
   @experimental
   @override
-  Element2? get writeElement2 {
-    if (writeElement case Fragment fragment) {
-      return fragment.element;
-    } else if (writeElement case Element2 element) {
-      return element;
-    }
-    return null;
-  }
+  Element2? get writeElement2 => writeElement.asElement2;
 }
 
 /// A conditional expression.
@@ -4142,7 +4128,7 @@ final class ConstantPatternImpl extends DartPatternImpl
 ///    initializerList ::=
 ///        ':' [ConstructorInitializer] (',' [ConstructorInitializer])*
 abstract final class ConstructorDeclaration
-    implements ClassMember, _FragmentDeclaration {
+    implements ClassMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if the keyword was absent.
   Token? get augmentKeyword;
 
@@ -4535,12 +4521,8 @@ final class ConstructorNameImpl extends AstNodeImpl implements ConstructorName {
 
   @experimental
   @override
-  ConstructorElement2? get element {
-    if (staticElement case ConstructorFragment fragment) {
-      return fragment.element;
-    }
-    return null;
-  }
+  ConstructorElement2? get element =>
+      staticElement?.asElement2 as ConstructorElement2?;
 
   @override
   Token get endToken {
@@ -4963,10 +4945,7 @@ final class DeclaredIdentifierImpl extends DeclarationImpl
   @experimental
   @override
   LocalVariableElement2? get declaredElement2 {
-    if (declaredElement case LocalVariableElementImpl element) {
-      return LocalVariableElementImpl2(element);
-    }
-    return null;
+    return declaredElement.asElement2 as LocalVariableElementImpl2?;
   }
 
   @override
@@ -5054,10 +5033,7 @@ final class DeclaredVariablePatternImpl extends VariablePatternImpl
   @experimental
   @override
   BindPatternVariableElement2? get declaredElement2 {
-    if (declaredElement case BindPatternVariableElementImpl declaredElement) {
-      return BindPatternVariableElementImpl2(declaredElement);
-    }
-    return null;
+    return declaredElement?.element2;
   }
 
   @override
@@ -5628,7 +5604,7 @@ final class EnumConstantArgumentsImpl extends AstNodeImpl
 }
 
 /// The declaration of an enum constant.
-abstract final class EnumConstantDeclaration implements _FragmentDeclaration {
+abstract final class EnumConstantDeclaration implements FragmentDeclaration {
   /// The explicit arguments (there are always implicit `index` and `name`
   /// leading arguments) to the invoked constructor, or `null` if this constant
   /// doesn't provide any explicit arguments.
@@ -5694,12 +5670,8 @@ final class EnumConstantDeclarationImpl extends DeclarationImpl
 
   @experimental
   @override
-  ConstructorElement2? get constructorElement2 {
-    if (constructorElement case ConstructorFragment fragment) {
-      return fragment.element;
-    }
-    return null;
-  }
+  ConstructorElement2? get constructorElement2 =>
+      constructorElement?.asElement2 as ConstructorElement2?;
 
   @experimental
   @override
@@ -5735,7 +5707,7 @@ final class EnumConstantDeclarationImpl extends DeclarationImpl
 ///        [WithClause]? [ImplementsClause]? '{' [SimpleIdentifier]
 ///        (',' [SimpleIdentifier])* (';' [ClassMember]+)? '}'
 abstract final class EnumDeclaration
-    implements NamedCompilationUnitMember, _FragmentDeclaration {
+    implements NamedCompilationUnitMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if the keyword was absent.
   @experimental
   Token? get augmentKeyword;
@@ -6455,7 +6427,7 @@ final class ExtendsClauseImpl extends AstNodeImpl implements ExtendsClause {
 ///        'on' [TypeAnnotation] [ShowClause]? [HideClause]?
 ///        '{' [ClassMember]* '}'
 abstract final class ExtensionDeclaration
-    implements CompilationUnitMember, _FragmentDeclaration {
+    implements CompilationUnitMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if the keyword was absent.
   @experimental
   Token? get augmentKeyword;
@@ -6802,7 +6774,7 @@ final class ExtensionOverrideImpl extends ExpressionImpl
 ///        '}'
 @experimental
 abstract final class ExtensionTypeDeclaration
-    implements NamedCompilationUnitMember, _FragmentDeclaration {
+    implements NamedCompilationUnitMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if the keyword was absent.
   @experimental
   Token? get augmentKeyword;
@@ -8185,6 +8157,16 @@ final class ForStatementImpl extends StatementImpl
   }
 }
 
+/// A declaration of a fragment of an element.
+@experimental
+abstract final class FragmentDeclaration implements Declaration {
+  /// The fragment declared by this declaration.
+  ///
+  /// Returns `null` if the AST structure hasn't been resolved.
+  @experimental
+  Fragment? get declaredFragment;
+}
+
 /// A node representing the body of a function or method.
 ///
 ///    functionBody ::=
@@ -8270,6 +8252,9 @@ sealed class FunctionBodyImpl extends AstNodeImpl implements FunctionBody {
   @experimental
   @override
   bool isPotentiallyMutatedInScope2(VariableElement2 variable) {
+    if (variable is LocalVariableElementImpl2) {
+      return isPotentiallyMutatedInScope(variable.wrappedElement);
+    }
     if (variable case VariableElement variable) {
       return isPotentiallyMutatedInScope(variable);
     }
@@ -8299,7 +8284,7 @@ sealed class FunctionBodyImpl extends AstNodeImpl implements FunctionBody {
 //  that are only sometimes applicable. Consider changing the class hierarchy so
 //  that these two kinds of variables can be distinguished.
 abstract final class FunctionDeclaration
-    implements NamedCompilationUnitMember, _FragmentDeclaration {
+    implements NamedCompilationUnitMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if there is no `augment` keyword.
   @experimental
   Token? get augmentKeyword;
@@ -8310,6 +8295,12 @@ abstract final class FunctionDeclaration
   /// represents a top-level function.
   @override
   ExecutableElement? get declaredElement;
+
+  /// The element defined by this local function declaration.
+  ///
+  /// Returns `null` if the AST structure hasn't been resolved or if this node
+  /// is not a local function.
+  LocalFunctionElement? get declaredElement2;
 
   /// The fragment declared by this declaration.
   ///
@@ -8358,6 +8349,9 @@ final class FunctionDeclarationImpl extends NamedCompilationUnitMemberImpl
 
   @override
   ExecutableElementImpl? declaredElement;
+
+  @override
+  LocalFunctionElementImpl? declaredElement2;
 
   /// Initializes a newly created function declaration.
   ///
@@ -8503,6 +8497,24 @@ abstract final class FunctionExpression implements Expression {
   /// hasn't been resolved.
   ExecutableElement? get declaredElement;
 
+  /// The element defined by this function expression.
+  ///
+  /// Returns `null` if the AST structure hasn't been resolved.
+  ///
+  /// Returns `null` if this expression is not a closure, and the parent is
+  /// not a local function.
+  @experimental
+  LocalFunctionElement? get declaredElement2;
+
+  /// The fragment declared by this function expression.
+  ///
+  /// Returns `null` if the AST structure hasn't been resolved.
+  ///
+  /// Returns `null` is thie expression is a closure, or the parent is a
+  /// local function.
+  @experimental
+  ExecutableFragment? get declaredFragment;
+
   /// The parameters associated with the function, or `null` if the function is
   /// part of a top-level getter.
   FormalParameterList? get parameters;
@@ -8528,6 +8540,9 @@ final class FunctionExpressionImpl extends ExpressionImpl
 
   @override
   ExecutableElementImpl? declaredElement;
+
+  @override
+  LocalFunctionElementImpl? declaredElement2;
 
   /// Initializes a newly created function declaration.
   FunctionExpressionImpl({
@@ -8560,6 +8575,14 @@ final class FunctionExpressionImpl extends ExpressionImpl
   }
 
   @override
+  ExecutableFragment? get declaredFragment {
+    if (declaredElement?.enclosingElement3 is CompilationUnitElement) {
+      return declaredElement;
+    }
+    return null;
+  }
+
+  @override
   Token get endToken {
     return _body.endToken;
   }
@@ -8573,6 +8596,15 @@ final class FunctionExpressionImpl extends ExpressionImpl
 
   @override
   Precedence get precedence => Precedence.primary;
+
+  DartType get returnType {
+    // If a closure, or a local function.
+    if (declaredElement2 case var declaredElement?) {
+      return declaredElement.returnType;
+    }
+    // SAFETY: must be a top-level function.
+    return declaredFragment!.element.returnType;
+  }
 
   @override
   TypeParameterListImpl? get typeParameters => _typeParameters;
@@ -8653,12 +8685,8 @@ final class FunctionExpressionInvocationImpl extends InvocationExpressionImpl
 
   @experimental
   @override
-  ExecutableElement2? get element {
-    if (staticElement case ExecutableFragment fragment) {
-      return fragment.element;
-    }
-    return null;
-  }
+  ExecutableElement2? get element =>
+      staticElement?.asElement2 as ExecutableElement2?;
 
   @override
   Token get endToken => _argumentList.endToken;
@@ -8803,7 +8831,7 @@ final class FunctionReferenceImpl extends CommentReferableExpressionImpl
 ///    functionPrefix ::=
 ///        [TypeAnnotation]? [SimpleIdentifier]
 abstract final class FunctionTypeAlias
-    implements TypeAlias, _FragmentDeclaration {
+    implements TypeAlias, FragmentDeclaration {
   @override
   TypeAliasElement? get declaredElement;
 
@@ -9165,7 +9193,7 @@ final class GenericFunctionTypeImpl extends TypeAnnotationImpl
 ///        'typedef' [SimpleIdentifier] [TypeParameterList]? =
 ///        [FunctionType] ';'
 abstract final class GenericTypeAlias
-    implements TypeAlias, _FragmentDeclaration {
+    implements TypeAlias, FragmentDeclaration {
   /// The equal sign separating the name being defined from the function type.
   Token get equals;
 
@@ -9396,13 +9424,7 @@ sealed class IdentifierImpl extends CommentReferableExpressionImpl
   @experimental
   @override
   Element2? get element {
-    var element = staticElement;
-    if (element case Fragment fragment) {
-      return fragment.element;
-    } else if (element case Element2 element) {
-      return element;
-    }
-    return null;
+    return staticElement.asElement2;
   }
 
   @override
@@ -10084,7 +10106,9 @@ final class ImportPrefixReferenceImpl extends AstNodeImpl
   @override
   Element2? get element2 {
     var element = this.element;
-    if (element case Fragment fragment) {
+    if (element case PrefixElementImpl element) {
+      return element.element2;
+    } else if (element case Fragment fragment) {
       return fragment.element;
     } else if (element case Element2 element) {
       return element;
@@ -10238,7 +10262,7 @@ final class IndexExpressionImpl extends ExpressionImpl
 
   @experimental
   @override
-  MethodElement2? get element => (staticElement as MethodFragment?)?.element;
+  MethodElement2? get element => staticElement?.asElement2 as MethodElement2?;
 
   @override
   Token get endToken => rightBracket;
@@ -11423,6 +11447,26 @@ sealed class LiteralImpl extends ExpressionImpl implements Literal {
   Precedence get precedence => Precedence.primary;
 }
 
+// TODO(scheglov): parse into actual `LocalFunctionDeclarationImpl`.
+class LocalFunctionDeclarationView {
+  final FunctionDeclarationImpl declaration;
+
+  LocalFunctionDeclarationView(this.declaration);
+
+  LocalFunctionElement? get declaredElement {
+    return declaration.declaredElement2;
+  }
+
+  static LocalFunctionDeclarationView? of(AstNode declaration) {
+    if (declaration is FunctionDeclarationImpl) {
+      if (declaration.parent is FunctionDeclarationStatement) {
+        return LocalFunctionDeclarationView(declaration);
+      }
+    }
+    return null;
+  }
+}
+
 /// Additional information about local variables within a function or method
 /// produced at resolution time.
 class LocalVariableInfo {
@@ -11877,7 +11921,7 @@ final class MapPatternImpl extends DartPatternImpl implements MapPattern {
 /// children of a class declaration. When the experiment is enabled, these nodes
 /// can also be children of an extension declaration.
 abstract final class MethodDeclaration
-    implements ClassMember, _FragmentDeclaration {
+    implements ClassMember, FragmentDeclaration {
   /// The token for the `augment` keyword.
   Token? get augmentKeyword;
 
@@ -12274,7 +12318,7 @@ abstract final class MethodReferenceExpression implements Expression {
 ///        'base'? 'mixin' name [TypeParameterList]?
 ///        [OnClause]? [ImplementsClause]? '{' [ClassMember]* '}'
 abstract final class MixinDeclaration
-    implements NamedCompilationUnitMember, _FragmentDeclaration {
+    implements NamedCompilationUnitMember, FragmentDeclaration {
   /// The `augment` keyword, or `null` if the keyword was absent.
   Token? get augmentKeyword;
 
@@ -12630,8 +12674,9 @@ final class NamedTypeImpl extends TypeAnnotationImpl implements NamedType {
   @override
   final Token name2;
 
+  @experimental
   @override
-  Element? element;
+  Element2? element2;
 
   @override
   TypeArgumentListImpl? typeArguments;
@@ -12658,16 +12703,9 @@ final class NamedTypeImpl extends TypeAnnotationImpl implements NamedType {
   @override
   Token get beginToken => importPrefix?.beginToken ?? name2;
 
-  @experimental
   @override
-  Element2? get element2 {
-    var element = this.element;
-    if (element case Fragment fragment) {
-      return fragment.element;
-    } else if (element case Element2 element) {
-      return element;
-    }
-    return null;
+  Element? get element {
+    return element2.asElement;
   }
 
   @override
@@ -13240,7 +13278,7 @@ final class NullAwareElementImpl extends CollectionElementImpl
   @override
   void resolveElement(
       ResolverVisitor resolver, CollectionLiteralContext? context) {
-    // resolver.visitNullAwareElement(this, context: context);
+    resolver.visitNullAwareElement(this, context: context);
     resolver.pushRewrite(null);
   }
 
@@ -15182,12 +15220,8 @@ final class RedirectingConstructorInvocationImpl
 
   @experimental
   @override
-  ConstructorElement2? get element {
-    if (staticElement case ConstructorFragment fragment) {
-      return fragment.element;
-    }
-    return null;
-  }
+  ConstructorElement2? get element =>
+      staticElement?.asElement2 as ConstructorElement2?;
 
   @override
   Token get endToken => _argumentList.endToken;
@@ -16748,12 +16782,8 @@ final class SuperConstructorInvocationImpl extends ConstructorInitializerImpl
 
   @experimental
   @override
-  ConstructorElement2? get element {
-    if (staticElement case ConstructorFragment fragment) {
-      return fragment.element;
-    }
-    return null;
-  }
+  ConstructorElement2? get element =>
+      staticElement?.asElement2 as ConstructorElement2?;
 
   @override
   Token get endToken => _argumentList.endToken;
@@ -18157,8 +18187,7 @@ final class TypeLiteralImpl extends CommentReferableExpressionImpl
 ///
 ///    typeParameter ::=
 ///        name ('extends' [TypeAnnotation])?
-abstract final class TypeParameter
-    implements Declaration, _FragmentDeclaration {
+abstract final class TypeParameter implements Declaration, FragmentDeclaration {
   /// The upper bound for legal arguments, or `null` if there's no explicit
   /// upper bound.
   TypeAnnotation? get bound;
@@ -18409,13 +18438,20 @@ class UriValidationCode {
 //  that are only sometimes applicable. Consider changing the class hierarchy so
 //  that these two kinds of variables can be distinguished.
 abstract final class VariableDeclaration
-    implements Declaration, _FragmentDeclaration {
+    implements Declaration, FragmentDeclaration {
   /// The element declared by this declaration.
   ///
   /// Returns `null` if the AST structure hasn't been resolved or if this node
   /// represents the declaration of a top-level variable or a field.
   @override
   VariableElement? get declaredElement;
+
+  /// The element declared by this declaration.
+  ///
+  /// Returns `null` if the AST structure hasn't been resolved or if this node
+  /// represents the declaration of a top-level variable or a field.
+  @experimental
+  LocalVariableElement2? get declaredElement2;
 
   /// The fragment declared by this declaration.
   ///
@@ -18482,6 +18518,12 @@ final class VariableDeclarationImpl extends DeclarationImpl
 
   @experimental
   @override
+  LocalVariableElement2? get declaredElement2 {
+    return declaredElement.asElement2.ifTypeOrNull<LocalVariableElement2>();
+  }
+
+  @experimental
+  @override
   VariableFragment? get declaredFragment {
     if (declaredElement case VariableFragment fragment) {
       return fragment;
@@ -18538,6 +18580,15 @@ final class VariableDeclarationImpl extends DeclarationImpl
   bool get isLate {
     var parent = this.parent;
     return parent is VariableDeclarationList && parent.isLate;
+  }
+
+  DartType get type {
+    if (declaredElement2 case var declaredElement?) {
+      return declaredElement.type;
+    }
+    // SAFETY: The variable declaration is either a local variable,
+    // of a fragment of: top-level, field, formal parameter.
+    return declaredFragment!.element.type;
   }
 
   @override
@@ -19192,15 +19243,6 @@ base mixin _AnnotatedNodeMixin on AstNodeImpl implements AnnotatedNode {
       }
     }
   }
-}
-
-/// A declaration of a fragment of an element.
-abstract final class _FragmentDeclaration implements Declaration {
-  /// The fragment declared by this declaration.
-  ///
-  /// Returns `null` if the AST structure hasn't been resolved.
-  @experimental
-  Fragment? get declaredFragment;
 }
 
 /// An indication of the resolved kind of a [SetOrMapLiteral].

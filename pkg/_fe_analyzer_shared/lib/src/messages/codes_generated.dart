@@ -3377,65 +3377,30 @@ Message _withArgumentsDuplicatedExport(String name, Uri uri_, Uri uri2_) {
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Template<Message Function(String name, Uri uri_, Uri uri2_)>
-    templateDuplicatedExportInType =
+    templateDuplicatedImport =
     const Template<Message Function(String name, Uri uri_, Uri uri2_)>(
-  "DuplicatedExportInType",
-  problemMessageTemplate:
-      r"""'#name' is exported from both '#uri' and '#uri2'.""",
-  withArguments: _withArgumentsDuplicatedExportInType,
-);
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Code<Message Function(String name, Uri uri_, Uri uri2_)>
-    codeDuplicatedExportInType =
-    const Code<Message Function(String name, Uri uri_, Uri uri2_)>(
-  "DuplicatedExportInType",
-);
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-Message _withArgumentsDuplicatedExportInType(String name, Uri uri_, Uri uri2_) {
-  if (name.isEmpty) throw 'No name provided';
-  name = demangleMixinApplicationName(name);
-  String? uri = relativizeUri(uri_);
-  String? uri2 = relativizeUri(uri2_);
-  return new Message(
-    codeDuplicatedExportInType,
-    problemMessage:
-        """'${name}' is exported from both '${uri}' and '${uri2}'.""",
-    arguments: {
-      'name': name,
-      'uri': uri_,
-      'uri2': uri2_,
-    },
-  );
-}
-
-// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Template<Message Function(String name, Uri uri_, Uri uri2_)>
-    templateDuplicatedImportInType =
-    const Template<Message Function(String name, Uri uri_, Uri uri2_)>(
-  "DuplicatedImportInType",
+  "DuplicatedImport",
   problemMessageTemplate:
       r"""'#name' is imported from both '#uri' and '#uri2'.""",
-  withArguments: _withArgumentsDuplicatedImportInType,
+  withArguments: _withArgumentsDuplicatedImport,
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
 const Code<Message Function(String name, Uri uri_, Uri uri2_)>
-    codeDuplicatedImportInType =
+    codeDuplicatedImport =
     const Code<Message Function(String name, Uri uri_, Uri uri2_)>(
-  "DuplicatedImportInType",
+  "DuplicatedImport",
   analyzerCodes: <String>["AMBIGUOUS_IMPORT"],
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-Message _withArgumentsDuplicatedImportInType(String name, Uri uri_, Uri uri2_) {
+Message _withArgumentsDuplicatedImport(String name, Uri uri_, Uri uri2_) {
   if (name.isEmpty) throw 'No name provided';
   name = demangleMixinApplicationName(name);
   String? uri = relativizeUri(uri_);
   String? uri2 = relativizeUri(uri2_);
   return new Message(
-    codeDuplicatedImportInType,
+    codeDuplicatedImport,
     problemMessage:
         """'${name}' is imported from both '${uri}' and '${uri2}'.""",
     arguments: {
@@ -11308,59 +11273,151 @@ const MessageCode messageLanguageVersionPatchContext = const MessageCode(
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Template<Message Function(int count, int count2)>
-    templateLanguageVersionTooHigh =
-    const Template<Message Function(int count, int count2)>(
-  "LanguageVersionTooHigh",
+const Template<Message Function(int count, int count2, int count3, int count4)>
+    templateLanguageVersionTooHighExplicit = const Template<
+        Message Function(int count, int count2, int count3, int count4)>(
+  "LanguageVersionTooHighExplicit",
   problemMessageTemplate:
-      r"""The specified language version is too high. The highest supported language version is #count.#count2.""",
-  withArguments: _withArgumentsLanguageVersionTooHigh,
+      r"""The specified language version #count.#count2 is too high. The highest supported language version is #count3.#count4.""",
+  withArguments: _withArgumentsLanguageVersionTooHighExplicit,
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Code<Message Function(int count, int count2)> codeLanguageVersionTooHigh =
-    const Code<Message Function(int count, int count2)>(
-  "LanguageVersionTooHigh",
+const Code<Message Function(int count, int count2, int count3, int count4)>
+    codeLanguageVersionTooHighExplicit =
+    const Code<Message Function(int count, int count2, int count3, int count4)>(
+  "LanguageVersionTooHighExplicit",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-Message _withArgumentsLanguageVersionTooHigh(int count, int count2) {
+Message _withArgumentsLanguageVersionTooHighExplicit(
+    int count, int count2, int count3, int count4) {
   return new Message(
-    codeLanguageVersionTooHigh,
+    codeLanguageVersionTooHighExplicit,
     problemMessage:
-        """The specified language version is too high. The highest supported language version is ${count}.${count2}.""",
+        """The specified language version ${count}.${count2} is too high. The highest supported language version is ${count3}.${count4}.""",
     arguments: {
       'count': count,
       'count2': count2,
+      'count3': count3,
+      'count4': count4,
     },
   );
 }
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Template<Message Function(int count, int count2)>
-    templateLanguageVersionTooLow =
-    const Template<Message Function(int count, int count2)>(
-  "LanguageVersionTooLow",
+const Template<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>
+    templateLanguageVersionTooHighPackage = const Template<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>(
+  "LanguageVersionTooHighPackage",
   problemMessageTemplate:
-      r"""The specified language version is too low. The lowest supported language version is #count.#count2.""",
-  withArguments: _withArgumentsLanguageVersionTooLow,
+      r"""The language version #count.#count2 specified for the package '#name' is too high. The highest supported language version is #count3.#count4.""",
+  withArguments: _withArgumentsLanguageVersionTooHighPackage,
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-const Code<Message Function(int count, int count2)> codeLanguageVersionTooLow =
-    const Code<Message Function(int count, int count2)>(
-  "LanguageVersionTooLow",
+const Code<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>
+    codeLanguageVersionTooHighPackage = const Code<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>(
+  "LanguageVersionTooHighPackage",
 );
 
 // DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
-Message _withArgumentsLanguageVersionTooLow(int count, int count2) {
+Message _withArgumentsLanguageVersionTooHighPackage(
+    int count, int count2, String name, int count3, int count4) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
   return new Message(
-    codeLanguageVersionTooLow,
+    codeLanguageVersionTooHighPackage,
     problemMessage:
-        """The specified language version is too low. The lowest supported language version is ${count}.${count2}.""",
+        """The language version ${count}.${count2} specified for the package '${name}' is too high. The highest supported language version is ${count3}.${count4}.""",
     arguments: {
       'count': count,
       'count2': count2,
+      'name': name,
+      'count3': count3,
+      'count4': count4,
+    },
+  );
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<Message Function(int count, int count2, int count3, int count4)>
+    templateLanguageVersionTooLowExplicit = const Template<
+        Message Function(int count, int count2, int count3, int count4)>(
+  "LanguageVersionTooLowExplicit",
+  problemMessageTemplate:
+      r"""The specified language version #count.#count2 is too low. The lowest supported language version is #count3.#count4.""",
+  withArguments: _withArgumentsLanguageVersionTooLowExplicit,
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<Message Function(int count, int count2, int count3, int count4)>
+    codeLanguageVersionTooLowExplicit =
+    const Code<Message Function(int count, int count2, int count3, int count4)>(
+  "LanguageVersionTooLowExplicit",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsLanguageVersionTooLowExplicit(
+    int count, int count2, int count3, int count4) {
+  return new Message(
+    codeLanguageVersionTooLowExplicit,
+    problemMessage:
+        """The specified language version ${count}.${count2} is too low. The lowest supported language version is ${count3}.${count4}.""",
+    arguments: {
+      'count': count,
+      'count2': count2,
+      'count3': count3,
+      'count4': count4,
+    },
+  );
+}
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Template<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>
+    templateLanguageVersionTooLowPackage = const Template<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>(
+  "LanguageVersionTooLowPackage",
+  problemMessageTemplate:
+      r"""The language version #count.#count2 specified for the package '#name' is too low. The lowest supported language version is #count3.#count4.""",
+  withArguments: _withArgumentsLanguageVersionTooLowPackage,
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+const Code<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>
+    codeLanguageVersionTooLowPackage = const Code<
+        Message Function(
+            int count, int count2, String name, int count3, int count4)>(
+  "LanguageVersionTooLowPackage",
+);
+
+// DO NOT EDIT. THIS FILE IS GENERATED. SEE TOP OF FILE.
+Message _withArgumentsLanguageVersionTooLowPackage(
+    int count, int count2, String name, int count3, int count4) {
+  if (name.isEmpty) throw 'No name provided';
+  name = demangleMixinApplicationName(name);
+  return new Message(
+    codeLanguageVersionTooLowPackage,
+    problemMessage:
+        """The language version ${count}.${count2} specified for the package '${name}' is too low. The lowest supported language version is ${count3}.${count4}.""",
+    arguments: {
+      'count': count,
+      'count2': count2,
+      'name': name,
+      'count3': count3,
+      'count4': count4,
     },
   );
 }

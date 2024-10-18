@@ -9,10 +9,12 @@ analyzer:
     - test_data/**
   language:
     strict-casts: true
+    strict-raw-types: true
 
 linter:
   rules:
     - always_put_required_named_parameters_first
+    - analyzer_use_new_elements
     - avoid_annotating_with_dynamic
     - avoid_catches_without_on_clauses
     - avoid_catching_errors
@@ -36,7 +38,6 @@ linter:
     - no_adjacent_strings_in_list
     - noop_primitive_operations
     - only_throw_errors
-    - package_api_docs
     - parameter_assignments
     - prefer_asserts_in_initializer_lists
     - prefer_const_constructors_in_immutables

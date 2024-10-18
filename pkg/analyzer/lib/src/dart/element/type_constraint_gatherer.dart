@@ -24,14 +24,21 @@ import 'package:analyzer/src/dart/resolver/flow_analysis_visitor.dart';
 /// to make one type schema a subtype of another.
 class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
         DartType,
+        ParameterElement,
         PromotableElement,
         TypeParameterElement,
         InterfaceType,
         InterfaceElement,
         AstNode>
     with
-        shared.TypeConstraintGeneratorMixin<DartType, PromotableElement,
-            TypeParameterElement, InterfaceType, InterfaceElement, AstNode> {
+        shared.TypeConstraintGeneratorMixin<
+            DartType,
+            ParameterElement,
+            PromotableElement,
+            TypeParameterElement,
+            InterfaceType,
+            InterfaceElement,
+            AstNode> {
   final TypeSystemImpl _typeSystem;
   final Set<TypeParameterElement> _typeParameters = Set.identity();
   final List<
@@ -117,9 +124,10 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
 
   /// Tries to match [P] as a subtype for [Q].
   ///
-  /// If the match succeeds, the resulting type constraints are recorded for
-  /// later use by [computeConstraints].  If the match fails, the set of type
-  /// constraints is unchanged.
+  /// If [P] is a subtype of [Q] under some constraints, the constraints making
+  /// the relation possible are recorded to [_constraints], and `true` is
+  /// returned. Otherwise, [_constraints] is left unchanged (or rolled back),
+  /// and `false` is returned.
   bool trySubtypeMatch(DartType P, DartType Q, bool leftSchema,
       {required AstNode? nodeForTesting}) {
     // If `P` is `_` then the match holds with no constraints.
@@ -164,13 +172,8 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     // in case [performSubtypeConstraintGenerationForFutureOr] returns false, as
     // [performSubtypeConstraintGenerationForFutureOr] handles the rewinding of
     // the state itself.
-    if (leftSchema
-        ? performSubtypeConstraintGenerationForFutureOrLeftSchema(
-            SharedTypeSchemaView(P), SharedTypeView(Q),
-            astNodeForTesting: nodeForTesting)
-        : performSubtypeConstraintGenerationForFutureOrRightSchema(
-            SharedTypeView(P), SharedTypeSchemaView(Q),
-            astNodeForTesting: nodeForTesting)) {
+    if (performSubtypeConstraintGenerationForFutureOr(P, Q,
+        leftSchema: leftSchema, astNodeForTesting: nodeForTesting)) {
       return true;
     }
 
@@ -191,7 +194,6 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
             nodeForTesting: nodeForTesting)) {
           return true;
         }
-        _constraints.length = rewind;
       }
 
       // Or if `P` is `dynamic` or `void` and `Object` is a subtype match
@@ -201,7 +203,6 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
             nodeForTesting: nodeForTesting)) {
           return true;
         }
-        _constraints.length = rewind;
       }
 
       // Or if `P` is a subtype match for `Q0` under non-empty
@@ -211,14 +212,12 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
       if (P_matches_Q0 && _constraints.length != rewind) {
         return true;
       }
-      _constraints.length = rewind;
 
       // Or if `P` is a subtype match for `Null` under constraint set `C`.
       if (trySubtypeMatch(P, _typeSystem.nullNone, leftSchema,
           nodeForTesting: nodeForTesting)) {
         return true;
       }
-      _constraints.length = rewind;
 
       // Or if `P` is a subtype match for `Q0` under empty
       // constraint set `C`.
@@ -293,13 +292,11 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     //   If `B` is a subtype match for `Q` with constraint set `C`.
     // Note: we have already eliminated the case that `X` is a variable in `L`.
     if (P_nullability == NullabilitySuffix.none && P is TypeParameterTypeImpl) {
-      var rewind = _constraints.length;
       var B = P.promotedBound ?? P.element.bound;
       if (B != null &&
           trySubtypeMatch(B, Q, leftSchema, nodeForTesting: nodeForTesting)) {
         return true;
       }
-      _constraints.length = rewind;
     }
 
     bool? result = performSubtypeConstraintGenerationForTypeDeclarationTypes(
@@ -312,15 +309,13 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     // If `Q` is `Function` then the match holds under no constraints:
     //   If `P` is a function type.
     if (_typeSystemOperations.isDartCoreFunction(SharedTypeView(Q))) {
-      if (_typeSystemOperations.isFunctionType(SharedTypeView(P))) {
+      if (P is SharedFunctionTypeStructure) {
         return true;
       }
     }
 
-    if (_typeSystemOperations.isFunctionType(SharedTypeView(P)) &&
-        _typeSystemOperations.isFunctionType(SharedTypeView(Q))) {
-      return _functionType(P as FunctionType, Q as FunctionType, leftSchema,
-          nodeForTesting: nodeForTesting);
+    if (P is FunctionType && Q is FunctionType) {
+      return _functionType(P, Q, leftSchema, nodeForTesting: nodeForTesting);
     }
 
     // A type `P` is a subtype match for `Record` with respect to `L` under no
@@ -369,6 +364,12 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     }
   }
 
+  /// Matches [P] against [Q], where [P] and [Q] are both function types.
+  ///
+  /// If [P] is a subtype of [Q] under some constraints, the constraints making
+  /// the relation possible are recorded to [_constraints], and `true` is
+  /// returned. Otherwise, [_constraints] is left unchanged (or rolled back),
+  /// and `false` is returned.
   bool _functionType(FunctionType P, FunctionType Q, bool leftSchema,
       {required AstNode? nodeForTesting}) {
     if (P.nullabilitySuffix != NullabilitySuffix.none) {
@@ -386,7 +387,8 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     }
 
     if (P_typeFormals.isEmpty && Q_typeFormals.isEmpty) {
-      return _functionType0(P, Q, leftSchema, nodeForTesting: nodeForTesting);
+      return performSubtypeConstraintGenerationForFunctionTypes(P, Q,
+          leftSchema: leftSchema, astNodeForTesting: nodeForTesting);
     }
 
     // We match two generic function types:
@@ -437,8 +439,9 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
         .toList();
     var P_instantiated = P.instantiate(typeArguments);
     var Q_instantiated = Q.instantiate(typeArguments);
-    if (!_functionType0(P_instantiated, Q_instantiated, leftSchema,
-        nodeForTesting: nodeForTesting)) {
+    if (!performSubtypeConstraintGenerationForFunctionTypes(
+        P_instantiated, Q_instantiated,
+        leftSchema: leftSchema, astNodeForTesting: nodeForTesting)) {
       _constraints.length = rewind;
       return false;
     }
@@ -451,115 +454,18 @@ class TypeConstraintGatherer extends shared.TypeConstraintGenerator<
     return true;
   }
 
-  /// A function type `(M0,..., Mn, [M{n+1}, ..., Mm]) -> R0` is a subtype
-  /// match for a function type `(N0,..., Nk, [N{k+1}, ..., Nr]) -> R1` with
-  /// respect to `L` under constraints `C0 + ... + Cr + C`.
-  bool _functionType0(FunctionType f, FunctionType g, bool leftSchema,
-      {required AstNode? nodeForTesting}) {
-    var rewind = _constraints.length;
-
-    // If `R0` is a subtype match for a type `R1` with respect to `L` under
-    // constraints `C`.
-    if (!trySubtypeMatch(f.returnType, g.returnType, leftSchema,
-        nodeForTesting: nodeForTesting)) {
-      _constraints.length = rewind;
-      return false;
-    }
-
-    var fParameters = f.parameters;
-    var gParameters = g.parameters;
-
-    // And for `i` in `0...r`, `Ni` is a subtype match for `Mi` with respect
-    // to `L` under constraints `Ci`.
-    var fIndex = 0;
-    var gIndex = 0;
-    while (fIndex < fParameters.length && gIndex < gParameters.length) {
-      var fParameter = fParameters[fIndex];
-      var gParameter = gParameters[gIndex];
-      if (fParameter.isRequiredPositional) {
-        if (gParameter.isRequiredPositional) {
-          if (trySubtypeMatch(gParameter.type, fParameter.type, leftSchema,
-              nodeForTesting: nodeForTesting)) {
-            fIndex++;
-            gIndex++;
-          } else {
-            _constraints.length = rewind;
-            return false;
-          }
-        } else {
-          _constraints.length = rewind;
-          return false;
-        }
-      } else if (fParameter.isOptionalPositional) {
-        if (gParameter.isPositional) {
-          if (trySubtypeMatch(gParameter.type, fParameter.type, leftSchema,
-              nodeForTesting: nodeForTesting)) {
-            fIndex++;
-            gIndex++;
-          } else {
-            _constraints.length = rewind;
-            return false;
-          }
-        } else {
-          _constraints.length = rewind;
-          return false;
-        }
-      } else if (fParameter.isNamed) {
-        if (gParameter.isNamed) {
-          var compareNames = fParameter.name.compareTo(gParameter.name);
-          if (compareNames == 0) {
-            if (trySubtypeMatch(gParameter.type, fParameter.type, leftSchema,
-                nodeForTesting: nodeForTesting)) {
-              fIndex++;
-              gIndex++;
-            } else {
-              _constraints.length = rewind;
-              return false;
-            }
-          } else if (compareNames < 0) {
-            if (fParameter.isRequiredNamed) {
-              _constraints.length = rewind;
-              return false;
-            } else {
-              fIndex++;
-            }
-          } else {
-            assert(compareNames > 0);
-            // The subtype must accept all parameters of the supertype.
-            _constraints.length = rewind;
-            return false;
-          }
-        } else {
-          break;
-        }
-      }
-    }
-
-    // The supertype must provide all required parameters to the subtype.
-    while (fIndex < fParameters.length) {
-      var fParameter = fParameters[fIndex++];
-      if (fParameter.isRequired) {
-        _constraints.length = rewind;
-        return false;
-      }
-    }
-
-    // The subtype must accept all parameters of the supertype.
-    assert(fIndex == fParameters.length);
-    if (gIndex < gParameters.length) {
-      _constraints.length = rewind;
-      return false;
-    }
-
-    return true;
-  }
-
-  /// If `P` is `(M0, ..., Mk)` and `Q` is `(N0, ..., Nk)`, then the match
-  /// holds under constraints `C0 + ... + Ck`:
-  ///   If `Mi` is a subtype match for `Ni` with respect to L under
-  ///   constraints `Ci`.
+  /// Matches [P] against [Q], where [P] and [Q] are both record types.
+  ///
+  /// If [P] is a subtype of [Q] under some constraints, the constraints making
+  /// the relation possible are recorded to [_constraints], and `true` is
+  /// returned. Otherwise, [_constraints] is left unchanged (or rolled back),
+  /// and `false` is returned.
   bool _recordType(RecordTypeImpl P, RecordTypeImpl Q, bool leftSchema,
       {required AstNode? nodeForTesting}) {
+    // If `P` is `(M0, ..., Mk)` and `Q` is `(N0, ..., Nk)`, then the match
+    // holds under constraints `C0 + ... + Ck`:
+    //   If `Mi` is a subtype match for `Ni` with respect to L under
+    //   constraints `Ci`.
     if (P.nullabilitySuffix != NullabilitySuffix.none) {
       return false;
     }

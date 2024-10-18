@@ -3126,7 +3126,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::f#element
               getter2: <testLibraryFragment>::@class::A::@getter::f
           getters
-            get f @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::f
               element: <testLibraryFragment>::@class::A::@getter::f#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -3143,7 +3143,7 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 56
               nameEnd: 62
-              parameters
+              formalParameters
                 this.f @68
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named::@parameter::f#element
   classes
@@ -3157,7 +3157,7 @@ library
       constructors
         named
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
-          parameters
+          formalParameters
             requiredPositional final f
               type: int
       getters
@@ -3255,7 +3255,7 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 56
               nameEnd: 62
-              parameters
+              formalParameters
                 a @67
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named::@parameter::a#element
   classes
@@ -3264,7 +3264,7 @@ library
       constructors
         named
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
-          parameters
+          formalParameters
             requiredPositional a
               type: int
 ''');
@@ -3352,10 +3352,10 @@ library
           element: <testLibraryFragment>::@class::A#element
           previousFragment: <testLibraryFragment>::@class::A
           constructors
-            new @55
+            <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new#element
-              parameters
+              formalParameters
                 a @61
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new::@parameter::a#element
   classes
@@ -3364,7 +3364,7 @@ library
       constructors
         new
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new
-          parameters
+          formalParameters
             requiredPositional a
               type: int
 ''');
@@ -3474,15 +3474,15 @@ library
               getter2: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
               setter2: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo#element
           setters
-            set foo= @-1
+            set <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo#element
-              parameters
-                _foo @-1
+              formalParameters
+                <null-name>
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo::@parameter::_foo#element
   classes
     class A
@@ -3499,7 +3499,7 @@ library
       setters
         synthetic set foo=
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional _foo
               type: int
 ''');
@@ -3704,7 +3704,7 @@ library
             foo @59
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@method::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@method::foo#element
-              parameters
+              formalParameters
                 a @70
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@method::foo::@parameter::a#element
   classes
@@ -3713,7 +3713,7 @@ library
       methods
         foo
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@method::foo
-          parameters
+          formalParameters
             requiredPositional a
               type: double
 ''');
@@ -3816,10 +3816,10 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@field::foo#element
               setter2: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
           setters
-            set foo= @59
+            set foo @59
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo#element
-              parameters
+              formalParameters
                 a @67
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo::@parameter::a#element
   classes
@@ -3833,7 +3833,7 @@ library
       setters
         set foo=
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional a
               type: int
 ''');
@@ -3874,7 +3874,7 @@ library
       constructors
         new
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::B::@constructor::new
-          parameters
+          formalParameters
             optionalPositional x
               type: dynamic
 ''');
@@ -3913,7 +3913,7 @@ library
       methods
         foo
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::B::@method::foo
-          parameters
+          formalParameters
             optionalPositional x
               type: dynamic
 ''');
@@ -3952,7 +3952,7 @@ library
       methods
         foo
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::B::@method::foo
-          parameters
+          formalParameters
             optionalPositional x
               type: dynamic
               metadata
@@ -3962,7 +3962,7 @@ library
                     prefix: SimpleIdentifier
                       token: prefix0 @108
                       staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                       staticType: null
                     period: . @115
                     identifier: SimpleIdentifier
@@ -4011,7 +4011,7 @@ library
       methods
         foo
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::B::@method::foo
-          parameters
+          formalParameters
             requiredPositional x
               type: dynamic
               metadata
@@ -4021,7 +4021,7 @@ library
                     prefix: SimpleIdentifier
                       token: prefix0 @107
                       staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                       staticType: null
                     period: . @114
                     identifier: SimpleIdentifier
@@ -4075,7 +4075,7 @@ library
       setters
         set foo=
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::B::@setter::foo
-          parameters
+          formalParameters
             requiredPositional x
               type: dynamic
               metadata
@@ -4085,7 +4085,7 @@ library
                     prefix: SimpleIdentifier
                       token: prefix0 @106
                       staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                      element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                       staticType: null
                     period: . @113
                     identifier: SimpleIdentifier
@@ -4390,10 +4390,56 @@ library
   topLevelVariables
     const x
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::x
+      metadata
+        Annotation
+          atSign: @ @77
+          name: PrefixedIdentifier
+            prefix: SimpleIdentifier
+              token: prefix0 @78
+              staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+              staticType: null
+            period: . @85
+            identifier: SimpleIdentifier
+              token: A @86
+              staticElement: package:test/a.dart::<fragment>::@class::A
+              element: package:test/a.dart::<fragment>::@class::A#element
+              staticType: null
+            staticElement: package:test/a.dart::<fragment>::@class::A
+            element: package:test/a.dart::<fragment>::@class::A#element
+            staticType: null
+          arguments: ArgumentList
+            leftParenthesis: ( @87
+            rightParenthesis: ) @88
+          element: package:test/a.dart::<fragment>::@class::A::@constructor::new
+          element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
       type: int
       getter: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::x#element
     const y
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::y
+      metadata
+        Annotation
+          atSign: @ @77
+          name: PrefixedIdentifier
+            prefix: SimpleIdentifier
+              token: prefix0 @78
+              staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+              staticType: null
+            period: . @85
+            identifier: SimpleIdentifier
+              token: A @86
+              staticElement: package:test/a.dart::<fragment>::@class::A
+              element: package:test/a.dart::<fragment>::@class::A#element
+              staticType: null
+            staticElement: package:test/a.dart::<fragment>::@class::A
+            element: package:test/a.dart::<fragment>::@class::A#element
+            staticType: null
+          arguments: ArgumentList
+            leftParenthesis: ( @87
+            rightParenthesis: ) @88
+          element: package:test/a.dart::<fragment>::@class::A::@constructor::new
+          element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
       type: int
       getter: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::y#element
   getters
@@ -4530,7 +4576,7 @@ library
                 prefix: SimpleIdentifier
                   token: prefix0 @98
                   staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                   staticType: null
                 period: . @105
                 identifier: SimpleIdentifier
@@ -4694,7 +4740,7 @@ library
                 prefix: SimpleIdentifier
                   token: prefix0 @98
                   staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                   staticType: null
                 period: . @105
                 identifier: SimpleIdentifier
@@ -4757,7 +4803,7 @@ library
                 prefix: SimpleIdentifier
                   token: prefix0 @98
                   staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                   staticType: null
                 period: . @105
                 identifier: SimpleIdentifier
@@ -4825,7 +4871,7 @@ library
                 prefix: SimpleIdentifier
                   token: prefix0 @98
                   staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                   staticType: null
                 period: . @105
                 identifier: SimpleIdentifier
@@ -4841,7 +4887,7 @@ library
                 rightParenthesis: ) @108
               element: package:test/a.dart::<fragment>::@class::A::@constructor::new
               element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
-          parameters
+          formalParameters
             requiredPositional _
               type: int
 ''');
@@ -4891,7 +4937,7 @@ library
             prefix: SimpleIdentifier
               token: prefix0 @78
               staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
               staticType: null
             period: . @85
             identifier: SimpleIdentifier
@@ -4944,7 +4990,7 @@ library
   functions
     foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
-      parameters
+      formalParameters
         optionalPositional x
           type: dynamic
       returnType: void
@@ -5000,7 +5046,7 @@ library
             prefix: SimpleIdentifier
               token: prefix0 @78
               staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
               staticType: null
             period: . @85
             identifier: SimpleIdentifier
@@ -5068,7 +5114,7 @@ library
             prefix: SimpleIdentifier
               token: prefix0 @78
               staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
               staticType: null
             period: . @85
             identifier: SimpleIdentifier
@@ -5084,7 +5130,7 @@ library
             rightParenthesis: ) @88
           element: package:test/a.dart::<fragment>::@class::A::@constructor::new
           element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
-      parameters
+      formalParameters
         requiredPositional _
           type: int
 ''');
@@ -5128,7 +5174,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::foo
-      parameters
+      formalParameters
         requiredPositional x
           type: dynamic
           metadata
@@ -5138,7 +5184,7 @@ library
                 prefix: SimpleIdentifier
                   token: prefix0 @86
                   staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+                  element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
                   staticType: null
                 period: . @93
                 identifier: SimpleIdentifier
@@ -5191,6 +5237,29 @@ library
   topLevelVariables
     final foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::foo
+      metadata
+        Annotation
+          atSign: @ @77
+          name: PrefixedIdentifier
+            prefix: SimpleIdentifier
+              token: prefix0 @78
+              staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+              staticType: null
+            period: . @85
+            identifier: SimpleIdentifier
+              token: A @86
+              staticElement: package:test/a.dart::<fragment>::@class::A
+              element: package:test/a.dart::<fragment>::@class::A#element
+              staticType: null
+            staticElement: package:test/a.dart::<fragment>::@class::A
+            element: package:test/a.dart::<fragment>::@class::A#element
+            staticType: null
+          arguments: ArgumentList
+            leftParenthesis: ( @87
+            rightParenthesis: ) @88
+          element: package:test/a.dart::<fragment>::@class::A::@constructor::new
+          element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
       type: int
       getter: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::foo#element
   getters
@@ -5236,10 +5305,56 @@ library
   topLevelVariables
     final foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::foo
+      metadata
+        Annotation
+          atSign: @ @77
+          name: PrefixedIdentifier
+            prefix: SimpleIdentifier
+              token: prefix0 @78
+              staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+              staticType: null
+            period: . @85
+            identifier: SimpleIdentifier
+              token: A @86
+              staticElement: package:test/a.dart::<fragment>::@class::A
+              element: package:test/a.dart::<fragment>::@class::A#element
+              staticType: null
+            staticElement: package:test/a.dart::<fragment>::@class::A
+            element: package:test/a.dart::<fragment>::@class::A#element
+            staticType: null
+          arguments: ArgumentList
+            leftParenthesis: ( @87
+            rightParenthesis: ) @88
+          element: package:test/a.dart::<fragment>::@class::A::@constructor::new
+          element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
       type: int
       getter: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::foo#element
     final bar
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::bar
+      metadata
+        Annotation
+          atSign: @ @77
+          name: PrefixedIdentifier
+            prefix: SimpleIdentifier
+              token: prefix0 @78
+              staticElement: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+              element: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+              staticType: null
+            period: . @85
+            identifier: SimpleIdentifier
+              token: A @86
+              staticElement: package:test/a.dart::<fragment>::@class::A
+              element: package:test/a.dart::<fragment>::@class::A#element
+              staticType: null
+            staticElement: package:test/a.dart::<fragment>::@class::A
+            element: package:test/a.dart::<fragment>::@class::A#element
+            staticType: null
+          arguments: ArgumentList
+            leftParenthesis: ( @87
+            rightParenthesis: ) @88
+          element: package:test/a.dart::<fragment>::@class::A::@constructor::new
+          element2: package:test/a.dart::<fragment>::@class::A::@constructor::new#element
       type: int
       getter: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::bar#element
   getters
@@ -5413,7 +5528,7 @@ library
   functions
     foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
-      parameters
+      formalParameters
         requiredPositional x1
           type: X
         requiredPositional x2
@@ -5459,7 +5574,7 @@ library
   functions
     foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
-      parameters
+      formalParameters
         requiredPositional x
           type: X
       returnType: void
@@ -5743,7 +5858,7 @@ library
           element: <testLibrary>::@fragment::package:test/test.macro.dart::@topLevelVariable::x#element
           getter2: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::x
       getters
-        get x @-1
+        get <null-name>
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::x
           element: <testLibrary>::@fragment::package:test/test.macro.dart::@accessor::x#element
   classes
@@ -5879,10 +5994,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
+        package:test/a.dart as prefix0 @67
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
       classes
         class A @91
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -6040,13 +6155,13 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
-        dart:core
+        package:test/a.dart as prefix0 @67
+        dart:core as prefix1 @98
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-        prefix1
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix1
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix1
+          fragments: @98
       classes
         class A @122
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -6064,15 +6179,15 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@field::foo#element
               previousFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@field::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo#element
           setters
-            set foo= @-1
+            set <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo#element
-              parameters
-                _foo @-1
+              formalParameters
+                <null-name>
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo::@parameter::_foo#element
   classes
     class A
@@ -6089,7 +6204,7 @@ library
       setters
         synthetic set foo=
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional _foo
               type: int
 ''');
@@ -6214,13 +6329,13 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
-        dart:core
+        package:test/a.dart as prefix0 @67
+        dart:core as prefix1 @98
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-        prefix1
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix1
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix1
+          fragments: @98
       classes
         class A @122
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -6359,13 +6474,13 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
-        dart:core
+        package:test/a.dart as prefix0 @67
+        dart:core as prefix1 @98
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-        prefix1
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix1
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix1
+          fragments: @98
       classes
         class A @122
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -6514,13 +6629,13 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
-        dart:core
+        package:test/a.dart as prefix0 @67
+        dart:core as prefix1 @98
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-        prefix1
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix1
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix1
+          fragments: @98
       classes
         class A @122
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -6532,17 +6647,17 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@field::foo#element
               setter2: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
           setters
-            set foo= @173
+            set foo @173
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo#element
-              parameters
+              formalParameters
                 value @189
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo::@parameter::value#element
               nextFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo
-            augment set foo= @216
+            augment set foo @216
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo#element
-              parameters
+              formalParameters
                 value @232
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setterAugmentation::foo::@parameter::value#element
               previousFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
@@ -6557,7 +6672,7 @@ library
       setters
         external set foo=
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional value
               type: int
 ''');
@@ -7542,7 +7657,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            new @70
+            <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               macroDiagnostics
@@ -7634,7 +7749,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::foo#element
               getter2: <testLibraryFragment>::@class::A::@getter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
   classes
@@ -8207,7 +8322,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::foo#element
               getter2: <testLibraryFragment>::@class::A::@getter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
   classes
@@ -8292,7 +8407,7 @@ library
         foo @93
           reference: <testLibraryFragment>::@function::foo
           element: <testLibraryFragment>::@function::foo#element
-          parameters
+          formalParameters
             a @101
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
             default b @113
@@ -8304,7 +8419,7 @@ library
   functions
     foo
       firstFragment: <testLibraryFragment>::@function::foo
-      parameters
+      formalParameters
         requiredPositional a
           type: int
         optionalNamed b
@@ -8381,7 +8496,7 @@ library
         foo @98
           reference: <testLibraryFragment>::@function::foo
           element: <testLibraryFragment>::@function::foo#element
-          parameters
+          formalParameters
             a @106
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
             b @116
@@ -8389,7 +8504,7 @@ library
   functions
     foo
       firstFragment: <testLibraryFragment>::@function::foo
-      parameters
+      formalParameters
         requiredPositional a
           type: int
         requiredPositional b
@@ -8801,7 +8916,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::foo#element
               getter2: <testLibraryFragment>::@class::A::@getter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
   classes
@@ -8880,13 +8995,13 @@ library
         foo @98
           reference: <testLibraryFragment>::@function::foo
           element: <testLibraryFragment>::@function::foo#element
-          parameters
+          formalParameters
             a @102
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
   functions
     foo
       firstFragment: <testLibraryFragment>::@function::foo
-      parameters
+      formalParameters
         requiredPositional a
           type: dynamic
       returnType: void
@@ -9098,7 +9213,7 @@ library
           element: <testLibraryFragment>::@topLevelVariable::foo#element
           getter2: <testLibraryFragment>::@getter::foo
       getters
-        get foo @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::foo
           element: <testLibraryFragment>::@getter::foo#element
   topLevelVariables
@@ -9330,7 +9445,7 @@ library
             foo @116
               reference: <testLibraryFragment>::@class::A::@method::foo
               element: <testLibraryFragment>::@class::A::@method::foo#element
-              parameters
+              formalParameters
                 a @124
                   element: <testLibraryFragment>::@class::A::@method::foo::@parameter::a#element
                 b @134
@@ -9341,7 +9456,7 @@ library
       methods
         foo
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
-          parameters
+          formalParameters
             requiredPositional a
               type: int
             requiredPositional b
@@ -9570,7 +9685,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::foo#element
               getter2: <testLibraryFragment>::@class::A::@getter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
   classes
@@ -9665,7 +9780,7 @@ library
               element: <testLibraryFragment>::@class::A::@field::foo#element
               getter2: <testLibraryFragment>::@class::A::@getter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
   classes
@@ -10142,7 +10257,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            new @76
+            <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               macroDiagnostics
@@ -10256,15 +10371,15 @@ library
               getter2: <testLibraryFragment>::@class::A::@getter::foo
               setter2: <testLibraryFragment>::@class::A::@setter::foo
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
           setters
-            set foo= @-1
+            set <null-name>
               reference: <testLibraryFragment>::@class::A::@setter::foo
               element: <testLibraryFragment>::@class::A::@setter::foo#element
-              parameters
-                _foo @-1
+              formalParameters
+                <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::foo::@parameter::_foo#element
   classes
     class A
@@ -10281,7 +10396,7 @@ library
       setters
         synthetic set foo=
           firstFragment: <testLibraryFragment>::@class::A::@setter::foo
-          parameters
+          formalParameters
             requiredPositional _foo
               type: int
 ''');
@@ -10653,7 +10768,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
   classes
@@ -10713,7 +10828,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic const new @-1
+            synthetic const <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               constantInitializers
@@ -10838,10 +10953,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/test.dart
+        package:test/test.dart as prefix0 @70
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @70
       classes
         class C @86
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::C
@@ -11820,10 +11935,10 @@ library
               element: <testLibraryFragment>::@enum::B::@field::values#element
               getter2: <testLibraryFragment>::@enum::B::@getter::values
           getters
-            get v @-1
+            get <null-name>
               reference: <testLibraryFragment>::@enum::B::@getter::v
               element: <testLibraryFragment>::@enum::B::@getter::v#element
-            get values @-1
+            get <null-name>
               reference: <testLibraryFragment>::@enum::B::@getter::values
               element: <testLibraryFragment>::@enum::B::@getter::values#element
   classes
@@ -12549,20 +12664,20 @@ library
               element: <testLibraryFragment>::@class::A::@field::bar#element
               getter2: <testLibraryFragment>::@class::A::@getter::bar
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
-            get bar @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::bar
               element: <testLibraryFragment>::@class::A::@getter::bar#element
     <testLibrary>::@fragment::package:test/test.macro.dart
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        dart:core
+        dart:core as prefix0 @57
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @57
       classes
         class A @81
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -12765,23 +12880,23 @@ library
               element: <testLibraryFragment>::@class::A::@field::bar#element
               getter2: <testLibraryFragment>::@class::A::@getter::bar
           getters
-            get foo @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::foo
               element: <testLibraryFragment>::@class::A::@getter::foo#element
-            get bar @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::bar
               element: <testLibraryFragment>::@class::A::@getter::bar#element
     <testLibrary>::@fragment::package:test/test.macro.dart
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/json_serializable.dart
-        dart:core
+        package:test/json_serializable.dart as prefix0 @83
+        dart:core as prefix1 @114
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
-        prefix1
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix1
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @83
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix1
+          fragments: @114
       classes
         class A @138
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
@@ -12793,7 +12908,7 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson#element
               periodOffset: 176
               nameEnd: 185
-              parameters
+              formalParameters
                 json @231
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson::@parameter::json#element
               nextFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::fromJson
@@ -12802,7 +12917,7 @@ library
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson#element
               periodOffset: 335
               nameEnd: 344
-              parameters
+              formalParameters
                 json @390
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::fromJson::@parameter::json#element
               previousFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson
@@ -12830,7 +12945,7 @@ library
       constructors
         external fromJson
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson
-          parameters
+          formalParameters
             requiredPositional json
               type: Map<String, Object?>
       getters
@@ -17816,7 +17931,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -17827,7 +17942,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes
@@ -17913,16 +18028,16 @@ library
       element: <testLibrary>
       nextFragment: <testLibrary>::@fragment::package:test/test.macro.dart
       libraryImports
-        package:test/append.dart
+        package:test/append.dart as prefix @24
       prefixes
-        prefix
-          reference: <testLibraryFragment>::@prefix::prefix
+        <testLibraryFragment>::@prefix2::prefix
+          fragments: @24
       classes
         class A @84
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -17933,7 +18048,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes
@@ -18019,16 +18134,16 @@ library
       element: <testLibrary>
       nextFragment: <testLibrary>::@fragment::package:test/test.macro.dart
       libraryImports
-        package:test/append.dart
+        package:test/append.dart as prefix @24
       prefixes
-        prefix
-          reference: <testLibraryFragment>::@prefix::prefix
+        <testLibraryFragment>::@prefix2::prefix
+          fragments: @24
       classes
         class A @90
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -18039,7 +18154,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes
@@ -18482,10 +18597,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
+        package:test/a.dart as prefix0 @67
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
       classes
         class MyClass @83
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
@@ -18494,7 +18609,7 @@ library
             foo @100
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@method::foo
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@method::foo#element
-              parameters
+              formalParameters
                 _ @114
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@method::foo::@parameter::_#element
   classes
@@ -18505,7 +18620,7 @@ library
       methods
         foo
           firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@method::foo
-          parameters
+          formalParameters
             requiredPositional _
               type: A
 ''');
@@ -18917,10 +19032,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       libraryImports
-        package:test/a.dart
+        package:test/a.dart as prefix0 @67
       prefixes
-        prefix0
-          reference: <testLibrary>::@fragment::package:test/test.macro.dart::@prefix::prefix0
+        <testLibrary>::@fragment::package:test/test.macro.dart::@prefix2::prefix0
+          fragments: @67
       classes
         class A @104
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::A
@@ -19832,9 +19947,7 @@ elementFactory
 
     newAnalysisOptionsYamlFile(
       otherRootPath,
-      AnalysisOptionsFileConfig(
-        experiments: experiments,
-      ).toContent(),
+      analysisOptionsContent(experiments: experiments),
     );
 
     var file = newFile('$otherRootPath/lib/other.dart', r'''

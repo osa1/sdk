@@ -21,7 +21,7 @@ class PublicMemberApiDocsExtensionTypesTest extends LintRuleTest {
   bool get addMetaPackageDep => true;
 
   @override
-  String get lintRule => 'public_member_api_docs';
+  String get lintRule => LintNames.public_member_api_docs;
 
   test_extensionTypeDeclaration() async {
     await assertDiagnostics(r'''
@@ -84,7 +84,7 @@ class PublicMemberApiDocsTest extends LintRuleTest {
   bool get addMetaPackageDep => true;
 
   @override
-  String get lintRule => 'public_member_api_docs';
+  String get lintRule => LintNames.public_member_api_docs;
 
   /// https://github.com/dart-lang/linter/issues/4526
   test_abstractFinalConstructor() async {
@@ -382,7 +382,7 @@ int get _z => 0;
 @reflectiveTest
 class PublicMemberApiDocsTestDirTest extends LintRuleTest {
   @override
-  String get lintRule => 'public_member_api_docs';
+  String get lintRule => LintNames.public_member_api_docs;
 
   @override
   String get testPackageLibPath => '$testPackageRootPath/test';
@@ -402,7 +402,7 @@ class PublicMemberApiDocsTestPackageTest extends LintRuleTest {
   String get fixturePackageLibPath => '$myPackageRootPath/test/fixture/lib';
 
   @override
-  String get lintRule => 'public_member_api_docs';
+  String get lintRule => LintNames.public_member_api_docs;
 
   String get myPackageRootPath => '$workspaceRootPath/myPackage';
 
@@ -413,15 +413,15 @@ class PublicMemberApiDocsTestPackageTest extends LintRuleTest {
       '$myPackageRootPath/.dart_tool/package_config.json',
       PackageConfigFileBuilder(),
     );
-    newPubspecYamlFile(myPackageRootPath,
-        PubspecYamlFileConfig(name: 'myPackage').toContent());
+    newPubspecYamlFile(
+        myPackageRootPath, pubspecYamlContent(name: 'myPackage'));
     newAnalysisOptionsYamlFile(
       myPackageRootPath,
-      AnalysisOptionsFileConfig(
+      analysisOptionsContent(
         experiments: experiments,
-        lints: lintRules,
+        rules: lintRules,
         propagateLinterExceptions: true,
-      ).toContent(),
+      ),
     );
     newFolder(fixturePackageLibPath);
     writePackageConfig(

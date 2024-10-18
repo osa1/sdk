@@ -7,33 +7,14 @@ import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Avoid private typedef functions.';
-
-const _details = r'''
-**AVOID** private typedef functions used only once. Prefer inline function
-syntax.
-
-**BAD:**
-```dart
-typedef void _F();
-m(_F f);
-```
-
-**GOOD:**
-```dart
-m(void Function() f);
-```
-
-''';
 
 class AvoidPrivateTypedefFunctions extends LintRule {
   AvoidPrivateTypedefFunctions()
       : super(
-          name: 'avoid_private_typedef_functions',
+          name: LintNames.avoid_private_typedef_functions,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -48,7 +29,7 @@ class AvoidPrivateTypedefFunctions extends LintRule {
   }
 }
 
-class _CountVisitor extends RecursiveAstVisitor {
+class _CountVisitor extends RecursiveAstVisitor<void> {
   final String type;
   int count = 0;
   _CountVisitor(this.type);

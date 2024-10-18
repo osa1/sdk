@@ -121,6 +121,7 @@ awaited
 awaiting
 awaits
 b
+backing
 backlog
 backping
 backstop
@@ -189,6 +190,7 @@ brevity
 brianwilkerson
 bridge
 bridges
+brief
 brute
 bs
 bsd
@@ -523,6 +525,7 @@ dsdk
 dso
 dsos
 dst
+dummies
 dummy
 dumping
 dupdate
@@ -622,6 +625,7 @@ explosion
 exportable
 exportee
 exportees
+exposing
 expr
 expression's
 ext
@@ -719,6 +723,7 @@ gardening
 garner
 gathers
 gb
+gc
 gen
 gendir
 generation
@@ -866,6 +871,7 @@ initializer's
 injecting
 inlines
 insertion
+insists
 inspect
 inspecting
 inspection
@@ -902,7 +908,9 @@ intersects
 interspersed
 interval
 intervals
+intervening
 intl
+introductory
 introspect
 introspectable
 introspecting
@@ -1081,6 +1089,7 @@ mimic
 min
 mini
 minutes
+misc
 miss
 mistakes
 misuse
@@ -1177,6 +1186,7 @@ occasionally
 occupied
 offending
 ogham
+okay
 oked
 omitting
 op
@@ -1257,6 +1267,7 @@ permit
 permits
 persist
 pertinent
+phrase
 physically
 pi
 picking
@@ -1307,6 +1318,7 @@ preorder
 prepares
 preprocess
 presented
+pressure
 presubmit
 presumably
 presuming
@@ -1801,6 +1813,7 @@ tails
 taking
 talk
 talks
+tandem
 target's
 tarjan
 tarjan's

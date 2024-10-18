@@ -9,8 +9,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dev_compiler/dev_compiler.dart';
+import 'package:dev_compiler/src/command/command.dart';
 import 'package:dev_compiler/src/js_ast/nodes.dart';
-import 'package:dev_compiler/src/kernel/command.dart';
 import 'package:front_end/src/api_unstable/vm.dart' show FileSystem;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
@@ -200,7 +200,7 @@ class IncrementalJavaScriptBundler {
       // use full path for tracking if module uri is not a package uri.
       final String moduleUrl = urlForComponentUri(moduleUri, packageConfig);
       final String moduleName = makeModuleName(moduleUrl);
-      final SharedCompilerOptions ddcOptions = new SharedCompilerOptions(
+      final Options ddcOptions = new Options(
         sourceMap: true,
         summarizeApi: false,
         emitDebugMetadata: emitDebugMetadata,

@@ -6,44 +6,16 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc =
     'Avoid library directives unless they have documentation comments or '
     'annotations.';
 
-const _details = r'''
-**DO** use library directives if you want to document a library and/or annotate 
-a library.
-
-**BAD:**
-```dart
-library;
-```
-
-**GOOD:**
-```dart
-/// This library does important things
-library;
-```
-
-```dart
-@TestOn('js')
-library;
-```
-
-NOTE: Due to limitations with this lint, libraries with parts will not be
-flagged for unnecessary library directives.
-''';
-
-const _name = 'unnecessary_library_directive';
-
 class UnnecessaryLibraryDirective extends LintRule {
   UnnecessaryLibraryDirective()
       : super(
-          name: _name,
+          name: LintNames.unnecessary_library_directive,
           description: _desc,
-          details: _details,
         );
 
   @override

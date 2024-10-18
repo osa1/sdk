@@ -4,50 +4,19 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Avoid using private types in public APIs.';
-
-const _details = r'''
-**AVOID** using library private types in public APIs.
-
-For the purposes of this lint, a public API is considered to be any top-level or
-member declaration unless the declaration is library private or contained in a
-declaration that's library private. The following uses of types are checked:
-
-- the return type of a function or method,
-- the type of any parameter of a function or method,
-- the bound of a type parameter to any function, method, class, mixin,
-  extension's extended type, or type alias,
-- the type of any top level variable or field,
-- any type used in the declaration of a type alias (for example
-  `typedef F = _Private Function();`), or
-- any type used in the `on` clause of an extension or a mixin
-
-**BAD:**
-```dart
-f(_Private p) { ... }
-class _Private {}
-```
-
-**GOOD:**
-```dart
-f(String s) { ... }
-```
-
-''';
 
 class LibraryPrivateTypesInPublicApi extends LintRule {
   LibraryPrivateTypesInPublicApi()
       : super(
-          name: 'library_private_types_in_public_api',
+          name: LintNames.library_private_types_in_public_api,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -160,10 +129,10 @@ class Validator extends SimpleAstVisitor<void> {
     }
 
     // Check implicit type.
-    var element = node.declaredElement;
-    if (element is FieldFormalParameterElement) {
+    var element = node.declaredFragment?.element;
+    if (element is FieldFormalParameterElement2) {
       var type = element.type;
-      if (type is InterfaceType && isPrivateName(type.element.name)) {
+      if (type is InterfaceType && isPrivateName(type.element3.name)) {
         rule.reportLintForToken(node.name);
       }
     }
@@ -242,7 +211,7 @@ class Validator extends SimpleAstVisitor<void> {
 
   @override
   void visitNamedType(NamedType node) {
-    var element = node.element;
+    var element = node.element2;
     if (element != null && isPrivate(element)) {
       rule.reportLintForToken(node.name2);
     }
@@ -272,10 +241,10 @@ class Validator extends SimpleAstVisitor<void> {
     }
 
     // Check implicit type.
-    var element = node.declaredElement;
-    if (element is SuperFormalParameterElement) {
+    var element = node.declaredFragment?.element;
+    if (element is SuperFormalParameterElement2) {
       var type = element.type;
-      if (type is InterfaceType && isPrivateName(type.element.name)) {
+      if (type is InterfaceType && isPrivateName(type.element3.name)) {
         rule.reportLintForToken(node.name);
       }
     }
@@ -306,20 +275,20 @@ class Validator extends SimpleAstVisitor<void> {
 
   /// Return `true` if the given [element] is private or is defined in a private
   /// library.
-  static bool isPrivate(Element element) => isPrivateName(element.name);
+  static bool isPrivate(Element2 element) => isPrivateName(element.name);
 
   static bool isPrivateName(String? name) =>
       name != null && Identifier.isPrivateName(name);
 }
 
-class Visitor extends SimpleAstVisitor {
+class Visitor extends SimpleAstVisitor<void> {
   LintRule rule;
 
   Visitor(this.rule);
 
   @override
   void visitCompilationUnit(CompilationUnit node) {
-    var element = node.declaredElement;
+    var element = node.declaredFragment?.element;
     if (element != null && !Validator.isPrivate(element)) {
       var validator = Validator(rule);
       node.declarations.accept(validator);

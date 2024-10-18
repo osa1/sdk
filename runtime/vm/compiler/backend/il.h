@@ -402,11 +402,9 @@ struct InstrAttrs {
   };
 };
 
-#define FOR_EACH_INSTRUCTION(M)                                                \
+#define FOR_EACH_LEAF_INSTRUCTION(M)                                           \
   M(GraphEntry, kNoGC)                                                         \
-  M(JoinEntry, kNoGC)                                                          \
   M(TargetEntry, kNoGC)                                                        \
-  M(FunctionEntry, kNoGC)                                                      \
   M(NativeEntry, kNoGC)                                                        \
   M(OsrEntry, kNoGC)                                                           \
   M(IndirectEntry, kNoGC)                                                      \
@@ -495,14 +493,11 @@ struct InstrAttrs {
   M(CheckSmi, kNoGC)                                                           \
   M(CheckNull, kNoGC)                                                          \
   M(CheckCondition, kNoGC)                                                     \
-  M(Constant, kNoGC)                                                           \
   M(UnboxedConstant, kNoGC)                                                    \
   M(CheckEitherNonSmi, kNoGC)                                                  \
   M(BinaryDoubleOp, kNoGC)                                                     \
   M(DoubleTestOp, kNoGC)                                                       \
   M(MathMinMax, kNoGC)                                                         \
-  M(Box, _)                                                                    \
-  M(Unbox, kNoGC)                                                              \
   M(BoxInt64, _)                                                               \
   M(UnboxInt64, kNoGC)                                                         \
   M(CaseInsensitiveCompare, kNoGC)                                             \
@@ -549,6 +544,17 @@ struct InstrAttrs {
   M(SimdOp, kNoGC)                                                             \
   M(Suspend, _)
 
+#define FOR_EACH_STEM_INSTRUCTION(M)                                           \
+  M(FunctionEntry, kNoGC)                                                      \
+  M(JoinEntry, kNoGC)                                                          \
+  M(Constant, kNoGC)                                                           \
+  M(Box, _)                                                                    \
+  M(Unbox, kNoGC)
+
+#define FOR_EACH_CONCRETE_INSTRUCTION(M)                                       \
+  FOR_EACH_STEM_INSTRUCTION(M)                                                 \
+  FOR_EACH_LEAF_INSTRUCTION(M)
+
 #define FOR_EACH_ABSTRACT_INSTRUCTION(M)                                       \
   M(Allocation, _)                                                             \
   M(ArrayAllocation, _)                                                        \
@@ -564,7 +570,7 @@ struct InstrAttrs {
   M(UnboxInteger, _)
 
 #define FORWARD_DECLARATION(type, attrs) class type##Instr;
-FOR_EACH_INSTRUCTION(FORWARD_DECLARATION)
+FOR_EACH_CONCRETE_INSTRUCTION(FORWARD_DECLARATION)
 FOR_EACH_ABSTRACT_INSTRUCTION(FORWARD_DECLARATION)
 #undef FORWARD_DECLARATION
 
@@ -961,7 +967,7 @@ class ValueListIterable {
 class Instruction : public ZoneAllocated {
  public:
 #define DECLARE_TAG(type, attrs) k##type,
-  enum Tag { FOR_EACH_INSTRUCTION(DECLARE_TAG) kNumInstructions };
+  enum Tag { FOR_EACH_CONCRETE_INSTRUCTION(DECLARE_TAG) kNumInstructions };
 #undef DECLARE_TAG
 
   static const intptr_t kInstructionAttrs[kNumInstructions];
@@ -1170,8 +1176,26 @@ class Instruction : public ZoneAllocated {
   DECLARE_INSTRUCTION_TYPE_CHECK(Definition, Definition)
   DECLARE_INSTRUCTION_TYPE_CHECK(BlockEntryWithInitialDefs,
                                  BlockEntryWithInitialDefs)
-  FOR_EACH_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
   FOR_EACH_ABSTRACT_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
+  FOR_EACH_STEM_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
+
+#undef DECLARE_INSTRUCTION_TYPE_CHECK
+#undef INSTRUCTION_TYPE_CHECK
+
+#define DECLARE_INSTRUCTION_TYPE_CHECK(Name, Type)                             \
+  bool Is##Name() const { return (As##Name() != nullptr); }                    \
+  Type* As##Name() {                                                           \
+    auto const_this = static_cast<const Instruction*>(this);                   \
+    return const_cast<Type*>(const_this->As##Name());                          \
+  }                                                                            \
+  const Type* As##Name() const {                                               \
+    if (tag() == k##Name) return reinterpret_cast<const Type*>(this);          \
+    return nullptr;                                                            \
+  }
+#define INSTRUCTION_TYPE_CHECK(Name, Attrs)                                    \
+  DECLARE_INSTRUCTION_TYPE_CHECK(Name, Name##Instr)
+
+  FOR_EACH_LEAF_INSTRUCTION(INSTRUCTION_TYPE_CHECK)
 
 #undef INSTRUCTION_TYPE_CHECK
 #undef DECLARE_INSTRUCTION_TYPE_CHECK
@@ -4030,6 +4054,10 @@ class BranchInstr : public Instruction {
     return comparison()->RequiredInputRepresentation(i);
   }
 
+  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
+    return comparison()->SpeculativeModeOfInput(index);
+  }
+
   virtual Instruction* Canonicalize(FlowGraph* flow_graph);
 
   void set_constant_target(TargetEntryInstr* target) {
@@ -4173,7 +4201,10 @@ class ReachabilityFenceInstr : public TemplateInstruction<1, NoThrow> {
 
 class ConstraintInstr : public TemplateDefinition<1, NoThrow> {
  public:
-  ConstraintInstr(Value* value, Range* constraint) : constraint_(constraint) {
+  ConstraintInstr(Value* value,
+                  Range* constraint,
+                  Representation representation)
+      : constraint_(constraint), representation_(representation) {
     SetInputAt(0, value);
   }
 
@@ -4193,6 +4224,11 @@ class ConstraintInstr : public TemplateDefinition<1, NoThrow> {
   Value* value() const { return inputs_[0]; }
   Range* constraint() const { return constraint_; }
 
+  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
+    return representation_;
+  }
+  virtual Representation representation() const { return representation_; }
+
   virtual void InferRange(RangeAnalysis* analysis, Range* range);
 
   // Constraints for branches have their target block stored in order
@@ -4203,7 +4239,9 @@ class ConstraintInstr : public TemplateDefinition<1, NoThrow> {
 
   PRINT_OPERANDS_TO_SUPPORT
 
-#define FIELD_LIST(F) F(Range*, constraint_)
+#define FIELD_LIST(F)                                                          \
+  F(Range*, constraint_)                                                       \
+  F(const Representation, representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(ConstraintInstr,
                                           TemplateDefinition,
@@ -5352,6 +5390,7 @@ class RelationalOpInstr : public TemplateComparison<2, NoThrow, Pure> {
       : TemplateComparison(source, kind, deopt_id),
         speculative_mode_(speculative_mode) {
     ASSERT(Token::IsRelationalOperator(kind));
+    ASSERT((cid == kSmiCid) || (cid == kMintCid) || (cid == kDoubleCid));
     SetInputAt(0, left);
     SetInputAt(1, right);
     set_operation_cid(cid);
@@ -5437,6 +5476,10 @@ class IfThenElseInstr : public Definition {
 
   virtual Representation RequiredInputRepresentation(intptr_t i) const {
     return comparison()->RequiredInputRepresentation(i);
+  }
+
+  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
+    return comparison()->SpeculativeModeOfInput(index);
   }
 
   virtual CompileType ComputeType() const;
@@ -10765,6 +10808,8 @@ class CheckBoundBaseInstr : public TemplateDefinition<2, NoThrow, Pure> {
 
   virtual Definition* Canonicalize(FlowGraph* flow_graph);
 
+  virtual void InferRange(RangeAnalysis* analysis, Range* range);
+
   DECLARE_ABSTRACT_INSTRUCTION(CheckBoundBase);
 
   virtual Value* RedefinedValue() const;
@@ -10826,16 +10871,32 @@ class CheckArrayBoundInstr : public CheckBoundBaseInstr {
 // or otherwise throws an out-of-bounds exception (viz. non-speculative).
 class GenericCheckBoundInstr : public CheckBoundBaseInstr {
  public:
+  enum Mode {
+    kReal,
+
+    // Phantom checks serve as dependencies inhibiting illegal code motion but
+    // are removed before code generation. Phantom checks are inserted due to
+    // unsafe annotations. An early-phaee path-sensitive bounds check removal
+    // optimization can be implemented by replacing a real check with a phantom
+    // check.
+    kPhantom
+  };
+
   // We prefer to have unboxed inputs on 64-bit where values can fit into a
   // register.
   static bool UseUnboxedRepresentation() {
     return compiler::target::kWordSize == 8;
   }
 
-  GenericCheckBoundInstr(Value* length, Value* index, intptr_t deopt_id)
-      : CheckBoundBaseInstr(length, index, deopt_id) {}
+  GenericCheckBoundInstr(Value* length,
+                         Value* index,
+                         intptr_t deopt_id,
+                         Mode mode = Mode::kReal)
+      : CheckBoundBaseInstr(length, index, deopt_id), mode_(mode) {}
 
-  virtual bool AttributesEqual(const Instruction& other) const { return true; }
+  virtual bool AttributesEqual(const Instruction& other) const {
+    return other.AsGenericCheckBound()->mode_ == mode_;
+  }
 
   DECLARE_INSTRUCTION(GenericCheckBound)
 
@@ -10857,6 +10918,8 @@ class GenericCheckBoundInstr : public CheckBoundBaseInstr {
     return UseUnboxedRepresentation() ? kUnboxedInt64 : kTagged;
   }
 
+  virtual Definition* Canonicalize(FlowGraph* flow_graph);
+
   // GenericCheckBound can implicitly call Dart code (RangeError or
   // ArgumentError constructor), so it can lazily deopt.
   virtual bool ComputeCanDeoptimize() const { return false; }
@@ -10870,7 +10933,16 @@ class GenericCheckBoundInstr : public CheckBoundBaseInstr {
     return SlowPathSharingSupported(is_optimizing);
   }
 
-  DECLARE_EMPTY_SERIALIZATION(GenericCheckBoundInstr, CheckBoundBaseInstr)
+  bool IsPhantom() const { return mode_ == Mode::kPhantom; }
+
+  PRINT_OPERANDS_TO_SUPPORT
+
+#define FIELD_LIST(F) F(const Mode, mode_)
+
+  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(GenericCheckBoundInstr,
+                                          CheckBoundBaseInstr,
+                                          FIELD_LIST)
+#undef FIELD_LIST
 
  private:
   DISALLOW_COPY_AND_ASSIGN(GenericCheckBoundInstr);
@@ -11790,7 +11862,7 @@ class InstructionVisitor : public ValueObject {
 #define DECLARE_VISIT_INSTRUCTION(ShortName, Attrs)                            \
   virtual void Visit##ShortName(ShortName##Instr* instr) {}
 
-  FOR_EACH_INSTRUCTION(DECLARE_VISIT_INSTRUCTION)
+  FOR_EACH_CONCRETE_INSTRUCTION(DECLARE_VISIT_INSTRUCTION)
 
 #undef DECLARE_VISIT_INSTRUCTION
 

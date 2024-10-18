@@ -8,33 +8,8 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Unnecessary `null` checks.';
-
-const _details = r'''
-**DON'T** apply a `null` check where a nullable value is accepted.
-
-**BAD:**
-```dart
-f(int? i) {}
-m() {
-  int? j;
-  f(j!);
-}
-
-```
-
-**GOOD:**
-```dart
-f(int? i) {}
-m() {
-  int? j;
-  f(j);
-}
-```
-
-''';
 
 DartType? getExpectedType(PostfixExpression node) {
   var realNode =
@@ -90,15 +65,16 @@ DartType? getExpectedType(PostfixExpression node) {
   }
   // in variable declaration
   if (parent is VariableDeclaration) {
-    return parent.declaredElement?.type;
+    var element = parent.declaredFragment?.element ?? parent.declaredElement2;
+    return element?.type;
   }
   // as right member of binary operator
   if (parent is BinaryExpression && parent.rightOperand == realNode) {
-    var parentElement = parent.staticElement;
+    var parentElement = parent.element;
     if (parentElement == null) {
       return null;
     }
-    return parentElement.parameters.first.type;
+    return parentElement.formalParameters.first.type;
   }
   // as member of list
   if (parent is ListLiteral) {
@@ -132,7 +108,7 @@ DartType? getExpectedType(PostfixExpression node) {
   if (parent is ArgumentList && realNode is Expression) {
     var grandParent = parent.parent;
     if (grandParent is InstanceCreationExpression) {
-      var constructor = grandParent.constructorName.staticElement;
+      var constructor = grandParent.constructorName.element;
       if (constructor != null) {
         if (constructor.returnType.isDartAsyncFuture &&
             constructor.name == 'value') {
@@ -151,7 +127,7 @@ DartType? getExpectedType(PostfixExpression node) {
         }
       }
     }
-    return realNode.staticParameterElement?.type;
+    return realNode.correspondingParameter?.type;
   }
   return null;
 }
@@ -159,9 +135,8 @@ DartType? getExpectedType(PostfixExpression node) {
 class UnnecessaryNullChecks extends LintRule {
   UnnecessaryNullChecks()
       : super(
-          name: 'unnecessary_null_checks',
+          name: LintNames.unnecessary_null_checks,
           description: _desc,
-          details: _details,
           state: State.experimental(),
         );
 

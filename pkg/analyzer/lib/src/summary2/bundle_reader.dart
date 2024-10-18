@@ -607,11 +607,6 @@ class LibraryElementLinkedData extends ElementLinkedData<LibraryElementImpl> {
   @override
   void _read(element, reader) {
     _readLibraryOrAugmentation(element, reader);
-    for (var part in element.parts) {
-      part.metadata = reader._readAnnotationList(
-        unitElement: unitElement,
-      );
-    }
 
     element.macroDiagnostics = reader.readMacroDiagnostics();
     element.entryPoint = reader.readElement() as FunctionElement?;
@@ -773,9 +768,11 @@ class LibraryReader {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
 
     var reference = _readReference();
-    var name = reference.elementName;
+    var fragmentName = _readFragmentName();
+    var name = fragmentName?.name ?? '';
 
     var element = ClassElementImpl(name, -1);
+    element.name2 = fragmentName;
 
     var linkedData = ClassElementLinkedData(
       reference: reference,
@@ -845,6 +842,13 @@ class LibraryReader {
       var reference = _readReference();
       var name = reference.elementName.ifEqualThen('new', '');
       var element = ConstructorElementImpl(name, -1);
+      element.name2 = _reader.readOptionalObject((reader) {
+        return ConstructorFragmentNameImpl(
+          name: _reader.readStringReference(),
+          nameOffset: -1,
+          periodOffset: -1,
+        );
+      });
       var linkedData = ConstructorElementLinkedData(
         reference: reference,
         libraryReader: this,
@@ -939,9 +943,11 @@ class LibraryReader {
   ) {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
     var reference = _readReference();
-    var name = reference.elementName;
+    var fragmentName = _readFragmentName();
+    var name = fragmentName?.name ?? '';
 
     var element = EnumElementImpl(name, -1);
+    element.name2 = fragmentName;
 
     var linkedData = EnumElementLinkedData(
       reference: reference,
@@ -1028,9 +1034,12 @@ class LibraryReader {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
 
     var reference = _readReference();
-    var name = _reader.readBool() ? reference.elementName : null;
+    var fragmentName = _readFragmentName();
+    var name = fragmentName?.name;
 
     var element = ExtensionElementImpl(name, -1);
+    element.name2 = fragmentName;
+
     element.setLinkedData(
       reference,
       ExtensionElementLinkedData(
@@ -1072,9 +1081,12 @@ class LibraryReader {
   ) {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
     var reference = _readReference();
-    var name = reference.elementName;
+    var fragmentName = _readFragmentName();
+    var name = fragmentName?.name ?? '';
 
     var element = ExtensionTypeElementImpl(name, -1);
+    element.name2 = fragmentName;
+
     element.setLinkedData(
       reference,
       ExtensionTypeElementLinkedData(
@@ -1187,6 +1199,16 @@ class LibraryReader {
     }
   }
 
+  FragmentNameImpl? _readFragmentName() {
+    return _reader.readOptionalObject((reader) {
+      return ConstructorFragmentNameImpl(
+        name: _reader.readStringReference(),
+        nameOffset: -1,
+        periodOffset: -1,
+      );
+    });
+  }
+
   void _readFunctions(
     CompilationUnitElementImpl unitElement,
     Reference unitReference,
@@ -1194,9 +1216,11 @@ class LibraryReader {
     unitElement.functions = _reader.readTypedList(() {
       var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
       var reference = _readReference();
+      var fragmentName = _readFragmentName();
       var name = reference.elementName;
 
       var element = FunctionElementImpl(name, -1);
+      element.name2 = fragmentName;
 
       var linkedData = FunctionElementLinkedData(
         reference: reference,
@@ -1225,6 +1249,9 @@ class LibraryReader {
       prefix: _readImportElementPrefix(
         containerLibrary: containerLibrary,
         containerUnit: containerUnit,
+      ),
+      prefix2: _readLibraryImportPrefixFragment(
+        libraryFragment: containerUnit,
       ),
       uri: _readDirectiveUri(
         libraryElement: libraryElement,
@@ -1288,6 +1315,37 @@ class LibraryReader {
     return LibraryLanguageVersion(package: package, override: override);
   }
 
+  PrefixFragmentImpl? _readLibraryImportPrefixFragment({
+    required CompilationUnitElementImpl libraryFragment,
+  }) {
+    return _reader.readOptionalObject((reader) {
+      var name = _reader.readStringReference();
+      var isDeferred = _reader.readBool();
+      var fragment = PrefixFragmentImpl(
+        enclosingFragment: libraryFragment,
+        name: name,
+        nameOffset: -1,
+        isDeferred: isDeferred,
+      );
+
+      var containerRef = libraryFragment.reference!;
+      var reference = containerRef.getChild('@prefix2').getChild(name);
+      var element = reference.element2 as PrefixElementImpl2?;
+
+      if (element == null) {
+        element = PrefixElementImpl2(
+          reference: reference,
+          firstFragment: fragment,
+        );
+      } else {
+        element.addFragment(fragment);
+      }
+
+      fragment.element = element;
+      return fragment;
+    });
+  }
+
   void _readLibraryOrAugmentationElement({
     required LibraryElementImpl libraryElement,
     required LibraryOrAugmentationElementImpl containerLibrary,
@@ -1310,8 +1368,10 @@ class LibraryReader {
     return _reader.readTypedList(() {
       var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
       var reference = _readReference();
+      var fragmentName = _readFragmentName();
       var name = reference.elementName;
       var element = MethodElementImpl(name, -1);
+      element.name2 = fragmentName;
       var linkedData = MethodElementLinkedData(
         reference: reference,
         libraryReader: this,
@@ -1333,9 +1393,11 @@ class LibraryReader {
   ) {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
     var reference = _readReference();
-    var name = reference.elementName;
+    var fragmentName = _readFragmentName();
+    var name = fragmentName?.name ?? '';
 
     var element = MixinElementImpl(name, -1);
+    element.name2 = fragmentName;
 
     var linkedData = MixinElementLinkedData(
       reference: reference,
@@ -1397,6 +1459,7 @@ class LibraryReader {
   // TODO(scheglov): Deduplicate parameter reading implementation.
   List<ParameterElementImpl> _readParameters() {
     return _reader.readTypedList(() {
+      var fragmentName = _readFragmentName();
       var name = _reader.readStringReference();
       var isDefault = _reader.readBool();
       var isInitializingFormal = _reader.readBool();
@@ -1452,6 +1515,7 @@ class LibraryReader {
           reference.element = element;
         }
       }
+      element.name2 = fragmentName;
       ParameterElementFlags.read(_reader, element);
       element.typeParameters = _readTypeParameters();
       element.parameters = _readParameters();
@@ -1506,9 +1570,11 @@ class LibraryReader {
     var resolutionOffset = _baseResolutionOffset + _reader.readUInt30();
 
     var reference = _readReference();
+    var fragmentName = _readFragmentName();
     var name = reference.elementName;
 
     var element = PropertyAccessorElementImpl(name, -1);
+    element.name2 = fragmentName;
     PropertyAccessorElementFlags.read(_reader, element);
 
     var linkedData = PropertyAccessorElementLinkedData(

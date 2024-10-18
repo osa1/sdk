@@ -6,47 +6,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Avoid empty statements.';
-
-const _details = r'''
-**AVOID** empty statements.
-
-Empty statements almost always indicate a bug.
-
-For example,
-
-**BAD:**
-```dart
-if (complicated.expression.foo());
-  bar();
-```
-
-Formatted with `dart format` the bug becomes obvious:
-
-```dart
-if (complicated.expression.foo()) ;
-bar();
-
-```
-
-Better to avoid the empty statement altogether.
-
-**GOOD:**
-```dart
-if (complicated.expression.foo())
-  bar();
-```
-
-''';
 
 class EmptyStatements extends LintRule {
   EmptyStatements()
       : super(
-          name: 'empty_statements',
+          name: LintNames.empty_statements,
           description: _desc,
-          details: _details,
         );
 
   @override

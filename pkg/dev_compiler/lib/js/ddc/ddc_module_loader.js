@@ -754,7 +754,7 @@ if (!self.dart_library) {
       }
       if (!!configuration.jsInteropNonNullAsserts) {
         runtimeLibrary.jsInteropNonNullAsserts(
-           configuration.jsInteropNonNullAsserts);
+          configuration.jsInteropNonNullAsserts);
       }
       if (!!configuration.dynamicModuleLoader) {
         let loader = configuration.dynamicModuleLoader;
@@ -1393,6 +1393,7 @@ if (!self.deferred_loader) {
     // The name of the entrypoint module. Set when the application starts for
     // the first time and used during a hot restart.
     savedEntryPointLibraryName = null;
+    savedDartSdkRuntimeOptions = null;
 
     createEmptyLibrary() {
       return Object.create(null);
@@ -1425,21 +1426,25 @@ if (!self.deferred_loader) {
       if (currentLibrary == null) {
         currentLibrary = this.createEmptyLibrary();
         // Run the initialization logic.
-        // TODO(nshahan): Refactor so the init function does not return a value,
-        // it should modify the library object passed in.
         let initializer = this.libraryInitializers[libraryName];
         if (initializer == null) {
           throw 'Library not defined: ' + libraryName + '. Failed to initialize.';
         }
-        currentLibrary = initializer(currentLibrary);
+        initializer(currentLibrary);
+        // We make the library available in the map before linking to break out
+        // of cycles in library dependencies.
+        // Invariant: during linking a library dependency can be read in a state
+        // where it is initialized but may not be linked.
+        this.libraries[libraryName] = currentLibrary;
         // Link the library. This action will trigger the initialization and
         // linking of dependency libraries as needed.
         currentLibrary.link();
-        this.libraries[libraryName] = currentLibrary;
       }
       if (installFn != null) {
         installFn(currentLibrary);
       }
+      // Invariant: at this point the library and all of its recursive
+      // dependencies are fully initialized and linked.
       return currentLibrary;
     }
 
@@ -1472,13 +1477,34 @@ if (!self.deferred_loader) {
       });
     }
 
+    /**
+     * Forces the SDK libraries with side effects on the JavaScript side to be
+     * initialized and linked.
+     *
+     * These side effects could be required for correct Dart semantics
+     * (ex: dart:_interceptors) or observable from a carefully crafted user
+     * program (ex: dart:html). In either case, the dependencies on the side
+     * effects are not expressed through a Dart import so the libraries need
+     * to be loaded manually before the user program starts running.
+     */
+    triggerSDKLibrariesSideEffects() {
+      this.initializeAndLinkLibrary('dart:_runtime');
+      this.initializeAndLinkLibrary('dart:_interceptors');
+      this.initializeAndLinkLibrary('dart:_native_typed_data');
+      this.initializeAndLinkLibrary('dart:html');
+      this.initializeAndLinkLibrary('dart:svg');
+      this.initializeAndLinkLibrary('dart:web_audio');
+      this.initializeAndLinkLibrary('dart:web_gl');
+    }
+
     // See docs on `DartDevEmbedder.runMain`.
     runMain(entryPointLibraryName, dartSdkRuntimeOptions) {
+      this.triggerSDKLibrariesSideEffects();
       this.setDartSDKRuntimeOptions(dartSdkRuntimeOptions);
-
       console.log('Starting application from main method in: ' + entryPointLibraryName + '.');
       let entryPointLibrary = this.initializeAndLinkLibrary(entryPointLibraryName);
       this.savedEntryPointLibraryName = entryPointLibraryName;
+      this.savedDartSdkRuntimeOptions = dartSdkRuntimeOptions;
       entryPointLibrary.main();
     }
 
@@ -1528,29 +1554,38 @@ if (!self.deferred_loader) {
 
     /**
      * Completes a hot reload operation.
+     *
+     * This method runs synchronously to guarantee that all libraries
+     * are in a consistent state before yielding control back to the
+     * application.
      */
     hotReloadEnd() {
-      let oldLibraries = Object.create(null);
-      // Remove all the current library values to ensure all reloaded libraries
-      // get fresh copies of each other when imported.
+      // On a hot reload, we reuse the existing library objects to ensure all
+      // references remain valid and continue to be unique. We track in
+      // `previouslyLoaded` which libraries already exist in the system, so we
+      // can properly initialize and link them with the new version of the code.
+      let previouslyLoaded = Object.create(null);
       for (let name of this.pendingHotReloadLibraryNames) {
-        oldLibraries[name] = this.libraries[name];
-        this.libraries[name] = null;
+        previouslyLoaded[name] = (this.libraries[name] != null);
       }
-      // Initialize all reloaded libraries.
+
+      // All initializers are updated, but only libraries that were previously
+      // loaded need to be reinitialized.
       for (let name of this.pendingHotReloadLibraryNames) {
-        let currentLibrary = oldLibraries[name];
-        if (currentLibrary == null) {
-          currentLibrary = this.createEmptyLibrary();
-        }
         let initializer = this.pendingHotReloadLibraryInitializers[name];
         this.libraryInitializers[name] = initializer;
-        this.libraries[name] = initializer(currentLibrary);
+        if (previouslyLoaded[name]) {
+          initializer(this.libraries[name]);
+        }
       }
-      // Link all reloaded libraries.
+
+      // Then we link the existing libraries. Note this may trigger initializing
+      // and linking new library dependencies that were not present before and
+      // requires for all library intitializers to be up to date.
       for (let name in this.pendingHotReloadLibraryInitializers) {
-        let currentLibrary = this.libraries[name];
-        currentLibrary.link();
+        if (previouslyLoaded[name]) {
+          this.libraries[name].link();
+        }
       }
       // Cleanup.
       this.pendingHotReloadLibraryInitializers = Object.create(null);
@@ -1567,15 +1602,22 @@ if (!self.deferred_loader) {
       if (!this.savedEntryPointLibraryName) {
         throw "Error: Hot restart requested before application started.";
       }
-      console.log('Hot restarting...');
-      // TODO(nshahan): Stop calling hotRestart in the SDK when the libraries
-      // have real initialization functions.
+      // TODO(nshahan): Stop calling hotRestart in the SDK when scheduled
+      // futures no longer keep lazy initialized values from the previous
+      // generation alive.
       let dart = this.importLibrary('dart:_runtime');
       dart.hotRestart();
       // Clear all libraries.
       this.libraries = Object.create(null);
+      this.triggerSDKLibrariesSideEffects();
+      this.setDartSDKRuntimeOptions(this.savedDartSdkRuntimeOptions);
       let entryPointLibrary = this.initializeAndLinkLibrary(this.savedEntryPointLibraryName);
+      // TODO(nshahan): Start sharing a single source of truth for the restart
+      // generation between the dart:_runtime and this module system.
       this.hotRestartGeneration += 1;
+      console.log('Hot restarting application from main method in: ' +
+        this.savedEntryPointLibraryName + ' (generation: ' +
+        this.hotRestartGeneration + ').');
       entryPointLibrary.main();
     }
   }
@@ -1642,7 +1684,7 @@ if (!self.deferred_loader) {
 
     /**
      * DDC's entrypoint for triggering a hot reload.
-     * 
+     *
      * Previous generations may continue to run until all specified files
      * have been loaded and initialized.
      *

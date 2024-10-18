@@ -15,7 +15,7 @@ main() {
 @reflectiveTest
 class OmitObviousLocalVariableTypesTest extends LintRuleTest {
   @override
-  String get lintRule => 'omit_obvious_local_variable_types';
+  String get lintRule => LintNames.omit_obvious_local_variable_types;
 
   test_as() async {
     await assertDiagnostics(r'''
@@ -227,11 +227,13 @@ f() {
   }
 
   test_literal_int() async {
-    await assertNoDiagnostics(r'''
+    await assertDiagnostics(r'''
 f() {
   int i = 1;
 }
-''');
+''', [
+      lint(8, 3),
+    ]);
   }
 
   // `Null` is not obvious, the inferred type is `dynamic`.

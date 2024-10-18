@@ -65,7 +65,7 @@ class ExperimentalFlag {
       isExpired: false,
       enabledVersion: defaultLanguageVersion,
       experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion);
+      experimentReleasedVersion: const Version(3, 6));
 
   static const ExperimentalFlag classModifiers = const ExperimentalFlag(
       name: 'class-modifiers',
@@ -129,7 +129,7 @@ class ExperimentalFlag {
       isExpired: false,
       enabledVersion: defaultLanguageVersion,
       experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion);
+      experimentReleasedVersion: const Version(3, 6));
 
   static const ExperimentalFlag extensionMethods = const ExperimentalFlag(
       name: 'extension-methods',
@@ -170,6 +170,22 @@ class ExperimentalFlag {
       enabledVersion: const Version(3, 4),
       experimentEnabledVersion: const Version(3, 4),
       experimentReleasedVersion: const Version(3, 4));
+
+  static const ExperimentalFlag inferenceUpdate4 = const ExperimentalFlag(
+      name: 'inference-update-4',
+      isEnabledByDefault: false,
+      isExpired: false,
+      enabledVersion: defaultLanguageVersion,
+      experimentEnabledVersion: defaultLanguageVersion,
+      experimentReleasedVersion: defaultLanguageVersion);
+
+  static const ExperimentalFlag inferenceUsingBounds = const ExperimentalFlag(
+      name: 'inference-using-bounds',
+      isEnabledByDefault: false,
+      isExpired: false,
+      enabledVersion: defaultLanguageVersion,
+      experimentEnabledVersion: defaultLanguageVersion,
+      experimentReleasedVersion: defaultLanguageVersion);
 
   static const ExperimentalFlag inlineClass = const ExperimentalFlag(
       name: 'inline-class',
@@ -325,11 +341,11 @@ class ExperimentalFlag {
 
   static const ExperimentalFlag wildcardVariables = const ExperimentalFlag(
       name: 'wildcard-variables',
-      isEnabledByDefault: false,
+      isEnabledByDefault: true,
       isExpired: false,
-      enabledVersion: defaultLanguageVersion,
-      experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion);
+      enabledVersion: const Version(3, 7),
+      experimentEnabledVersion: const Version(3, 7),
+      experimentReleasedVersion: const Version(3, 7));
 }
 
 /// Interface for accessing the global state of experimental features.
@@ -437,6 +453,14 @@ class GlobalFeatures {
   GlobalFeature? _inferenceUpdate3;
   GlobalFeature get inferenceUpdate3 => _inferenceUpdate3 ??=
       _computeGlobalFeature(ExperimentalFlag.inferenceUpdate3);
+
+  GlobalFeature? _inferenceUpdate4;
+  GlobalFeature get inferenceUpdate4 => _inferenceUpdate4 ??=
+      _computeGlobalFeature(ExperimentalFlag.inferenceUpdate4);
+
+  GlobalFeature? _inferenceUsingBounds;
+  GlobalFeature get inferenceUsingBounds => _inferenceUsingBounds ??=
+      _computeGlobalFeature(ExperimentalFlag.inferenceUsingBounds);
 
   GlobalFeature? _inlineClass;
   GlobalFeature get inlineClass =>
@@ -608,6 +632,16 @@ class LibraryFeatures {
       _inferenceUpdate3 ??= globalFeatures._computeLibraryFeature(
           ExperimentalFlag.inferenceUpdate3, canonicalUri, libraryVersion);
 
+  LibraryFeature? _inferenceUpdate4;
+  LibraryFeature get inferenceUpdate4 =>
+      _inferenceUpdate4 ??= globalFeatures._computeLibraryFeature(
+          ExperimentalFlag.inferenceUpdate4, canonicalUri, libraryVersion);
+
+  LibraryFeature? _inferenceUsingBounds;
+  LibraryFeature get inferenceUsingBounds =>
+      _inferenceUsingBounds ??= globalFeatures._computeLibraryFeature(
+          ExperimentalFlag.inferenceUsingBounds, canonicalUri, libraryVersion);
+
   LibraryFeature? _inlineClass;
   LibraryFeature get inlineClass =>
       _inlineClass ??= globalFeatures._computeLibraryFeature(
@@ -744,6 +778,10 @@ class LibraryFeatures {
         return inferenceUpdate2;
       case shared.ExperimentalFlag.inferenceUpdate3:
         return inferenceUpdate3;
+      case shared.ExperimentalFlag.inferenceUpdate4:
+        return inferenceUpdate4;
+      case shared.ExperimentalFlag.inferenceUsingBounds:
+        return inferenceUsingBounds;
       case shared.ExperimentalFlag.inlineClass:
         return inlineClass;
       case shared.ExperimentalFlag.macros:
@@ -820,6 +858,10 @@ ExperimentalFlag? parseExperimentalFlag(String flag) {
       return ExperimentalFlag.inferenceUpdate2;
     case "inference-update-3":
       return ExperimentalFlag.inferenceUpdate3;
+    case "inference-update-4":
+      return ExperimentalFlag.inferenceUpdate4;
+    case "inference-using-bounds":
+      return ExperimentalFlag.inferenceUsingBounds;
     case "inline-class":
       return ExperimentalFlag.inlineClass;
     case "macros":
@@ -895,6 +937,10 @@ final Map<ExperimentalFlag, bool> defaultExperimentalFlags = {
       ExperimentalFlag.inferenceUpdate2.isEnabledByDefault,
   ExperimentalFlag.inferenceUpdate3:
       ExperimentalFlag.inferenceUpdate3.isEnabledByDefault,
+  ExperimentalFlag.inferenceUpdate4:
+      ExperimentalFlag.inferenceUpdate4.isEnabledByDefault,
+  ExperimentalFlag.inferenceUsingBounds:
+      ExperimentalFlag.inferenceUsingBounds.isEnabledByDefault,
   ExperimentalFlag.inlineClass: ExperimentalFlag.inlineClass.isEnabledByDefault,
   ExperimentalFlag.macros: ExperimentalFlag.macros.isEnabledByDefault,
   ExperimentalFlag.namedArgumentsAnywhere:
@@ -954,6 +1000,9 @@ const Map<shared.ExperimentalFlag, ExperimentalFlag> sharedExperimentalFlags = {
   shared.ExperimentalFlag.inferenceUpdate1: ExperimentalFlag.inferenceUpdate1,
   shared.ExperimentalFlag.inferenceUpdate2: ExperimentalFlag.inferenceUpdate2,
   shared.ExperimentalFlag.inferenceUpdate3: ExperimentalFlag.inferenceUpdate3,
+  shared.ExperimentalFlag.inferenceUpdate4: ExperimentalFlag.inferenceUpdate4,
+  shared.ExperimentalFlag.inferenceUsingBounds:
+      ExperimentalFlag.inferenceUsingBounds,
   shared.ExperimentalFlag.inlineClass: ExperimentalFlag.inlineClass,
   shared.ExperimentalFlag.macros: ExperimentalFlag.macros,
   shared.ExperimentalFlag.namedArgumentsAnywhere:

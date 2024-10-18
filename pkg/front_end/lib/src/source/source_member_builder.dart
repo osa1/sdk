@@ -9,10 +9,8 @@ import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/type_environment.dart';
 
 import '../base/common.dart';
-import '../base/modifier.dart';
+import '../base/modifiers.dart';
 import '../base/problems.dart' show unsupported;
-import '../builder/builder.dart';
-import '../builder/declaration_builders.dart';
 import '../builder/member_builder.dart';
 import '../kernel/body_builder_context.dart';
 import '../kernel/kernel_helper.dart';
@@ -115,16 +113,35 @@ abstract class SourceMemberBuilderImpl extends MemberBuilderImpl
   @override
   MemberDataForTesting? dataForTesting;
 
-  SourceMemberBuilderImpl(Builder parent, Uri fileUri, int charOffset)
+  SourceMemberBuilderImpl()
       : dataForTesting = retainDataForTesting
             ?
             // Coverage-ignore(suite): Not run.
             new MemberDataForTesting()
-            : null,
-        super(parent, fileUri, charOffset);
+            : null;
+
+  Modifiers get modifiers;
 
   @override
-  bool get isAugmentation => modifiers & augmentMask != 0;
+  bool get isAugmentation => modifiers.isAugment;
+
+  @override
+  bool get isExternal => modifiers.isExternal;
+
+  @override
+  bool get isAbstract => modifiers.isAbstract;
+
+  @override
+  bool get isConst => modifiers.isConst;
+
+  @override
+  bool get isFinal => modifiers.isFinal;
+
+  @override
+  bool get isStatic => modifiers.isStatic;
+
+  @override
+  bool get isAugment => modifiers.isAugment;
 
   bool? _isConflictingSetter;
 
@@ -164,20 +181,21 @@ abstract class SourceMemberBuilderImpl extends MemberBuilderImpl
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {}
 
   @override
-  // Coverage-ignore(suite): Not run.
-  StringBuffer printOn(StringBuffer buffer) {
-    if (isClassMember) {
-      buffer.write(classBuilder!.name);
-      buffer.write('.');
+  String toString() {
+    StringBuffer sb = new StringBuffer();
+    sb.write(runtimeType);
+    sb.write('(');
+    if (isAugmenting) {
+      sb.write('augmentation ');
     }
-    buffer.write(name);
-    return buffer;
+    if (isClassMember) {
+      sb.write(classBuilder!.name);
+      sb.write('.');
+    }
+    sb.write(name);
+    sb.write(')');
+    return sb.toString();
   }
-
-  /// The builder for the enclosing class or extension, if any.
-  @override
-  DeclarationBuilder? get declarationBuilder =>
-      parent is DeclarationBuilder ? parent as DeclarationBuilder : null;
 
   @override
   AugmentSuperTarget? get augmentSuperTarget {

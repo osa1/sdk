@@ -351,13 +351,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             x @13
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional x
           type: dynamic
       returnType: void
@@ -394,13 +394,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             this.a @16
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional final a
           type: int
       returnType: void
@@ -442,14 +442,14 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             default this.a @17
               reference: <testLibraryFragment>::@function::f::@parameter::a
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         optionalNamed final a
           firstFragment: <testLibraryFragment>::@function::f::@parameter::a
           type: int
@@ -490,16 +490,16 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             this.a @16
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional final a
           type: int Function(int)
-          parameters
+          formalParameters
             requiredPositional b
               type: int
       returnType: void
@@ -533,13 +533,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             x @8
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional final x
           type: dynamic
       returnType: dynamic
@@ -574,14 +574,14 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             default x @3
               reference: <testLibraryFragment>::@function::f::@parameter::x
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         optionalNamed x
           firstFragment: <testLibraryFragment>::@function::f::@parameter::x
           type: dynamic
@@ -616,13 +616,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             default x @3
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         optionalPositional x
           type: dynamic
       returnType: dynamic
@@ -656,13 +656,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             x @2
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional x
           type: dynamic
       returnType: dynamic
@@ -701,16 +701,16 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             g @2
               element: <testLibraryFragment>::@function::f::@parameter::g#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional g
           type: dynamic Function(dynamic, dynamic)
-          parameters
+          formalParameters
             requiredPositional x
               type: dynamic
             requiredPositional y
@@ -746,13 +746,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             g @6
               element: <testLibraryFragment>::@function::f::@parameter::g#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional g
           type: int Function()
       returnType: dynamic
@@ -786,13 +786,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             g @7
               element: <testLibraryFragment>::@function::f::@parameter::g#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional g
           type: void Function()
       returnType: dynamic
@@ -826,13 +826,13 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             i @6
               element: <testLibraryFragment>::@function::f::@parameter::i#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional i
           type: int
       returnType: dynamic
@@ -874,7 +874,7 @@ library
           typeParameters
             T @7
               element: <not-implemented>
-          parameters
+          formalParameters
             a @12
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
@@ -882,7 +882,7 @@ library
       firstFragment: <testLibraryFragment>::@function::f
       typeParameters
         T
-      parameters
+      formalParameters
         requiredPositional a
           type: T
       returnType: void
@@ -918,13 +918,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             a @9
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional a
           type: InvalidType
       returnType: void
@@ -960,7 +960,7 @@ library
         f @0
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             x @2
               element: <testLibraryFragment>::@function::f::@parameter::x#element
             y @5
@@ -968,7 +968,7 @@ library
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional x
           type: dynamic
         requiredPositional y
@@ -1186,7 +1186,7 @@ library
               element: <not-implemented>
             U @10
               element: <not-implemented>
-          parameters
+          formalParameters
             x @15
               element: <testLibraryFragment>::@function::f::@parameter::x#element
   functions
@@ -1195,10 +1195,10 @@ library
       typeParameters
         T
         U
-      parameters
+      formalParameters
         requiredPositional x
           type: T Function(U)
-          parameters
+          formalParameters
             requiredPositional u
               type: U
       returnType: void
@@ -1366,7 +1366,7 @@ library
           reference: <testLibraryFragment>::@class::main
           element: <testLibraryFragment>::@class::main#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::main::@constructor::new
               element: <testLibraryFragment>::@class::main::@constructor::new#element
   classes
@@ -1433,7 +1433,7 @@ library
           reference: <testLibraryFragment>::@class::main
           element: <testLibraryFragment>::@class::main#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::main::@constructor::new
               element: <testLibraryFragment>::@class::main::@constructor::new#element
               constantInitializers
@@ -1449,14 +1449,14 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibraryFragment>::@class::C#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
         class D @40
           reference: <testLibraryFragment>::@class::D
           element: <testLibraryFragment>::@class::D#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::D::@constructor::new
               element: <testLibraryFragment>::@class::D::@constructor::new#element
   classes
@@ -1697,15 +1697,15 @@ library
           getter2: <testLibraryFragment>::@getter::main
           setter2: <testLibraryFragment>::@setter::main
       getters
-        get main @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::main
           element: <testLibraryFragment>::@getter::main#element
       setters
-        set main= @-1
+        set <null-name>
           reference: <testLibraryFragment>::@setter::main
           element: <testLibraryFragment>::@setter::main#element
-          parameters
-            _main @-1
+          formalParameters
+            <null-name>
               element: <testLibraryFragment>::@setter::main::@parameter::_main#element
   topLevelVariables
     main
@@ -1719,7 +1719,7 @@ library
   setters
     synthetic static set main=
       firstFragment: <testLibraryFragment>::@setter::main
-      parameters
+      formalParameters
         requiredPositional _main
           type: dynamic
 ''');
@@ -1908,7 +1908,7 @@ library
       functions
         foo @68
           reference: <testLibrary>::@fragment::package:test/a1.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a1.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
     <testLibrary>::@fragment::package:test/a11.dart
       element: <testLibrary>
       previousFragment: <testLibrary>::@fragment::package:test/a1.dart
@@ -1916,7 +1916,7 @@ library
       functions
         foo @32
           reference: <testLibrary>::@fragment::package:test/a11.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a11.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
     <testLibrary>::@fragment::package:test/a12.dart
       element: <testLibrary>
       previousFragment: <testLibrary>::@fragment::package:test/a11.dart
@@ -1924,7 +1924,7 @@ library
       functions
         foo @32
           reference: <testLibrary>::@fragment::package:test/a12.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a12.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
     <testLibrary>::@fragment::package:test/a2.dart
       element: <testLibrary>
       previousFragment: <testLibrary>::@fragment::package:test/a12.dart
@@ -1932,7 +1932,7 @@ library
       functions
         foo @68
           reference: <testLibrary>::@fragment::package:test/a2.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a2.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
     <testLibrary>::@fragment::package:test/a21.dart
       element: <testLibrary>
       previousFragment: <testLibrary>::@fragment::package:test/a2.dart
@@ -1940,35 +1940,17 @@ library
       functions
         foo @32
           reference: <testLibrary>::@fragment::package:test/a21.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a21.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
     <testLibrary>::@fragment::package:test/a22.dart
       element: <testLibrary>
       previousFragment: <testLibrary>::@fragment::package:test/a21.dart
       functions
         foo @32
           reference: <testLibrary>::@fragment::package:test/a22.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a22.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
   functions
     foo
       firstFragment: <testLibraryFragment>::@function::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a1.dart::@functionAugmentation::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a11.dart::@functionAugmentation::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a12.dart::@functionAugmentation::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a2.dart::@functionAugmentation::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a21.dart::@functionAugmentation::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a22.dart::@functionAugmentation::foo
       returnType: void
 ''');
   }
@@ -2028,7 +2010,7 @@ library
           reference: <testLibraryFragment>::@class::foo
           element: <testLibraryFragment>::@class::foo#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::foo::@constructor::new
               element: <testLibraryFragment>::@class::foo::@constructor::new#element
     <testLibrary>::@fragment::package:test/a.dart
@@ -2112,13 +2094,10 @@ library
       functions
         foo @34
           reference: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo#element
+          element: <testLibraryFragment>::@function::foo#element
   functions
     foo
       firstFragment: <testLibraryFragment>::@function::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo
       returnType: void
   exportedReferences
     declared <testLibraryFragment>::@function::foo
@@ -2186,13 +2165,10 @@ library
           element: <testLibrary>::@fragment::package:test/a.dart::@function::foo#element
         foo @48
           reference: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo
-          element: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo#element
+          element: <testLibrary>::@fragment::package:test/a.dart::@function::foo#element
   functions
     foo
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@function::foo
-      returnType: void
-    foo
-      firstFragment: <testLibrary>::@fragment::package:test/a.dart::@functionAugmentation::foo
       returnType: void
   exportedReferences
     declared <testLibrary>::@fragment::package:test/a.dart::@function::foo
@@ -2345,10 +2321,10 @@ library
           element: <testLibraryFragment>::@topLevelVariable::foo#element
           setter2: <testLibraryFragment>::@setter::foo
       setters
-        set foo= @20
+        set foo @20
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
+          formalParameters
             _ @28
               element: <testLibraryFragment>::@setter::foo::@parameter::_#element
     <testLibrary>::@fragment::package:test/a.dart
@@ -2366,7 +2342,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   functions
@@ -2443,15 +2419,15 @@ library
           getter2: <testLibraryFragment>::@getter::foo
           setter2: <testLibraryFragment>::@setter::foo
       getters
-        get foo @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::foo
           element: <testLibraryFragment>::@getter::foo#element
       setters
-        set foo= @-1
+        set <null-name>
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
-            _foo @-1
+          formalParameters
+            <null-name>
               element: <testLibraryFragment>::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
@@ -2472,7 +2448,7 @@ library
   setters
     synthetic static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _foo
           type: int
   functions
@@ -2870,10 +2846,10 @@ library
           element: <testLibraryFragment>::@topLevelVariable::foo#element
           setter2: <testLibraryFragment>::@setter::foo
       setters
-        set foo= @19
+        set foo @19
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
+          formalParameters
             _ @27
               element: <testLibraryFragment>::@setter::foo::@parameter::_#element
     <testLibrary>::@fragment::package:test/a.dart
@@ -2894,7 +2870,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   exportedReferences
@@ -2988,16 +2964,16 @@ library
           getter2: <testLibraryFragment>::@getter::foo
           setter2: <testLibraryFragment>::@setter::foo
       getters
-        get foo @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::foo
           element: <testLibraryFragment>::@getter::foo#element
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@getterAugmentation::foo
       setters
-        set foo= @-1
+        set <null-name>
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
-            _foo @-1
+          formalParameters
+            <null-name>
               element: <testLibraryFragment>::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
@@ -3019,7 +2995,7 @@ library
   setters
     synthetic static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _foo
           type: int
   exportedReferences
@@ -3096,17 +3072,17 @@ library
           reference: <testLibraryFragment>::@class::foo
           element: <testLibraryFragment>::@class::foo#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::foo::@constructor::new
               element: <testLibraryFragment>::@class::foo::@constructor::new#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       setters
-        augment set foo= @33
+        augment set foo @33
           reference: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
           element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo#element
-          parameters
+          formalParameters
             _ @41
               element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo::@parameter::_#element
   classes
@@ -3118,7 +3094,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   exportedReferences
@@ -3207,10 +3183,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       setters
-        augment set foo= @33
+        augment set foo @33
           reference: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
           element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo#element
-          parameters
+          formalParameters
             _ @41
               element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo::@parameter::_#element
   topLevelVariables
@@ -3224,7 +3200,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   exportedReferences
@@ -3286,16 +3262,16 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       setters
-        augment set foo= @33
+        augment set foo @33
           reference: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
           element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo#element
-          parameters
+          formalParameters
             _ @41
               element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo::@parameter::_#element
   setters
     static set foo=
       firstFragment: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   exportedReferences
@@ -3379,10 +3355,10 @@ library
           element: <testLibraryFragment>::@topLevelVariable::foo#element
           setter2: <testLibraryFragment>::@setter::foo
       setters
-        set foo= @19
+        set foo @19
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
+          formalParameters
             _ @27
               element: <testLibraryFragment>::@setter::foo::@parameter::_#element
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
@@ -3390,10 +3366,10 @@ library
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       setters
-        augment set foo= @33
+        augment set foo @33
           reference: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
+          formalParameters
             _ @41
               element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo::@parameter::_#element
           previousFragment: <testLibraryFragment>::@setter::foo
@@ -3405,7 +3381,7 @@ library
   setters
     static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _
           type: int
   exportedReferences
@@ -3502,25 +3478,25 @@ library
           getter2: <testLibraryFragment>::@getter::foo
           setter2: <testLibraryFragment>::@setter::foo
       getters
-        get foo @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::foo
           element: <testLibraryFragment>::@getter::foo#element
       setters
-        set foo= @-1
+        set <null-name>
           reference: <testLibraryFragment>::@setter::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
-            _foo @-1
+          formalParameters
+            <null-name>
               element: <testLibraryFragment>::@setter::foo::@parameter::_foo#element
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
       previousFragment: <testLibraryFragment>
       setters
-        augment set foo= @33
+        augment set foo @33
           reference: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo
           element: <testLibraryFragment>::@setter::foo#element
-          parameters
+          formalParameters
             _ @41
               element: <testLibrary>::@fragment::package:test/a.dart::@setterAugmentation::foo::@parameter::_#element
           previousFragment: <testLibraryFragment>::@setter::foo
@@ -3536,7 +3512,7 @@ library
   setters
     synthetic static set foo=
       firstFragment: <testLibraryFragment>::@setter::foo
-      parameters
+      formalParameters
         requiredPositional _foo
           type: int
   exportedReferences

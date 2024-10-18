@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 
@@ -37,10 +38,15 @@ bool isExactWidgetTypeSizedBox(DartType? type) =>
 
 bool isKDebugMode(Element? element) => _flutter.isKDebugMode(element);
 
+bool isKDebugMode2(Element2? element) => _flutter.isKDebugMode2(element);
+
 bool isState(InterfaceElement element) => _flutter.isState(element);
 
 bool isStatefulWidget(ClassElement? element) =>
     element != null && _flutter.isStatefulWidget(element);
+
+bool isStatefulWidget2(ClassElement2? element) =>
+    element != null && _flutter.isStatefulWidget2(element);
 
 bool isWidgetProperty(DartType? type) {
   if (isWidgetType(type)) {
@@ -111,6 +117,11 @@ class _Flutter {
   bool isExactly(InterfaceElement element, String type, Uri uri) =>
       element.name == type && element.source.uri == uri;
 
+  /// Whether [element] is exactly the element named [type], from Flutter.
+  bool isExactly2(InterfaceElement2 element, String type, Uri uri) =>
+      element.name == type &&
+      element.firstFragment.libraryFragment.source.uri == uri;
+
   bool isExactWidget(ClassElement element) =>
       isExactly(element, _nameWidget, _uriFramework);
 
@@ -127,6 +138,11 @@ class _Flutter {
       element.name == 'kDebugMode' &&
       element.source?.uri == _uriFoundation;
 
+  bool isKDebugMode2(Element2? element) =>
+      element != null &&
+      element.name == 'kDebugMode' &&
+      element.library2.uri == _uriFoundation;
+
   bool isState(InterfaceElement element) =>
       isExactly(element, _nameState, _uriFramework) ||
       element.allSupertypes
@@ -134,6 +150,11 @@ class _Flutter {
 
   bool isStatefulWidget(ClassElement element) =>
       isExactly(element, _nameStatefulWidget, _uriFramework) ||
+      element.allSupertypes.any((type) =>
+          isExactly(type.element, _nameStatefulWidget, _uriFramework));
+
+  bool isStatefulWidget2(ClassElement2 element) =>
+      isExactly2(element, _nameStatefulWidget, _uriFramework) ||
       element.allSupertypes.any((type) =>
           isExactly(type.element, _nameStatefulWidget, _uriFramework));
 

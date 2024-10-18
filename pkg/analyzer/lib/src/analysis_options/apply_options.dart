@@ -4,6 +4,7 @@
 
 import 'package:analyzer/dart/analysis/code_style_options.dart';
 import 'package:analyzer/dart/analysis/features.dart';
+import 'package:analyzer/dart/analysis/formatter_options.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/source/error_processor.dart';
 import 'package:analyzer/src/analysis_options/code_style_options.dart';
@@ -148,6 +149,18 @@ extension on AnalysisOptionsImpl {
     return CodeStyleOptionsImpl(this, useFormatter: useFormatter);
   }
 
+  FormatterOptions buildFormatterOptions(YamlNode? formatter) {
+    int? pageWidth;
+    if (formatter is YamlMap) {
+      var formatNode = formatter.valueAt(AnalyzerOptions.pageWidth);
+      var formatValue = formatNode?.value;
+      if (formatValue is int && formatValue > 0) {
+        pageWidth = formatValue;
+      }
+    }
+    return FormatterOptions(pageWidth: pageWidth);
+  }
+
   void _applyLegacyPlugins(YamlNode? plugins) {
     var pluginName = plugins.stringValue;
     if (pluginName != null) {
@@ -225,6 +238,10 @@ extension AnalysisOptionsImplExtensions on AnalysisOptionsImpl {
     // Process the 'code-style' option.
     var codeStyle = optionMap.valueAt(AnalyzerOptions.codeStyle);
     codeStyleOptions = buildCodeStyleOptions(codeStyle);
+
+    // Process the 'formatter' option.
+    var formatter = optionMap.valueAt(AnalyzerOptions.formatter);
+    formatterOptions = buildFormatterOptions(formatter);
 
     var config = parseConfig(optionMap);
     if (config != null) {

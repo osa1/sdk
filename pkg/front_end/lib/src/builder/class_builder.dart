@@ -179,23 +179,8 @@ abstract class ClassBuilderImpl extends DeclarationBuilderImpl
   InterfaceType? _nonNullableRawType;
   InterfaceType? _thisType;
 
-  ClassBuilderImpl(List<MetadataBuilder>? metadata, int modifiers, String name,
-      LibraryBuilder parent, Uri fileUri, int fileOffset)
-      : super(metadata, modifiers, name, parent, fileUri, fileOffset);
-
-  @override
-  String get debugName => "ClassBuilder";
-
-  @override
-  bool get isAbstract => (modifiers & abstractMask) != 0;
-
   @override
   bool get isMixinApplication => mixedInTypeBuilder != null;
-
-  @override
-  bool get isNamedMixinApplication {
-    return isMixinApplication && (modifiers & namedMixinApplicationMask) != 0;
-  }
 
   @override
   bool get isAnonymousMixinApplication {
@@ -203,10 +188,6 @@ abstract class ClassBuilderImpl extends DeclarationBuilderImpl
         // Coverage-ignore(suite): Not run.
         !isNamedMixinApplication;
   }
-
-  @override
-  bool get declaresConstConstructor =>
-      (modifiers & declaresConstConstructorMask) != 0;
 
   @override
   Builder? findStaticBuilder(
@@ -314,9 +295,8 @@ abstract class ClassBuilderImpl extends DeclarationBuilderImpl
   @override
   bool get isFutureOr {
     if (name == "FutureOr") {
-      LibraryBuilder parentLibrary = parent as LibraryBuilder;
-      if (parentLibrary.importUri.isScheme("dart") &&
-          parentLibrary.importUri.path == "async") {
+      if (parent.importUri.isScheme("dart") &&
+          parent.importUri.path == "async") {
         return true;
       }
     }

@@ -13,9 +13,10 @@ import 'package:kernel/type_environment.dart';
 
 import '../api_prototype/lowering_predicates.dart';
 import '../base/constant_context.dart' show ConstantContext;
-import '../base/modifier.dart' show covariantMask, hasInitializerMask, lateMask;
+import '../base/modifiers.dart' show Modifiers;
 import '../base/problems.dart' show internalProblem;
 import '../base/scope.dart' show LookupScope;
+import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/field_builder.dart';
 import '../builder/member_builder.dart';
@@ -52,7 +53,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   final MemberName _memberName;
 
   @override
-  final int modifiers;
+  final Modifiers modifiers;
 
   late FieldEncoding _fieldEncoding;
 
@@ -81,6 +82,15 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   /// element.
   final bool isEnumElement;
 
+  @override
+  final DeclarationBuilder? declarationBuilder;
+
+  @override
+  final int charOffset;
+
+  @override
+  final Uri fileUri;
+
   SourceFieldBuilder(
       this.metadata,
       this.type,
@@ -88,9 +98,9 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
       this.modifiers,
       this.isTopLevel,
       this.libraryBuilder,
-      DeclarationBuilder? declarationBuilder,
-      Uri fileUri,
-      int charOffset,
+      this.declarationBuilder,
+      this.fileUri,
+      this.charOffset,
       int charEndOffset,
       NameScheme fieldNameScheme,
       {Reference? fieldReference,
@@ -106,8 +116,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
       this.isSynthesized = false,
       this.isEnumElement = false})
       : _constInitializerToken = constInitializerToken,
-        _memberName = fieldNameScheme.getDeclaredName(name),
-        super(declarationBuilder ?? libraryBuilder, fileUri, charOffset) {
+        _memberName = fieldNameScheme.getDeclaredName(name) {
     type.registerInferredTypeListener(this);
 
     bool isInstanceMember = fieldNameScheme.isInstanceMember;
@@ -308,6 +317,9 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   }
 
   @override
+  Builder get parent => declarationBuilder ?? libraryBuilder;
+
+  @override
   Name get memberName => _memberName.name;
 
   bool _typeEnsured = false;
@@ -335,19 +347,13 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   }
 
   @override
-  Member get member => _fieldEncoding.field;
-
-  @override
-  String get debugName => "FieldBuilder";
-
-  @override
   bool get isField => true;
 
-  bool get isLate => (modifiers & lateMask) != 0;
+  bool get isLate => modifiers.isLate;
 
-  bool get isCovariantByDeclaration => (modifiers & covariantMask) != 0;
+  bool get isCovariantByDeclaration => modifiers.isCovariant;
 
-  bool get hasInitializer => (modifiers & hasInitializerMask) != 0;
+  bool get hasInitializer => modifiers.hasInitializer;
 
   /// Builds the body of this field using [initializer] as the initializer
   /// expression.
@@ -441,7 +447,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
       {required bool inOutlineBuildingPhase,
       required bool inMetadata,
       required bool inConstFields}) {
-    return new FieldBodyBuilderContext(this,
+    return new FieldBodyBuilderContext(this, _fieldEncoding.builtMember,
         inOutlineBuildingPhase: inOutlineBuildingPhase,
         inMetadata: inMetadata,
         inConstFields: inConstFields);
@@ -635,6 +641,9 @@ abstract class FieldEncoding {
   /// Returns the field that holds the field value at runtime.
   Field get field;
 
+  /// The [Member] built during [SourceFieldBuilder.buildOutlineExpressions].
+  Member get builtMember;
+
   /// Returns the members that holds the field annotations.
   Iterable<Annotatable> get annotatables;
 
@@ -771,6 +780,9 @@ class RegularFieldEncoding implements FieldEncoding {
 
   @override
   Field get field => _field;
+
+  @override
+  Member get builtMember => _field;
 
   @override
   Iterable<Annotatable> get annotatables => [_field];
@@ -1129,6 +1141,9 @@ abstract class AbstractLateFieldEncoding implements FieldEncoding {
 
   @override
   Field get field => _field;
+
+  @override
+  Member get builtMember => _field;
 
   @override
   Iterable<Annotatable> get annotatables {
@@ -1955,6 +1970,9 @@ class AbstractOrExternalFieldEncoding implements FieldEncoding {
   }
 
   @override
+  Member get builtMember => _getter;
+
+  @override
   Iterable<Annotatable> get annotatables {
     List<Annotatable> list = [_getter];
     if (_setter != null) {
@@ -2105,6 +2123,9 @@ class RepresentationFieldEncoding implements FieldEncoding {
   Field get field {
     throw new UnsupportedError("$runtimeType.field");
   }
+
+  @override
+  Member get builtMember => _getter;
 
   @override
   Iterable<Annotatable> get annotatables => [_getter];

@@ -5,51 +5,19 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 
 import '../analyzer.dart';
 import '../extensions.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Unnecessary parentheses can be removed.';
-
-const _details = r'''
-**AVOID** using parentheses when not needed.
-
-**BAD:**
-```dart
-a = (b);
-```
-
-**GOOD:**
-```dart
-a = b;
-```
-
-Parentheses are considered unnecessary if they do not change the meaning of the
-code and they do not improve the readability of the code. The goal is not to
-force all developers to maintain the expression precedence table in their heads,
-which is why the second condition is included. Examples of this condition
-include:
-
-* cascade expressions - it is sometimes not clear what the target of a cascade
-  expression is, especially with assignments, or nested cascades. For example,
-  the expression `a.b = (c..d)`.
-* expressions with whitespace between tokens - it can look very strange to see
-  an expression like `!await foo` which is valid and equivalent to
-  `!(await foo)`.
-* logical expressions - parentheses can improve the readability of the implicit
-  grouping defined by precedence. For example, the expression
-  `(a && b) || c && d`.
-''';
 
 class UnnecessaryParenthesis extends LintRule {
   UnnecessaryParenthesis()
       : super(
-          name: 'unnecessary_parenthesis',
+          name: LintNames.unnecessary_parenthesis,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -99,19 +67,21 @@ class _Visitor extends SimpleAstVisitor<void> {
     // Don't over-report on records missing trailing commas.
     // `(int,) r = (3);` is OK.
     if (parent is VariableDeclaration &&
-        parent.declaredElement?.type is RecordType) {
+        parent.declaredElement2?.type is RecordType) {
       if (expression is! RecordLiteral) return;
     }
+
     // `g((3)); => g((int,) i) { }` is OK.
     if (parent is ArgumentList) {
-      var element = node.staticParameterElement;
+      var element = node.correspondingParameter;
       if (element?.type is RecordType && node.expression is! RecordLiteral) {
         return;
       }
     }
+
     // `g(i: (3)); => g({required (int,) i}) { }` is OK.
     if (parent is NamedExpression &&
-        parent.staticParameterElement?.type is RecordType) {
+        parent.correspondingParameter?.type is RecordType) {
       if (expression is! RecordLiteral) return;
     }
 
@@ -135,8 +105,8 @@ class _Visitor extends SimpleAstVisitor<void> {
     // `(List<int>).toString()` is OK.
     if (expression is TypeLiteral) return;
 
-    if (expression is SimpleIdentifier ||
-        expression.containsNullAwareInvocationInChain()) {
+    if (expression.isOneToken ||
+        expression.containsNullAwareInvocationInChain) {
       if (parent is PropertyAccess) {
         var name = parent.propertyName.name;
         if (name == 'hashCode' || name == 'runtimeType') {
@@ -147,8 +117,8 @@ class _Visitor extends SimpleAstVisitor<void> {
         // Parentheses are required to stop null-aware shorting, which then
         // allows an extension getter, which extends a nullable type, to be
         // called on a `null` value.
-        var target = parent.propertyName.staticElement?.enclosingElement3;
-        if (target is ExtensionElement &&
+        var target = parent.propertyName.element?.enclosingElement2;
+        if (target is ExtensionElement2 &&
             typeSystem.isNullable(target.extendedType)) {
           return;
         }
@@ -162,8 +132,8 @@ class _Visitor extends SimpleAstVisitor<void> {
         // Parentheses are required to stop null-aware shorting, which then
         // allows an extension method, which extends a nullable type, to be
         // called on a `null` value.
-        var target = parent.methodName.staticElement?.enclosingElement3;
-        if (target is ExtensionElement &&
+        var target = parent.methodName.element?.enclosingElement2;
+        if (target is ExtensionElement2 &&
             typeSystem.isNullable(target.extendedType)) {
           return;
         }
@@ -188,16 +158,6 @@ class _Visitor extends SimpleAstVisitor<void> {
       }
       rule.reportLint(node);
       return;
-    }
-
-    // https://github.com/dart-lang/linter/issues/2944
-    if (expression is FunctionExpression) {
-      if (parent is MethodInvocation ||
-          parent is PropertyAccess ||
-          parent is BinaryExpression ||
-          parent is IndexExpression) {
-        return;
-      }
     }
 
     if (expression is ConstructorReference) {
@@ -262,11 +222,13 @@ class _Visitor extends SimpleAstVisitor<void> {
       // An expression with internal whitespace can be made more readable when
       // wrapped in parentheses in many cases. But when the parentheses are
       // inside one of the following nodes, the readability is not affected.
+      // See https://github.com/dart-lang/linter/issues/2944.
       if (parent is! AssignmentExpression &&
           parent is! ConstructorFieldInitializer &&
-          parent is! VariableDeclaration &&
           parent is! ExpressionFunctionBody &&
+          parent is! RecordLiteral &&
           parent is! ReturnStatement &&
+          parent is! VariableDeclaration &&
           parent is! YieldStatement &&
           !node.isArgument) {
         return;
@@ -358,7 +320,9 @@ extension on Expression? {
         self is AssignmentExpression ||
         self is AwaitExpression ||
         self is BinaryExpression ||
+        self is FunctionExpression ||
         self is IsExpression ||
+        self is SwitchExpression ||
         // As in, `!(new Foo())`.
         (self is InstanceCreationExpression && self.keyword != null) ||
         // No TypedLiteral (ListLiteral, MapLiteral, SetLiteral) accepts `-`
@@ -381,4 +345,15 @@ extension on Expression {
   bool get isArgument =>
       parent is ArgumentList ||
       (parent is NamedExpression && parent?.parent is ArgumentList);
+
+  /// Whether this expression is a sigle token.
+  ///
+  /// This excludes type literals because they often need to be parenthesized.
+  bool get isOneToken =>
+      this is SimpleIdentifier ||
+      this is StringLiteral ||
+      this is IntegerLiteral ||
+      this is DoubleLiteral ||
+      this is NullLiteral ||
+      this is BooleanLiteral;
 }

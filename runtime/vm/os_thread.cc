@@ -315,6 +315,16 @@ void OSThread::RemoveThreadFromList(OSThread* thread) {
   }
 }
 
+// current_vm_thread_ is also accessed from signal handlers for the profiler.
+// When detaching the thread, it is important that the stores don't get
+// reordered, such as
+//     current_vm_thread_ = nullptr;
+//     thread->set_os_thread(nullptr);
+// otherwise the profiler may observe a non-null Thread::Current() with a null
+// thread->os_thread().
+// Logically current_vm_thread_ should be volatile, but that is too restrictive
+// around loads. Instead, we block inlining of the much rarer stores.
+DART_NOINLINE
 void OSThread::SetCurrentTLS(BaseThread* value) {
   // Provides thread-local destructors.
   SetThreadLocal(thread_key_, reinterpret_cast<uword>(value));
@@ -324,6 +334,18 @@ void OSThread::SetCurrentTLS(BaseThread* value) {
     current_vm_thread_ = static_cast<Thread*>(value);
   } else {
     current_vm_thread_ = nullptr;
+  }
+}
+
+void OSThread::Start(const char* name,
+                     ThreadStartFunction function,
+                     uword parameter) {
+  int result = TryStart(name, function, parameter);
+  if (result != 0) {
+    const int kBufferSize = 1024;
+    char error_buf[kBufferSize];
+    FATAL("Could not start thread %s: %d (%s)", name, result,
+          Utils::StrError(result, error_buf, kBufferSize));
   }
 }
 

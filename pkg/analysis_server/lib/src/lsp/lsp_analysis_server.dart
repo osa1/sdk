@@ -30,7 +30,6 @@ import 'package:analysis_server/src/server/error_notifier.dart';
 import 'package:analysis_server/src/server/message_scheduler.dart';
 import 'package:analysis_server/src/server/performance.dart';
 import 'package:analysis_server/src/services/user_prompts/dart_fix_prompt_manager.dart';
-import 'package:analysis_server/src/utilities/extensions/flutter.dart';
 import 'package:analysis_server/src/utilities/process.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
@@ -43,6 +42,7 @@ import 'package:analyzer/src/dart/analysis/status.dart' as analysis;
 import 'package:analyzer/src/generated/sdk.dart';
 import 'package:analyzer/src/util/file_paths.dart' as file_paths;
 import 'package:analyzer/src/util/performance/operation_performance.dart';
+import 'package:analyzer/src/utilities/extensions/flutter.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart' as plugin;
 import 'package:analyzer_plugin/protocol/protocol_generated.dart' as plugin;
 import 'package:analyzer_plugin/src/protocol/protocol_internal.dart' as plugin;
@@ -61,7 +61,7 @@ class LspAnalysisServer extends AnalysisServer {
 
   /// Information about the connected client. Will be null prior to
   /// initialization or if the client did not provide it.
-  InitializeParamsClientInfo? _clientInfo;
+  ClientInfo? _clientInfo;
 
   /// Initialization options provided by the LSP client. Allows opting in/out of
   /// specific server functionality. Will be null prior to initialization.
@@ -213,7 +213,7 @@ class LspAnalysisServer extends AnalysisServer {
 
   /// Information about the connected editor client. Will be `null` prior to
   /// initialization.
-  InitializeParamsClientInfo? get clientInfo => _clientInfo;
+  ClientInfo? get clientInfo => _clientInfo;
 
   /// The name of the remote when the client is running using a remote workspace.
   ///
@@ -407,7 +407,7 @@ class LspAnalysisServer extends AnalysisServer {
 
   void handleClientConnection(
     ClientCapabilities capabilities,
-    InitializeParamsClientInfo? clientInfo,
+    ClientInfo? clientInfo,
     Object? initializationOptions,
   ) {
     _clientCapabilities = LspClientCapabilities(capabilities);

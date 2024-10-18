@@ -7,15 +7,16 @@ library fasta.dill_typedef_builder;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
-import '../base/problems.dart' show unimplemented;
 import '../builder/declaration_builders.dart';
 import '../builder/library_builder.dart';
-import '../builder/metadata_builder.dart';
 import '../builder/type_builder.dart';
 import 'dill_class_builder.dart' show computeTypeVariableBuilders;
 import 'dill_library_builder.dart' show DillLibraryBuilder;
 
 class DillTypeAliasBuilder extends TypeAliasBuilderImpl {
+  @override
+  final DillLibraryBuilder parent;
+
   @override
   final Typedef typedef;
 
@@ -28,14 +29,19 @@ class DillTypeAliasBuilder extends TypeAliasBuilderImpl {
   @override
   DartType? thisType;
 
-  DillTypeAliasBuilder(this.typedef, this.tearOffs, DillLibraryBuilder parent)
-      : super(null, typedef.name, parent, typedef.fileUri, typedef.fileOffset);
+  DillTypeAliasBuilder(this.typedef, this.tearOffs, this.parent);
 
   @override
-  // Coverage-ignore(suite): Not run.
-  List<MetadataBuilder> get metadata {
-    return unimplemented("metadata", -1, null);
-  }
+  int get charOffset => typedef.fileOffset;
+
+  @override
+  String get name => typedef.name;
+
+  @override
+  Uri get fileUri => typedef.fileUri;
+
+  @override
+  Reference get reference => typedef.reference;
 
   @override
   List<NominalVariableBuilder>? get typeVariables {

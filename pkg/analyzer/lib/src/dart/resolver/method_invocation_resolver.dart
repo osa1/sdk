@@ -42,6 +42,9 @@ class MethodInvocationResolver with ScopeHelpers {
   /// The URI of [_definingLibrary].
   final Uri _definingLibraryUri;
 
+  /// The library fragment of the compilation unit being visited.
+  final CompilationUnitElementImpl _libraryFragment;
+
   /// The object providing promoted or declared types of variables.
   final LocalVariableTypeProvider _localVariableTypeProvider;
 
@@ -63,6 +66,7 @@ class MethodInvocationResolver with ScopeHelpers {
         _inheritance = _resolver.inheritance,
         _definingLibrary = _resolver.definingLibrary,
         _definingLibraryUri = _resolver.definingLibrary.source.uri,
+        _libraryFragment = _resolver.libraryFragment,
         _localVariableTypeProvider = _resolver.localVariableTypeProvider,
         _extensionResolver = _resolver.extensionResolver,
         _inferenceHelper = inferenceHelper;
@@ -76,7 +80,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? resolve(
+  FunctionExpressionInvocationImpl? resolve(
       MethodInvocationImpl node, List<WhyNotPromotedGetter> whyNotPromotedList,
       {required DartType contextType}) {
     _invocation = node;
@@ -294,7 +298,7 @@ class MethodInvocationResolver with ScopeHelpers {
     _setInvalidTypeResolution(node,
         whyNotPromotedList: whyNotPromotedList, contextType: contextType);
 
-    if (_definingLibrary.shouldIgnoreUndefined(prefix: prefix, name: name)) {
+    if (_libraryFragment.shouldIgnoreUndefined(prefix: prefix, name: name)) {
       return;
     }
 
@@ -353,7 +357,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveExtensionMember(
+  FunctionExpressionInvocationImpl? _resolveExtensionMember(
       MethodInvocationImpl node,
       Identifier receiver,
       ExtensionElement extension,
@@ -394,7 +398,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveExtensionOverride(
+  FunctionExpressionInvocationImpl? _resolveExtensionOverride(
       MethodInvocationImpl node,
       ExtensionOverride override,
       SimpleIdentifierImpl nameNode,
@@ -487,7 +491,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverNever(
+  FunctionExpressionInvocationImpl? _resolveReceiverNever(
     MethodInvocationImpl node,
     Expression receiver,
     DartType receiverType,
@@ -552,7 +556,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverNull(
+  FunctionExpressionInvocationImpl? _resolveReceiverNull(
       MethodInvocationImpl node,
       SimpleIdentifierImpl nameNode,
       String name,
@@ -659,7 +663,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverPrefix(
+  FunctionExpressionInvocationImpl? _resolveReceiverPrefix(
       MethodInvocationImpl node,
       PrefixElement prefix,
       SimpleIdentifierImpl nameNode,
@@ -723,7 +727,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverSuper(
+  FunctionExpressionInvocationImpl? _resolveReceiverSuper(
       MethodInvocationImpl node,
       SuperExpression receiver,
       SimpleIdentifierImpl nameNode,
@@ -788,7 +792,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverType({
+  FunctionExpressionInvocationImpl? _resolveReceiverType({
     required MethodInvocationImpl node,
     required Expression? receiver,
     required DartType receiverType,
@@ -883,7 +887,7 @@ class MethodInvocationResolver with ScopeHelpers {
   ///
   /// If [node] is rewritten to be a [FunctionExpressionInvocation] in the
   /// process, then returns that new node. Otherwise, returns `null`.
-  FunctionExpressionInvocation? _resolveReceiverTypeLiteral(
+  FunctionExpressionInvocationImpl? _resolveReceiverTypeLiteral(
       MethodInvocationImpl node,
       InterfaceElement receiver,
       SimpleIdentifierImpl nameNode,
@@ -942,7 +946,7 @@ class MethodInvocationResolver with ScopeHelpers {
   /// of a getter execution, or implicitly invokes the `call` method of
   /// an [InterfaceType]. So, it should be represented as instead as a
   /// [FunctionExpressionInvocation].
-  FunctionExpressionInvocation _rewriteAsFunctionExpressionInvocation(
+  FunctionExpressionInvocationImpl _rewriteAsFunctionExpressionInvocation(
       MethodInvocationImpl node, DartType getterReturnType,
       {bool isSuperAccess = false}) {
     var targetType = _typeSystem.resolveToBound(getterReturnType);

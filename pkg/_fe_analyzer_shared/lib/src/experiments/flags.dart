@@ -6,7 +6,7 @@
 //
 // Instead modify 'tools/experimental_features.yaml' and run
 // 'dart pkg/front_end/tool/fasta.dart generate-experimental-flags' to update.
-const Version defaultLanguageVersion = const Version(3, 6);
+const Version defaultLanguageVersion = const Version(3, 7);
 
 /// Enum for experimental flags shared between the CFE and the analyzer.
 enum ExperimentalFlag {
@@ -15,7 +15,7 @@ enum ExperimentalFlag {
       isEnabledByDefault: false,
       isExpired: false,
       experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion),
+      experimentReleasedVersion: const Version(3, 6)),
 
   classModifiers(
       name: 'class-modifiers',
@@ -71,7 +71,7 @@ enum ExperimentalFlag {
       isEnabledByDefault: false,
       isExpired: false,
       experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion),
+      experimentReleasedVersion: const Version(3, 6)),
 
   extensionMethods(
       name: 'extension-methods',
@@ -107,6 +107,20 @@ enum ExperimentalFlag {
       isExpired: true,
       experimentEnabledVersion: const Version(3, 4),
       experimentReleasedVersion: const Version(3, 4)),
+
+  inferenceUpdate4(
+      name: 'inference-update-4',
+      isEnabledByDefault: false,
+      isExpired: false,
+      experimentEnabledVersion: defaultLanguageVersion,
+      experimentReleasedVersion: defaultLanguageVersion),
+
+  inferenceUsingBounds(
+      name: 'inference-using-bounds',
+      isEnabledByDefault: false,
+      isExpired: false,
+      experimentEnabledVersion: defaultLanguageVersion,
+      experimentReleasedVersion: defaultLanguageVersion),
 
   inlineClass(
       name: 'inline-class',
@@ -243,10 +257,10 @@ enum ExperimentalFlag {
 
   wildcardVariables(
       name: 'wildcard-variables',
-      isEnabledByDefault: false,
+      isEnabledByDefault: true,
       isExpired: false,
-      experimentEnabledVersion: defaultLanguageVersion,
-      experimentReleasedVersion: defaultLanguageVersion),
+      experimentEnabledVersion: const Version(3, 7),
+      experimentReleasedVersion: const Version(3, 7)),
   ;
 
   final String name;

@@ -9,7 +9,7 @@ import 'package:_fe_analyzer_shared/src/util/resolve_relative_uri.dart'
 import 'package:kernel/ast.dart' hide Combinator, MapLiteralEntry;
 import 'package:kernel/names.dart' show indexSetName;
 import 'package:kernel/reference_from_index.dart'
-    show IndexedClass, IndexedContainer, IndexedLibrary;
+    show IndexedClass, IndexedLibrary;
 import 'package:kernel/src/bounds_checks.dart' show VarianceCalculationValue;
 
 import '../api_prototype/experimental_flags.dart';
@@ -20,20 +20,7 @@ import '../base/export.dart' show Export;
 import '../base/identifiers.dart' show Identifier, QualifiedNameIdentifier;
 import '../base/import.dart' show Import;
 import '../base/messages.dart';
-import '../base/modifier.dart'
-    show
-        abstractMask,
-        augmentMask,
-        constMask,
-        externalMask,
-        finalMask,
-        declaresConstConstructorMask,
-        hasInitializerMask,
-        initializingFormalMask,
-        superInitializingFormalMask,
-        lateMask,
-        namedMixinApplicationMask,
-        staticMask;
+import '../base/modifiers.dart' show Modifiers;
 import '../base/problems.dart' show internalProblem, unhandled;
 import '../base/scope.dart';
 import '../base/uris.dart';
@@ -54,7 +41,6 @@ import '../builder/void_type_builder.dart';
 import '../fragment/fragment.dart';
 import '../util/local_stack.dart';
 import 'builder_factory.dart';
-import 'name_scheme.dart';
 import 'offset_map.dart';
 import 'source_class_builder.dart' show SourceClassBuilder;
 import 'source_enum_builder.dart';
@@ -69,14 +55,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
   /// The object used as the root for creating augmentation libraries.
   // TODO(johnniwinther): Remove this once parts support augmentations.
-  final SourceLibraryBuilder _augmentationRoot;
-
-  /// [SourceLibraryBuilder] used for passing a parent [Builder] to created
-  /// [Builder]s. These uses are only needed because we creating [Builder]s
-  /// instead of fragments.
-  // TODO(johnniwinther): Remove this when we no longer create [Builder]s in
-  // the outline builder.
-  final SourceLibraryBuilder _parent;
+  final SourceCompilationUnit _augmentationRoot;
 
   final LibraryNameSpaceBuilder _libraryNameSpaceBuilder;
 
@@ -121,11 +100,13 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
   final List<FactoryFragment> _nativeFactoryFragments = [];
 
+  final List<GetterFragment> _nativeGetterFragments = [];
+
+  final List<SetterFragment> _nativeSetterFragments = [];
+
   final List<MethodFragment> _nativeMethodFragments = [];
 
   final List<ConstructorFragment> _nativeConstructorFragments = [];
-
-  final LibraryName libraryName;
 
   final LookupScope _compilationUnitScope;
 
@@ -145,21 +126,17 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
   BuilderFactoryImpl(
       {required SourceCompilationUnit compilationUnit,
-      required SourceLibraryBuilder augmentationRoot,
-      required SourceLibraryBuilder parent,
+      required SourceCompilationUnit augmentationRoot,
       required LibraryNameSpaceBuilder libraryNameSpaceBuilder,
       required ProblemReporting problemReporting,
       required LookupScope scope,
-      required LibraryName libraryName,
       required IndexedLibrary? indexedLibrary,
       required Map<String, Builder>? omittedTypeDeclarationBuilders})
       : _compilationUnit = compilationUnit,
         _augmentationRoot = augmentationRoot,
         _libraryNameSpaceBuilder = libraryNameSpaceBuilder,
         _problemReporting = problemReporting,
-        _parent = parent,
         _compilationUnitScope = scope,
-        libraryName = libraryName,
         indexedLibrary = indexedLibrary,
         _omittedTypeDeclarationBuilders = omittedTypeDeclarationBuilders,
         _typeScopes =
@@ -650,28 +627,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         "$_structuralParameterScopes.");
   }
 
-  // TODO(johnniwinther): Use [_indexedContainer] for library members and make
-  // it [null] when there is null corresponding [IndexedContainer].
-  IndexedContainer? _indexedContainer;
-
-  @override
-  void beginIndexedContainer(String name,
-      {required bool isExtensionTypeDeclaration}) {
-    if (indexedLibrary != null) {
-      if (isExtensionTypeDeclaration) {
-        _indexedContainer =
-            indexedLibrary!.lookupIndexedExtensionTypeDeclaration(name);
-      } else {
-        _indexedContainer = indexedLibrary!.lookupIndexedClass(name);
-      }
-    }
-  }
-
-  @override
-  void endIndexedContainer() {
-    _indexedContainer = null;
-  }
-
   @override
   // Coverage-ignore(suite): Not run.
   void registerUnboundStructuralVariables(
@@ -723,10 +678,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     // through the file uri of this library. See issue #52964.
     Uri newFileUri = loader.target.uriTranslator.translate(resolvedUri) ??
         _resolve(_compilationUnit.fileUri, uri, charOffset);
-    // TODO(johnniwinther): Add a LibraryPartBuilder instead of using
-    // [LibraryBuilder] to represent both libraries and parts.
     CompilationUnit compilationUnit = loader.read(resolvedUri, charOffset,
-        origin: _compilationUnit.isAugmenting ? _augmentationRoot.origin : null,
+        origin: _compilationUnit.isAugmenting ? _augmentationRoot : null,
         originImportUri: _compilationUnit.originImportUri,
         fileUri: newFileUri,
         accessor: _compilationUnit,
@@ -784,8 +737,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       required bool deferred,
       required int charOffset,
       required int prefixCharOffset,
-      required int uriOffset,
-      required int importIndex}) {
+      required int uriOffset}) {
     if (configurations != null) {
       for (Configuration config in configurations) {
         if (loader.getLibrarySupportValue(config.dottedName) ==
@@ -824,16 +776,16 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     }
 
     Import import = new Import(
-        _parent,
+        _compilationUnit,
         compilationUnit,
         isAugmentationImport,
         deferred,
         prefix,
         combinators,
         configurations,
+        _compilationUnit.fileUri,
         charOffset,
         prefixCharOffset,
-        importIndex,
         nativeImportPath: nativePath);
     imports.add(import);
     offsetMap?.registerImport(importKeyword!, import);
@@ -874,7 +826,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   void addClass(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       Identifier identifier,
       List<NominalVariableBuilder>? typeVariables,
       TypeBuilder? supertype,
@@ -883,14 +835,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       int startOffset,
       int nameOffset,
       int endOffset,
-      int supertypeOffset,
-      {required bool isMacro,
-      required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
-      required bool isAugmentation,
-      required bool isMixinClass}) {
+      int supertypeOffset) {
     String className = identifier.name;
 
     endClassDeclaration(className);
@@ -904,7 +849,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         ownerName: className, allowNameConflict: false);
 
     if (declarationFragment.declaresConstConstructor) {
-      modifiers |= declaresConstConstructorMask;
+      modifiers |= Modifiers.DeclaresConstConstructor;
     }
 
     declarationFragment.compilationUnitScope = _compilationUnitScope;
@@ -918,20 +863,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     declarationFragment.startOffset = startOffset;
     declarationFragment.charOffset = nameOffset;
     declarationFragment.endOffset = endOffset;
-    declarationFragment.indexedLibrary = indexedLibrary;
-    declarationFragment.indexedClass = _indexedContainer as IndexedClass?;
-    declarationFragment.isAugmentation = isAugmentation;
-    declarationFragment.isBase = isBase;
-    declarationFragment.isFinal = isFinal;
-    declarationFragment.isInterface = isInterface;
-    declarationFragment.isMacro = isMacro;
-    declarationFragment.isMixinClass = isMixinClass;
-    declarationFragment.isSealed = isSealed;
 
     _constructorReferences.clear();
 
-    _addFragment(declarationFragment,
-        getterReference: _indexedContainer?.reference);
+    _addFragment(declarationFragment);
     offsetMap.registerNamedDeclarationFragment(identifier, declarationFragment);
   }
 
@@ -949,10 +884,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     String name = identifier.name;
     int charOffset = identifier.nameOffset;
 
-    IndexedClass? referencesFromIndexedClass;
-    if (indexedLibrary != null) {
-      referencesFromIndexedClass = indexedLibrary!.lookupIndexedClass(name);
-    }
     // Nested declaration began in `OutlineBuilder.beginEnum`.
     endEnumDeclaration(name);
 
@@ -974,13 +905,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     declarationFragment.startCharOffset = startCharOffset;
     declarationFragment.charOffset = charOffset;
     declarationFragment.charEndOffset = charEndOffset;
-    declarationFragment.indexedLibrary = indexedLibrary;
-    declarationFragment.indexedClass = referencesFromIndexedClass;
 
     _constructorReferences.clear();
 
-    _addFragment(declarationFragment,
-        getterReference: referencesFromIndexedClass?.reference);
+    _addFragment(declarationFragment);
 
     offsetMap.registerNamedDeclarationFragment(identifier, declarationFragment);
   }
@@ -989,6 +917,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   void addMixinDeclaration(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
+      Modifiers modifiers,
       Identifier identifier,
       List<NominalVariableBuilder>? typeVariables,
       List<TypeBuilder>? supertypeConstraints,
@@ -996,9 +925,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       int startOffset,
       int nameOffset,
       int endOffset,
-      int supertypeOffset,
-      {required bool isBase,
-      required bool isAugmentation}) {
+      int supertypeOffset) {
     TypeBuilder? supertype;
     MixinApplicationBuilder? mixinApplication;
     if (supertypeConstraints != null && supertypeConstraints.isNotEmpty) {
@@ -1022,9 +949,9 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     nominalParameterNameSpace.addTypeVariables(_problemReporting, typeVariables,
         ownerName: className, allowNameConflict: false);
 
-    int modifiers = abstractMask;
+    modifiers |= Modifiers.Abstract;
     if (declarationFragment.declaresConstConstructor) {
-      modifiers |= declaresConstConstructorMask;
+      modifiers |= Modifiers.DeclaresConstConstructor;
     }
 
     declarationFragment.compilationUnitScope = _compilationUnitScope;
@@ -1038,15 +965,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     declarationFragment.startOffset = startOffset;
     declarationFragment.charOffset = nameOffset;
     declarationFragment.endOffset = endOffset;
-    declarationFragment.indexedLibrary = indexedLibrary;
-    declarationFragment.indexedClass = _indexedContainer as IndexedClass?;
-    declarationFragment.isAugmentation = isAugmentation;
-    declarationFragment.isBase = isBase;
 
     _constructorReferences.clear();
 
-    _addFragment(declarationFragment,
-        getterReference: _indexedContainer?.reference);
+    _addFragment(declarationFragment);
 
     offsetMap.registerNamedDeclarationFragment(identifier, declarationFragment);
   }
@@ -1063,20 +985,13 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       List<MetadataBuilder>? metadata,
       String name,
       List<NominalVariableBuilder>? typeVariables,
-      int modifiers,
+      Modifiers modifiers,
       TypeBuilder? supertype,
       MixinApplicationBuilder mixinApplication,
       List<TypeBuilder>? interfaces,
       int startCharOffset,
       int charOffset,
-      int charEndOffset,
-      {required bool isMacro,
-      required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
-      required bool isAugmentation,
-      required bool isMixinClass}) {
+      int charEndOffset) {
     // Nested declaration began in `OutlineBuilder.beginNamedMixinApplication`.
     endNamedMixinApplication(name);
 
@@ -1087,32 +1002,19 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         _problemReporting, typeVariables,
         ownerName: name, allowNameConflict: false);
 
-    _addFragment(
-        new NamedMixinApplicationFragment(
-          name: name,
-          fileUri: _compilationUnit.fileUri,
-          startCharOffset: startCharOffset,
-          charOffset: charOffset,
-          charEndOffset: charEndOffset,
-          modifiers: modifiers,
-          metadata: metadata,
-          typeParameters: typeVariables,
-          supertype: supertype,
-          mixins: mixinApplication,
-          interfaces: interfaces,
-          isAugmentation: isAugmentation,
-          isBase: isBase,
-          isFinal: isFinal,
-          isInterface: isInterface,
-          isMacro: isMacro,
-          isMixinClass: isMixinClass,
-          isSealed: isSealed,
-          compilationUnitScope: _compilationUnitScope,
-          indexedLibrary: indexedLibrary,
-        ),
-        // References are looked up in [BuilderFactoryImpl.applyMixin] when the
-        // [SourceClassBuilder] is created.
-        getterReference: null);
+    _addFragment(new NamedMixinApplicationFragment(
+        name: name,
+        fileUri: _compilationUnit.fileUri,
+        startCharOffset: startCharOffset,
+        charOffset: charOffset,
+        charEndOffset: charEndOffset,
+        modifiers: modifiers,
+        metadata: metadata,
+        typeParameters: typeVariables,
+        supertype: supertype,
+        mixins: mixinApplication,
+        interfaces: interfaces,
+        compilationUnitScope: _compilationUnitScope));
   }
 
   static TypeBuilder? applyMixins(
@@ -1133,15 +1035,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       List<MetadataBuilder>? metadata,
       String? name,
       List<NominalVariableBuilder>? typeVariables,
-      int modifiers = 0,
+      required Modifiers modifiers,
       List<TypeBuilder>? interfaces,
-      required bool isMacro,
-      required bool isSealed,
-      required bool isBase,
-      required bool isInterface,
-      required bool isFinal,
-      required bool isAugmentation,
-      required bool isMixinClass,
       required TypeBuilder objectTypeBuilder,
       required void Function(String name, Builder declaration, int charOffset,
               {Reference? getterReference})
@@ -1318,8 +1213,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         SourceClassBuilder application = new SourceClassBuilder(
             isNamedMixinApplication ? metadata : null,
             isNamedMixinApplication
-                ? modifiers | namedMixinApplicationMask
-                : abstractMask,
+                ? modifiers | Modifiers.NamedMixinApplication
+                : Modifiers.Abstract,
             fullname,
             applicationTypeVariables,
             isMixinDeclaration ? null : supertype,
@@ -1339,20 +1234,13 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
             charOffset,
             charEndOffset,
             referencesFromIndexedClass,
-            mixedInTypeBuilder: isMixinDeclaration ? null : mixin,
-            isMacro: isNamedMixinApplication && isMacro,
-            isSealed: isNamedMixinApplication && isSealed,
-            isBase: isNamedMixinApplication && isBase,
-            isInterface: isNamedMixinApplication && isInterface,
-            isFinal: isNamedMixinApplication && isFinal,
-            isAugmentation: isNamedMixinApplication && isAugmentation,
-            isMixinClass: isNamedMixinApplication && isMixinClass);
+            mixedInTypeBuilder: isMixinDeclaration ? null : mixin);
         // TODO(ahe, kmillikin): Should always be true?
         // pkg/analyzer/test/src/summary/resynthesize_kernel_test.dart can't
         // handle that :(
         application.cls.isAnonymousMixin = !isNamedMixinApplication;
         addBuilder(fullname, application, charOffset,
-            getterReference: referencesFromIndexedClass?.cls.reference);
+            getterReference: referencesFromIndexedClass?.reference);
         supertype = new NamedTypeBuilderImpl.fromTypeDeclarationBuilder(
             application, const NullabilityBuilder.omitted(),
             arguments: applicationTypeArguments,
@@ -1373,7 +1261,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       OffsetMap offsetMap,
       Token beginToken,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       Identifier? identifier,
       List<NominalVariableBuilder>? typeVariables,
       TypeBuilder type,
@@ -1393,23 +1281,16 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     nominalParameterNameSpace.addTypeVariables(_problemReporting, typeVariables,
         ownerName: name, allowNameConflict: false);
 
-    Extension? referenceFrom;
-    if (name != null) {
-      referenceFrom = indexedLibrary?.lookupExtension(name);
-    }
-
     declarationFragment.metadata = metadata;
     declarationFragment.modifiers = modifiers;
     declarationFragment.onType = type;
     declarationFragment.startOffset = startOffset;
     declarationFragment.nameOffset = nameOffset;
     declarationFragment.endOffset = endOffset;
-    declarationFragment.reference = referenceFrom?.reference;
 
     _constructorReferences.clear();
 
-    _addFragment(declarationFragment,
-        getterReference: referenceFrom?.reference);
+    _addFragment(declarationFragment);
 
     if (identifier != null) {
       offsetMap.registerNamedDeclarationFragment(
@@ -1423,7 +1304,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   void addExtensionTypeDeclaration(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       Identifier identifier,
       List<NominalVariableBuilder>? typeVariables,
       List<TypeBuilder>? interfaces,
@@ -1441,9 +1322,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     nominalParameterNameSpace.addTypeVariables(_problemReporting, typeVariables,
         ownerName: name, allowNameConflict: false);
 
-    IndexedContainer? indexedContainer =
-        indexedLibrary?.lookupIndexedExtensionTypeDeclaration(name);
-
     declarationFragment.metadata = metadata;
     declarationFragment.modifiers = modifiers;
     declarationFragment.interfaces = interfaces;
@@ -1451,12 +1329,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         new List<ConstructorReferenceBuilder>.of(_constructorReferences);
     declarationFragment.startOffset = startOffset;
     declarationFragment.endOffset = endOffset;
-    declarationFragment.indexedContainer = indexedContainer;
 
     _constructorReferences.clear();
 
-    _addFragment(declarationFragment,
-        getterReference: indexedContainer?.reference);
+    _addFragment(declarationFragment);
     offsetMap.registerNamedDeclarationFragment(identifier, declarationFragment);
   }
 
@@ -1473,7 +1349,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
             VarianceCalculationValue.pending;
       }
     }
-    Reference? reference = indexedLibrary?.lookupTypedef(name)?.reference;
     _nominalParameterNameSpaces.pop().addTypeVariables(
         _problemReporting, typeVariables,
         ownerName: name, allowNameConflict: true);
@@ -1485,9 +1360,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         typeVariables: typeVariables,
         type: type,
         fileUri: _compilationUnit.fileUri,
-        fileOffset: charOffset,
-        reference: reference);
-    _addFragment(fragment, getterReference: reference);
+        fileOffset: charOffset);
+    _addFragment(fragment);
   }
 
   @override
@@ -1504,7 +1378,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       required int endCharOffset,
       required int charOffset,
       required int formalsOffset,
-      required int modifiers,
+      required Modifiers modifiers,
       required bool inConstructor,
       required bool isStatic,
       required bool isConstructor,
@@ -1576,7 +1450,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
           }
           List<FormalParameterBuilder> synthesizedFormals = [
             new FormalParameterBuilder(FormalParameterKind.requiredPositional,
-                finalMask, thisType, syntheticThisName, charOffset,
+                Modifiers.Final, thisType, syntheticThisName, charOffset,
                 fileUri: _compilationUnit.fileUri,
                 isExtensionThis: true,
                 hasImmediatelyDeclaredInitializer: false)
@@ -1626,7 +1500,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
           }
           List<FormalParameterBuilder> synthesizedFormals = [
             new FormalParameterBuilder(FormalParameterKind.requiredPositional,
-                finalMask, thisType, syntheticThisName, charOffset,
+                Modifiers.Final, thisType, syntheticThisName, charOffset,
                 fileUri: _compilationUnit.fileUri,
                 isExtensionThis: true,
                 hasImmediatelyDeclaredInitializer: false)
@@ -1661,25 +1535,70 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
           beginInitializers: beginInitializers,
           forAbstractClassOrMixin: forAbstractClassOrMixin);
     } else {
-      addProcedure(
-          offsetMap,
-          metadata,
-          modifiers,
-          returnType,
-          identifier,
-          name,
-          typeVariables,
-          formals,
-          kind!,
-          startCharOffset,
-          charOffset,
-          formalsOffset,
-          endCharOffset,
-          nativeMethodName,
-          asyncModifier,
-          isInstanceMember: !isStatic,
-          isExtensionMember: isExtensionMember,
-          isExtensionTypeMember: isExtensionTypeMember);
+      switch (kind!) {
+        case ProcedureKind.Method:
+        case ProcedureKind.Operator:
+          addMethod(
+              offsetMap,
+              metadata,
+              modifiers,
+              returnType,
+              identifier,
+              name,
+              typeVariables,
+              formals,
+              kind,
+              startCharOffset,
+              charOffset,
+              formalsOffset,
+              endCharOffset,
+              nativeMethodName,
+              asyncModifier,
+              isInstanceMember: !isStatic,
+              isExtensionMember: isExtensionMember,
+              isExtensionTypeMember: isExtensionTypeMember);
+        case ProcedureKind.Getter:
+          addGetter(
+              offsetMap,
+              metadata,
+              modifiers,
+              returnType,
+              identifier,
+              name,
+              typeVariables,
+              formals,
+              startCharOffset,
+              charOffset,
+              formalsOffset,
+              endCharOffset,
+              nativeMethodName,
+              asyncModifier,
+              isInstanceMember: !isStatic,
+              isExtensionMember: isExtensionMember,
+              isExtensionTypeMember: isExtensionTypeMember);
+        case ProcedureKind.Setter:
+          addSetter(
+              offsetMap,
+              metadata,
+              modifiers,
+              returnType,
+              identifier,
+              name,
+              typeVariables,
+              formals,
+              startCharOffset,
+              charOffset,
+              formalsOffset,
+              endCharOffset,
+              nativeMethodName,
+              asyncModifier,
+              isInstanceMember: !isStatic,
+              isExtensionMember: isExtensionMember,
+              isExtensionTypeMember: isExtensionTypeMember);
+        // Coverage-ignore(suite): Not run.
+        case ProcedureKind.Factory:
+          throw new UnsupportedError("Unexpected procedure kind: $kind");
+      }
     }
   }
 
@@ -1687,7 +1606,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   void addConstructor(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       Identifier identifier,
       String constructorName,
       List<NominalVariableBuilder>? typeVariables,
@@ -1712,7 +1631,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         nativeMethodName,
         beginInitializers: beginInitializers,
         forAbstractClassOrMixin: forAbstractClassOrMixin,
-        isConst: modifiers & constMask != 0);
+        isConst: modifiers.isConst);
     offsetMap.registerConstructorFragment(identifier, fragment);
   }
 
@@ -1735,7 +1654,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
     ConstructorFragment builder = _addConstructor(
         null,
-        isConst ? constMask : 0,
+        isConst ? Modifiers.Const : Modifiers.empty,
         constructorName,
         typeVariables,
         formals,
@@ -1761,24 +1680,19 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       required int charOffset}) {
     _declarationFragments.current.addPrimaryConstructorField(_addField(
         metadata,
-        finalMask,
-        /* isTopLevel = */
-        false,
+        Modifiers.Final,
+        /* isTopLevel = */ false,
         type,
         name,
-        /* charOffset = */
-        charOffset,
-        /* charEndOffset = */
-        charOffset,
-        /* initializerToken = */
-        null,
-        /* hasInitializer = */
-        false));
+        /* charOffset = */ charOffset,
+        /* charEndOffset = */ charOffset,
+        /* initializerToken = */ null,
+        /* hasInitializer = */ false));
   }
 
   ConstructorFragment _addConstructor(
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       String constructorName,
       List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
@@ -1790,30 +1704,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       {Token? beginInitializers,
       required bool isConst,
       required bool forAbstractClassOrMixin}) {
-    ContainerType containerType = _declarationFragments.current.containerType;
-    ContainerName? containerName = _declarationFragments.current.containerName;
-    NameScheme nameScheme = new NameScheme(
-        isInstanceMember: false,
-        containerName: containerName,
-        containerType: containerType,
-        libraryName: indexedLibrary != null
-            ? new LibraryName(indexedLibrary!.library.reference)
-            : libraryName);
-
-    Reference? constructorReference;
-    Reference? tearOffReference;
-
-    IndexedContainer? indexedContainer = _indexedContainer;
-    if (indexedContainer != null) {
-      constructorReference = indexedContainer.lookupConstructorReference(
-          nameScheme
-              .getConstructorMemberName(constructorName, isTearOff: false)
-              .name);
-      tearOffReference = indexedContainer.lookupGetterReference(nameScheme
-          .getConstructorMemberName(constructorName, isTearOff: true)
-          .name);
-    }
-
     ConstructorFragment fragment = new ConstructorFragment(
         name: constructorName,
         fileUri: _compilationUnit.fileUri,
@@ -1821,14 +1711,11 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         charOffset: charOffset,
         charOpenParenOffset: charOpenParenOffset,
         charEndOffset: charEndOffset,
-        modifiers: modifiers & ~abstractMask,
+        modifiers: modifiers - Modifiers.Abstract,
         metadata: metadata,
         returnType: addInferableType(),
         typeParameters: typeVariables,
         formals: formals,
-        constructorReference: constructorReference,
-        tearOffReference: tearOffReference,
-        nameScheme: nameScheme,
         nativeMethodName: nativeMethodName,
         forAbstractClassOrMixin: forAbstractClassOrMixin,
         beginInitializers: isConst || libraryFeatures.superParameters.isEnabled
@@ -1845,8 +1732,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     _nominalParameterNameSpaces.pop().addTypeVariables(
         _problemReporting, typeVariables,
         ownerName: constructorName, allowNameConflict: true);
-    // TODO(johnniwinther): There is no way to pass the tear off reference here.
-    _addFragment(fragment, getterReference: constructorReference);
+    _addFragment(fragment);
     if (nativeMethodName != null) {
       _addNativeConstructorFragment(fragment);
     }
@@ -1860,7 +1746,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   void addFactoryMethod(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       Identifier identifier,
       List<FormalParameterBuilder>? formals,
       ConstructorReferenceBuilder? redirectionTarget,
@@ -1902,43 +1788,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       procedureName = identifier.name;
     }
 
-    ContainerType containerType = enclosingDeclaration.containerType;
-    ContainerName containerName = enclosingDeclaration.containerName;
-
-    NameScheme procedureNameScheme = new NameScheme(
-        containerName: containerName,
-        containerType: containerType,
-        isInstanceMember: false,
-        libraryName: indexedLibrary != null
-            ? new LibraryName(
-                (_indexedContainer ?? // Coverage-ignore(suite): Not run.
-                        indexedLibrary)!
-                    .library
-                    .reference)
-            : libraryName);
-
-    Reference? constructorReference;
-    Reference? tearOffReference;
-    if (_indexedContainer != null) {
-      constructorReference = _indexedContainer!.lookupConstructorReference(
-          procedureNameScheme
-              .getConstructorMemberName(procedureName, isTearOff: false)
-              .name);
-      tearOffReference = _indexedContainer!.lookupGetterReference(
-          procedureNameScheme
-              .getConstructorMemberName(procedureName, isTearOff: true)
-              .name);
-    } else if (indexedLibrary != null) {
-      // Coverage-ignore-block(suite): Not run.
-      constructorReference = indexedLibrary!.lookupGetterReference(
-          procedureNameScheme
-              .getConstructorMemberName(procedureName, isTearOff: false)
-              .name);
-      tearOffReference = indexedLibrary!.lookupGetterReference(
-          procedureNameScheme
-              .getConstructorMemberName(procedureName, isTearOff: true)
-              .name);
-    }
     List<NominalVariableBuilder>? typeVariables = copyTypeVariables(
             _unboundNominalVariables, enclosingDeclaration.typeParameters,
             kind: TypeVariableKind.function,
@@ -1951,15 +1800,12 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         charOffset: charOffset,
         charOpenParenOffset: charOpenParenOffset,
         charEndOffset: charEndOffset,
-        modifiers: staticMask | modifiers,
+        modifiers: modifiers | Modifiers.Static,
         metadata: metadata,
         returnType: returnType,
         typeParameters: typeVariables,
         formals: formals,
-        constructorReference: constructorReference,
-        tearOffReference: tearOffReference,
         asyncModifier: asyncModifier,
-        nameScheme: procedureNameScheme,
         nativeMethodName: nativeMethodName,
         redirectionTarget: redirectionTarget);
 
@@ -1982,7 +1828,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         _problemReporting, typeVariables,
         ownerName: identifier.name, allowNameConflict: true);
 
-    _addFragment(fragment, getterReference: constructorReference);
+    _addFragment(fragment);
     if (nativeMethodName != null) {
       _addNativeFactoryFragment(fragment);
     }
@@ -2077,6 +1923,14 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     return suffix;
   }
 
+  void _addNativeGetterFragment(GetterFragment fragment) {
+    _nativeGetterFragments.add(fragment);
+  }
+
+  void _addNativeSetterFragment(SetterFragment fragment) {
+    _nativeSetterFragments.add(fragment);
+  }
+
   void _addNativeMethodFragment(MethodFragment fragment) {
     _nativeMethodFragments.add(fragment);
   }
@@ -2090,10 +1944,118 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   }
 
   @override
-  void addProcedure(
+  void addGetter(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
+      TypeBuilder? returnType,
+      Identifier identifier,
+      String name,
+      List<NominalVariableBuilder>? typeVariables,
+      List<FormalParameterBuilder>? formals,
+      int startCharOffset,
+      int charOffset,
+      int charOpenParenOffset,
+      int charEndOffset,
+      String? nativeMethodName,
+      AsyncMarker asyncModifier,
+      {required bool isInstanceMember,
+      required bool isExtensionMember,
+      required bool isExtensionTypeMember}) {
+    DeclarationFragment? enclosingDeclaration =
+        _declarationFragments.currentOrNull;
+    assert(!isExtensionMember ||
+        enclosingDeclaration?.kind ==
+            DeclarationFragmentKind.extensionDeclaration);
+    assert(!isExtensionTypeMember ||
+        enclosingDeclaration?.kind ==
+            DeclarationFragmentKind.extensionTypeDeclaration);
+
+    GetterFragment fragment = new GetterFragment(
+        name: name,
+        fileUri: _compilationUnit.fileUri,
+        startCharOffset: startCharOffset,
+        charOffset: charOffset,
+        charOpenParenOffset: charOpenParenOffset,
+        charEndOffset: charEndOffset,
+        metadata: metadata,
+        modifiers: modifiers,
+        returnType: returnType ?? addInferableType(),
+        typeParameters: typeVariables,
+        formals: formals,
+        asyncModifier: asyncModifier,
+        nativeMethodName: nativeMethodName);
+    _nominalParameterNameSpaces.pop().addTypeVariables(
+        _problemReporting, typeVariables,
+        ownerName: name, allowNameConflict: true);
+    _addFragment(fragment);
+    if (nativeMethodName != null) {
+      _addNativeGetterFragment(fragment);
+    }
+    offsetMap.registerGetter(identifier, fragment);
+  }
+
+  @override
+  void addSetter(
+      OffsetMap offsetMap,
+      List<MetadataBuilder>? metadata,
+      Modifiers modifiers,
+      TypeBuilder? returnType,
+      Identifier identifier,
+      String name,
+      List<NominalVariableBuilder>? typeVariables,
+      List<FormalParameterBuilder>? formals,
+      int startCharOffset,
+      int charOffset,
+      int charOpenParenOffset,
+      int charEndOffset,
+      String? nativeMethodName,
+      AsyncMarker asyncModifier,
+      {required bool isInstanceMember,
+      required bool isExtensionMember,
+      required bool isExtensionTypeMember}) {
+    DeclarationFragment? enclosingDeclaration =
+        _declarationFragments.currentOrNull;
+    assert(!isExtensionMember ||
+        enclosingDeclaration?.kind ==
+            DeclarationFragmentKind.extensionDeclaration);
+    assert(!isExtensionTypeMember ||
+        enclosingDeclaration?.kind ==
+            DeclarationFragmentKind.extensionTypeDeclaration);
+
+    if (returnType == null) {
+      returnType = addVoidType(charOffset);
+    }
+
+    SetterFragment fragment = new SetterFragment(
+        name: name,
+        fileUri: _compilationUnit.fileUri,
+        startCharOffset: startCharOffset,
+        charOffset: charOffset,
+        charOpenParenOffset: charOpenParenOffset,
+        charEndOffset: charEndOffset,
+        metadata: metadata,
+        modifiers: modifiers,
+        returnType: returnType,
+        typeParameters: typeVariables,
+        formals: formals,
+        asyncModifier: asyncModifier,
+        nativeMethodName: nativeMethodName);
+    _nominalParameterNameSpaces.pop().addTypeVariables(
+        _problemReporting, typeVariables,
+        ownerName: name, allowNameConflict: true);
+    _addFragment(fragment);
+    if (nativeMethodName != null) {
+      _addNativeSetterFragment(fragment);
+    }
+    offsetMap.registerSetter(identifier, fragment);
+  }
+
+  @override
+  void addMethod(
+      OffsetMap offsetMap,
+      List<MetadataBuilder>? metadata,
+      Modifiers modifiers,
       TypeBuilder? returnType,
       Identifier identifier,
       String name,
@@ -2117,53 +2079,17 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     assert(!isExtensionTypeMember ||
         enclosingDeclaration?.kind ==
             DeclarationFragmentKind.extensionTypeDeclaration);
-    ContainerType containerType =
-        enclosingDeclaration?.containerType ?? ContainerType.Library;
-    ContainerName? containerName = enclosingDeclaration?.containerName;
-    NameScheme nameScheme = new NameScheme(
-        containerName: containerName,
-        containerType: containerType,
-        isInstanceMember: isInstanceMember,
-        libraryName: indexedLibrary != null
-            ? new LibraryName(indexedLibrary!.library.reference)
-            : libraryName);
 
     if (returnType == null) {
       if (kind == ProcedureKind.Operator &&
           identical(name, indexSetName.text)) {
         returnType = addVoidType(charOffset);
       } else if (kind == ProcedureKind.Setter) {
+        // Coverage-ignore-block(suite): Not run.
         returnType = addVoidType(charOffset);
       }
     }
-    Reference? procedureReference;
-    Reference? tearOffReference;
-    IndexedContainer? indexedContainer = _indexedContainer ?? indexedLibrary;
 
-    bool isAugmentation =
-        _compilationUnit.isAugmenting && (modifiers & augmentMask) != 0;
-    if (indexedContainer != null && !isAugmentation) {
-      Name nameToLookup = nameScheme.getProcedureMemberName(kind, name).name;
-      if (kind == ProcedureKind.Setter) {
-        if ((isExtensionMember || isExtensionTypeMember) && isInstanceMember) {
-          // Extension (type) instance setters are encoded as methods.
-          procedureReference =
-              indexedContainer.lookupGetterReference(nameToLookup);
-        } else {
-          procedureReference =
-              indexedContainer.lookupSetterReference(nameToLookup);
-        }
-      } else {
-        procedureReference =
-            indexedContainer.lookupGetterReference(nameToLookup);
-        if ((isExtensionMember || isExtensionTypeMember) &&
-            kind == ProcedureKind.Method) {
-          tearOffReference = indexedContainer.lookupGetterReference(nameScheme
-              .getProcedureMemberName(ProcedureKind.Getter, name)
-              .name);
-        }
-      }
-    }
     MethodFragment fragment = new MethodFragment(
         name: name,
         fileUri: _compilationUnit.fileUri,
@@ -2177,32 +2103,29 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         typeParameters: typeVariables,
         formals: formals,
         kind: kind,
-        procedureReference: procedureReference,
-        tearOffReference: tearOffReference,
         asyncModifier: asyncModifier,
-        nameScheme: nameScheme,
         nativeMethodName: nativeMethodName);
     _nominalParameterNameSpaces.pop().addTypeVariables(
         _problemReporting, typeVariables,
         ownerName: name, allowNameConflict: true);
-    _addFragment(fragment, getterReference: procedureReference);
+    _addFragment(fragment);
     if (nativeMethodName != null) {
       _addNativeMethodFragment(fragment);
     }
-    offsetMap.registerProcedure(identifier, fragment);
+    offsetMap.registerMethod(identifier, fragment);
   }
 
   @override
   void addFields(
       OffsetMap offsetMap,
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       bool isTopLevel,
       TypeBuilder? type,
       List<FieldInfo> fieldInfos) {
     for (FieldInfo info in fieldInfos) {
-      bool isConst = modifiers & constMask != 0;
-      bool isFinal = modifiers & finalMask != 0;
+      bool isConst = modifiers.isConst;
+      bool isFinal = modifiers.isFinal;
       bool potentiallyNeedInitializerInOutline = isConst || isFinal;
       Token? startToken;
       if (potentiallyNeedInitializerInOutline || type == null) {
@@ -2235,7 +2158,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
   FieldFragment _addField(
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       bool isTopLevel,
       TypeBuilder type,
       String name,
@@ -2245,101 +2168,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       bool hasInitializer,
       {Token? constInitializerToken}) {
     if (hasInitializer) {
-      modifiers |= hasInitializerMask;
+      modifiers |= Modifiers.HasInitializer;
     }
-    bool isLate = (modifiers & lateMask) != 0;
-    bool isFinal = (modifiers & finalMask) != 0;
-    bool isStatic = (modifiers & staticMask) != 0;
-    bool isExternal = (modifiers & externalMask) != 0;
-    final bool fieldIsLateWithLowering = isLate &&
-        (loader.target.backendTarget.isLateFieldLoweringEnabled(
-                hasInitializer: hasInitializer,
-                isFinal: isFinal,
-                isStatic: isTopLevel || isStatic) ||
-            (loader.target.backendTarget.useStaticFieldLowering &&
-                (isStatic || isTopLevel)));
-
-    DeclarationFragment? enclosingDeclaration =
-        _declarationFragments.currentOrNull;
-    final bool isInstanceMember = enclosingDeclaration != null && !isStatic;
-    final bool isExtensionMember = enclosingDeclaration?.kind ==
-        DeclarationFragmentKind.extensionDeclaration;
-    final bool isExtensionTypeMember = enclosingDeclaration?.kind ==
-        DeclarationFragmentKind.extensionTypeDeclaration;
-    ContainerType containerType =
-        enclosingDeclaration?.containerType ?? ContainerType.Library;
-    ContainerName? containerName = enclosingDeclaration?.containerName;
-
-    Reference? fieldReference;
-    Reference? fieldGetterReference;
-    Reference? fieldSetterReference;
-    Reference? lateIsSetFieldReference;
-    Reference? lateIsSetGetterReference;
-    Reference? lateIsSetSetterReference;
-    Reference? lateGetterReference;
-    Reference? lateSetterReference;
-
-    NameScheme nameScheme = new NameScheme(
-        isInstanceMember: isInstanceMember,
-        containerName: containerName,
-        containerType: containerType,
-        libraryName: indexedLibrary != null
-            ? new LibraryName(indexedLibrary!.reference)
-            : libraryName);
-    IndexedContainer? indexedContainer = _indexedContainer ?? indexedLibrary;
-    if (indexedContainer != null) {
-      if ((isExtensionMember || isExtensionTypeMember) &&
-          isInstanceMember &&
-          isExternal) {
-        /// An external extension (type) instance field is special. It is
-        /// treated as an external getter/setter pair and is therefore encoded
-        /// as a pair of top level methods using the extension instance member
-        /// naming convention.
-        fieldGetterReference = indexedContainer.lookupGetterReference(
-            nameScheme.getProcedureMemberName(ProcedureKind.Getter, name).name);
-        fieldSetterReference = indexedContainer.lookupGetterReference(
-            nameScheme.getProcedureMemberName(ProcedureKind.Setter, name).name);
-      } else if (isExtensionTypeMember && isInstanceMember) {
-        Name nameToLookup = nameScheme
-            .getFieldMemberName(FieldNameType.RepresentationField, name,
-                isSynthesized: true)
-            .name;
-        fieldGetterReference =
-            indexedContainer.lookupGetterReference(nameToLookup);
-      } else {
-        Name nameToLookup = nameScheme
-            .getFieldMemberName(FieldNameType.Field, name,
-                isSynthesized: fieldIsLateWithLowering)
-            .name;
-        fieldReference = indexedContainer.lookupFieldReference(nameToLookup);
-        fieldGetterReference =
-            indexedContainer.lookupGetterReference(nameToLookup);
-        fieldSetterReference =
-            indexedContainer.lookupSetterReference(nameToLookup);
-      }
-
-      if (fieldIsLateWithLowering) {
-        Name lateIsSetName = nameScheme
-            .getFieldMemberName(FieldNameType.IsSetField, name,
-                isSynthesized: fieldIsLateWithLowering)
-            .name;
-        lateIsSetFieldReference =
-            indexedContainer.lookupFieldReference(lateIsSetName);
-        lateIsSetGetterReference =
-            indexedContainer.lookupGetterReference(lateIsSetName);
-        lateIsSetSetterReference =
-            indexedContainer.lookupSetterReference(lateIsSetName);
-        lateGetterReference = indexedContainer.lookupGetterReference(nameScheme
-            .getFieldMemberName(FieldNameType.Getter, name,
-                isSynthesized: fieldIsLateWithLowering)
-            .name);
-        lateSetterReference = indexedContainer.lookupSetterReference(nameScheme
-            .getFieldMemberName(FieldNameType.Setter, name,
-                isSynthesized: fieldIsLateWithLowering)
-            .name);
-      }
-    }
-
     FieldFragment fragment = new FieldFragment(
         name: name,
         fileUri: _compilationUnit.fileUri,
@@ -2349,20 +2179,9 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         constInitializerToken: constInitializerToken,
         metadata: metadata,
         type: type,
-        fieldReference: fieldReference,
-        fieldGetterReference: fieldGetterReference,
-        fieldSetterReference: fieldSetterReference,
-        lateGetterReference: lateGetterReference,
-        lateSetterReference: lateSetterReference,
-        lateIsSetFieldReference: lateIsSetFieldReference,
-        lateIsSetGetterReference: lateIsSetGetterReference,
-        lateIsSetSetterReference: lateIsSetSetterReference,
         isTopLevel: isTopLevel,
-        modifiers: modifiers,
-        nameScheme: nameScheme);
-    _addFragment(fragment,
-        getterReference: fieldGetterReference,
-        setterReference: fieldSetterReference);
+        modifiers: modifiers);
+    _addFragment(fragment);
     return fragment;
   }
 
@@ -2370,7 +2189,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   FormalParameterBuilder addFormalParameter(
       List<MetadataBuilder>? metadata,
       FormalParameterKind kind,
-      int modifiers,
+      Modifiers modifiers,
       TypeBuilder type,
       String name,
       bool hasThis,
@@ -2381,10 +2200,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     assert(!hasThis || !hasSuper,
         "Formal parameter '${name}' has both 'this' and 'super' prefixes.");
     if (hasThis) {
-      modifiers |= initializingFormalMask;
+      modifiers |= Modifiers.InitializingFormal;
     }
     if (hasSuper) {
-      modifiers |= superInitializingFormalMask;
+      modifiers |= Modifiers.SuperInitializingFormal;
     }
     String formalName = name;
     bool isWildcard =
@@ -2605,14 +2424,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     return _compilationUnit.loader.inferableTypes.addInferableType();
   }
 
-  void _addFragment(Fragment fragment,
-      {required Reference? getterReference, Reference? setterReference}) {
-    if (getterReference != null) {
-      loader.fragmentsCreatedWithReferences[getterReference] = fragment;
-    }
-    if (setterReference != null) {
-      loader.fragmentsCreatedWithReferences[setterReference] = fragment;
-    }
+  void _addFragment(Fragment fragment) {
     if (_declarationFragments.isEmpty) {
       _libraryNameSpaceBuilder.addFragment(fragment);
     } else {
@@ -2675,6 +2487,12 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   @override
   int finishNativeMethods() {
     for (FactoryFragment fragment in _nativeFactoryFragments) {
+      fragment.builder.becomeNative(loader);
+    }
+    for (GetterFragment fragment in _nativeGetterFragments) {
+      fragment.builder.becomeNative(loader);
+    }
+    for (SetterFragment fragment in _nativeSetterFragments) {
       fragment.builder.becomeNative(loader);
     }
     for (MethodFragment fragment in _nativeMethodFragments) {

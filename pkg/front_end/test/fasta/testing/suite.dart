@@ -1882,7 +1882,7 @@ class _FakeFileSystemEntity extends FileSystemEntity {
       fs.data[uri] = null;
       return;
     }
-    fs.data[uri] = (await f.readAsBytes()) as Uint8List;
+    fs.data[uri] = await f.readAsBytes();
   }
 
   @override
@@ -1897,7 +1897,7 @@ class _FakeFileSystemEntity extends FileSystemEntity {
   Future<bool> existsAsyncIfPossible() => exists();
 
   @override
-  Future<List<int>> readAsBytes() async {
+  Future<Uint8List> readAsBytes() async {
     await _ensureCachedIfOk();
     Uint8List? data = fs.data[uri];
     if (data == null) throw new FileSystemException(uri, "File doesn't exist.");
@@ -2054,6 +2054,7 @@ class Outline extends Step<TestDescription, ComponentResult, FastaContext> {
           buildComponent: compileMode == CompileMode.full,
           includeHierarchyAndCoreTypes: true,
           retainDataForTesting: true,
+          allowVerificationErrorForTesting: true,
         );
         Component p = internalCompilerResult.component!;
         internalCompilerResult.kernelTargetForTesting!;
@@ -2102,15 +2103,15 @@ class Outline extends Step<TestDescription, ComponentResult, FastaContext> {
         compilationSetup.options.inputs.clear();
         compilationSetup.options.inputs.add(description.uri);
         InternalCompilerResult internalCompilerResult =
-            await generateKernelInternal(
-          c,
-          buildSummary: compileMode == CompileMode.outline,
-          serializeIfBuildingSummary: false,
-          buildComponent: compileMode != CompileMode.outline,
-          instrumentation: instrumentation,
-          retainDataForTesting: true,
-          additionalDillsForTesting: alsoAppend != null ? [alsoAppend] : null,
-        );
+            await generateKernelInternal(c,
+                buildSummary: compileMode == CompileMode.outline,
+                serializeIfBuildingSummary: false,
+                buildComponent: compileMode != CompileMode.outline,
+                instrumentation: instrumentation,
+                retainDataForTesting: true,
+                additionalDillsForTesting:
+                    alsoAppend != null ? [alsoAppend] : null,
+                allowVerificationErrorForTesting: true);
         p = internalCompilerResult.component!;
         sourceTarget = internalCompilerResult.kernelTargetForTesting!;
 

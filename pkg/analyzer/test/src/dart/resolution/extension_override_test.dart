@@ -137,7 +137,7 @@ FunctionExpressionInvocation
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     argumentList: ArgumentList
       leftParenthesis: (
@@ -189,7 +189,7 @@ FunctionExpressionInvocation
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     typeArguments: TypeArgumentList
       leftBracket: <
@@ -370,7 +370,7 @@ PropertyAccess
   operator: .
   propertyName: SimpleIdentifier
     token: g
-    staticElement: PropertyAccessorMember
+    staticElement: GetterMember
       base: <testLibraryFragment>::@extension::E::@getter::g
       substitution: {T: int}
     element: <testLibraryFragment>::@extension::E::@getter::g#element
@@ -401,7 +401,7 @@ PropertyAccess
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     argumentList: ArgumentList
       leftParenthesis: (
@@ -449,7 +449,7 @@ PropertyAccess
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     typeArguments: TypeArgumentList
       leftBracket: <
@@ -479,7 +479,7 @@ PropertyAccess
   operator: .
   propertyName: SimpleIdentifier
     token: g
-    staticElement: PropertyAccessorMember
+    staticElement: GetterMember
       base: package:test/lib.dart::<fragment>::@extension::E::@getter::g
       substitution: {T: int}
     element: package:test/lib.dart::<fragment>::@extension::E::@getter::g#element
@@ -708,7 +708,7 @@ MethodInvocation
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     argumentList: ArgumentList
       leftParenthesis: (
@@ -760,7 +760,7 @@ MethodInvocation
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     typeArguments: TypeArgumentList
       leftBracket: <
@@ -1016,7 +1016,7 @@ BinaryExpression
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     argumentList: ArgumentList
       leftParenthesis: (
@@ -1066,7 +1066,7 @@ BinaryExpression
       name: p
       period: .
       element: <testLibraryFragment>::@prefix::p
-      element2: <testLibraryFragment>::@prefix::p
+      element2: <testLibraryFragment>::@prefix2::p
     name: E
     typeArguments: TypeArgumentList
       leftBracket: <
@@ -1271,7 +1271,7 @@ AssignmentExpression
   readElement: <null>
   readElement2: <null>
   readType: null
-  writeElement: PropertyAccessorMember
+  writeElement: SetterMember
     base: <testLibraryFragment>::@extension::E::@setter::s
     substitution: {T: int}
   writeElement2: <testLibraryFragment>::@extension::E::@setter::s#element
@@ -1305,7 +1305,7 @@ AssignmentExpression
         name: p
         period: .
         element: <testLibraryFragment>::@prefix::p
-        element2: <testLibraryFragment>::@prefix::p
+        element2: <testLibraryFragment>::@prefix2::p
       name: E
       argumentList: ArgumentList
         leftParenthesis: (
@@ -1368,7 +1368,7 @@ AssignmentExpression
         name: p
         period: .
         element: <testLibraryFragment>::@prefix::p
-        element2: <testLibraryFragment>::@prefix::p
+        element2: <testLibraryFragment>::@prefix2::p
       name: E
       typeArguments: TypeArgumentList
         leftBracket: <
@@ -1412,7 +1412,7 @@ AssignmentExpression
   readElement: <null>
   readElement2: <null>
   readType: null
-  writeElement: PropertyAccessorMember
+  writeElement: SetterMember
     base: package:test/lib.dart::<fragment>::@extension::E::@setter::s
     substitution: {T: int}
   writeElement2: package:test/lib.dart::<fragment>::@extension::E::@setter::s#element
@@ -1534,12 +1534,12 @@ AssignmentExpression
     literal: 0
     parameter: dart:core::<fragment>::@class::num::@method::+::@parameter::other
     staticType: int
-  readElement: PropertyAccessorMember
+  readElement: GetterMember
     base: <testLibraryFragment>::@extension::E::@getter::s
     substitution: {T: int}
   readElement2: <testLibraryFragment>::@extension::E::@getter::s#element
   readType: int
-  writeElement: PropertyAccessorMember
+  writeElement: SetterMember
     base: <testLibraryFragment>::@extension::E::@setter::s
     substitution: {T: int}
   writeElement2: <testLibraryFragment>::@extension::E::@setter::s#element
@@ -1574,7 +1574,7 @@ AssignmentExpression
         name: p
         period: .
         element: <testLibraryFragment>::@prefix::p
-        element2: <testLibraryFragment>::@prefix::p
+        element2: <testLibraryFragment>::@prefix2::p
       name: E
       argumentList: ArgumentList
         leftParenthesis: (
@@ -1638,7 +1638,7 @@ AssignmentExpression
         name: p
         period: .
         element: <testLibraryFragment>::@prefix::p
-        element2: <testLibraryFragment>::@prefix::p
+        element2: <testLibraryFragment>::@prefix2::p
       name: E
       typeArguments: TypeArgumentList
         leftBracket: <
@@ -1677,12 +1677,12 @@ AssignmentExpression
     literal: 0
     parameter: dart:core::<fragment>::@class::num::@method::+::@parameter::other
     staticType: int
-  readElement: PropertyAccessorMember
+  readElement: GetterMember
     base: package:test/lib.dart::<fragment>::@extension::E::@getter::s
     substitution: {T: int}
   readElement2: package:test/lib.dart::<fragment>::@extension::E::@getter::s#element
   readType: int
-  writeElement: PropertyAccessorMember
+  writeElement: SetterMember
     base: package:test/lib.dart::<fragment>::@extension::E::@setter::s
     substitution: {T: int}
   writeElement2: package:test/lib.dart::<fragment>::@extension::E::@setter::s#element

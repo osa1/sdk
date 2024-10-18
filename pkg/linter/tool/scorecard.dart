@@ -14,9 +14,9 @@ import 'package:linter/src/rules.dart';
 import 'package:linter/src/utils.dart';
 
 import '../tool/util/path_utils.dart';
-import 'crawl.dart';
+import 'generate_lints.dart' show generatedNamesPath;
+import 'lint_sets.dart';
 import 'parse.dart';
-import 'since.dart';
 
 void main() async {
   var scorecard = await ScoreCard.calculate();
@@ -124,16 +124,15 @@ class LintScore {
   String name;
   bool hasFix;
   State state;
-  SinceInfo? since;
 
   List<String> ruleSets;
 
-  LintScore(
-      {required this.name,
-      required this.hasFix,
-      required this.state,
-      required this.ruleSets,
-      this.since});
+  LintScore({
+    required this.name,
+    required this.hasFix,
+    required this.state,
+    required this.ruleSets,
+  });
 
   String get _ruleSets => ruleSets.isNotEmpty ? ' $ruleSets' : '';
 
@@ -143,8 +142,6 @@ class LintScore {
       switch (detail) {
         case Detail.rule:
           sb.write(' [$name](https://dart.dev/lints/$name) |');
-        case Detail.sdk:
-          sb.write(' ${since!.sinceDartSdk} |');
         case Detail.fix:
           sb.write('${hasFix ? " $bulb" : ""} |');
         case Detail.flutterUser:
@@ -196,8 +193,8 @@ class ScoreCard {
   static Future<ScoreCard> calculate() async {
     var lintsWithFixes = _getLintsWithFixes();
     var lintsWithAssists = _getLintsWithAssists();
-    var flutterRuleset = await flutterRules;
-    var flutterRepoRuleset = await flutterRepoRules;
+    var flutterRuleset = await flutterUserLints;
+    var flutterRepoRuleset = await flutterRepoLints;
 
     var scorecard = ScoreCard();
     for (var lint in registeredLints!) {
@@ -210,12 +207,12 @@ class ScoreCard {
       }
 
       scorecard.add(LintScore(
-          name: lint.name,
-          hasFix: lintsWithFixes.contains(lint.name) ||
-              lintsWithAssists.contains(lint.name),
-          state: lint.state,
-          ruleSets: ruleSets,
-          since: sinceMap[lint.name]));
+        name: lint.name,
+        hasFix: lintsWithFixes.contains(lint.name) ||
+            lintsWithAssists.contains(lint.name),
+        state: lint.state,
+        ruleSets: ruleSets,
+      ));
     }
 
     return scorecard;
@@ -243,15 +240,7 @@ class ScoreCard {
   }
 
   static List<String> _getLintsWithFixes() {
-    var lintNamesFilePath = pathRelativeToPkgDir([
-      'analysis_server',
-      'lib',
-      'src',
-      'services',
-      'linter',
-      'lint_names.dart'
-    ]);
-    var contents = File(lintNamesFilePath).readAsStringSync();
+    var contents = File(generatedNamesPath).readAsStringSync();
 
     var parser = CompilationUnitParser();
     var cu = parser.parse(contents: contents, name: 'lint_names.dart');

@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.source_type_alias_builder;
-
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 
@@ -21,6 +19,7 @@ import '../builder/record_type_builder.dart';
 import '../builder/type_builder.dart';
 import '../codes/cfe_codes.dart'
     show templateCyclicTypedef, templateTypeArgumentMismatch;
+import '../fragment/fragment.dart';
 import '../kernel/body_builder_context.dart';
 import '../kernel/constructor_tearoff_lowering.dart';
 import '../kernel/expression_generator_helper.dart';
@@ -30,13 +29,22 @@ import 'source_loader.dart';
 
 class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
   @override
-  TypeBuilder type;
+  final SourceLibraryBuilder parent;
 
-  final List<NominalVariableBuilder>? _typeVariables;
-
-  /// The [Typedef] built by this builder.
   @override
-  final Typedef typedef;
+  final int charOffset;
+
+  @override
+  final String name;
+
+  @override
+  final Uri fileUri;
+
+  late TypeBuilder _type;
+
+  final Reference _reference;
+
+  Typedef? _typedef;
 
   @override
   DartType? thisType;
@@ -44,30 +52,47 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
   @override
   Map<Name, Procedure>? tearOffs;
 
+  /// The `typedef` declaration that introduces this typedef. Subsequent
+  /// typedefs of the same name must be augmentations.
+  // TODO(johnniwinther): Add [_augmentations] field.
+  final TypedefFragment _introductory;
+
   SourceTypeAliasBuilder(
-      {required List<MetadataBuilder>? metadata,
-      required String name,
-      required List<NominalVariableBuilder>? typeVariables,
-      required this.type,
+      {required this.name,
       required SourceLibraryBuilder enclosingLibraryBuilder,
-      required Uri fileUri,
+      required this.fileUri,
       required int fileOffset,
+      required TypedefFragment fragment,
       required Reference? reference})
-      : typedef = new Typedef(name, null,
-            typeParameters: NominalVariableBuilder.typeParametersFromBuilders(
-                typeVariables),
-            fileUri: fileUri,
-            reference: reference)
-          ..fileOffset = fileOffset,
-        _typeVariables = typeVariables,
-        super(metadata, name, enclosingLibraryBuilder, fileUri, fileOffset);
+      : charOffset = fileOffset,
+        parent = enclosingLibraryBuilder,
+        _reference = reference ?? new Reference(),
+        _introductory = fragment,
+        _type = fragment.type {
+    _introductory.builder = this;
+  }
+
+  @override
+  TypeBuilder get type => _type;
+
+  /// The [Typedef] built by this builder.
+  @override
+  Typedef get typedef {
+    assert(
+        _typedef != null, "Typedef node has not been created yet for $this.");
+    return _typedef!;
+  }
+
+  @override
+  Reference get reference => _reference;
 
   @override
   SourceLibraryBuilder get libraryBuilder =>
       super.libraryBuilder as SourceLibraryBuilder;
 
   @override
-  List<NominalVariableBuilder>? get typeVariables => _typeVariables;
+  List<NominalVariableBuilder>? get typeVariables =>
+      _introductory.typeVariables;
 
   @override
   bool get fromDill => false;
@@ -79,9 +104,15 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
 
   void _breakCyclicDependency() {
     if (_hasCheckedForCyclicDependency) return;
+    _typedef = new Typedef(name, null,
+        typeParameters:
+            NominalVariableBuilder.typeParametersFromBuilders(typeVariables),
+        fileUri: fileUri,
+        reference: _reference)
+      ..fileOffset = charOffset;
     if (_checkCyclicTypedefDependency(type, this, {this})) {
       typedef.type = new InvalidType();
-      type = new InvalidTypeBuilderImpl(fileUri, charOffset);
+      _type = new InvalidTypeBuilderImpl(fileUri, charOffset);
     }
     if (typeVariables != null) {
       for (TypeVariableBuilder typeVariable in typeVariables!) {
@@ -95,7 +126,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
           // The typedef itself can't be used without proper bounds of its type
           // variables, so we set it to mean [InvalidType] too.
           typedef.type = new InvalidType();
-          type = new InvalidTypeBuilderImpl(fileUri, charOffset);
+          _type = new InvalidTypeBuilderImpl(fileUri, charOffset);
         }
       }
     }
@@ -103,7 +134,6 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
   }
 
   Typedef build() {
-    _breakCyclicDependency();
     buildThisType();
     return typedef;
   }
@@ -255,8 +285,10 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
 
   @override
   DartType buildThisType() {
+    _breakCyclicDependency();
     if (thisType != null) {
       if (identical(thisType, pendingTypeAliasMarker)) {
+        // Coverage-ignore-block(suite): Not run.
         thisType = cyclicTypeAliasMarker;
         assert(libraryBuilder.loader.assertProblemReportedElsewhere(
             "SourceTypeAliasBuilder.buildThisType",
@@ -344,7 +376,7 @@ class SourceTypeAliasBuilder extends TypeAliasBuilderImpl {
       List<DelayedDefaultValueCloner> delayedDefaultValueCloners) {
     MetadataBuilder.buildAnnotations(
         typedef,
-        metadata,
+        _introductory.metadata,
         createBodyBuilderContext(
             inOutlineBuildingPhase: true,
             inMetadata: true,

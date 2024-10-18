@@ -21,6 +21,7 @@ import 'package:kernel/type_algebra.dart'
         updateBoundNullabilities;
 import 'package:kernel/type_environment.dart';
 
+import '../base/modifiers.dart';
 import '../base/name_space.dart';
 import '../base/problems.dart' show unexpected, unhandled, unimplemented;
 import '../base/scope.dart';
@@ -43,6 +44,7 @@ import '../kernel/hierarchy/hierarchy_node.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/utils.dart' show compareProcedures;
 import 'class_declaration.dart';
+import 'name_scheme.dart';
 import 'source_builder_mixins.dart';
 import 'source_constructor_builder.dart';
 import 'source_factory_builder.dart';
@@ -90,6 +92,22 @@ class SourceClassBuilder extends ClassBuilderImpl
         Comparable<SourceClassBuilder>,
         ClassDeclaration,
         SourceDeclarationBuilder {
+  @override
+  final SourceLibraryBuilder parent;
+
+  @override
+  final int charOffset;
+
+  @override
+  final String name;
+
+  @override
+  final Uri fileUri;
+
+  final Modifiers _modifiers;
+
+  final List<MetadataBuilder>? metadata;
+
   final Class actualCls;
 
   final DeclarationNameSpaceBuilder nameSpaceBuilder;
@@ -124,27 +142,6 @@ class SourceClassBuilder extends ClassBuilderImpl
   final IndexedClass? indexedClass;
 
   @override
-  final bool isMacro;
-
-  @override
-  final bool isSealed;
-
-  @override
-  final bool isBase;
-
-  @override
-  final bool isInterface;
-
-  @override
-  final bool isFinal;
-
-  /// Set to `true` if this class is declared using the `augment` modifier.
-  final bool isAugmentation;
-
-  @override
-  final bool isMixinClass;
-
-  @override
   bool isMixinDeclaration;
 
   bool? _isConflictingAugmentationMember;
@@ -166,38 +163,73 @@ class SourceClassBuilder extends ClassBuilderImpl
   MergedClassMemberScope? _mergedScope;
 
   SourceClassBuilder(
-      List<MetadataBuilder>? metadata,
-      int modifiers,
-      String name,
+      this.metadata,
+      this._modifiers,
+      this.name,
       this.typeVariables,
       this.supertypeBuilder,
       this.interfaceBuilders,
       this.onTypes,
       this.typeParameterScope,
       this.nameSpaceBuilder,
-      SourceLibraryBuilder parent,
+      this.parent,
       this.constructorReferences,
-      Uri fileUri,
+      this.fileUri,
       int startCharOffset,
       int nameOffset,
       int charEndOffset,
       this.indexedClass,
       {this.mixedInTypeBuilder,
-      this.isMixinDeclaration = false,
-      this.isMacro = false,
-      this.isSealed = false,
-      this.isBase = false,
-      this.isInterface = false,
-      this.isFinal = false,
-      bool isAugmentation = false,
-      this.isMixinClass = false})
-      : actualCls = initializeClass(typeVariables, name, fileUri,
+      this.isMixinDeclaration = false})
+      : charOffset = nameOffset,
+        actualCls = initializeClass(typeVariables, name, fileUri,
             startCharOffset, nameOffset, charEndOffset, indexedClass,
-            isAugmentation: isAugmentation),
-        isAugmentation = isAugmentation,
-        super(metadata, modifiers, name, parent, fileUri, nameOffset) {
+            isAugmentation: _modifiers.isAugment) {
     actualCls.hasConstConstructor = declaresConstConstructor;
   }
+
+  @override
+  bool get isAbstract => _modifiers.isAbstract;
+
+  @override
+  bool get isNamedMixinApplication {
+    return isMixinApplication && _modifiers.isNamedMixinApplication;
+  }
+
+  @override
+  bool get declaresConstConstructor => _modifiers.declaresConstConstructor;
+
+  @override
+  bool get isMacro => _modifiers.isMacro;
+
+  @override
+  bool get isSealed => _modifiers.isSealed;
+
+  @override
+  bool get isBase => _modifiers.isBase;
+
+  @override
+  bool get isInterface => _modifiers.isInterface;
+
+  @override
+  bool get isFinal => _modifiers.isFinal;
+
+  /// Set to `true` if this class is declared using the `augment` modifier.
+  bool get isAugmentation => _modifiers.isAugment;
+
+  @override
+  bool get isMixinClass => _modifiers.isMixin;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isConst => _modifiers.isConst;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isStatic => _modifiers.isStatic;
+
+  @override
+  bool get isAugment => _modifiers.isAugment;
 
   @override
   LookupScope get scope => _scope;
@@ -214,7 +246,11 @@ class SourceClassBuilder extends ClassBuilderImpl
         loader: libraryBuilder.loader,
         problemReporting: libraryBuilder,
         enclosingLibraryBuilder: libraryBuilder,
-        declarationBuilder: this);
+        declarationBuilder: this,
+        indexedLibrary: libraryBuilder.indexedLibrary,
+        indexedContainer: indexedClass,
+        containerType: ContainerType.Class,
+        containerName: new ClassName(name));
     _scope = new NameSpaceLookupScope(
         _nameSpace, ScopeKind.declaration, "class $name",
         parent: typeParameterScope);

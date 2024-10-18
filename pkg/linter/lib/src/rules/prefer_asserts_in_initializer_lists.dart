@@ -8,37 +8,14 @@ import 'package:analyzer/dart/element/element.dart';
 
 import '../analyzer.dart';
 import '../ast.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Prefer putting asserts in initializer lists.';
-
-const _details = r'''
-**DO** put asserts in initializer lists.
-
-**BAD:**
-```dart
-class A {
-  A(int a) {
-    assert(a != 0);
-  }
-}
-```
-
-**GOOD:**
-```dart
-class A {
-  A(int a) : assert(a != 0);
-}
-```
-
-''';
 
 class PreferAssertsInInitializerLists extends LintRule {
   PreferAssertsInInitializerLists()
       : super(
-          name: 'prefer_asserts_in_initializer_lists',
+          name: LintNames.prefer_asserts_in_initializer_lists,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -53,7 +30,7 @@ class PreferAssertsInInitializerLists extends LintRule {
   }
 }
 
-class _AssertVisitor extends RecursiveAstVisitor {
+class _AssertVisitor extends RecursiveAstVisitor<void> {
   final ConstructorElement constructorElement;
   final _ClassAndSuperClasses? classAndSuperClasses;
 

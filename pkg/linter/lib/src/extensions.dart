@@ -2,9 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
 import 'package:analyzer/src/dart/ast/ast.dart'; // ignore: implementation_imports
@@ -98,28 +100,28 @@ extension AstNodeNullableExtension on AstNode? {
     return null;
   }
 
+  /// Whether the expression is null-aware, or if one of its recursive targets
+  /// is null-aware.
+  bool get containsNullAwareInvocationInChain {
+    var node = this;
+    if (node is PropertyAccess) {
+      if (node.isNullAware) return true;
+      return node.target.containsNullAwareInvocationInChain;
+    } else if (node is MethodInvocation) {
+      if (node.isNullAware) return true;
+      return node.target.containsNullAwareInvocationInChain;
+    } else if (node is IndexExpression) {
+      if (node.isNullAware) return true;
+      return node.target.containsNullAwareInvocationInChain;
+    }
+    return false;
+  }
+
   bool get isFieldNameShortcut {
     var node = this;
     if (node is NullCheckPattern) node = node.parent;
     if (node is NullAssertPattern) node = node.parent;
     return node is PatternField && node.name != null && node.name?.name == null;
-  }
-
-  /// Return `true` if the expression is null aware, or if one of its recursive
-  /// targets is null aware.
-  bool containsNullAwareInvocationInChain() {
-    var node = this;
-    if (node is PropertyAccess) {
-      if (node.isNullAware) return true;
-      return node.target.containsNullAwareInvocationInChain();
-    } else if (node is MethodInvocation) {
-      if (node.isNullAware) return true;
-      return node.target.containsNullAwareInvocationInChain();
-    } else if (node is IndexExpression) {
-      if (node.isNullAware) return true;
-      return node.target.containsNullAwareInvocationInChain();
-    }
-    return false;
   }
 }
 
@@ -158,19 +160,6 @@ extension ClassElementExtension on ClassElement {
 
   /// Get all mixins, including merged augmentations.
   List<InterfaceType> get allMixins => augmented.mixins;
-
-  bool get hasImmutableAnnotation {
-    var inheritedAndSelfElements = <InterfaceElement>[
-      ...allSupertypes.map((t) => t.element),
-      this,
-    ];
-
-    return inheritedAndSelfElements.any((e) => e.hasImmutable);
-
-    // TODO(pq): update when implemented or replace w/ a better has{*} call
-    // https://github.com/dart-lang/linter/issues/4939
-    //return inheritedAndSelfElements.any((e) => e.augmented.metadata.any((e) => e.isImmutable));
-  }
 
   bool get hasSubclassInDefiningCompilationUnit {
     var compilationUnit = library.definingCompilationUnit;
@@ -257,6 +246,21 @@ extension ClassElementExtension on ClassElement {
   bool isEnumLikeClass() => asEnumLikeClass() != null;
 }
 
+extension ClassElementExtension2 on ClassElement2 {
+  bool get hasImmutableAnnotation {
+    var inheritedAndSelfElements = <InterfaceElement2>[
+      ...allSupertypes.map((t) => t.element3),
+      this,
+    ];
+
+    return inheritedAndSelfElements.any((e) => e.metadata2.hasImmutable);
+
+    // TODO(pq): update when implemented or replace w/ a better has{*} call
+    // https://github.com/dart-lang/linter/issues/4939
+    //return inheritedAndSelfElements.any((e) => e.augmented.metadata.any((e) => e.isImmutable));
+  }
+}
+
 extension ClassMemberListExtension on List<ClassMember> {
   MethodDeclaration? getMethod(String name) => whereType<MethodDeclaration>()
       .firstWhereOrNull((node) => node.name.lexeme == name);
@@ -272,6 +276,19 @@ extension ConstructorElementExtension on ConstructorElement {
   }) =>
       library.name == uri &&
       enclosingElement3.name == className &&
+      name == constructorName;
+}
+
+extension ConstructorElementExtension2 on ConstructorElement2 {
+  /// Returns whether `this` is the same element as the [className] constructor
+  /// named [constructorName] declared in [uri].
+  bool isSameAs({
+    required String uri,
+    required String className,
+    required String constructorName,
+  }) =>
+      library2?.name == uri &&
+      enclosingElement2.name == className &&
       name == constructorName;
 }
 
@@ -356,6 +373,15 @@ extension ElementExtension on Element {
   bool get isMacro {
     var self = this;
     return self is ClassElementImpl && self.isMacro;
+  }
+}
+
+extension ElementExtension2 on Element2? {
+  bool get isDartCorePrint {
+    var self = this;
+    return self is TopLevelFunctionElement &&
+        self.name == 'print' &&
+        self.firstFragment.libraryFragment.element.isDartCore;
   }
 }
 
@@ -510,6 +536,26 @@ extension InhertanceManager3Extension on InheritanceManager3 {
     var libraryUri = interfaceElement.library.source.uri;
     return getInherited(interfaceElement.thisType, Name(libraryUri, name));
   }
+
+  /// Returns the class member that is overridden by [member], if there is one,
+  /// as defined by [getInherited].
+  ExecutableElement2? overriddenMember2(Element2? member) {
+    if (member == null) {
+      return null;
+    }
+
+    var interfaceElement = member.thisOrAncestorOfType2<InterfaceElement2>();
+    if (interfaceElement == null) {
+      return null;
+    }
+    var name = member.name;
+    if (name == null) {
+      return null;
+    }
+
+    var libraryUri = interfaceElement.library2.firstFragment.source.uri;
+    return getInherited3(interfaceElement.thisType, Name(libraryUri, name));
+  }
 }
 
 extension InterfaceElementExtension on InterfaceElement {
@@ -544,6 +590,16 @@ extension InterfaceTypeExtension on InterfaceType {
     searchSupertypes(this, {}, interfaceTypes);
     return interfaceTypes;
   }
+}
+
+extension LibraryElementExtension2 on LibraryElement2? {
+  Uri? get uri => this?.library2.firstFragment.source.uri;
+}
+
+extension LinterContextExtension on LinterContext {
+  /// Whether the given [feature] is enabled in this linter context.
+  bool isEnabled(Feature feature) =>
+      libraryElement2!.featureSet.isEnabled(feature);
 }
 
 extension MethodDeclarationExtension on MethodDeclaration {

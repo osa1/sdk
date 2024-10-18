@@ -6,47 +6,14 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 
 const _desc = r'Avoid relative imports for files in `lib/`.';
-
-const _details = r'''
-**DO** avoid relative imports for files in `lib/`.
-
-When mixing relative and absolute imports it's possible to create confusion
-where the same member gets imported in two different ways.  An easy way to avoid
-that is to ensure you have no relative imports that include `lib/` in their
-paths.
-
-You can also use 'always_use_package_imports' to disallow relative imports
-between files within `lib/`.
-
-**BAD:**
-```dart
-import 'package:foo/bar.dart';
-
-import '../lib/baz.dart';
-
-...
-```
-
-**GOOD:**
-```dart
-import 'package:foo/bar.dart';
-
-import 'baz.dart';
-
-...
-```
-
-''';
 
 class AvoidRelativeLibImports extends LintRule {
   AvoidRelativeLibImports()
       : super(
-          name: 'avoid_relative_lib_imports',
+          name: LintNames.avoid_relative_lib_imports,
           description: _desc,
-          details: _details,
         );
 
   @override

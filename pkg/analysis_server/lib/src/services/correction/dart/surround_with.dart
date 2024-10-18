@@ -4,10 +4,10 @@
 
 import 'package:analysis_server/src/services/correction/assist.dart';
 import 'package:analysis_server/src/services/correction/statement_analyzer.dart';
-import 'package:analysis_server/src/utilities/extensions/flutter.dart';
 import 'package:analysis_server_plugin/edit/dart/correction_producer.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/source/source_range.dart';
+import 'package:analyzer/src/utilities/extensions/flutter.dart';
 import 'package:analyzer_plugin/utilities/assist/assist.dart';
 import 'package:analyzer_plugin/utilities/change_builder/change_builder_core.dart';
 
@@ -288,8 +288,10 @@ class _SurroundWithSetState extends _SurroundWith {
 
   @override
   Future<void> compute(ChangeBuilder builder) async {
-    var classElement =
-        node.parent?.thisOrAncestorOfType<ClassDeclaration>()?.declaredElement;
+    var classElement = node.parent
+        ?.thisOrAncestorOfType<ClassDeclaration>()
+        ?.declaredFragment
+        ?.element;
     if (classElement != null && classElement.isState) {
       await builder.addDartFileEdit(file, (builder) {
         builder.addReplacement(statementsRange, (builder) {

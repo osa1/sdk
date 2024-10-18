@@ -15,6 +15,7 @@ import '../base/messages.dart'
         templateIncompatibleRedirecteeFunctionType,
         templateRedirectingFactoryIncompatibleTypeArgument,
         templateTypeArgumentMismatch;
+import '../base/modifiers.dart';
 import '../base/problems.dart' show unexpected, unhandled;
 import '../base/scope.dart';
 import '../builder/builder.dart';
@@ -48,6 +49,9 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
   @override
   final SourceLibraryBuilder libraryBuilder;
 
+  @override
+  final DeclarationBuilder declarationBuilder;
+
   final int charOpenParenOffset;
 
   AsyncMarker actualAsyncModifier = AsyncMarker.Sync;
@@ -69,18 +73,24 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
 
   DelayedDefaultValueCloner? _delayedDefaultValueCloner;
 
+  @override
+  final int charOffset;
+
+  @override
+  final Uri fileUri;
+
   SourceFactoryBuilder(
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       this.returnType,
       String name,
       List<NominalVariableBuilder>? typeVariables,
       List<FormalParameterBuilder>? formals,
       this.libraryBuilder,
-      DeclarationBuilder declarationBuilder,
-      Uri fileUri,
+      this.declarationBuilder,
+      this.fileUri,
       int startCharOffset,
-      int charOffset,
+      this.charOffset,
       this.charOpenParenOffset,
       int charEndOffset,
       Reference? procedureReference,
@@ -90,7 +100,7 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       {String? nativeMethodName})
       : _memberName = nameScheme.getDeclaredName(name),
         super(metadata, modifiers, name, typeVariables, formals,
-            declarationBuilder, fileUri, charOffset, nativeMethodName) {
+            nativeMethodName) {
     _procedureInternal = new Procedure(
         dummyName,
         nameScheme.isExtensionTypeMember
@@ -118,11 +128,11 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
   }
 
   @override
-  // Coverage-ignore(suite): Not run.
-  Name get memberName => _memberName.name;
+  Builder get parent => declarationBuilder;
 
   @override
-  DeclarationBuilder get declarationBuilder => super.declarationBuilder!;
+  // Coverage-ignore(suite): Not run.
+  Name get memberName => _memberName.name;
 
   // Coverage-ignore(suite): Not run.
   List<SourceFactoryBuilder>? get augmentationsForTesting => _augmentations;
@@ -143,9 +153,6 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
     function.asyncMarker = actualAsyncModifier;
     function.dartAsyncMarker = actualAsyncModifier;
   }
-
-  @override
-  Member get member => _procedure;
 
   @override
   SourceFactoryBuilder get origin => actualOrigin ?? this;
@@ -328,7 +335,7 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       {required bool inOutlineBuildingPhase,
       required bool inMetadata,
       required bool inConstFields}) {
-    return new FactoryBodyBuilderContext(this,
+    return new FactoryBodyBuilderContext(this, _procedure,
         inOutlineBuildingPhase: inOutlineBuildingPhase,
         inMetadata: inMetadata,
         inConstFields: inConstFields);
@@ -365,7 +372,7 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
 
   RedirectingFactoryBuilder(
       List<MetadataBuilder>? metadata,
-      int modifiers,
+      Modifiers modifiers,
       TypeBuilder returnType,
       String name,
       List<NominalVariableBuilder>? typeVariables,
@@ -529,11 +536,11 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
             classHierarchy, delayedDefaultValueCloners);
       }
       if (targetBuilder is FunctionBuilder) {
-        target = targetBuilder.member;
+        target = targetBuilder.invokeTarget!;
       }
       // Coverage-ignore(suite): Not run.
       else if (targetBuilder is DillMemberBuilder) {
-        target = targetBuilder.member;
+        target = targetBuilder.invokeTarget!;
       } else {
         unhandled("${targetBuilder.runtimeType}", "buildOutlineExpressions",
             charOffset, fileUri);
@@ -888,7 +895,7 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
       {required bool inOutlineBuildingPhase,
       required bool inMetadata,
       required bool inConstFields}) {
-    return new RedirectingFactoryBodyBuilderContext(this,
+    return new RedirectingFactoryBodyBuilderContext(this, _procedure,
         inOutlineBuildingPhase: inOutlineBuildingPhase,
         inMetadata: inMetadata,
         inConstFields: inConstFields);

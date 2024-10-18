@@ -6,54 +6,15 @@ import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 
 import '../analyzer.dart';
-import '../linter_lint_codes.dart';
 import '../util/flutter_utils.dart';
 
 const _desc = r'Use `DecoratedBox`.';
 
-const _details = r'''
-**DO** use `DecoratedBox` when `Container` has only a `Decoration`.
-
-A `Container` is a heavier Widget than a `DecoratedBox`, and as bonus,
-`DecoratedBox` has a `const` constructor.
-
-**BAD:**
-```dart
-Widget buildArea() {
-  return Container(
-    decoration: const BoxDecoration(
-      color: Colors.blue,
-      borderRadius: BorderRadius.all(
-        Radius.circular(5),
-      ),
-    ),
-    child: const Text('...'),
-  );
-}
-```
-
-**GOOD:**
-```dart
-Widget buildArea() {
-  return const DecoratedBox(
-    decoration: BoxDecoration(
-      color: Colors.blue,
-      borderRadius: BorderRadius.all(
-        Radius.circular(5),
-      ),
-    ),
-    child: Text('...'),
-  );
-}
-```
-''';
-
 class UseDecoratedBox extends LintRule {
   UseDecoratedBox()
       : super(
-          name: 'use_decorated_box',
+          name: LintNames.use_decorated_box,
           description: _desc,
-          details: _details,
         );
 
   @override
@@ -68,7 +29,7 @@ class UseDecoratedBox extends LintRule {
   }
 }
 
-class _Visitor extends SimpleAstVisitor {
+class _Visitor extends SimpleAstVisitor<void> {
   final LintRule rule;
 
   _Visitor(this.rule);

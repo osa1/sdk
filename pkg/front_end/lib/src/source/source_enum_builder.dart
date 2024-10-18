@@ -14,7 +14,7 @@ import 'package:kernel/src/bounds_checks.dart';
 import 'package:kernel/transformations/flags.dart';
 
 import '../base/constant_context.dart';
-import '../base/modifier.dart' show constMask, hasInitializerMask, staticMask;
+import '../base/modifiers.dart' show Modifiers;
 import '../base/scope.dart';
 import '../builder/builder.dart';
 import '../builder/constructor_reference_builder.dart';
@@ -103,7 +103,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       IndexedClass? referencesFromIndexed)
       : super(
             metadata,
-            0,
+            Modifiers.empty,
             name,
             typeVariables,
             supertypeBuilder,
@@ -174,14 +174,14 @@ class SourceEnumBuilder extends SourceClassBuilder {
 
         FormalParameterBuilder nameFormalParameterBuilder =
             new FormalParameterBuilder(FormalParameterKind.requiredPositional,
-                /* modifiers = */ 0, stringType, "#name", charOffset,
+                Modifiers.empty, stringType, "#name", charOffset,
                 fileUri: fileUri, hasImmediatelyDeclaredInitializer: false);
         member.formals!.insert(0, nameFormalParameterBuilder);
         nameFormalParameterBuilder.parent = member;
 
         FormalParameterBuilder indexFormalParameterBuilder =
             new FormalParameterBuilder(FormalParameterKind.requiredPositional,
-                /* modifiers = */ 0, intType, "#index", charOffset,
+                Modifiers.empty, intType, "#index", charOffset,
                 fileUri: fileUri, hasImmediatelyDeclaredInitializer: false);
         member.formals!.insert(0, indexFormalParameterBuilder);
         indexFormalParameterBuilder.parent = member;
@@ -315,7 +315,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
         /* metadata = */ null,
         listType,
         "values",
-        constMask | staticMask | hasInitializerMask,
+        Modifiers.Const | Modifiers.Static | Modifiers.HasInitializer,
         /* isTopLevel = */ false,
         libraryBuilder,
         this,
@@ -331,12 +331,10 @@ class SourceEnumBuilder extends SourceClassBuilder {
       customValuesDeclaration.next = valuesBuilder;
       nameSpaceBuilder.checkTypeVariableConflict(libraryBuilder,
           valuesBuilder.name, valuesBuilder, valuesBuilder.fileUri);
-      valuesBuilder.parent = this;
     } else {
       nameSpace.addLocalMember("values", valuesBuilder, setter: false);
       nameSpaceBuilder.checkTypeVariableConflict(libraryBuilder,
           valuesBuilder.name, valuesBuilder, valuesBuilder.fileUri);
-      valuesBuilder.parent = this;
     }
 
     // The default constructor is added if no generative or unnamed factory
@@ -354,7 +352,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       synthesizedDefaultConstructorBuilder =
           new DeclaredSourceConstructorBuilder(
               /* metadata = */ null,
-              constMask,
+              Modifiers.Const,
               /* returnType = */ libraryBuilder.loader.inferableTypes
                   .addInferableType(),
               /* name = */ "",
@@ -388,12 +386,11 @@ class SourceEnumBuilder extends SourceClassBuilder {
           synthesizedDefaultConstructorBuilder!.name,
           synthesizedDefaultConstructorBuilder!,
           synthesizedDefaultConstructorBuilder!.fileUri);
-      synthesizedDefaultConstructorBuilder!.parent = this;
     }
 
     ProcedureBuilder toStringBuilder = new SourceProcedureBuilder(
         /* metadata = */ null,
-        0,
+        Modifiers.empty,
         stringType,
         "_enumToString",
         /* typeVariables = */ null,
@@ -418,7 +415,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
     nameSpace.addLocalMember("_enumToString", toStringBuilder, setter: false);
     nameSpaceBuilder.checkTypeVariableConflict(libraryBuilder,
         toStringBuilder.name, toStringBuilder, toStringBuilder.fileUri!);
-    toStringBuilder.parent = this;
 
     String className = name;
 
@@ -485,7 +481,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
             metadata,
             libraryBuilder.loader.inferableTypes.addInferableType(),
             name,
-            constMask | staticMask | hasInitializerMask,
+            Modifiers.Const | Modifiers.Static | Modifiers.HasInitializer,
             /* isTopLevel = */ false,
             libraryBuilder,
             this,
@@ -502,7 +498,6 @@ class SourceEnumBuilder extends SourceClassBuilder {
             setter: false);
         nameSpaceBuilder.checkTypeVariableConflict(libraryBuilder,
             fieldBuilder.name, fieldBuilder, fieldBuilder.fileUri);
-        fieldBuilder.parent = this;
         elementBuilders.add(fieldBuilder);
       }
     }
@@ -563,7 +558,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
               objectClass.fileUri);
         } else {
           constructor.initializers.add(new SuperInitializer(
-              superConstructor.member as Constructor,
+              superConstructor.invokeTarget as Constructor,
               new Arguments.forwarded(
                   constructor.function, libraryBuilder.library))
             ..parent = constructor);
@@ -780,7 +775,8 @@ class SourceEnumBuilder extends SourceClassBuilder {
 
     if (toStringSuperTarget != null) {
       // Coverage-ignore-block(suite): Not run.
-      toStringBuilder.member.transformerFlags |= TransformerFlag.superCalls;
+      toStringBuilder.invokeTarget!.transformerFlags |=
+          TransformerFlag.superCalls;
       toStringBuilder.body = new ReturnStatement(new SuperMethodInvocation(
           toStringName, new Arguments([]), toStringSuperTarget));
     } else {
@@ -789,7 +785,7 @@ class SourceEnumBuilder extends SourceClassBuilder {
       MemberBuilder? nameFieldBuilder =
           enumClass.lookupLocalMember("_name") as MemberBuilder?;
       assert(nameFieldBuilder != null);
-      Field nameField = nameFieldBuilder!.member as Field;
+      Field nameField = nameFieldBuilder!.readTarget as Field;
 
       toStringBuilder.body = new ReturnStatement(new StringConcatenation([
         new StringLiteral("${cls.demangledName}."),

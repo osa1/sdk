@@ -39,6 +39,9 @@ class AnalysisOptionsGenerator extends YamlCompletionGenerator {
     AnalyzerOptions.codeStyle: MapProducer({
       AnalyzerOptions.format: BooleanProducer(),
     }),
+    AnalyzerOptions.formatter: MapProducer({
+      AnalyzerOptions.pageWidth: EmptyProducer(),
+    }),
     // TODO(brianwilkerson): Create a producer to produce `package:` URIs.
     AnalyzerOptions.include: EmptyProducer(),
     // TODO(brianwilkerson): Create constants for 'linter' and 'rules'.
@@ -105,7 +108,7 @@ class _LintRuleProducer extends Producer {
       YamlCompletionRequest request) sync* {
     for (var rule in Registry.ruleRegistry.rules) {
       // TODO(pq): consider suggesting internal lints if editing an SDK options file
-      if (!rule.state.isInternal) {
+      if (!rule.state.isInternal && !rule.state.isRemoved) {
         yield identifier(rule.name, docComplete: rule.description);
       }
     }

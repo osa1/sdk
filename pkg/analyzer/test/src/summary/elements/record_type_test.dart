@@ -63,11 +63,11 @@ library
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
           getters
-            get x @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
   classes
@@ -135,11 +135,11 @@ library
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
           getters
-            get x @-1
+            get <null-name>
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
   classes
@@ -199,14 +199,14 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
           methods
             foo @17
               reference: <testLibraryFragment>::@class::A::@method::foo
               element: <testLibraryFragment>::@class::A::@method::foo#element
-              parameters
+              formalParameters
                 a @35
                   element: <testLibraryFragment>::@class::A::@method::foo::@parameter::a#element
   classes
@@ -218,7 +218,7 @@ library
       methods
         foo
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
-          parameters
+          formalParameters
             requiredPositional a
               type: (int, String)
 ''');
@@ -261,7 +261,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibraryFragment>::@class::A#element
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
           methods
@@ -317,7 +317,7 @@ library
             T @8
               element: <not-implemented>
           constructors
-            synthetic new @-1
+            synthetic <null-name>
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
   classes
@@ -393,13 +393,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             b @38
               element: <testLibraryFragment>::@function::f::@parameter::b#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional b
           type: void Function((int, String))
       returnType: void
@@ -435,13 +435,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             a @32
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional a
           type: (int, String) Function()
       returnType: void
@@ -477,13 +477,13 @@ library
         f @5
           reference: <testLibraryFragment>::@function::f
           element: <testLibraryFragment>::@function::f#element
-          parameters
+          formalParameters
             a @21
               element: <testLibraryFragment>::@function::f::@parameter::a#element
   functions
     f
       firstFragment: <testLibraryFragment>::@function::f
-      parameters
+      formalParameters
         requiredPositional a
           type: (int, String)
       returnType: void
@@ -795,7 +795,7 @@ library
           element: <testLibraryFragment>::@topLevelVariable::x#element
           getter2: <testLibraryFragment>::@getter::x
       getters
-        get x @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
   topLevelVariables
@@ -843,7 +843,7 @@ library
           element: <testLibraryFragment>::@topLevelVariable::x#element
           getter2: <testLibraryFragment>::@getter::x
       getters
-        get x @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
   topLevelVariables
@@ -925,7 +925,7 @@ library
           element: <testLibraryFragment>::@topLevelVariable::x#element
           getter2: <testLibraryFragment>::@getter::x
       getters
-        get x @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
   topLevelVariables
@@ -1003,7 +1003,7 @@ library
           element: <testLibraryFragment>::@topLevelVariable::x#element
           getter2: <testLibraryFragment>::@getter::x
       getters
-        get x @-1
+        get <null-name>
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
   topLevelVariables
