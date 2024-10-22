@@ -20,6 +20,7 @@ import 'dart:_js_helper' show JSValue;
 import 'dart:_js_types';
 import 'dart:_wasm';
 import 'dart:typed_data' show Uint8List;
+import 'dart:_boxed_int';
 
 part "class_id.dart";
 part "deferred.dart";
@@ -140,6 +141,7 @@ external Function get mainTearOff;
 /// escape.
 @pragma("wasm:export", "\$invokeMain")
 void _invokeMain(WasmExternRef jsArrayRef) {
+  print("preallocatedInts lenght = ${preallocatedInts.length}");
   try {
     final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
     final args = <String>[for (final jsValue in jsArray) jsValue.toDart];

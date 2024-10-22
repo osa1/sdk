@@ -899,9 +899,27 @@ class Translator with KernelNodes {
 
         w.Local temp = b.addLocal(from);
         b.local_set(temp);
+
+        if (from == w.NumType.i64) {
+          b.local_get(temp);
+          b.i64_const(100);
+          b.i64_lt_u();
+          b.if_([], [to]);
+          b.global_get(globals.getGlobalForStaticField(preallocatedInts));
+          b.local_get(temp);
+          b.i32_wrap_i64();
+          b.array_get(arrayTypeForDartType(coreTypes.objectNonNullableRawType));
+          b.ref_cast(to);
+          b.else_();
+        }
+
         b.i32_const(info.classId);
         b.local_get(temp);
         b.struct_new(info.struct);
+
+        if (from == w.NumType.i64) {
+          b.end();
+        }
       } else if (from is w.RefType) {
         // Unboxing
         ClassInfo info = classInfo[boxedClasses[to]!]!;

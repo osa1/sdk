@@ -378,6 +378,9 @@ mixin KernelNodes {
   late final Procedure systemHashCombine =
       index.getProcedure("dart:_internal", "SystemHash", "combine");
 
+  late final Field preallocatedInts =
+      index.getTopLevelField("dart:_boxed_int", "preallocatedInts");
+
   // Debugging
   late final Procedure printToConsole =
       index.getTopLevelProcedure("dart:_internal", "printToConsole");
