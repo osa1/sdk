@@ -86,6 +86,7 @@ lib/src/rules/library_private_types_in_public_api.dart
 lib/src/rules/lines_longer_than_80_chars.dart
 lib/src/rules/list_remove_unrelated_type.dart
 lib/src/rules/literal_only_boolean_expressions.dart
+lib/src/rules/matching_super_parameters.dart
 lib/src/rules/missing_code_block_language_in_doc_comment.dart
 lib/src/rules/missing_whitespace_between_adjacent_strings.dart
 lib/src/rules/no_adjacent_strings_in_list.dart
@@ -139,6 +140,7 @@ lib/src/rules/prefer_iterable_whereType.dart
 lib/src/rules/prefer_mixin.dart
 lib/src/rules/prefer_null_aware_method_calls.dart
 lib/src/rules/prefer_null_aware_operators.dart
+lib/src/rules/prefer_relative_imports.dart
 lib/src/rules/prefer_single_quotes.dart
 lib/src/rules/prefer_spread_collections.dart
 lib/src/rules/prefer_typing_uninitialized_variables.dart
@@ -157,6 +159,7 @@ lib/src/rules/sort_child_properties_last.dart
 lib/src/rules/sort_constructors_first.dart
 lib/src/rules/sort_unnamed_constructors_first.dart
 lib/src/rules/specify_nonobvious_local_variable_types.dart
+lib/src/rules/specify_nonobvious_property_types.dart
 lib/src/rules/super_goes_last.dart
 lib/src/rules/test_types_in_equals.dart
 lib/src/rules/throw_in_finally.dart
@@ -195,6 +198,7 @@ lib/src/rules/use_if_null_to_convert_nulls_to_bools.dart
 lib/src/rules/use_is_even_rather_than_modulo.dart
 lib/src/rules/use_named_constants.dart
 lib/src/rules/use_raw_strings.dart
+lib/src/rules/use_rethrow_when_possible.dart
 lib/src/rules/use_string_in_part_of_directives.dart
 lib/src/rules/use_test_throws_matchers.dart
 lib/src/rules/use_to_and_as_if_applicable.dart
@@ -203,6 +207,7 @@ lib/src/rules/valid_regexps.dart
 lib/src/test_utilities/analyzer_utils.dart
 lib/src/test_utilities/annotation.dart
 lib/src/test_utilities/formatter.dart
+lib/src/test_utilities/lint_driver.dart
 lib/src/test_utilities/test_linter.dart
 lib/src/test_utilities/test_resource_provider.dart
 lib/src/util/ascii_utils.dart

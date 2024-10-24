@@ -605,6 +605,11 @@ class ClassElementImpl extends ClassOrMixinElementImpl
       implicitConstructor.name = name;
       implicitConstructor.nameOffset = -1;
 
+      implicitConstructor.element = ConstructorElementImpl2(
+        superclassConstructor.element.name3,
+        implicitConstructor,
+      );
+
       var containerRef = reference!.getChild('@constructor');
       var referenceName = name.ifNotEmptyOrElse('new');
       var implicitReference = containerRef.getChild(referenceName);
@@ -1372,15 +1377,21 @@ class ConstructorElementImpl extends ExecutableElementImpl
     if (_element != null) {
       return _element!;
     }
+
     ConstructorFragment firstFragment = this;
     var previousFragment = firstFragment.previousFragment;
     while (previousFragment != null) {
       firstFragment = previousFragment;
       previousFragment = firstFragment.previousFragment;
     }
+    firstFragment as ConstructorElementImpl;
+
     // As a side-effect of creating the element, all of the fragments in the
     // chain will have their `_element` set to the newly created element.
-    return ConstructorElementImpl2(firstFragment as ConstructorElementImpl);
+    return ConstructorElementImpl2(
+      firstFragment.name2?.name ?? 'new',
+      firstFragment,
+    );
   }
 
   set element(ConstructorElement2 element) => _element = element;
@@ -1531,9 +1542,12 @@ class ConstructorElementImpl2 extends ExecutableElementImpl2
         FragmentedElementMixin<ConstructorFragment>
     implements ConstructorElement2 {
   @override
+  final String? name3;
+
+  @override
   final ConstructorElementImpl firstFragment;
 
-  ConstructorElementImpl2(this.firstFragment) {
+  ConstructorElementImpl2(this.name3, this.firstFragment) {
     ConstructorElementImpl? fragment = firstFragment;
     while (fragment != null) {
       fragment.element = this;
@@ -1562,9 +1576,6 @@ class ConstructorElementImpl2 extends ExecutableElementImpl2
 
   @override
   ElementKind get kind => ElementKind.CONSTRUCTOR;
-
-  @override
-  String get name => firstFragment.name;
 
   @override
   ConstructorElement2? get redirectedConstructor2 =>
@@ -2828,6 +2839,9 @@ abstract class ElementImpl implements Element, Element2 {
   }
 
   @override
+  String? get name3 => _name;
+
+  @override
   int get nameLength => displayName.length;
 
   @override
@@ -3125,7 +3139,7 @@ abstract class ElementImpl2 implements Element2 {
   List<Element2> get children2 => const [];
 
   @override
-  String get displayName => name ?? '';
+  String get displayName => name3 ?? '';
 
   @override
   // TODO(augmentations): implement enclosingElement2
@@ -3134,7 +3148,7 @@ abstract class ElementImpl2 implements Element2 {
   /// Return an identifier that uniquely identifies this element among the
   /// children of this element's parent.
   String get identifier {
-    var identifier = name!;
+    var identifier = name3!;
     // TODO(augmentations): Figure out how to get a unique identifier. In the
     //  old model we sometimes used the offset of the name to disambiguate
     //  between elements, but we can't do that anymore because the name can
@@ -3144,11 +3158,11 @@ abstract class ElementImpl2 implements Element2 {
 
   @override
   bool get isPrivate {
-    var name = this.name;
-    if (name == null) {
+    var name3 = this.name3;
+    if (name3 == null) {
       return true;
     }
-    return Identifier.isPrivateName(name);
+    return Identifier.isPrivateName(name3);
   }
 
   @override
@@ -3175,8 +3189,8 @@ abstract class ElementImpl2 implements Element2 {
 
   @override
   bool isAccessibleIn2(LibraryElement2 library) {
-    var name = this.name;
-    if (name == null || Identifier.isPrivateName(name)) {
+    var name3 = this.name3;
+    if (name3 == null || Identifier.isPrivateName(name3)) {
       return library == library2;
     }
     return true;
@@ -3994,7 +4008,7 @@ class FieldElementImpl2 extends PropertyInducingElementImpl2
   ElementKind get kind => ElementKind.FIELD;
 
   @override
-  String get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   SetterElement? get setter2 => firstFragment.setter?.element as SetterElement?;
@@ -4061,9 +4075,6 @@ class FieldFormalParameterElementImpl2 extends FormalParameterElementImpl
       ((firstFragment as FieldFormalParameterElementImpl).field
               as FieldFragment)
           .element;
-
-  @override
-  String get name => firstFragment.name;
 }
 
 class FormalParameterElementImpl extends PromotableElementImpl2
@@ -4167,7 +4178,7 @@ class FormalParameterElementImpl extends PromotableElementImpl2
           as LibraryElement2;
 
   @override
-  String get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   // TODO(augmentations): Implement the merge of formal parameters.
@@ -4982,7 +4993,7 @@ class GetterElementImpl extends ExecutableElementImpl2
   ElementKind get kind => ElementKind.GETTER;
 
   @override
-  String? get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   PropertyInducingElement2? get variable3 => firstFragment.variable2?.element;
@@ -6848,7 +6859,7 @@ mixin MaybeAugmentedInstanceElementMixin
       methods.map((e) => e.asElement2 as MethodElement2?).nonNulls.toList();
 
   @override
-  String? get name => declaration.name;
+  String? get name3 => declaration.name;
 
   @override
   Element2 get nonSynthetic2 =>
@@ -7578,15 +7589,18 @@ class MethodElementImpl extends ExecutableElementImpl
     if (_element != null) {
       return _element!;
     }
+
     MethodFragment firstFragment = this;
     var previousFragment = firstFragment.previousFragment;
     while (previousFragment != null) {
       firstFragment = previousFragment;
       previousFragment = firstFragment.previousFragment;
     }
+    firstFragment as MethodElementImpl;
+
     // As a side-effect of creating the element, all of the fragments in the
     // chain will have their `_element` set to the newly created element.
-    return MethodElementImpl2(firstFragment as MethodElementImpl);
+    return MethodElementImpl2(firstFragment.name2?.name, firstFragment);
   }
 
   set element(MethodElement2 element) => _element = element;
@@ -7652,9 +7666,12 @@ class MethodElementImpl2 extends ExecutableElementImpl2
         FragmentedElementMixin<MethodFragment>
     implements MethodElement2 {
   @override
+  final String? name3;
+
+  @override
   final MethodElementImpl firstFragment;
 
-  MethodElementImpl2(this.firstFragment) {
+  MethodElementImpl2(this.name3, this.firstFragment) {
     MethodElementImpl? fragment = firstFragment;
     while (fragment != null) {
       fragment.element = this;
@@ -7674,9 +7691,6 @@ class MethodElementImpl2 extends ExecutableElementImpl2
 
   @override
   ElementKind get kind => ElementKind.METHOD;
-
-  @override
-  String get name => firstFragment.name;
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
@@ -8075,6 +8089,9 @@ class MultiplyDefinedElementImpl implements MultiplyDefinedElement, Element2 {
   List<ElementAnnotationImpl> get metadata {
     return const <ElementAnnotationImpl>[];
   }
+
+  @override
+  String get name3 => name;
 
   @override
   int get nameLength => 0;
@@ -8821,7 +8838,7 @@ class PrefixElementImpl extends _ExistingElementImpl implements PrefixElement {
 
   PrefixElementImpl2 get element2 {
     return enclosingElement3.prefixes.firstWhere((element) {
-      return (element.name ?? '') == name;
+      return (element.name3 ?? '') == name;
     });
   }
 
@@ -8917,7 +8934,7 @@ class PrefixElementImpl2 extends ElementImpl2 implements PrefixElement2 {
   }
 
   @override
-  String? get name => firstFragment.name2?.name;
+  String? get name3 => firstFragment.name2?.name;
 
   @override
   // TODO(scheglov): implement scope
@@ -9480,10 +9497,7 @@ abstract class PropertyInducingElementImpl
 }
 
 abstract class PropertyInducingElementImpl2 extends VariableElementImpl2
-    implements PropertyInducingElement2 {
-  @override
-  String get name;
-}
+    implements PropertyInducingElement2 {}
 
 /// Instances of this class are set for fields and top-level variables
 /// to perform top-level type inference during linking.
@@ -9519,7 +9533,7 @@ class SetterElementImpl extends ExecutableElementImpl2
 
   @override
   String get displayName {
-    if (name case var name?) {
+    if (name3 case var name?) {
       return name.substring(0, name.length - 1);
     } else {
       return '<null-name>';
@@ -9536,7 +9550,7 @@ class SetterElementImpl extends ExecutableElementImpl2
   ElementKind get kind => ElementKind.SETTER;
 
   @override
-  String? get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   PropertyInducingElement2? get variable3 => firstFragment.variable2?.element;
@@ -9682,7 +9696,7 @@ class TopLevelFunctionElementImpl extends ExecutableElementImpl2
   ElementKind get kind => ElementKind.FUNCTION;
 
   @override
-  String? get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
@@ -9807,7 +9821,7 @@ class TopLevelVariableElementImpl2 extends PropertyInducingElementImpl2
   ElementKind get kind => ElementKind.TOP_LEVEL_VARIABLE;
 
   @override
-  String get name => firstFragment.name;
+  String? get name3 => firstFragment.name;
 
   @override
   SetterElement? get setter2 =>
@@ -10126,7 +10140,7 @@ class TypeAliasElementImpl2 extends TypeDefiningElementImpl2
   ElementKind get kind => ElementKind.TYPE_ALIAS;
 
   @override
-  String get name => firstFragment.name;
+  String? get name3 => firstFragment.name2?.name;
 
   @override
   List<TypeParameterElement2> get typeParameters2 =>
@@ -10232,7 +10246,7 @@ class TypeParameterElementImpl extends ElementImpl
     // chain will have their `_element` set to the newly created element.
     return TypeParameterElementImpl2(
       firstFragment: firstFragment as TypeParameterElementImpl,
-      name: firstFragment.name,
+      name3: firstFragment.name,
       bound: firstFragment.bound,
     );
   }
@@ -10365,7 +10379,7 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
   final TypeParameterElementImpl? firstFragment;
 
   @override
-  final String name;
+  final String name3;
 
   DartType? _bound;
 
@@ -10375,7 +10389,7 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
 
   TypeParameterElementImpl2({
     required this.firstFragment,
-    required this.name,
+    required this.name3,
     required DartType? bound,
   }) : _bound = bound {
     var fragment = firstFragment;
@@ -10406,7 +10420,7 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
 
   TypeParameterElementImpl get firstFragmentOrSynthetic {
     return firstFragment ??
-        (_syntheticFirstFragment ??= TypeParameterElementImpl(name, -1)
+        (_syntheticFirstFragment ??= TypeParameterElementImpl(name3, -1)
           ..isSynthetic = true
           ..bound = bound);
   }
@@ -10663,7 +10677,7 @@ mixin WrappedElementMixin implements ElementImpl2 {
   LibraryElement2? get library2 => _wrappedElement.library2;
 
   @override
-  String get name => _wrappedElement.name!;
+  String? get name3 => _wrappedElement.name3;
 
   ElementImpl get _wrappedElement;
 
