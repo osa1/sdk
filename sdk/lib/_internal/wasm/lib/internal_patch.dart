@@ -141,7 +141,6 @@ external Function get mainTearOff;
 /// escape.
 @pragma("wasm:export", "\$invokeMain")
 void _invokeMain(WasmExternRef jsArrayRef) {
-  print("preallocatedInts lenght = ${preallocatedInts.length}");
   try {
     final jsArray = (JSValue(jsArrayRef) as JSArray<JSString>).toDart;
     final args = <String>[for (final jsValue in jsArray) jsValue.toDart];
