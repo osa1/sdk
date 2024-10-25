@@ -905,7 +905,8 @@ class Translator with KernelNodes {
           b.i64_const(100);
           b.i64_lt_u();
           b.if_([], [to]);
-          b.global_get(globals.getGlobalForStaticField(preallocatedInts));
+          globals.readGlobal(
+              b, globals.getGlobalForStaticField(preallocatedInts));
           b.local_get(temp);
           b.i32_wrap_i64();
           b.array_get(arrayTypeForDartType(coreTypes.objectNonNullableRawType));
