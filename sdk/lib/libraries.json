@@ -286,6 +286,9 @@
       "_simd": {
         "uri": "_internal/wasm/lib/simd.dart"
       },
+      "_string_canonicalizer": {
+        "uri": "_internal/wasm/lib/string_canonicalizer.dart"
+      },
       "_string_helper": {
         "uri": "_internal/wasm/lib/string_helper.dart"
       },

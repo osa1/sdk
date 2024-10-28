@@ -5,11 +5,12 @@
 import "dart:_compact_hash" show createMapFromKeyValueListUnsafe;
 import "dart:_internal"
     show patch, POWERS_OF_TEN, unsafeCast, pushWasmArray, popWasmArray;
+import "dart:_js_helper" show jsStringToDartString;
 import "dart:_js_string_convert";
 import "dart:_js_types";
-import "dart:_js_helper" show jsStringToDartString;
 import "dart:_list" show GrowableList, WasmListBaseUnsafeExtensions;
 import "dart:_string";
+import "dart:_string_canonicalizer";
 import "dart:_typed_data";
 import "dart:_wasm";
 import "dart:typed_data" show Uint8List;
