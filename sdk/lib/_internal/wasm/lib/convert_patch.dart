@@ -274,15 +274,14 @@ class _NumberBuffer {
     this.array = newArray;
   }
 
-  String getString() {
-    String result = createOneByteStringFromCharactersArray(array, 0, length);
-    return result;
-  }
+  String getString() =>
+      createOneByteStringFromCharactersArray(array, 0, length);
 
   // TODO(lrn): See if parsing of numbers can be abstracted to something
   // not only working on strings, but also on char-code lists, without losing
   // performance.
   num parseNum() => num.parse(getString());
+
   double parseDouble() => double.parse(getString());
 }
 
@@ -633,6 +632,8 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    */
   String getString(int start, int end, int bits);
 
+  String getCanonicalizedString(int start, int end, int bits);
+
   /**
    * Parse a slice of the current chunk as a number.
    *
@@ -888,7 +889,9 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
         case QUOTE:
           if ((state & ALLOW_STRING_MASK) != 0) fail(position);
           state |= VALUE_READ_BITS;
-          position = parseString(position + 1);
+          final canonicalize = (state & (INSIDE_OBJECT | STRING_ONLY)) ==
+              (INSIDE_OBJECT | STRING_ONLY);
+          position = parseString(position + 1, canonicalize);
           break;
         case LBRACKET:
           if ((state & ALLOW_VALUE_MASK) != 0) fail(position);
@@ -1094,7 +1097,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * Initial [position] is right after the initial quote.
    * Returned position right after the final quote.
    */
-  int parseString(int position) {
+  int parseString(int position, bool canonicalize) {
     // Format: '"'([^\x00-\x1f\\\"]|'\\'[bfnrt/\\"])*'"'
     // Initial position is right after first '"'.
     int start = position;
@@ -1120,7 +1123,9 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
       } while (position < end);
       if (char == QUOTE) {
         int sliceEnd = position - 1;
-        listener.handleString(getString(start, sliceEnd, bits));
+        listener.handleString(canonicalize
+            ? getCanonicalizedString(start, sliceEnd, bits)
+            : getString(start, sliceEnd, bits));
         return sliceEnd + 1;
       }
       if (char == BACKSLASH) {
@@ -1519,6 +1524,8 @@ class _JsonStringParser extends _JsonParserWithListener
 
   _JsonStringParser(_JsonListener listener) : super(listener);
 
+  late final StringCanonicalizer stringCanonicalizer = StringCanonicalizer();
+
   @pragma('wasm:prefer-inline')
   bool get isUtf16Input => true;
 
@@ -1527,6 +1534,9 @@ class _JsonStringParser extends _JsonParserWithListener
   String getString(int start, int end, int bits) {
     return chunk.substringUnchecked(start, end);
   }
+
+  String getCanonicalizedString(int start, int end, int bits) =>
+      stringCanonicalizer.canonicalizeSubString(chunk, start, end);
 
   void beginString() {
     assert(stringBuffer.isEmpty);
@@ -1621,6 +1631,8 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   U8List chunk = emptyChunk;
   int chunkEnd = 0;
 
+  late final StringCanonicalizer stringCanonicalizer = StringCanonicalizer();
+
   _JsonUtf8Parser(_JsonListener listener, bool allowMalformed)
       : decoder = new _Utf8Decoder(allowMalformed),
         super(listener) {
@@ -1649,16 +1661,20 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   @pragma('wasm:prefer-inline')
   int getChar(int position) => chunk[position];
 
+  static const int maxAsciiChar = 0x7f;
+
   String getString(int start, int end, int bits) {
-    const int maxAsciiChar = 0x7f;
     if (bits <= maxAsciiChar) {
       return createOneByteStringFromCharacters(chunk, start, end);
     }
     beginString();
     if (start < end) addSliceToString(start, end);
-    String result = endString();
-    return result;
+    return endString();
   }
+
+  String getCanonicalizedString(int start, int end, int bits) =>
+      stringCanonicalizer.canonicalizeBytes(
+          chunk, start, end, bits <= maxAsciiChar);
 
   void beginString() {
     decoder.reset();
