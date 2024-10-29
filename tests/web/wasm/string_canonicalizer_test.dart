@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:expect/expect.dart';
 
 void main() {
-  final canonicalizer = Utf8StringCanonicalizer();
+  final canonicalizer = StringCanonicalizer();
 
   final bytes = U8List(2);
   bytes[0] = 68;
