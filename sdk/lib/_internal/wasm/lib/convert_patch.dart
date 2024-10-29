@@ -1631,7 +1631,8 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   U8List chunk = emptyChunk;
   int chunkEnd = 0;
 
-  late final StringCanonicalizer stringCanonicalizer = StringCanonicalizer();
+  late final Utf8StringCanonicalizer stringCanonicalizer =
+      Utf8StringCanonicalizer();
 
   _JsonUtf8Parser(_JsonListener listener, bool allowMalformed)
       : decoder = new _Utf8Decoder(allowMalformed),

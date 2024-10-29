@@ -11,40 +11,37 @@ import 'dart:_typed_data';
 import 'dart:_wasm';
 import 'dart:convert';
 
-abstract class _Node {
+// FIXME: I couldn't use a mixin for the common parts below as with a mixin
+// `_nodes` becomes `WasmArray<T?>` with `T extends Node` mixin type parameter,
+// which causes a crash when creating a selector info of something with
+// arguments `WasmArray<_StringNode?>` and `WasmArray<_Utf8Node?>`, because
+// these two types are different and they don't have a common supertype (they
+// don't inherit from `Object`).
+
+class _StringNode {
   final StringBase payload;
-  _Node? next;
 
-  _Node(this.payload, this.next);
+  _StringNode? next;
 
-  int get hash;
-}
+  _StringNode(this.payload, this.next);
 
-class _StringNode extends _Node {
-  int usageCount = 1;
-
-  _StringNode(super.payload, super.next);
-
-  @override
   int get hash => _hashString(payload, /* start = */ 0, payload.length);
 }
 
-class _Utf8Node extends _Node {
+class _Utf8Node {
+  final StringBase payload;
+
+  _Utf8Node? next;
+
   final U8List data;
   final int start;
   final int end;
 
-  _Utf8Node(this.data, this.start, this.end, StringBase payload, _Node? next)
-      : super(payload, next);
+  _Utf8Node(this.data, this.start, this.end, this.payload, this.next);
 
-  @override
   int get hash => _hashBytes(data, start, end);
 }
 
-/// A hash table for triples:
-/// (list of bytes, start, end) --> canonicalized string
-/// Using triples avoids allocating string slices before checking if they
-/// are canonical.
 class StringCanonicalizer {
   static const int INITIAL_SIZE = 8 * 1024;
 
@@ -54,17 +51,17 @@ class StringCanonicalizer {
   /// Items in a hash table.
   int _count = 0;
 
-  WasmArray<_Node?> _nodes = WasmArray<_Node?>(INITIAL_SIZE);
+  WasmArray<_StringNode?> _nodes = WasmArray<_StringNode?>(INITIAL_SIZE);
 
   void rehash() {
     int newSize = _size * 2;
-    WasmArray<_Node?> newNodes = WasmArray<_Node?>(newSize);
+    WasmArray<_StringNode?> newNodes = WasmArray<_StringNode?>(newSize);
     for (int i = 0; i < _size; i++) {
-      _Node? t = _nodes[i];
+      _StringNode? t = _nodes[i];
       while (t != null) {
-        _Node? n = t.next;
+        _StringNode? n = t.next;
         int newIndex = t.hash & (newSize - 1);
-        _Node? s = newNodes[newIndex];
+        _StringNode? s = newNodes[newIndex];
         t.next = s;
         newNodes[newIndex] = t;
         t = n;
@@ -74,32 +71,6 @@ class StringCanonicalizer {
     _nodes = newNodes;
   }
 
-  String canonicalizeBytes(U8List data, int start, int end, bool asciiOnly) {
-    if (_count > _size) rehash();
-    final int index = _hashBytes(data, start, end) & (_size - 1);
-    _Node? s = _nodes[index];
-    _Node? t = s;
-    int len = end - start;
-    while (t != null) {
-      if (t is _Utf8Node) {
-        final U8List tData = t.data;
-        if (t.end - t.start == len) {
-          int i = start, j = t.start;
-          while (i < end && data.getUnchecked(i) == tData.getUnchecked(j)) {
-            i++;
-            j++;
-          }
-          if (i == end) {
-            return t.payload;
-          }
-        }
-      }
-      t = t.next;
-    }
-    return _insertUtf8Node(
-        index, s, data, start, end, _decodeString(data, start, end, asciiOnly));
-  }
-
   String canonicalizeSubString(StringBase data, int start, int end) {
     final int len = end - start;
     if (start == 0 && data.length == len) {
@@ -107,13 +78,12 @@ class StringCanonicalizer {
     }
     if (_count > _size) rehash();
     final int index = _hashString(data, start, end) & (_size - 1);
-    final _Node? s = _nodes[index];
-    _Node? t = s;
+    final _StringNode? s = _nodes[index];
+    _StringNode? t = s;
     while (t != null) {
       if (t is _StringNode) {
         final String tData = t.payload;
         if (tData.length == len && data.startsWith(tData, start)) {
-          t.usageCount++;
           return tData;
         }
       }
@@ -127,29 +97,90 @@ class StringCanonicalizer {
     if (_count > _size) rehash();
     final int index =
         _hashString(data, /* start = */ 0, data.length) & (_size - 1);
-    final _Node? s = _nodes[index];
-    _Node? t = s;
+    final _StringNode? s = _nodes[index];
+    _StringNode? t = s;
     while (t != null) {
-      if (t is _StringNode) {
-        final String tData = t.payload;
-        if (identical(data, tData) || data == tData) {
-          t.usageCount++;
-          return tData;
-        }
+      final String tData = t.payload;
+      if (identical(data, tData) || data == tData) {
+        return tData;
       }
       t = t.next;
     }
     return _insertStringNode(index, s, data);
   }
 
-  String _insertStringNode(int index, _Node? next, StringBase value) {
+  String _insertStringNode(int index, _StringNode? next, StringBase value) {
     final _StringNode newNode = _StringNode(value, next);
     _nodes[index] = newNode;
     _count++;
     return value;
   }
 
-  String _insertUtf8Node(int index, _Node? next, U8List buffer, int start,
+  void clear() {
+    initializeWithSize(INITIAL_SIZE);
+  }
+
+  void initializeWithSize(int size) {
+    _size = size;
+    _nodes = WasmArray<_StringNode?>(_size);
+    _count = 0;
+  }
+}
+
+class Utf8StringCanonicalizer {
+  static const int INITIAL_SIZE = 8 * 1024;
+
+  /// Linear size of a hash table.
+  int _size = INITIAL_SIZE;
+
+  /// Items in a hash table.
+  int _count = 0;
+
+  WasmArray<_Utf8Node?> _nodes = WasmArray<_Utf8Node?>(INITIAL_SIZE);
+
+  void rehash() {
+    int newSize = _size * 2;
+    WasmArray<_Utf8Node?> newNodes = WasmArray<_Utf8Node?>(newSize);
+    for (int i = 0; i < _size; i++) {
+      _Utf8Node? t = _nodes[i];
+      while (t != null) {
+        _Utf8Node? n = t.next;
+        int newIndex = t.hash & (newSize - 1);
+        _Utf8Node? s = newNodes[newIndex];
+        t.next = s;
+        newNodes[newIndex] = t;
+        t = n;
+      }
+    }
+    _size = newSize;
+    _nodes = newNodes;
+  }
+
+  String canonicalizeBytes(U8List data, int start, int end, bool asciiOnly) {
+    if (_count > _size) rehash();
+    final int index = _hashBytes(data, start, end) & (_size - 1);
+    _Utf8Node? s = _nodes[index];
+    _Utf8Node? t = s;
+    int len = end - start;
+    while (t != null) {
+      final U8List tData = t.data;
+      if (t.end - t.start == len) {
+        int i = start, j = t.start;
+        while (i < end && data.getUnchecked(i) == tData.getUnchecked(j)) {
+          i++;
+          j++;
+        }
+        if (i == end) {
+          return t.payload;
+        }
+      }
+      t = t.next;
+    }
+    return _insertUtf8Node(
+        index, s, data, start, end, _decodeString(data, start, end, asciiOnly));
+  }
+
+  String _insertUtf8Node(int index, _Utf8Node? next, U8List buffer, int start,
       int end, StringBase value) {
     final _Utf8Node newNode = _Utf8Node(buffer, start, end, value, next);
     _nodes[index] = newNode;
@@ -163,7 +194,7 @@ class StringCanonicalizer {
 
   void initializeWithSize(int size) {
     _size = size;
-    _nodes = WasmArray<_Node?>(_size);
+    _nodes = WasmArray<_Utf8Node?>(_size);
     _count = 0;
   }
 }
