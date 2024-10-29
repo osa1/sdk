@@ -54,12 +54,11 @@ class StringCanonicalizer {
   /// Items in a hash table.
   int _count = 0;
 
-  /// The table itself.
-  List<_Node?> _nodes = List<_Node?>.filled(INITIAL_SIZE, /* fill = */ null);
+  WasmArray<_Node?> _nodes = WasmArray<_Node?>(INITIAL_SIZE);
 
   void rehash() {
     int newSize = _size * 2;
-    List<_Node?> newNodes = List<_Node?>.filled(newSize, /* fill = */ null);
+    WasmArray<_Node?> newNodes = WasmArray<_Node?>(newSize);
     for (int i = 0; i < _size; i++) {
       _Node? t = _nodes[i];
       while (t != null) {
@@ -164,7 +163,7 @@ class StringCanonicalizer {
 
   void initializeWithSize(int size) {
     _size = size;
-    _nodes = List<_Node?>.filled(_size, /* fill = */ null);
+    _nodes = WasmArray<_Node?>(_size);
     _count = 0;
   }
 }
