@@ -2531,7 +2531,7 @@ class U8List extends _WasmI8ArrayBase
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
     indexCheck(index, length);
-    return _data.readUnsigned(_offsetInElements + index);
+    return getUnchecked(index);
   }
 
   @override
@@ -2540,6 +2540,11 @@ class U8List extends _WasmI8ArrayBase
     indexCheck(index, length);
     _data.write(_offsetInElements + index, value);
   }
+}
+
+extension U8ListUncheckedOperations on U8List {
+  @pragma("wasm:prefer-inline")
+  int getUnchecked(int index) => _data.readUnsigned(_offsetInElements + index);
 }
 
 class U8ClampedList extends _WasmI8ArrayBase

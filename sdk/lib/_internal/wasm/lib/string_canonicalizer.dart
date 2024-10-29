@@ -5,11 +5,14 @@
 // This library is copied from _fe_analyzer_shared.scanner.string_canonicalizer
 // and modified.
 
+import 'dart:_internal';
+import 'dart:_string';
+import 'dart:_typed_data';
+import 'dart:_wasm';
 import 'dart:convert';
-import 'dart:typed_data' show Uint8List;
 
 abstract class _Node {
-  final String payload;
+  final StringBase payload;
   _Node? next;
 
   _Node(this.payload, this.next);
@@ -27,11 +30,11 @@ class _StringNode extends _Node {
 }
 
 class _Utf8Node extends _Node {
-  final Uint8List data;
+  final U8List data;
   final int start;
   final int end;
 
-  _Utf8Node(this.data, this.start, this.end, String payload, _Node? next)
+  _Utf8Node(this.data, this.start, this.end, StringBase payload, _Node? next)
       : super(payload, next);
 
   @override
@@ -72,7 +75,7 @@ class StringCanonicalizer {
     _nodes = newNodes;
   }
 
-  String canonicalizeBytes(Uint8List data, int start, int end, bool asciiOnly) {
+  String canonicalizeBytes(U8List data, int start, int end, bool asciiOnly) {
     if (_count > _size) rehash();
     final int index = _hashBytes(data, start, end) & (_size - 1);
     _Node? s = _nodes[index];
@@ -80,10 +83,10 @@ class StringCanonicalizer {
     int len = end - start;
     while (t != null) {
       if (t is _Utf8Node) {
-        final Uint8List tData = t.data;
+        final U8List tData = t.data;
         if (t.end - t.start == len) {
           int i = start, j = t.start;
-          while (i < end && data[i] == tData[j]) {
+          while (i < end && data.getUnchecked(i) == tData.getUnchecked(j)) {
             i++;
             j++;
           }
@@ -94,11 +97,11 @@ class StringCanonicalizer {
       }
       t = t.next;
     }
-    return insertUtf8Node(
+    return _insertUtf8Node(
         index, s, data, start, end, _decodeString(data, start, end, asciiOnly));
   }
 
-  String canonicalizeSubString(String data, int start, int end) {
+  String canonicalizeSubString(StringBase data, int start, int end) {
     final int len = end - start;
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
@@ -117,10 +120,11 @@ class StringCanonicalizer {
       }
       t = t.next;
     }
-    return insertStringNode(index, s, data.substring(start, end));
+    return _insertStringNode(
+        index, s, unsafeCast<StringBase>(data.substringUnchecked(start, end)));
   }
 
-  String canonicalizeString(String data) {
+  String canonicalizeString(StringBase data) {
     if (_count > _size) rehash();
     final int index =
         _hashString(data, /* start = */ 0, data.length) & (_size - 1);
@@ -136,18 +140,18 @@ class StringCanonicalizer {
       }
       t = t.next;
     }
-    return insertStringNode(index, s, data);
+    return _insertStringNode(index, s, data);
   }
 
-  String insertStringNode(int index, _Node? next, String value) {
+  String _insertStringNode(int index, _Node? next, StringBase value) {
     final _StringNode newNode = _StringNode(value, next);
     _nodes[index] = newNode;
     _count++;
     return value;
   }
 
-  String insertUtf8Node(int index, _Node? next, Uint8List buffer, int start,
-      int end, String value) {
+  String _insertUtf8Node(int index, _Node? next, U8List buffer, int start,
+      int end, StringBase value) {
     final _Utf8Node newNode = _Utf8Node(buffer, start, end, value, next);
     _nodes[index] = newNode;
     _count++;
@@ -166,24 +170,25 @@ class StringCanonicalizer {
 }
 
 /// Decode UTF-8 without canonicalizing it.
-String _decodeString(Uint8List bytes, int start, int end, bool isAscii) {
+StringBase _decodeString(U8List bytes, int start, int end, bool isAscii) {
   return isAscii
-      ? String.fromCharCodes(bytes, start, end)
-      : const Utf8Decoder(allowMalformed: true).convert(bytes, start, end);
+      ? createOneByteStringFromCharactersArray(bytes.data, start, end)
+      : unsafeCast<StringBase>(
+          const Utf8Decoder(allowMalformed: true).convert(bytes, start, end));
 }
 
-int _hashBytes(Uint8List data, int start, int end) {
+int _hashBytes(U8List data, int start, int end) {
   int h = 5381;
   for (int i = start; i < end; i++) {
-    h = (h << 5) + h + data[i];
+    h = (h << 5) + h + data.getUnchecked(i);
   }
   return h;
 }
 
-int _hashString(String data, int start, int end) {
+int _hashString(StringBase data, int start, int end) {
   int h = 5381;
   for (int i = start; i < end; i++) {
-    h = (h << 5) + h + data.codeUnitAt(i);
+    h = (h << 5) + h + data.codeUnitAtUnchecked(i);
   }
   return h;
 }
