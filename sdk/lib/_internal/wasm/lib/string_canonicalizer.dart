@@ -81,11 +81,9 @@ class StringCanonicalizer {
     final _StringNode? s = _nodes[index];
     _StringNode? t = s;
     while (t != null) {
-      if (t is _StringNode) {
-        final String tData = t.payload;
-        if (tData.length == len && data.startsWith(tData, start)) {
-          return tData;
-        }
+      final String tData = t.payload;
+      if (tData.length == len && data.startsWith(tData, start)) {
+        return tData;
       }
       t = t.next;
     }
