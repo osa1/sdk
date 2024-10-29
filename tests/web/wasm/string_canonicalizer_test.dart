@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:_string_canonicalizer';
+import 'dart:_typed_data';
 import 'dart:typed_data';
 
 import 'package:expect/expect.dart';
@@ -10,11 +11,11 @@ import 'package:expect/expect.dart';
 void main() {
   final canonicalizer = StringCanonicalizer();
 
-  final str1 =
-      canonicalizer.canonicalizeBytes(Uint8List.fromList([68, 69]), 0, 2, true);
+  final bytes = U8List(2);
+  bytes[0] = 68;
+  bytes[1] = 69;
 
-  final str2 =
-      canonicalizer.canonicalizeBytes(Uint8List.fromList([68, 69]), 0, 2, true);
-
+  final str1 = canonicalizer.canonicalizeBytes(bytes, 0, 2, true);
+  final str2 = canonicalizer.canonicalizeBytes(bytes, 0, 2, true);
   Expect.identical(str1, str2);
 }
