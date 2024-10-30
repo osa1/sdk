@@ -314,8 +314,7 @@ class WasmTarget extends Target {
       logger?.call("Transformed ffi annotations");
     }
 
-    wasmTrans.transformLibraries(
-        libraries, coreTypes, hierarchy, diagnosticReporter);
+    wasmTrans.transformLibraries(libraries, coreTypes, hierarchy);
 
     awaitTrans.transformLibraries(libraries, hierarchy, coreTypes);
   }
