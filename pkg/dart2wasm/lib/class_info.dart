@@ -226,6 +226,7 @@ class ClassInfoCollector {
       translator.index.getClass("dart:core", "_Type"),
       translator.index.getClass("dart:core", "_ListBase"),
       translator.index.getClass("dart:_js_types", "JSStringImpl"),
+      translator.index.getClass("dart:_list", "WasmListBase"),
     };
     for (final name in const <String>[
       "ByteBuffer",
