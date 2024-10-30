@@ -146,6 +146,7 @@ class WasmTarget extends Target {
         'dart:_internal',
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_string',
         'dart:_wasm',
         'dart:async',
         'dart:developer',
@@ -163,6 +164,7 @@ class WasmTarget extends Target {
   List<String> get extraIndexedLibraries => [
         'dart:_js_helper',
         'dart:_js_types',
+        'dart:_string',
         'dart:_wasm',
         'dart:collection',
         'dart:js_interop',
@@ -278,6 +280,8 @@ class WasmTarget extends Target {
           component, Uri.parse("dart:js_interop")),
       ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
           component, Uri.parse("dart:convert")),
+      ...jsInteropHelper.calculateTransitiveImportsOfJsInteropIfUsed(
+          component, Uri.parse("dart:_string")),
     };
     if (transitiveImportingJSInterop.isEmpty) {
       logger?.call("Skipped JS interop transformations");
@@ -485,7 +489,7 @@ class WasmTarget extends Target {
   @override
   Class concreteStringLiteralClass(CoreTypes coreTypes, String value) {
     return _jsString ??=
-        coreTypes.index.getClass("dart:_js_types", "JSStringImpl");
+        coreTypes.index.getClass("dart:_string", "JSStringImpl");
   }
 
   @override
