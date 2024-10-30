@@ -11,7 +11,24 @@ import 'dart:_string_helper';
 import 'dart:_wasm';
 import 'dart:js_interop';
 
-final class JSStringImpl implements String {
+abstract class StringUncheckedOperationsBase {
+  int _codeUnitAtUnchecked(int index);
+  String _substringUnchecked(int start, int end);
+}
+
+extension StringUncheckedOperations on String {
+  @pragma('wasm:prefer-inline')
+  int codeUnitAtUnchecked(int index) =>
+      unsafeCast<StringUncheckedOperationsBase>(this)
+          ._codeUnitAtUnchecked(index);
+
+  @pragma('wasm:prefer-inline')
+  String substringUnchecked(int start, int end) =>
+      unsafeCast<StringUncheckedOperationsBase>(this)
+          ._substringUnchecked(start, end);
+}
+
+final class JSStringImpl implements String, StringUncheckedOperationsBase {
   final WasmExternRef? _ref;
 
   JSStringImpl(this._ref);
@@ -58,6 +75,7 @@ final class JSStringImpl implements String {
     return _codeUnitAtUnchecked(index);
   }
 
+  @override
   @pragma("wasm:prefer-inline")
   int _codeUnitAtUnchecked(int index) {
     return _jsCharCodeAt(toExternRef, index);
