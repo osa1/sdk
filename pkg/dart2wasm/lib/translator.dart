@@ -519,8 +519,6 @@ class Translator with KernelNodes {
   bool isWasmType(Class cls) =>
       cls == wasmTypesBaseClass || _hasSuperclass(cls, wasmTypesBaseClass);
 
-  bool isFfiCompound(Class cls) => _hasSuperclass(cls, ffiCompoundClass);
-
   w.StorageType translateStorageType(DartType type) {
     bool nullable = type.isPotentiallyNullable;
     if (type is InterfaceType) {
@@ -563,12 +561,6 @@ class Translator with KernelNodes {
         ];
         w.FunctionType wasmType = m.types.defineFunction(inputs, outputs);
         return w.RefType.def(wasmType, nullable: nullable);
-      }
-
-      // FFI compound?
-      if (isFfiCompound(cls)) {
-        if (nullable) throw "FFI types can't be nullable";
-        return w.NumType.i32;
       }
 
       // Other built-in type?
@@ -663,9 +655,6 @@ class Translator with KernelNodes {
         w.StorageType? builtin = builtinTypes[cls];
         if (builtin != null && builtin.isPrimitive) {
           return builtin as w.ValueType;
-        }
-        if (isFfiCompound(cls)) {
-          return w.NumType.i32;
         }
       }
     }
