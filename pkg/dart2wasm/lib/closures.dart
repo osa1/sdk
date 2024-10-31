@@ -1099,24 +1099,24 @@ class Closures {
   final Map<TreeNode, Context> contexts = {};
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
-  final Class? _enclosingClass;
+  final Member _member;
   bool _isThisCaptured = false;
   final w.RefType? _nullableThisType;
 
-  Closures(this.translator, Member member)
-      : _enclosingClass = member.enclosingClass,
-        _nullableThisType = member is Constructor || member.isInstanceMember
-            ? translator.preciseThisFor(member, nullable: true) as w.RefType
+  Closures(this.translator, this._member)
+      : _nullableThisType = _member is Constructor || _member.isInstanceMember
+            ? translator.preciseThisFor(_member, nullable: true) as w.RefType
             : null {
-    _findCaptures(member);
-    _collectContexts(member);
+    _findCaptures();
+    _collectContexts();
     _buildContexts();
   }
 
   w.RefType get typeType => translator.types.nonNullableTypeType;
 
-  void _findCaptures(Member member) {
-    var find = _CaptureFinder(this, member);
+  void _findCaptures() {
+    var find = _CaptureFinder(this, _member);
+    final member = _member;
     if (member is Constructor) {
       Class cls = member.enclosingClass;
       for (Field field in cls.fields) {
@@ -1128,9 +1128,9 @@ class Closures {
     member.accept(find);
   }
 
-  void _collectContexts(Member node) {
+  void _collectContexts() {
     if (captures.isNotEmpty || _isThisCaptured) {
-      node.accept(_ContextCollector(this, translator.options.enableAsserts));
+      _member.accept(_ContextCollector(this, translator.options.enableAsserts));
     }
   }
 
@@ -1163,7 +1163,7 @@ class Closures {
               w.RefType.def(context.parent!.struct, nullable: true)));
         }
         if (context.containsThis) {
-          assert(_enclosingClass != null);
+          assert(_member.enclosingClass != null);
           struct.fields.add(w.FieldType(_nullableThisType!));
         }
         for (VariableDeclaration variable in context.variables) {
