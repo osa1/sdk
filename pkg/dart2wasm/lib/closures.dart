@@ -1087,20 +1087,39 @@ class Capture {
   w.ValueType get type => context.struct.fields[fieldIndex].type.unpacked;
 }
 
-/// Compiler passes to find all captured variables and construct the context
-/// tree for a member.
+/// Information about contexts and closures of a member.
 class Closures {
   final Translator translator;
+
+  /// Maps [FunctionDeclaration]s and [FunctionExpression]s in the member to
+  /// [Lambda]s.
   final Map<FunctionNode, Lambda> lambdas = {};
+
+  /// Maps [VariableDeclaration]s and [TypeParameter]s in the member to
+  /// [Capture]s.
   final Map<TreeNode, Capture> captures = {};
 
-  // This [TreeNode] is the context owner, and can be a [FunctionNode],
-  // [Constructor], [ForStatement], [DoStatement] or a [WhileStatement].
+  /// Maps AST nodes with contexts to their contexts.
+  ///
+  /// AST nodes that can have a context are:
+  ///
+  /// - [FunctionNode]
+  /// - [Constructor]
+  /// - [ForStatement]
+  /// - [DoStatement]
+  /// - [WhileStatement]
   final Map<TreeNode, Context> contexts = {};
+
+  /// ????????????????
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
   final Member _member;
+
+  /// Whether the member captures `this`. Set by [_CaptureFinder].
   bool _isThisCaptured = false;
+
+  /// When the member is a constructor or an instance member, nullable type of
+  /// `this`.
   final w.RefType? _nullableThisType;
 
   Closures(this.translator, this._member)
