@@ -420,10 +420,6 @@ abstract class AstCodeGenerator
     setupParameters(member.reference,
         canSafelyOmitImplicitChecks: canSafelyOmitImplicitChecks);
 
-    closures.findCaptures(member);
-    closures.collectContexts(member);
-    closures.buildContexts();
-
     allocateContext(member.function!);
     captureParameters();
   }
@@ -601,23 +597,23 @@ abstract class AstCodeGenerator
 
   void allocateContext(TreeNode node) {
     Context? context = closures.contexts[node];
-    if (context != null && !context.isEmpty) {
-      w.Local contextLocal =
-          addLocal(w.RefType.def(context.struct, nullable: true));
-      context.currentLocal = contextLocal;
-      b.struct_new_default(context.struct);
-      b.local_set(contextLocal);
-      if (context.containsThis) {
-        b.local_get(contextLocal);
-        b.local_get(preciseThisLocal!);
-        b.struct_set(context.struct, context.thisFieldIndex);
-      }
-      if (context.parent != null) {
-        w.Local parentLocal = context.parent!.currentLocal;
-        b.local_get(contextLocal);
-        b.local_get(parentLocal);
-        b.struct_set(context.struct, context.parentFieldIndex);
-      }
+    if (context == null || context.isEmpty) return;
+
+    w.Local contextLocal =
+        addLocal(w.RefType.def(context.struct, nullable: true));
+    context.currentLocal = contextLocal;
+    b.struct_new_default(context.struct);
+    b.local_set(contextLocal);
+    if (context.containsThis) {
+      b.local_get(contextLocal);
+      b.local_get(preciseThisLocal!);
+      b.struct_set(context.struct, context.thisFieldIndex);
+    }
+    if (context.parent != null) {
+      w.Local parentLocal = context.parent!.currentLocal;
+      b.local_get(contextLocal);
+      b.local_get(parentLocal);
+      b.struct_set(context.struct, context.parentFieldIndex);
     }
   }
 
@@ -2409,9 +2405,9 @@ abstract class AstCodeGenerator
 
     // Evaluate receiver
     w.StructType struct = representation.closureStruct;
-    w.Local temp = addLocal(w.RefType.def(struct, nullable: false));
-    translateExpression(receiver, temp.type);
-    b.local_tee(temp);
+    w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
+    translateExpression(receiver, closureLocal.type);
+    b.local_tee(closureLocal);
     b.struct_get(struct, FieldIndex.closureContext);
 
     // Type arguments
@@ -2441,7 +2437,7 @@ abstract class AstCodeGenerator
         representation.fieldIndexForSignature(posArgCount, argNames);
     w.FunctionType functionType =
         representation.getVtableFieldType(vtableFieldIndex);
-    b.local_get(temp);
+    b.local_get(closureLocal);
     b.struct_get(struct, FieldIndex.closureVtable);
     b.struct_get(representation.vtableStruct, vtableFieldIndex);
     b.call_ref(functionType);
@@ -3187,7 +3183,6 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
     }
 
     closures = Closures(translator, member);
-
     setupParametersAndContexts(member, useUncheckedEntry: useUncheckedEntry);
 
     Statement? body = member.function.body;
@@ -3849,9 +3844,6 @@ class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
 
     // Static field initializer function
     closures = Closures(translator, field);
-    closures.findCaptures(field);
-    closures.collectContexts(field);
-    closures.buildContexts();
 
     w.Global global = translator.globals.getGlobalForStaticField(field);
     w.Global? flag = translator.globals.getGlobalInitializedFlag(field);

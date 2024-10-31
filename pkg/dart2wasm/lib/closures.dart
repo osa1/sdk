@@ -262,8 +262,8 @@ class ClosureLayouter extends RecursiveVisitor {
   late final w.StructType closureBaseStruct = _makeClosureStruct(
       "#ClosureBase", _vtableBaseStructBare, translator.closureInfo.struct);
 
-  late final w.RefType typeType =
-      translator.classInfo[translator.typeClass]!.nonNullableType;
+  w.RefType get typeType => translator.types.nonNullableTypeType;
+
   late final w.RefType functionTypeType =
       translator.classInfo[translator.functionTypeClass]!.nonNullableType;
 
@@ -1091,30 +1091,32 @@ class Capture {
 /// tree for a member.
 class Closures {
   final Translator translator;
-  final Class? enclosingClass;
-  final Map<TreeNode, Capture> captures = {};
-  bool isThisCaptured = false;
   final Map<FunctionNode, Lambda> lambdas = {};
-  late final w.RefType? nullableThisType;
+  final Map<TreeNode, Capture> captures = {};
 
   // This [TreeNode] is the context owner, and can be a [FunctionNode],
   // [Constructor], [ForStatement], [DoStatement] or a [WhileStatement].
   final Map<TreeNode, Context> contexts = {};
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
+  final Class? _enclosingClass;
+  bool _isThisCaptured = false;
+  final w.RefType? _nullableThisType;
+
   Closures(this.translator, Member member)
-      : enclosingClass = member.enclosingClass {
-    final hasThis = member is Constructor || member.isInstanceMember;
-    nullableThisType = hasThis
-        ? translator.preciseThisFor(member, nullable: true) as w.RefType
-        : null;
+      : _enclosingClass = member.enclosingClass,
+        _nullableThisType = member is Constructor || member.isInstanceMember
+            ? translator.preciseThisFor(member, nullable: true) as w.RefType
+            : null {
+    _findCaptures(member);
+    _collectContexts(member);
+    _buildContexts();
   }
 
-  late final w.ValueType typeType =
-      translator.classInfo[translator.typeClass]!.nonNullableType;
+  w.RefType get typeType => translator.types.nonNullableTypeType;
 
-  void findCaptures(Member member) {
-    var find = CaptureFinder(this, member);
+  void _findCaptures(Member member) {
+    var find = _CaptureFinder(this, member);
     if (member is Constructor) {
       Class cls = member.enclosingClass;
       for (Field field in cls.fields) {
@@ -1126,13 +1128,13 @@ class Closures {
     member.accept(find);
   }
 
-  void collectContexts(TreeNode node) {
-    if (captures.isNotEmpty || isThisCaptured) {
-      node.accept(ContextCollector(this, translator.options.enableAsserts));
+  void _collectContexts(Member node) {
+    if (captures.isNotEmpty || _isThisCaptured) {
+      node.accept(_ContextCollector(this, translator.options.enableAsserts));
     }
   }
 
-  void buildContexts() {
+  void _buildContexts() {
     // Make struct definitions
     for (Context context in contexts.values) {
       if (!context.isEmpty) {
@@ -1161,8 +1163,8 @@ class Closures {
               w.RefType.def(context.parent!.struct, nullable: true)));
         }
         if (context.containsThis) {
-          assert(enclosingClass != null);
-          struct.fields.add(w.FieldType(nullableThisType!));
+          assert(_enclosingClass != null);
+          struct.fields.add(w.FieldType(_nullableThisType!));
         }
         for (VariableDeclaration variable in context.variables) {
           int index = struct.fields.length;
@@ -1181,7 +1183,7 @@ class Closures {
   }
 }
 
-class CaptureFinder extends RecursiveVisitor {
+class _CaptureFinder extends RecursiveVisitor {
   final Closures closures;
   final Member member;
 
@@ -1192,7 +1194,7 @@ class CaptureFinder extends RecursiveVisitor {
 
   int get depth => functionIsSyncStarOrAsync.length - 1;
 
-  CaptureFinder(this.closures, this.member)
+  _CaptureFinder(this.closures, this.member)
       : _currentSource =
             member.enclosingComponent!.uriToSource[member.fileUri]!;
 
@@ -1273,7 +1275,7 @@ class CaptureFinder extends RecursiveVisitor {
 
   void _visitThis() {
     if (depth > 0 || functionIsSyncStarOrAsync[0]) {
-      closures.isThisCaptured = true;
+      closures._isThisCaptured = true;
     }
   }
 
@@ -1361,12 +1363,12 @@ class CaptureFinder extends RecursiveVisitor {
   }
 }
 
-class ContextCollector extends RecursiveVisitor {
+class _ContextCollector extends RecursiveVisitor {
   final Closures closures;
   Context? currentContext;
   final bool enableAsserts;
 
-  ContextCollector(this.closures, this.enableAsserts);
+  _ContextCollector(this.closures, this.enableAsserts);
 
   @override
   void visitAssertStatement(AssertStatement node) {
@@ -1389,7 +1391,7 @@ class ContextCollector extends RecursiveVisitor {
     while (parent != null && parent.isEmpty) {
       parent = parent.parent;
     }
-    bool containsThis = closures.isThisCaptured && outerMost;
+    bool containsThis = closures._isThisCaptured && outerMost;
     currentContext = Context(node, parent, containsThis);
     closures.contexts[node] = currentContext!;
     node.visitChildren(this);
@@ -1434,7 +1436,7 @@ class ContextCollector extends RecursiveVisitor {
       // Some type arguments or variables have been captured by the
       // initializer list.
 
-      if (closures.isThisCaptured) {
+      if (closures._isThisCaptured) {
         // In this case, we need two contexts: a constructor context to store
         // the captured arguments/type parameters (shared by the initializer
         // and constructor body, and a separate context just for the
@@ -1463,7 +1465,7 @@ class ContextCollector extends RecursiveVisitor {
       // (node.function) for debugging purposes, and drop the
       // constructor allocator context as it is not used.
       final Context constructorBodyContext =
-          Context(node.function, null, closures.isThisCaptured);
+          Context(node.function, null, closures._isThisCaptured);
       currentContext = constructorBodyContext;
 
       node.function.body?.accept(this);
