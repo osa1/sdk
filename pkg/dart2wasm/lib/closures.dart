@@ -61,8 +61,6 @@ class ClosureRepresentation {
   /// The struct type for the context of an instantiated closure.
   final w.StructType? instantiationContextStruct;
 
-  final String exportSuffix;
-
   /// Entry point functions for instantiations of this generic closure.
   final Map<w.ModuleBuilder, List<w.BaseFunction>> _instantiationTrampolines =
       {};
@@ -121,8 +119,7 @@ class ClosureRepresentation {
       this.vtableStruct,
       this.closureStruct,
       this._indexOfCombination,
-      this.instantiationContextStruct,
-      this.exportSuffix);
+      this.instantiationContextStruct);
 
   bool get isGeneric => typeCount > 0;
 
@@ -469,8 +466,7 @@ class ClosureLayouter extends RecursiveVisitor {
         vtableStruct,
         closureStruct,
         indexOfCombination,
-        instantiationContextStruct,
-        nameTags.join('-'));
+        instantiationContextStruct);
 
     if (typeCount > 0) {
       // The instantiation trampolines and the instantiation function can't be
