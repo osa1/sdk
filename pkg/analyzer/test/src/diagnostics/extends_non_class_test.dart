@@ -49,7 +49,7 @@ ExtendsClause
   superclass: NamedType
     name: E
     element: <testLibraryFragment>::@enum::E
-    element2: <testLibraryFragment>::@enum::E#element
+    element2: <testLibrary>::@enum::E
     type: E
 ''');
   }
@@ -69,7 +69,7 @@ ExtendsClause
   superclass: NamedType
     name: A
     element: <testLibraryFragment>::@extensionType::A
-    element2: <testLibraryFragment>::@extensionType::A#element
+    element2: <testLibrary>::@extensionType::A
     type: A
 ''');
   }
@@ -89,7 +89,7 @@ ExtendsClause
   superclass: NamedType
     name: M
     element: <testLibraryFragment>::@mixin::M
-    element2: <testLibraryFragment>::@mixin::M#element
+    element2: <testLibrary>::@mixin::M
     type: M
 ''');
   }

@@ -27,7 +27,6 @@ import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/lint/linter_visitor.dart' show NodeLintRegistry;
 import 'package:analyzer/src/lint/pub.dart';
-import 'package:analyzer/src/lint/registry.dart';
 import 'package:analyzer/src/lint/state.dart';
 import 'package:analyzer/src/workspace/workspace.dart';
 import 'package:meta/meta.dart';
@@ -36,6 +35,10 @@ import 'package:path/path.dart' as p;
 export 'package:analyzer/src/lint/linter_visitor.dart' show NodeLintRegistry;
 export 'package:analyzer/src/lint/state.dart'
     show dart2_12, dart3, dart3_3, State;
+
+/// Describes a static analysis rule, either a lint rule (which must be enabled
+/// via analysis options) or a warning rule (which is enabled by default).
+typedef AnalysisRule = LintRule;
 
 /// The result of attempting to evaluate an expression as a constant.
 final class LinterConstantEvaluationResult {
@@ -183,34 +186,12 @@ final class LinterContextWithResolvedResults implements LinterContext {
   LibraryElement2 get libraryElement2 => libraryElement as LibraryElement2;
 }
 
-class LinterOptions {
-  final Iterable<LintRule> enabledRules;
-
-  /// The path to the Dart SDK.
-  String? dartSdkPath;
-
-  /// Whether to gather timing data during analysis.
-  bool enableTiming = false;
-
-  LinterOptions({
-    Iterable<LintRule>? enabledRules,
-  }) : enabledRules = enabledRules ?? Registry.ruleRegistry;
-}
-
 /// Describes a lint rule.
 abstract class LintRule {
   /// Used to report lint warnings.
   /// NOTE: this is set by the framework before any node processors start
   /// visiting nodes.
   late ErrorReporter _reporter;
-
-  /// Description (in markdown format) suitable for display in a detailed lint
-  /// description.
-  ///
-  /// This property is deprecated and will be removed in a future release.
-  @Deprecated('Use .description for a short description and consider placing '
-      'long-form documentation on an external website.')
-  final String details;
 
   /// Short description suitable for display in console output.
   final String description;
@@ -230,9 +211,6 @@ abstract class LintRule {
     @Deprecated('Lint rule categories are no longer used. Remove the argument.')
     this.categories = const <String>{},
     required this.description,
-    @Deprecated("Specify 'details' for a short description and consider "
-        'placing long-form documentation on an external website.')
-    this.details = '',
     State? state,
   }) : state = state ?? State.stable();
 

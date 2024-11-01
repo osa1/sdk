@@ -14,6 +14,9 @@ const _nameAlign = 'Align';
 const _nameBuilder = 'Builder';
 const _nameCenter = 'Center';
 const _nameContainer = 'Container';
+const _nameExpanded = 'Expanded';
+const _nameFlex = 'Flex';
+const _nameFlexible = 'Flexible';
 const _namePadding = 'Padding';
 const _nameSizedBox = 'SizedBox';
 const _nameState = 'State';
@@ -263,6 +266,20 @@ extension DartTypeExtension on DartType? {
         self.element._isExactly(_nameContainer, _uriContainer);
   }
 
+  /// Whether this is the Flutter class `Expanded`.
+  bool get isExactWidgetTypeExpanded {
+    var self = this;
+    return self is InterfaceType &&
+        self.element._isExactly(_nameExpanded, _uriBasic);
+  }
+
+  /// Whether this is the Flutter class `Flexible`.
+  bool get isExactWidgetTypeFlexible {
+    var self = this;
+    return self is InterfaceType &&
+        self.element._isExactly(_nameFlexible, _uriBasic);
+  }
+
   /// Whether this is the Flutter class `Padding`.
   bool get isExactWidgetTypePadding {
     var self = this;
@@ -372,8 +389,8 @@ extension InstanceCreationExpressionExtension on InstanceCreationExpression {
   /// Whether this is a constructor invocation for a class that has the Flutter
   /// class `Widget` as a superclass.
   bool get isWidgetCreation {
-    var element =
-        constructorName.staticElement?.enclosingElement3.augmented.declaration;
+    var element = constructorName
+        .staticElement?.enclosingElement3.augmented.firstFragment;
     return element.isWidget;
   }
 
@@ -391,8 +408,8 @@ extension InstanceCreationExpressionExtension on InstanceCreationExpression {
 
   /// The presentation for this node.
   String? get widgetPresentationText {
-    var element =
-        constructorName.staticElement?.enclosingElement3.augmented.declaration;
+    var element = constructorName
+        .staticElement?.enclosingElement3.augmented.firstFragment;
     if (!element.isWidget) {
       return null;
     }
@@ -416,6 +433,24 @@ extension InstanceCreationExpressionExtension on InstanceCreationExpression {
       }
     }
     return element?.name;
+  }
+}
+
+extension InterfaceElement2Extension on InterfaceElement2? {
+  /// Whether this is the Flutter class `Flex`, or a subtype.
+  bool get isFlexWidget {
+    var self = this;
+    if (self is! ClassElement2) {
+      return false;
+    }
+    if (!self.isWidget) {
+      return false;
+    }
+    if (_isExactly(_nameFlex, _uriBasic)) {
+      return true;
+    }
+    return self.allSupertypes
+        .any((type) => type.element._isExactly(_nameFlex, _uriBasic));
   }
 }
 

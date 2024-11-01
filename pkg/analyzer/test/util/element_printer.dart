@@ -95,7 +95,7 @@ class ElementPrinter {
         _sink.write('dynamic@-1');
       case FormalParameterElementImpl():
         var firstFragment = element.firstFragment;
-        var referenceStr = _elementToReferenceString(firstFragment);
+        var referenceStr = _elementToReferenceString(firstFragment as Element);
         _sink.write(referenceStr);
         _sink.write('#element');
       case FragmentedElementMixin element:
@@ -115,18 +115,21 @@ class ElementPrinter {
       case LibraryElementImpl e:
         writeReference(e.reference!);
       case LocalFunctionElementImpl():
-        _sink.write('${element.name3}@${element.nameOffset}');
+        _sink.write('${element.name3}@${element.firstFragment.nameOffset}');
       case LocalVariableElementImpl():
         _sink.write('${element.name}@${element.nameOffset}');
       case LocalVariableElementImpl2():
         _sink.write('${element.name3}@${element.nameOffset}');
       case MaybeAugmentedClassElementMixin element:
         writeReference(element.reference);
-      case MaybeAugmentedInstanceElementMixin element:
-        var firstFragment = element.firstFragment as ElementImpl;
-        var reference = firstFragment.reference!;
-        writeReference(reference);
-        _sink.write('#element');
+      case MaybeAugmentedEnumElementMixin element:
+        writeReference(element.reference);
+      case MaybeAugmentedExtensionElementMixin element:
+        writeReference(element.reference);
+      case MaybeAugmentedExtensionTypeElementMixin element:
+        writeReference(element.reference);
+      case MaybeAugmentedMixinElementMixin element:
+        writeReference(element.reference);
       case MethodElement2 element:
         var firstFragment = element.firstFragment as ElementImpl;
         var reference = firstFragment.reference;

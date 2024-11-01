@@ -261,37 +261,16 @@ Location? newLocation_fromElement(engine.Element? element) {
   return _locationForArgs(unitElement, range);
 }
 
-/// Create a Location based on an [engine.Element].
+/// Create a Location based on an [engine.Element2].
 Location? newLocation_fromElement2(engine.Element2? element) {
   if (element == null) {
     return null;
   }
   if (element is engine.FragmentedElement) {
     var fragment = (element as engine.FragmentedElement).firstFragment;
-    if (fragment == null) {
-      return null;
-    }
     var offset = fragment.name2?.nameOffset ?? 0;
     var length = fragment.name2?.name.length ?? 0;
     var range = engine.SourceRange(offset, length);
-    return _locationForArgs2(fragment, range);
-  } else if (element is engine.LocalFunctionElement) {
-    var offset = element.nameOffset;
-    var length = element.name3?.length ?? 0;
-    var range = engine.SourceRange(offset, length);
-    var fragment = element.enclosingFunction;
-    return _locationForArgs2(fragment, range);
-  } else if (element is engine.LocalVariableElement2) {
-    var offset = element.nameOffset;
-    var length = element.name3?.length ?? 0;
-    var range = engine.SourceRange(offset, length);
-    var fragment = element.enclosingFunction;
-    return _locationForArgs2(fragment, range);
-  } else if (element is engine.LabelElement2) {
-    var offset = element.nameOffset;
-    var length = element.name3?.length ?? 0;
-    var range = engine.SourceRange(offset, length);
-    var fragment = element.enclosingFunction;
     return _locationForArgs2(fragment, range);
   } else {
     assert(false, 'Could not convert ${element.runtimeType} to Location.');
@@ -329,9 +308,9 @@ Location newLocation_fromUnit(
 }
 
 /// Construct based on an element from the analyzer engine.
-OverriddenMember newOverriddenMember_fromEngine(engine.Element member) {
-  var element = convertElement(member);
-  var className = member.enclosingElement3!.displayName;
+OverriddenMember newOverriddenMember_fromEngine(engine.Element2 member) {
+  var element = convertElement2(member);
+  var className = member.enclosingElement2!.displayName;
   return OverriddenMember(element, className);
 }
 

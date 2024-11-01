@@ -13,7 +13,9 @@ import 'package:args/args.dart';
 import 'package:linter/src/analyzer.dart';
 import 'package:linter/src/extensions.dart';
 import 'package:linter/src/rules.dart';
+import 'package:linter/src/test_utilities/analysis_error_info.dart';
 import 'package:linter/src/test_utilities/formatter.dart';
+import 'package:linter/src/test_utilities/linter_options.dart';
 import 'package:linter/src/test_utilities/test_linter.dart';
 import 'package:yaml/yaml.dart';
 
@@ -24,10 +26,11 @@ Future<void> main(List<String> args) async {
   await runLinter(args);
 }
 
+const loggedAnalyzerErrorExitCode = 63;
+
 const unableToProcessExitCode = 64;
 
-Future<Iterable<AnalysisErrorInfo>> lintFiles(
-    TestLinter linter, List<File> filesToLint) async {
+Future<void> lintFiles(TestLinter linter, List<File> filesToLint) async {
   // Setup an error watcher to track whether an error was logged to stderr so
   // we can set the exit code accordingly.
   var errorWatcher = _ErrorWatchingSink(errorSink);
@@ -38,8 +41,6 @@ Future<Iterable<AnalysisErrorInfo>> lintFiles(
   } else if (errors.isNotEmpty) {
     exitCode = _maxSeverity(errors);
   }
-
-  return errors;
 }
 
 void printUsage(ArgParser parser, StringSink out, [String? error]) {
@@ -96,7 +97,7 @@ Future<void> runLinter(List<String> args) async {
   if (configFile is String) {
     var optionsContent = readFile(configFile);
     var ruleConfigs =
-        parseLintRuleConfigs(loadYamlNode(optionsContent) as YamlMap)!;
+        parseLinterSection(loadYamlNode(optionsContent) as YamlMap)!;
     var enabledRules = Registry.ruleRegistry.where(
         (LintRule rule) => !ruleConfigs.any((rc) => rc.disables(rule.name)));
 
@@ -142,7 +143,7 @@ Future<void> writeBenchmarks(
   var timings = <String, int>{};
   for (var i = 0; i < benchmarkRuns; ++i) {
     await lintFiles(TestLinter(linterOptions), filesToLint);
-    lintRuleTimers.timers.forEach((n, t) {
+    analysisRuleTimers.timers.forEach((n, t) {
       var timing = t.elapsedMilliseconds;
       var previous = timings[n];
       timings[n] = previous == null ? timing : math.min(previous, timing);

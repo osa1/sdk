@@ -8,13 +8,13 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/file_system/physical_file_system.dart';
-import 'package:analyzer/src/generated/engine.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options.dart';
 import 'package:analyzer/src/lint/io.dart';
 import 'package:analyzer/src/lint/registry.dart';
-import 'package:linter/src/analyzer.dart';
+import 'package:analyzer/src/lint/util.dart' show FileSpelunker;
 import 'package:linter/src/ast.dart';
 import 'package:linter/src/rules.dart';
-import 'package:linter/src/rules/package_prefixed_library_names.dart';
+import 'package:linter/src/test_utilities/analysis_error_info.dart';
 import 'package:linter/src/test_utilities/annotation.dart';
 import 'package:linter/src/test_utilities/formatter.dart';
 import 'package:linter/src/test_utilities/test_resource_provider.dart';
@@ -72,29 +72,6 @@ void defineRuleUnitTests() {
       var bad = ['if', '42', '3', '2f'];
       testEach(bad, isValidDartIdentifier, isFalse);
     });
-    group('library_name_prefixes', () {
-      bool isGoodPrefix(List<String> v) => matchesOrIsPrefixedBy(
-          v[3],
-          Analyzer.facade.createLibraryNamePrefix(
-              libraryPath: v[0], projectRoot: v[1], packageName: v[2]));
-
-      var good = [
-        ['/u/b/c/lib/src/a.dart', '/u/b/c', 'acme', 'acme.src.a'],
-        ['/u/b/c/lib/a.dart', '/u/b/c', 'acme', 'acme.a'],
-        ['/u/b/c/test/a.dart', '/u/b/c', 'acme', 'acme.test.a'],
-        ['/u/b/c/test/data/a.dart', '/u/b/c', 'acme', 'acme.test.data.a'],
-        ['/u/b/c/lib/acme.dart', '/u/b/c', 'acme', 'acme']
-      ];
-      testEach(good, isGoodPrefix, isTrue);
-
-      var bad = [
-        ['/u/b/c/lib/src/a.dart', '/u/b/c', 'acme', 'acme.a'],
-        ['/u/b/c/lib/a.dart', '/u/b/c', 'acme', 'wrk.acme.a'],
-        ['/u/b/c/test/a.dart', '/u/b/c', 'acme', 'acme.a'],
-        ['/u/b/c/test/data/a.dart', '/u/b/c', 'acme', 'acme.test.a']
-      ];
-      testEach(bad, isGoodPrefix, isFalse);
-    });
   });
 }
 
@@ -143,10 +120,7 @@ Future<Iterable<AnalysisErrorInfo>> _getErrorInfos(String ruleName, File file,
   var result =
       await context.currentSession.getResolvedUnit(path) as ResolvedUnitResult;
   return [
-    AnalysisErrorInfoImpl(
-      result.errors,
-      result.lineInfo,
-    )
+    AnalysisErrorInfo(result.errors, result.lineInfo),
   ];
 }
 

@@ -10709,6 +10709,14 @@ abstract class C {
 
 ### invalid_null_aware_operator
 
+_The element can't be null, so the null-aware operator '?' is unnecessary._
+
+_The map entry key can't be null, so the null-aware operator '?' is
+unnecessary._
+
+_The map entry value can't be null, so the null-aware operator '?' is
+unnecessary._
+
 _The receiver can't be 'null' because of short-circuiting, so the null-aware
 operator '{0}' can't be used._
 
@@ -10768,6 +10776,14 @@ The reason `s` can't be null, despite the fact that `o` can be `null`, is
 because of the cast to `String`, which is a non-nullable type. If `o` ever
 has the value `null`, the cast will fail and the invocation of `length`
 will not happen.
+
+The following code produces this diagnostic because `s` can't be `null`:
+
+```dart
+List<String> makeSingletonList(String s) {
+  return <String>[[!?!]s];
+}
+```
 
 #### Common fixes
 
@@ -23233,8 +23249,6 @@ void f() {
 
 ### unused_element
 
-_A value for optional parameter '{0}' isn't ever given._
-
 _The declaration '{0}' isn't referenced._
 
 #### Description
@@ -23244,8 +23258,6 @@ referenced in the library that contains the declaration. The following
 kinds of declarations are analyzed:
 - Private top-level declarations and all of their members
 - Private members of public declarations
-- Optional parameters of private functions for which a value is never
-  passed
 
 Not all references to an element will mark it as "used":
 - Assigning a value to a top-level variable (with a standard `=`
@@ -23264,6 +23276,23 @@ produces this diagnostic:
 ```dart
 class [!_C!] {}
 ```
+
+#### Common fixes
+
+If the declaration isn't needed, then remove it.
+
+If the declaration is intended to be used, then add the code to use it.
+
+### unused_element_parameter
+
+_A value for optional parameter '{0}' isn't ever given._
+
+#### Description
+
+The analyzer produces this diagnostic when a value is never passed for an
+optional parameter declared within a private declaration.
+
+#### Example
 
 Assuming that no code in the library passes a value for `y` in any
 invocation of `_m`, the following code produces this diagnostic:

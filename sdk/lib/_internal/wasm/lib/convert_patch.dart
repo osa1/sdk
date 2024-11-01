@@ -40,7 +40,6 @@ class Utf8Decoder {
               (next as JsonDecoder)._reviver, this._allowMalformed)
           as dynamic/*=Converter<List<int>, T>*/;
     }
-    // TODO(lrn): Recognize a fused decoder where the next step is JsonDecoder.
     return super.fuse<T>(next);
   }
 }
@@ -1068,8 +1067,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    * }
    * ```
    */
-  static const WasmArray<WasmI8> _characterAttributes =
-      WasmArray<WasmI8>.literal([
+  static const _characterAttributes = ImmutableWasmArray<WasmI8>.literal([
     33, 33, 33, 33, 33, 33, 33, 33, 33, 35, 35, 33, 33, 35, 33, 33, 33, 33, //
     33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 34, 32, 33, 32, //
     32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, //
@@ -1777,7 +1775,7 @@ class _Utf8Decoder {
   // Non-BMP   'R' = 64 + (2 | flagNonLatin1);
   // Illegal   'a' = 64 + (1 | flagIllegal);
   // Illegal   'b' = 64 + (2 | flagIllegal);
-  static const WasmArray<WasmI8> scanTable = WasmArray<WasmI8>.literal([
+  static const scanTable = ImmutableWasmArray<WasmI8>.literal([
     // 00-1F
     65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
     65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65,

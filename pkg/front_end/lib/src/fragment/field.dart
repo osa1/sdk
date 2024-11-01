@@ -5,10 +5,12 @@
 part of 'fragment.dart';
 
 class FieldFragment implements Fragment {
+  @override
   final String name;
+
   final Uri fileUri;
-  final int charOffset;
-  final int charEndOffset;
+  final int nameOffset;
+  final int endOffset;
   Token? _initializerToken;
   Token? _constInitializerToken;
   final List<MetadataBuilder>? metadata;
@@ -21,8 +23,8 @@ class FieldFragment implements Fragment {
   FieldFragment(
       {required this.name,
       required this.fileUri,
-      required this.charOffset,
-      required this.charEndOffset,
+      required this.nameOffset,
+      required this.endOffset,
       required Token? initializerToken,
       required Token? constInitializerToken,
       required this.metadata,
@@ -58,5 +60,5 @@ class FieldFragment implements Fragment {
   }
 
   @override
-  String toString() => '$runtimeType($name,$fileUri,$charOffset)';
+  String toString() => '$runtimeType($name,$fileUri,$nameOffset)';
 }

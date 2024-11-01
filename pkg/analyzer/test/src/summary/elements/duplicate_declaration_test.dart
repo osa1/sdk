@@ -705,7 +705,7 @@ library
       mixins
         mixin M @68
           reference: <testLibraryFragment>::@mixin::M
-          element: <testLibraryFragment>::@mixin::M#element
+          element: <testLibrary>::@mixin::M
   classes
     class A
       reference: <testLibrary>::@class::A
@@ -737,6 +737,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
   mixins
     mixin M
+      reference: <testLibrary>::@mixin::M
       firstFragment: <testLibraryFragment>::@mixin::M
       superclassConstraints
         Object
@@ -773,7 +774,7 @@ library
                     type: NamedType
                       name: E @-1
                       element: <testLibraryFragment>::@enum::E::@def::0
-                      element2: <testLibraryFragment>::@enum::E::@def::0#element
+                      element2: <testLibrary>::@enum::E::@def::0
                       type: E
                     staticElement: <testLibraryFragment>::@enum::E::@def::0::@constructor::new
                     element: <testLibraryFragment>::@enum::E::@def::0::@constructor::new#element
@@ -792,7 +793,7 @@ library
                     type: NamedType
                       name: E @-1
                       element: <testLibraryFragment>::@enum::E::@def::0
-                      element2: <testLibraryFragment>::@enum::E::@def::0#element
+                      element2: <testLibrary>::@enum::E::@def::0
                       type: E
                     staticElement: <testLibraryFragment>::@enum::E::@def::0::@constructor::new
                     element: <testLibraryFragment>::@enum::E::@def::0::@constructor::new#element
@@ -853,7 +854,7 @@ library
                     type: NamedType
                       name: E @-1
                       element: <testLibraryFragment>::@enum::E::@def::0
-                      element2: <testLibraryFragment>::@enum::E::@def::0#element
+                      element2: <testLibrary>::@enum::E::@def::0
                       type: E
                     staticElement: <testLibraryFragment>::@enum::E::@def::0::@constructor::new
                     element: <testLibraryFragment>::@enum::E::@def::0::@constructor::new#element
@@ -872,7 +873,7 @@ library
                     type: NamedType
                       name: E @-1
                       element: <testLibraryFragment>::@enum::E::@def::0
-                      element2: <testLibraryFragment>::@enum::E::@def::0#element
+                      element2: <testLibrary>::@enum::E::@def::0
                       type: E
                     staticElement: <testLibraryFragment>::@enum::E::@def::0::@constructor::new
                     element: <testLibraryFragment>::@enum::E::@def::0::@constructor::new#element
@@ -891,7 +892,7 @@ library
                     type: NamedType
                       name: E @-1
                       element: <testLibraryFragment>::@enum::E::@def::0
-                      element2: <testLibraryFragment>::@enum::E::@def::0#element
+                      element2: <testLibrary>::@enum::E::@def::0
                       type: E
                     staticElement: <testLibraryFragment>::@enum::E::@def::0::@constructor::new
                     element: <testLibraryFragment>::@enum::E::@def::0::@constructor::new#element
@@ -954,7 +955,7 @@ library
       enums
         enum E @5
           reference: <testLibraryFragment>::@enum::E::@def::0
-          element: <testLibraryFragment>::@enum::E::@def::0#element
+          element: <testLibrary>::@enum::E::@def::0
           fields
             enumConstant a @8
               reference: <testLibraryFragment>::@enum::E::@def::0::@field::a
@@ -984,7 +985,7 @@ library
               element: <testLibraryFragment>::@enum::E::@def::0::@getter::values#element
         enum E @19
           reference: <testLibraryFragment>::@enum::E::@def::1
-          element: <testLibraryFragment>::@enum::E::@def::1#element
+          element: <testLibrary>::@enum::E::@def::1
           fields
             enumConstant c @22
               reference: <testLibraryFragment>::@enum::E::@def::1::@field::c
@@ -1021,6 +1022,7 @@ library
               element: <testLibraryFragment>::@enum::E::@def::1::@getter::values#element
   enums
     enum E
+      reference: <testLibrary>::@enum::E::@def::0
       firstFragment: <testLibraryFragment>::@enum::E::@def::0
       supertype: Enum
       fields
@@ -1047,6 +1049,7 @@ library
         synthetic static get values
           firstFragment: <testLibraryFragment>::@enum::E::@def::0::@getter::values
     enum E
+      reference: <testLibrary>::@enum::E::@def::1
       firstFragment: <testLibraryFragment>::@enum::E::@def::1
       supertype: Enum
       fields
@@ -1156,10 +1159,10 @@ library
       extensions
         extension E @10
           reference: <testLibraryFragment>::@extension::E::@def::0
-          element: <testLibraryFragment>::@extension::E::@def::0#element
+          element: <testLibrary>::@extension::E::@def::0
         extension E @32
           reference: <testLibraryFragment>::@extension::E::@def::1
-          element: <testLibraryFragment>::@extension::E::@def::1#element
+          element: <testLibrary>::@extension::E::@def::1
           fields
             x @56
               reference: <testLibraryFragment>::@extension::E::@def::1::@field::x
@@ -1179,7 +1182,7 @@ library
                   element: <testLibraryFragment>::@extension::E::@def::1::@setter::x::@parameter::_x#element
         extension E @71
           reference: <testLibraryFragment>::@extension::E::@def::2
-          element: <testLibraryFragment>::@extension::E::@def::2#element
+          element: <testLibrary>::@extension::E::@def::2
           fields
             y @95
               reference: <testLibraryFragment>::@extension::E::@def::2::@field::y
@@ -1199,8 +1202,10 @@ library
                   element: <testLibraryFragment>::@extension::E::@def::2::@setter::y::@parameter::_y#element
   extensions
     extension E
+      reference: <testLibrary>::@extension::E::@def::0
       firstFragment: <testLibraryFragment>::@extension::E::@def::0
     extension E
+      reference: <testLibrary>::@extension::E::@def::1
       firstFragment: <testLibraryFragment>::@extension::E::@def::1
       fields
         static x
@@ -1218,6 +1223,7 @@ library
             requiredPositional _x
               type: dynamic
     extension E
+      reference: <testLibrary>::@extension::E::@def::2
       firstFragment: <testLibraryFragment>::@extension::E::@def::2
       fields
         static y
@@ -1308,7 +1314,7 @@ library
       extensionTypes
         extension type E @15
           reference: <testLibraryFragment>::@extensionType::E::@def::0
-          element: <testLibraryFragment>::@extensionType::E::@def::0#element
+          element: <testLibrary>::@extensionType::E::@def::0
           fields
             it @21
               reference: <testLibraryFragment>::@extensionType::E::@def::0::@field::it
@@ -1327,7 +1333,7 @@ library
               element: <testLibraryFragment>::@extensionType::E::@def::0::@getter::it#element
         extension type E @43
           reference: <testLibraryFragment>::@extensionType::E::@def::1
-          element: <testLibraryFragment>::@extensionType::E::@def::1#element
+          element: <testLibrary>::@extensionType::E::@def::1
           fields
             it @52
               reference: <testLibraryFragment>::@extensionType::E::@def::1::@field::it
@@ -1346,6 +1352,7 @@ library
               element: <testLibraryFragment>::@extensionType::E::@def::1::@getter::it#element
   extensionTypes
     extension type E
+      reference: <testLibrary>::@extensionType::E::@def::0
       firstFragment: <testLibraryFragment>::@extensionType::E::@def::0
       typeErasure: int
       fields
@@ -1363,6 +1370,7 @@ library
         synthetic get it
           firstFragment: <testLibraryFragment>::@extensionType::E::@def::0::@getter::it
     extension type E
+      reference: <testLibrary>::@extensionType::E::@def::1
       firstFragment: <testLibraryFragment>::@extensionType::E::@def::1
       typeErasure: double
       fields
@@ -1662,10 +1670,10 @@ library
       mixins
         mixin A @6
           reference: <testLibraryFragment>::@mixin::A::@def::0
-          element: <testLibraryFragment>::@mixin::A::@def::0#element
+          element: <testLibrary>::@mixin::A::@def::0
         mixin A @17
           reference: <testLibraryFragment>::@mixin::A::@def::1
-          element: <testLibraryFragment>::@mixin::A::@def::1#element
+          element: <testLibrary>::@mixin::A::@def::1
           fields
             x @27
               reference: <testLibraryFragment>::@mixin::A::@def::1::@field::x
@@ -1685,7 +1693,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@def::1::@setter::x::@parameter::_x#element
         mixin A @38
           reference: <testLibraryFragment>::@mixin::A::@def::2
-          element: <testLibraryFragment>::@mixin::A::@def::2#element
+          element: <testLibrary>::@mixin::A::@def::2
           fields
             y @48
               reference: <testLibraryFragment>::@mixin::A::@def::2::@field::y
@@ -1705,10 +1713,12 @@ library
                   element: <testLibraryFragment>::@mixin::A::@def::2::@setter::y::@parameter::_y#element
   mixins
     mixin A
+      reference: <testLibrary>::@mixin::A::@def::0
       firstFragment: <testLibraryFragment>::@mixin::A::@def::0
       superclassConstraints
         Object
     mixin A
+      reference: <testLibrary>::@mixin::A::@def::1
       firstFragment: <testLibraryFragment>::@mixin::A::@def::1
       superclassConstraints
         Object
@@ -1728,6 +1738,7 @@ library
             requiredPositional _x
               type: dynamic
     mixin A
+      reference: <testLibrary>::@mixin::A::@def::2
       firstFragment: <testLibraryFragment>::@mixin::A::@def::2
       superclassConstraints
         Object

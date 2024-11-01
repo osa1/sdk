@@ -40,7 +40,10 @@ lib/src/computer/computer_color.dart
 lib/src/computer/computer_folding.dart
 lib/src/computer/computer_highlights.dart
 lib/src/computer/computer_outline.dart
+lib/src/computer/computer_overrides.dart
 lib/src/computer/computer_selection_ranges.dart
+lib/src/computer/computer_signature.dart
+lib/src/computer/computer_type_arguments_signature.dart
 lib/src/context_manager.dart
 lib/src/domain_analysis_flags.dart
 lib/src/domains/analysis/occurrences.dart
@@ -133,7 +136,6 @@ lib/src/lsp/handlers/handler_cancel_request.dart
 lib/src/lsp/handlers/handler_change_workspace_folders.dart
 lib/src/lsp/handlers/handler_code_actions.dart
 lib/src/lsp/handlers/handler_code_lens.dart
-lib/src/lsp/handlers/handler_completion.dart
 lib/src/lsp/handlers/handler_dart_text_document_content_provider.dart
 lib/src/lsp/handlers/handler_document_color.dart
 lib/src/lsp/handlers/handler_document_highlights.dart
@@ -173,6 +175,7 @@ lib/src/lsp/semantic_tokens/legend.dart
 lib/src/lsp/semantic_tokens/mapping.dart
 lib/src/lsp/server_capabilities_computer.dart
 lib/src/lsp/snippets.dart
+lib/src/lsp/source_edits.dart
 lib/src/lsp/temporary_overlay_operation.dart
 lib/src/plugin/notification_manager.dart
 lib/src/plugin/plugin_locator.dart

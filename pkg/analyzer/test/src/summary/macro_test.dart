@@ -6063,7 +6063,7 @@ augment class A {
               enclosingElement3: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
               returnType: int
               id: getter_1
-              variable: field_0
+              variable: <null>
               augmentationTarget: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
 ----------------------------------------
 library
@@ -6355,7 +6355,7 @@ augment class A {
                   type: int
               returnType: void
               id: setter_1
-              variable: field_0
+              variable: <null>
               augmentationTarget: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
 ----------------------------------------
 library
@@ -7667,9 +7667,10 @@ library
       mixins
         mixin A @62
           reference: <testLibraryFragment>::@mixin::A
-          element: <testLibraryFragment>::@mixin::A#element
+          element: <testLibrary>::@mixin::A
   mixins
     mixin A
+      reference: <testLibrary>::@mixin::A
       firstFragment: <testLibraryFragment>::@mixin::A
       superclassConstraints
         Object
@@ -7731,12 +7732,13 @@ library
       mixins
         mixin A @80
           reference: <testLibraryFragment>::@mixin::A
-          element: <testLibraryFragment>::@mixin::A#element
+          element: <testLibrary>::@mixin::A
           typeParameters
             T @82
               element: <not-implemented>
   mixins
     mixin A
+      reference: <testLibrary>::@mixin::A
       firstFragment: <testLibraryFragment>::@mixin::A
       typeParameters
         T
@@ -10457,7 +10459,7 @@ library
       mixins
         mixin M @6
           reference: <testLibraryFragment>::@mixin::M
-          element: <testLibraryFragment>::@mixin::M#element
+          element: <testLibrary>::@mixin::M
   classes
     class alias A
       reference: <testLibrary>::@class::A
@@ -10468,6 +10470,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
   mixins
     mixin M
+      reference: <testLibrary>::@mixin::M
       firstFragment: <testLibraryFragment>::@mixin::M
       superclassConstraints
         Object
@@ -10853,7 +10856,7 @@ library
       extensions
         extension B @45
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B
-          element: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B#element
+          element: <testLibrary>::@extension::B
   classes
     class A
       reference: <testLibrary>::@class::A
@@ -10863,6 +10866,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
   extensions
     extension B
+      reference: <testLibrary>::@extension::B
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B
 ''');
   }
@@ -11511,7 +11515,7 @@ library
       enums
         enum B @104
           reference: <testLibraryFragment>::@enum::B
-          element: <testLibraryFragment>::@enum::B#element
+          element: <testLibrary>::@enum::B
           fields
             enumConstant v @107
               reference: <testLibraryFragment>::@enum::B::@field::v
@@ -11537,6 +11541,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
   enums
     enum B
+      reference: <testLibrary>::@enum::B
       firstFragment: <testLibraryFragment>::@enum::B
       supertype: Enum
       fields

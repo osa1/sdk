@@ -26,11 +26,9 @@ class EditFormatHandler extends LegacyHandler {
         clientUriConverter: server.uriConverter);
     var file = params.file;
 
-    String unformattedCode;
-    try {
-      var resource = server.resourceProvider.getFile(file);
-      unformattedCode = resource.readAsStringSync();
-    } catch (e) {
+    var driver = server.getAnalysisDriver(file);
+    var unit = driver?.parseFileSync(file);
+    if (unit is! ParsedUnitResult) {
       sendResponse(Response.formatInvalidFile(request));
       return;
     }
@@ -44,23 +42,18 @@ class EditFormatHandler extends LegacyHandler {
       length = null;
     }
 
+    var unformattedCode = unit.content;
     var code = SourceCode(
       unformattedCode,
       selectionStart: start,
       selectionLength: length,
     );
 
-    var driver = server.getAnalysisDriver(file);
-    var unit = await driver?.getResolvedUnit(file);
-    var (pageWidth, effectiveLanguageVersion) = switch (unit) {
-      ResolvedUnitResult() => (
-          unit.analysisOptions.formatterOptions.pageWidth,
-          unit.libraryElement2.effectiveLanguageVersion,
-        ),
-      (_) => (null, null),
-    };
+    var effectivePageWidth =
+        unit.analysisOptions.formatterOptions.pageWidth ?? params.lineLength;
+    var effectiveLanguageVersion = unit.unit.languageVersion.effective;
     var formatter = DartFormatter(
-        pageWidth: pageWidth ?? params.lineLength,
+        pageWidth: effectivePageWidth,
         languageVersion: effectiveLanguageVersion);
     SourceCode formattedResult;
     try {

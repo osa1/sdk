@@ -6,11 +6,14 @@ part of 'fragment.dart';
 
 class TypedefFragment implements Fragment {
   final List<MetadataBuilder>? metadata;
+
+  @override
   final String name;
+
   final List<NominalParameterBuilder>? typeParameters;
   final TypeBuilder type;
   final Uri fileUri;
-  final int fileOffset;
+  final int nameOffset;
 
   SourceTypeAliasBuilder? _builder;
 
@@ -20,7 +23,7 @@ class TypedefFragment implements Fragment {
       required this.typeParameters,
       required this.type,
       required this.fileUri,
-      required this.fileOffset});
+      required this.nameOffset});
 
   @override
   // Coverage-ignore(suite): Not run.
@@ -35,5 +38,5 @@ class TypedefFragment implements Fragment {
   }
 
   @override
-  String toString() => "$runtimeType($name,$fileUri,$fileOffset)";
+  String toString() => "$runtimeType($name,$fileUri,$nameOffset)";
 }

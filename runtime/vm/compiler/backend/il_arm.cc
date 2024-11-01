@@ -2384,7 +2384,7 @@ LocationSummary* StoreIndexedInstr::MakeLocationSummary(Zone* zone,
       locs->set_in(2, Location::Pair(Location::RequiresRegister(),
                                      Location::RequiresRegister()));
     } else if (rep == kUnboxedInt8 || rep == kUnboxedUint8) {
-      locs->set_in(2, LocationRegisterOrConstant(value()));
+      locs->set_in(2, LocationRegisterOrSmiConstant(value()));
     } else {
       locs->set_in(2, Location::RequiresRegister());
     }
@@ -6491,7 +6491,11 @@ static void EmitShiftInt64ByConstant(FlowGraphCompiler* compiler,
                                      Register left_hi,
                                      const Object& right) {
   const int64_t shift = Integer::Cast(right).Value();
-  ASSERT(shift >= 0);
+  if (shift < 0) {
+    // The compiler sometimes fails to eliminate unreachable code.
+    __ Stop("Unreachable shift");
+    return;
+  }
 
   switch (op_kind) {
     case Token::kSHR: {
@@ -6594,7 +6598,12 @@ static void EmitShiftUint32ByConstant(FlowGraphCompiler* compiler,
                                       Register left,
                                       const Object& right) {
   const int64_t shift = Integer::Cast(right).Value();
-  ASSERT(shift >= 0);
+  if (shift < 0) {
+    // The compiler sometimes fails to eliminate unreachable code.
+    __ Stop("Unreachable shift");
+    return;
+  }
+
   if (shift >= 32) {
     __ LoadImmediate(out, 0);
   } else {

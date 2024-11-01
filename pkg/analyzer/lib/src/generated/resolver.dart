@@ -16,6 +16,7 @@ import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer.dart';
 import 'package:_fe_analyzer_shared/src/type_inference/type_analyzer_operations.dart'
     as shared;
 import 'package:_fe_analyzer_shared/src/types/shared_type.dart';
+import 'package:analyzer/dart/analysis/analysis_options.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/ast/token.dart';
@@ -78,7 +79,6 @@ import 'package:analyzer/src/error/dead_code_verifier.dart';
 import 'package:analyzer/src/error/nullable_dereference_verifier.dart';
 import 'package:analyzer/src/error/super_formal_parameters_verifier.dart';
 import 'package:analyzer/src/generated/element_resolver.dart';
-import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/error_detection_helpers.dart';
 import 'package:analyzer/src/generated/inference_log.dart';
 import 'package:analyzer/src/generated/static_type_analyzer.dart';
@@ -163,7 +163,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
   final ErrorReporter errorReporter;
 
   /// The analysis options used by this resolver.
-  final AnalysisOptionsImpl analysisOptions;
+  final AnalysisOptions analysisOptions;
 
   /// The class containing the AST nodes being visited,
   /// or `null` if we are not in the scope of a class.
@@ -318,7 +318,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     AnalysisErrorListener errorListener, {
     required CompilationUnitElementImpl libraryFragment,
     required FeatureSet featureSet,
-    required AnalysisOptionsImpl analysisOptions,
+    required AnalysisOptions analysisOptions,
     required FlowAnalysisHelper flowAnalysisHelper,
   }) : this._(
           inheritanceManager,
@@ -4193,7 +4193,7 @@ class ResolverVisitor extends ThrowingAstVisitor<void>
     var enclosingClass = this.enclosingClass;
     if (enclosingClass != null) {
       var augmented = enclosingClass.augmented;
-      _thisType = augmented.declaration.thisType;
+      _thisType = augmented.firstFragment.thisType;
     } else {
       var enclosingExtension = this.enclosingExtension;
       if (enclosingExtension != null) {

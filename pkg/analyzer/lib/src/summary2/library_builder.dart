@@ -81,16 +81,9 @@ class LibraryBuilder with MacroApplicationsContainer {
   final Map<EnumElementImpl, ImplicitEnumNodes> implicitEnumNodes =
       Map.identity();
 
-  /// The top-level elements that can be augmented.
-  final Map<String, AugmentedInstanceDeclarationBuilder> _augmentedBuilders =
-      {};
-
-  /// The top-level variables and accessors that can be augmented.
-  late final AugmentedTopVariablesBuilder topVariables =
-      AugmentedTopVariablesBuilder(_augmentationTargets);
-
-  /// The top-level elements that can be augmented.
-  final Map<String, ElementImpl> _augmentationTargets = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderGetters = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderSetters = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderVariables = {};
 
   /// Local declarations.
   final Map<String, Reference> _declaredReferences = {};
@@ -472,10 +465,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     }
   }
 
-  AugmentedInstanceDeclarationBuilder? getAugmentedBuilder(String name) {
-    return _augmentedBuilders[name];
-  }
-
   MacroResultOutput? getCacheableMacroResult() {
     // Nothing if we already reuse a cached result.
     if (inputMacroPartInclude != null) {
@@ -652,13 +641,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     ).applyToUnit(unitElement, informativeBytes);
   }
 
-  void putAugmentedBuilder(
-    String name,
-    AugmentedInstanceDeclarationBuilder element,
-  ) {
-    _augmentedBuilders[name] = element;
-  }
-
   void replaceConstFieldsIfNoConstConstructor() {
     var withConstConstructors = Set<ClassElementImpl>.identity();
     for (var classElement in element.topLevelElements) {
@@ -675,7 +657,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       var enclosing = fieldElement.enclosingElement3;
       var augmented = enclosing.ifTypeOrNull<ClassElementImpl>()?.augmented;
       if (augmented == null) continue;
-      if (!withConstConstructors.contains(augmented.declaration)) {
+      if (!withConstConstructors.contains(augmented.firstFragment)) {
         fieldElement.constantInitializer = null;
       }
     }
@@ -777,24 +759,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     if (entryPoint is FunctionElement) {
       element.entryPoint = entryPoint;
     }
-  }
-
-  void updateAugmentationTarget<T extends ElementImpl>(
-    String name,
-    AugmentableElement<T> augmentation,
-  ) {
-    if (augmentation.isAugmentation) {
-      var target = _augmentationTargets[name];
-      target ??= topVariables.accessors[name];
-      target ??= topVariables.accessors['$name='];
-
-      augmentation.augmentationTargetAny = target;
-      if (target is AugmentableElement<T>) {
-        augmentation.isAugmentationChainStart = false;
-        target.augmentation = augmentation as T;
-      }
-    }
-    _augmentationTargets[name] = augmentation;
   }
 
   /// Updates the element of the macro augmentation.
@@ -1357,7 +1321,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       libraryUnitNode.featureSet,
     );
     libraryElement.isSynthetic = !libraryFile.exists;
-    libraryElement.languageVersion = libraryUnitNode.languageVersion!;
+    libraryElement.languageVersion = libraryUnitNode.languageVersion;
     _bindReference(libraryReference, libraryElement);
     elementFactory.setLibraryTypeSystem(libraryElement);
 

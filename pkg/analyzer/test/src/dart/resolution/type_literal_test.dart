@@ -370,7 +370,7 @@ TypeLiteral
           type: int
       rightBracket: >
     element: <testLibraryFragment>::@extensionType::A
-    element2: <testLibraryFragment>::@extensionType::A#element
+    element2: <testLibrary>::@extensionType::A
     type: A<int>
   staticType: Type
 ''');
@@ -406,7 +406,7 @@ TypeLiteral
           type: int
       rightBracket: >
     element: package:test/a.dart::<fragment>::@extensionType::A
-    element2: package:test/a.dart::<fragment>::@extensionType::A#element
+    element2: package:test/a.dart::@extensionType::A
     type: A<int>
   staticType: Type
 ''');
@@ -879,7 +879,7 @@ TypeLiteral
           type: int
       rightBracket: >
     element: <testLibraryFragment>::@mixin::M
-    element2: <testLibraryFragment>::@mixin::M#element
+    element2: <testLibrary>::@mixin::M
     type: M<int>
   staticType: Type
 ''');

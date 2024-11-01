@@ -8,6 +8,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/error/error.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/src/context/source.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options.dart';
 import 'package:analyzer/src/dart/analysis/file_analysis.dart';
 import 'package:analyzer/src/dart/analysis/file_state.dart' as file_state;
 import 'package:analyzer/src/dart/analysis/file_state.dart';
@@ -40,13 +41,12 @@ import 'package:analyzer/src/error/todo_finder.dart';
 import 'package:analyzer/src/error/unicode_text_verifier.dart';
 import 'package:analyzer/src/error/unused_local_elements_verifier.dart';
 import 'package:analyzer/src/generated/element_walker.dart';
-import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/error_verifier.dart';
 import 'package:analyzer/src/generated/ffi_verifier.dart';
 import 'package:analyzer/src/generated/resolver.dart';
 import 'package:analyzer/src/hint/sdk_constraint_verifier.dart';
 import 'package:analyzer/src/ignore_comments/ignore_info.dart';
-import 'package:analyzer/src/lint/lint_rule_timers.dart';
+import 'package:analyzer/src/lint/analysis_rule_timers.dart';
 import 'package:analyzer/src/lint/linter.dart';
 import 'package:analyzer/src/lint/linter_visitor.dart';
 import 'package:analyzer/src/util/performance/operation_performance.dart';
@@ -383,13 +383,13 @@ class LibraryAnalyzer {
     );
 
     for (var linter in _analysisOptions.lintRules) {
-      var timer = enableTiming ? lintRuleTimers.getTimer(linter) : null;
+      var timer = enableTiming ? analysisRuleTimers.getTimer(linter) : null;
       timer?.start();
       linter.registerNodeProcessors(nodeRegistry, context);
       timer?.stop();
     }
 
-    var logException = LinterExceptionHandler(
+    var logException = AnalysisRuleExceptionHandler(
       propagateExceptions: _analysisOptions.propagateLinterExceptions,
     ).logException;
 
@@ -408,13 +408,13 @@ class LibraryAnalyzer {
 
       // Run lint rules that handle specific node types.
       unit.accept(
-        LinterVisitor(nodeRegistry, logException),
+        AnalysisRuleVisitor(nodeRegistry, logException),
       );
     }
 
     // Now that all lint rules have visited the code in each of the compilation
     // units, we can accept each lint rule's `afterLibrary` hook.
-    LinterVisitor(nodeRegistry, logException).afterLibrary();
+    AnalysisRuleVisitor(nodeRegistry, logException).afterLibrary();
   }
 
   void _computeVerifyErrors(FileAnalysis fileAnalysis) {
@@ -504,7 +504,7 @@ class LibraryAnalyzer {
       verifier.generateDuplicateExportWarnings(errorReporter);
       verifier.generateDuplicateImportWarnings(errorReporter);
       verifier.generateDuplicateShownHiddenNameWarnings(errorReporter);
-      verifier.generateUnusedImportHints(errorReporter);
+      verifier.generateUnusedImportWarnings(errorReporter);
       verifier.generateUnusedShownNameHints(errorReporter);
       verifier.generateUnnecessaryImportHints(errorReporter);
     }
@@ -535,8 +535,8 @@ class LibraryAnalyzer {
     }
   }
 
-  /// Return a subset of the given [errors] that are not marked as ignored in
-  /// the [file].
+  /// Returns a subset of the given [errors] that are not marked as ignored in
+  /// the file.
   List<AnalysisError> _filterIgnoredErrors(
     FileAnalysis fileAnalysis,
     List<AnalysisError> errors,

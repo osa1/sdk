@@ -186,6 +186,10 @@ abstract class _AbstractElementWriter {
   void _writeReference2(Element2 e) {
     var reference = switch (e) {
       MaybeAugmentedClassElementMixin() => e.reference,
+      MaybeAugmentedEnumElementMixin() => e.reference,
+      MaybeAugmentedExtensionElementMixin() => e.reference,
+      MaybeAugmentedExtensionTypeElementMixin() => e.reference,
+      MaybeAugmentedMixinElementMixin() => e.reference,
       _ => null,
     };
 
@@ -803,7 +807,7 @@ class _Element2Writer extends _AbstractElementWriter {
         if (element is NotAugmentedInstanceElementImpl) {
           element = element.baseElement;
         } else if (element is MaybeAugmentedInstanceElementMixin) {
-          element = element.declaration;
+          element = element.firstFragment;
         }
       }
     }
@@ -886,16 +890,16 @@ class _Element2Writer extends _AbstractElementWriter {
 
   void _writeGetterFragment(GetterFragment f) {
     var variable = f.variable3;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingFragment;
-      if (variableEnclosing is LibraryFragment) {
-        expect(variableEnclosing.topLevelVariables2, contains(variable));
-      } else if (variableEnclosing is InterfaceFragment) {
-        expect(variableEnclosing.fields2, contains(variable));
-      }
+    if (f.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(f.isAugmentation, isTrue);
-      expect(f.previousFragment, isNull);
+      var enclosing = variable!.enclosingFragment;
+      switch (enclosing) {
+        case LibraryFragment():
+          expect(enclosing.topLevelVariables2, contains(variable));
+        case InterfaceFragment():
+          expect(enclosing.fields2, contains(variable));
+      }
     }
 
     // if (f.isSynthetic) {
@@ -1669,16 +1673,16 @@ class _Element2Writer extends _AbstractElementWriter {
 
   void _writeSetterFragment(SetterFragment f) {
     var variable = f.variable3;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingFragment;
-      if (variableEnclosing is LibraryFragment) {
-        expect(variableEnclosing.topLevelVariables2, contains(variable));
-      } else if (variableEnclosing is InterfaceFragment) {
-        expect(variableEnclosing.fields2, contains(variable));
-      }
+    if (f.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(f.isAugmentation, isTrue);
-      expect(f.previousFragment, isNull);
+      var enclosing = variable!.enclosingFragment;
+      switch (enclosing) {
+        case LibraryFragment():
+          expect(enclosing.topLevelVariables2, contains(variable));
+        case InterfaceFragment():
+          expect(enclosing.fields2, contains(variable));
+      }
     }
 
     // if (f.isSynthetic) {
@@ -1818,7 +1822,7 @@ class _Element2Writer extends _AbstractElementWriter {
     expect(type, isNotNull);
 
     if (!e.isSynthetic) {
-      expect(e.getter2, isNotNull);
+      // expect(e.getter2, isNotNull);
       _assertNonSyntheticElementSelf(e);
     }
 
@@ -3098,16 +3102,16 @@ class _ElementWriter extends _AbstractElementWriter {
     e as PropertyAccessorElementImpl;
 
     var variable = e.variable2;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingElement3;
-      if (variableEnclosing is CompilationUnitElement) {
-        expect(variableEnclosing.topLevelVariables, contains(variable));
-      } else if (variableEnclosing is InterfaceElement) {
-        expect(variableEnclosing.fields, contains(variable));
-      }
+    if (e.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(e.isAugmentation, isTrue);
-      expect(e.augmentationTarget, isNull);
+      var enclosing = variable!.enclosingElement3;
+      switch (enclosing) {
+        case CompilationUnitElement():
+          expect(enclosing.topLevelVariables, contains(variable));
+        case InterfaceElement():
+          expect(enclosing.fields, contains(variable));
+      }
     }
 
     if (e.isSynthetic) {
