@@ -3205,12 +3205,10 @@ class TearOffCodeGenerator extends AstCodeGenerator {
 
   @override
   void generateInternal() {
-    closures = Closures(translator, member);
-    generateTearOffGetter(member as Procedure);
-  }
+    closures = Closures(translator, member, findCaptures: false);
 
-  void generateTearOffGetter(Procedure procedure) {
     _initializeThis(member.reference);
+    Procedure procedure = member as Procedure;
     DartType functionType = translator.getTearOffType(procedure);
     ClosureImplementation closure = translator.getTearOffClosure(procedure);
     w.StructType struct = closure.representation.closureStruct;
@@ -3237,7 +3235,7 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
 
   @override
   void generateInternal() {
-    closures = Closures(translator, member);
+    closures = Closures(translator, member, findCaptures: false);
     if (member is Field ||
         (member is Procedure && (member as Procedure).isSetter)) {
       _generateFieldSetterTypeCheckerMethod();
@@ -3939,7 +3937,7 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
     // that instantiates types uses closure information to see whether a type
     // parameter was captured (and loads it from context chain) or not (and
     // loads it directly from `this`).
-    closures = Closures(translator, field);
+    closures = Closures(translator, field, findCaptures: false);
 
     final source = field.enclosingComponent!.uriToSource[field.fileUri]!;
     setSourceMapSourceAndFileOffset(source, field.fileOffset);

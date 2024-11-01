@@ -1069,10 +1069,15 @@ class Context {
   Context(this.owner, this.parent, this.containsThis);
 }
 
-/// A captured variable.
+/// A captured variable or type parameter.
 class Capture {
+  /// The captured [VariableDeclaration] or [TypeParameter].
   final TreeNode variable;
+
   late final Context context;
+
+  /// The index of the captured variable or type parameter in its context
+  /// struct.
   late final int fieldIndex;
 
   /// Whether the captured variable is updated after initialization.
@@ -1122,13 +1127,15 @@ class Closures {
   /// `this`.
   final w.RefType? _nullableThisType;
 
-  Closures(this.translator, this._member)
+  Closures(this.translator, this._member, {bool findCaptures = true})
       : _nullableThisType = _member is Constructor || _member.isInstanceMember
             ? translator.preciseThisFor(_member, nullable: true) as w.RefType
             : null {
-    _findCaptures();
-    _collectContexts();
-    _buildContexts();
+    if (findCaptures) {
+      _findCaptures();
+      _collectContexts();
+      _buildContexts();
+    }
   }
 
   w.RefType get typeType => translator.types.nonNullableTypeType;
@@ -1156,47 +1163,47 @@ class Closures {
   void _buildContexts() {
     // Make struct definitions
     for (Context context in contexts.values) {
-      if (!context.isEmpty) {
-        if (context.owner is Constructor) {
-          Constructor constructor = context.owner as Constructor;
-          context.struct = translator.typesBuilder
-              .defineStruct("<$constructor-constructor-context>");
-        } else if (context.owner.parent is Constructor) {
-          Constructor constructor = context.owner.parent as Constructor;
-          context.struct = translator.typesBuilder
-              .defineStruct("<$constructor-constructor-body-context>");
-        } else {
-          context.struct = translator.typesBuilder
-              .defineStruct("<context ${context.owner.location}>");
-        }
+      if (context.isEmpty) continue;
+
+      if (context.owner is Constructor) {
+        Constructor constructor = context.owner as Constructor;
+        context.struct = translator.typesBuilder
+            .defineStruct("<$constructor-constructor-context>");
+      } else if (context.owner.parent is Constructor) {
+        Constructor constructor = context.owner.parent as Constructor;
+        context.struct = translator.typesBuilder
+            .defineStruct("<$constructor-constructor-body-context>");
+      } else {
+        context.struct = translator.typesBuilder
+            .defineStruct("<context ${context.owner.location}>");
       }
     }
 
     // Build object layouts
     for (Context context in contexts.values) {
-      if (!context.isEmpty) {
-        w.StructType struct = context.struct;
-        if (context.parent != null) {
-          assert(!context.parent!.isEmpty);
-          struct.fields.add(w.FieldType(
-              w.RefType.def(context.parent!.struct, nullable: true)));
-        }
-        if (context.containsThis) {
-          assert(_member.enclosingClass != null);
-          struct.fields.add(w.FieldType(_nullableThisType!));
-        }
-        for (VariableDeclaration variable in context.variables) {
-          int index = struct.fields.length;
-          struct.fields.add(w.FieldType(translator
-              .translateTypeOfLocalVariable(variable)
-              .withNullability(true)));
-          captures[variable]!.fieldIndex = index;
-        }
-        for (TypeParameter parameter in context.typeParameters) {
-          int index = struct.fields.length;
-          struct.fields.add(w.FieldType(typeType.withNullability(true)));
-          captures[parameter]!.fieldIndex = index;
-        }
+      if (context.isEmpty) continue;
+
+      w.StructType struct = context.struct;
+      if (context.parent != null) {
+        assert(!context.parent!.isEmpty);
+        struct.fields.add(
+            w.FieldType(w.RefType.def(context.parent!.struct, nullable: true)));
+      }
+      if (context.containsThis) {
+        assert(_member.enclosingClass != null);
+        struct.fields.add(w.FieldType(_nullableThisType!));
+      }
+      for (VariableDeclaration variable in context.variables) {
+        int index = struct.fields.length;
+        struct.fields.add(w.FieldType(translator
+            .translateTypeOfLocalVariable(variable)
+            .withNullability(true)));
+        captures[variable]!.fieldIndex = index;
+      }
+      for (TypeParameter parameter in context.typeParameters) {
+        int index = struct.fields.length;
+        struct.fields.add(w.FieldType(typeType.withNullability(true)));
+        captures[parameter]!.fieldIndex = index;
       }
     }
   }
