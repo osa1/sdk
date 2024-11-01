@@ -1115,6 +1115,15 @@ class Closures {
   /// - [WhileStatement]
   final Map<TreeNode, Context> contexts = {};
 
+  /// Set of function declarations in the member that need to be compiled as
+  /// closures. These functions are used as variables. Example:
+  /// ```
+  /// void f() {
+  ///   void g () {}
+  ///   print(g);
+  /// }
+  /// ```
+  /// In the `Closures` for `f`, `g` will be in this set.
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
   final Member _member;
@@ -1282,6 +1291,8 @@ class _CaptureFinder extends RecursiveVisitor {
       if (functionIsSyncStarOrAsync[declDepth]) capture.written = true;
     } else if (variable is VariableDeclaration &&
         variable.parent is FunctionDeclaration) {
+      // Variable is for a function declaration, the function needs to be
+      // compiled as a closure.
       closures.closurizedFunctions.add(variable.parent as FunctionDeclaration);
     }
   }
