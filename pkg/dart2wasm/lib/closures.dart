@@ -1115,7 +1115,6 @@ class Closures {
   /// - [WhileStatement]
   final Map<TreeNode, Context> contexts = {};
 
-  /// ????????????????
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
   final Member _member;

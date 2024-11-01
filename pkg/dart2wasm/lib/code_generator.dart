@@ -3183,6 +3183,7 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
     }
 
     closures = Closures(translator, member);
+
     setupParametersAndContexts(member, useUncheckedEntry: useUncheckedEntry);
 
     Statement? body = member.function.body;
