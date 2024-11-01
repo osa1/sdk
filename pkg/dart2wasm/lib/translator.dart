@@ -908,7 +908,7 @@ class Translator with KernelNodes {
           return;
         }
 
-        w.Local temp = b.addLocal(from);
+        w.Local temp = b.newLocalFromFreeLocals(from);
         b.local_set(temp);
 
         if (from == w.NumType.i64) {
@@ -928,6 +928,7 @@ class Translator with KernelNodes {
 
         b.i32_const(info.classId);
         b.local_get(temp);
+        b.freeLocal(temp);
         b.struct_new(info.struct);
 
         if (from == w.NumType.i64) {
@@ -2119,5 +2120,26 @@ class WasmTagImporter extends _WasmImporter<w.Tag> {
   w.Tag _import(w.ModuleBuilder importingModule, w.Tag definition,
       String moduleName, String importName) {
     return importingModule.tags.import(moduleName, importName, definition.type);
+  }
+}
+
+final Expando<Map<w.ValueType, List<w.Local>>> _instructionsBuilderFreeLocals =
+    Expando();
+
+extension InstructionsBuilderExtensions on w.InstructionsBuilder {
+  void freeLocal(w.Local local) {
+    ((_instructionsBuilderFreeLocals[this] ??= Map())[local.type] ??= [])
+        .add(local);
+  }
+
+  w.Local newLocalFromFreeLocals(w.ValueType localType) {
+    final builderLocals = _instructionsBuilderFreeLocals[this];
+    if (builderLocals != null) {
+      final localsWithType = builderLocals[localType];
+      if (localsWithType != null && localsWithType.isNotEmpty) {
+        return localsWithType.removeLast();
+      }
+    }
+    return addLocal(localType);
   }
 }
