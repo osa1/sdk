@@ -921,7 +921,7 @@ class Translator with KernelNodes {
           b.local_get(temp);
           b.i32_wrap_i64();
           b.array_get(arrayTypeForDartType(coreTypes.objectNonNullableRawType,
-              mutable: true));
+              mutable: false));
           b.ref_cast(to);
           b.else_();
         }
