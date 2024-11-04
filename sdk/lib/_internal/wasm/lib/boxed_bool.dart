@@ -14,8 +14,6 @@ final class BoxedBool implements bool {
   @override
   int get hashCode => this ? 1231 : 1237;
 
-  int get _identityHashCode => this ? 1231 : 1237;
-
   @override
   String toString() => this ? "true" : "false";
 
