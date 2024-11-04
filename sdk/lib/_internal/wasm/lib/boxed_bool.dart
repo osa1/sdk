@@ -12,6 +12,14 @@ final class BoxedBool implements bool {
   BoxedBool._(this.value);
 
   @override
+  int get hashCode => this ? 1231 : 1237;
+
+  int get _identityHashCode => this ? 1231 : 1237;
+
+  @override
+  String toString() => this ? "true" : "false";
+
+  @override
   bool operator ==(Object other) {
     return other is bool
         ? this == other // Intrinsic ==
@@ -19,11 +27,14 @@ final class BoxedBool implements bool {
   }
 
   @override
+  @pragma("wasm:entry-point")
   bool operator &(bool other) => this & other; // Intrinsic &
 
   @override
+  @pragma("wasm:entry-point")
   bool operator ^(bool other) => this ^ other; // Intrinsic ^
 
   @override
+  @pragma("wasm:entry-point")
   bool operator |(bool other) => this | other; // Intrinsic |
 }
