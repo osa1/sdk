@@ -10,7 +10,10 @@ import 'dart:_wasm';
 final class BoxedInt implements int {
   // A boxed int contains an unboxed int.
   @pragma("wasm:entry-point")
-  int value = 0;
+  final int value;
+
+  @pragma("wasm:entry-point")
+  BoxedInt._(this.value);
 
   external num operator +(num other);
   external num operator -(num other);

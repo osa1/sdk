@@ -12,7 +12,10 @@ import 'dart:_wasm';
 final class BoxedDouble implements double {
   // A boxed double contains an unboxed double.
   @pragma("wasm:entry-point")
-  double value = 0.0;
+  final double value;
+
+  @pragma("wasm:entry-point")
+  BoxedDouble._(this.value);
 
   static const int _mantissaBits = 52;
   static const int _exponentBits = 11;
