@@ -98,6 +98,8 @@ class ElementPrinter {
         var referenceStr = _elementToReferenceString(firstFragment as Element);
         _sink.write(referenceStr);
         _sink.write('#element');
+      case TopLevelFunctionElementImpl element:
+        writeReference(element.reference);
       case FragmentedElementMixin element:
         var firstFragment = element.firstFragment as ElementImpl;
         var reference = firstFragment.reference!;
@@ -111,24 +113,27 @@ class ElementPrinter {
       case LabelElementImpl():
         _sink.write('${element.name}@${element.nameOffset}');
       case LabelElementImpl2():
-        _sink.write('${element.name3}@${element.nameOffset}');
+      // TODO(scheglov): nameOffset2 can be `null`
+        _sink.write('${element.name3}@${element.firstFragment.nameOffset2}');
       case LibraryElementImpl e:
         writeReference(e.reference!);
       case LocalFunctionElementImpl():
-        _sink.write('${element.name3}@${element.firstFragment.nameOffset}');
+        // TODO(scheglov): nameOffset2 can be `null`
+        _sink.write('${element.name3}@${element.firstFragment.nameOffset2}');
       case LocalVariableElementImpl():
         _sink.write('${element.name}@${element.nameOffset}');
       case LocalVariableElementImpl2():
-        _sink.write('${element.name3}@${element.nameOffset}');
-      case MaybeAugmentedClassElementMixin element:
+      // TODO(scheglov): nameOffset2 can be `null`
+        _sink.write('${element.name3}@${element.firstFragment.nameOffset2}');
+      case AugmentedClassElementImpl element:
         writeReference(element.reference);
-      case MaybeAugmentedEnumElementMixin element:
+      case AugmentedEnumElementImpl element:
         writeReference(element.reference);
-      case MaybeAugmentedExtensionElementMixin element:
+      case AugmentedExtensionElementImpl element:
         writeReference(element.reference);
-      case MaybeAugmentedExtensionTypeElementMixin element:
+      case AugmentedExtensionTypeElementImpl element:
         writeReference(element.reference);
-      case MaybeAugmentedMixinElementMixin element:
+      case AugmentedMixinElementImpl element:
         writeReference(element.reference);
       case MethodElement2 element:
         var firstFragment = element.firstFragment as ElementImpl;
