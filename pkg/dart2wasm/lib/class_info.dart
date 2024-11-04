@@ -313,7 +313,8 @@ class ClassInfoCollector {
       ClassInfo superInfo = cls == translator.coreTypes.boolClass ||
               cls == translator.coreTypes.numClass ||
               cls == translator.boxedIntClass ||
-              cls == translator.boxedDoubleClass
+              cls == translator.boxedDoubleClass ||
+              cls == translator.boxedBoolClass
           ? topInfo
           : (!translator.options.jsCompatibility &&
                       cls == translator.wasmStringBaseClass) ||
