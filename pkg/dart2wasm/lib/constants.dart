@@ -600,7 +600,6 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
     w.RefType type = info.nonNullableType;
 
     // Collect sub-constants for field values.
-    const int baseFieldCount = 2;
     int fieldCount = info.struct.fields.length;
     List<Constant?> subConstants = List.filled(fieldCount, null);
     bool lazy = false;
@@ -632,7 +631,15 @@ class ConstantCreator extends ConstantVisitor<ConstantInfo?>
 
     return createConstant(constant, type, lazy: lazy, (b) {
       b.i32_const(info.classId);
-      b.i32_const(initialIdentityHash);
+
+      final int baseFieldCount;
+      if (translator.valueClasses.containsKey(info.cls!)) {
+        baseFieldCount = 1;
+      } else {
+        baseFieldCount = 2;
+        b.i32_const(initialIdentityHash);
+      }
+
       for (int i = baseFieldCount; i < fieldCount; i++) {
         Constant subConstant = subConstants[i]!;
         constants.instantiateConstant(
