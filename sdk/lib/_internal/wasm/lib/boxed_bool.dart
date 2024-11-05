@@ -25,14 +25,11 @@ final class BoxedBool implements bool {
   }
 
   @override
-  @pragma("wasm:entry-point")
   bool operator &(bool other) => this & other; // Intrinsic &
 
   @override
-  @pragma("wasm:entry-point")
   bool operator ^(bool other) => this ^ other; // Intrinsic ^
 
   @override
-  @pragma("wasm:entry-point")
   bool operator |(bool other) => this | other; // Intrinsic |
 }
