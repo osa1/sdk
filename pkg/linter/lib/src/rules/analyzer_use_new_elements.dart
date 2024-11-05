@@ -16,10 +16,24 @@ import '../analyzer.dart';
 const _desc = r'Use new element model in opted-in files.';
 
 bool _isOldModelElement(Element2? element) {
-  var firstFragment = element?.firstFragment;
-  if (firstFragment != null) {
-    var libraryFragment = firstFragment.libraryFragment;
-    var uriStr = libraryFragment.source.uri.toString();
+  if (element == null) {
+    return false;
+  }
+
+  // Skip synthetic formal parameters.
+  if (element is FormalParameterElement && element.enclosingElement2 == null) {
+    return false;
+  }
+
+  var firstFragment = element.firstFragment;
+  if (firstFragment == null) {
+    return false;
+  }
+
+  var libraryFragment = firstFragment.libraryFragment;
+  var uriStr = libraryFragment.source.uri.toString();
+
+  if (element is InstanceElement2) {
     if (uriStr == 'package:analyzer/dart/element/element.dart') {
       // Skip classes that don't required migration.
       if (const {
@@ -35,6 +49,12 @@ bool _isOldModelElement(Element2? element) {
         return false;
       }
       return true;
+    }
+  }
+
+  if (element is GetterElement) {
+    if (uriStr == 'package:analyzer/src/dart/ast/ast.dart') {
+      return element.name3 == 'declaredElement';
     }
   }
   return false;
@@ -116,25 +136,25 @@ class _FilesRegistry {
   static final Map<Folder, _FilesRegistry?> _registry = {};
 
   final Folder rootFolder;
-  final List<String> prefixes;
-  final Map<File, bool> _fileResults = {};
+  final List<String> relativePaths;
 
   _FilesRegistry({
     required this.rootFolder,
-    required this.prefixes,
+    required this.relativePaths,
   });
 
-  bool isEnabled(File file) => _fileResults[file] ??= _computeEnabled(file);
+  bool isEnabled(File file) {
+    if (!file.path.endsWith('.dart')) {
+      return false;
+    }
 
-  bool _computeEnabled(File file) {
     var rootPath = rootFolder.path;
     if (!file.path.startsWith(rootPath)) {
       return false;
     }
 
     var relativePath = file.path.substring(rootPath.length + 1);
-    return _fileResults[file] ??=
-        prefixes.any((prefix) => relativePath.startsWith(prefix));
+    return !relativePaths.contains(relativePath);
   }
 
   /// Note, we cache statically, to reload restart the server.
@@ -147,7 +167,6 @@ class _FilesRegistry {
     }
 
     try {
-      // TODO(scheglov): include this file into the results signature.
       var lines = rootFolder
           .getChildAssumingFile('analyzer_use_new_elements.txt')
           .readAsStringSync()
@@ -159,7 +178,7 @@ class _FilesRegistry {
           .toList();
       var result = _FilesRegistry(
         rootFolder: rootFolder,
-        prefixes: lines,
+        relativePaths: lines,
       );
       return _registry[rootFolder] = result;
     } on FileSystemException {
@@ -203,6 +222,10 @@ class _Visitor extends SimpleAstVisitor<void> {
       if (invocation.methodName == node) {
         return;
       }
+    }
+
+    if (_isOldModelElement(node.element)) {
+      rule.reportLint(node);
     }
 
     if (_isOldModelType(node.staticType)) {

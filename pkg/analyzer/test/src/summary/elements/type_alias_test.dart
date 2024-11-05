@@ -4707,6 +4707,11 @@ library
     class B
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
+      interfaces
+        A<int, String>
+          alias: <testLibraryFragment>::@typeAlias::X
+            typeArguments
+              String
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
@@ -4845,6 +4850,9 @@ library
     class D
       reference: <testLibrary>::@class::D
       firstFragment: <testLibraryFragment>::@class::D
+      interfaces
+        B
+        C
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::D::@constructor::new
@@ -4987,6 +4995,13 @@ library
     class D
       reference: <testLibrary>::@class::D
       firstFragment: <testLibraryFragment>::@class::D
+      interfaces
+        B
+        A<int?>
+          alias: <testLibraryFragment>::@typeAlias::X
+            typeArguments
+              int
+        C
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::D::@constructor::new
@@ -5216,6 +5231,9 @@ library
       firstFragment: <testLibraryFragment>::@class::C
       typeParameters
         U
+      interfaces
+        A
+        B
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
@@ -5319,6 +5337,9 @@ library
     class C
       reference: <testLibrary>::@class::C
       firstFragment: <testLibraryFragment>::@class::C
+      interfaces
+        A
+        B
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
@@ -5409,6 +5430,9 @@ library
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
       supertype: Object
+      mixins
+        A<int>
+          alias: <testLibraryFragment>::@typeAlias::X
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
@@ -5519,6 +5543,9 @@ library
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
       supertype: Object
+      mixins
+        M1
+        M2
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
@@ -5642,6 +5669,11 @@ library
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
       supertype: Object
+      mixins
+        M1
+        A<int?>
+          alias: <testLibraryFragment>::@typeAlias::X
+        M2
       constructors
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
@@ -6284,28 +6316,9 @@ library
     <testLibraryFragment>
       enclosingElement3: <null>
       typeAliases
-        functionTypeAliasBased @8
+        @8
           reference: <testLibraryFragment>::@typeAlias::0
-          aliasedType: dynamic Function()
-          aliasedElement: GenericFunctionTypeElement
-            returnType: dynamic
-      topLevelVariables
-        static int @10
-          reference: <testLibraryFragment>::@topLevelVariable::int
-          enclosingElement3: <testLibraryFragment>
-          type: dynamic
-      accessors
-        synthetic static get int @-1
-          reference: <testLibraryFragment>::@getter::int
-          enclosingElement3: <testLibraryFragment>
-          returnType: dynamic
-        synthetic static set int= @-1
-          reference: <testLibraryFragment>::@setter::int
-          enclosingElement3: <testLibraryFragment>
-          parameters
-            requiredPositional _int @-1
-              type: dynamic
-          returnType: void
+          aliasedType: int
 ----------------------------------------
 library
   reference: <testLibrary>
@@ -6316,42 +6329,10 @@ library
         <null-name>
           reference: <testLibraryFragment>::@typeAlias::0
           element: <testLibraryFragment>::@typeAlias::0#element
-      topLevelVariables
-        int @10
-          reference: <testLibraryFragment>::@topLevelVariable::int
-          element: <testLibraryFragment>::@topLevelVariable::int#element
-          getter2: <testLibraryFragment>::@getter::int
-          setter2: <testLibraryFragment>::@setter::int
-      getters
-        get <null-name>
-          reference: <testLibraryFragment>::@getter::int
-          element: <testLibraryFragment>::@getter::int#element
-      setters
-        set <null-name>
-          reference: <testLibraryFragment>::@setter::int
-          element: <testLibraryFragment>::@setter::int#element
-          formalParameters
-            <null-name>
-              element: <testLibraryFragment>::@setter::int::@parameter::_int#element
   typeAliases
     <null-name>
       firstFragment: <testLibraryFragment>::@typeAlias::0
-      aliasedType: dynamic Function()
-  topLevelVariables
-    int
-      firstFragment: <testLibraryFragment>::@topLevelVariable::int
-      type: dynamic
-      getter: <testLibraryFragment>::@getter::int#element
-      setter: <testLibraryFragment>::@setter::int#element
-  getters
-    synthetic static get int
-      firstFragment: <testLibraryFragment>::@getter::int
-  setters
-    synthetic static set int=
-      firstFragment: <testLibraryFragment>::@setter::int
-      formalParameters
-        requiredPositional _int
-          type: dynamic
+      aliasedType: int
 ''');
   }
 
