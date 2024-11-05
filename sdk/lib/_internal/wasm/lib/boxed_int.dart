@@ -10,10 +10,13 @@ import 'dart:_wasm';
 final class BoxedInt implements int {
   // A boxed int contains an unboxed int.
   @pragma("wasm:entry-point")
-  final int value;
+  final WasmI64 _value;
 
   @pragma("wasm:entry-point")
-  BoxedInt._(this.value);
+  int get value => _value.toInt();
+
+  @pragma("wasm:entry-point")
+  const BoxedInt._(this._value);
 
   external num operator +(num other);
   external num operator -(num other);
@@ -430,12 +433,40 @@ int intHashCode(int value) {
 }
 
 @pragma("wasm:entry-point")
-const ImmutableWasmArray<Object> preallocatedInts =
-    ImmutableWasmArray<Object>.literal([
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, //
-  21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, //
-  40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, //
-  59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, //
-  78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, //
-  97, 98, 99
+const ImmutableWasmArray<BoxedInt> preallocatedInts =
+    ImmutableWasmArray<BoxedInt>.literal([
+  BoxedInt._(WasmI64(0)), BoxedInt._(WasmI64(1)), BoxedInt._(WasmI64(2)), //
+  BoxedInt._(WasmI64(3)), BoxedInt._(WasmI64(4)), BoxedInt._(WasmI64(5)), //
+  BoxedInt._(WasmI64(6)), BoxedInt._(WasmI64(7)), BoxedInt._(WasmI64(8)), //
+  BoxedInt._(WasmI64(9)), BoxedInt._(WasmI64(10)), BoxedInt._(WasmI64(11)), //
+  BoxedInt._(WasmI64(12)), BoxedInt._(WasmI64(13)), BoxedInt._(WasmI64(14)), //
+  BoxedInt._(WasmI64(15)), BoxedInt._(WasmI64(16)), BoxedInt._(WasmI64(17)), //
+  BoxedInt._(WasmI64(18)), BoxedInt._(WasmI64(19)), BoxedInt._(WasmI64(20)), //
+  BoxedInt._(WasmI64(21)), BoxedInt._(WasmI64(22)), BoxedInt._(WasmI64(23)), //
+  BoxedInt._(WasmI64(24)), BoxedInt._(WasmI64(25)), BoxedInt._(WasmI64(26)), //
+  BoxedInt._(WasmI64(27)), BoxedInt._(WasmI64(28)), BoxedInt._(WasmI64(29)), //
+  BoxedInt._(WasmI64(30)), BoxedInt._(WasmI64(31)), BoxedInt._(WasmI64(32)), //
+  BoxedInt._(WasmI64(33)), BoxedInt._(WasmI64(34)), BoxedInt._(WasmI64(35)), //
+  BoxedInt._(WasmI64(36)), BoxedInt._(WasmI64(37)), BoxedInt._(WasmI64(38)), //
+  BoxedInt._(WasmI64(39)), BoxedInt._(WasmI64(40)), BoxedInt._(WasmI64(41)), //
+  BoxedInt._(WasmI64(42)), BoxedInt._(WasmI64(43)), BoxedInt._(WasmI64(44)), //
+  BoxedInt._(WasmI64(45)), BoxedInt._(WasmI64(46)), BoxedInt._(WasmI64(47)), //
+  BoxedInt._(WasmI64(48)), BoxedInt._(WasmI64(49)), BoxedInt._(WasmI64(50)), //
+  BoxedInt._(WasmI64(51)), BoxedInt._(WasmI64(52)), BoxedInt._(WasmI64(53)), //
+  BoxedInt._(WasmI64(54)), BoxedInt._(WasmI64(55)), BoxedInt._(WasmI64(56)), //
+  BoxedInt._(WasmI64(57)), BoxedInt._(WasmI64(58)), BoxedInt._(WasmI64(59)), //
+  BoxedInt._(WasmI64(60)), BoxedInt._(WasmI64(61)), BoxedInt._(WasmI64(62)), //
+  BoxedInt._(WasmI64(63)), BoxedInt._(WasmI64(64)), BoxedInt._(WasmI64(65)), //
+  BoxedInt._(WasmI64(66)), BoxedInt._(WasmI64(67)), BoxedInt._(WasmI64(68)), //
+  BoxedInt._(WasmI64(69)), BoxedInt._(WasmI64(70)), BoxedInt._(WasmI64(71)), //
+  BoxedInt._(WasmI64(72)), BoxedInt._(WasmI64(73)), BoxedInt._(WasmI64(74)), //
+  BoxedInt._(WasmI64(75)), BoxedInt._(WasmI64(76)), BoxedInt._(WasmI64(77)), //
+  BoxedInt._(WasmI64(78)), BoxedInt._(WasmI64(79)), BoxedInt._(WasmI64(80)), //
+  BoxedInt._(WasmI64(81)), BoxedInt._(WasmI64(82)), BoxedInt._(WasmI64(83)), //
+  BoxedInt._(WasmI64(84)), BoxedInt._(WasmI64(85)), BoxedInt._(WasmI64(86)), //
+  BoxedInt._(WasmI64(87)), BoxedInt._(WasmI64(88)), BoxedInt._(WasmI64(89)), //
+  BoxedInt._(WasmI64(90)), BoxedInt._(WasmI64(91)), BoxedInt._(WasmI64(92)), //
+  BoxedInt._(WasmI64(93)), BoxedInt._(WasmI64(94)), BoxedInt._(WasmI64(95)), //
+  BoxedInt._(WasmI64(96)), BoxedInt._(WasmI64(97)), BoxedInt._(WasmI64(98)), //
+  BoxedInt._(WasmI64(99)),
 ]);

@@ -83,7 +83,7 @@ class FieldIndex {
         FieldIndex.asyncSuspendStateCurrentReturnValue);
 
     check(translator.boxedBoolClass, "value", FieldIndex.boxValue);
-    check(translator.boxedIntClass, "value", FieldIndex.boxValue);
+    check(translator.boxedIntClass, "_value", FieldIndex.boxValue);
     check(translator.boxedDoubleClass, "value", FieldIndex.boxValue);
     if (!translator.options.jsCompatibility) {
       check(translator.oneByteStringClass, "_array", FieldIndex.stringArray);
