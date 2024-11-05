@@ -1677,14 +1677,8 @@ abstract class AstCodeGenerator
 
     Member? singleTarget = translator.singleTarget(node);
     if (singleTarget != null) {
-      final target = singleTarget.reference;
-      final signature = translator.signatureForDirectCall(target);
-      final paramInfo = translator.paramInfoForDirectCall(target);
-      translateExpression(node.receiver, signature.inputs.first);
-      _visitArguments(node.arguments, signature, paramInfo, 1);
-
-      return translator
-          .outputOrVoid(call(target, useUncheckedEntry: useUncheckedEntry));
+      return _invokeSingleTarget(singleTarget, node.receiver, node.arguments,
+          expectedType, useUncheckedEntry);
     }
     return _virtualCall(
         node,
@@ -1700,6 +1694,12 @@ abstract class AstCodeGenerator
   @override
   w.ValueType visitDynamicInvocation(
       DynamicInvocation node, w.ValueType expectedType) {
+    Member? singleTarget = translator.singleTarget(node);
+    if (singleTarget != null) {
+      return _invokeSingleTarget(singleTarget, node.receiver, node.arguments,
+          expectedType, translator.canUseUncheckedEntry(node));
+    }
+
     // Call dynamic invocation forwarder
     final receiver = node.receiver;
     final typeArguments = node.arguments.types;
@@ -1935,6 +1935,17 @@ abstract class AstCodeGenerator
     }
 
     return translator.outputOrVoid(selector.signature.outputs);
+  }
+
+  w.ValueType _invokeSingleTarget(Member singleTarget, Expression receiver,
+      Arguments arguments, w.ValueType expectedType, bool useUncheckedEntry) {
+    final target = singleTarget.reference;
+    final signature = translator.signatureForDirectCall(target);
+    final paramInfo = translator.paramInfoForDirectCall(target);
+    translateExpression(receiver, signature.inputs.first);
+    _visitArguments(arguments, signature, paramInfo, 1);
+    return translator
+        .outputOrVoid(call(target, useUncheckedEntry: useUncheckedEntry));
   }
 
   @override
