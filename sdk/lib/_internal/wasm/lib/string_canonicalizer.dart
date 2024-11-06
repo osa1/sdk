@@ -19,14 +19,69 @@ import 'dart:convert';
 // these two types are different and they don't have a common supertype (they
 // don't inherit from `Object`).
 
-class _StringNode {
-  final StringBase payload;
+class StringCanonicalizer {
+  static const int INITIAL_SIZE = 8 * 1024;
 
-  _StringNode? next;
+  /// Linear size of a hash table.
+  int _size = INITIAL_SIZE;
 
-  _StringNode(this.payload, this.next);
+  /// Items in a hash table.
+  int _count = 0;
 
-  int get hash => payload.hashCode;
+  WasmArray<StringBase?> _nodes = WasmArray<StringBase?>(INITIAL_SIZE);
+
+  void rehash() {
+    final newSize = _size * 2;
+    WasmArray<StringBase?> newNodes = WasmArray<StringBase?>(newSize);
+    for (int i = 0; i < _size; i++) {
+      StringBase? t = _nodes[i];
+      if (t != null) {
+        final newIndex = t.hashCode & (newSize - 1);
+        newNodes[newIndex] = t;
+      }
+    }
+    _size = newSize;
+    _nodes = newNodes;
+  }
+
+  String canonicalizeSubString(StringBase data, int start, int end) {
+    final len = end - start;
+    if (start == 0 && data.length == len) {
+      return canonicalizeString(data);
+    }
+    if (_count >= _size / 2) rehash();
+    final int index = data.computeHashCodeRange(start, end) & (_size - 1);
+    final StringBase? s = _nodes[index];
+    if (s != null) {
+      if (s.length == len && data.startsWith(s, start)) {
+        return s;
+      }
+    }
+    final newNode = unsafeCast<StringBase>(data.substringUnchecked(start, end));
+    _nodes[index] = newNode;
+    return newNode;
+  }
+
+  String canonicalizeString(StringBase data) {
+    if (_count >= _size / 2) rehash();
+    final int index = data.hashCode & (_size - 1);
+    final StringBase? s = _nodes[index];
+    if (data == s) {
+      return unsafeCast<String>(s);
+    }
+    _nodes[index] = data;
+    return data;
+  }
+
+  void clear() {
+    initializeWithSize(INITIAL_SIZE);
+  }
+
+  void initializeWithSize(int size) {
+    _size = size;
+    _nodes = WasmArray<StringBase?>(_size);
+    _count = 0;
+  }
 }
 
 class _Utf8Node {
@@ -41,88 +96,6 @@ class _Utf8Node {
   _Utf8Node(this.data, this.start, this.end, this.payload, this.next);
 
   int get hash => payload.hashCode;
-}
-
-class StringCanonicalizer {
-  static const int INITIAL_SIZE = 8 * 1024;
-
-  /// Linear size of a hash table.
-  int _size = INITIAL_SIZE;
-
-  /// Items in a hash table.
-  int _count = 0;
-
-  WasmArray<_StringNode?> _nodes = WasmArray<_StringNode?>(INITIAL_SIZE);
-
-  void rehash() {
-    int newSize = _size * 2;
-    WasmArray<_StringNode?> newNodes = WasmArray<_StringNode?>(newSize);
-    for (int i = 0; i < _size; i++) {
-      _StringNode? t = _nodes[i];
-      while (t != null) {
-        _StringNode? n = t.next;
-        int newIndex = t.hash & (newSize - 1);
-        _StringNode? s = newNodes[newIndex];
-        t.next = s;
-        newNodes[newIndex] = t;
-        t = n;
-      }
-    }
-    _size = newSize;
-    _nodes = newNodes;
-  }
-
-  String canonicalizeSubString(StringBase data, int start, int end) {
-    final int len = end - start;
-    if (start == 0 && data.length == len) {
-      return canonicalizeString(data);
-    }
-    if (_count > _size) rehash();
-    final int index = data.computeHashCodeRange(start, end) & (_size - 1);
-    final _StringNode? s = _nodes[index];
-    _StringNode? t = s;
-    while (t != null) {
-      final String tData = t.payload;
-      if (tData.length == len && data.startsWith(tData, start)) {
-        return tData;
-      }
-      t = t.next;
-    }
-    return _insertStringNode(
-        index, s, unsafeCast<StringBase>(data.substringUnchecked(start, end)));
-  }
-
-  String canonicalizeString(StringBase data) {
-    if (_count > _size) rehash();
-    final int index = data.hashCode & (_size - 1);
-    final _StringNode? s = _nodes[index];
-    _StringNode? t = s;
-    while (t != null) {
-      final String tData = t.payload;
-      if (identical(data, tData) || data == tData) {
-        return tData;
-      }
-      t = t.next;
-    }
-    return _insertStringNode(index, s, data);
-  }
-
-  String _insertStringNode(int index, _StringNode? next, StringBase value) {
-    final _StringNode newNode = _StringNode(value, next);
-    _nodes[index] = newNode;
-    _count++;
-    return value;
-  }
-
-  void clear() {
-    initializeWithSize(INITIAL_SIZE);
-  }
-
-  void initializeWithSize(int size) {
-    _size = size;
-    _nodes = WasmArray<_StringNode?>(_size);
-    _count = 0;
-  }
 }
 
 class Utf8StringCanonicalizer {
@@ -155,7 +128,7 @@ class Utf8StringCanonicalizer {
   }
 
   String canonicalizeBytes(U8List data, int start, int end, bool asciiOnly) {
-    if (_count > _size) rehash();
+    if (_count >= _size / 2) rehash();
     final int index = _hashBytes(data, start, end) & (_size - 1);
     _Utf8Node? s = _nodes[index];
     _Utf8Node? t = s;
