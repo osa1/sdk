@@ -9,10 +9,13 @@ import 'dart:_string';
 import 'dart:_wasm';
 
 @pragma("wasm:entry-point")
-final class BoxedDouble extends double {
+final class BoxedDouble implements double {
   // A boxed double contains an unboxed double.
   @pragma("wasm:entry-point")
-  double value = 0.0;
+  final double value;
+
+  @pragma("wasm:entry-point")
+  BoxedDouble._(this.value);
 
   /// Dummy factory to silence error about missing superclass constructor.
   external factory BoxedDouble();
