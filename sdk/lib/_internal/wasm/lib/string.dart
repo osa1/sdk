@@ -105,6 +105,12 @@ extension OneByteStringUnsafeExtensions on String {
       unsafeCast<OneByteString>(this)._codeUnitAtUnchecked(index);
 }
 
+extension StringBaseUnsafeExtensions on StringBase {
+  @pragma('wasm:prefer-inline')
+  int computeHashCodeRange(int start, int end) =>
+      this._computeHashCodeRange(start, end);
+}
+
 const int _maxLatin1 = 0xff;
 const int _maxUtf16 = 0xffff;
 
@@ -154,6 +160,8 @@ abstract final class StringBase extends WasmStringBase
   }
 
   int _computeHashCode();
+
+  int _computeHashCodeRange(int start, int end);
 
   /**
    * Create the most efficient string representation for specified
@@ -1166,11 +1174,14 @@ final class OneByteString extends StringBase {
 
   // Same hash as VM
   @override
-  int _computeHashCode() {
-    WasmArray<WasmI8> array = _array;
-    int length = array.length;
+  @pragma("wasm:prefer-inline")
+  int _computeHashCode() => _computeHashCodeRange(0, _array.length);
+
+  @override
+  int _computeHashCodeRange(int start, int end) {
+    final WasmArray<WasmI8> array = _array;
     int hash = 0;
-    for (int i = 0; i < length; i++) {
+    for (int i = start; i < end; i++) {
       hash = stringCombineHashes(hash, array.readUnsigned(i));
     }
     return stringFinalizeHash(hash);
@@ -1591,11 +1602,14 @@ final class TwoByteString extends StringBase {
 
   // Same hash as VM
   @override
-  int _computeHashCode() {
-    WasmArray<WasmI16> array = _array;
-    int length = array.length;
+  @pragma("wasm:prefer-inline")
+  int _computeHashCode() => _computeHashCodeRange(0, _array.length);
+
+  @override
+  int _computeHashCodeRange(int start, int end) {
+    final WasmArray<WasmI16> array = _array;
     int hash = 0;
-    for (int i = 0; i < length; i++) {
+    for (int i = start; i < end; i++) {
       hash = stringCombineHashes(hash, array.readUnsigned(i));
     }
     return stringFinalizeHash(hash);

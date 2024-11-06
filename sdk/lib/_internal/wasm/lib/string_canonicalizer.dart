@@ -7,6 +7,7 @@
 
 import 'dart:_internal';
 import 'dart:_string';
+import 'dart:_string_helper';
 import 'dart:_typed_data';
 import 'dart:_wasm';
 import 'dart:convert';
@@ -25,7 +26,7 @@ class _StringNode {
 
   _StringNode(this.payload, this.next);
 
-  int get hash => _hashString(payload, /* start = */ 0, payload.length);
+  int get hash => payload.hashCode;
 }
 
 class _Utf8Node {
@@ -77,7 +78,7 @@ class StringCanonicalizer {
       return canonicalizeString(data);
     }
     if (_count > _size) rehash();
-    final int index = _hashString(data, start, end) & (_size - 1);
+    final int index = data.computeHashCodeRange(start, end) & (_size - 1);
     final _StringNode? s = _nodes[index];
     _StringNode? t = s;
     while (t != null) {
@@ -93,8 +94,7 @@ class StringCanonicalizer {
 
   String canonicalizeString(StringBase data) {
     if (_count > _size) rehash();
-    final int index =
-        _hashString(data, /* start = */ 0, data.length) & (_size - 1);
+    final int index = data.hashCode & (_size - 1);
     final _StringNode? s = _nodes[index];
     _StringNode? t = s;
     while (t != null) {
@@ -209,14 +209,6 @@ int _hashBytes(U8List data, int start, int end) {
   int h = 5381;
   for (int i = start; i < end; i++) {
     h = (h << 5) + h + data.getUnchecked(i);
-  }
-  return h;
-}
-
-int _hashString(StringBase data, int start, int end) {
-  int h = 5381;
-  for (int i = start; i < end; i++) {
-    h = (h << 5) + h + data.codeUnitAtUnchecked(i);
   }
   return h;
 }
