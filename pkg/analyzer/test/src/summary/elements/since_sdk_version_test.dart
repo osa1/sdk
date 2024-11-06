@@ -83,7 +83,6 @@ library
               element: dart:foo::<fragment>::@class::A::@constructor::named#element
               sinceSdkVersion: 2.15.0
               periodOffset: 54
-              nameEnd: 60
         class B @73
           reference: dart:foo::<fragment>::@class::B
           element: dart:foo::@class::B
@@ -92,7 +91,6 @@ library
               reference: dart:foo::<fragment>::@class::B::@constructor::named
               element: dart:foo::<fragment>::@class::B::@constructor::named#element
               periodOffset: 80
-              nameEnd: 86
   classes
     class A
       reference: dart:foo::@class::A
@@ -578,7 +576,7 @@ library
       enums
         enum E @31
           reference: dart:foo::<fragment>::@enum::E
-          element: dart:foo::<fragment>::@enum::E#element
+          element: dart:foo::@enum::E
           fields
             enumConstant v1 @37
               reference: dart:foo::<fragment>::@enum::E::@field::v1
@@ -605,6 +603,7 @@ library
               element: dart:foo::<fragment>::@enum::E::@getter::values#element
   enums
     enum E
+      reference: dart:foo::@enum::E
       firstFragment: dart:foo::<fragment>::@enum::E
       supertype: Enum
       fields
@@ -690,7 +689,7 @@ library
       enums
         enum E @46
           reference: dart:foo::<fragment>::@enum::E
-          element: dart:foo::<fragment>::@enum::E#element
+          element: dart:foo::@enum::E
           fields
             enumConstant v @52
               reference: dart:foo::<fragment>::@enum::E::@field::v
@@ -715,6 +714,7 @@ library
               sinceSdkVersion: 2.15.0
   enums
     enum E
+      reference: dart:foo::@enum::E
       firstFragment: dart:foo::<fragment>::@enum::E
       sinceSdkVersion: 2.15.0
       supertype: Enum
@@ -776,7 +776,7 @@ library
       extensions
         extension E @51
           reference: dart:foo::<fragment>::@extension::E
-          element: dart:foo::<fragment>::@extension::E#element
+          element: dart:foo::@extension::E
           methods
             foo @69
               reference: dart:foo::<fragment>::@extension::E::@method::foo
@@ -784,6 +784,7 @@ library
               sinceSdkVersion: 2.15.0
   extensions
     extension E
+      reference: dart:foo::@extension::E
       firstFragment: dart:foo::<fragment>::@extension::E
       sinceSdkVersion: 2.15.0
       methods
@@ -886,16 +887,18 @@ library
       functions
         foo @46
           reference: dart:foo::<fragment>::@function::foo
-          element: dart:foo::<fragment>::@function::foo#element
+          element: dart:foo::@function::foo
           sinceSdkVersion: 2.15.0
         bar @61
           reference: dart:foo::<fragment>::@function::bar
-          element: dart:foo::<fragment>::@function::bar#element
+          element: dart:foo::@function::bar
   functions
     foo
+      reference: dart:foo::@function::foo
       firstFragment: dart:foo::<fragment>::@function::foo
       returnType: void
     bar
+      reference: dart:foo::@function::bar
       firstFragment: dart:foo::<fragment>::@function::bar
       returnType: void
 ''');
@@ -931,10 +934,11 @@ library
       functions
         foo @54
           reference: dart:foo::<fragment>::@function::foo
-          element: dart:foo::<fragment>::@function::foo#element
+          element: dart:foo::@function::foo
           sinceSdkVersion: 2.15.3-dev.7
   functions
     foo
+      reference: dart:foo::@function::foo
       firstFragment: dart:foo::<fragment>::@function::foo
       returnType: void
 ''');
@@ -970,10 +974,11 @@ library
       functions
         foo @48
           reference: dart:foo::<fragment>::@function::foo
-          element: dart:foo::<fragment>::@function::foo#element
+          element: dart:foo::@function::foo
           sinceSdkVersion: 2.15.3
   functions
     foo
+      reference: dart:foo::@function::foo
       firstFragment: dart:foo::<fragment>::@function::foo
       returnType: void
 ''');
@@ -1008,9 +1013,10 @@ library
       functions
         foo @44
           reference: dart:foo::<fragment>::@function::foo
-          element: dart:foo::<fragment>::@function::foo#element
+          element: dart:foo::@function::foo
   functions
     foo
+      reference: dart:foo::@function::foo
       firstFragment: dart:foo::<fragment>::@function::foo
       returnType: void
 ''');
@@ -1050,10 +1056,11 @@ library
       functions
         foo @56
           reference: dart:foo::<fragment>::@function::foo
-          element: dart:foo::<fragment>::@function::foo#element
+          element: dart:foo::@function::foo
           sinceSdkVersion: 2.15.0
   functions
     foo
+      reference: dart:foo::@function::foo
       firstFragment: dart:foo::<fragment>::@function::foo
       returnType: void
 ''');
@@ -1097,7 +1104,7 @@ library
       functions
         f @31
           reference: dart:foo::<fragment>::@function::f
-          element: dart:foo::<fragment>::@function::f#element
+          element: dart:foo::@function::f
           formalParameters
             p1 @37
               element: dart:foo::<fragment>::@function::f::@parameter::p1#element
@@ -1107,6 +1114,7 @@ library
               sinceSdkVersion: 2.15.0
   functions
     f
+      reference: dart:foo::@function::f
       firstFragment: dart:foo::<fragment>::@function::f
       formalParameters
         requiredPositional p1
@@ -1155,7 +1163,7 @@ library
       functions
         f @31
           reference: dart:foo::<fragment>::@function::f
-          element: dart:foo::<fragment>::@function::f#element
+          element: dart:foo::@function::f
           formalParameters
             p1 @37
               element: dart:foo::<fragment>::@function::f::@parameter::p1#element
@@ -1164,6 +1172,7 @@ library
               sinceSdkVersion: 2.15.0
   functions
     f
+      reference: dart:foo::@function::f
       firstFragment: dart:foo::<fragment>::@function::f
       formalParameters
         requiredPositional p1

@@ -69,6 +69,7 @@ class MicroAssembler : public AssemblerBase {
 #if defined(TESTING)
   void SetExtensions(ExtensionSet extensions) { extensions_ = extensions; }
 #endif
+  ExtensionSet extensions() const { return extensions_; }
   bool Supports(Extension extension) const {
     return extensions_.Includes(extension);
   }
@@ -561,6 +562,8 @@ class MicroAssembler : public AssemblerBase {
   void sh3add(Register rd, Register rs1, Register rs2);
   void sh3adduw(Register rd, Register rs1, Register rs2);
   void slliuw(Register rd, Register rs1, intx_t imm);
+
+  void zextw(Register rd, Register rs) { adduw(rd, rs, ZR); }
 
   // ==== Zbb: Basic bit-manipulation ====
   void andn(Register rd, Register rs1, Register rs2);
@@ -1188,6 +1191,19 @@ class Assembler : public MicroAssembler {
   void MoveUnboxedSimd128(FpuRegister dst, FpuRegister src) {
     // No single register SIMD on RISC-V.
     UNREACHABLE();
+  }
+
+  void InitializeHeader(Register tags, Register object) {
+    sx(tags, FieldAddress(object, target::Object::tags_offset()));
+#if defined(TARGET_HAS_FAST_WRITE_WRITE_FENCE)
+    fence(kWrite, kWrite);
+#endif
+  }
+  void InitializeHeaderUntagged(Register tags, Register object) {
+    sx(tags, Address(object, target::Object::tags_offset()));
+#if defined(TARGET_HAS_FAST_WRITE_WRITE_FENCE)
+    fence(kWrite, kWrite);
+#endif
   }
 
   void StoreBarrier(Register object,

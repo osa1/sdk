@@ -9,6 +9,7 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/source/source.dart';
 import 'package:analyzer/src/context/packages.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options.dart';
 import 'package:analyzer/src/dart/analysis/analysis_options_map.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/feature_set_provider.dart';
@@ -18,7 +19,6 @@ import 'package:analyzer/src/dart/analysis/performance_logger.dart';
 import 'package:analyzer/src/dart/analysis/unlinked_unit_store.dart';
 import 'package:analyzer/src/dart/sdk/sdk.dart';
 import 'package:analyzer/src/file_system/file_system.dart';
-import 'package:analyzer/src/generated/engine.dart';
 import 'package:analyzer/src/generated/source.dart'
     show DartUriResolver, SourceFactory, UriResolver;
 import 'package:analyzer/src/source/package_map_resolver.dart';
@@ -36,8 +36,360 @@ main() {
     defineReflectiveTests(FileSystemStateTest);
     defineReflectiveTests(FileSystemState_BlazeWorkspaceTest);
     defineReflectiveTests(FileSystemState_PubPackageTest);
+    defineReflectiveTests(DartdocInfoTest);
     defineReflectiveTests(UpdateNodeTextExpectations);
   });
+}
+
+@reflectiveTest
+class DartdocInfoTest extends PubPackageResolutionTest {
+  Future<void> expectDocumentation(
+    String templateDefinition,
+    String macroReference,
+    String expected,
+  ) async {
+    newFile(testFile.path, templateDefinition);
+
+    // Ask for the file, will extract templates.
+    fileStateFor(testFile);
+
+    // We should have templates here now.
+    var info = driverFor(testFile).dartdocDirectiveInfo;
+
+    // Apply these templates.
+    var result = info.processDartdoc('''
+/// Before macro.
+/// $macroReference
+/// After macro.''');
+    expect(result.full, '''
+Before macro.
+$expected
+After macro.''');
+  }
+
+  FileState fileStateFor(File file) {
+    return fsStateFor(file).getFileForPath(file.path);
+  }
+
+  FileSystemState fsStateFor(File file) {
+    return driverFor(file).fsState;
+  }
+
+  test_class() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+class A {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_class_getter() async {
+    var definition = '''
+class A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  String get f => '';
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_class_method() async {
+    var definition = '''
+class A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  void f() {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_class_setter() async {
+    var definition = '''
+class A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  set f(String value) {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_enum_constant() async {
+    var definition = '''
+enum E {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  one,
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_enum_member() async {
+    var definition = '''
+enum E {
+  one;
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  void f() {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extension() async {
+    var definition = '''
+class A {}
+
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+extension on A {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extension_getter() async {
+    var definition = '''
+class A {}
+
+extension on A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  String get f => '';
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extension_method() async {
+    var definition = '''
+class A {}
+
+extension on A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  void f() {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extension_setter() async {
+    var definition = '''
+class A {}
+
+extension on A {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  set f(String value) {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extensionType() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+extension type IdNumber(int id) {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extensionType_getter() async {
+    var definition = '''
+extension type IdNumber(int id) {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  String get f => '';
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extensionType_method() async {
+    var definition = '''
+extension type IdNumber(int id) {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  void f() {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_extensionType_setter() async {
+    var definition = '''
+extension type IdNumber(int id) {
+  /// {@template foo}
+  /// Body of the template.
+  /// {@endtemplate}
+  set f(String value) {}
+}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_samePackage() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+class A {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_topLevel_function() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+void f() {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_topLevel_getter() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+String get f => '';
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_topLevel_setter() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+set f(String value) {}
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
+
+  test_topLevel_variable() async {
+    var definition = '''
+/// {@template foo}
+/// Body of the template.
+/// {@endtemplate}
+var x = 0;
+''';
+
+    await expectDocumentation(
+      definition,
+      '{@macro foo}',
+      'Body of the template.',
+    );
+  }
 }
 
 @reflectiveTest

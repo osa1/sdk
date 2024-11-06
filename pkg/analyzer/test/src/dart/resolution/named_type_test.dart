@@ -295,7 +295,7 @@ void f(A a) {}
 NamedType
   name: A
   element: <testLibraryFragment>::@extensionType::A
-  element2: <testLibraryFragment>::@extensionType::A#element
+  element2: <testLibrary>::@extensionType::A
   type: A<num>
 ''');
   }
@@ -311,7 +311,7 @@ void f(A a) {}
 NamedType
   name: A
   element: <testLibraryFragment>::@extensionType::A
-  element2: <testLibraryFragment>::@extensionType::A#element
+  element2: <testLibrary>::@extensionType::A
   type: A<dynamic>
 ''');
   }
@@ -336,7 +336,7 @@ NamedType
         type: int
     rightBracket: >
   element: <testLibraryFragment>::@extensionType::A
-  element2: <testLibraryFragment>::@extensionType::A#element
+  element2: <testLibrary>::@extensionType::A
   type: A<int>
 ''');
   }
@@ -701,7 +701,7 @@ void T() {}
 NamedType
   name: T
   element: <testLibraryFragment>::@function::T
-  element2: <testLibraryFragment>::@function::T#element
+  element2: <testLibrary>::@function::T
   type: InvalidType
 ''');
   }
@@ -729,7 +729,7 @@ NamedType
         type: int
     rightBracket: >
   element: <testLibraryFragment>::@function::T
-  element2: <testLibraryFragment>::@function::T#element
+  element2: <testLibrary>::@function::T
   type: InvalidType
 ''');
   }

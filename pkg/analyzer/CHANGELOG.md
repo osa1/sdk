@@ -33,6 +33,8 @@
 * Remove deprecated `lint/Spelunker`.
 * Remove deprecated `source_resource.dart`.
 * Remove `MultiplyInheritedExecutableElement`.
+* Remove `AnalyzeFunctionBodiesPredicate`.
+* Remove `normalParameterNames` and `optionalParameterNames` from `FunctionType`.
 
 ## 6.11.0
 * Un-deprecated `LibraryElement.exportedLibraries`.

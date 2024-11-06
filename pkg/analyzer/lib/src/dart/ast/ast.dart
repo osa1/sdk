@@ -3222,8 +3222,6 @@ final class CommentImpl extends AstNodeImpl
   ///
   /// The list of [tokens] must contain at least one token.
   ///
-  /// The [type] is the type of the comment.
-  ///
   /// The list of [references] can be empty if the comment doesn't contain any
   /// embedded references.
   CommentImpl({
@@ -3396,6 +3394,9 @@ abstract final class CompilationUnit implements AstNode {
   /// `@dart` directive in a comment at the top of the file.
   FeatureSet get featureSet;
 
+  /// The language version information.
+  LibraryLanguageVersion get languageVersion;
+
   /// The language version override specified for this compilation unit using a
   /// token like '// @dart = 2.7', or `null` if no override is specified.
   LanguageVersionToken? get languageVersionToken;
@@ -3434,8 +3435,8 @@ final class CompilationUnitImpl extends AstNodeImpl
   @override
   final LineInfo lineInfo;
 
-  /// The language version information.
-  LibraryLanguageVersion? languageVersion;
+  @override
+  final LibraryLanguageVersion languageVersion;
 
   @override
   final FeatureSet featureSet;
@@ -3467,6 +3468,7 @@ final class CompilationUnitImpl extends AstNodeImpl
     required this.featureSet,
     required this.lineInfo,
     required this.invalidNodes,
+    required this.languageVersion,
   }) : _scriptTag = scriptTag {
     _becomeParentOf(_scriptTag);
     _directives._initialize(this, directives);
@@ -4078,7 +4080,7 @@ abstract final class ConstructorDeclaration
   @override
   ConstructorFragment? get declaredFragment;
 
-  /// The token for the `external` keyword to the given [token].
+  /// The token for the `external` keyword to this constructor declaration.
   Token? get externalKeyword;
 
   /// The token for the `factory` keyword, or `null` if the constructor isn't a
@@ -4213,8 +4215,8 @@ final class ConstructorDeclarationImpl extends ClassMemberImpl
 
   @experimental
   @override
-  ConstructorFragment? get declaredFragment =>
-      declaredElement as ConstructorFragment;
+  ConstructorElementImpl? get declaredFragment =>
+      declaredElement as ConstructorElementImpl;
 
   @override
   Token get endToken {
@@ -4774,7 +4776,7 @@ sealed class DartPatternImpl extends AstNodeImpl
 
   DartType computePatternSchema(ResolverVisitor resolverVisitor);
 
-  /// Dispatches this pattern to the [resolver], with the given [context]
+  /// Dispatches this pattern to the [resolverVisitor], with the given [context]
   /// information.
   ///
   /// Note: most code shouldn't call this method directly, but should instead
@@ -4965,7 +4967,7 @@ final class DeclaredVariablePatternImpl extends VariablePatternImpl
   @experimental
   @override
   BindPatternVariableElement2? get declaredElement2 {
-    return declaredElement?.element2;
+    return declaredElement?.element;
   }
 
   @override
@@ -7144,8 +7146,6 @@ sealed class ForEachPartsImpl extends ForLoopPartsImpl implements ForEachParts {
 
   /// Initializes a newly created for-each statement whose loop control variable
   /// is declared internally (in the for-loop part).
-  ///
-  /// The [awaitKeyword] can be `null` if this isn't an asynchronous for loop.
   ForEachPartsImpl({
     required this.inKeyword,
     required ExpressionImpl iterable,
@@ -7768,8 +7768,6 @@ sealed class ForPartsImpl extends ForLoopPartsImpl implements ForParts {
 
   /// Initializes a newly created for statement.
   ///
-  /// Either the [variableList] or the [initialization] must be `null`.
-  ///
   /// Either the [condition] and the list of [updaters] can be `null` if the
   /// loop doesn't have the corresponding attribute.
   ForPartsImpl({
@@ -8212,12 +8210,6 @@ abstract final class FunctionDeclaration
   @override
   ExecutableElement? get declaredElement;
 
-  /// The element defined by this local function declaration.
-  ///
-  /// Returns `null` if the AST structure hasn't been resolved or if this node
-  /// is not a local function.
-  LocalFunctionElement? get declaredElement2;
-
   /// The fragment declared by this declaration.
   ///
   /// Returns `null` if the AST structure hasn't been resolved or if this node
@@ -8265,9 +8257,6 @@ final class FunctionDeclarationImpl extends NamedCompilationUnitMemberImpl
 
   @override
   ExecutableElementImpl? declaredElement;
-
-  @override
-  LocalFunctionElementImpl? declaredElement2;
 
   /// Initializes a newly created function declaration.
   ///
@@ -10710,10 +10699,12 @@ abstract final class InvocationExpression implements Expression {
   ///
   /// For example:
   ///
-  ///     (o.m)<TArgs>(args); // target is `o.m`
-  ///     o.m<TArgs>(args);   // target is `m`
+  /// ```dart
+  /// (o.m)<TArgs>(args); // target is `o.m`
+  /// o.m<TArgs>(args);   // target is `m`
+  /// ```
   ///
-  /// In either case, the [function.staticType] is the [staticInvokeType] before
+  /// In either case, the `function.staticType` is the [staticInvokeType] before
   /// applying type arguments `TArgs`.
   Expression get function;
 
@@ -11345,26 +11336,6 @@ sealed class Literal implements Expression {}
 sealed class LiteralImpl extends ExpressionImpl implements Literal {
   @override
   Precedence get precedence => Precedence.primary;
-}
-
-// TODO(scheglov): parse into actual `LocalFunctionDeclarationImpl`.
-class LocalFunctionDeclarationView {
-  final FunctionDeclarationImpl declaration;
-
-  LocalFunctionDeclarationView(this.declaration);
-
-  LocalFunctionElement? get declaredElement {
-    return declaration.declaredElement2;
-  }
-
-  static LocalFunctionDeclarationView? of(AstNode declaration) {
-    if (declaration is FunctionDeclarationImpl) {
-      if (declaration.parent is FunctionDeclarationStatement) {
-        return LocalFunctionDeclarationView(declaration);
-      }
-    }
-    return null;
-  }
 }
 
 /// Additional information about local variables within a function or method
@@ -15678,17 +15649,7 @@ final class SetOrMapLiteralImpl extends TypedLiteralImpl
   /// whether the kind hasn't or can't be determined.
   _SetOrMapKind _resolvedKind = _SetOrMapKind.unresolved;
 
-  /// The context type computed by
-  /// [ResolverVisitor._computeSetOrMapContextType].
-  ///
-  /// Note that this isn't the same as the context pushed down by type
-  /// inference (which can be obtained via [InferenceContext.getContext]). For
-  /// example, in the following code:
-  ///
-  ///     var m = {};
-  ///
-  /// The context pushed down by type inference is null, whereas the
-  /// `contextType` is `Map<dynamic, dynamic>`.
+  /// The context type computed by [TypedLiteralResolver].
   InterfaceType? contextType;
 
   /// Initializes a newly created set or map literal.
@@ -16827,9 +16788,6 @@ final class SuperFormalParameterImpl extends NormalFormalParameterImpl
   /// The [keyword] can be `null` if there's a type.
   ///
   /// The [type] must be `null` if the keyword is `var`.
-  ///
-  /// The [thisKeyword] and [period] can be `null` if the keyword `this` isn't
-  /// provided.
   ///
   /// The[parameters] can be `null` if this isn't a function-typed field formal
   /// parameter.
@@ -18304,7 +18262,7 @@ sealed class UriBasedDirectiveImpl extends DirectiveImpl
   }
 }
 
-/// Validation codes returned by [UriBasedDirective.validate].
+/// Validation codes returned by [UriBasedDirectiveImpl.validateUri].
 class UriValidationCode {
   static const UriValidationCode INVALID_URI = UriValidationCode('INVALID_URI');
 
@@ -18717,7 +18675,7 @@ sealed class VariablePatternImpl extends DartPatternImpl
 ///    switchCase ::=
 ///        'when' [Expression]
 abstract final class WhenClause implements AstNode {
-  /// The condition that is evaluated when the [pattern] matches, that must
+  /// The condition that is evaluated when the pattern matches, that must
   /// evaluate to `true` in order for the [expression] to be executed.
   Expression get expression;
 

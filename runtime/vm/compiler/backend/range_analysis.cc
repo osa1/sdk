@@ -203,7 +203,7 @@ ConstraintInstr* RangeAnalysis::InsertConstraintFor(Value* use,
 
 bool RangeAnalysis::ConstrainValueAfterBranch(Value* use, Definition* defn) {
   BranchInstr* branch = use->instruction()->AsBranch();
-  RelationalOpInstr* rel_op = branch->comparison()->AsRelationalOp();
+  RelationalOpInstr* rel_op = branch->condition()->AsRelationalOp();
   if ((rel_op != nullptr) && ((rel_op->operation_cid() == kSmiCid) ||
                               (rel_op->operation_cid() == kMintCid))) {
     // Found comparison of two integers. Constrain defn at true and false
@@ -1654,10 +1654,8 @@ Definition* IntegerInstructionSelector::ConstructReplacementFor(
     Value* left = op->left()->CopyWithType();
     Value* right = op->right()->CopyWithType();
     intptr_t deopt_id = op->DeoptimizationTarget();
-    return BinaryIntegerOpInstr::Make(
-        kUnboxedUint32, op_kind, left, right, deopt_id,
-        def->IsSpeculativeShiftInt64Op() ? Instruction::kGuardInputs
-                                         : Instruction::kNotSpeculative);
+    return BinaryIntegerOpInstr::Make(kUnboxedUint32, op_kind, left, right,
+                                      deopt_id);
   } else if (def->IsBoxInt64()) {
     Value* value = def->AsBoxInt64()->value()->CopyWithType();
     return new (Z) BoxUint32Instr(value);
@@ -1665,8 +1663,7 @@ Definition* IntegerInstructionSelector::ConstructReplacementFor(
     UnboxInstr* unbox = def->AsUnboxInt64();
     Value* value = unbox->value()->CopyWithType();
     intptr_t deopt_id = unbox->DeoptimizationTarget();
-    return new (Z)
-        UnboxUint32Instr(value, deopt_id, def->SpeculativeModeOfInputs());
+    return new (Z) UnboxUint32Instr(value, deopt_id, unbox->value_mode());
   } else if (def->IsUnaryInt64Op()) {
     UnaryInt64OpInstr* op = def->AsUnaryInt64Op();
     Token::Kind op_kind = op->op_kind();
@@ -3098,14 +3095,12 @@ void UnboxIntegerInstr::InferRange(RangeAnalysis* analysis, Range* range) {
     *range = to_range;
   } else if (value_range->IsWithin(&to_range)) {
     *range = *value_range;
-  } else if (is_truncating()) {
-    // If truncating, then in most cases any non-representable values means
+  } else {
+    ASSERT((representation() == kUnboxedInt32) ||
+           (representation() == kUnboxedUint32));
+    // In most cases any non-representable values means
     // no assumption can be made about the truncated value.
     *range = to_range;
-  } else {
-    // When not truncating, then unboxing deoptimizes if the value is outside
-    // the range representation.
-    *range = value_range->Intersect(&to_range);
   }
   ASSERT_VALID_RANGE_FOR_REPRESENTATION(this, range, representation());
 }
@@ -3132,7 +3127,7 @@ void IntConverterInstr::InferRange(RangeAnalysis* analysis, Range* range) {
     // unboxed ints of larger sizes can represent all values for unsigned
     // boxed ints of smaller sizes.
     *range = *value_range;
-  } else if (is_truncating()) {
+  } else {
     // Either the bits are being reinterpreted (if the two representations
     // are the same size) or a larger value is being truncated. That means
     // we need to determine whether or not the value range lies within the
@@ -3145,10 +3140,6 @@ void IntConverterInstr::InferRange(RangeAnalysis* analysis, Range* range) {
       // assumptions can be made about the converted value.
       *range = to_range;
     }
-  } else {
-    // The conversion deoptimizes if the value is outside the range represented
-    // by to(), so we can just take the intersection.
-    *range = value_range->Intersect(&to_range);
   }
 
   ASSERT_VALID_RANGE_FOR_REPRESENTATION(this, range, to());

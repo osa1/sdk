@@ -3135,7 +3135,6 @@ library
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 56
-              nameEnd: 62
               formalParameters
                 this.f @68
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named::@parameter::f#element
@@ -3243,7 +3242,6 @@ library
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 56
-              nameEnd: 62
               formalParameters
                 a @67
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named::@parameter::a#element
@@ -3337,7 +3335,7 @@ library
           element: <testLibrary>::@class::A
           previousFragment: <testLibraryFragment>::@class::A
           constructors
-            <null-name>
+            new
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::new#element
               formalParameters
@@ -4774,6 +4772,7 @@ library
       firstFragment: <testLibraryFragment>::@class::B
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
       metadata
         Annotation
@@ -4828,6 +4827,7 @@ library
       firstFragment: <testLibraryFragment>::@class::B
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
       formalParameters
         optionalPositional x
@@ -5313,6 +5313,7 @@ library
       firstFragment: <testLibraryFragment>::@class::A
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
       formalParameters
         requiredPositional x1
@@ -5354,6 +5355,7 @@ library
       firstFragment: <testLibraryFragment>::@class::X
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
       formalParameters
         requiredPositional x
@@ -5523,13 +5525,14 @@ library
       functions
         foo @40
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
-          element: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo#element
+          element: <testLibrary>::@function::foo
   classes
     class A
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@function::foo
       returnType: void
   exportedReferences
@@ -5770,13 +5773,11 @@ library
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 130
-              nameEnd: 136
               nextFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::named
             augment named @152
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::named
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named#element
               periodOffset: 151
-              nameEnd: 157
               previousFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::named
   classes
     class A
@@ -6063,7 +6064,7 @@ augment class A {
               enclosingElement3: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A
               returnType: int
               id: getter_1
-              variable: field_0
+              variable: <null>
               augmentationTarget: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@getter::foo
 ----------------------------------------
 library
@@ -6355,7 +6356,7 @@ augment class A {
                   type: int
               returnType: void
               id: setter_1
-              variable: field_0
+              variable: <null>
               augmentationTarget: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@setter::foo
 ----------------------------------------
 library
@@ -6911,9 +6912,10 @@ library
       functions
         f @59
           reference: <testLibraryFragment>::@function::f
-          element: <testLibraryFragment>::@function::f#element
+          element: <testLibrary>::@function::f
   functions
     f
+      reference: <testLibrary>::@function::f
       firstFragment: <testLibraryFragment>::@function::f
       returnType: void
 ''');
@@ -7370,7 +7372,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            <null-name>
+            new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               macroDiagnostics
@@ -7532,12 +7534,13 @@ library
       functions
         foo @79
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
           typeParameters
             T @83
               element: <not-implemented>
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       typeParameters
         T
@@ -8097,7 +8100,7 @@ library
       functions
         foo @93
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
           formalParameters
             a @101
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
@@ -8109,6 +8112,7 @@ library
               element: <testLibraryFragment>::@function::foo::@parameter::c#element
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       formalParameters
         requiredPositional a
@@ -8183,7 +8187,7 @@ library
       functions
         foo @98
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
           formalParameters
             a @106
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
@@ -8191,6 +8195,7 @@ library
               element: <testLibraryFragment>::@function::foo::@parameter::b#element
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       formalParameters
         requiredPositional a
@@ -8254,9 +8259,10 @@ library
       functions
         foo @76
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: int
 ''');
@@ -8318,9 +8324,10 @@ library
       functions
         foo @144
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: int Function(bool, {int b, String c})
 ''');
@@ -8382,9 +8389,10 @@ library
       functions
         foo @139
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: int Function(int, String)
 ''');
@@ -8445,9 +8453,10 @@ library
       functions
         foo @103
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: int Function()
 ''');
@@ -8506,9 +8515,10 @@ library
       functions
         foo @88
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: void Function()
 ''');
@@ -8662,12 +8672,13 @@ library
       functions
         foo @98
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
           formalParameters
             a @102
               element: <testLibraryFragment>::@function::foo::@parameter::a#element
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       formalParameters
         requiredPositional a
@@ -8729,9 +8740,10 @@ library
       functions
         foo @72
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: dynamic
 ''');
@@ -8940,9 +8952,10 @@ library
       functions
         foo @86
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: (int, String)
 ''');
@@ -9012,13 +9025,14 @@ library
       functions
         foo @98
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   typeAliases
     A
       firstFragment: <testLibraryFragment>::@typeAlias::A
       aliasedType: List<int>
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: List<int>
         alias: <testLibraryFragment>::@typeAlias::A
@@ -9246,9 +9260,10 @@ library
       functions
         foo @114
           reference: <testLibraryFragment>::@function::foo
-          element: <testLibraryFragment>::@function::foo#element
+          element: <testLibrary>::@function::foo
   functions
     foo
+      reference: <testLibrary>::@function::foo
       firstFragment: <testLibraryFragment>::@function::foo
       returnType: Map<int, String>
 ''');
@@ -9884,7 +9899,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            <null-name>
+            new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               macroDiagnostics
@@ -10384,7 +10399,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
   classes
@@ -10445,7 +10460,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            synthetic const <null-name>
+            synthetic const new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
               constantInitializers
@@ -10465,6 +10480,8 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       supertype: Object
+      mixins
+        M
       constructors
         synthetic const new
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
@@ -10856,7 +10873,7 @@ library
       extensions
         extension B @45
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B
-          element: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B#element
+          element: <testLibrary>::@extension::B
   classes
     class A
       reference: <testLibrary>::@class::A
@@ -10866,6 +10883,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
   extensions
     extension B
+      reference: <testLibrary>::@extension::B
       firstFragment: <testLibrary>::@fragment::package:test/test.macro.dart::@extension::B
 ''');
   }
@@ -11514,7 +11532,7 @@ library
       enums
         enum B @104
           reference: <testLibraryFragment>::@enum::B
-          element: <testLibraryFragment>::@enum::B#element
+          element: <testLibrary>::@enum::B
           fields
             enumConstant v @107
               reference: <testLibraryFragment>::@enum::B::@field::v
@@ -11540,6 +11558,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
   enums
     enum B
+      reference: <testLibrary>::@enum::B
       firstFragment: <testLibraryFragment>::@enum::B
       supertype: Enum
       fields
@@ -12473,7 +12492,6 @@ library
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson#element
               periodOffset: 176
-              nameEnd: 185
               formalParameters
                 json @231
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson::@parameter::json#element
@@ -12482,7 +12500,6 @@ library
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::fromJson
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructor::fromJson#element
               periodOffset: 335
-              nameEnd: 344
               formalParameters
                 json @390
                   element: <testLibrary>::@fragment::package:test/test.macro.dart::@classAugmentation::A::@constructorAugmentation::fromJson::@parameter::json#element
@@ -17490,7 +17507,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -17501,7 +17518,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@class::MyClass
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes
@@ -17589,7 +17606,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -17600,7 +17617,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@class::MyClass
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes
@@ -17688,7 +17705,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
     <testLibrary>::@fragment::package:test/test.macro.dart
@@ -17699,7 +17716,7 @@ library
           reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass
           element: <testLibrary>::@class::MyClass
           constructors
-            synthetic <null-name>
+            synthetic new
               reference: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new
               element: <testLibrary>::@fragment::package:test/test.macro.dart::@class::MyClass::@constructor::new#element
   classes

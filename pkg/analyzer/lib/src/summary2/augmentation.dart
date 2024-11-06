@@ -8,109 +8,116 @@ import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/member.dart';
 import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
-import 'package:analyzer/src/summary2/library_builder.dart';
 import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:analyzer/src/utilities/extensions/string.dart';
 
-class ClassElementBuilder extends InstanceElementBuilder<ClassElementImpl> {
+class ClassElementBuilder
+    extends InstanceElementBuilder<ClassElementImpl2, ClassElementImpl> {
   ClassElementBuilder({
+    required super.element,
     required super.firstFragment,
-    required MaybeAugmentedClassElementMixin element,
-  }) {
-    firstFragment.augmentedInternal = element;
-    addFields(firstFragment.fields);
-    addConstructors(firstFragment.constructors);
-    addAccessors(firstFragment.accessors);
-    addMethods(firstFragment.methods);
-  }
+  });
 
-  void augment(ClassElementImpl fragment) {
-    lastFragment.augmentation = fragment;
-    lastFragment = fragment;
-
-    var element = _ensureAugmented();
-    fragment.augmentedInternal = firstFragment.augmentedInternal;
-
+  void addFragment(ClassElementImpl fragment) {
     addFields(fragment.fields);
     addConstructors(fragment.constructors);
     addAccessors(fragment.accessors);
     addMethods(fragment.methods);
-    _updatedAugmented(element, fragment);
+
+    if (identical(fragment, firstFragment)) {
+      _addFirstFragment();
+    } else {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+
+      fragment.augmentedInternal = element;
+      _updatedAugmented(fragment);
+    }
   }
 }
 
-class EnumElementBuilder extends InstanceElementBuilder<EnumElementImpl> {
+class EnumElementBuilder
+    extends InstanceElementBuilder<EnumElementImpl2, EnumElementImpl> {
   EnumElementBuilder({
+    required super.element,
     required super.firstFragment,
-  }) {
-    addFields(firstFragment.fields);
-    addConstructors(firstFragment.constructors);
-    addAccessors(firstFragment.accessors);
-    addMethods(firstFragment.methods);
-  }
+  });
 
-  void augment(EnumElementImpl fragment) {
-    var element = _ensureAugmented();
-    fragment.augmentedInternal = firstFragment.augmentedInternal;
-
+  void addFragment(EnumElementImpl fragment) {
     addFields(fragment.fields);
     addConstructors(fragment.constructors);
     addAccessors(fragment.accessors);
     addMethods(fragment.methods);
-    _updatedAugmented(element, fragment);
+
+    if (identical(fragment, firstFragment)) {
+      _addFirstFragment();
+    } else {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+
+      fragment.augmentedInternal = element;
+      _updatedAugmented(fragment);
+    }
   }
 }
 
-class ExtensionElementBuilder
-    extends InstanceElementBuilder<ExtensionElementImpl> {
+class ExtensionElementBuilder extends InstanceElementBuilder<
+    ExtensionElementImpl2, ExtensionElementImpl> {
   ExtensionElementBuilder({
+    required super.element,
     required super.firstFragment,
-  }) {
-    addFields(firstFragment.fields);
-    addAccessors(firstFragment.accessors);
-    addMethods(firstFragment.methods);
-  }
+  });
 
-  void augment(ExtensionElementImpl fragment) {
-    var element = _ensureAugmented();
-    fragment.augmentedInternal = firstFragment.augmentedInternal;
-
+  void addFragment(ExtensionElementImpl fragment) {
     addFields(fragment.fields);
     addAccessors(fragment.accessors);
     addMethods(fragment.methods);
-    _updatedAugmented(element, fragment);
+
+    if (identical(fragment, firstFragment)) {
+      _addFirstFragment();
+    } else {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+
+      fragment.augmentedInternal = element;
+      _updatedAugmented(fragment);
+    }
   }
 }
 
-class ExtensionTypeElementBuilder
-    extends InstanceElementBuilder<ExtensionTypeElementImpl> {
+class ExtensionTypeElementBuilder extends InstanceElementBuilder<
+    ExtensionTypeElementImpl2, ExtensionTypeElementImpl> {
   ExtensionTypeElementBuilder({
+    required super.element,
     required super.firstFragment,
-  }) {
-    addFields(firstFragment.fields);
-    addConstructors(firstFragment.constructors);
-    addAccessors(firstFragment.accessors);
-    addMethods(firstFragment.methods);
-  }
+  });
 
-  void augment(ExtensionTypeElementImpl fragment) {
-    var element = _ensureAugmented();
-    fragment.augmentedInternal = firstFragment.augmentedInternal;
-
+  void addFragment(ExtensionTypeElementImpl fragment) {
     addFields(fragment.fields);
     addConstructors(fragment.constructors);
     addAccessors(fragment.accessors);
     addMethods(fragment.methods);
-    _updatedAugmented(element, fragment);
+
+    if (identical(fragment, firstFragment)) {
+      _addFirstFragment();
+    } else {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+
+      fragment.augmentedInternal = element;
+      _updatedAugmented(fragment);
+    }
   }
 }
 
 /// A builder for top-level fragmented elements, e.g. classes.
-class FragmentedElementBuilder<F extends Fragment> {
+class FragmentedElementBuilder<E extends Element2, F extends Fragment> {
+  final E element;
   final F firstFragment;
   F lastFragment;
 
   FragmentedElementBuilder({
+    required this.element,
     required this.firstFragment,
   }) : lastFragment = firstFragment;
 
@@ -131,8 +138,24 @@ class FragmentedElementBuilder<F extends Fragment> {
   }
 }
 
-abstract class InstanceElementBuilder<F extends InstanceElementImpl>
-    extends FragmentedElementBuilder<F> {
+class GetterElementBuilder extends FragmentedElementBuilder<GetterElementImpl,
+    PropertyAccessorElementImpl> {
+  GetterElementBuilder({
+    required super.element,
+    required super.firstFragment,
+  });
+
+  void addFragment(PropertyAccessorElementImpl fragment) {
+    if (!identical(fragment, firstFragment)) {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+      fragment.element = element;
+    }
+  }
+}
+
+abstract class InstanceElementBuilder<E extends InstanceElementImpl2,
+    F extends InstanceElementImpl> extends FragmentedElementBuilder<E, F> {
   final Map<String, FieldElementImpl> fields = {};
   final Map<String, ConstructorElementImpl> constructors = {};
   final Map<String, PropertyAccessorElementImpl> getters = {};
@@ -140,6 +163,7 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
   final Map<String, MethodElementImpl> methods = {};
 
   InstanceElementBuilder({
+    required super.element,
     required super.firstFragment,
   });
 
@@ -151,7 +175,6 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
           if (getters[name] case var target?) {
             target.augmentation = fragment;
             fragment.augmentationTargetAny = target;
-            fragment.variable2 = target.variable2;
           } else {
             var target = _recoveryAugmentationTarget(name);
             fragment.augmentationTargetAny = target;
@@ -163,7 +186,6 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
           if (setters[name] case var target?) {
             target.augmentation = fragment;
             fragment.augmentationTargetAny = target;
-            fragment.variable2 = target.variable2;
           } else {
             var target = _recoveryAugmentationTarget(name);
             fragment.augmentationTargetAny = target;
@@ -222,21 +244,15 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
     }
   }
 
-  AugmentedInstanceElementImpl _ensureAugmented() {
+  void _addFirstFragment() {
     var firstFragment = this.firstFragment;
-    var maybeAugmented = firstFragment.augmented;
-    if (maybeAugmented is AugmentedInstanceElementImpl) {
-      return maybeAugmented;
-    }
-
-    maybeAugmented as NotAugmentedInstanceElementImpl;
-    var augmented = maybeAugmented.toAugmented();
+    var augmented = firstFragment.augmented;
 
     augmented.fields.addAll(firstFragment.fields);
     augmented.accessors.addAll(firstFragment.accessors);
     augmented.methods.addAll(firstFragment.methods);
 
-    if (augmented is AugmentedInterfaceElementImpl) {
+    if (augmented is InterfaceElementImpl2) {
       if (firstFragment is InterfaceElementImpl) {
         augmented.mixins.addAll(firstFragment.mixins);
         augmented.interfaces.addAll(firstFragment.interfaces);
@@ -244,15 +260,13 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
       }
     }
 
-    if (augmented is AugmentedMixinElementImpl) {
+    if (augmented is MixinElementImpl2) {
       if (firstFragment is MixinElementImpl) {
         augmented.superclassConstraints.addAll(
           firstFragment.superclassConstraints,
         );
       }
     }
-
-    return augmented;
   }
 
   ElementImpl? _recoveryAugmentationTarget(String name) {
@@ -266,22 +280,20 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
     return target;
   }
 
-  void _updatedAugmented(
-    AugmentedInstanceElementImpl augmented,
-    InstanceElementImpl augmentation,
-  ) {
-    var declaration = firstFragment;
-    var declarationTypeParameters = declaration.typeParameters;
+  void _updatedAugmented(InstanceElementImpl augmentation) {
+    var element = this.element;
+    var firstFragment = this.firstFragment;
+    var firstTypeParameters = firstFragment.typeParameters;
 
-    MapSubstitution toDeclaration;
+    MapSubstitution toFirstFragment;
     var augmentationTypeParameters = augmentation.typeParameters;
-    if (augmentationTypeParameters.length == declarationTypeParameters.length) {
-      toDeclaration = Substitution.fromPairs(
+    if (augmentationTypeParameters.length == firstTypeParameters.length) {
+      toFirstFragment = Substitution.fromPairs(
         augmentationTypeParameters,
-        declarationTypeParameters.instantiateNone(),
+        firstTypeParameters.instantiateNone(),
       );
     } else {
-      toDeclaration = Substitution.fromPairs(
+      toFirstFragment = Substitution.fromPairs(
         augmentationTypeParameters,
         List.filled(
           augmentationTypeParameters.length,
@@ -291,138 +303,140 @@ abstract class InstanceElementBuilder<F extends InstanceElementImpl>
     }
 
     if (augmentation is InterfaceElementImpl &&
-        declaration is InterfaceElementImpl &&
-        augmented is AugmentedInterfaceElementImpl) {
-      augmented.constructors = [
-        ...augmented.constructors.notAugmented,
+        firstFragment is InterfaceElementImpl &&
+        element is InterfaceElementImpl2) {
+      element.constructors = [
+        ...element.constructors.notAugmented,
         ...augmentation.constructors.notAugmented.map((element) {
-          if (toDeclaration.map.isEmpty) {
+          if (toFirstFragment.map.isEmpty) {
             return element;
           }
           return ConstructorMember(
             declaration: element,
-            augmentationSubstitution: toDeclaration,
+            augmentationSubstitution: toFirstFragment,
             substitution: Substitution.empty,
           );
         }),
       ];
     }
 
-    augmented.fields = [
-      ...augmented.fields.notAugmented,
+    element.fields = [
+      ...element.fields.notAugmented,
       ...augmentation.fields.notAugmented.map((element) {
-        if (toDeclaration.map.isEmpty) {
+        if (toFirstFragment.map.isEmpty) {
           return element;
         }
-        return FieldMember(element, toDeclaration, Substitution.empty);
+        return FieldMember(element, toFirstFragment, Substitution.empty);
       }),
     ];
 
-    augmented.accessors = [
-      ...augmented.accessors.notAugmented,
+    element.accessors = [
+      ...element.accessors.notAugmented,
       ...augmentation.accessors.notAugmented.map((element) {
-        if (toDeclaration.map.isEmpty) {
+        if (toFirstFragment.map.isEmpty) {
           return element;
         }
         return PropertyAccessorMember(
-            element, toDeclaration, Substitution.empty);
+            element, toFirstFragment, Substitution.empty);
       }),
     ];
 
-    augmented.methods = [
-      ...augmented.methods.notAugmented,
+    element.methods = [
+      ...element.methods.notAugmented,
       ...augmentation.methods.notAugmented.map((element) {
-        if (toDeclaration.map.isEmpty) {
+        if (toFirstFragment.map.isEmpty) {
           return element;
         }
-        return MethodMember(element, toDeclaration, Substitution.empty);
+        return MethodMember(element, toFirstFragment, Substitution.empty);
       }),
     ];
   }
 }
 
-class MixinElementBuilder extends InstanceElementBuilder<MixinElementImpl> {
+class MixinElementBuilder
+    extends InstanceElementBuilder<MixinElementImpl2, MixinElementImpl> {
   MixinElementBuilder({
+    required super.element,
     required super.firstFragment,
-    required MaybeAugmentedMixinElementMixin element,
-  }) {
-    firstFragment.augmentedInternal = element;
-    addFields(firstFragment.fields);
-    addAccessors(firstFragment.accessors);
-    addMethods(firstFragment.methods);
-  }
+  });
 
-  void augment(MixinElementImpl fragment) {
-    lastFragment.augmentation = fragment;
-    lastFragment = fragment;
-
-    var element = _ensureAugmented();
-    fragment.augmentedInternal = firstFragment.augmentedInternal;
-
+  void addFragment(MixinElementImpl fragment) {
     addFields(fragment.fields);
     addAccessors(fragment.accessors);
     addMethods(fragment.methods);
-    _updatedAugmented(element, fragment);
+
+    if (identical(fragment, firstFragment)) {
+      _addFirstFragment();
+    } else {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+
+      fragment.augmentedInternal = element;
+      _updatedAugmented(fragment);
+    }
   }
 }
 
-class TopVariableElementsBuilder {
-  /// This map is shared with [LibraryBuilder].
-  final Map<String, ElementImpl> augmentationTargets;
+class SetterElementBuilder extends FragmentedElementBuilder<SetterElementImpl,
+    PropertyAccessorElementImpl> {
+  SetterElementBuilder({
+    required super.element,
+    required super.firstFragment,
+  });
 
-  final Map<String, TopLevelVariableElementImpl> variables = {};
-  final Map<String, PropertyAccessorElementImpl> accessors = {};
-
-  TopVariableElementsBuilder(this.augmentationTargets);
-
-  void addAccessor(PropertyAccessorElementImpl fragment) {
-    var name = fragment.name;
-    if (fragment.isAugmentation) {
-      ElementImpl? target = accessors[name];
-      // Recovery.
-      if (target == null) {
-        if (name.removeSuffix('=') case var getterName?) {
-          target ??= accessors[getterName];
-          target ??= augmentationTargets[getterName];
-        } else {
-          target ??= accessors['$name='];
-          target ??= augmentationTargets[name];
-        }
-      }
-
-      if (target is PropertyAccessorElementImpl &&
-          target.isGetter == fragment.isGetter) {
-        target.augmentation = fragment;
-        fragment.augmentationTargetAny = target;
-        fragment.variable2 = target.variable2;
-      } else {
-        fragment.augmentationTargetAny = target;
-      }
+  void addFragment(PropertyAccessorElementImpl fragment) {
+    if (!identical(fragment, firstFragment)) {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+      fragment.element = element;
     }
-    accessors[name] = fragment;
   }
+}
 
-  void addVariable(TopLevelVariableElementImpl fragment) {
-    var name = fragment.name;
-    if (fragment.isAugmentation) {
-      ElementImpl? target = variables[name];
-      // Recovery.
-      target ??= accessors[name];
-      target ??= accessors['$name='];
-      target ??= augmentationTargets[name];
+class TopLevelFunctionElementBuilder extends FragmentedElementBuilder<
+    TopLevelFunctionElementImpl, FunctionElementImpl> {
+  TopLevelFunctionElementBuilder({
+    required super.element,
+    required super.firstFragment,
+  });
 
-      fragment.augmentationTargetAny = target;
-      if (target is TopLevelVariableElementImpl) {
-        target.augmentation = fragment;
-      }
+  void addFragment(FunctionElementImpl fragment) {
+    if (!identical(fragment, firstFragment)) {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+      fragment.element = element;
     }
-    variables[name] = fragment;
+  }
+}
 
-    if (fragment.getter case var getter?) {
-      addAccessor(getter);
+class TopLevelVariableElementBuilder extends FragmentedElementBuilder<
+    TopLevelVariableElementImpl2, TopLevelVariableElementImpl> {
+  TopLevelVariableElementBuilder({
+    required super.element,
+    required super.firstFragment,
+  });
+
+  void addFragment(TopLevelVariableElementImpl fragment) {
+    if (!identical(fragment, firstFragment)) {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+      fragment.element = element;
     }
-    if (fragment.setter case var setter?) {
-      addAccessor(setter);
+  }
+}
+
+class TypeAliasElementBuilder extends FragmentedElementBuilder<
+    TypeAliasElementImpl2, TypeAliasElementImpl> {
+  TypeAliasElementBuilder({
+    required super.element,
+    required super.firstFragment,
+  });
+
+  void addFragment(TypeAliasElementImpl fragment) {
+    if (!identical(fragment, firstFragment)) {
+      lastFragment.augmentation = fragment;
+      lastFragment = fragment;
+      // fragment.element = element;
     }
   }
 }

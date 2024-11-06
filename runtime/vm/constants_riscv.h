@@ -20,8 +20,6 @@
 
 namespace dart {
 
-DECLARE_FLAG(bool, use_compressed_instructions);
-
 #if defined(TARGET_ARCH_RISCV32)
 typedef uint32_t uintx_t;
 typedef int32_t intx_t;
@@ -69,7 +67,7 @@ enum Register {
   S7 = 23,   // CALLEE_SAVED_TEMP2
   S8 = 24,   // CALLEE_SAVED_TEMP / FAR_TMP
   S9 = 25,   // DISPATCH_TABLE_REG
-  S10 = 26,  // nullptr
+  S10 = 26,  // NULL_REG
   S11 = 27,  // WRITE_BARRIER_STATE
   T3 = 28,
   T4 = 29,
@@ -593,8 +591,10 @@ class CallingConventions {
 //
 // See |compiler::ComputeCallingConvention| for more details.
 struct DartCallingConvention {
-  static constexpr Register kCpuRegistersForArgs[] = {kNoRegister};
-  static constexpr FpuRegister kFpuRegistersForArgs[] = {kNoFpuRegister};
+  // A2-A5 have conflicting uses. The order should be revisited once we
+  // implement Location::MayBeSameAsInput, likely putting A0 first.
+  static constexpr Register kCpuRegistersForArgs[] = {A1, A6, A0, A7};
+  static constexpr FpuRegister kFpuRegistersForArgs[] = {FA0, FA1, FA2, FA3};
 };
 
 // TODO(riscv): Architecture-independent parts of the compiler should use
@@ -1602,6 +1602,12 @@ static constexpr ExtensionSet RV_B = RV_Zba | RV_Zbb | RV_Zbs;
 static constexpr ExtensionSet RV_GCB = RV_GC | RV_B;
 static constexpr Extension RV_Zbc(9);      // Carry-less multiplication
 static constexpr Extension RV_Zalasr(10);  // Load-acquire, store-release
+
+#if defined(DART_TARGET_OS_FUCHSIA) || defined(DART_TARGET_OS_ANDROID)
+static constexpr ExtensionSet RV_baseline = RV_GCB;
+#else
+static constexpr ExtensionSet RV_baseline = RV_GC;
+#endif
 
 #undef R
 

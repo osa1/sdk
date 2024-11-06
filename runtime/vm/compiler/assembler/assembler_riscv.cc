@@ -2406,9 +2406,7 @@ void MicroAssembler::EmitJType(intptr_t imm, Register rd, Opcode opcode) {
 
 Assembler::Assembler(ObjectPoolBuilder* object_pool_builder,
                      intptr_t far_branch_level)
-    : MicroAssembler(object_pool_builder,
-                     far_branch_level,
-                     FLAG_use_compressed_instructions ? RV_GC : RV_G),
+    : MicroAssembler(object_pool_builder, far_branch_level, RV_baseline),
       constant_pool_allowed_(false) {
   generate_invoke_write_barrier_wrapper_ = [&](Register reg) {
     // Note this does not destroy RA.
@@ -2572,7 +2570,7 @@ void Assembler::ExtendValue(Register rd, Register rn, OperandSize sz) {
       return mv(rd, rn);
     case kUnsignedFourBytes:
       if (Supports(RV_Zba)) {
-        return adduw(rd, rn, ZR);
+        return zextw(rd, rn);
       }
       slli(rd, rn, XLEN - 32);
       return srli(rd, rn, XLEN - 32);
@@ -2855,10 +2853,34 @@ void Assembler::BranchIf(Condition condition,
         UNREACHABLE();
     }
   } else if (deferred_compare_ == kTestImm || deferred_compare_ == kTestReg) {
-    if (deferred_compare_ == kTestImm) {
-      AndImmediate(TMP2, deferred_left_, deferred_imm_);
-    } else {
+    uintx_t uimm = deferred_imm_;
+    if (deferred_compare_ == kTestReg) {
       and_(TMP2, deferred_left_, deferred_reg_);
+    } else if (IsITypeImm(deferred_imm_)) {
+      andi(TMP2, deferred_left_, deferred_imm_);
+    } else if (Utils::IsPowerOfTwo(uimm)) {
+      intptr_t shift = Utils::ShiftForPowerOfTwo(uimm);
+      Register sign;
+      if (shift == XLEN - 1) {
+        sign = deferred_left_;
+      } else {
+        slli(TMP2, deferred_left_, XLEN - 1 - shift);
+        sign = TMP2;
+      }
+      switch (condition) {
+        case ZERO:
+          bgez(sign, label, distance);
+          break;
+        case NOT_ZERO:
+          bltz(sign, label, distance);
+          break;
+        default:
+          UNREACHABLE();
+      }
+      deferred_compare_ = kNone;  // Consumed.
+      return;
+    } else {
+      AndImmediate(TMP2, deferred_left_, deferred_imm_);
     }
     switch (condition) {
       case ZERO:
@@ -3311,13 +3333,12 @@ void Assembler::LslImmediate(Register rd,
     return slliw(rd, rn, shift);
   }
   if (sz == kUnsignedFourBytes) {
-    if (Supports(RV_Zba)) {
-      return slliuw(rd, rn, shift);
-    } else {
-      // Clear upper bits in addition to the shift.
-      slli(rd, rn, shift + (XLEN / 2));
-      return srli(rd, rn, XLEN / 2);
-    }
+    // Not slliuw even when available. That zero extends the input, not the
+    // output.
+
+    // Clear upper bits in addition to the shift.
+    slli(rd, rn, shift + (XLEN / 2));
+    return srli(rd, rn, XLEN / 2);
   }
 #endif
   slli(rd, rn, shift);
@@ -4554,7 +4575,7 @@ void Assembler::TryAllocateObject(intptr_t cid,
 
     const uword tags = target::MakeTagWordForNewSpaceObject(cid, instance_size);
     LoadImmediate(temp_reg, tags);
-    Store(temp_reg, FieldAddress(instance_reg, target::Object::tags_offset()));
+    InitializeHeader(temp_reg, instance_reg);
   } else {
     j(failure, distance);
   }
@@ -4595,7 +4616,7 @@ void Assembler::TryAllocateArray(intptr_t cid,
     // instance: new object start as a tagged pointer.
     const uword tags = target::MakeTagWordForNewSpaceObject(cid, instance_size);
     LoadImmediate(temp2, tags);
-    sx(temp2, FieldAddress(instance, target::Object::tags_offset()));
+    InitializeHeader(temp2, instance);
   } else {
     j(failure);
   }

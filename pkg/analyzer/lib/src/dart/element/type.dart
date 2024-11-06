@@ -43,7 +43,10 @@ class DynamicTypeImpl extends TypeImpl
   DynamicTypeImpl._();
 
   @override
-  Element2? get element3 => (element as Fragment).element;
+  Element2? get element3 => switch (element) {
+        Fragment(:var element) => element,
+        _ => null,
+      };
 
   @override
   int get hashCode => 1;
@@ -197,20 +200,8 @@ class FunctionTypeImpl extends TypeImpl implements FunctionType {
       };
 
   @override
-  List<String> get normalParameterNames => parameters
-      .where((p) => p.isRequiredPositional)
-      .map((p) => p.name)
-      .toList();
-
-  @override
   List<DartType> get normalParameterTypes =>
       positionalParameterTypes.sublist(0, requiredPositionalParameterCount);
-
-  @override
-  List<String> get optionalParameterNames => parameters
-      .where((p) => p.isOptionalPositional)
-      .map((p) => p.name)
-      .toList();
 
   @override
   List<DartType> get optionalParameterTypes =>

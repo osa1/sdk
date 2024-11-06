@@ -31,24 +31,258 @@ import 'source_loader.dart';
 import 'source_procedure_builder.dart';
 import 'source_type_alias_builder.dart';
 
-class _Added {
-  final Fragment fragment;
+class _FragmentName {
+  final Uri fileUri;
+  final String name;
+  final int nameOffset;
+  final int nameLength;
+  final bool isAugment;
 
-  _Added(this.fragment);
+  _FragmentName(
+      {required this.fileUri,
+      required this.name,
+      required this.nameOffset,
+      required this.nameLength,
+      required this.isAugment});
+}
 
-  void getAddBuilders(
-      {required ProblemReporting problemReporting,
-      required SourceLoader loader,
-      required SourceLibraryBuilder enclosingLibraryBuilder,
-      DeclarationBuilder? declarationBuilder,
-      required List<NominalParameterBuilder> unboundNominalVariables,
-      required Map<SourceClassBuilder, TypeBuilder> mixinApplications,
-      required List<_AddBuilder> builders,
-      required IndexedLibrary? indexedLibrary,
-      required ContainerType containerType,
-      IndexedContainer? indexedContainer,
-      ContainerName? containerName}) {
-    Fragment fragment = this.fragment;
+void _computeBuildersFromFragments(String name, List<Fragment> fragments,
+    {required ProblemReporting problemReporting,
+    required SourceLoader loader,
+    required SourceLibraryBuilder enclosingLibraryBuilder,
+    DeclarationBuilder? declarationBuilder,
+    required List<NominalParameterBuilder> unboundNominalVariables,
+    required Map<SourceClassBuilder, TypeBuilder> mixinApplications,
+    required List<_AddBuilder> builders,
+    required IndexedLibrary? indexedLibrary,
+    required ContainerType containerType,
+    IndexedContainer? indexedContainer,
+    ContainerName? containerName}) {
+  // TODO(johnniwinther): Collect introductory and augmenting fragments.
+  _FragmentName? existingGetable;
+  _FragmentName? existingSetable;
+  _FragmentName? existingConstructor;
+
+  void checkGetable(_FragmentName fragmentName) {
+    if (fragmentName.isAugment) {
+      // TODO(johnniwinther): Check that an introductory fragment exists and
+      //  collect augmentations.
+      return;
+    }
+    if (existingGetable != null) {
+      problemReporting.addProblem(
+          templateDuplicatedDeclaration.withArguments(fragmentName.name),
+          fragmentName.nameOffset,
+          fragmentName.nameLength,
+          fragmentName.fileUri,
+          context: <LocatedMessage>[
+            templateDuplicatedDeclarationCause
+                .withArguments(existingGetable!.name)
+                .withLocation(existingGetable!.fileUri,
+                    existingGetable!.nameOffset, existingGetable!.nameLength)
+          ]);
+    }
+    // TODO(johnniwinther): Check for conflict with setters.
+    /*else if (existingSetable != null) {
+      problemReporting.addProblem(
+          templateDuplicatedDeclaration.withArguments(fragmentName.name),
+          fragmentName.nameOffset,
+          fragmentName.nameLength,
+          fragmentName.fileUri,
+          context: <LocatedMessage>[
+            templateDuplicatedDeclarationCause
+                .withArguments(existingSetable!.name)
+                .withLocation(existingSetable!.fileUri,
+                    existingSetable!.nameOffset, existingSetable!.nameLength)
+          ]);
+    }*/
+    existingGetable = fragmentName;
+  }
+
+  void checkProperty({_FragmentName? getable, _FragmentName? setable}) {
+    if (getable != null && existingGetable != null) {
+      if (getable.isAugment) {
+        // Check that an introductory fragment exists and collect augmentations.
+        getable = null;
+      } else {
+        problemReporting.addProblem(
+            templateDuplicatedDeclaration.withArguments(getable.name),
+            getable.nameOffset,
+            getable.nameLength,
+            getable.fileUri,
+            context: <LocatedMessage>[
+              templateDuplicatedDeclarationCause
+                  .withArguments(existingGetable!.name)
+                  .withLocation(existingGetable!.fileUri,
+                      existingGetable!.nameOffset, existingGetable!.nameLength)
+            ]);
+      }
+    } else if (setable != null && existingSetable != null) {
+      if (setable.isAugment) {
+        // TODO(johnniwinther): Check that an introductory fragment exists and
+        //  collect augmentations.
+        setable = null;
+      } else {
+        problemReporting.addProblem(
+            templateDuplicatedDeclaration.withArguments(setable.name),
+            setable.nameOffset,
+            setable.nameLength,
+            setable.fileUri,
+            context: <LocatedMessage>[
+              templateDuplicatedDeclarationCause
+                  .withArguments(existingSetable!.name)
+                  .withLocation(existingSetable!.fileUri,
+                      existingSetable!.nameOffset, existingSetable!.nameLength)
+            ]);
+      }
+    }
+    if (getable != null) {
+      existingGetable = getable;
+    }
+    if (setable != null) {
+      existingSetable = setable;
+    }
+  }
+
+  void checkConstructor(_FragmentName constructor) {
+    if (constructor.isAugment) {
+      // TODO(johnniwinther): Check that an introductory fragment exists and
+      //  collect augmentations.
+      return;
+    }
+    if (existingConstructor != null) {
+      problemReporting.addProblem(
+          templateDuplicatedDeclaration.withArguments(constructor.name),
+          constructor.nameOffset,
+          constructor.nameLength,
+          constructor.fileUri,
+          context: <LocatedMessage>[
+            templateDuplicatedDeclarationCause
+                .withArguments(existingConstructor!.name)
+                .withLocation(
+                    existingConstructor!.fileUri,
+                    existingConstructor!.nameOffset,
+                    existingConstructor!.nameLength)
+          ]);
+    }
+    existingConstructor = constructor;
+  }
+
+  for (Fragment fragment in fragments) {
+    switch (fragment) {
+      case ClassFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment));
+      case EnumFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            // TODO(johnniwinther): Support enum augmentations.
+            isAugment: false));
+      case ExtensionTypeFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment));
+      case MethodFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment));
+      case MixinFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment));
+      case NamedMixinApplicationFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment));
+      case TypedefFragment():
+        checkGetable(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            // TODO(johnniwinther): Support typedef augmentations.
+            isAugment: false));
+      case ExtensionFragment():
+        if (!fragment.isUnnamed) {
+          checkGetable(new _FragmentName(
+              fileUri: fragment.fileUri,
+              name: fragment.name,
+              nameOffset: fragment.fileOffset,
+              nameLength: fragment.name.length,
+              isAugment: fragment.modifiers.isAugment));
+        }
+      // TODO(johnniwinther):
+      case FactoryFragment():
+        checkConstructor(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.constructorName.fullName,
+            nameOffset: fragment.constructorName.fullNameOffset,
+            nameLength: fragment.constructorName.fullNameLength,
+            isAugment: fragment.modifiers.isAugment));
+      case ConstructorFragment():
+        checkConstructor(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.constructorName.fullName,
+            nameOffset: fragment.constructorName.fullNameOffset,
+            nameLength: fragment.constructorName.fullNameLength,
+            isAugment: fragment.modifiers.isAugment));
+      case PrimaryConstructorFragment():
+        checkConstructor(new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.constructorName.fullName,
+            nameOffset: fragment.constructorName.fullNameOffset,
+            nameLength: fragment.constructorName.fullNameLength,
+            isAugment: fragment.modifiers.isAugment));
+      case FieldFragment():
+        _FragmentName fragmentName = new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment);
+        checkProperty(getable: fragmentName
+            // TODO(johnniwinther): Check getter/setter conflict here.
+            /*, setable: fragment.hasSetter ? fragmentName : null*/
+            );
+      case GetterFragment():
+        _FragmentName fragmentName = new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment);
+        checkProperty(getable: fragmentName);
+      case SetterFragment():
+        _FragmentName fragmentName = new _FragmentName(
+            fileUri: fragment.fileUri,
+            name: fragment.name,
+            nameOffset: fragment.nameOffset,
+            nameLength: fragment.name.length,
+            isAugment: fragment.modifiers.isAugment);
+        checkProperty(setable: fragmentName);
+    }
+  }
+
+  for (Fragment fragment in fragments) {
     switch (fragment) {
       case TypedefFragment():
         Reference? reference = indexedLibrary?.lookupTypedef(fragment.name);
@@ -56,11 +290,11 @@ class _Added {
             name: fragment.name,
             enclosingLibraryBuilder: enclosingLibraryBuilder,
             fileUri: fragment.fileUri,
-            fileOffset: fragment.fileOffset,
+            fileOffset: fragment.nameOffset,
             fragment: fragment,
             reference: reference);
         builders.add(new _AddBuilder(fragment.name, typedefBuilder,
-            fragment.fileUri, fragment.fileOffset));
+            fragment.fileUri, fragment.nameOffset));
         if (reference != null) {
           loader.buildersCreatedWithReferences[reference] = typedefBuilder;
         }
@@ -403,17 +637,17 @@ class _Added {
           }
         }
         SourceFieldBuilder fieldBuilder = new SourceFieldBuilder(
-            fragment.metadata,
-            fragment.type,
-            name,
-            fragment.modifiers,
-            fragment.isTopLevel,
-            enclosingLibraryBuilder,
-            declarationBuilder,
-            fragment.fileUri,
-            fragment.charOffset,
-            fragment.charEndOffset,
-            nameScheme,
+            metadata: fragment.metadata,
+            type: fragment.type,
+            name: name,
+            modifiers: fragment.modifiers,
+            isTopLevel: fragment.isTopLevel,
+            libraryBuilder: enclosingLibraryBuilder,
+            declarationBuilder: declarationBuilder,
+            fileUri: fragment.fileUri,
+            nameOffset: fragment.nameOffset,
+            endOffset: fragment.endOffset,
+            nameScheme: nameScheme,
             fieldReference: fieldReference,
             fieldGetterReference: fieldGetterReference,
             fieldSetterReference: fieldSetterReference,
@@ -426,7 +660,7 @@ class _Added {
             constInitializerToken: fragment.constInitializerToken);
         fragment.builder = fieldBuilder;
         builders.add(new _AddBuilder(fragment.name, fieldBuilder,
-            fragment.fileUri, fragment.charOffset));
+            fragment.fileUri, fragment.nameOffset));
         if (fieldGetterReference != null) {
           loader.buildersCreatedWithReferences[fieldGetterReference] =
               fieldBuilder;
@@ -655,7 +889,7 @@ class _Added {
               declarationBuilder: declarationBuilder,
               fileUri: fragment.fileUri,
               startOffset: fragment.startOffset,
-              fileOffset: fragment.nameOffset,
+              fileOffset: fragment.fullNameOffset,
               formalsOffset: fragment.formalsOffset,
               endOffset: fragment.endOffset,
               constructorReference: constructorReference,
@@ -676,7 +910,7 @@ class _Added {
               declarationBuilder: declarationBuilder!,
               fileUri: fragment.fileUri,
               startOffset: fragment.startOffset,
-              fileOffset: fragment.nameOffset,
+              fileOffset: fragment.fullNameOffset,
               formalsOffset: fragment.formalsOffset,
               endOffset: fragment.endOffset,
               constructorReference: constructorReference,
@@ -688,7 +922,7 @@ class _Added {
         }
         fragment.builder = constructorBuilder;
         builders.add(new _AddBuilder(fragment.name, constructorBuilder,
-            fragment.fileUri, fragment.nameOffset));
+            fragment.fileUri, fragment.fullNameOffset));
 
         // TODO(johnniwinther): There is no way to pass the tear off reference
         //  here.
@@ -812,7 +1046,7 @@ class _Added {
               declarationBuilder: declarationBuilder!,
               fileUri: fragment.fileUri,
               startOffset: fragment.startOffset,
-              nameOffset: fragment.nameOffset,
+              nameOffset: fragment.fullNameOffset,
               formalsOffset: fragment.formalsOffset,
               endOffset: fragment.endOffset,
               procedureReference: procedureReference,
@@ -834,7 +1068,7 @@ class _Added {
               declarationBuilder: declarationBuilder!,
               fileUri: fragment.fileUri,
               startOffset: fragment.startOffset,
-              nameOffset: fragment.nameOffset,
+              nameOffset: fragment.fullNameOffset,
               formalsOffset: fragment.formalsOffset,
               endOffset: fragment.endOffset,
               procedureReference: procedureReference,
@@ -845,7 +1079,7 @@ class _Added {
         }
         fragment.builder = factoryBuilder;
         builders.add(new _AddBuilder(fragment.name, factoryBuilder,
-            fragment.fileUri, fragment.nameOffset));
+            fragment.fileUri, fragment.fullNameOffset));
         // TODO(johnniwinther): There is no way to pass the tear off reference
         //  here.
         if (procedureReference != null) {
@@ -861,14 +1095,14 @@ class LibraryNameSpaceBuilder {
 
   final Map<String, List<Builder>> setterAugmentations = {};
 
-  List<_Added> _added = [];
+  List<Fragment> _fragments = [];
 
   void addFragment(Fragment fragment) {
-    _added.add(new _Added(fragment));
+    _fragments.add(fragment);
   }
 
   void includeBuilders(LibraryNameSpaceBuilder other) {
-    _added.addAll(other._added);
+    _fragments.addAll(other._fragments);
   }
 
   NameSpace toNameSpace({
@@ -929,18 +1163,8 @@ class LibraryNameSpaceBuilder {
       }
       declaration.next = existing;
       if (isDuplicatedDeclaration(existing, declaration)) {
-        String fullName = name;
-        problemReporting.addProblem(
-            templateDuplicatedDeclaration.withArguments(fullName),
-            charOffset,
-            fullName.length,
-            declaration.fileUri!,
-            context: <LocatedMessage>[
-              templateDuplicatedDeclarationCause
-                  .withArguments(fullName)
-                  .withLocation(
-                      existing!.fileUri!, existing.fileOffset, fullName.length)
-            ]);
+        // Error reporting in [_computeBuildersFromFragments].
+        // TODO(johnniwinther): Avoid the use of [isDuplicatedDeclaration].
       } else if (declaration.isExtension) {
         // We add the extension declaration to the extension scope only if its
         // name is unique. Only the first of duplicate extensions is accessible
@@ -961,9 +1185,14 @@ class LibraryNameSpaceBuilder {
       members[name] = declaration;
     }
 
-    for (_Added added in _added) {
+    Map<String, List<Fragment>> fragmentsByName = {};
+    for (Fragment fragment in _fragments) {
+      (fragmentsByName[fragment.name] ??= []).add(fragment);
+    }
+
+    for (MapEntry<String, List<Fragment>> entry in fragmentsByName.entries) {
       List<_AddBuilder> addBuilders = [];
-      added.getAddBuilders(
+      _computeBuildersFromFragments(entry.key, entry.value,
           loader: enclosingLibraryBuilder.loader,
           problemReporting: problemReporting,
           enclosingLibraryBuilder: enclosingLibraryBuilder,
@@ -1046,7 +1275,7 @@ abstract class DeclarationFragment {
   final Uri fileUri;
   final LookupScope typeParameterScope;
   final DeclarationBuilderScope bodyScope = new DeclarationBuilderScope();
-  final List<_Added> _added = [];
+  final List<Fragment> _fragments = [];
 
   List<FieldFragment>? primaryConstructorFields;
 
@@ -1072,12 +1301,12 @@ abstract class DeclarationFragment {
   }
 
   void addFragment(Fragment fragment) {
-    _added.add(new _Added(fragment));
+    _fragments.add(fragment);
   }
 
   DeclarationNameSpaceBuilder toDeclarationNameSpaceBuilder() {
     return new DeclarationNameSpaceBuilder._(
-        name, _nominalParameterNameSpace, _added);
+        name, _nominalParameterNameSpace, _fragments);
   }
 }
 
@@ -1093,15 +1322,15 @@ class _AddBuilder {
 class DeclarationNameSpaceBuilder {
   final String _name;
   final NominalParameterNameSpace? _nominalParameterNameSpace;
-  final List<_Added> _added;
+  final List<Fragment> _fragments;
 
   DeclarationNameSpaceBuilder.empty()
       : _name = '',
         _nominalParameterNameSpace = null,
-        _added = const [];
+        _fragments = const [];
 
   DeclarationNameSpaceBuilder._(
-      this._name, this._nominalParameterNameSpace, this._added);
+      this._name, this._nominalParameterNameSpace, this._fragments);
 
   void _addBuilder(
       ProblemReporting problemReporting,
@@ -1139,25 +1368,8 @@ class DeclarationNameSpaceBuilder {
     }
     declaration.next = existing;
     if (isDuplicatedDeclaration(existing, declaration)) {
-      String fullName = name;
-      if (isConstructor) {
-        if (name.isEmpty) {
-          fullName = _name;
-        } else {
-          fullName = "${_name}.$name";
-        }
-      }
-      problemReporting.addProblem(
-          templateDuplicatedDeclaration.withArguments(fullName),
-          charOffset,
-          fullName.length,
-          declaration.fileUri!,
-          context: <LocatedMessage>[
-            templateDuplicatedDeclarationCause
-                .withArguments(fullName)
-                .withLocation(
-                    existing!.fileUri!, existing.fileOffset, fullName.length)
-          ]);
+      // Error reporting in [_computeBuildersFromFragments].
+      // TODO(johnniwinther): Avoid the use of [isDuplicatedDeclaration].
     } else if (declaration.isAugment) {
       // Coverage-ignore-block(suite): Not run.
       if (existing != null) {
@@ -1206,9 +1418,14 @@ class DeclarationNameSpaceBuilder {
     Map<String, MemberBuilder> setables = {};
     Map<String, MemberBuilder> constructors = {};
 
-    for (_Added added in _added) {
+    Map<String, List<Fragment>> fragmentsByName = {};
+    for (Fragment fragment in _fragments) {
+      (fragmentsByName[fragment.name] ??= []).add(fragment);
+    }
+
+    for (MapEntry<String, List<Fragment>> entry in fragmentsByName.entries) {
       List<_AddBuilder> addBuilders = [];
-      added.getAddBuilders(
+      _computeBuildersFromFragments(entry.key, entry.value,
           loader: loader,
           problemReporting: problemReporting,
           enclosingLibraryBuilder: enclosingLibraryBuilder,

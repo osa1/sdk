@@ -2837,7 +2837,11 @@ void Object::InitializeObject(uword address,
 #if defined(HASH_IN_OBJECT_HEADER)
   tags = UntaggedObject::HashTag::update(0, tags);
 #endif
+
   reinterpret_cast<UntaggedObject*>(address)->tags_ = tags;
+#if defined(HOST_HAS_FAST_WRITE_WRITE_FENCE)
+  std::atomic_thread_fence(std::memory_order_release);
+#endif
 }
 
 void Object::CheckHandle() const {
@@ -27724,7 +27728,8 @@ ErrorPtr EntryPointMemberInvocationError(const Object& member) {
 // dynamic call site.
 intptr_t Function::MaxNumberOfParametersInRegisters(Zone* zone) const {
 #if defined(TARGET_ARCH_X64) || defined(TARGET_ARCH_ARM64) ||                  \
-    defined(TARGET_ARCH_ARM)
+    defined(TARGET_ARCH_ARM) || defined(TARGET_ARCH_RISCV32) ||                \
+    defined(TARGET_ARCH_RISCV64)
   if (!FLAG_precompiled_mode) {
     return 0;
   }

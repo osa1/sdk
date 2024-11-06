@@ -1308,7 +1308,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       String name,
       List<NominalParameterBuilder>? typeParameters,
       TypeBuilder type,
-      int charOffset) {
+      int nameOffset) {
     if (typeParameters != null) {
       for (NominalParameterBuilder typeParameter in typeParameters) {
         typeParameter.varianceCalculationValue =
@@ -1326,7 +1326,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
         typeParameters: typeParameters,
         type: type,
         fileUri: _compilationUnit.fileUri,
-        fileOffset: charOffset);
+        nameOffset: nameOffset);
     _addFragment(fragment);
   }
 
@@ -1475,9 +1475,8 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     }
 
     if (isConstructor) {
-      String constructorName =
-          computeAndValidateConstructorName(declarationFragment, identifier) ??
-              name;
+      ConstructorName constructorName =
+          computeAndValidateConstructorName(declarationFragment, identifier);
       addConstructor(
           offsetMap: offsetMap,
           metadata: metadata,
@@ -1487,7 +1486,6 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
           typeParameters: typeParameters,
           formals: formals,
           startOffset: startOffset,
-          nameOffset: nameOffset,
           formalsOffset: formalsOffset,
           endOffset: endOffset,
           nativeMethodName: nativeMethodName,
@@ -1562,69 +1560,10 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   }
 
   @override
-  void addConstructor(
-      {required OffsetMap offsetMap,
-      required List<MetadataBuilder>? metadata,
-      required Modifiers modifiers,
-      required Identifier identifier,
-      required String constructorName,
-      required List<NominalParameterBuilder>? typeParameters,
-      required List<FormalParameterBuilder>? formals,
-      required int startOffset,
-      required int nameOffset,
-      required int formalsOffset,
-      required int endOffset,
-      required String? nativeMethodName,
-      required Token? beginInitializers,
-      required bool forAbstractClassOrMixin}) {
-    TypeScope typeParameterScope = _typeScopes.pop();
-    assert(typeParameterScope.kind == TypeScopeKind.memberTypeParameters,
-        "Unexpected type scope: $typeParameterScope.");
-
-    ConstructorFragment fragment = new ConstructorFragment(
-        name: constructorName,
-        fileUri: _compilationUnit.fileUri,
-        startOffset: startOffset,
-        nameOffset: nameOffset,
-        formalsOffset: formalsOffset,
-        endOffset: endOffset,
-        modifiers: modifiers - Modifiers.Abstract,
-        metadata: metadata,
-        returnType: addInferableType(),
-        typeParameters: typeParameters,
-        typeParameterScope: typeParameterScope.lookupScope,
-        formals: formals,
-        nativeMethodName: nativeMethodName,
-        forAbstractClassOrMixin: forAbstractClassOrMixin,
-        beginInitializers: modifiers.isConst ||
-                libraryFeatures.superParameters.isEnabled
-            // const constructors will have their initializers compiled and
-            // written into the outline. In case of super-parameters language
-            // feature, the super initializers are required to infer the types
-            // of super parameters.
-            // TODO(johnniwinther): Avoid using a dummy token to ensure building
-            // of constant constructors in the outline phase.
-            ? (beginInitializers ?? new Token.eof(-1))
-            : null);
-
-    _nominalParameterNameSpaces.pop().addTypeParameters(
-        _problemReporting, typeParameters,
-        ownerName: constructorName, allowNameConflict: true);
-    _addFragment(fragment);
-    if (nativeMethodName != null) {
-      _addNativeConstructorFragment(fragment);
-    }
-    if (modifiers.isConst) {
-      _declarationFragments.current.declaresConstConstructor = true;
-    }
-    offsetMap.registerConstructorFragment(identifier, fragment);
-  }
-
-  @override
   void addPrimaryConstructor(
       {required OffsetMap offsetMap,
       required Token beginToken,
-      required String constructorName,
+      required String? name,
       required List<FormalParameterBuilder>? formals,
       required int startOffset,
       required int? nameOffset,
@@ -1649,11 +1588,34 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
     List<NominalParameterBuilder>? typeParameters =
         nominalVariableCopy?.newParameterBuilders;
 
+    ConstructorName constructorName;
+    String declarationName = _declarationFragments.current.name;
+    if (name == 'new') {
+      constructorName = new ConstructorName(
+          name: '',
+          nameOffset: nameOffset!,
+          fullName: declarationName,
+          fullNameOffset: nameOffset,
+          fullNameLength: noLength);
+    } else if (name != null) {
+      constructorName = new ConstructorName(
+          name: name,
+          nameOffset: nameOffset!,
+          fullName: '$declarationName.$name',
+          fullNameOffset: nameOffset,
+          fullNameLength: noLength);
+    } else {
+      constructorName = new ConstructorName(
+          name: '',
+          nameOffset: null,
+          fullName: declarationName,
+          fullNameOffset: formalsOffset,
+          fullNameLength: noLength);
+    }
     PrimaryConstructorFragment fragment = new PrimaryConstructorFragment(
-        name: constructorName,
+        constructorName: constructorName,
         fileUri: _compilationUnit.fileUri,
         startOffset: startOffset,
-        nameOffset: nameOffset,
         formalsOffset: formalsOffset,
         modifiers: isConst ? Modifiers.Const : Modifiers.empty,
         returnType: addInferableType(),
@@ -1673,7 +1635,7 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
 
     _nominalParameterNameSpaces.pop().addTypeParameters(
         _problemReporting, typeParameters,
-        ownerName: constructorName, allowNameConflict: true);
+        ownerName: constructorName.name, allowNameConflict: true);
     _addFragment(fragment);
     if (isConst) {
       _declarationFragments.current.declaresConstConstructor = true;
@@ -1683,21 +1645,78 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   }
 
   @override
+  void addConstructor(
+      {required OffsetMap offsetMap,
+      required List<MetadataBuilder>? metadata,
+      required Modifiers modifiers,
+      required Identifier identifier,
+      required ConstructorName constructorName,
+      required List<NominalParameterBuilder>? typeParameters,
+      required List<FormalParameterBuilder>? formals,
+      required int startOffset,
+      required int formalsOffset,
+      required int endOffset,
+      required String? nativeMethodName,
+      required Token? beginInitializers,
+      required bool forAbstractClassOrMixin}) {
+    TypeScope typeParameterScope = _typeScopes.pop();
+    assert(typeParameterScope.kind == TypeScopeKind.memberTypeParameters,
+        "Unexpected type scope: $typeParameterScope.");
+
+    ConstructorFragment fragment = new ConstructorFragment(
+        constructorName: constructorName,
+        fileUri: _compilationUnit.fileUri,
+        startOffset: startOffset,
+        formalsOffset: formalsOffset,
+        endOffset: endOffset,
+        modifiers: modifiers - Modifiers.Abstract,
+        metadata: metadata,
+        returnType: addInferableType(),
+        typeParameters: typeParameters,
+        typeParameterScope: typeParameterScope.lookupScope,
+        formals: formals,
+        nativeMethodName: nativeMethodName,
+        forAbstractClassOrMixin: forAbstractClassOrMixin,
+        beginInitializers: modifiers.isConst ||
+                libraryFeatures.superParameters.isEnabled
+            // const constructors will have their initializers compiled and
+            // written into the outline. In case of super-parameters language
+            // feature, the super initializers are required to infer the types
+            // of super parameters.
+            // TODO(johnniwinther): Avoid using a dummy token to ensure building
+            // of constant constructors in the outline phase.
+            ? (beginInitializers ?? new Token.eof(-1))
+            : null);
+
+    _nominalParameterNameSpaces.pop().addTypeParameters(
+        _problemReporting, typeParameters,
+        ownerName: constructorName.name, allowNameConflict: true);
+    _addFragment(fragment);
+    if (nativeMethodName != null) {
+      _addNativeConstructorFragment(fragment);
+    }
+    if (modifiers.isConst) {
+      _declarationFragments.current.declaresConstConstructor = true;
+    }
+    offsetMap.registerConstructorFragment(identifier, fragment);
+  }
+
+  @override
   void addPrimaryConstructorField(
       {required List<MetadataBuilder>? metadata,
       required TypeBuilder type,
       required String name,
-      required int charOffset}) {
+      required int nameOffset}) {
     _declarationFragments.current.addPrimaryConstructorField(_addField(
-        metadata,
-        Modifiers.Final,
-        /* isTopLevel = */ false,
-        type,
-        name,
-        /* charOffset = */ charOffset,
-        /* charEndOffset = */ charOffset,
-        /* initializerToken = */ null,
-        /* hasInitializer = */ false));
+        metadata: metadata,
+        modifiers: Modifiers.Final,
+        isTopLevel: false,
+        type: type,
+        name: name,
+        nameOffset: nameOffset,
+        endOffset: nameOffset,
+        initializerToken: null,
+        hasInitializer: false));
   }
 
   @override
@@ -1736,16 +1755,9 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
               InstanceTypeParameterAccessState.Allowed);
     }
 
-    // Prepare the simple procedure name.
-    String procedureName;
-    String? constructorName = computeAndValidateConstructorName(
+    ConstructorName constructorName = computeAndValidateConstructorName(
         enclosingDeclaration, identifier,
         isFactory: true);
-    if (constructorName != null) {
-      procedureName = constructorName;
-    } else {
-      procedureName = identifier.name;
-    }
 
     List<NominalParameterBuilder>? typeParameters = copyTypeParameters(
             _unboundNominalVariables, enclosingDeclaration.typeParameters,
@@ -1754,10 +1766,9 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
                 InstanceTypeParameterAccessState.Allowed)
         ?.newParameterBuilders;
     FactoryFragment fragment = new FactoryFragment(
-        name: procedureName,
+        constructorName: constructorName,
         fileUri: _compilationUnit.fileUri,
         startOffset: startOffset,
-        nameOffset: nameOffset,
         formalsOffset: formalsOffset,
         endOffset: endOffset,
         modifiers: modifiers | Modifiers.Static,
@@ -1843,46 +1854,84 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
   }
 
   @override
-  String? computeAndValidateConstructorName(
+  ConstructorName computeAndValidateConstructorName(
       DeclarationFragment enclosingDeclaration, Identifier identifier,
       {isFactory = false}) {
     String className = enclosingDeclaration.name;
     String prefix;
     String? suffix;
+    int? suffixOffset;
+    String fullName;
+    int fullNameOffset;
+    int fullNameLength;
     int charOffset;
     if (identifier is QualifiedNameIdentifier) {
       Identifier qualifier = identifier.qualifier;
       prefix = qualifier.name;
       suffix = identifier.name;
+      suffixOffset = identifier.nameOffset;
       charOffset = qualifier.nameOffset;
+      String prefixAndSuffix = '${prefix}.${suffix}';
+      fullNameOffset = qualifier.nameOffset;
+      // If the there is no space between the prefix and suffix we use the full
+      // length as the name length. Otherwise the full name has no length.
+      fullNameLength = fullNameOffset + prefix.length + 1 == suffixOffset
+          ? prefixAndSuffix.length
+          : noLength;
+      if (suffix == "new") {
+        // Normalize `Class.new` to `Class`.
+        suffix = '';
+        fullName = className;
+      } else {
+        fullName = '$className.$suffix';
+      }
     } else {
       prefix = identifier.name;
       suffix = null;
+      suffixOffset = null;
       charOffset = identifier.nameOffset;
+      fullName = prefix;
+      fullNameOffset = identifier.nameOffset;
+      fullNameLength = prefix.length;
     }
-    if (libraryFeatures.constructorTearoffs.isEnabled) {
-      suffix = suffix == "new" ? "" : suffix;
-    }
+
     if (prefix == className) {
-      return suffix ?? "";
+      return new ConstructorName(
+          name: suffix ?? '',
+          nameOffset: suffixOffset,
+          fullName: fullName,
+          fullNameOffset: fullNameOffset,
+          fullNameLength: fullNameLength);
+    } else if (suffix == null) {
+      // Normalize `foo` in `Class` to `Class.foo`.
+      fullName = '$className.$prefix';
     }
     if (suffix == null && !isFactory) {
-      // A legal name for a regular method, but not for a constructor.
-      return null;
+      // This method is called because the syntax indicated that this is a
+      // constructor, either because it had qualified name or because the method
+      // had an initializer list.
+      //
+      // In either case this is reported elsewhere, and since the name is a
+      // legal name for a regular method, we don't remove an error on the name.
+    } else {
+      _problemReporting.addProblem(messageConstructorWithWrongName, charOffset,
+          prefix.length, _compilationUnit.fileUri,
+          context: [
+            templateConstructorWithWrongNameContext
+                .withArguments(enclosingDeclaration.name)
+                .withLocation(
+                    _compilationUnit.importUri,
+                    enclosingDeclaration.fileOffset,
+                    enclosingDeclaration.name.length)
+          ]);
     }
 
-    _problemReporting.addProblem(messageConstructorWithWrongName, charOffset,
-        prefix.length, _compilationUnit.fileUri,
-        context: [
-          templateConstructorWithWrongNameContext
-              .withArguments(enclosingDeclaration.name)
-              .withLocation(
-                  _compilationUnit.importUri,
-                  enclosingDeclaration.fileOffset,
-                  enclosingDeclaration.name.length)
-        ]);
-
-    return suffix;
+    return new ConstructorName(
+        name: suffix ?? prefix,
+        nameOffset: suffixOffset,
+        fullName: fullName,
+        fullNameOffset: fullNameOffset,
+        fullNameLength: fullNameLength);
   }
 
   void _addNativeGetterFragment(GetterFragment fragment) {
@@ -2122,39 +2171,39 @@ class BuilderFactoryImpl implements BuilderFactory, BuilderFactoryResult {
       offsetMap.registerField(
           info.identifier,
           _addField(
-              metadata,
-              modifiers,
-              isTopLevel,
-              type ?? addInferableType(),
-              info.identifier.name,
-              info.identifier.nameOffset,
-              info.charEndOffset,
-              startToken,
-              hasInitializer,
+              metadata: metadata,
+              modifiers: modifiers,
+              isTopLevel: isTopLevel,
+              type: type ?? addInferableType(),
+              name: info.identifier.name,
+              nameOffset: info.identifier.nameOffset,
+              endOffset: info.endOffset,
+              initializerToken: startToken,
+              hasInitializer: hasInitializer,
               constInitializerToken:
                   potentiallyNeedInitializerInOutline ? startToken : null));
     }
   }
 
   FieldFragment _addField(
-      List<MetadataBuilder>? metadata,
-      Modifiers modifiers,
-      bool isTopLevel,
-      TypeBuilder type,
-      String name,
-      int charOffset,
-      int charEndOffset,
-      Token? initializerToken,
-      bool hasInitializer,
-      {Token? constInitializerToken}) {
+      {required List<MetadataBuilder>? metadata,
+      required Modifiers modifiers,
+      required bool isTopLevel,
+      required TypeBuilder type,
+      required String name,
+      required int nameOffset,
+      required int endOffset,
+      required Token? initializerToken,
+      required bool hasInitializer,
+      Token? constInitializerToken}) {
     if (hasInitializer) {
       modifiers |= Modifiers.HasInitializer;
     }
     FieldFragment fragment = new FieldFragment(
         name: name,
         fileUri: _compilationUnit.fileUri,
-        charOffset: charOffset,
-        charEndOffset: charEndOffset,
+        nameOffset: nameOffset,
+        endOffset: endOffset,
         initializerToken: initializerToken,
         constInitializerToken: constInitializerToken,
         metadata: metadata,

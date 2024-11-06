@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:analyzer/dart/analysis/analysis_options.dart';
 import 'package:analyzer/dart/analysis/declared_variables.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -14,6 +15,7 @@ import 'package:analyzer/exception/exception.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/source/source.dart';
 import 'package:analyzer/src/context/packages.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options.dart';
 import 'package:analyzer/src/dart/analysis/analysis_options_map.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/driver_based_analysis_context.dart';
@@ -35,11 +37,12 @@ import 'package:analyzer/src/dart/analysis/testing_data.dart';
 import 'package:analyzer/src/dart/analysis/unlinked_unit_store.dart';
 import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/resolver/flow_analysis_visitor.dart';
+import 'package:analyzer/src/dartdoc/dartdoc_directive_info.dart';
 import 'package:analyzer/src/diagnostic/diagnostic.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/exception/exception.dart';
 import 'package:analyzer/src/generated/engine.dart'
-    show AnalysisContext, AnalysisEngine, AnalysisOptions, AnalysisOptionsImpl;
+    show AnalysisContext, AnalysisEngine;
 import 'package:analyzer/src/generated/source.dart' show SourceFactory;
 import 'package:analyzer/src/lint/registry.dart' as linter;
 import 'package:analyzer/src/summary/api_signature.dart';
@@ -96,7 +99,7 @@ import 'package:meta/meta.dart';
 // TODO(scheglov): Clean up the list of implicitly analyzed files.
 class AnalysisDriver {
   /// The version of data format, should be incremented on every format change.
-  static const int DATA_VERSION = 404;
+  static const int DATA_VERSION = 414;
 
   /// The number of exception contexts allowed to write. Once this field is
   /// zero, we stop writing any new exception contexts in this process.
@@ -127,7 +130,7 @@ class AnalysisDriver {
   /// file analysis.
   final SummaryDataStore? _externalSummaries;
 
-  /// This [ContentCache] is consulted for a file content before reading
+  /// This [FileContentCache] is consulted for a file content before reading
   /// the content from the file.
   final FileContentCache _fileContentCache;
 
@@ -171,10 +174,6 @@ class AnalysisDriver {
 
   /// The file changes that should be applied before processing requests.
   final List<_FileChange> _pendingFileChanges = [];
-
-  /// When [_applyFileChangesSynchronously] is `true`, affected files are
-  /// accumulated here.
-  Set<String> _accumulatedAffected = {};
 
   /// The completers to complete after [_pendingFileChanges] are applied.
   final _pendingFileChangesCompleters = <Completer<List<String>>>[];
@@ -348,6 +347,11 @@ class AnalysisDriver {
   /// Return the current analysis session.
   AnalysisSessionImpl get currentSession {
     return libraryContext.elementFactory.analysisSession;
+  }
+
+  /// The dartdoc directives in this context.
+  DartdocDirectiveInfo get dartdocDirectiveInfo {
+    return _fsState.dartdocDirectiveInfo;
   }
 
   /// The set of legacy plugin names enabled in analysis options in this driver.
@@ -558,9 +562,7 @@ class AnalysisDriver {
       _pendingFileChangesCompleters.add(completer);
       return completer.future;
     } else {
-      var accumulatedAffected = _accumulatedAffected.toList();
-      _accumulatedAffected = {};
-      return Future.value(accumulatedAffected);
+      return Future.value([]);
     }
   }
 
@@ -743,7 +745,7 @@ class AnalysisDriver {
   /// NOTE: this API is experimental and subject to change in a future
   /// release (see https://github.com/dart-lang/sdk/issues/53876 for context).
   @experimental
-  AnalysisOptionsImpl getAnalysisOptionsForFile(File file) =>
+  AnalysisOptions getAnalysisOptionsForFile(File file) =>
       analysisOptionsMap.getOptions(file);
 
   /// Return the cached [ResolvedUnitResult] for the Dart file with the given
@@ -2117,7 +2119,7 @@ class AnalysisDriver {
           strictCasts: analysisOptions.strictCasts);
 
       var analysisResult = LibraryAnalyzer(
-        analysisOptions,
+        analysisOptions as AnalysisOptionsImpl,
         declaredVariables,
         libraryElement,
         libraryContext.elementFactory.analysisSession.inheritanceManager,
@@ -2272,12 +2274,6 @@ class AnalysisDriverScheduler {
 
   bool _started = false;
 
-  /// The optional worker that is invoked when its work priority is higher
-  /// than work priorities in drivers.
-  ///
-  /// Don't use outside of Analyzer and Analysis Server.
-  SchedulerWorker? outOfBandWorker;
-
   /// The operations performance accumulated so far.
   ///
   /// It is expected that the consumer of this performance operation will
@@ -2416,17 +2412,6 @@ class AnalysisDriverScheduler {
         if (priority.index > bestPriority.index) {
           bestDriver = driver;
           bestPriority = priority;
-        }
-      }
-
-      if (outOfBandWorker != null) {
-        var workerPriority = outOfBandWorker!.workPriority;
-        if (workerPriority != AnalysisDriverPriority.nothing) {
-          if (workerPriority.index > bestPriority.index) {
-            await outOfBandWorker!.performWork();
-            _hasWork.notify();
-            continue;
-          }
         }
       }
 

@@ -185,8 +185,12 @@ abstract class _AbstractElementWriter {
 
   void _writeReference2(Element2 e) {
     var reference = switch (e) {
-      MaybeAugmentedClassElementMixin() => e.reference,
-      MaybeAugmentedMixinElementMixin() => e.reference,
+      ClassElementImpl2() => e.reference,
+      EnumElementImpl2() => e.reference,
+      ExtensionElementImpl2() => e.reference,
+      ExtensionTypeElementImpl2() => e.reference,
+      MixinElementImpl2() => e.reference,
+      TopLevelFunctionElementImpl() => e.reference,
       _ => null,
     };
 
@@ -361,9 +365,8 @@ class _Element2Writer extends _AbstractElementWriter {
       _writeFragmentCodeRange(f);
       // _writeDisplayName(f);
 
-      if (f.name2 case var name?) {
-        _sink.writelnWithIndent('periodOffset: ${name.periodOffset}');
-        _sink.writelnWithIndent('nameEnd: ${name.nameEnd}');
+      if (f.periodOffset case var periodOffset?) {
+        _sink.writelnWithIndent('periodOffset: $periodOffset');
       }
 
       _writeFragmentList(
@@ -774,12 +777,13 @@ class _Element2Writer extends _AbstractElementWriter {
   }
 
   void _writeFragmentName(Fragment f) {
-    if (f.name2 case var name?) {
-      _sink.write(name.name);
-      _sink.write(' @');
-      _sink.write(name.nameOffset);
-    } else {
-      _sink.write('<null-name>');
+    if (f.name2 == null) {
+      expect(f.nameOffset2, isNull);
+    }
+
+    _sink.write(f.name2 ?? '<null-name>');
+    if (f.nameOffset2 case var nameOffset?) {
+      _sink.write(' @$nameOffset');
     }
   }
 
@@ -801,10 +805,8 @@ class _Element2Writer extends _AbstractElementWriter {
     } else {
       element = f.element;
       if (element is! ElementImpl) {
-        if (element is NotAugmentedInstanceElementImpl) {
-          element = element.baseElement;
-        } else if (element is MaybeAugmentedInstanceElementMixin) {
-          element = element.declaration;
+        if (element is InstanceElementImpl2) {
+          element = element.firstFragment;
         }
       }
     }
@@ -887,16 +889,16 @@ class _Element2Writer extends _AbstractElementWriter {
 
   void _writeGetterFragment(GetterFragment f) {
     var variable = f.variable3;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingFragment;
-      if (variableEnclosing is LibraryFragment) {
-        expect(variableEnclosing.topLevelVariables2, contains(variable));
-      } else if (variableEnclosing is InterfaceFragment) {
-        expect(variableEnclosing.fields2, contains(variable));
-      }
+    if (f.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(f.isAugmentation, isTrue);
-      expect(f.previousFragment, isNull);
+      var enclosing = variable!.enclosingFragment;
+      switch (enclosing) {
+        case LibraryFragment():
+          expect(enclosing.topLevelVariables2, contains(variable));
+        case InterfaceFragment():
+          expect(enclosing.fields2, contains(variable));
+      }
     }
 
     // if (f.isSynthetic) {
@@ -1015,32 +1017,48 @@ class _Element2Writer extends _AbstractElementWriter {
           'typeParameters', e, e.typeParameters2, _writeTypeParameterElement);
       _writeMacroDiagnostics(e);
 
-      if (e is InterfaceElement2) {
-        var supertype = e.supertype;
-        if (supertype != null &&
-            (supertype.element.name != 'Object' || e.mixins.isNotEmpty)) {
-          _writeType('supertype', supertype);
+      void writeSupertype(InterfaceElement2 e) {
+        if (e.supertype case var supertype?) {
+          if (supertype.element.name != 'Object' || e.mixins.isNotEmpty) {
+            _writeType('supertype', supertype);
+          }
         }
       }
 
-      if (e is ExtensionTypeElement2) {
-        // _elementPrinter.writeNamedElement('representation', e.representation2);
-        // _elementPrinter.writeNamedElement(
-        //     'primaryConstructor', e.primaryConstructor2);
-        _elementPrinter.writeNamedType('typeErasure', e.typeErasure);
+      switch (e) {
+        case ClassElement2():
+          writeSupertype(e);
+          _elementPrinter.writeTypeList('mixins', e.mixins);
+          _elementPrinter.writeTypeList('interfaces', e.interfaces);
+        case EnumElement2():
+          writeSupertype(e);
+          _elementPrinter.writeTypeList('mixins', e.mixins);
+          _elementPrinter.writeTypeList('interfaces', e.interfaces);
+        case ExtensionElement2():
+          break;
+        case ExtensionTypeElement2():
+          expect(e.supertype, isNull);
+          _elementPrinter.writelnNamedElement2(
+            'representation',
+            e.representation2,
+          );
+          _elementPrinter.writelnNamedElement2(
+            'primaryConstructor',
+            e.primaryConstructor2,
+          );
+          _elementPrinter.writeNamedType('typeErasure', e.typeErasure);
+          _elementPrinter.writeTypeList('interfaces', e.interfaces);
+        case MixinElement2():
+          expect(e.supertype, isNull);
+          _elementPrinter.writeTypeList(
+            'superclassConstraints',
+            e.superclassConstraints,
+          );
+          expect(e.mixins, isEmpty);
+          _elementPrinter.writeTypeList('interfaces', e.interfaces);
+        default:
+          throw UnimplementedError('${e.runtimeType}');
       }
-
-      if (e is MixinElement2) {
-        _elementPrinter.writeTypeList(
-          'superclassConstraints',
-          e.superclassConstraints,
-        );
-      }
-
-      // TODO(brianwilkerson): Add a `writeTypeList2` that will use the new API
-      //  version of the elements of type parameters.
-      // _elementPrinter.writeTypeList('mixins', e.mixins);
-      // _elementPrinter.writeTypeList('interfaces', e.interfaces);
 
       if (configuration.withAllSupertypes && e is InterfaceElement2) {
         var sorted = e.allSupertypes.sortedBy((t) => t.element.name);
@@ -1102,13 +1120,7 @@ class _Element2Writer extends _AbstractElementWriter {
           // _writeNotSimplyBounded(f);
           _sink.write('mixin ');
       }
-      if (f.name2 case var name?) {
-        _sink.write(name.name);
-        _sink.write(' @');
-        _sink.write(name.nameOffset);
-      } else {
-        _sink.write('<null-name>');
-      }
+      _writeFragmentName(f);
     });
     _sink.withIndent(() {
       _writeFragmentReference('reference', f);
@@ -1596,12 +1608,8 @@ class _Element2Writer extends _AbstractElementWriter {
         _sink.write('fragments: ');
         _sink.write(e.fragments.map((f) {
           expect(f.element, same(e));
-          if (f.name2 case var name?) {
-            expect(name.name, e.name3);
-            return '@${name.nameOffset}';
-          } else {
-            return '<null-name>';
-          }
+          expect(f.name2, e.name3);
+          return '@${f.nameOffset2}';
         }).join(' '));
       });
     });
@@ -1670,16 +1678,16 @@ class _Element2Writer extends _AbstractElementWriter {
 
   void _writeSetterFragment(SetterFragment f) {
     var variable = f.variable3;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingFragment;
-      if (variableEnclosing is LibraryFragment) {
-        expect(variableEnclosing.topLevelVariables2, contains(variable));
-      } else if (variableEnclosing is InterfaceFragment) {
-        expect(variableEnclosing.fields2, contains(variable));
-      }
+    if (f.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(f.isAugmentation, isTrue);
-      expect(f.previousFragment, isNull);
+      var enclosing = variable!.enclosingFragment;
+      switch (enclosing) {
+        case LibraryFragment():
+          expect(enclosing.topLevelVariables2, contains(variable));
+        case InterfaceFragment():
+          expect(enclosing.fields2, contains(variable));
+      }
     }
 
     // if (f.isSynthetic) {
@@ -1752,6 +1760,7 @@ class _Element2Writer extends _AbstractElementWriter {
     });
 
     _sink.withIndent(() {
+      _writeReference2(e);
       _writeFragmentReference('firstFragment', e.firstFragment);
       _writeDocumentation(e.documentationComment);
       _writeMetadata(e.metadata2);
@@ -1819,7 +1828,7 @@ class _Element2Writer extends _AbstractElementWriter {
     expect(type, isNotNull);
 
     if (!e.isSynthetic) {
-      expect(e.getter2, isNotNull);
+      // expect(e.getter2, isNotNull);
       _assertNonSyntheticElementSelf(e);
     }
 
@@ -2170,7 +2179,6 @@ class _ElementWriter extends _AbstractElementWriter {
 
     // No augmentation, not interesting.
     if (e.augmentation == null) {
-      expect(e.augmented, TypeMatcher<NotAugmentedInstanceElementImpl>());
       if (!configuration.withAugmentedWithoutAugmentation) {
         return;
       }
@@ -2187,7 +2195,7 @@ class _ElementWriter extends _AbstractElementWriter {
       if (!configuration.withConstructors) {
         return;
       }
-      if (augmented is AugmentedInterfaceElementImpl) {
+      if (augmented is InterfaceElementImpl2) {
         var sorted = augmented.constructors.sortedBy((e) => e.name);
         expect(sorted, isNotEmpty);
         _elementPrinter.writeElementList('constructors', sorted);
@@ -2271,9 +2279,6 @@ class _ElementWriter extends _AbstractElementWriter {
 
   void _writeCodeRange(Element e) {
     if (configuration.withCodeRanges && !e.isSynthetic) {
-      if (e is MaybeAugmentedInstanceElementMixin) {
-        e = e.declaration!;
-      }
       e as ElementImpl;
       _sink.writelnWithIndent('codeOffset: ${e.codeOffset}');
       _sink.writelnWithIndent('codeLength: ${e.codeLength}');
@@ -3099,16 +3104,16 @@ class _ElementWriter extends _AbstractElementWriter {
     e as PropertyAccessorElementImpl;
 
     var variable = e.variable2;
-    if (variable != null) {
-      var variableEnclosing = variable.enclosingElement3;
-      if (variableEnclosing is CompilationUnitElement) {
-        expect(variableEnclosing.topLevelVariables, contains(variable));
-      } else if (variableEnclosing is InterfaceElement) {
-        expect(variableEnclosing.fields, contains(variable));
-      }
+    if (e.isAugmentation) {
+      expect(variable, isNull);
     } else {
-      expect(e.isAugmentation, isTrue);
-      expect(e.augmentationTarget, isNull);
+      var enclosing = variable!.enclosingElement3;
+      switch (enclosing) {
+        case CompilationUnitElement():
+          expect(enclosing.topLevelVariables, contains(variable));
+        case InterfaceElement():
+          expect(enclosing.fields, contains(variable));
+      }
     }
 
     if (e.isSynthetic) {

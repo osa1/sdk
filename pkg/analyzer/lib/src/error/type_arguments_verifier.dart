@@ -4,6 +4,7 @@
 
 import "dart:math" as math;
 
+import 'package:analyzer/dart/analysis/analysis_options.dart';
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -16,10 +17,9 @@ import 'package:analyzer/src/dart/element/type_algebra.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/diagnostic/diagnostic.dart';
 import 'package:analyzer/src/error/codes.dart';
-import 'package:analyzer/src/generated/engine.dart' show AnalysisOptionsImpl;
 
 class TypeArgumentsVerifier {
-  final AnalysisOptionsImpl _options;
+  final AnalysisOptions _options;
   final LibraryElement _libraryElement;
   final ErrorReporter _errorReporter;
 
@@ -222,7 +222,7 @@ class TypeArgumentsVerifier {
   }
 
   /// Checks a type annotation for a raw generic type, and reports the
-  /// appropriate error if [AnalysisOptionsImpl.strictRawTypes] is set.
+  /// appropriate error if [AnalysisOptions.strictRawTypes] is set.
   ///
   /// This checks if [node] refers to a generic type and does not have explicit
   /// or inferred type arguments. When that happens, it reports error code
@@ -568,13 +568,8 @@ class TypeArgumentsVerifier {
   /// This function is used by other node-specific type checking functions, and
   /// should only be called when [node] has no explicit `typeArguments`.
   ///
-  /// [inferenceContextNode] is the node that has the downwards context type,
-  /// if any. For example an [InstanceCreationExpression].
+  /// This function will return false if either of the following are true:
   ///
-  /// This function will return false if any of the following are true:
-  ///
-  /// - [inferenceContextNode] has an inference context type that does not
-  ///   contain `_`
   /// - [type] does not have any `dynamic` type arguments.
   /// - the element is marked with `@optionalTypeArgs` from "package:meta".
   bool _isMissingTypeArguments(AstNode node, DartType type, Element? element) {

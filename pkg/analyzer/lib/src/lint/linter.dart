@@ -27,7 +27,6 @@ import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/lint/linter_visitor.dart' show NodeLintRegistry;
 import 'package:analyzer/src/lint/pub.dart';
-import 'package:analyzer/src/lint/registry.dart';
 import 'package:analyzer/src/lint/state.dart';
 import 'package:analyzer/src/workspace/workspace.dart';
 import 'package:meta/meta.dart';
@@ -36,6 +35,10 @@ import 'package:path/path.dart' as p;
 export 'package:analyzer/src/lint/linter_visitor.dart' show NodeLintRegistry;
 export 'package:analyzer/src/lint/state.dart'
     show dart2_12, dart3, dart3_3, State;
+
+/// Describes a static analysis rule, either a lint rule (which must be enabled
+/// via analysis options) or a warning rule (which is enabled by default).
+typedef AnalysisRule = LintRule;
 
 /// The result of attempting to evaluate an expression as a constant.
 final class LinterConstantEvaluationResult {
@@ -181,20 +184,6 @@ final class LinterContextWithResolvedResults implements LinterContext {
   @experimental
   @override
   LibraryElement2 get libraryElement2 => libraryElement as LibraryElement2;
-}
-
-class LinterOptions {
-  final Iterable<LintRule> enabledRules;
-
-  /// The path to the Dart SDK.
-  String? dartSdkPath;
-
-  /// Whether to gather timing data during analysis.
-  bool enableTiming = false;
-
-  LinterOptions({
-    Iterable<LintRule>? enabledRules,
-  }) : enabledRules = enabledRules ?? Registry.ruleRegistry;
 }
 
 /// Describes a lint rule.

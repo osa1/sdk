@@ -573,8 +573,8 @@ static bool IsPowerOfTwoKind(intptr_t v1, intptr_t v2) {
 
 LocationSummary* IfThenElseInstr::MakeLocationSummary(Zone* zone,
                                                       bool opt) const {
-  comparison()->InitializeLocationSummary(zone, opt);
-  return comparison()->locs();
+  condition()->InitializeLocationSummary(zone, opt);
+  return condition()->locs();
 }
 
 void IfThenElseInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
@@ -585,10 +585,10 @@ void IfThenElseInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   ASSERT(!left.IsConstant() || !right.IsConstant());
 
   // Emit comparison code. This must not overwrite the result register.
-  // IfThenElseInstr::Supports() should prevent EmitComparisonCode from using
+  // IfThenElseInstr::Supports() should prevent EmitConditionCode from using
   // the labels or returning an invalid condition.
   BranchLabels labels = {nullptr, nullptr, nullptr};
-  Condition true_condition = comparison()->EmitComparisonCode(compiler, labels);
+  Condition true_condition = condition()->EmitConditionCode(compiler, labels);
   ASSERT(true_condition != kInvalidCondition);
 
   const bool is_power_of_two_kind = IsPowerOfTwoKind(if_true_, if_false_);
@@ -1044,7 +1044,7 @@ static Condition EmitSmiComparisonOp(FlowGraphCompiler* compiler,
   return true_condition;
 }
 
-// Similar to ComparisonInstr::EmitComparisonCode, may either:
+// Similar to ConditionInstr::EmitConditionCode, may either:
 //   - emit comparison code and return a valid condition in which case the
 //     caller is expected to emit a branch to the true label based on that
 //     condition (or a branch to the false label on the opposite condition).
@@ -1209,8 +1209,8 @@ static Condition EmitDoubleComparisonOp(FlowGraphCompiler* compiler,
   }
 }
 
-Condition EqualityCompareInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
-                                                   BranchLabels labels) {
+Condition EqualityCompareInstr::EmitConditionCode(FlowGraphCompiler* compiler,
+                                                  BranchLabels labels) {
   if (is_null_aware()) {
     ASSERT(operation_cid() == kMintCid);
     return EmitNullAwareInt64ComparisonOp(compiler, locs(), kind(), labels);
@@ -1238,8 +1238,8 @@ LocationSummary* TestIntInstr::MakeLocationSummary(Zone* zone, bool opt) const {
   return locs;
 }
 
-Condition TestIntInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
-                                           BranchLabels labels) {
+Condition TestIntInstr::EmitConditionCode(FlowGraphCompiler* compiler,
+                                          BranchLabels labels) {
   const Register left = locs()->in(0).reg();
   Location right = locs()->in(1);
   const auto operand_size = representation_ == kTagged ? compiler::kObjectBytes
@@ -1307,7 +1307,7 @@ void TestIntInstr::EmitBranchCode(FlowGraphCompiler* compiler,
   }
 
   // Otherwise use shared implementation.
-  ComparisonInstr::EmitBranchCode(compiler, branch);
+  ConditionInstr::EmitBranchCode(compiler, branch);
 }
 
 LocationSummary* TestCidsInstr::MakeLocationSummary(Zone* zone,
@@ -1322,8 +1322,8 @@ LocationSummary* TestCidsInstr::MakeLocationSummary(Zone* zone,
   return locs;
 }
 
-Condition TestCidsInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
-                                            BranchLabels labels) {
+Condition TestCidsInstr::EmitConditionCode(FlowGraphCompiler* compiler,
+                                           BranchLabels labels) {
   ASSERT((kind() == Token::kIS) || (kind() == Token::kISNOT));
   const Register val_reg = locs()->in(0).reg();
   const Register cid_reg = locs()->temp(0).reg();
@@ -1393,8 +1393,8 @@ LocationSummary* RelationalOpInstr::MakeLocationSummary(Zone* zone,
   return nullptr;
 }
 
-Condition RelationalOpInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
-                                                BranchLabels labels) {
+Condition RelationalOpInstr::EmitConditionCode(FlowGraphCompiler* compiler,
+                                               BranchLabels labels) {
   if (operation_cid() == kSmiCid) {
     return EmitSmiComparisonOp(compiler, locs(), kind(), labels);
   } else if (operation_cid() == kMintCid) {
@@ -3838,32 +3838,16 @@ void UnboxInteger32Instr::EmitNativeCode(FlowGraphCompiler* compiler) {
     __ SmiUntag(out, value);
   } else if (value_cid == kMintCid) {
     __ LoadFieldFromOffset(out, value, Mint::value_offset());
-  } else if (!CanDeoptimize()) {
-    // Type information is not conclusive, but range analysis found
-    // the value to be in int64 range. Therefore it must be a smi
-    // or mint value.
-    ASSERT(is_truncating());
-    compiler::Label done;
-    __ SmiUntag(out, value);
-    __ BranchIfSmi(value, &done);
-    __ LoadFieldFromOffset(out, value, Mint::value_offset());
-    __ Bind(&done);
   } else {
     compiler::Label done;
     __ SmiUntag(out, value);
     __ BranchIfSmi(value, &done);
-    __ CompareClassId(value, kMintCid);
-    __ b(deopt, NE);
+    if (CanDeoptimize()) {
+      __ CompareClassId(value, kMintCid);
+      __ b(deopt, NE);
+    }
     __ LoadFieldFromOffset(out, value, Mint::value_offset());
     __ Bind(&done);
-  }
-
-  // TODO(vegorov): as it is implemented right now truncating unboxing would
-  // leave "garbage" in the higher word.
-  if (!is_truncating() && (deopt != nullptr)) {
-    ASSERT(representation() == kUnboxedInt32);
-    __ cmp(out, compiler::Operand(out, SXTW, 0));
-    __ b(deopt, NE);
   }
 }
 
@@ -3916,8 +3900,8 @@ LocationSummary* DoubleTestOpInstr::MakeLocationSummary(Zone* zone,
   return summary;
 }
 
-Condition DoubleTestOpInstr::EmitComparisonCode(FlowGraphCompiler* compiler,
-                                                BranchLabels labels) {
+Condition DoubleTestOpInstr::EmitConditionCode(FlowGraphCompiler* compiler,
+                                               BranchLabels labels) {
   ASSERT(compiler->is_optimizing());
   const VRegister value = locs()->in(0).fpu_reg();
   const bool is_negated = kind() != Token::kEQ;
@@ -5155,14 +5139,14 @@ void HashIntegerOpInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
 }
 
 LocationSummary* BranchInstr::MakeLocationSummary(Zone* zone, bool opt) const {
-  comparison()->InitializeLocationSummary(zone, opt);
+  condition()->InitializeLocationSummary(zone, opt);
   // Branches don't produce a result.
-  comparison()->locs()->set_out(0, Location::NoLocation());
-  return comparison()->locs();
+  condition()->locs()->set_out(0, Location::NoLocation());
+  return condition()->locs();
 }
 
 void BranchInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
-  comparison()->EmitBranchCode(compiler, this);
+  condition()->EmitBranchCode(compiler, this);
 }
 
 LocationSummary* CheckClassInstr::MakeLocationSummary(Zone* zone,
@@ -5654,7 +5638,12 @@ static void EmitShiftInt64ByConstant(FlowGraphCompiler* compiler,
                                      Register left,
                                      const Object& right) {
   const int64_t shift = Integer::Cast(right).Value();
-  ASSERT(shift >= 0);
+  if (shift < 0) {
+    // The compiler sometimes fails to eliminate unreachable code.
+    __ Stop("Unreachable shift");
+    return;
+  }
+
   switch (op_kind) {
     case Token::kSHR: {
       __ AsrImmediate(out, left,
@@ -5705,7 +5694,12 @@ static void EmitShiftUint32ByConstant(FlowGraphCompiler* compiler,
                                       Register left,
                                       const Object& right) {
   const int64_t shift = Integer::Cast(right).Value();
-  ASSERT(shift >= 0);
+  if (shift < 0) {
+    // The compiler sometimes fails to eliminate unreachable code.
+    __ Stop("Unreachable shift");
+    return;
+  }
+
   if (shift >= 32) {
     __ LoadImmediate(out, 0);
   } else {
@@ -6111,7 +6105,6 @@ LocationSummary* IntConverterInstr::MakeLocationSummary(Zone* zone,
   if (from() == kUntagged || to() == kUntagged) {
     ASSERT((from() == kUntagged && to() == kUnboxedIntPtr) ||
            (from() == kUnboxedIntPtr && to() == kUntagged));
-    ASSERT(!CanDeoptimize());
   } else if (from() == kUnboxedInt64) {
     ASSERT(to() == kUnboxedUint32 || to() == kUnboxedInt32);
   } else if (to() == kUnboxedInt64) {
@@ -6121,11 +6114,7 @@ LocationSummary* IntConverterInstr::MakeLocationSummary(Zone* zone,
     ASSERT(from() == kUnboxedUint32 || from() == kUnboxedInt32);
   }
   summary->set_in(0, Location::RequiresRegister());
-  if (CanDeoptimize()) {
-    summary->set_out(0, Location::RequiresRegister());
-  } else {
-    summary->set_out(0, Location::SameAsFirstInput());
-  }
+  summary->set_out(0, Location::SameAsFirstInput());
   return summary;
 }
 
@@ -6142,41 +6131,20 @@ void IntConverterInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
 
   const Register value = locs()->in(0).reg();
   const Register out = locs()->out(0).reg();
-  compiler::Label* deopt =
-      !CanDeoptimize()
-          ? nullptr
-          : compiler->AddDeoptStub(deopt_id(), ICData::kDeoptUnboxInteger);
   if (from() == kUnboxedInt32 && to() == kUnboxedUint32) {
-    if (CanDeoptimize()) {
-      __ tbnz(deopt, value,
-              31);  // If sign bit is set it won't fit in a uint32.
-    }
     if (out != value) {
       __ mov(out, value);  // For positive values the bits are the same.
     }
   } else if (from() == kUnboxedUint32 && to() == kUnboxedInt32) {
-    if (CanDeoptimize()) {
-      __ tbnz(deopt, value,
-              31);  // If high bit is set it won't fit in an int32.
-    }
     if (out != value) {
       __ mov(out, value);  // For 31 bit values the bits are the same.
     }
   } else if (from() == kUnboxedInt64) {
     if (to() == kUnboxedInt32) {
-      if (is_truncating() || out != value) {
-        __ sxtw(out, value);  // Signed extension 64->32.
-      }
+      __ sxtw(out, value);  // Signed extension 64->32.
     } else {
       ASSERT(to() == kUnboxedUint32);
-      if (is_truncating() || out != value) {
-        __ uxtw(out, value);  // Unsigned extension 64->32.
-      }
-    }
-    if (CanDeoptimize()) {
-      ASSERT(to() == kUnboxedInt32);
-      __ cmp(out, compiler::Operand(value));
-      __ b(deopt, NE);  // Value cannot be held in Int32, deopt.
+      __ uxtw(out, value);  // Unsigned extension 64->32.
     }
   } else if (to() == kUnboxedInt64) {
     if (from() == kUnboxedUint32) {
@@ -6380,10 +6348,10 @@ Condition StrictCompareInstr::EmitComparisonCodeRegConstant(
   }
 }
 
-void ComparisonInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
+void ConditionInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   compiler::Label is_true, is_false;
   BranchLabels labels = {&is_true, &is_false, &is_false};
-  Condition true_condition = EmitComparisonCode(compiler, labels);
+  Condition true_condition = EmitConditionCode(compiler, labels);
 
   const Register result = this->locs()->out(0).reg();
   if (is_true.IsLinked() || is_false.IsLinked()) {
@@ -6398,7 +6366,7 @@ void ComparisonInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
     __ LoadObject(result, Bool::True());
     __ Bind(&done);
   } else {
-    // If EmitComparisonCode did not use the labels and just returned
+    // If EmitConditionCode did not use the labels and just returned
     // a condition we can avoid the branch and use conditional loads.
     ASSERT(true_condition != kInvalidCondition);
     __ LoadObject(TMP, Bool::True());
@@ -6407,10 +6375,10 @@ void ComparisonInstr::EmitNativeCode(FlowGraphCompiler* compiler) {
   }
 }
 
-void ComparisonInstr::EmitBranchCode(FlowGraphCompiler* compiler,
-                                     BranchInstr* branch) {
+void ConditionInstr::EmitBranchCode(FlowGraphCompiler* compiler,
+                                    BranchInstr* branch) {
   BranchLabels labels = compiler->CreateBranchLabels(branch);
-  Condition true_condition = EmitComparisonCode(compiler, labels);
+  Condition true_condition = EmitConditionCode(compiler, labels);
   if (true_condition != kInvalidCondition) {
     EmitBranchOnCondition(compiler, true_condition, labels);
   }

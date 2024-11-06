@@ -41,7 +41,7 @@ AssignmentExpression
     methodName: SimpleIdentifier
       token: f
       staticElement: <testLibraryFragment>::@function::f
-      element: <testLibraryFragment>::@function::f#element
+      element: <testLibrary>::@function::f
       staticType: T Function<T>()
     argumentList: ArgumentList
       leftParenthesis: (
@@ -96,7 +96,7 @@ AssignmentExpression
     methodName: SimpleIdentifier
       token: f
       staticElement: <testLibraryFragment>::@function::f
-      element: <testLibraryFragment>::@function::f#element
+      element: <testLibrary>::@function::f
       staticType: T Function<T>()
     argumentList: ArgumentList
       leftParenthesis: (
@@ -145,7 +145,7 @@ AssignmentExpression
     methodName: SimpleIdentifier
       token: f
       staticElement: <testLibraryFragment>::@function::f
-      element: <testLibraryFragment>::@function::f#element
+      element: <testLibrary>::@function::f
       staticType: T Function<T>()
     argumentList: ArgumentList
       leftParenthesis: (
@@ -198,7 +198,7 @@ AssignmentExpression
       methodName: SimpleIdentifier
         token: f
         staticElement: <testLibraryFragment>::@function::f
-        element: <testLibraryFragment>::@function::f#element
+        element: <testLibrary>::@function::f
         staticType: T Function<T>()
       argumentList: ArgumentList
         leftParenthesis: (
@@ -1625,7 +1625,7 @@ AssignmentExpression
     methodName: SimpleIdentifier
       token: f
       staticElement: <testLibraryFragment>::@function::f
-      element: <testLibraryFragment>::@function::f#element
+      element: <testLibrary>::@function::f
       staticType: T Function<T>()
     argumentList: ArgumentList
       leftParenthesis: (
@@ -2189,7 +2189,7 @@ AssignmentExpression
     prefix: SimpleIdentifier
       token: A
       staticElement: <testLibraryFragment>::@extension::A
-      element: <testLibraryFragment>::@extension::A#element
+      element: <testLibrary>::@extension::A
       staticType: null
     period: .
     identifier: SimpleIdentifier
@@ -2237,7 +2237,7 @@ AssignmentExpression
     prefix: SimpleIdentifier
       token: A
       staticElement: <testLibraryFragment>::@extension::A
-      element: <testLibraryFragment>::@extension::A#element
+      element: <testLibrary>::@extension::A
       staticType: null
     period: .
     identifier: SimpleIdentifier

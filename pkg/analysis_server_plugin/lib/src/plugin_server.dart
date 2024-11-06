@@ -21,12 +21,12 @@ import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/file_system/overlay_file_system.dart';
 import 'package:analyzer/instrumentation/instrumentation.dart';
 import 'package:analyzer/src/dart/analysis/analysis_context_collection.dart';
+import 'package:analyzer/src/dart/analysis/analysis_options.dart';
 import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:analyzer/src/dart/analysis/session.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
-import 'package:analyzer/src/generated/engine.dart' show AnalysisOptionsImpl;
-import 'package:analyzer/src/lint/lint_rule_timers.dart';
+import 'package:analyzer/src/lint/analysis_rule_timers.dart';
 import 'package:analyzer/src/lint/linter.dart';
 import 'package:analyzer/src/lint/linter_visitor.dart';
 import 'package:analyzer/src/lint/registry.dart';
@@ -256,17 +256,19 @@ class PluginServer {
 
     for (var configuration in analysisOptions.pluginConfigurations) {
       if (!configuration.isEnabled) continue;
-      var rules = Registry.ruleRegistry.enabled(configuration.ruleConfigs);
+      // TODO(srawlins): Namespace rules by their plugin, to avoid collisions.
+      var rules =
+          Registry.ruleRegistry.enabled(configuration.diagnosticConfigs);
       for (var rule in rules) {
         rule.reporter = errorReporter;
-        var timer = enableTiming ? lintRuleTimers.getTimer(rule) : null;
+        var timer = enableTiming ? analysisRuleTimers.getTimer(rule) : null;
         timer?.start();
         rule.registerNodeProcessors(nodeRegistry, context);
         timer?.stop();
       }
     }
 
-    currentUnit.unit.accept(LinterVisitor(nodeRegistry));
+    currentUnit.unit.accept(AnalysisRuleVisitor(nodeRegistry));
     // The list of the `AnalysisError`s and their associated
     // `protocol.AnalysisError`s.
     var errorsAndProtocolErrors = [

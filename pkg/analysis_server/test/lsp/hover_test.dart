@@ -276,6 +276,98 @@ Type: `String`''';
     );
   }
 
+  Future<void> test_import_alias_dart() async {
+    var content = '''
+import 'dart:core' as [!l^ib!];
+''';
+    var expected = '''
+```dart
+import 'dart:core' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
+  Future<void> test_import_alias_interpolation() async {
+    var content = '''
+// ignore: uri_with_interpolation
+import '\$bug.dart' as [!l^ib!];
+const bug = 'bug';
+''';
+    var expected = '''
+```dart
+import '<unknown>' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
+  Future<void> test_import_alias_multiple_equal() async {
+    newFile('/home/my_project/lib/lib.dart', '''
+/// This is a string.
+library my.lib;
+''');
+    var content = '''
+import 'dart:math' as lib;
+import 'lib.dart' as [!l^ib!];
+''';
+    var expected = '''
+```dart
+import 'dart:math' as lib;
+import 'lib.dart' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
+  Future<void> test_import_alias_package() async {
+    newFile('/home/my_project/lib/lib.dart', '''
+/// This is a string.
+library my.lib;
+''');
+    var content = '''
+import 'package:test/lib.dart' as [!l^ib!];
+''';
+    var expected = '''
+```dart
+import 'package:test/lib.dart' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
+  Future<void> test_import_alias_project() async {
+    newFile('/home/my_project/lib/lib.dart', '''
+''');
+    var content = '''
+import 'lib.dart' as [!l^ib!];
+''';
+    var expected = '''
+```dart
+import 'lib.dart' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
+  Future<void> test_import_prefix() async {
+    newFile('/home/my_project/lib/lib.dart', '''
+/// This is a string.
+library my.lib;
+class C {}
+''');
+    var content = '''
+import 'lib.dart' as lib;
+[!li^b!].C? c;
+''';
+    var expected = '''
+```dart
+import 'lib.dart' as lib;
+```
+*package:test/main.dart*''';
+    await assertStringContents(content, equals(expected));
+  }
+
   Future<void> test_localVariable_wildcard() async {
     var content = '''
 f() {

@@ -81,15 +81,9 @@ class LibraryBuilder with MacroApplicationsContainer {
   final Map<EnumElementImpl, ImplicitEnumNodes> implicitEnumNodes =
       Map.identity();
 
-  /// The builders for top-level elements.
-  final Map<String, FragmentedElementBuilder> _elementBuilders = {};
-
-  /// The builders for top-level variables and accessors.
-  late final TopVariableElementsBuilder topVariables =
-      TopVariableElementsBuilder(_augmentationTargets);
-
-  /// The top-level elements that can be augmented.
-  final Map<String, ElementImpl> _augmentationTargets = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderGetters = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderSetters = {};
+  final Map<String, FragmentedElementBuilder> elementBuilderVariables = {};
 
   /// Local declarations.
   final Map<String, Reference> _declaredReferences = {};
@@ -186,10 +180,11 @@ class LibraryBuilder with MacroApplicationsContainer {
       var reference = containerRef.getChild('new');
       reference.element = constructor;
       constructor.reference = reference;
+      constructor.name2 = 'new';
 
       classElement.constructors = [constructor].toFixedList();
 
-      if (classElement.augmented case AugmentedClassElementImpl augmented) {
+      if (classElement.augmented case ClassElementImpl2 augmented) {
         augmented.constructors = classElement.constructors;
       }
     }
@@ -257,13 +252,14 @@ class LibraryBuilder with MacroApplicationsContainer {
       var reference = containerRef.getChild('new');
       reference.element = constructor;
       constructor.reference = reference;
+      constructor.name2 = 'new';
 
       enumElement.constructors = [
         ...enumElement.constructors,
         constructor,
       ].toFixedList();
 
-      if (enumElement.augmented case AugmentedEnumElementImpl augmented) {
+      if (enumElement.augmented case EnumElementImpl2 augmented) {
         augmented.constructors = enumElement.constructors;
       }
     }
@@ -492,10 +488,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     return null;
   }
 
-  FragmentedElementBuilder? getElementBuilder(String name) {
-    return _elementBuilders[name];
-  }
-
   /// Merges accumulated [_macroResults] and corresponding macro augmentation
   /// libraries into a single macro augmentation library.
   Future<void> mergeMacroAugmentations({
@@ -651,13 +643,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     ).applyToUnit(unitElement, informativeBytes);
   }
 
-  void putElementBuilder(
-    String name,
-    FragmentedElementBuilder builder,
-  ) {
-    _elementBuilders[name] = builder;
-  }
-
   void replaceConstFieldsIfNoConstConstructor() {
     var withConstConstructors = Set<ClassElementImpl>.identity();
     for (var classElement in element.topLevelElements) {
@@ -674,7 +659,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       var enclosing = fieldElement.enclosingElement3;
       var augmented = enclosing.ifTypeOrNull<ClassElementImpl>()?.augmented;
       if (augmented == null) continue;
-      if (!withConstConstructors.contains(augmented.declaration)) {
+      if (!withConstConstructors.contains(augmented.firstFragment)) {
         fieldElement.constantInitializer = null;
       }
     }
@@ -746,9 +731,7 @@ class LibraryBuilder with MacroApplicationsContainer {
           if (augmented.superclassConstraints.isEmpty) {
             shouldResetClassHierarchies = true;
             interface.superclassConstraints = [objectType];
-            if (augmented is AugmentedMixinElementImpl) {
-              augmented.superclassConstraints = [objectType];
-            }
+            augmented.superclassConstraints = [objectType];
           }
       }
     }
@@ -776,32 +759,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     if (entryPoint is FunctionElement) {
       element.entryPoint = entryPoint;
     }
-  }
-
-  void updateAugmentationTarget<T extends ElementImpl>(
-    String name,
-    AugmentableElement<T> augmentation,
-  ) {
-    if (augmentation.isAugmentation) {
-      var target = _augmentationTargets[name];
-      target ??= topVariables.accessors[name];
-      target ??= topVariables.accessors['$name='];
-
-      augmentation.augmentationTargetAny = target;
-      if (target is AugmentableElement<T>) {
-        augmentation.isAugmentationChainStart = false;
-        target.augmentation = augmentation as T;
-      }
-    }
-    _augmentationTargets[name] = augmentation;
-  }
-
-  // TODO(scheglov): Remove this method when we use only builders.
-  void updateAugmentationTarget0<T extends ElementImpl>(
-    String name,
-    AugmentableElement<T> augmentation,
-  ) {
-    _augmentationTargets[name] = augmentation;
   }
 
   /// Updates the element of the macro augmentation.
@@ -1195,17 +1152,10 @@ class LibraryBuilder with MacroApplicationsContainer {
     required UnlinkedLibraryImportPrefixName? unlinkedName,
     required bool isDeferred,
   }) {
-    FragmentNameImpl? fragmentName;
-    if (unlinkedName != null) {
-      fragmentName = FragmentNameImpl(
-        name: unlinkedName.name,
-        nameOffset: unlinkedName.nameOffset,
-      );
-    }
-
     var fragment = PrefixFragmentImpl(
       enclosingFragment: libraryFragment,
-      name2: fragmentName,
+      name2: unlinkedName?.name,
+      nameOffset2: unlinkedName?.nameOffset,
       isDeferred: isDeferred,
     );
 
@@ -1308,6 +1258,25 @@ class LibraryBuilder with MacroApplicationsContainer {
     );
   }
 
+  /// We want to have stable references for `loadLibrary` function. But we
+  /// cannot create the function itself right now, because the type provider
+  /// might be not available yet. So, we create references together with the
+  /// library, and create the fragment and element later.
+  void _createLoadLibraryReferences() {
+    var name = FunctionElement.LOAD_LIBRARY_NAME;
+
+    var fragmentContainer = units[0].reference.getChild('@function');
+    var fragmentReference = fragmentContainer.addChild(name);
+
+    var elementContainer = reference.getChild('@function');
+    var elementReference = elementContainer.addChild(name);
+
+    element.loadLibraryProvider = LoadLibraryFunctionProvider(
+      fragmentReference: fragmentReference,
+      elementReference: elementReference,
+    );
+  }
+
   /// These elements are implicitly declared in `dart:core`.
   void _declareDartCoreDynamicNever() {
     if (reference.name == 'dart:core') {
@@ -1364,9 +1333,8 @@ class LibraryBuilder with MacroApplicationsContainer {
       libraryUnitNode.featureSet,
     );
     libraryElement.isSynthetic = !libraryFile.exists;
-    libraryElement.languageVersion = libraryUnitNode.languageVersion!;
+    libraryElement.languageVersion = libraryUnitNode.languageVersion;
     _bindReference(libraryReference, libraryElement);
-    elementFactory.setLibraryTypeSystem(libraryElement);
 
     var unitContainerRef = libraryReference.getChild('@fragment');
 
@@ -1403,6 +1371,9 @@ class LibraryBuilder with MacroApplicationsContainer {
       element: libraryElement,
       units: linkingUnits,
     );
+
+    builder._createLoadLibraryReferences();
+    elementFactory.setLibraryTypeSystem(libraryElement);
 
     if (inputMacroResult != null) {
       var import = inputLibrary.addMacroPart(

@@ -48,7 +48,7 @@ class BoxIntegerInstr;
 class CallTargets;
 class CatchBlockEntryInstr;
 class CheckBoundBaseInstr;
-class ComparisonInstr;
+class ConditionInstr;
 class Definition;
 class Environment;
 class FlowGraph;
@@ -563,6 +563,7 @@ struct InstrAttrs {
   M(BoxInteger, _)                                                             \
   M(CheckBoundBase, _)                                                         \
   M(Comparison, _)                                                             \
+  M(Condition, _)                                                              \
   M(InstanceCallBase, _)                                                       \
   M(ReturnBase, _)                                                             \
   M(ShiftIntegerOp, _)                                                         \
@@ -613,8 +614,8 @@ FOR_EACH_ABSTRACT_INSTRUCTION(FORWARD_DECLARATION)
 #define DECLARE_COMPARISON_METHODS                                             \
   virtual LocationSummary* MakeLocationSummary(Zone* zone, bool optimizing)    \
       const;                                                                   \
-  virtual Condition EmitComparisonCode(FlowGraphCompiler* compiler,            \
-                                       BranchLabels labels);
+  virtual Condition EmitConditionCode(FlowGraphCompiler* compiler,             \
+                                      BranchLabels labels);
 
 #define DECLARE_COMPARISON_INSTRUCTION(type)                                   \
   DECLARE_INSTRUCTION_NO_BACKEND(type)                                         \
@@ -972,14 +973,6 @@ class Instruction : public ZoneAllocated {
 
   static const intptr_t kInstructionAttrs[kNumInstructions];
 
-  enum SpeculativeMode {
-    // Types of inputs should be checked when unboxing for this instruction.
-    kGuardInputs,
-    // Each input is guaranteed to have a valid type for the input
-    // representation and its type should not be checked when unboxing.
-    kNotSpeculative
-  };
-
   // If the source has the inlining ID of the root function, then don't set
   // the inlining ID to that; instead, treat it as unset.
   explicit Instruction(const InstructionSource& source,
@@ -1265,20 +1258,6 @@ class Instruction : public ZoneAllocated {
     return kTagged;
   }
 
-  SpeculativeMode SpeculativeModeOfInputs() const {
-    for (intptr_t i = 0; i < InputCount(); i++) {
-      if (SpeculativeModeOfInput(i) == kGuardInputs) {
-        return kGuardInputs;
-      }
-    }
-    return kNotSpeculative;
-  }
-
-  // By default, instructions should check types of inputs when unboxing
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kGuardInputs;
-  }
-
   // Representation of the value produced by this computation.
   virtual Representation representation() const { return kTagged; }
 
@@ -1421,7 +1400,7 @@ class Instruction : public ZoneAllocated {
   // GetDeoptId and/or CopyDeoptIdFrom.
   friend class CallSiteInliner;
   friend class LICM;
-  friend class ComparisonInstr;
+  friend class ConditionInstr;
   friend class Scheduler;
   friend class BlockEntryInstr;
   friend class CatchBlockEntryInstr;  // deopt_id_
@@ -1437,7 +1416,7 @@ class Instruction : public ZoneAllocated {
 
   // Write/read locs and environment, but not inputs.
   // Used when one instruction embeds another and reuses their inputs
-  // (e.g. Branch/IfThenElse/CheckCondition wrap Comparison).
+  // (e.g. Branch/IfThenElse/CheckCondition wrap Condition).
   void WriteExtraWithoutInputs(FlowGraphSerializer* s);
   void ReadExtraWithoutInputs(FlowGraphDeserializer* d);
 
@@ -2868,14 +2847,6 @@ class PhiInstr : public VariadicDefinition {
 
   virtual void set_representation(Representation r) { representation_ = r; }
 
-  // Only Int32 phis in JIT mode are unboxed optimistically.
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return (CompilerState::Current().is_aot() ||
-            (representation_ != kUnboxedInt32))
-               ? kNotSpeculative
-               : kGuardInputs;
-  }
-
   virtual uword Hash() const {
     UNREACHABLE();
     return 0;
@@ -3481,10 +3452,6 @@ class ReturnBaseInstr : public Instruction {
 
   virtual bool MayThrow() const { return false; }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   DECLARE_ABSTRACT_INSTRUCTION(ReturnBase)
 
   DECLARE_EMPTY_SERIALIZATION(ReturnBaseInstr, Instruction)
@@ -3866,20 +3833,19 @@ class IndirectGotoInstr : public TemplateInstruction<1, NoThrow> {
   DISALLOW_COPY_AND_ASSIGN(IndirectGotoInstr);
 };
 
-class ComparisonInstr : public Definition {
+// Base class for instructions which can be used as conditions in Branch,
+// IfThenElse and CheckCondition instructions.
+class ConditionInstr : public Definition {
  public:
-  Value* left() const { return InputAt(0); }
-  Value* right() const { return InputAt(1); }
-
   virtual TokenPosition token_pos() const { return token_pos_; }
   Token::Kind kind() const { return kind_; }
   DECLARE_ATTRIBUTE(kind())
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right) = 0;
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right) = 0;
 
-  // Emits instructions to do the comparison and branch to the true or false
+  // Emits instructions for the condition and branch to the true or false
   // label depending on the result.  This implementation will call
-  // EmitComparisonCode and then generate the branch instructions afterwards.
+  // EmitConditionCode and then generate the branch instructions afterwards.
   virtual void EmitBranchCode(FlowGraphCompiler* compiler, BranchInstr* branch);
 
   // Used by EmitBranchCode and EmitNativeCode depending on whether the boolean
@@ -3887,13 +3853,13 @@ class ComparisonInstr : public Definition {
   // condition in which case the caller is expected to emit a branch to the
   // true label based on that condition (or a branch to the false label on the
   // opposite condition).  May also branch directly to the labels.
-  virtual Condition EmitComparisonCode(FlowGraphCompiler* compiler,
-                                       BranchLabels labels) = 0;
+  virtual Condition EmitConditionCode(FlowGraphCompiler* compiler,
+                                      BranchLabels labels) = 0;
 
-  // Emits code that generates 'true' or 'false', depending on the comparison.
-  // This implementation will call EmitComparisonCode.  If EmitComparisonCode
-  // does not use the labels (merely returning a condition) then EmitNativeCode
-  // may be able to use the condition to avoid a branch.
+  // Emits code that generates 'true' or 'false', depending on the condition.
+  // This implementation will call EmitConditionCode.  If EmitConditionCode
+  // does not use the labels (merely setting condition flags) then
+  // EmitNativeCode may be able to use the condition flags to avoid a branch.
   virtual void EmitNativeCode(FlowGraphCompiler* compiler);
 
   void SetDeoptId(const Instruction& instr) { CopyDeoptIdFrom(instr); }
@@ -3902,16 +3868,87 @@ class ComparisonInstr : public Definition {
   void set_operation_cid(intptr_t value) { operation_cid_ = value; }
   intptr_t operation_cid() const { return operation_cid_; }
 
-  virtual void NegateComparison() { kind_ = Token::NegateComparison(kind_); }
+  virtual void NegateCondition() { kind_ = Token::NegateComparison(kind_); }
 
   virtual bool CanBecomeDeoptimizationTarget() const { return true; }
   virtual intptr_t DeoptimizationTarget() const { return GetDeoptId(); }
 
   virtual bool AttributesEqual(const Instruction& other) const {
-    auto const other_comparison = other.AsComparison();
-    return kind() == other_comparison->kind() &&
-           (operation_cid() == other_comparison->operation_cid());
+    auto const other_condition = other.AsCondition();
+    return kind() == other_condition->kind() &&
+           (operation_cid() == other_condition->operation_cid());
   }
+
+  DECLARE_ABSTRACT_INSTRUCTION(Condition)
+
+#define FIELD_LIST(F)                                                          \
+  F(const TokenPosition, token_pos_)                                           \
+  F(Token::Kind, kind_)                                                        \
+  /* Set by optimizer. */                                                      \
+  F(intptr_t, operation_cid_)
+
+  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(ConditionInstr,
+                                          Definition,
+                                          FIELD_LIST)
+#undef FIELD_LIST
+
+ protected:
+  ConditionInstr(const InstructionSource& source,
+                 Token::Kind kind,
+                 intptr_t deopt_id = DeoptId::kNone)
+      : Definition(source, deopt_id),
+        token_pos_(source.token_pos),
+        kind_(kind),
+        operation_cid_(kIllegalCid) {}
+
+ private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionInstr);
+};
+
+class PureCondition : public ConditionInstr {
+ public:
+  virtual bool AllowsCSE() const { return true; }
+  virtual bool HasUnknownSideEffects() const { return false; }
+
+  DECLARE_EMPTY_SERIALIZATION(PureCondition, ConditionInstr)
+ protected:
+  PureCondition(const InstructionSource& source,
+                Token::Kind kind,
+                intptr_t deopt_id)
+      : ConditionInstr(source, kind, deopt_id) {}
+};
+
+template <intptr_t N,
+          typename ThrowsTrait,
+          template <typename Impure, typename Pure> class CSETrait = NoCSE>
+class TemplateCondition : public CSETrait<ConditionInstr, PureCondition>::Base {
+ public:
+  using BaseClass = typename CSETrait<ConditionInstr, PureCondition>::Base;
+
+  TemplateCondition(const InstructionSource& source,
+                    Token::Kind kind,
+                    intptr_t deopt_id = DeoptId::kNone)
+      : BaseClass(source, kind, deopt_id), inputs_() {}
+
+  virtual intptr_t InputCount() const { return N; }
+  virtual Value* InputAt(intptr_t i) const { return inputs_[i]; }
+
+  virtual bool MayThrow() const { return ThrowsTrait::kCanThrow; }
+
+  DECLARE_EMPTY_SERIALIZATION(TemplateCondition, BaseClass)
+
+ protected:
+  EmbeddedArray<Value*, N> inputs_;
+
+ private:
+  virtual void RawSetInputAt(intptr_t i, Value* value) { inputs_[i] = value; }
+};
+
+// Compares left and right.
+class ComparisonInstr : public TemplateCondition<2, NoThrow, Pure> {
+ public:
+  Value* left() const { return InputAt(0); }
+  Value* right() const { return InputAt(1); }
 
   // Detects comparison with a constant and returns constant and the other
   // operand.
@@ -3929,133 +3966,76 @@ class ComparisonInstr : public Definition {
   }
 
   DECLARE_ABSTRACT_INSTRUCTION(Comparison)
-
-#define FIELD_LIST(F)                                                          \
-  F(const TokenPosition, token_pos_)                                           \
-  F(Token::Kind, kind_)                                                        \
-  /* Set by optimizer. */                                                      \
-  F(intptr_t, operation_cid_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(ComparisonInstr,
-                                          Definition,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(ComparisonInstr, TemplateCondition)
 
  protected:
   ComparisonInstr(const InstructionSource& source,
                   Token::Kind kind,
-                  intptr_t deopt_id = DeoptId::kNone)
-      : Definition(source, deopt_id),
-        token_pos_(source.token_pos),
-        kind_(kind),
-        operation_cid_(kIllegalCid) {}
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(ComparisonInstr);
-};
-
-class PureComparison : public ComparisonInstr {
- public:
-  virtual bool AllowsCSE() const { return true; }
-  virtual bool HasUnknownSideEffects() const { return false; }
-
-  DECLARE_EMPTY_SERIALIZATION(PureComparison, ComparisonInstr)
- protected:
-  PureComparison(const InstructionSource& source,
-                 Token::Kind kind,
-                 intptr_t deopt_id)
-      : ComparisonInstr(source, kind, deopt_id) {}
-};
-
-template <intptr_t N,
-          typename ThrowsTrait,
-          template <typename Impure, typename Pure> class CSETrait = NoCSE>
-class TemplateComparison
-    : public CSETrait<ComparisonInstr, PureComparison>::Base {
- public:
-  using BaseClass = typename CSETrait<ComparisonInstr, PureComparison>::Base;
-
-  TemplateComparison(const InstructionSource& source,
-                     Token::Kind kind,
-                     intptr_t deopt_id = DeoptId::kNone)
-      : BaseClass(source, kind, deopt_id), inputs_() {}
-
-  virtual intptr_t InputCount() const { return N; }
-  virtual Value* InputAt(intptr_t i) const { return inputs_[i]; }
-
-  virtual bool MayThrow() const { return ThrowsTrait::kCanThrow; }
-
-  DECLARE_EMPTY_SERIALIZATION(TemplateComparison, BaseClass)
-
- protected:
-  EmbeddedArray<Value*, N> inputs_;
-
- private:
-  virtual void RawSetInputAt(intptr_t i, Value* value) { inputs_[i] = value; }
+                  Value* left,
+                  Value* right,
+                  intptr_t deopt_id)
+      : TemplateCondition(source, kind, deopt_id) {
+    SetInputAt(0, left);
+    SetInputAt(1, right);
+  }
 };
 
 class BranchInstr : public Instruction {
  public:
-  explicit BranchInstr(ComparisonInstr* comparison, intptr_t deopt_id)
-      : Instruction(deopt_id), comparison_(comparison) {
-    ASSERT(comparison->env() == nullptr);
-    for (intptr_t i = comparison->InputCount() - 1; i >= 0; --i) {
-      comparison->InputAt(i)->set_instruction(this);
+  explicit BranchInstr(ConditionInstr* condition, intptr_t deopt_id)
+      : Instruction(deopt_id), condition_(condition) {
+    ASSERT(condition->env() == nullptr);
+    for (intptr_t i = condition->InputCount() - 1; i >= 0; --i) {
+      condition->InputAt(i)->set_instruction(this);
     }
   }
 
   DECLARE_INSTRUCTION(Branch)
 
   virtual intptr_t ArgumentCount() const {
-    return comparison()->ArgumentCount();
+    return condition()->ArgumentCount();
   }
   virtual void SetMoveArguments(MoveArgumentsArray* move_arguments) {
-    comparison()->SetMoveArguments(move_arguments);
+    condition()->SetMoveArguments(move_arguments);
   }
   virtual MoveArgumentsArray* GetMoveArguments() const {
-    return comparison()->GetMoveArguments();
+    return condition()->GetMoveArguments();
   }
 
-  intptr_t InputCount() const { return comparison()->InputCount(); }
+  intptr_t InputCount() const { return condition()->InputCount(); }
 
-  Value* InputAt(intptr_t i) const { return comparison()->InputAt(i); }
+  Value* InputAt(intptr_t i) const { return condition()->InputAt(i); }
 
-  virtual TokenPosition token_pos() const { return comparison_->token_pos(); }
-  virtual intptr_t inlining_id() const { return comparison_->inlining_id(); }
+  virtual TokenPosition token_pos() const { return condition_->token_pos(); }
+  virtual intptr_t inlining_id() const { return condition_->inlining_id(); }
   virtual void set_inlining_id(intptr_t value) {
-    return comparison_->set_inlining_id(value);
+    return condition_->set_inlining_id(value);
   }
-  virtual bool has_inlining_id() const {
-    return comparison_->has_inlining_id();
-  }
+  virtual bool has_inlining_id() const { return condition_->has_inlining_id(); }
 
   virtual bool ComputeCanDeoptimize() const {
-    return comparison()->ComputeCanDeoptimize();
+    return condition()->ComputeCanDeoptimize();
   }
 
   virtual bool CanBecomeDeoptimizationTarget() const {
-    return comparison()->CanBecomeDeoptimizationTarget();
+    return condition()->CanBecomeDeoptimizationTarget();
   }
 
   virtual bool HasUnknownSideEffects() const {
-    return comparison()->HasUnknownSideEffects();
+    return condition()->HasUnknownSideEffects();
   }
 
-  virtual bool CanCallDart() const { return comparison()->CanCallDart(); }
+  virtual bool CanCallDart() const { return condition()->CanCallDart(); }
 
-  ComparisonInstr* comparison() const { return comparison_; }
-  void SetComparison(ComparisonInstr* comp);
+  ConditionInstr* condition() const { return condition_; }
+  void SetCondition(ConditionInstr* new_condition);
 
   virtual intptr_t DeoptimizationTarget() const {
-    return comparison()->DeoptimizationTarget();
+    return condition()->DeoptimizationTarget();
   }
 
   virtual Representation RequiredInputRepresentation(intptr_t i) const {
-    return comparison()->RequiredInputRepresentation(i);
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return comparison()->SpeculativeModeOfInput(index);
+    return condition()->RequiredInputRepresentation(i);
   }
 
   virtual Instruction* Canonicalize(FlowGraph* flow_graph);
@@ -4068,10 +4048,10 @@ class BranchInstr : public Instruction {
 
   virtual void CopyDeoptIdFrom(const Instruction& instr) {
     Instruction::CopyDeoptIdFrom(instr);
-    comparison()->CopyDeoptIdFrom(instr);
+    condition()->CopyDeoptIdFrom(instr);
   }
 
-  virtual bool MayThrow() const { return comparison()->MayThrow(); }
+  virtual bool MayThrow() const { return condition()->MayThrow(); }
 
   TargetEntryInstr* true_successor() const { return true_successor_; }
   TargetEntryInstr* false_successor() const { return false_successor_; }
@@ -4084,7 +4064,7 @@ class BranchInstr : public Instruction {
 
   PRINT_TO_SUPPORT
 
-#define FIELD_LIST(F) F(ComparisonInstr*, comparison_)
+#define FIELD_LIST(F) F(ConditionInstr*, condition_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(BranchInstr, Instruction, FIELD_LIST)
 #undef FIELD_LIST
@@ -4092,7 +4072,7 @@ class BranchInstr : public Instruction {
 
  private:
   virtual void RawSetInputAt(intptr_t i, Value* value) {
-    comparison()->RawSetInputAt(i, value);
+    condition()->RawSetInputAt(i, value);
   }
 
   TargetEntryInstr* true_successor_ = nullptr;
@@ -4232,8 +4212,8 @@ class ConstraintInstr : public TemplateDefinition<1, NoThrow> {
   virtual void InferRange(RangeAnalysis* analysis, Range* range);
 
   // Constraints for branches have their target block stored in order
-  // to find the comparison that generated the constraint:
-  // target->predecessor->last_instruction->comparison.
+  // to find the condition that generated the constraint:
+  // target->predecessor->last_instruction->condition.
   void set_target(TargetEntryInstr* target) { target_ = target; }
   TargetEntryInstr* target() const { return target_; }
 
@@ -4774,18 +4754,6 @@ class InstanceCallBaseInstr : public TemplateDartCall<0> {
 
   bool CanReceiverBeSmiBasedOnInterfaceTarget(Zone* zone) const;
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    if (type_args_len() > 0) {
-      if (idx == 0) {
-        return kGuardInputs;
-      }
-      idx--;
-    }
-    if (interface_target_.IsNull()) return kGuardInputs;
-    return interface_target_.is_unboxed_parameter_at(idx) ? kNotSpeculative
-                                                          : kGuardInputs;
-  }
-
   virtual intptr_t ArgumentsSize() const;
 
   virtual Representation RequiredInputRepresentation(intptr_t idx) const;
@@ -5072,17 +5040,6 @@ class DispatchTableCallInstr : public TemplateDartCall<1> {
 
   virtual bool HasUnknownSideEffects() const { return true; }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    if (type_args_len() > 0) {
-      if (idx == 0) {
-        return kGuardInputs;
-      }
-      idx--;
-    }
-    return interface_target_.is_unboxed_parameter_at(idx) ? kNotSpeculative
-                                                          : kGuardInputs;
-  }
-
   virtual intptr_t ArgumentsSize() const;
 
   virtual Representation RequiredInputRepresentation(intptr_t idx) const;
@@ -5104,7 +5061,7 @@ class DispatchTableCallInstr : public TemplateDartCall<1> {
   DISALLOW_COPY_AND_ASSIGN(DispatchTableCallInstr);
 };
 
-class StrictCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
+class StrictCompareInstr : public ComparisonInstr {
  public:
   StrictCompareInstr(const InstructionSource& source,
                      Token::Kind kind,
@@ -5115,7 +5072,7 @@ class StrictCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
 
   DECLARE_COMPARISON_INSTRUCTION(StrictCompare)
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5136,7 +5093,7 @@ class StrictCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
   F(bool, needs_number_check_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(StrictCompareInstr,
-                                          TemplateComparison,
+                                          ComparisonInstr,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -5154,16 +5111,15 @@ class StrictCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
   DISALLOW_COPY_AND_ASSIGN(StrictCompareInstr);
 };
 
-// Comparison instruction that is equivalent to the (left & right) == 0
-// comparison pattern.
-class TestIntInstr : public TemplateComparison<2, NoThrow, Pure> {
+// Test (left & right) == 0 pattern.
+class TestIntInstr : public TemplateCondition<2, NoThrow, Pure> {
  public:
   TestIntInstr(const InstructionSource& source,
                Token::Kind kind,
                Representation representation,
                Value* left,
                Value* right)
-      : TemplateComparison(source, kind), representation_(representation) {
+      : TemplateCondition(source, kind), representation_(representation) {
     ASSERT(kind == Token::kEQ || kind == Token::kNE);
     ASSERT(IsSupported(representation));
     SetInputAt(0, left);
@@ -5172,7 +5128,10 @@ class TestIntInstr : public TemplateComparison<2, NoThrow, Pure> {
 
   DECLARE_COMPARISON_INSTRUCTION(TestInt);
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  Value* left() const { return InputAt(0); }
+  Value* right() const { return InputAt(1); }
+
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5180,10 +5139,6 @@ class TestIntInstr : public TemplateComparison<2, NoThrow, Pure> {
 
   virtual Representation RequiredInputRepresentation(intptr_t idx) const {
     return representation_;
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
   }
 
   static bool IsSupported(Representation representation) {
@@ -5207,7 +5162,7 @@ class TestIntInstr : public TemplateComparison<2, NoThrow, Pure> {
 #define FIELD_LIST(F) F(const Representation, representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(TestIntInstr,
-                                          TemplateComparison,
+                                          TemplateCondition,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -5224,7 +5179,7 @@ class TestIntInstr : public TemplateComparison<2, NoThrow, Pure> {
 // the opposite for cids not on the list.  The first element in the table must
 // always be the result for the Smi class-id and is allowed to differ from the
 // other results even in the no-deopt case.
-class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
+class TestCidsInstr : public TemplateCondition<1, NoThrow, Pure> {
  public:
   TestCidsInstr(const InstructionSource& source,
                 Token::Kind kind,
@@ -5238,7 +5193,7 @@ class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
 
   DECLARE_COMPARISON_INSTRUCTION(TestCids);
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5260,7 +5215,7 @@ class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
 #define FIELD_LIST(F) F(const ZoneGrowableArray<intptr_t>&, cid_results_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(TestCidsInstr,
-                                          TemplateComparison,
+                                          TemplateCondition,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -5268,7 +5223,7 @@ class TestCidsInstr : public TemplateComparison<1, NoThrow, Pure> {
   DISALLOW_COPY_AND_ASSIGN(TestCidsInstr);
 };
 
-class TestRangeInstr : public TemplateComparison<1, NoThrow, Pure> {
+class TestRangeInstr : public TemplateCondition<1, NoThrow, Pure> {
  public:
   TestRangeInstr(const InstructionSource& source,
                  Value* value,
@@ -5281,7 +5236,7 @@ class TestRangeInstr : public TemplateComparison<1, NoThrow, Pure> {
   uword lower() const { return lower_; }
   uword upper() const { return upper_; }
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5304,7 +5259,7 @@ class TestRangeInstr : public TemplateComparison<1, NoThrow, Pure> {
   F(const Representation, value_representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(TestRangeInstr,
-                                          TemplateComparison,
+                                          TemplateCondition,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -5312,7 +5267,7 @@ class TestRangeInstr : public TemplateComparison<1, NoThrow, Pure> {
   DISALLOW_COPY_AND_ASSIGN(TestRangeInstr);
 };
 
-class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
+class EqualityCompareInstr : public ComparisonInstr {
  public:
   EqualityCompareInstr(const InstructionSource& source,
                        Token::Kind kind,
@@ -5320,20 +5275,16 @@ class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
                        Value* right,
                        intptr_t cid,
                        intptr_t deopt_id,
-                       bool null_aware = false,
-                       SpeculativeMode speculative_mode = kGuardInputs)
-      : TemplateComparison(source, kind, deopt_id),
-        null_aware_(null_aware),
-        speculative_mode_(speculative_mode) {
+                       bool null_aware)
+      : ComparisonInstr(source, kind, left, right, deopt_id),
+        null_aware_(null_aware) {
     ASSERT(Token::IsEqualityOperator(kind));
-    SetInputAt(0, left);
-    SetInputAt(1, right);
     set_operation_cid(cid);
   }
 
   DECLARE_COMPARISON_INSTRUCTION(EqualityCompare)
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5351,26 +5302,19 @@ class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
     return kTagged;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
   virtual bool AttributesEqual(const Instruction& other) const {
-    return ComparisonInstr::AttributesEqual(other) &&
-           (null_aware_ == other.AsEqualityCompare()->null_aware_) &&
-           (speculative_mode_ == other.AsEqualityCompare()->speculative_mode_);
+    return ConditionInstr::AttributesEqual(other) &&
+           (null_aware_ == other.AsEqualityCompare()->null_aware_);
   }
 
   virtual Definition* Canonicalize(FlowGraph* flow_graph);
 
   PRINT_OPERANDS_TO_SUPPORT
 
-#define FIELD_LIST(F)                                                          \
-  F(bool, null_aware_)                                                         \
-  F(const SpeculativeMode, speculative_mode_)
+#define FIELD_LIST(F) F(bool, null_aware_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(EqualityCompareInstr,
-                                          TemplateComparison,
+                                          ComparisonInstr,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -5378,27 +5322,23 @@ class EqualityCompareInstr : public TemplateComparison<2, NoThrow, Pure> {
   DISALLOW_COPY_AND_ASSIGN(EqualityCompareInstr);
 };
 
-class RelationalOpInstr : public TemplateComparison<2, NoThrow, Pure> {
+class RelationalOpInstr : public ComparisonInstr {
  public:
   RelationalOpInstr(const InstructionSource& source,
                     Token::Kind kind,
                     Value* left,
                     Value* right,
                     intptr_t cid,
-                    intptr_t deopt_id,
-                    SpeculativeMode speculative_mode = kGuardInputs)
-      : TemplateComparison(source, kind, deopt_id),
-        speculative_mode_(speculative_mode) {
+                    intptr_t deopt_id)
+      : ComparisonInstr(source, kind, left, right, deopt_id) {
     ASSERT(Token::IsRelationalOperator(kind));
     ASSERT((cid == kSmiCid) || (cid == kMintCid) || (cid == kDoubleCid));
-    SetInputAt(0, left);
-    SetInputAt(1, right);
     set_operation_cid(cid);
   }
 
   DECLARE_COMPARISON_INSTRUCTION(RelationalOp)
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
   virtual CompileType ComputeType() const;
 
@@ -5411,110 +5351,92 @@ class RelationalOpInstr : public TemplateComparison<2, NoThrow, Pure> {
     return kTagged;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
-  virtual bool AttributesEqual(const Instruction& other) const {
-    return ComparisonInstr::AttributesEqual(other) &&
-           (speculative_mode_ == other.AsRelationalOp()->speculative_mode_);
-  }
-
   PRINT_OPERANDS_TO_SUPPORT
 
-#define FIELD_LIST(F) F(const SpeculativeMode, speculative_mode_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(RelationalOpInstr,
-                                          TemplateComparison,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(RelationalOpInstr, ComparisonInstr)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(RelationalOpInstr);
 };
 
-// TODO(vegorov): ComparisonInstr should be switched to use IfTheElseInstr for
+// TODO(vegorov): ConditionInstr should be switched to use IfTheElseInstr for
 // materialization of true and false constants.
 class IfThenElseInstr : public Definition {
  public:
-  IfThenElseInstr(ComparisonInstr* comparison,
+  IfThenElseInstr(ConditionInstr* condition,
                   Value* if_true,
                   Value* if_false,
                   intptr_t deopt_id)
       : Definition(deopt_id),
-        comparison_(comparison),
+        condition_(condition),
         if_true_(Smi::Cast(if_true->BoundConstant()).Value()),
         if_false_(Smi::Cast(if_false->BoundConstant()).Value()) {
-    // Adjust uses at the comparison.
-    ASSERT(comparison->env() == nullptr);
-    for (intptr_t i = comparison->InputCount() - 1; i >= 0; --i) {
-      comparison->InputAt(i)->set_instruction(this);
+    // Adjust uses at the condition.
+    ASSERT(condition->env() == nullptr);
+    for (intptr_t i = condition->InputCount() - 1; i >= 0; --i) {
+      condition->InputAt(i)->set_instruction(this);
     }
   }
 
-  // Returns true if this combination of comparison and values flowing on
+  // Returns true if this combination of condition and values flowing on
   // the true and false paths is supported on the current platform.
-  static bool Supports(ComparisonInstr* comparison, Value* v1, Value* v2);
+  static bool Supports(ConditionInstr* condition, Value* v1, Value* v2);
 
   DECLARE_INSTRUCTION(IfThenElse)
 
-  intptr_t InputCount() const { return comparison()->InputCount(); }
+  intptr_t InputCount() const { return condition()->InputCount(); }
 
-  Value* InputAt(intptr_t i) const { return comparison()->InputAt(i); }
+  Value* InputAt(intptr_t i) const { return condition()->InputAt(i); }
 
   virtual bool ComputeCanDeoptimize() const {
-    return comparison()->ComputeCanDeoptimize();
+    return condition()->ComputeCanDeoptimize();
   }
 
   virtual bool CanBecomeDeoptimizationTarget() const {
-    return comparison()->CanBecomeDeoptimizationTarget();
+    return condition()->CanBecomeDeoptimizationTarget();
   }
 
   virtual intptr_t DeoptimizationTarget() const {
-    return comparison()->DeoptimizationTarget();
+    return condition()->DeoptimizationTarget();
   }
 
   virtual Representation RequiredInputRepresentation(intptr_t i) const {
-    return comparison()->RequiredInputRepresentation(i);
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return comparison()->SpeculativeModeOfInput(index);
+    return condition()->RequiredInputRepresentation(i);
   }
 
   virtual CompileType ComputeType() const;
 
   virtual void InferRange(RangeAnalysis* analysis, Range* range);
 
-  ComparisonInstr* comparison() const { return comparison_; }
+  ConditionInstr* condition() const { return condition_; }
   intptr_t if_true() const { return if_true_; }
   intptr_t if_false() const { return if_false_; }
 
-  virtual bool AllowsCSE() const { return comparison()->AllowsCSE(); }
+  virtual bool AllowsCSE() const { return condition()->AllowsCSE(); }
   virtual bool HasUnknownSideEffects() const {
-    return comparison()->HasUnknownSideEffects();
+    return condition()->HasUnknownSideEffects();
   }
-  virtual bool CanCallDart() const { return comparison()->CanCallDart(); }
+  virtual bool CanCallDart() const { return condition()->CanCallDart(); }
 
   virtual bool AttributesEqual(const Instruction& other) const {
     auto const other_if_then_else = other.AsIfThenElse();
-    return (comparison()->tag() == other_if_then_else->comparison()->tag()) &&
-           comparison()->AttributesEqual(*other_if_then_else->comparison()) &&
+    return (condition()->tag() == other_if_then_else->condition()->tag()) &&
+           condition()->AttributesEqual(*other_if_then_else->condition()) &&
            (if_true_ == other_if_then_else->if_true_) &&
            (if_false_ == other_if_then_else->if_false_);
   }
 
-  virtual bool MayThrow() const { return comparison()->MayThrow(); }
+  virtual bool MayThrow() const { return condition()->MayThrow(); }
 
   virtual void CopyDeoptIdFrom(const Instruction& instr) {
     Definition::CopyDeoptIdFrom(instr);
-    comparison()->CopyDeoptIdFrom(instr);
+    condition()->CopyDeoptIdFrom(instr);
   }
 
   PRINT_OPERANDS_TO_SUPPORT
 
 #define FIELD_LIST(F)                                                          \
-  F(ComparisonInstr*, comparison_)                                             \
+  F(ConditionInstr*, condition_)                                               \
   F(const intptr_t, if_true_)                                                  \
   F(const intptr_t, if_false_)
 
@@ -5526,7 +5448,7 @@ class IfThenElseInstr : public Definition {
 
  private:
   virtual void RawSetInputAt(intptr_t i, Value* value) {
-    comparison()->RawSetInputAt(i, value);
+    condition()->RawSetInputAt(i, value);
   }
 
   DISALLOW_COPY_AND_ASSIGN(IfThenElseInstr);
@@ -5675,17 +5597,6 @@ class StaticCallInstr : public TemplateDartCall<0> {
 
   bool IsRecognizedFactory() const { return is_known_list_constructor(); }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    if (type_args_len() > 0 || function().IsFactory()) {
-      if (idx == 0) {
-        return kGuardInputs;
-      }
-      idx--;
-    }
-    return function_.is_unboxed_parameter_at(idx) ? kNotSpeculative
-                                                  : kGuardInputs;
-  }
-
   virtual intptr_t ArgumentsSize() const;
 
   virtual Representation RequiredInputRepresentation(intptr_t idx) const;
@@ -5769,17 +5680,6 @@ class CachableIdempotentCallInstr : public TemplateDartCall<0> {
   virtual bool HasUnknownSideEffects() const { return true; }
 
   virtual bool CanCallDart() const { return true; }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    if (type_args_len() > 0) {
-      if (idx == 0) {
-        return kGuardInputs;
-      }
-      idx--;
-    }
-    return function_.is_unboxed_parameter_at(idx) ? kNotSpeculative
-                                                  : kGuardInputs;
-  }
 
   virtual intptr_t ArgumentsSize() const;
 
@@ -6221,10 +6121,6 @@ class LeafRuntimeCallInstr : public VariadicDefinition {
     return kUntagged;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   virtual bool MayCreateUnsafeUntaggedPointer() const {
     if (representation() != kUntagged) return false;
     // Returns true iff any of the inputs to the target may be an unsafe
@@ -6415,13 +6311,6 @@ class StoreFieldInstr : public TemplateInstruction<2, NoThrow> {
                         emit_store_barrier,
                         source,
                         kind) {}
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    // Slots are unboxed based on statically inferrable type information.
-    // Either sound non-nullable static types (JIT) or global type flow analysis
-    // results (AOT).
-    return slot().representation() != kTagged ? kNotSpeculative : kGuardInputs;
-  }
 
   DECLARE_INSTRUCTION(StoreField)
   DECLARE_ATTRIBUTES_NAMED(("slot", "is_initialization"),
@@ -7048,10 +6937,6 @@ class Utf8ScanInstr : public TemplateDefinition<5, NoThrow> {
   virtual intptr_t DeoptimizationTarget() const { return DeoptId::kNone; }
   virtual void InferRange(RangeAnalysis* analysis, Range* range);
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   virtual bool AttributesEqual(const Instruction& other) const {
     return scan_flags_field_.Equals(other.AsUtf8Scan()->scan_flags_field_);
   }
@@ -7082,8 +6967,7 @@ class StoreIndexedInstr : public TemplateInstruction<3, NoThrow> {
                     intptr_t class_id,
                     AlignmentType alignment,
                     intptr_t deopt_id,
-                    const InstructionSource& source,
-                    SpeculativeMode speculative_mode = kGuardInputs);
+                    const InstructionSource& source);
   DECLARE_INSTRUCTION(StoreIndexed)
 
   enum { kArrayPos = 0, kIndexPos = 1, kValuePos = 2 };
@@ -7106,10 +6990,6 @@ class StoreIndexedInstr : public TemplateInstruction<3, NoThrow> {
 
   void set_emit_store_barrier(StoreBarrierType value) {
     emit_store_barrier_ = value;
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
   }
 
   virtual bool ComputeCanDeoptimize() const { return false; }
@@ -7145,8 +7025,7 @@ class StoreIndexedInstr : public TemplateInstruction<3, NoThrow> {
   F(const intptr_t, index_scale_)                                              \
   F(const intptr_t, class_id_)                                                 \
   F(const AlignmentType, alignment_)                                           \
-  F(const TokenPosition, token_pos_)                                           \
-  F(const SpeculativeMode, speculative_mode_)
+  F(const TokenPosition, token_pos_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(StoreIndexedInstr,
                                           TemplateInstruction,
@@ -8015,10 +7894,6 @@ class CalculateElementAddressInstr : public TemplateDefinition<3, NoThrow> {
     return kUnboxedIntPtr;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   Value* base() const { return inputs_[kBasePos]; }
   Value* index() const { return inputs_[kIndexPos]; }
   Value* offset() const { return inputs_[kOffsetPos]; }
@@ -8557,10 +8432,6 @@ class BoxInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
   virtual TokenPosition token_pos() const { return TokenPosition::kBox; }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
 #define FIELD_LIST(F) F(const Representation, from_representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(BoxInstr,
@@ -8680,35 +8551,29 @@ class BoxInt64Instr : public BoxIntegerInstr {
 
 class UnboxInstr : public TemplateDefinition<1, NoThrow, Pure> {
  public:
+  enum class ValueMode {
+    // Input value has a type which matches representation.
+    kHasValidType,
+    // Type of the input value should be checked during unboxing.
+    // Deoptimize if type doesn't match representation.
+    kCheckType,
+  };
+
   static UnboxInstr* Create(Representation to,
                             Value* value,
                             intptr_t deopt_id,
-                            SpeculativeMode speculative_mode = kGuardInputs);
+                            ValueMode value_mode);
 
   Value* value() const { return inputs_[0]; }
 
+  bool HasMatchingType();
+
   virtual bool ComputeCanDeoptimize() const {
-    if (SpeculativeModeOfInputs() == kNotSpeculative) {
-      return false;
-    }
-
-    const intptr_t value_cid = value()->Type()->ToCid();
-    const intptr_t box_cid = BoxCid();
-
-    if (value_cid == box_cid) {
-      return false;
-    }
-
-    if (CanConvertSmi() && (value_cid == kSmiCid)) {
-      return false;
-    }
-
-    return true;
+    return value_mode() == ValueMode::kCheckType;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
+  ValueMode value_mode() const { return value_mode_; }
+  void set_value_mode(ValueMode value_mode) { value_mode_ = value_mode; }
 
   virtual Representation representation() const { return representation_; }
 
@@ -8717,7 +8582,7 @@ class UnboxInstr : public TemplateDefinition<1, NoThrow, Pure> {
   virtual bool AttributesEqual(const Instruction& other) const {
     auto const other_unbox = other.AsUnbox();
     return (representation() == other_unbox->representation()) &&
-           (speculative_mode_ == other_unbox->speculative_mode_);
+           (value_mode_ == other_unbox->value_mode_);
   }
 
   Definition* Canonicalize(FlowGraph* flow_graph);
@@ -8728,7 +8593,7 @@ class UnboxInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
 #define FIELD_LIST(F)                                                          \
   F(const Representation, representation_)                                     \
-  F(SpeculativeMode, speculative_mode_)
+  F(ValueMode, value_mode_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(UnboxInstr,
                                           TemplateDefinition,
@@ -8739,17 +8604,13 @@ class UnboxInstr : public TemplateDefinition<1, NoThrow, Pure> {
   UnboxInstr(Representation representation,
              Value* value,
              intptr_t deopt_id,
-             SpeculativeMode speculative_mode)
+             ValueMode value_mode)
       : TemplateDefinition(deopt_id),
         representation_(representation),
-        speculative_mode_(speculative_mode) {
+        value_mode_(value_mode) {
     // Unboxing doesn't currently handle non-native representations.
     ASSERT_EQUAL(Boxing::NativeRepresentation(representation), representation);
     SetInputAt(0, value);
-  }
-
-  void set_speculative_mode(SpeculativeMode value) {
-    speculative_mode_ = value;
   }
 
  private:
@@ -8772,24 +8633,10 @@ class UnboxIntegerInstr : public UnboxInstr {
   enum TruncationMode { kTruncate, kNoTruncation };
 
   UnboxIntegerInstr(Representation representation,
-                    TruncationMode truncation_mode,
                     Value* value,
                     intptr_t deopt_id,
-                    SpeculativeMode speculative_mode)
-      : UnboxInstr(representation, value, deopt_id, speculative_mode),
-        is_truncating_(truncation_mode == kTruncate) {}
-
-  bool is_truncating() const { return is_truncating_; }
-
-  void mark_truncating() { is_truncating_ = true; }
-
-  virtual bool ComputeCanDeoptimize() const;
-
-  virtual bool AttributesEqual(const Instruction& other) const {
-    auto const other_unbox = other.AsUnboxInteger();
-    return UnboxInstr::AttributesEqual(other) &&
-           (other_unbox->is_truncating_ == is_truncating_);
-  }
+                    ValueMode value_mode)
+      : UnboxInstr(representation, value, deopt_id, value_mode) {}
 
   virtual Definition* Canonicalize(FlowGraph* flow_graph);
 
@@ -8799,12 +8646,7 @@ class UnboxIntegerInstr : public UnboxInstr {
 
   PRINT_OPERANDS_TO_SUPPORT
 
-#define FIELD_LIST(F) F(bool, is_truncating_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(UnboxIntegerInstr,
-                                          UnboxInstr,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(UnboxIntegerInstr, UnboxInstr)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(UnboxIntegerInstr);
@@ -8813,15 +8655,10 @@ class UnboxIntegerInstr : public UnboxInstr {
 class UnboxInteger32Instr : public UnboxIntegerInstr {
  public:
   UnboxInteger32Instr(Representation representation,
-                      TruncationMode truncation_mode,
                       Value* value,
                       intptr_t deopt_id,
-                      SpeculativeMode speculative_mode)
-      : UnboxIntegerInstr(representation,
-                          truncation_mode,
-                          value,
-                          deopt_id,
-                          speculative_mode) {}
+                      ValueMode value_mode)
+      : UnboxIntegerInstr(representation, value, deopt_id, value_mode) {}
 
   DECLARE_INSTRUCTION_BACKEND()
 
@@ -8833,16 +8670,8 @@ class UnboxInteger32Instr : public UnboxIntegerInstr {
 
 class UnboxUint32Instr : public UnboxInteger32Instr {
  public:
-  UnboxUint32Instr(Value* value,
-                   intptr_t deopt_id,
-                   SpeculativeMode speculative_mode = kGuardInputs)
-      : UnboxInteger32Instr(kUnboxedUint32,
-                            kTruncate,
-                            value,
-                            deopt_id,
-                            speculative_mode) {
-    ASSERT(is_truncating());
-  }
+  UnboxUint32Instr(Value* value, intptr_t deopt_id, ValueMode value_mode)
+      : UnboxInteger32Instr(kUnboxedUint32, value, deopt_id, value_mode) {}
 
   DECLARE_INSTRUCTION_NO_BACKEND(UnboxUint32)
 
@@ -8854,15 +8683,8 @@ class UnboxUint32Instr : public UnboxInteger32Instr {
 
 class UnboxInt32Instr : public UnboxInteger32Instr {
  public:
-  UnboxInt32Instr(TruncationMode truncation_mode,
-                  Value* value,
-                  intptr_t deopt_id,
-                  SpeculativeMode speculative_mode = kGuardInputs)
-      : UnboxInteger32Instr(kUnboxedInt32,
-                            truncation_mode,
-                            value,
-                            deopt_id,
-                            speculative_mode) {}
+  UnboxInt32Instr(Value* value, intptr_t deopt_id, ValueMode value_mode)
+      : UnboxInteger32Instr(kUnboxedInt32, value, deopt_id, value_mode) {}
 
   DECLARE_INSTRUCTION_NO_BACKEND(UnboxInt32)
 
@@ -8874,14 +8696,8 @@ class UnboxInt32Instr : public UnboxInteger32Instr {
 
 class UnboxInt64Instr : public UnboxIntegerInstr {
  public:
-  UnboxInt64Instr(Value* value,
-                  intptr_t deopt_id,
-                  SpeculativeMode speculative_mode)
-      : UnboxIntegerInstr(kUnboxedInt64,
-                          kNoTruncation,
-                          value,
-                          deopt_id,
-                          speculative_mode) {}
+  UnboxInt64Instr(Value* value, intptr_t deopt_id, ValueMode value_mode)
+      : UnboxIntegerInstr(kUnboxedInt64, value, deopt_id, value_mode) {}
 
   DECLARE_INSTRUCTION_NO_BACKEND(UnboxInt64)
 
@@ -9029,12 +8845,10 @@ class BinaryDoubleOpInstr : public TemplateDefinition<2, NoThrow, Pure> {
                       Value* right,
                       intptr_t deopt_id,
                       const InstructionSource& source,
-                      SpeculativeMode speculative_mode = kGuardInputs,
                       Representation representation = kUnboxedDouble)
       : TemplateDefinition(source, deopt_id),
         op_kind_(op_kind),
         token_pos_(source.token_pos),
-        speculative_mode_(speculative_mode),
         representation_(representation) {
     ASSERT((representation == kUnboxedFloat) ||
            (representation == kUnboxedDouble));
@@ -9058,10 +8872,6 @@ class BinaryDoubleOpInstr : public TemplateDefinition<2, NoThrow, Pure> {
     return representation_;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
   virtual intptr_t DeoptimizationTarget() const {
     // Direct access since this instruction cannot deoptimize, and the deopt-id
     // was inherited from another instruction that could deoptimize.
@@ -9079,14 +8889,12 @@ class BinaryDoubleOpInstr : public TemplateDefinition<2, NoThrow, Pure> {
   virtual bool AttributesEqual(const Instruction& other) const {
     auto const other_bin_op = other.AsBinaryDoubleOp();
     return (op_kind() == other_bin_op->op_kind()) &&
-           (speculative_mode_ == other_bin_op->speculative_mode_) &&
            (representation_ == other_bin_op->representation_);
   }
 
 #define FIELD_LIST(F)                                                          \
   F(const Token::Kind, op_kind_)                                               \
   F(const TokenPosition, token_pos_)                                           \
-  F(const SpeculativeMode, speculative_mode_)                                  \
   F(const Representation, representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(BinaryDoubleOpInstr,
@@ -9098,13 +8906,13 @@ class BinaryDoubleOpInstr : public TemplateDefinition<2, NoThrow, Pure> {
   DISALLOW_COPY_AND_ASSIGN(BinaryDoubleOpInstr);
 };
 
-class DoubleTestOpInstr : public TemplateComparison<1, NoThrow, Pure> {
+class DoubleTestOpInstr : public TemplateCondition<1, NoThrow, Pure> {
  public:
   DoubleTestOpInstr(MethodRecognizer::Kind op_kind,
                     Value* value,
                     intptr_t deopt_id,
                     const InstructionSource& source)
-      : TemplateComparison(source, Token::kEQ, deopt_id), op_kind_(op_kind) {
+      : TemplateCondition(source, Token::kEQ, deopt_id), op_kind_(op_kind) {
     SetInputAt(0, value);
   }
 
@@ -9129,15 +8937,15 @@ class DoubleTestOpInstr : public TemplateComparison<1, NoThrow, Pure> {
 
   virtual bool AttributesEqual(const Instruction& other) const {
     return op_kind_ == other.AsDoubleTestOp()->op_kind() &&
-           ComparisonInstr::AttributesEqual(other);
+           ConditionInstr::AttributesEqual(other);
   }
 
-  virtual ComparisonInstr* CopyWithNewOperands(Value* left, Value* right);
+  virtual ConditionInstr* CopyWithNewOperands(Value* left, Value* right);
 
 #define FIELD_LIST(F) F(const MethodRecognizer::Kind, op_kind_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(DoubleTestOpInstr,
-                                          TemplateComparison,
+                                          TemplateCondition,
                                           FIELD_LIST)
 #undef FIELD_LIST
 
@@ -9244,7 +9052,6 @@ class UnaryIntegerOpInstr : public TemplateDefinition<1, NoThrow, Pure> {
                                    Token::Kind op_kind,
                                    Value* value,
                                    intptr_t deopt_id,
-                                   SpeculativeMode speculative_mode,
                                    Range* range);
 
   Value* value() const { return inputs_[0]; }
@@ -9329,12 +9136,8 @@ class UnaryUint32OpInstr : public UnaryIntegerOpInstr {
 
 class UnaryInt64OpInstr : public UnaryIntegerOpInstr {
  public:
-  UnaryInt64OpInstr(Token::Kind op_kind,
-                    Value* value,
-                    intptr_t deopt_id,
-                    SpeculativeMode speculative_mode = kGuardInputs)
-      : UnaryIntegerOpInstr(op_kind, value, deopt_id),
-        speculative_mode_(speculative_mode) {
+  UnaryInt64OpInstr(Token::Kind op_kind, Value* value, intptr_t deopt_id)
+      : UnaryIntegerOpInstr(op_kind, value, deopt_id) {
     ASSERT(op_kind == Token::kBIT_NOT || op_kind == Token::kNEGATE);
   }
 
@@ -9347,24 +9150,9 @@ class UnaryInt64OpInstr : public UnaryIntegerOpInstr {
     return kUnboxedInt64;
   }
 
-  virtual bool AttributesEqual(const Instruction& other) const {
-    auto const unary_op_other = other.AsUnaryInt64Op();
-    return UnaryIntegerOpInstr::AttributesEqual(other) &&
-           (speculative_mode_ == unary_op_other->speculative_mode_);
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
   DECLARE_INSTRUCTION(UnaryInt64Op)
 
-#define FIELD_LIST(F) F(const SpeculativeMode, speculative_mode_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(UnaryInt64OpInstr,
-                                          UnaryIntegerOpInstr,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(UnaryInt64OpInstr, UnaryIntegerOpInstr)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(UnaryInt64OpInstr);
@@ -9384,24 +9172,20 @@ class BinaryIntegerOpInstr : public TemplateDefinition<2, NoThrow, Pure> {
     SetInputAt(1, right);
   }
 
-  static BinaryIntegerOpInstr* Make(
-      Representation representation,
-      Token::Kind op_kind,
-      Value* left,
-      Value* right,
-      intptr_t deopt_id,
-      SpeculativeMode speculative_mode = kGuardInputs);
+  static BinaryIntegerOpInstr* Make(Representation representation,
+                                    Token::Kind op_kind,
+                                    Value* left,
+                                    Value* right,
+                                    intptr_t deopt_id);
 
-  static BinaryIntegerOpInstr* Make(
-      Representation representation,
-      Token::Kind op_kind,
-      Value* left,
-      Value* right,
-      intptr_t deopt_id,
-      bool can_overflow,
-      bool is_truncating,
-      Range* range,
-      SpeculativeMode speculative_mode = kGuardInputs);
+  static BinaryIntegerOpInstr* Make(Representation representation,
+                                    Token::Kind op_kind,
+                                    Value* left,
+                                    Value* right,
+                                    intptr_t deopt_id,
+                                    bool can_overflow,
+                                    bool is_truncating,
+                                    Range* range);
 
   Token::Kind op_kind() const { return op_kind_; }
   Value* left() const { return inputs_[0]; }
@@ -9569,10 +9353,6 @@ class BinaryUint32OpInstr : public BinaryIntegerOpInstr {
     return kUnboxedUint32;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   static bool IsSupported(Token::Kind op_kind) {
     switch (op_kind) {
       case Token::kADD:
@@ -9600,10 +9380,8 @@ class BinaryInt64OpInstr : public BinaryIntegerOpInstr {
   BinaryInt64OpInstr(Token::Kind op_kind,
                      Value* left,
                      Value* right,
-                     intptr_t deopt_id,
-                     SpeculativeMode speculative_mode = kGuardInputs)
-      : BinaryIntegerOpInstr(op_kind, left, right, deopt_id),
-        speculative_mode_(speculative_mode) {
+                     intptr_t deopt_id)
+      : BinaryIntegerOpInstr(op_kind, left, right, deopt_id) {
     mark_truncating();
   }
 
@@ -9624,23 +9402,9 @@ class BinaryInt64OpInstr : public BinaryIntegerOpInstr {
     return kUnboxedInt64;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
-  virtual bool AttributesEqual(const Instruction& other) const {
-    return BinaryIntegerOpInstr::AttributesEqual(other) &&
-           (speculative_mode_ == other.AsBinaryInt64Op()->speculative_mode_);
-  }
-
   DECLARE_INSTRUCTION(BinaryInt64Op)
 
-#define FIELD_LIST(F) F(const SpeculativeMode, speculative_mode_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(BinaryInt64OpInstr,
-                                          BinaryIntegerOpInstr,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(BinaryInt64OpInstr, BinaryIntegerOpInstr)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(BinaryInt64OpInstr);
@@ -9700,9 +9464,6 @@ class ShiftInt64OpInstr : public ShiftIntegerOpInstr {
                     Range* right_range = nullptr)
       : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
   virtual bool ComputeCanDeoptimize() const { return false; }
   virtual bool MayThrow() const { return !IsShiftCountInRange(); }
 
@@ -9763,9 +9524,6 @@ class ShiftUint32OpInstr : public ShiftIntegerOpInstr {
                      Range* right_range = nullptr)
       : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
   virtual bool ComputeCanDeoptimize() const { return false; }
   virtual bool MayThrow() const {
     return !IsShiftCountInRange(kUint32ShiftCountLimit);
@@ -9824,11 +9582,9 @@ class UnaryDoubleOpInstr : public TemplateDefinition<1, NoThrow, Pure> {
   UnaryDoubleOpInstr(Token::Kind op_kind,
                      Value* value,
                      intptr_t deopt_id,
-                     SpeculativeMode speculative_mode = kGuardInputs,
                      Representation representation = kUnboxedDouble)
       : TemplateDefinition(deopt_id),
         op_kind_(op_kind),
-        speculative_mode_(speculative_mode),
         representation_(representation) {
     ASSERT((representation == kUnboxedFloat) ||
            (representation == kUnboxedDouble));
@@ -9855,14 +9611,9 @@ class UnaryDoubleOpInstr : public TemplateDefinition<1, NoThrow, Pure> {
     return representation_;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
   virtual bool AttributesEqual(const Instruction& other) const {
     auto other_op = other.Cast<UnaryDoubleOpInstr>();
     return (op_kind_ == other_op->op_kind_) &&
-           (speculative_mode_ == other_op->speculative_mode_) &&
            (representation_ == other_op->representation_);
   }
 
@@ -9872,7 +9623,6 @@ class UnaryDoubleOpInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
 #define FIELD_LIST(F)                                                          \
   F(const Token::Kind, op_kind_)                                               \
-  F(const SpeculativeMode, speculative_mode_)                                  \
   F(const Representation, representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(UnaryDoubleOpInstr,
@@ -10008,10 +9758,8 @@ class Int32ToDoubleInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
 class Int64ToDoubleInstr : public TemplateDefinition<1, NoThrow, Pure> {
  public:
-  Int64ToDoubleInstr(Value* value,
-                     intptr_t deopt_id,
-                     SpeculativeMode speculative_mode = kGuardInputs)
-      : TemplateDefinition(deopt_id), speculative_mode_(speculative_mode) {
+  Int64ToDoubleInstr(Value* value, intptr_t deopt_id)
+      : TemplateDefinition(deopt_id) {
     SetInputAt(0, value);
   }
 
@@ -10034,20 +9782,9 @@ class Int64ToDoubleInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
   virtual bool ComputeCanDeoptimize() const { return false; }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
+  virtual bool AttributesEqual(const Instruction& other) const { return true; }
 
-  virtual bool AttributesEqual(const Instruction& other) const {
-    return speculative_mode_ == other.AsInt64ToDouble()->speculative_mode_;
-  }
-
-#define FIELD_LIST(F) F(const SpeculativeMode, speculative_mode_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(Int64ToDoubleInstr,
-                                          TemplateDefinition,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(Int64ToDoubleInstr, TemplateDefinition)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(Int64ToDoubleInstr);
@@ -10075,11 +9812,6 @@ class DoubleToIntegerInstr : public TemplateDefinition<1, Throws, Pure> {
   virtual Representation RequiredInputRepresentation(intptr_t idx) const {
     ASSERT(idx == 0);
     return kUnboxedDouble;
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    ASSERT(idx == 0);
-    return kNotSpeculative;
   }
 
   virtual bool ComputeCanDeoptimize() const {
@@ -10142,10 +9874,8 @@ class DoubleToSmiInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
 class DoubleToFloatInstr : public TemplateDefinition<1, NoThrow, Pure> {
  public:
-  DoubleToFloatInstr(Value* value,
-                     intptr_t deopt_id,
-                     SpeculativeMode speculative_mode = kGuardInputs)
-      : TemplateDefinition(deopt_id), speculative_mode_(speculative_mode) {
+  DoubleToFloatInstr(Value* value, intptr_t deopt_id)
+      : TemplateDefinition(deopt_id) {
     SetInputAt(0, value);
   }
 
@@ -10162,22 +9892,13 @@ class DoubleToFloatInstr : public TemplateDefinition<1, NoThrow, Pure> {
     return kUnboxedDouble;
   }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return speculative_mode_;
-  }
-
   virtual intptr_t DeoptimizationTarget() const { return GetDeoptId(); }
 
   virtual bool AttributesEqual(const Instruction& other) const { return true; }
 
   virtual Definition* Canonicalize(FlowGraph* flow_graph);
 
-#define FIELD_LIST(F) F(const SpeculativeMode, speculative_mode_)
-
-  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(DoubleToFloatInstr,
-                                          TemplateDefinition,
-                                          FIELD_LIST)
-#undef FIELD_LIST
+  DECLARE_EMPTY_SERIALIZATION(DoubleToFloatInstr, TemplateDefinition)
 
  private:
   DISALLOW_COPY_AND_ASSIGN(DoubleToFloatInstr);
@@ -10281,11 +10002,6 @@ class InvokeMathCFunctionInstr : public VariadicDefinition {
   virtual Representation RequiredInputRepresentation(intptr_t idx) const {
     ASSERT((0 <= idx) && (idx < InputCount()));
     return kUnboxedDouble;
-  }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t idx) const {
-    ASSERT((0 <= idx) && (idx < InputCount()));
-    return kNotSpeculative;
   }
 
   virtual intptr_t DeoptimizationTarget() const { return GetDeoptId(); }
@@ -10529,10 +10245,6 @@ class BoxLanesInstr : public TemplateDefinition<4, NoThrow, Pure> {
   Definition* Canonicalize(FlowGraph* flow_graph);
 
   virtual TokenPosition token_pos() const { return TokenPosition::kBox; }
-
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
 
   PRINT_OPERANDS_TO_SUPPORT
 
@@ -10905,10 +10617,6 @@ class GenericCheckBoundInstr : public CheckBoundBaseInstr {
 
   virtual intptr_t DeoptimizationTarget() const { return DeoptId::kNone; }
 
-  virtual SpeculativeMode SpeculativeModeOfInput(intptr_t index) const {
-    return kNotSpeculative;
-  }
-
   virtual Representation representation() const {
     return UseUnboxedRepresentation() ? kUnboxedInt64 : kTagged;
   }
@@ -10997,20 +10705,20 @@ class CheckWritableInstr : public TemplateDefinition<1, Throws, Pure> {
   DISALLOW_COPY_AND_ASSIGN(CheckWritableInstr);
 };
 
-// Instruction evaluates the given comparison and deoptimizes if it evaluates
+// Instruction evaluates the given condition and deoptimizes if it evaluates
 // to false.
 class CheckConditionInstr : public Instruction {
  public:
-  CheckConditionInstr(ComparisonInstr* comparison, intptr_t deopt_id)
-      : Instruction(deopt_id), comparison_(comparison) {
-    ASSERT(comparison->ArgumentCount() == 0);
-    ASSERT(comparison->env() == nullptr);
-    for (intptr_t i = comparison->InputCount() - 1; i >= 0; --i) {
-      comparison->InputAt(i)->set_instruction(this);
+  CheckConditionInstr(ConditionInstr* condition, intptr_t deopt_id)
+      : Instruction(deopt_id), condition_(condition) {
+    ASSERT(condition->ArgumentCount() == 0);
+    ASSERT(condition->env() == nullptr);
+    for (intptr_t i = condition->InputCount() - 1; i >= 0; --i) {
+      condition->InputAt(i)->set_instruction(this);
     }
   }
 
-  ComparisonInstr* comparison() const { return comparison_; }
+  ConditionInstr* condition() const { return condition_; }
 
   DECLARE_INSTRUCTION(CheckCondition)
 
@@ -11022,23 +10730,22 @@ class CheckConditionInstr : public Instruction {
   virtual bool HasUnknownSideEffects() const { return false; }
 
   virtual bool AttributesEqual(const Instruction& other) const {
-    return other.AsCheckCondition()->comparison()->AttributesEqual(
-        *comparison());
+    return other.AsCheckCondition()->condition()->AttributesEqual(*condition());
   }
 
-  virtual intptr_t InputCount() const { return comparison()->InputCount(); }
-  virtual Value* InputAt(intptr_t i) const { return comparison()->InputAt(i); }
+  virtual intptr_t InputCount() const { return condition()->InputCount(); }
+  virtual Value* InputAt(intptr_t i) const { return condition()->InputAt(i); }
 
   virtual bool MayThrow() const { return false; }
 
   virtual void CopyDeoptIdFrom(const Instruction& instr) {
     Instruction::CopyDeoptIdFrom(instr);
-    comparison()->CopyDeoptIdFrom(instr);
+    condition()->CopyDeoptIdFrom(instr);
   }
 
   PRINT_OPERANDS_TO_SUPPORT
 
-#define FIELD_LIST(F) F(ComparisonInstr*, comparison_)
+#define FIELD_LIST(F) F(ConditionInstr*, condition_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(CheckConditionInstr,
                                           Instruction,
@@ -11048,7 +10755,7 @@ class CheckConditionInstr : public Instruction {
 
  private:
   virtual void RawSetInputAt(intptr_t i, Value* value) {
-    comparison()->RawSetInputAt(i, value);
+    condition()->RawSetInputAt(i, value);
   }
 
   DISALLOW_COPY_AND_ASSIGN(CheckConditionInstr);
@@ -11056,14 +10763,10 @@ class CheckConditionInstr : public Instruction {
 
 class IntConverterInstr : public TemplateDefinition<1, NoThrow, Pure> {
  public:
-  IntConverterInstr(Representation from,
-                    Representation to,
-                    Value* value,
-                    intptr_t deopt_id)
-      : TemplateDefinition(deopt_id),
+  IntConverterInstr(Representation from, Representation to, Value* value)
+      : TemplateDefinition(DeoptId::kNone),
         from_representation_(from),
-        to_representation_(to),
-        is_truncating_(to == kUnboxedUint32) {
+        to_representation_(to) {
     ASSERT(from != to);
     // Integer conversion doesn't currently handle non-native representations.
     ASSERT_EQUAL(Boxing::NativeRepresentation(from), from);
@@ -11084,13 +10787,10 @@ class IntConverterInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
   Representation from() const { return from_representation_; }
   Representation to() const { return to_representation_; }
-  bool is_truncating() const { return is_truncating_; }
-
-  void mark_truncating() { is_truncating_ = true; }
 
   Definition* Canonicalize(FlowGraph* flow_graph);
 
-  virtual bool ComputeCanDeoptimize() const;
+  virtual bool ComputeCanDeoptimize() const { return false; }
 
   virtual Representation representation() const { return to(); }
 
@@ -11102,8 +10802,7 @@ class IntConverterInstr : public TemplateDefinition<1, NoThrow, Pure> {
   virtual bool AttributesEqual(const Instruction& other) const {
     ASSERT(other.IsIntConverter());
     auto const converter = other.AsIntConverter();
-    return (converter->from() == from()) && (converter->to() == to()) &&
-           (converter->is_truncating() == is_truncating());
+    return (converter->from() == from()) && (converter->to() == to());
   }
 
   virtual intptr_t DeoptimizationTarget() const { return GetDeoptId(); }
@@ -11118,15 +10817,13 @@ class IntConverterInstr : public TemplateDefinition<1, NoThrow, Pure> {
 
   DECLARE_INSTRUCTION(IntConverter);
 
-  DECLARE_ATTRIBUTES_NAMED(("from", "to", "is_truncating"),
-                           (from(), to(), is_truncating()))
+  DECLARE_ATTRIBUTES_NAMED(("from", "to"), (from(), to()))
 
   PRINT_OPERANDS_TO_SUPPORT
 
 #define FIELD_LIST(F)                                                          \
   F(const Representation, from_representation_)                                \
-  F(const Representation, to_representation_)                                  \
-  F(bool, is_truncating_)
+  F(const Representation, to_representation_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(IntConverterInstr,
                                           TemplateDefinition,

@@ -812,7 +812,7 @@ ExtensionOverride
         staticType: A
     rightParenthesis: )
   element: <testLibraryFragment>::@extension::E
-  element2: <testLibraryFragment>::@extension::E#element
+  element2: <testLibrary>::@extension::E
   extendedType: A
   staticType: null
   typeArgumentTypes
@@ -835,7 +835,7 @@ MethodInvocation
   methodName: SimpleIdentifier
     token: A
     staticElement: <testLibraryFragment>::@function::A
-    element: <testLibraryFragment>::@function::A#element
+    element: <testLibrary>::@function::A
     staticType: void Function<T, U>(int)
   typeArguments: TypeArgumentList
     leftBracket: <
@@ -1538,7 +1538,7 @@ ExtensionOverride
         staticType: A
     rightParenthesis: )
   element: package:test/a.dart::<fragment>::@extension::E
-  element2: package:test/a.dart::<fragment>::@extension::E#element
+  element2: package:test/a.dart::@extension::E
   extendedType: A
   staticType: null
   typeArgumentTypes
@@ -1571,7 +1571,7 @@ MethodInvocation
   methodName: SimpleIdentifier
     token: A
     staticElement: package:test/a.dart::<fragment>::@function::A
-    element: package:test/a.dart::<fragment>::@function::A#element
+    element: package:test/a.dart::@function::A
     staticType: void Function<T, U>(int)
   typeArguments: TypeArgumentList
     leftBracket: <

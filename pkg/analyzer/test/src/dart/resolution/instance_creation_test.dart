@@ -1052,7 +1052,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A<int>
     staticElement: ConstructorMember
       base: <testLibraryFragment>::@extensionType::A::@constructor::new
@@ -1090,7 +1090,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A<int>
     staticElement: ConstructorMember
       base: <testLibraryFragment>::@extensionType::A::@constructor::new
@@ -1126,7 +1126,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A
     period: .
     name: SimpleIdentifier
@@ -1164,7 +1164,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A
     staticElement: <testLibraryFragment>::@extensionType::A::@constructor::new
     element: <testLibraryFragment>::@extensionType::A::@constructor::new#element
@@ -1198,7 +1198,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A
     period: .
     name: SimpleIdentifier
@@ -1238,7 +1238,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A
     staticElement: <testLibraryFragment>::@extensionType::A::@constructor::new
     element: <testLibraryFragment>::@extensionType::A::@constructor::new#element
@@ -1273,7 +1273,7 @@ InstanceCreationExpression
     type: NamedType
       name: A
       element: <testLibraryFragment>::@extensionType::A
-      element2: <testLibraryFragment>::@extensionType::A#element
+      element2: <testLibrary>::@extensionType::A
       type: A
     period: .
     name: SimpleIdentifier
@@ -1909,7 +1909,7 @@ InstanceCreationExpression
         methodName: SimpleIdentifier
           token: g1
           staticElement: <testLibraryFragment>::@function::g1
-          element: <testLibraryFragment>::@function::g1#element
+          element: <testLibrary>::@function::g1
           staticType: T Function<T>()
         argumentList: ArgumentList
           leftParenthesis: (
@@ -1931,7 +1931,7 @@ InstanceCreationExpression
           methodName: SimpleIdentifier
             token: g3
             staticElement: <testLibraryFragment>::@function::g3
-            element: <testLibraryFragment>::@function::g3#element
+            element: <testLibrary>::@function::g3
             staticType: T Function<T>()
           argumentList: ArgumentList
             leftParenthesis: (
@@ -1945,7 +1945,7 @@ InstanceCreationExpression
         methodName: SimpleIdentifier
           token: g2
           staticElement: <testLibraryFragment>::@function::g2
-          element: <testLibraryFragment>::@function::g2#element
+          element: <testLibrary>::@function::g2
           staticType: T Function<T>()
         argumentList: ArgumentList
           leftParenthesis: (
@@ -1967,7 +1967,7 @@ InstanceCreationExpression
           methodName: SimpleIdentifier
             token: g4
             staticElement: <testLibraryFragment>::@function::g4
-            element: <testLibraryFragment>::@function::g4#element
+            element: <testLibrary>::@function::g4
             staticType: T Function<T>()
           argumentList: ArgumentList
             leftParenthesis: (
