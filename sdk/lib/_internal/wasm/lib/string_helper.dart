@@ -82,6 +82,7 @@ class StringAllMatchesIterator implements Iterator<Match> {
   Match get current => _current as Match;
 }
 
+@pragma("wasm:prefer-inline")
 int stringCombineHashes(int hash, int other_hash) {
   hash += other_hash;
   hash += hash << 10;
@@ -89,6 +90,7 @@ int stringCombineHashes(int hash, int other_hash) {
   return hash;
 }
 
+@pragma("wasm:prefer-inline")
 int stringFinalizeHash(int hash) {
   hash += hash << 3;
   hash ^= (hash & 0xFFFFFFFF) >>> 11;

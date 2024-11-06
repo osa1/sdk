@@ -40,7 +40,7 @@ class _Utf8Node {
 
   _Utf8Node(this.data, this.start, this.end, this.payload, this.next);
 
-  int get hash => _hashBytes(data, start, end);
+  int get hash => payload.hashCode;
 }
 
 class StringCanonicalizer {
@@ -206,9 +206,10 @@ StringBase _decodeString(U8List bytes, int start, int end, bool isAscii) {
 }
 
 int _hashBytes(U8List data, int start, int end) {
-  int h = 5381;
+  // Same as string hash code
+  int hash = 0;
   for (int i = start; i < end; i++) {
-    h = (h << 5) + h + data.getUnchecked(i);
+    hash = stringCombineHashes(hash, data.getUnchecked(i));
   }
-  return h;
+  return stringFinalizeHash(hash);
 }
