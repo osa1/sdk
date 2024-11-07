@@ -6,6 +6,7 @@
 // and modified.
 
 import 'dart:_internal';
+import 'dart:_object_helper';
 import 'dart:_string';
 import 'dart:_string_helper';
 import 'dart:_typed_data';
@@ -49,7 +50,8 @@ class StringCanonicalizer {
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
     }
-    final int index = data.computeHashCodeRange(start, end) & (_size - 1);
+    final int substringHash = data.computeHashCodeRange(start, end);
+    final int index = substringHash & (_size - 1);
     final StringBase? s = _nodes[index];
     if (s != null) {
       if (s.length == len && data.startsWith(s, start)) {
@@ -58,6 +60,7 @@ class StringCanonicalizer {
     }
     if (_count >= _size / 2) rehash();
     final newNode = unsafeCast<StringBase>(data.substringUnchecked(start, end));
+    setIdentityHashField(newNode, substringHash);
     _nodes[index] = newNode;
     return newNode;
   }
