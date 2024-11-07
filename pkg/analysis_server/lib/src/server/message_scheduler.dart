@@ -20,17 +20,19 @@ final class DtdMessage extends MessageObject {
   final Completer<Map<String, Object?>> completer;
   final OperationPerformanceImpl performance;
 
-  DtdMessage(
-      {required this.message,
-      required this.completer,
-      required this.performance});
+  DtdMessage({
+    required this.message,
+    required this.completer,
+    required this.performance,
+  });
 }
 
 /// Represents a message in the Legacy protocol format.
 final class LegacyMessage extends MessageObject {
   final legacy.Request request;
+  CancelableToken? cancellationToken;
 
-  LegacyMessage({required this.request});
+  LegacyMessage({required this.request, this.cancellationToken});
 }
 
 /// Represents a message in the LSP protocol format.
@@ -77,14 +79,22 @@ final class MessageScheduler {
     switch (message) {
       case LspMessage():
         var lspMessage = message.message;
-        (server as LspAnalysisServer).handleMessage(lspMessage,
-            cancellationToken: message.cancellationToken);
+        (server as LspAnalysisServer).handleMessage(
+          lspMessage,
+          cancellationToken: message.cancellationToken,
+        );
       case LegacyMessage():
         var request = message.request;
-        (server as LegacyAnalysisServer).handleRequest(request);
+        (server as LegacyAnalysisServer).handleRequest(
+          request,
+          message.cancellationToken,
+        );
       case DtdMessage():
         server.dtd!.processMessage(
-            message.message, message.performance, message.completer);
+          message.message,
+          message.performance,
+          message.completer,
+        );
     }
   }
 
