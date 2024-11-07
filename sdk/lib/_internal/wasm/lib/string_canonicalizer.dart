@@ -49,7 +49,6 @@ class StringCanonicalizer {
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
     }
-    if (_count >= _size / 2) rehash();
     final int index = data.computeHashCodeRange(start, end) & (_size - 1);
     final StringBase? s = _nodes[index];
     if (s != null) {
@@ -57,6 +56,7 @@ class StringCanonicalizer {
         return s;
       }
     }
+    if (_count >= _size / 2) rehash();
     final newNode = unsafeCast<StringBase>(data.substringUnchecked(start, end));
     _nodes[index] = newNode;
     return newNode;
@@ -65,10 +65,6 @@ class StringCanonicalizer {
   String canonicalizeString(StringBase data) {
     if (_count >= _size / 2) rehash();
     final int index = data.hashCode & (_size - 1);
-    final StringBase? s = _nodes[index];
-    if (data == s) {
-      return unsafeCast<String>(s);
-    }
     _nodes[index] = data;
     return data;
   }
