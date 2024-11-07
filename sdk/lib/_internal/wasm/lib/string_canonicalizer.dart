@@ -51,14 +51,17 @@ class StringCanonicalizer {
       return canonicalizeString(data);
     }
     final int substringHash = data.computeHashCodeRange(start, end);
-    final int index = substringHash & (_size - 1);
+    int index = substringHash & (_size - 1);
     final StringBase? s = _nodes[index];
     if (s != null) {
       if (s.length == len && data.startsWith(s, start)) {
         return s;
       }
     }
-    if (_count >= _size / 2) rehash();
+    if (_count >= _size / 2) {
+      rehash();
+      index = substringHash & (_size - 1);
+    }
     final newNode = unsafeCast<StringBase>(data.substringUnchecked(start, end));
     setIdentityHashField(newNode, substringHash);
     _nodes[index] = newNode;
