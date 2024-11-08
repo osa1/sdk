@@ -445,7 +445,7 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
 
   // The current parsing state.
   int state = STATE_INITIAL;
-  List<int> states = <int>[];
+  GrowableList<int> states = GrowableList<int>.empty();
 
   /**
    * Stores tokenizer state between chunks.
@@ -1642,7 +1642,7 @@ class JsonDecoder {
 
 class _ChunkedParserState {
   int state;
-  List<int> states;
+  GrowableList<int> states;
   int partialState;
   StringBuffer? stringBuffer;
   _NumberBuffer? numberBuffer;
@@ -1660,7 +1660,7 @@ class _ChunkedParserState {
 class _JsonStringDecoderSink extends StringConversionSinkBase {
   final _ChunkedParserState _parserState = _ChunkedParserState(
       _ChunkedJsonParser.STATE_INITIAL,
-      <int>[],
+      GrowableList<int>.empty(),
       _ChunkedJsonParser.NO_PARTIAL,
       null,
       null);
