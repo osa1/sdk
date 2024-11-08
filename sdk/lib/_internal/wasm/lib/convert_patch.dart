@@ -21,7 +21,7 @@ import "dart:typed_data" show Uint8List;
 @patch
 dynamic _parseJson(
     String source, Object? Function(Object? key, Object? value)? reviver) {
-  final _JsonListener listener = _JsonListener(reviver);
+  final listener = _JsonListener(reviver);
   if (source is OneByteString) {
     final parser = _JsonOneByteStringParser(listener);
     parser.chunk = source;
@@ -68,9 +68,8 @@ class _JsonUtf8Decoder extends Converter<List<int>, Object?> {
     return parser.result;
   }
 
-  ByteConversionSink startChunkedConversion(Sink<Object?> sink) {
-    return new _JsonUtf8DecoderSink(_reviver, sink, _allowMalformed);
-  }
+  ByteConversionSink startChunkedConversion(Sink<Object?> sink) =>
+      _JsonUtf8DecoderSink(_reviver, sink, _allowMalformed);
 }
 
 //// Implementation ///////////////////////////////////////////////////////////
@@ -1637,9 +1636,8 @@ class _JsonTwoByteStringParser extends _JsonParserWithListener
 @patch
 class JsonDecoder {
   @patch
-  StringConversionSink startChunkedConversion(Sink<Object?> sink) {
-    return new _JsonStringDecoderSink(this._reviver, sink);
-  }
+  StringConversionSink startChunkedConversion(Sink<Object?> sink) =>
+      _JsonStringDecoderSink(this._reviver, sink);
 }
 
 class _ChunkedParserState {
@@ -1746,7 +1744,7 @@ class _JsonUtf8Parser extends _JsonParserWithListener
   int chunkEnd = 0;
 
   _JsonUtf8Parser(_JsonListener listener, bool allowMalformed)
-      : decoder = new _Utf8Decoder(allowMalformed),
+      : decoder = _Utf8Decoder(allowMalformed),
         super(listener) {
     // Starts out checking for an optional BOM (KWD_BOM, count = 0).
     partialState =
@@ -1833,10 +1831,9 @@ class _JsonUtf8DecoderSink extends ByteConversionSink {
       : _parser = _createParser(reviver, allowMalformed);
 
   static _JsonUtf8Parser _createParser(
-      Object? Function(Object? key, Object? value)? reviver,
-      bool allowMalformed) {
-    return new _JsonUtf8Parser(new _JsonListener(reviver), allowMalformed);
-  }
+          Object? Function(Object? key, Object? value)? reviver,
+          bool allowMalformed) =>
+      _JsonUtf8Parser(_JsonListener(reviver), allowMalformed);
 
   void addSlice(List<int> chunk, int start, int end, bool isLast) {
     _addChunk(chunk, start, end);
