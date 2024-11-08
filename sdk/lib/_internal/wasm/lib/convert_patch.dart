@@ -1555,7 +1555,7 @@ class _JsonOneByteStringParser extends _JsonParserWithListener
 
   int getChar(int position) => chunk.codeUnitAtUnchecked(position);
 
-  OneByteString getString(int start, int end, int bits) =>
+  String getString(int start, int end, int bits) =>
       chunk.substringUnchecked(start, end);
 
   void beginString() {
@@ -1598,11 +1598,11 @@ class _JsonTwoByteStringParser extends _JsonParserWithListener
   _JsonTwoByteStringParser(_JsonListener listener) : super(listener);
 
   @pragma('wasm:prefer-inline')
-  bool get isUtf16Input => true;
+  bool get isUtf16Input => false;
 
   int getChar(int position) => chunk.codeUnitAtUnchecked(position);
 
-  TwoByteString getString(int start, int end, int bits) =>
+  String getString(int start, int end, int bits) =>
       chunk.substringUnchecked(start, end);
 
   void beginString() {
