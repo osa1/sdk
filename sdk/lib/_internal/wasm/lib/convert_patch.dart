@@ -1551,7 +1551,7 @@ class _JsonOneByteStringParser extends _JsonParserWithListener
   _JsonOneByteStringParser(_JsonListener listener) : super(listener);
 
   @pragma('wasm:prefer-inline')
-  bool get isUtf16Input => true;
+  bool get isUtf16Input => false;
 
   int getChar(int position) => chunk.codeUnitAtUnchecked(position);
 
@@ -1598,7 +1598,7 @@ class _JsonTwoByteStringParser extends _JsonParserWithListener
   _JsonTwoByteStringParser(_JsonListener listener) : super(listener);
 
   @pragma('wasm:prefer-inline')
-  bool get isUtf16Input => false;
+  bool get isUtf16Input => true;
 
   int getChar(int position) => chunk.codeUnitAtUnchecked(position);
 
