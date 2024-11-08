@@ -478,13 +478,19 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
   /**
    * String parts stored while parsing a string.
    */
-  late final StringBuffer stringBuffer = StringBuffer();
+  StringBuffer? _stringBuffer;
+
+  @pragma('wasm:prefer-inline')
+  StringBuffer get stringBuffer => _stringBuffer ??= StringBuffer();
 
   /**
    * Number parts stored while parsing a number.
    */
-  late final _NumberBuffer numberBuffer =
-      _NumberBuffer(_NumberBuffer.minCapacity);
+  _NumberBuffer? _numberBuffer;
+
+  @pragma('wasm:prefer-inline')
+  _NumberBuffer get numberBuffer =>
+      _numberBuffer ??= _NumberBuffer(_NumberBuffer.minCapacity);
 
   /**
    * Push the current parse [state] on a stack.
