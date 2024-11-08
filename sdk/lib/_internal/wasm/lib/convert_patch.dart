@@ -1652,11 +1652,15 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
 
   final _JsonListener _listener;
 
-  late final _JsonOneByteStringParser _oneByteStringParser =
-      _JsonOneByteStringParser(_listener);
+  _JsonOneByteStringParser? _oneByteStringParser;
 
-  late final _JsonTwoByteStringParser _twoByteStringParser =
-      _JsonTwoByteStringParser(_listener);
+  _JsonOneByteStringParser get oneByteStringParser =>
+      _oneByteStringParser ??= _JsonOneByteStringParser(_listener);
+
+  _JsonTwoByteStringParser? _twoByteStringParser;
+
+  _JsonTwoByteStringParser get twoByteStringParser =>
+      _twoByteStringParser ??= _JsonTwoByteStringParser(_listener);
 
   final Object? Function(Object? key, Object? value)? _reviver;
 
@@ -1667,7 +1671,7 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
 
   void addSlice(String chunk, int start, int end, bool isLast) {
     if (chunk is OneByteString) {
-      final parser = _oneByteStringParser;
+      final parser = oneByteStringParser;
 
       // Restore state.
       parser.state = _parserState.state;
@@ -1689,7 +1693,7 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
       _parserState.stringBuffer = parser._stringBuffer;
       _parserState.numberBuffer = parser._numberBuffer;
     } else if (chunk is TwoByteString) {
-      final parser = _twoByteStringParser;
+      final parser = twoByteStringParser;
 
       // Restore state.
       parser.state = _parserState.state;
@@ -1722,7 +1726,7 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
 
   void close() {
     // TODO: Use the one that's initialized.
-    final parser = _oneByteStringParser;
+    final parser = oneByteStringParser;
 
     // Restore state.
     parser.state = _parserState.state;
