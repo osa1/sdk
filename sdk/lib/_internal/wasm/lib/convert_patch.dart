@@ -21,14 +21,25 @@ import "dart:typed_data" show Uint8List;
 @patch
 dynamic _parseJson(
     String source, Object? Function(Object? key, Object? value)? reviver) {
-  _JsonListener listener = new _JsonListener(reviver);
-  var parser = new _JsonStringParser(listener);
-  parser.chunk = unsafeCast<StringBase>(
-      source is JSStringImpl ? jsStringToDartString(source) : source);
-  parser.chunkEnd = source.length;
-  parser.parse(0);
-  parser.close();
-  return listener.result;
+  final _JsonListener listener = _JsonListener(reviver);
+  if (source is OneByteString) {
+    final parser = _JsonOneByteStringParser(listener);
+    parser.chunk = source;
+    parser.chunkEnd = source.length;
+    parser.parse(0);
+    parser.close();
+    return listener.result;
+  } else if (source is TwoByteString) {
+    final parser = _JsonTwoByteStringParser(listener);
+    parser.chunk = source;
+    parser.chunkEnd = source.length;
+    parser.parse(0);
+    parser.close();
+    return listener.result;
+  } else {
+    return _parseJson(
+        jsStringToDartString(unsafeCast<JSStringImpl>(source)), reviver);
+  }
 }
 
 @patch
@@ -1513,23 +1524,22 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
 }
 
 /**
- * Chunked JSON parser that parses [String] chunks.
+ * Chunked JSON parser that parses [OneByteString] chunks.
  */
-class _JsonStringParser extends _JsonParserWithListener
-    with _ChunkedJsonParser<StringBase> {
-  StringBase chunk = unsafeCast<StringBase>('');
+class _JsonOneByteStringParser extends _JsonParserWithListener
+    with _ChunkedJsonParser<OneByteString> {
+  OneByteString chunk = OneByteString.withLength(0);
   int chunkEnd = 0;
 
-  _JsonStringParser(_JsonListener listener) : super(listener);
+  _JsonOneByteStringParser(_JsonListener listener) : super(listener);
 
   @pragma('wasm:prefer-inline')
   bool get isUtf16Input => true;
 
   int getChar(int position) => chunk.codeUnitAtUnchecked(position);
 
-  String getString(int start, int end, int bits) {
-    return chunk.substringUnchecked(start, end);
-  }
+  OneByteString getString(int start, int end, int bits) =>
+      chunk.substringUnchecked(start, end);
 
   void beginString() {
     assert(stringBuffer.isEmpty);
@@ -1557,9 +1567,54 @@ class _JsonStringParser extends _JsonParserWithListener
     }
   }
 
-  double parseDouble(int start, int end) {
-    return _parseDouble(chunk, start, end);
+  double parseDouble(int start, int end) => _parseDouble(chunk, start, end);
+}
+
+/**
+ * Chunked JSON parser that parses [TwoByteString] chunks.
+ */
+class _JsonTwoByteStringParser extends _JsonParserWithListener
+    with _ChunkedJsonParser<TwoByteString> {
+  TwoByteString chunk = TwoByteString.withLength(0);
+  int chunkEnd = 0;
+
+  _JsonTwoByteStringParser(_JsonListener listener) : super(listener);
+
+  @pragma('wasm:prefer-inline')
+  bool get isUtf16Input => true;
+
+  int getChar(int position) => chunk.codeUnitAtUnchecked(position);
+
+  TwoByteString getString(int start, int end, int bits) =>
+      chunk.substringUnchecked(start, end);
+
+  void beginString() {
+    assert(stringBuffer.isEmpty);
   }
+
+  void addSliceToString(int start, int end) {
+    stringBuffer.write(chunk.substringUnchecked(start, end));
+  }
+
+  void addCharToString(int charCode) {
+    stringBuffer.writeCharCode(charCode);
+  }
+
+  String endString() {
+    final string = stringBuffer.toString();
+    stringBuffer.clear();
+    return string;
+  }
+
+  void copyCharsToList(
+      int start, int end, WasmArray<WasmI8> target, int offset) {
+    int length = end - start;
+    for (int i = 0; i < length; i++) {
+      target.write(offset + i, chunk.codeUnitAtUnchecked(start + i));
+    }
+  }
+
+  double parseDouble(int start, int end) => _parseDouble(chunk, start, end);
 }
 
 @patch
@@ -1595,31 +1650,56 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
       null,
       null);
 
+  final _JsonListener _listener;
+
+  late final _JsonOneByteStringParser _oneByteStringParser =
+      _JsonOneByteStringParser(_listener);
+
+  late final _JsonTwoByteStringParser _twoByteStringParser =
+      _JsonTwoByteStringParser(_listener);
+
   final Object? Function(Object? key, Object? value)? _reviver;
 
   final Sink<Object?> _sink;
 
-  _JsonStringDecoderSink(this._reviver, this._sink);
+  _JsonStringDecoderSink(this._reviver, this._sink)
+      : _listener = _JsonListener(_reviver);
 
   void addSlice(String chunk, int start, int end, bool isLast) {
-    final StringBase chunkConverted = unsafeCast<StringBase>(
-        chunk is JSStringImpl ? jsStringToDartString(chunk) : chunk);
+    if (chunk is OneByteString) {
+      final parser = _oneByteStringParser;
 
-    final parser = _JsonStringParser(_JsonListener(_reviver));
+      // Restore state.
+      parser.state = _parserState.state;
+      parser.states = _parserState.states;
+      parser.partialState = _parserState.partialState;
+      parser._stringBuffer = _parserState.stringBuffer;
+      parser._numberBuffer = _parserState.numberBuffer;
 
-    // Restore state.
-    parser.state = _parserState.state;
-    parser.states = _parserState.states;
-    parser.partialState = _parserState.partialState;
-    parser._stringBuffer = _parserState.stringBuffer;
-    parser._numberBuffer = _parserState.numberBuffer;
+      parser.chunk = chunk;
+      parser.chunkEnd = end;
+      parser.parse(start);
 
-    parser.chunk = unsafeCast<StringBase>(
-        chunk is JSStringImpl ? jsStringToDartString(chunk) : chunk);
-    parser.chunkEnd = end;
-    parser.parse(start);
+      if (isLast) parser.close();
+    } else if (chunk is TwoByteString) {
+      final parser = _twoByteStringParser;
 
-    if (isLast) parser.close();
+      // Restore state.
+      parser.state = _parserState.state;
+      parser.states = _parserState.states;
+      parser.partialState = _parserState.partialState;
+      parser._stringBuffer = _parserState.stringBuffer;
+      parser._numberBuffer = _parserState.numberBuffer;
+
+      parser.chunk = chunk;
+      parser.chunkEnd = end;
+      parser.parse(start);
+
+      if (isLast) parser.close();
+    } else {
+      final dartString = jsStringToDartString(unsafeCast<JSStringImpl>(chunk));
+      return addSlice(dartString, start, end, isLast);
+    }
   }
 
   void add(String chunk) {
@@ -1627,7 +1707,8 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   }
 
   void close() {
-    final parser = _JsonStringParser(_JsonListener(_reviver));
+    // TODO: Use the one that's initialized.
+    final parser = _oneByteStringParser;
 
     // Restore state.
     parser.state = _parserState.state;

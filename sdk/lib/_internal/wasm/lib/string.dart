@@ -26,8 +26,8 @@ extension OneByteStringUncheckedOperations on OneByteString {
   int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
 
   @pragma('wasm:prefer-inline')
-  String substringUnchecked(int start, int end) =>
-      _substringUnchecked(start, end);
+  OneByteString substringUnchecked(int start, int end) =>
+      unsafeCast<OneByteString>(_substringUnchecked(start, end));
 
   @pragma('wasm:prefer-inline')
   void setUnchecked(int index, int codePoint) => _setAt(index, codePoint);
@@ -38,8 +38,8 @@ extension TwoByteStringUncheckedOperations on TwoByteString {
   int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
 
   @pragma('wasm:prefer-inline')
-  String substringUnchecked(int start, int end) =>
-      _substringUnchecked(start, end);
+  TwoByteString substringUnchecked(int start, int end) =>
+      unsafeCast<TwoByteString>(_substringUnchecked(start, end));
 
   @pragma('wasm:prefer-inline')
   void setUnchecked(int index, int codePoint) => _setAt(index, codePoint);
