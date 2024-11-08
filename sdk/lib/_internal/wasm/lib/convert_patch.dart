@@ -1626,11 +1626,11 @@ class JsonDecoder {
 }
 
 class _ChunkedParserState {
-  final int state;
-  final List<int> states;
-  final int partialState;
-  final StringBuffer? stringBuffer;
-  final _NumberBuffer? numberBuffer;
+  int state;
+  List<int> states;
+  int partialState;
+  StringBuffer? stringBuffer;
+  _NumberBuffer? numberBuffer;
 
   _ChunkedParserState(this.state, this.states, this.partialState,
       this.stringBuffer, this.numberBuffer);
@@ -1681,6 +1681,13 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
       parser.parse(start);
 
       if (isLast) parser.close();
+
+      // Save parser state.
+      _parserState.state = parser.state;
+      _parserState.states = parser.states;
+      _parserState.partialState = parser.partialState;
+      _parserState.stringBuffer = parser._stringBuffer;
+      _parserState.numberBuffer = parser._numberBuffer;
     } else if (chunk is TwoByteString) {
       final parser = _twoByteStringParser;
 
@@ -1696,6 +1703,13 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
       parser.parse(start);
 
       if (isLast) parser.close();
+
+      // Save parser state.
+      _parserState.state = parser.state;
+      _parserState.states = parser.states;
+      _parserState.partialState = parser.partialState;
+      _parserState.stringBuffer = parser._stringBuffer;
+      _parserState.numberBuffer = parser._numberBuffer;
     } else {
       final dartString = jsStringToDartString(unsafeCast<JSStringImpl>(chunk));
       return addSlice(dartString, start, end, isLast);
