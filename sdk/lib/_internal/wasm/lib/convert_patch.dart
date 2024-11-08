@@ -491,6 +491,23 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    */
   StringBuffer? _stringBuffer;
 
+  void saveStateToChunkedParserState(_ChunkedParserState chunkedParserState) {
+    chunkedParserState.state = state;
+    chunkedParserState.states = states;
+    chunkedParserState.partialState = partialState;
+    chunkedParserState.stringBuffer = _stringBuffer;
+    chunkedParserState.numberBuffer = _numberBuffer;
+  }
+
+  void restoreStateFromChunkedParserState(
+      _ChunkedParserState chunkedParserState) {
+    state = chunkedParserState.state;
+    states = chunkedParserState.states;
+    partialState = chunkedParserState.partialState;
+    _stringBuffer = chunkedParserState.stringBuffer;
+    _numberBuffer = chunkedParserState.numberBuffer;
+  }
+
   @pragma('wasm:prefer-inline')
   StringBuffer get stringBuffer => _stringBuffer ??= StringBuffer();
 
@@ -1672,48 +1689,20 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   void addSlice(String chunk, int start, int end, bool isLast) {
     if (chunk is OneByteString) {
       final parser = oneByteStringParser;
-
-      // Restore state.
-      parser.state = _parserState.state;
-      parser.states = _parserState.states;
-      parser.partialState = _parserState.partialState;
-      parser._stringBuffer = _parserState.stringBuffer;
-      parser._numberBuffer = _parserState.numberBuffer;
-
+      parser.restoreStateFromChunkedParserState(_parserState);
       parser.chunk = chunk;
       parser.chunkEnd = end;
       parser.parse(start);
-
       if (isLast) parser.close();
-
-      // Save parser state.
-      _parserState.state = parser.state;
-      _parserState.states = parser.states;
-      _parserState.partialState = parser.partialState;
-      _parserState.stringBuffer = parser._stringBuffer;
-      _parserState.numberBuffer = parser._numberBuffer;
+      parser.saveStateToChunkedParserState(_parserState);
     } else if (chunk is TwoByteString) {
       final parser = twoByteStringParser;
-
-      // Restore state.
-      parser.state = _parserState.state;
-      parser.states = _parserState.states;
-      parser.partialState = _parserState.partialState;
-      parser._stringBuffer = _parserState.stringBuffer;
-      parser._numberBuffer = _parserState.numberBuffer;
-
+      parser.restoreStateFromChunkedParserState(_parserState);
       parser.chunk = chunk;
       parser.chunkEnd = end;
       parser.parse(start);
-
       if (isLast) parser.close();
-
-      // Save parser state.
-      _parserState.state = parser.state;
-      _parserState.states = parser.states;
-      _parserState.partialState = parser.partialState;
-      _parserState.stringBuffer = parser._stringBuffer;
-      _parserState.numberBuffer = parser._numberBuffer;
+      parser.saveStateToChunkedParserState(_parserState);
     } else {
       final dartString = jsStringToDartString(unsafeCast<JSStringImpl>(chunk));
       return addSlice(dartString, start, end, isLast);
@@ -1727,23 +1716,15 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   void close() {
     // TODO: Use the one that's initialized.
     final parser = oneByteStringParser;
-
-    // Restore state.
-    parser.state = _parserState.state;
-    parser.states = _parserState.states;
-    parser.partialState = _parserState.partialState;
-    parser._stringBuffer = _parserState.stringBuffer;
-    parser._numberBuffer = _parserState.numberBuffer;
-
+    parser.restoreStateFromChunkedParserState(_parserState);
     parser.close();
     var decoded = parser.result;
     _sink.add(decoded);
     _sink.close();
   }
 
-  ByteConversionSink asUtf8Sink(bool allowMalformed) {
-    return new _JsonUtf8DecoderSink(_reviver, _sink, allowMalformed);
-  }
+  ByteConversionSink asUtf8Sink(bool allowMalformed) =>
+      _JsonUtf8DecoderSink(_reviver, _sink, allowMalformed);
 }
 
 /**
