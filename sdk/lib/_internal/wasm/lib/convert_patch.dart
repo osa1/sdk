@@ -491,6 +491,18 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
    */
   StringBuffer? _stringBuffer;
 
+  @pragma('wasm:prefer-inline')
+  StringBuffer get stringBuffer => _stringBuffer ??= StringBuffer();
+
+  /**
+   * Number parts stored while parsing a number.
+   */
+  _NumberBuffer? _numberBuffer;
+
+  @pragma('wasm:prefer-inline')
+  _NumberBuffer get numberBuffer =>
+      _numberBuffer ??= _NumberBuffer(_NumberBuffer.minCapacity);
+
   void saveStateToChunkedParserState(_ChunkedParserState chunkedParserState) {
     chunkedParserState.state = state;
     chunkedParserState.states = states;
@@ -507,18 +519,6 @@ mixin _ChunkedJsonParser<T> on _JsonParserWithListener {
     _stringBuffer = chunkedParserState.stringBuffer;
     _numberBuffer = chunkedParserState.numberBuffer;
   }
-
-  @pragma('wasm:prefer-inline')
-  StringBuffer get stringBuffer => _stringBuffer ??= StringBuffer();
-
-  /**
-   * Number parts stored while parsing a number.
-   */
-  _NumberBuffer? _numberBuffer;
-
-  @pragma('wasm:prefer-inline')
-  _NumberBuffer get numberBuffer =>
-      _numberBuffer ??= _NumberBuffer(_NumberBuffer.minCapacity);
 
   /**
    * Push the current parse [state] on a stack.
