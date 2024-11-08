@@ -1714,12 +1714,19 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   }
 
   void close() {
-    // TODO: Use the one that's initialized.
-    final parser = oneByteStringParser;
-    parser.restoreStateFromChunkedParserState(_parserState);
-    parser.close();
-    var decoded = parser.result;
-    _sink.add(decoded);
+    final oneByteStringParser = _oneByteStringParser;
+    final twoByteStringParser = _twoByteStringParser;
+
+    // Use any of the parsers to finish parsing.
+    if (oneByteStringParser != null) {
+      oneByteStringParser.restoreStateFromChunkedParserState(_parserState);
+      oneByteStringParser.close();
+    } else if (twoByteStringParser != null) {
+      twoByteStringParser.restoreStateFromChunkedParserState(_parserState);
+      twoByteStringParser.close();
+    }
+
+    _sink.add(_listener.result);
     _sink.close();
   }
 
