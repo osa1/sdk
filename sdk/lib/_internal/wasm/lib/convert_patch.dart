@@ -1570,6 +1570,17 @@ class JsonDecoder {
   }
 }
 
+class _ChunkedParserState {
+  final int state;
+  final List<int> states;
+  final int partialState;
+  final StringBuffer? stringBuffer;
+  final _NumberBuffer? numberBuffer;
+
+  _ChunkedParserState(this.state, this.states, this.partialState,
+      this.stringBuffer, this.numberBuffer);
+}
+
 /**
  * Implements the chunked conversion from a JSON string to its corresponding
  * object.
@@ -1577,19 +1588,38 @@ class JsonDecoder {
  * The sink only creates one object, but its input can be chunked.
  */
 class _JsonStringDecoderSink extends StringConversionSinkBase {
-  _JsonStringParser _parser;
+  final _ChunkedParserState _parserState = _ChunkedParserState(
+      _ChunkedJsonParser.STATE_INITIAL,
+      <int>[],
+      _ChunkedJsonParser.NO_PARTIAL,
+      null,
+      null);
+
   final Object? Function(Object? key, Object? value)? _reviver;
+
   final Sink<Object?> _sink;
 
-  _JsonStringDecoderSink(this._reviver, this._sink)
-      : _parser = _JsonStringParser(_JsonListener(_reviver));
+  _JsonStringDecoderSink(this._reviver, this._sink);
 
   void addSlice(String chunk, int start, int end, bool isLast) {
-    _parser.chunk = unsafeCast<StringBase>(
+    final StringBase chunkConverted = unsafeCast<StringBase>(
         chunk is JSStringImpl ? jsStringToDartString(chunk) : chunk);
-    _parser.chunkEnd = end;
-    _parser.parse(start);
-    if (isLast) _parser.close();
+
+    final parser = _JsonStringParser(_JsonListener(_reviver));
+
+    // Restore state.
+    parser.state = _parserState.state;
+    parser.states = _parserState.states;
+    parser.partialState = _parserState.partialState;
+    parser._stringBuffer = _parserState.stringBuffer;
+    parser._numberBuffer = _parserState.numberBuffer;
+
+    parser.chunk = unsafeCast<StringBase>(
+        chunk is JSStringImpl ? jsStringToDartString(chunk) : chunk);
+    parser.chunkEnd = end;
+    parser.parse(start);
+
+    if (isLast) parser.close();
   }
 
   void add(String chunk) {
@@ -1597,8 +1627,17 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   }
 
   void close() {
-    _parser.close();
-    var decoded = _parser.result;
+    final parser = _JsonStringParser(_JsonListener(_reviver));
+
+    // Restore state.
+    parser.state = _parserState.state;
+    parser.states = _parserState.states;
+    parser.partialState = _parserState.partialState;
+    parser._stringBuffer = _parserState.stringBuffer;
+    parser._numberBuffer = _parserState.numberBuffer;
+
+    parser.close();
+    var decoded = parser.result;
     _sink.add(decoded);
     _sink.close();
   }
