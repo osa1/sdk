@@ -1576,12 +1576,7 @@ class _JsonStringDecoderSink extends StringConversionSinkBase {
   final Sink<Object?> _sink;
 
   _JsonStringDecoderSink(this._reviver, this._sink)
-      : _parser = _createParser(_reviver);
-
-  static _JsonStringParser _createParser(
-      Object? Function(Object? key, Object? value)? reviver) {
-    return new _JsonStringParser(new _JsonListener(reviver));
-  }
+      : _parser = _JsonStringParser(_JsonListener(_reviver));
 
   void addSlice(String chunk, int start, int end, bool isLast) {
     _parser.chunk = unsafeCast<StringBase>(
