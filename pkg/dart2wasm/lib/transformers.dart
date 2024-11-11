@@ -991,6 +991,8 @@ class PushPopWasmArrayTransformer {
       return cloner.clone(node);
     }
 
+    final List<Statement> blockStatements = [];
+
     // length - 1
     final intSubtractType = _intSubtract.computeSignatureOrFunctionType();
     final lengthMinusOne = InstanceInvocation(InstanceAccessKind.Instance,
@@ -1008,6 +1010,7 @@ class PushPopWasmArrayTransformer {
       arrayLengthUpdate = ExpressionStatement(
           VariableSet(lengthVariableGet.variable, lengthMinusOne));
     }
+    blockStatements.add(arrayLengthUpdate);
 
     // array[length]
     final arrayGet = StaticInvocation(_wasmArrayElementGet,
@@ -1016,16 +1019,19 @@ class PushPopWasmArrayTransformer {
     // final temp = array[length]
     final arrayGetVariable = VariableDeclaration.forValue(arrayGet,
         isFinal: true, type: elementTypeNullable);
+    blockStatements.add(arrayGetVariable);
 
     // array[length] = null
-    final arrayClearElement = ExpressionStatement(StaticInvocation(
-        _wasmArrayElementSet,
-        Arguments([clone(array), clone(length), NullLiteral()],
-            types: [elementTypeNullable])));
+    if (elementType.nullability != Nullability.nonNullable) {
+      final arrayClearElement = ExpressionStatement(StaticInvocation(
+          _wasmArrayElementSet,
+          Arguments([clone(array), clone(length), NullLiteral()],
+              types: [elementTypeNullable])));
+      blockStatements.add(arrayClearElement);
+    }
 
     return BlockExpression(
-        Block([arrayLengthUpdate, arrayGetVariable, arrayClearElement]),
-        VariableGet(arrayGetVariable));
+        Block(blockStatements), VariableGet(arrayGetVariable));
   }
 }
 
