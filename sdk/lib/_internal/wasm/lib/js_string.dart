@@ -30,10 +30,12 @@ extension StringUncheckedOperations on String {
       )._substringUnchecked(start, end);
 }
 
-final class JSStringImpl implements String, StringUncheckedOperationsBase {
+final class JSStringImpl extends IntParseMixinBase
+    with IntParseMixin
+    implements StringUncheckedOperationsBase, String {
   final WasmExternRef? _ref;
 
-  JSStringImpl(this._ref);
+  JSStringImpl(this._ref) : super();
 
   @pragma("wasm:prefer-inline")
   static String? box(WasmExternRef? ref) =>
@@ -776,6 +778,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   @override
   String toString() => this;
 
+  @override
   int firstNonWhitespace() {
     final length = this.length;
     int first = 0;
@@ -787,6 +790,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
     return first;
   }
 
+  @override
   int lastNonWhitespace() {
     int last = length - 1;
     for (; last >= 0; last--) {
@@ -883,3 +887,267 @@ external WasmExternRef _jsStringSubstringImport(
   WasmI32 startIndex,
   WasmI32 endIndex,
 );
+
+abstract class IntParseMixinBase
+    implements StringUncheckedOperationsBase, String {}
+
+mixin IntParseMixin on StringUncheckedOperationsBase, String {
+  int? tryParseInt({int? radix}) {
+    if (isEmpty) {
+      return null;
+    }
+    if (radix == null || radix == 10) {
+      // Try parsing immediately, without trimming whitespace.
+      int? result = _tryParseIntRadix10(0, length);
+      if (result != null) return result;
+    } else if ((radix - 2).gtU(34)) {
+      throw RangeError("Radix $radix not in range 2..36");
+    }
+    return _parse(radix, _kNull);
+  }
+
+  int parseInt({int? radix}) {
+    if (isEmpty) {
+      return _handleFormatError(null, this, 0, radix, null) as int;
+    }
+    if (radix == null || radix == 10) {
+      // Try parsing immediately, without trimming whitespace.
+      int? result = _tryParseIntRadix10(0, length);
+      if (result != null) return result;
+    } else if ((radix - 2).gtU(34)) {
+      throw RangeError("Radix $radix not in range 2..36");
+    }
+    // Split here so improve odds of parse being inlined and the checks omitted.
+    return _parse(radix, null)!;
+  }
+
+  int? _parse(int? radix, int? Function(String)? onError) {
+    int end = lastNonWhitespace() + 1;
+    if (end == 0) {
+      return _handleFormatError(onError, this, length, radix, null);
+    }
+    int start = firstNonWhitespace();
+
+    int first = _codeUnitAtUnchecked(start);
+    int sign = 1;
+    if (first == 0x2b /* + */ || first == 0x2d /* - */ ) {
+      sign = 0x2c - first; // -1 if '-', +1 if '+'.
+      start++;
+      if (start == end) {
+        return _handleFormatError(onError, this, end, radix, null);
+      }
+      first = _codeUnitAtUnchecked(start);
+    }
+    if (radix == null) {
+      // check for 0x prefix.
+      int index = start;
+      if (first == 0x30 /* 0 */ ) {
+        index++;
+        if (index == end) return 0;
+        first = _codeUnitAtUnchecked(index);
+        if ((first | 0x20) == 0x78 /* x */ ) {
+          index++;
+          if (index == end) {
+            return _handleFormatError(onError, this, index, null, null);
+          }
+          return _parseRadix(16, index, end, sign, sign > 0, onError);
+        }
+      }
+      radix = 10;
+    }
+    return _parseRadix(radix, start, end, sign, false, onError);
+  }
+
+  int? _parseRadix(
+    int radix,
+    int start,
+    int end,
+    int sign,
+    bool allowOverflow,
+    int? Function(String)? onError,
+  ) {
+    // Skip leading zeroes.
+    while (start < end && _codeUnitAtUnchecked(start) == 0x30 /* 0 */ ) {
+      start += 1;
+    }
+
+    final blockSize = _PARSE_LIMITS[radix].toInt();
+    final length = end - start;
+
+    // Parse at most `blockSize` characters without overflows.
+    final parseBlockLength = length < blockSize ? length : blockSize;
+    int? blockResult = _parseBlock(radix, start, start + parseBlockLength);
+    if (blockResult == null) {
+      return _handleFormatError(onError, this, start, radix, null);
+    }
+
+    int result = sign * blockResult;
+
+    if (parseBlockLength < blockSize) {
+      // Overflow is not possible.
+      return result;
+    }
+
+    // Check overflows on the next digits. We can scan at most two digits before an overflow.
+    start += parseBlockLength;
+
+    for (int i = start; i < end; i++) {
+      int char = _codeUnitAtUnchecked(i);
+      int digit = char ^ 0x30;
+      if (digit > 9) {
+        digit = (char | 0x20) - (0x61 - 10);
+        if (digit < 10 || digit >= radix) {
+          return _handleFormatError(onError, this, start, radix, null);
+        }
+      }
+
+      if (sign > 0) {
+        const max = 9223372036854775807;
+
+        if (!allowOverflow && (result > (max - digit) ~/ radix)) {
+          return _handleFormatError(
+            onError,
+            this,
+            null,
+            radix,
+            "Positive input exceeds the limit of integer",
+          );
+        }
+
+        result = (radix * result) + digit;
+      } else {
+        const min = -9223372036854775808;
+
+        // We don't need to check `allowOverflow` as overflows are only allowed
+        // in positive numbers.
+        if (result < (min + digit) ~/ radix) {
+          return _handleFormatError(
+            onError,
+            this,
+            null,
+            radix,
+            "Negative input exceeds the limit of integer",
+          );
+        }
+
+        result = (radix * result) - digit;
+      }
+    }
+
+    return result;
+  }
+
+  /// Parse digits in [source] range from [start] to [end].
+  ///
+  /// Returns `null` if a character is not valid in radix [radix].
+  ///
+  /// Does not check for overflows, assumes that the number of digits in the
+  /// range will fit into an [int].
+  int? _parseBlock(int radix, int start, int end) {
+    int result = 0;
+    if (radix <= 10) {
+      for (int i = start; i < end; i++) {
+        int digit = _codeUnitAtUnchecked(i) ^ 0x30;
+        if (digit >= radix) return null;
+        result = (radix * result) + digit;
+      }
+    } else {
+      for (int i = start; i < end; i++) {
+        int char = _codeUnitAtUnchecked(i);
+        int digit = char ^ 0x30;
+        if (digit > 9) {
+          digit = (char | 0x20) - (0x61 - 10);
+          if (digit < 10 || digit >= radix) return null;
+        }
+        result = (radix * result) + digit;
+      }
+    }
+    return result;
+  }
+
+  int? _tryParseIntRadix10(int start, int end) {
+    int ix = start;
+    int sign = 1;
+    int c = _codeUnitAtUnchecked(ix);
+    // Check for leading '+' or '-'.
+    if ((c == 0x2b) || (c == 0x2d)) {
+      ix++;
+      sign = 0x2c - c; // -1 for '-', +1 for '+'.
+      if (ix == end) {
+        return null; // Empty.
+      }
+    }
+    if (end - ix > 18) {
+      return null; // May not fit into an `int`.
+    }
+    int result = 0;
+    for (int i = ix; i < end; i++) {
+      int c = 0x30 ^ _codeUnitAtUnchecked(i);
+      if (9 < c) {
+        return null;
+      }
+      result = (10 * result) + c;
+    }
+    return sign * result;
+  }
+}
+
+int? _handleFormatError(
+  int? Function(String)? onError,
+  String source,
+  int? index,
+  int? radix,
+  String? message,
+) {
+  if (onError != null) return onError(source);
+  if (message != null) {
+    throw FormatException(message, source, index);
+  }
+  if (radix == null) {
+    throw FormatException("Invalid number", source, index);
+  }
+  throw FormatException("Invalid radix-$radix number", source, index);
+}
+
+Null _kNull(_) => null;
+
+// For each radix, 2-36, how many digits are guaranteed to fit in an `int`.
+const _PARSE_LIMITS = const ImmutableWasmArray<WasmI64>.literal([
+  0, // unused
+  0, // unused
+  63, // radix: 2
+  39,
+  31,
+  27, // radix: 5
+  24,
+  22,
+  21,
+  19,
+  18, // radix: 10
+  18,
+  17,
+  17,
+  16,
+  16, // radix: 15
+  15,
+  15,
+  15,
+  14,
+  14, // radix: 20
+  14,
+  14,
+  13,
+  13,
+  13, // radix: 25
+  13,
+  13,
+  13,
+  12,
+  12, // radix: 30
+  12,
+  12,
+  12,
+  12,
+  12, // radix: 35
+  12,
+]);

@@ -114,11 +114,12 @@ class String {
       ),
     );
   }
-}
 
-extension _StringExt on String {
-  int firstNonWhitespace() =>
-      unsafeCast<JSStringImpl>(this).firstNonWhitespace();
+  int firstNonWhitespace();
 
-  int lastNonWhitespace() => unsafeCast<JSStringImpl>(this).lastNonWhitespace();
+  int lastNonWhitespace();
+
+  int? tryParseInt({int? radix});
+
+  int parseInt({int? radix});
 }

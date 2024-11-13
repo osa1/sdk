@@ -1244,7 +1244,7 @@ abstract final class StringBase extends WasmStringBase
 }
 
 @pragma("wasm:entry-point")
-final class OneByteString extends StringBase {
+final class OneByteString extends StringBase with IntParseMixin {
   @pragma("wasm:entry-point")
   final WasmArray<WasmI8> _array;
 
@@ -1683,7 +1683,7 @@ final class OneByteString extends StringBase {
 }
 
 @pragma("wasm:entry-point")
-final class TwoByteString extends StringBase {
+final class TwoByteString extends StringBase with IntParseMixin {
   @pragma("wasm:entry-point")
   final WasmArray<WasmI16> _array;
 

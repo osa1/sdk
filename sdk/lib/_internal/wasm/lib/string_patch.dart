@@ -54,18 +54,12 @@ class String {
     String name, {
     String defaultValue = "",
   });
-}
 
-extension _StringExt on String {
-  int firstNonWhitespace() {
-    final value = this;
-    if (value is StringBase) return value.firstNonWhitespace();
-    return unsafeCast<JSStringImpl>(value).firstNonWhitespace();
-  }
+  int firstNonWhitespace();
 
-  int lastNonWhitespace() {
-    final value = this;
-    if (value is StringBase) return value.lastNonWhitespace();
-    return unsafeCast<JSStringImpl>(value).lastNonWhitespace();
-  }
+  int lastNonWhitespace();
+
+  int? tryParseInt({int? radix});
+
+  int parseInt({int? radix});
 }
