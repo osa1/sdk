@@ -2073,7 +2073,7 @@ class _Utf8Decoder {
     final actualStart = start;
 
     // Skip initial BOM.
-    start = skipBomSingle(bytes, start, end);
+    start = _skipBomSingle(bytes, start, end);
 
     // Special case empty input.
     if (start == end) return "";
@@ -2095,10 +2095,10 @@ class _Utf8Decoder {
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(bytes, start, end, size);
+      result = _decode8(bytes, start, end, size);
     } else {
       // Arbitrary Unicode.
-      result = decode16(bytes, start, end, size);
+      result = _decode16(bytes, start, end, size);
     }
     if (_state == accept) {
       return result;
@@ -2139,7 +2139,7 @@ class _Utf8Decoder {
     }
 
     // Skip initial BOM.
-    start = skipBomChunked(bytes, start, end);
+    start = _skipBomChunked(bytes, start, end);
 
     // Special case empty input.
     if (start == end) return "";
@@ -2202,10 +2202,10 @@ class _Utf8Decoder {
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(bytes, start, end, size);
+      result = _decode8(bytes, start, end, size);
     } else {
       // Arbitrary Unicode.
-      result = decode16(bytes, start, end, size);
+      result = _decode16(bytes, start, end, size);
     }
     if (!isErrorState(_state)) {
       return result;
@@ -2226,7 +2226,7 @@ class _Utf8Decoder {
     return result;
   }
 
-  int skipBomSingle(Uint8List bytes, int start, int end) {
+  int _skipBomSingle(U8List bytes, int start, int end) {
     if (end - start >= 3 &&
         bytes[start] == 0xEF &&
         bytes[start + 1] == 0xBB &&
@@ -2236,7 +2236,7 @@ class _Utf8Decoder {
     return start;
   }
 
-  int skipBomChunked(Uint8List bytes, int start, int end) {
+  int _skipBomChunked(Uint8List bytes, int start, int end) {
     assert(start <= end);
     int bomIndex = _bomIndex;
     // Already skipped?
@@ -2262,7 +2262,7 @@ class _Utf8Decoder {
     return i;
   }
 
-  String decode8(Uint8List bytes, int start, int end, int size) {
+  String _decode8(Uint8List bytes, int start, int end, int size) {
     assert(start < end);
     OneByteString result = OneByteString.withLength(size);
     int i = start;
@@ -2314,7 +2314,7 @@ class _Utf8Decoder {
     return result;
   }
 
-  String decode16(Uint8List bytes, int start, int end, int size) {
+  String _decode16(Uint8List bytes, int start, int end, int size) {
     assert(start < end);
     final OneByteString transitionTable = unsafeCast<OneByteString>(
       _Utf8Decoder.transitionTable,
