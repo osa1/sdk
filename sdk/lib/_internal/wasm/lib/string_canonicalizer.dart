@@ -20,24 +20,26 @@ import 'dart:convert';
 // these two types are different and they don't have a common supertype (they
 // don't inherit from `Object`).
 
-class StringCanonicalizer {
-  static const int INITIAL_SIZE = 8 * 1024;
+const int _INITIAL_SIZE = 8 * 1024;
 
-  /// Linear size of a hash table.
-  int _size = INITIAL_SIZE;
+class OneByteStringCanonicalizer {
+  /// Size of the hash table.
+  int _size = _INITIAL_SIZE;
 
-  /// Items in a hash table.
+  /// Items in the hash table.
   int _count = 0;
 
-  WasmArray<StringBase?> _nodes = WasmArray<StringBase?>(INITIAL_SIZE);
+  WasmArray<OneByteString?> _nodes = WasmArray<OneByteString?>(_INITIAL_SIZE);
 
   void rehash() {
     final newSize = _size * 2;
-    WasmArray<StringBase?> newNodes = WasmArray<StringBase?>(newSize);
+    WasmArray<OneByteString?> newNodes = WasmArray<OneByteString?>(newSize);
     for (int i = 0; i < _size; i++) {
-      StringBase? t = _nodes[i];
+      OneByteString? t = _nodes[i];
       if (t != null) {
-        final newIndex = t.hashCode & (newSize - 1);
+        // Use identity hash code as the string has already been hashed when
+        // adding to the map.
+        final newIndex = identityHashCode(t) & (newSize - 1);
         newNodes[newIndex] = t;
       }
     }
@@ -45,14 +47,14 @@ class StringCanonicalizer {
     _nodes = newNodes;
   }
 
-  String canonicalizeSubString(StringBase data, int start, int end) {
+  String canonicalizeSubString(OneByteString data, int start, int end) {
     final len = end - start;
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
     }
     final int substringHash = data.computeHashCodeRange(start, end);
     int index = substringHash & (_size - 1);
-    final StringBase? s = _nodes[index];
+    final OneByteString? s = _nodes[index];
     if (s != null) {
       if (s.length == len && data.startsWith(s, start)) {
         return s;
@@ -62,13 +64,13 @@ class StringCanonicalizer {
       rehash();
       index = substringHash & (_size - 1);
     }
-    final newNode = unsafeCast<StringBase>(data.substringUnchecked(start, end));
+    final OneByteString newNode = data.substringUnchecked(start, end);
     setIdentityHashField(newNode, substringHash);
     _nodes[index] = newNode;
     return newNode;
   }
 
-  String canonicalizeString(StringBase data) {
+  String canonicalizeString(OneByteString data) {
     if (_count >= _size / 2) rehash();
     final int index = data.hashCode & (_size - 1);
     _nodes[index] = data;
@@ -76,12 +78,70 @@ class StringCanonicalizer {
   }
 
   void clear() {
-    initializeWithSize(INITIAL_SIZE);
+    _size = size;
+    _nodes = WasmArray<OneByteString?>(_size);
+    _count = 0;
+  }
+}
+
+class TwoByteStringCanonicalizer {
+  /// Size of the hash table.
+  int _size = _INITIAL_SIZE;
+
+  /// Items in the hash table.
+  int _count = 0;
+
+  WasmArray<TwoByteString?> _nodes = WasmArray<TwoByteString?>(_INITIAL_SIZE);
+
+  void rehash() {
+    final newSize = _size * 2;
+    WasmArray<TwoByteString?> newNodes = WasmArray<TwoByteString?>(newSize);
+    for (int i = 0; i < _size; i++) {
+      TwoByteString? t = _nodes[i];
+      if (t != null) {
+        // Use identity hash code as the string has already been hashed when
+        // adding to the map.
+        final newIndex = identityHashCode(t) & (newSize - 1);
+        newNodes[newIndex] = t;
+      }
+    }
+    _size = newSize;
+    _nodes = newNodes;
   }
 
-  void initializeWithSize(int size) {
+  String canonicalizeSubString(TwoByteString data, int start, int end) {
+    final len = end - start;
+    if (start == 0 && data.length == len) {
+      return canonicalizeString(data);
+    }
+    final int substringHash = data.computeHashCodeRange(start, end);
+    int index = substringHash & (_size - 1);
+    final TwoByteString? s = _nodes[index];
+    if (s != null) {
+      if (s.length == len && data.startsWith(s, start)) {
+        return s;
+      }
+    }
+    if (_count >= _size / 2) {
+      rehash();
+      index = substringHash & (_size - 1);
+    }
+    final TwoByteString newNode = data.substringUnchecked(start, end);
+    setIdentityHashField(newNode, substringHash);
+    _nodes[index] = newNode;
+    return newNode;
+  }
+
+  String canonicalizeString(TwoByteString data) {
+    if (_count >= _size / 2) rehash();
+    final int index = data.hashCode & (_size - 1);
+    _nodes[index] = data;
+    return data;
+  }
+
+  void clear() {
     _size = size;
-    _nodes = WasmArray<StringBase?>(_size);
+    _nodes = WasmArray<TwoByteString?>(_size);
     _count = 0;
   }
 }
@@ -101,15 +161,13 @@ class _Utf8Node {
 }
 
 class Utf8StringCanonicalizer {
-  static const int INITIAL_SIZE = 8 * 1024;
-
   /// Linear size of a hash table.
-  int _size = INITIAL_SIZE;
+  int _size = _INITIAL_SIZE;
 
   /// Items in a hash table.
   int _count = 0;
 
-  WasmArray<_Utf8Node?> _nodes = WasmArray<_Utf8Node?>(INITIAL_SIZE);
+  WasmArray<_Utf8Node?> _nodes = WasmArray<_Utf8Node?>(_INITIAL_SIZE);
 
   void rehash() {
     int newSize = _size * 2;
@@ -150,11 +208,23 @@ class Utf8StringCanonicalizer {
       t = t.next;
     }
     return _insertUtf8Node(
-        index, s, data, start, end, _decodeString(data, start, end, asciiOnly));
+      index,
+      s,
+      data,
+      start,
+      end,
+      _decodeString(data, start, end, asciiOnly),
+    );
   }
 
-  String _insertUtf8Node(int index, _Utf8Node? next, U8List buffer, int start,
-      int end, StringBase value) {
+  String _insertUtf8Node(
+    int index,
+    _Utf8Node? next,
+    U8List buffer,
+    int start,
+    int end,
+    StringBase value,
+  ) {
     final _Utf8Node newNode = _Utf8Node(buffer, start, end, value, next);
     _nodes[index] = newNode;
     _count++;
@@ -162,7 +232,7 @@ class Utf8StringCanonicalizer {
   }
 
   void clear() {
-    initializeWithSize(INITIAL_SIZE);
+    initializeWithSize(_INITIAL_SIZE);
   }
 
   void initializeWithSize(int size) {
@@ -177,7 +247,8 @@ StringBase _decodeString(U8List bytes, int start, int end, bool isAscii) {
   return isAscii
       ? createOneByteStringFromCharactersArray(bytes.data, start, end)
       : unsafeCast<StringBase>(
-          const Utf8Decoder(allowMalformed: true).convert(bytes, start, end));
+        const Utf8Decoder(allowMalformed: true).convert(bytes, start, end),
+      );
 }
 
 int _hashBytes(U8List data, int start, int end) {
