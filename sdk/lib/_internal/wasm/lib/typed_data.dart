@@ -2792,13 +2792,23 @@ class U8List extends _WasmI8ArrayBase
   @pragma("wasm:prefer-inline")
   int operator [](int index) {
     indexCheck(index, length);
-    return _data.readUnsigned(_offsetInElements + index);
+    return getUnchecked(index);
   }
 
   @override
   @pragma("wasm:prefer-inline")
   void operator []=(int index, int value) {
     indexCheck(index, length);
+    setUnchecked(index, value);
+  }
+}
+
+extension U8ListUncheckedOperations on U8List {
+  @pragma("wasm:prefer-inline")
+  int getUnchecked(int index) => _data.readUnsigned(_offsetInElements + index);
+
+  @pragma("wasm:prefer-inline")
+  void setUnchecked(int index, int value) {
     _data.write(_offsetInElements + index, value);
   }
 }
