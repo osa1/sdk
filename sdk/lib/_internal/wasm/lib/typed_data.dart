@@ -1976,8 +1976,8 @@ mixin _TypedIntListMixin<SpawnedType extends TypedDataList<int>>
       final fromTypedData = unsafeCast<JSIntegerArrayBase>(from);
 
       final fromElementSize = fromTypedData.elementSizeInBytes;
-      if (fromElementSize == 1 && this is _WasmI8ArrayBase) {
-        final destTypedData = unsafeCast<_WasmI8ArrayBase>(this);
+      if (fromElementSize == 1 && this is WasmI8ArrayBase) {
+        final destTypedData = unsafeCast<WasmI8ArrayBase>(this);
         copyToWasmI8Array(
           fromTypedData.toJSArrayExternRef()!,
           skipCount,
@@ -2565,16 +2565,16 @@ mixin _UnmodifiableDoubleListMixin {
 // Fast lists
 //
 
-abstract class _WasmI8ArrayBase extends WasmTypedDataBase {
+abstract class WasmI8ArrayBase extends WasmTypedDataBase {
   final WasmArray<WasmI8> _data;
   final int _offsetInElements;
   final int length;
 
-  _WasmI8ArrayBase(this.length)
+  WasmI8ArrayBase(this.length)
     : _data = WasmArray(_newArrayLengthCheck(length)),
       _offsetInElements = 0;
 
-  _WasmI8ArrayBase._(this._data, this._offsetInElements, this.length);
+  WasmI8ArrayBase._(this._data, this._offsetInElements, this.length);
 
   int get elementSizeInBytes => 1;
 
@@ -2679,7 +2679,7 @@ abstract class _WasmF64ArrayBase extends WasmTypedDataBase {
   _F64ByteBuffer get buffer => _F64ByteBuffer(_data);
 }
 
-extension WasmI8ArrayBaseExt on _WasmI8ArrayBase {
+extension WasmI8ArrayBaseExt on WasmI8ArrayBase {
   @pragma('wasm:prefer-inline')
   WasmArray<WasmI8> get data => _data;
 
@@ -2719,7 +2719,7 @@ extension WasmF64ArrayBaseExt on _WasmF64ArrayBase {
   int get offsetInElements => _offsetInElements;
 }
 
-class I8List extends _WasmI8ArrayBase
+class I8List extends WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<I8List>,
@@ -2761,7 +2761,7 @@ class I8List extends _WasmI8ArrayBase
   }
 }
 
-class U8List extends _WasmI8ArrayBase
+class U8List extends WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<U8List>,
@@ -2813,7 +2813,7 @@ extension U8ListUncheckedOperations on U8List {
   }
 }
 
-class U8ClampedList extends _WasmI8ArrayBase
+class U8ClampedList extends WasmI8ArrayBase
     with
         _IntListMixin,
         _TypedIntListMixin<U8ClampedList>,

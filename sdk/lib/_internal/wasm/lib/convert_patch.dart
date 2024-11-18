@@ -8,7 +8,8 @@ import "dart:_internal"
 import "dart:_js_string_convert";
 import "dart:_js_types";
 import "dart:_js_helper" show jsStringToDartString;
-import "dart:_list" show GrowableList, WasmListBaseUnsafeExtensions;
+import "dart:_list"
+    show GrowableList, WasmListBaseUnsafeExtensions, WasmListBase;
 import "dart:_string";
 import "dart:_typed_data";
 import "dart:_wasm";
@@ -2370,6 +2371,22 @@ class _Utf8Decoder {
 }
 
 U8List _makeU8List(List<int> codeUnits, int start, int end) {
+  if (codeUnits is WasmListBase) {
+    return _makeU8ListFromWasmListBase(
+      unsafeCast<WasmListBase<int>>(codeUnits),
+      start,
+      end,
+    );
+  }
+
+  if (codeUnits is WasmI8ArrayBase) {
+    return _makeU8ListFromWasmI8ArrayBase(
+      unsafeCast<WasmI8ArrayBase>(codeUnits),
+      start,
+      end,
+    );
+  }
+
   final int length = end - start;
   final U8List bytes = U8List(length);
   for (int i = 0; i < length; i++) {
@@ -2379,6 +2396,47 @@ U8List _makeU8List(List<int> codeUnits, int start, int end) {
       b = 0xFF;
     }
     bytes.setUnchecked(i, b);
+  }
+  return bytes;
+}
+
+U8List _makeU8ListFromWasmListBase(
+  WasmListBase<int> codeUnits,
+  int start,
+  int end,
+) {
+  final int length = end - start;
+  final U8List bytes = U8List(length);
+  final WasmArray<Object?> listData = codeUnits.data;
+  final WasmArray<WasmI8> bytesData = bytes.data;
+  for (int i = 0; i < length; i++) {
+    int b = unsafeCast<int>(listData[start + i]);
+    if ((b & ~0xFF) != 0) {
+      // Replace invalid byte values by FF, which is also invalid.
+      b = 0xFF;
+    }
+    bytesData.write(i, b);
+  }
+  return bytes;
+}
+
+U8List _makeU8ListFromWasmI8ArrayBase(
+  WasmI8ArrayBase codeUnits,
+  int start,
+  int end,
+) {
+  final int length = end - start;
+  final U8List bytes = U8List(length);
+  final WasmArray<WasmI8> listData = codeUnits.data;
+  final listDataOffset = codeUnits.offsetInBytes;
+  final WasmArray<WasmI8> bytesData = bytes.data;
+  for (int i = 0; i < length; i++) {
+    int b = listData.readUnsigned(listDataOffset + start + i);
+    if ((b & ~0xFF) != 0) {
+      // Replace invalid byte values by FF, which is also invalid.
+      b = 0xFF;
+    }
+    bytesData.write(i, b);
   }
   return bytes;
 }
