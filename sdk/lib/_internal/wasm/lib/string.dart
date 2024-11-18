@@ -26,7 +26,7 @@ extension OneByteStringUncheckedOperations on OneByteString {
   int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
 
   @pragma('wasm:prefer-inline')
-  String substringUnchecked(int start, int end) =>
+  OneByteString substringUnchecked(int start, int end) =>
       _substringUnchecked(start, end);
 
   @pragma('wasm:prefer-inline')
@@ -38,7 +38,7 @@ extension TwoByteStringUncheckedOperations on TwoByteString {
   int codeUnitAtUnchecked(int index) => _codeUnitAtUnchecked(index);
 
   @pragma('wasm:prefer-inline')
-  String substringUnchecked(int start, int end) =>
+  TwoByteString substringUnchecked(int start, int end) =>
       _substringUnchecked(start, end);
 
   @pragma('wasm:prefer-inline')
@@ -154,6 +154,8 @@ String _toLowerCase(String string) => jsStringToDartString(
  */
 abstract final class StringBase extends WasmStringBase
     implements StringUncheckedOperationsBase {
+  const StringBase();
+
   bool _isWhitespace(int codeUnit);
 
   // Constants used by replaceAll encoding of string slices between matches.
@@ -514,30 +516,6 @@ abstract final class StringBase extends WasmStringBase
     }
     return -1;
   }
-
-  String substring(int startIndex, [int? endIndex]) {
-    endIndex = RangeError.checkValidRange(startIndex, endIndex, this.length);
-    return _substringUnchecked(startIndex, endIndex);
-  }
-
-  String _substringUnchecked(int startIndex, int endIndex) {
-    assert((startIndex >= 0) && (startIndex <= this.length));
-    assert((endIndex >= 0) && (endIndex <= this.length));
-    assert(startIndex <= endIndex);
-
-    if (startIndex == endIndex) {
-      return "";
-    }
-    if ((startIndex == 0) && (endIndex == this.length)) {
-      return this;
-    }
-    if ((startIndex + 1) == endIndex) {
-      return this[startIndex];
-    }
-    return _substringUncheckedInternal(startIndex, endIndex);
-  }
-
-  String _substringUncheckedInternal(int startIndex, int endIndex);
 
   // Checks for one-byte whitespaces only.
   static bool _isOneByteWhitespace(int codeUnit) {
@@ -1262,6 +1240,8 @@ final class OneByteString extends StringBase {
   @pragma("wasm:prefer-inline")
   OneByteString.withData(this._array);
 
+  const OneByteString.empty() : _array = const WasmArray<WasmI8>.literal([]);
+
   // Same hash as VM
   @override
   @pragma("wasm:prefer-inline")
@@ -1319,7 +1299,27 @@ final class OneByteString extends StringBase {
   }
 
   @override
-  String _substringUncheckedInternal(int startIndex, int endIndex) {
+  OneByteString substring(int startIndex, [int? endIndex]) {
+    endIndex = RangeError.checkValidRange(startIndex, endIndex, this.length);
+    return _substringUnchecked(startIndex, endIndex);
+  }
+
+  OneByteString _substringUnchecked(int startIndex, int endIndex) {
+    assert((startIndex >= 0) && (startIndex <= this.length));
+    assert((endIndex >= 0) && (endIndex <= this.length));
+    assert(startIndex <= endIndex);
+
+    if (startIndex == endIndex) {
+      return OneByteString.empty();
+    }
+    if ((startIndex == 0) && (endIndex == this.length)) {
+      return this;
+    }
+    return _substringUncheckedInternal(startIndex, endIndex);
+  }
+
+  @override
+  OneByteString _substringUncheckedInternal(int startIndex, int endIndex) {
     final length = endIndex - startIndex;
     final result = OneByteString.withLength(length);
     result._array.copy(0, _array, startIndex, length);
@@ -1703,6 +1703,8 @@ final class TwoByteString extends StringBase {
   @pragma("wasm:prefer-inline")
   TwoByteString.withData(this._array);
 
+  TwoByteString.empty() : _array = const WasmArray<WasmI16>.literal([]);
+
   // Same hash as VM
   @override
   @pragma("wasm:prefer-inline")
@@ -1772,7 +1774,27 @@ final class TwoByteString extends StringBase {
   int get length => _array.length;
 
   @override
-  String _substringUncheckedInternal(int startIndex, int endIndex) {
+  TwoByteString substring(int startIndex, [int? endIndex]) {
+    endIndex = RangeError.checkValidRange(startIndex, endIndex, this.length);
+    return _substringUnchecked(startIndex, endIndex);
+  }
+
+  TwoByteString _substringUnchecked(int startIndex, int endIndex) {
+    assert((startIndex >= 0) && (startIndex <= this.length));
+    assert((endIndex >= 0) && (endIndex <= this.length));
+    assert(startIndex <= endIndex);
+
+    if (startIndex == endIndex) {
+      return TwoByteString.empty();
+    }
+    if ((startIndex == 0) && (endIndex == this.length)) {
+      return this;
+    }
+    return _substringUncheckedInternal(startIndex, endIndex);
+  }
+
+  @override
+  TwoByteString _substringUncheckedInternal(int startIndex, int endIndex) {
     final length = endIndex - startIndex;
     final result = TwoByteString.withLength(length);
     result._array.copy(0, _array, startIndex, length);
