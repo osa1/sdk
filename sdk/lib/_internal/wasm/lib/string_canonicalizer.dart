@@ -47,7 +47,7 @@ class OneByteStringCanonicalizer {
     _nodes = newNodes;
   }
 
-  String canonicalizeSubString(OneByteString data, int start, int end) {
+  OneByteString canonicalizeSubString(OneByteString data, int start, int end) {
     final len = end - start;
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
@@ -70,7 +70,7 @@ class OneByteStringCanonicalizer {
     return newNode;
   }
 
-  String canonicalizeString(OneByteString data) {
+  OneByteString canonicalizeString(OneByteString data) {
     if (_count >= _size / 2) rehash();
     final int index = data.hashCode & (_size - 1);
     _nodes[index] = data;
@@ -78,7 +78,7 @@ class OneByteStringCanonicalizer {
   }
 
   void clear() {
-    _size = size;
+    _size = _INITIAL_SIZE;
     _nodes = WasmArray<OneByteString?>(_size);
     _count = 0;
   }
@@ -109,7 +109,7 @@ class TwoByteStringCanonicalizer {
     _nodes = newNodes;
   }
 
-  String canonicalizeSubString(TwoByteString data, int start, int end) {
+  TwoByteString canonicalizeSubString(TwoByteString data, int start, int end) {
     final len = end - start;
     if (start == 0 && data.length == len) {
       return canonicalizeString(data);
@@ -132,7 +132,7 @@ class TwoByteStringCanonicalizer {
     return newNode;
   }
 
-  String canonicalizeString(TwoByteString data) {
+  TwoByteString canonicalizeString(TwoByteString data) {
     if (_count >= _size / 2) rehash();
     final int index = data.hashCode & (_size - 1);
     _nodes[index] = data;
@@ -140,7 +140,7 @@ class TwoByteStringCanonicalizer {
   }
 
   void clear() {
-    _size = size;
+    _size = _INITIAL_SIZE;
     _nodes = WasmArray<TwoByteString?>(_size);
     _count = 0;
   }
