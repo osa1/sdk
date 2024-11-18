@@ -1762,25 +1762,12 @@ class LinterLintCode extends LintCode {
         uniqueName: 'unrelated_type_equality_checks_in_pattern',
       );
 
-  static const LintCode unsafe_html_attribute = LinterLintCode(
-    LintNames.unsafe_html,
-    "Assigning to the attribute '{0}' is unsafe.",
-    correctionMessage: "Try finding a different way to implement the page.",
-    uniqueName: 'unsafe_html_attribute',
-  );
-
-  static const LintCode unsafe_html_constructor = LinterLintCode(
-    LintNames.unsafe_html,
-    "Invoking the constructor '{0}' is unsafe.",
-    correctionMessage: "Try finding a different way to implement the page.",
-    uniqueName: 'unsafe_html_constructor',
-  );
-
-  static const LintCode unsafe_html_method = LinterLintCode(
-    LintNames.unsafe_html,
-    "Invoking the method '{0}' is unsafe.",
-    correctionMessage: "Try finding a different way to implement the page.",
-    uniqueName: 'unsafe_html_method',
+  static const LintCode unsafe_variance = LinterLintCode(
+    LintNames.unsafe_variance,
+    "This type is unsafe: a type parameter occurs in a non-covariant position.",
+    correctionMessage:
+        "Try using a more general type that doesn't contain any type "
+        "parameters in such a position.",
   );
 
   static const LintCode

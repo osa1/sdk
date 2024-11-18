@@ -926,12 +926,6 @@ class OperationsCfe
   }
 
   @override
-  bool isNonNullable(SharedTypeSchemaView<DartType> typeSchema) {
-    return typeSchema.unwrapTypeSchemaView().nullability ==
-        Nullability.nonNullable;
-  }
-
-  @override
   StructuralParameter? matchInferableParameter(SharedTypeView<DartType> type) {
     DartType unwrappedType = type.unwrapTypeView();
     if (unwrappedType is StructuralParameterType) {
@@ -987,6 +981,12 @@ class OperationsCfe
   }
 
   @override
+  bool isDartCoreRecord(SharedTypeView<DartType> type) {
+    return type.unwrapTypeView() ==
+        typeEnvironment.coreTypes.recordNonNullableRawType;
+  }
+
+  @override
   DartType greatestClosureOfTypeInternal(DartType type,
       List<SharedTypeParameterStructure<DartType>> typeParametersToEliminate) {
     return new NullabilityAwareFreeTypeParameterEliminator(
@@ -995,6 +995,44 @@ class OperationsCfe
             topFunctionType: typeEnvironment.coreTypes
                 .functionRawType(Nullability.nonNullable))
         .eliminateToGreatest(type);
+  }
+
+  @override
+  DartType leastClosureOfTypeInternal(DartType type,
+      List<SharedTypeParameterStructure<DartType>> typeParametersToEliminate) {
+    return new NullabilityAwareFreeTypeParameterEliminator(
+            bottomType: const NeverType.nonNullable(),
+            topType: typeEnvironment.coreTypes.objectNullableRawType,
+            topFunctionType: typeEnvironment.coreTypes
+                .functionRawType(Nullability.nonNullable))
+        .eliminateToLeast(type);
+  }
+
+  @override
+  DartType? matchTypeParameterBoundInternal(DartType type) {
+    if (type.nullabilitySuffix != NullabilitySuffix.none) {
+      return null;
+    }
+    if (type is TypeParameterType) {
+      return type.parameter.bound;
+    } else if (type is StructuralParameterType) {
+      // Coverage-ignore-block(suite): Not run.
+      return type.parameter.bound;
+    } else if (type is IntersectionType) {
+      return type.right;
+    } else {
+      return null;
+    }
+  }
+
+  @override
+  bool isNonNullableInternal(DartType type) {
+    return type.nullability == Nullability.nonNullable;
+  }
+
+  @override
+  bool isNullableInternal(DartType type) {
+    return type.nullability == Nullability.nullable;
   }
 }
 

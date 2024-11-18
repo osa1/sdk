@@ -2,9 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.field_builder;
-
 import 'package:_fe_analyzer_shared/src/scanner/scanner.dart' show Token;
+import 'package:_fe_analyzer_shared/src/metadata/expressions.dart' as shared;
 import 'package:kernel/ast.dart';
 import 'package:kernel/class_hierarchy.dart';
 import 'package:kernel/core_types.dart';
@@ -32,6 +31,7 @@ import '../kernel/implicit_field_type.dart';
 import '../kernel/internal_ast.dart';
 import '../kernel/kernel_helper.dart';
 import '../kernel/late_lowering.dart' as late_lowering;
+import '../kernel/macro/metadata.dart';
 import '../kernel/member_covariance.dart';
 import '../kernel/type_algorithms.dart';
 import '../source/name_scheme.dart';
@@ -62,6 +62,8 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
   final TypeBuilder type;
 
   Token? _constInitializerToken;
+
+  shared.Expression? _initializerExpression;
 
   /// Whether the body of this field has been built.
   ///
@@ -497,6 +499,7 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
                 isClassMember &&
                 classBuilder!.declaresConstConstructor)) &&
         _constInitializerToken != null) {
+      Token initializerToken = _constInitializerToken!;
       LookupScope scope = declarationBuilder?.scope ?? libraryBuilder.scope;
       BodyBuilder bodyBuilder = libraryBuilder.loader
           .createBodyBuilderForOutlineExpression(
@@ -505,13 +508,21 @@ class SourceFieldBuilder extends SourceMemberBuilderImpl
           isConst ? ConstantContext.inferred : ConstantContext.required;
       Expression initializer = bodyBuilder.typeInferrer
           .inferFieldInitializer(bodyBuilder, fieldType,
-              bodyBuilder.parseFieldInitializer(_constInitializerToken!))
+              bodyBuilder.parseFieldInitializer(initializerToken))
           .expression;
       buildBody(classHierarchy.coreTypes, initializer);
       bodyBuilder.performBacklogComputations();
+      if (computeSharedExpressionForTesting) {
+        // Coverage-ignore-block(suite): Not run.
+        _initializerExpression = parseFieldInitializer(libraryBuilder.loader,
+            initializerToken, libraryBuilder.importUri, fileUri, scope);
+      }
     }
     _constInitializerToken = null;
   }
+
+  // Coverage-ignore(suite): Not run.
+  shared.Expression? get initializerExpression => _initializerExpression;
 
   // Coverage-ignore(suite): Not run.
   bool get hasOutlineExpressionsBuilt => _constInitializerToken == null;

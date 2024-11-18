@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.incremental_compiler;
-
 import 'dart:async' show Completer;
 import 'dart:convert' show JsonEncoder;
 import 'dart:typed_data';
@@ -2509,7 +2507,7 @@ class _InitializationFromSdkSummary extends _InitializationStrategy {
       _ComponentProblems componentProblems,
       IncrementalSerializer? incrementalSerializer,
       RecorderForTesting? recorderForTesting) async {
-    List<int>? summaryBytes = await context.options.loadSdkSummaryBytes();
+    Uint8List? summaryBytes = await context.options.loadSdkSummaryBytes();
     return _prepareSummary(
         dillLoadedData, summaryBytes, uriTranslator, context, data);
   }
@@ -2517,7 +2515,7 @@ class _InitializationFromSdkSummary extends _InitializationStrategy {
   // Coverage-ignore(suite): Not run.
   int _prepareSummary(
       DillTarget dillLoadedTarget,
-      List<int>? summaryBytes,
+      Uint8List? summaryBytes,
       UriTranslator uriTranslator,
       CompilerContext context,
       IncrementalCompilerData data) {
@@ -2607,7 +2605,7 @@ class _InitializationFromUri extends _InitializationFromSdkSummary {
       _ComponentProblems componentProblems,
       IncrementalSerializer? incrementalSerializer,
       RecorderForTesting? recorderForTesting) async {
-    List<int>? summaryBytes = await context.options.loadSdkSummaryBytes();
+    Uint8List? summaryBytes = await context.options.loadSdkSummaryBytes();
     int bytesLength = _prepareSummary(
         dillLoadedData, summaryBytes, uriTranslator, context, data);
     try {
@@ -2685,7 +2683,7 @@ class _InitializationFromUri extends _InitializationFromSdkSummary {
     FileSystemEntity entity =
         context.options.fileSystem.entityForUri(initializeFromDillUri);
     if (await entity.exists()) {
-      List<int> initializationBytes = await entity.readAsBytes();
+      Uint8List initializationBytes = await entity.readAsBytes();
       if (initializationBytes.isNotEmpty) {
         dillLoadedData.ticker.logMs("Read $initializeFromDillUri");
         data.initializationBytes = initializationBytes;

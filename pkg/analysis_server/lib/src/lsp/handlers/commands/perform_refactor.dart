@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:analysis_server/lsp_protocol/protocol.dart';
 import 'package:analysis_server/src/lsp/client_capabilities.dart';
 import 'package:analysis_server/src/lsp/error_or.dart';
 import 'package:analysis_server/src/lsp/handlers/commands/abstract_refactor.dart';
@@ -50,7 +49,7 @@ class PerformRefactorCommandHandler extends AbstractRefactorCommandHandler {
 
     return result.mapResult((result) async {
       var refactoring = await getRefactoring(
-        RefactoringKind(kind),
+        RefactoringKind.values.byName(kind),
         result,
         offset,
         length,
@@ -80,13 +79,13 @@ class PerformRefactorCommandHandler extends AbstractRefactorCommandHandler {
           }
 
           if (cancelableToken.isCancellationRequested) {
-            return error(ErrorCodes.RequestCancelled, 'Request was cancelled');
+            return cancelled(cancelableToken);
           }
 
           var change = await refactoring.createChange();
 
           if (cancelableToken.isCancellationRequested) {
-            return error(ErrorCodes.RequestCancelled, 'Request was cancelled');
+            return cancelled(cancelableToken);
           }
 
           if (change.edits.isEmpty) {

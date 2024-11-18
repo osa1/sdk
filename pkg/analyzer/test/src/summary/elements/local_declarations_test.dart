@@ -92,6 +92,8 @@ library
             new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
+              typeNameOffset: 12
   classes
     class C
       reference: <testLibrary>::@class::C
@@ -144,6 +146,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           methods
             m @12
               reference: <testLibraryFragment>::@class::C::@method::m
@@ -157,6 +160,7 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
 ''');
   }
@@ -191,9 +195,9 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        synthetic <null-name>
+        synthetic g
           reference: <testLibraryFragment>::@topLevelVariable::g
-          element: <testLibraryFragment>::@topLevelVariable::g#element
+          element: <testLibrary>::@topLevelVariable::g
           getter2: <testLibraryFragment>::@getter::g
       getters
         get g @4
@@ -201,6 +205,7 @@ library
           element: <testLibraryFragment>::@getter::g#element
   topLevelVariables
     synthetic g
+      reference: <testLibrary>::@topLevelVariable::g
       firstFragment: <testLibraryFragment>::@topLevelVariable::g
       type: dynamic
       getter: <testLibraryFragment>::@getter::g#element
@@ -251,6 +256,8 @@ library
             new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
+              typeNameOffset: 12
   classes
     class C
       reference: <testLibrary>::@class::C
@@ -307,6 +314,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           methods
             m @12
               reference: <testLibraryFragment>::@class::C::@method::m
@@ -320,6 +328,7 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
 ''');
   }

@@ -107,8 +107,7 @@ extension AstNodeNullableExtension on AstNode? {
       if (node is Identifier) {
         return node.element;
       } else if (node is PropertyAccess) {
-        // TODO(pq): implement.
-        return null;
+        return node.propertyName.element;
       }
     }
     return null;
@@ -372,6 +371,12 @@ extension ElementExtension on Element {
 }
 
 extension ElementExtension2 on Element2? {
+  Element2? get canonicalElement2 => switch (this) {
+        GetterElement(:var variable3) => variable3,
+        SetterElement(:var variable3) => variable3,
+        _ => this,
+      };
+
   bool get isDartCorePrint {
     var self = this;
     return self is TopLevelFunctionElement &&
@@ -540,22 +545,41 @@ extension InhertanceManager3Extension on InheritanceManager3 {
   /// Returns the class member that is overridden by [member], if there is one,
   /// as defined by [getInherited].
   ExecutableElement2? overriddenMember2(Element2? member) {
-    if (member == null) {
+    ExecutableElement2? executable;
+    switch (member) {
+      case FieldElement2():
+        executable = member.getter2;
+      case GetterElement():
+        executable = member;
+      case MethodElement2():
+        executable = member;
+      case SetterElement():
+        executable = member;
+    }
+
+    if (executable == null) {
       return null;
     }
 
-    var interfaceElement = member.thisOrAncestorOfType2<InterfaceElement2>();
-    if (interfaceElement == null) {
-      return null;
-    }
-    var name = member.name3;
-    if (name == null) {
+    var interfaceElement = executable.enclosingElement2;
+    if (interfaceElement is! InterfaceElement2) {
       return null;
     }
 
-    var libraryUri = interfaceElement.library2.firstFragment.source.uri;
-    return getInherited3(interfaceElement.thisType, Name(libraryUri, name));
+    var nameObj = Name.forElement(executable);
+    if (nameObj == null) {
+      return null;
+    }
+
+    return getInherited3(interfaceElement.thisType, nameObj);
   }
+}
+
+extension InterfaceElement2Extension on InterfaceElement2 {
+  /// Whether this element has the exact [name] and defined in the file with
+  /// the given [uri].
+  bool isExactly(String name, Uri uri) =>
+      name3 == name && enclosingElement2.uri == uri;
 }
 
 extension InterfaceTypeExtension on InterfaceType {
@@ -590,10 +614,6 @@ extension InterfaceTypeExtension on InterfaceType {
 
   SetterElement? getSetter2(String name) =>
       setters.firstWhereOrNull((s) => s.canonicalName == name);
-}
-
-extension LibraryElementExtension2 on LibraryElement2? {
-  Uri? get uri => this?.library2.firstFragment.source.uri;
 }
 
 extension LinterContextExtension on LinterContext {

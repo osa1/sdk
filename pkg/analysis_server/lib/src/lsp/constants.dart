@@ -148,9 +148,13 @@ abstract final class CustomMethods {
     'dart/textDocument/publishFlutterOutline',
   );
   static const super_ = Method('dart/textDocument/super');
+  static const imports = Method('dart/textDocument/imports');
   static const dartTextDocumentContent = Method('dart/textDocumentContent');
   static const dartTextDocumentContentDidChange = Method(
     'dart/textDocumentContentDidChange',
+  );
+  static const dartTextDocumentEditableArguments = Method(
+    'experimental/dart/textDocument/editableArguments',
   );
 
   // TODO(dantup): Remove custom AnalyzerStatus status method soon as no clients
@@ -164,6 +168,10 @@ abstract final class CustomMethods {
   static const semanticTokenDynamicRegistration = Method(
     'textDocument/semanticTokens',
   );
+
+  /// An experimental 'echo' handler that can used by tests to verify
+  /// experimental handlers only show up when requested.
+  static const experimentalEcho = Method('experimental/echo');
 }
 
 abstract final class CustomSemanticTokenModifiers {

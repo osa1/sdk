@@ -2698,6 +2698,7 @@ review
 revise
 revision
 revisit
+rewind
 rewrite
 rewriter
 rewriting
@@ -2832,6 +2833,7 @@ shorted
 shorten
 shortened
 shorter
+shorthands
 shorting
 shorts
 should

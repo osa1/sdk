@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.type_builder;
-
 import 'package:kernel/ast.dart'
     show DartType, Nullability, Supertype, TreeNode, Variance;
 import 'package:kernel/class_hierarchy.dart';
@@ -653,11 +651,9 @@ class SyntheticTypeName implements TypeName {
   String get fullName => name;
 
   @override
-  // Coverage-ignore(suite): Not run.
   int get fullNameOffset => nameOffset;
 
   @override
-  // Coverage-ignore(suite): Not run.
   int get fullNameLength => noLength;
 }
 

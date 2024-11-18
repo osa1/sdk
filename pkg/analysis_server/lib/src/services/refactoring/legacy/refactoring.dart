@@ -27,11 +27,13 @@ import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/syntactic_entity.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/file_system/file_system.dart';
 import 'package:analyzer/src/dart/analysis/driver.dart';
 import 'package:analyzer/src/dart/analysis/index.dart';
 import 'package:analyzer/src/dart/analysis/session_helper.dart';
 import 'package:analyzer/src/utilities/cancellation.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:analyzer_plugin/protocol/protocol_common.dart'
     show RefactoringMethodParameter, SourceChange;
 
@@ -42,9 +44,13 @@ abstract class ConvertGetterToMethodRefactoring implements Refactoring {
   factory ConvertGetterToMethodRefactoring(
     RefactoringWorkspace workspace,
     AnalysisSession session,
-    PropertyAccessorElement element,
+    GetterElement element,
   ) {
-    return ConvertGetterToMethodRefactoringImpl(workspace, session, element);
+    return ConvertGetterToMethodRefactoringImpl(
+      workspace,
+      session,
+      element.asElement as PropertyAccessorElement,
+    );
   }
 
   /// Return `true` if refactoring is available, possibly without checking all
@@ -65,9 +71,13 @@ abstract class ConvertMethodToGetterRefactoring implements Refactoring {
   factory ConvertMethodToGetterRefactoring(
     RefactoringWorkspace workspace,
     AnalysisSession session,
-    ExecutableElement element,
+    ExecutableElement2 element,
   ) {
-    return ConvertMethodToGetterRefactoringImpl(workspace, session, element);
+    return ConvertMethodToGetterRefactoringImpl(
+      workspace,
+      session,
+      element.asElement,
+    );
   }
 
   /// Return `true` if refactoring is available, possibly without checking all
@@ -610,4 +620,8 @@ class RenameRefactoringElement {
   final int length;
 
   RenameRefactoringElement(this.element, this.offset, this.length);
+
+  Element2 get element2 {
+    return element.asElement2!;
+  }
 }

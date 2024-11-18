@@ -46,6 +46,9 @@ extension Element2Extension on Element2 {
     if (this is Annotatable && (this as Annotatable).metadata2.hasDeprecated) {
       return true;
     }
+    if (this is FormalParameterElement) {
+      return false;
+    }
     var ancestor = enclosingElement2;
     if (ancestor is InterfaceElement2) {
       if (ancestor.metadata2.hasDeprecated) {
@@ -94,6 +97,13 @@ extension ElementExtension on Element {
 }
 
 extension LibraryElementExtensions on LibraryElement {
+  /// Return all extensions exported from this library.
+  Iterable<ExtensionElement> get exportedExtensions {
+    return exportNamespace.definedNames.values.whereType();
+  }
+}
+
+extension LibraryElementExtensions2 on LibraryElement2 {
   /// Return all extensions exported from this library.
   Iterable<ExtensionElement> get exportedExtensions {
     return exportNamespace.definedNames.values.whereType();

@@ -59,6 +59,27 @@ static void CheckRangeForRepresentation(const Assert& assert,
   } while (false)
 #endif
 
+static RangeBoundary::RangeSize RepresentationToRangeSize(Representation r) {
+  switch (r) {
+    case kTagged:
+      return RangeBoundary::kRangeBoundarySmi;
+    case kUnboxedInt8:
+      return RangeBoundary::kRangeBoundaryInt8;
+    case kUnboxedInt16:
+    case kUnboxedUint8:  // Overapproximate Uint8 as Int16.
+      return RangeBoundary::kRangeBoundaryInt16;
+    case kUnboxedInt32:
+    case kUnboxedUint16:  // Overapproximate Uint16 as Int32.
+      return RangeBoundary::kRangeBoundaryInt32;
+    case kUnboxedInt64:
+    case kUnboxedUint32:  // Overapproximate Uint32 as Int64.
+      return RangeBoundary::kRangeBoundaryInt64;
+    default:
+      UNREACHABLE();
+      return RangeBoundary::kRangeBoundarySmi;
+  }
+}
+
 void RangeAnalysis::Analyze() {
   CollectValues();
   InsertConstraints();
@@ -67,7 +88,7 @@ void RangeAnalysis::Analyze() {
   EliminateRedundantBoundsChecks();
   MarkUnreachableBlocks();
 
-  NarrowMintToInt32();
+  NarrowInt64OperationsToInt32();
 
   IntegerInstructionSelector iis(flow_graph_);
   iis.Select();
@@ -129,14 +150,27 @@ void RangeAnalysis::CollectValues() {
           values_.Add(defn);
           if (defn->IsBinaryInt64Op()) {
             binary_int64_ops_.Add(defn->AsBinaryInt64Op());
-          } else if (defn->IsShiftInt64Op() ||
-                     defn->IsSpeculativeShiftInt64Op()) {
+          } else if (defn->IsShiftInt64Op()) {
             shift_int64_ops_.Add(defn->AsShiftIntegerOp());
           }
         }
       }
       if (auto check = current->AsCheckBoundBase()) {
         bounds_checks_.Add(check);
+      }
+      ComparisonInstr* comparison = nullptr;
+      if (auto branch = current->AsBranch()) {
+        comparison = branch->condition()->AsComparison();
+      } else if (auto if_then_else = current->AsIfThenElse()) {
+        comparison = if_then_else->condition()->AsComparison();
+      } else if (auto check_condition = current->AsCheckCondition()) {
+        comparison = check_condition->condition()->AsComparison();
+      } else {
+        comparison = current->AsComparison();
+      }
+      if ((comparison != nullptr) &&
+          (comparison->input_representation() == kUnboxedInt64)) {
+        int64_comparisons_.Add(comparison);
       }
     }
   }
@@ -204,8 +238,7 @@ ConstraintInstr* RangeAnalysis::InsertConstraintFor(Value* use,
 bool RangeAnalysis::ConstrainValueAfterBranch(Value* use, Definition* defn) {
   BranchInstr* branch = use->instruction()->AsBranch();
   RelationalOpInstr* rel_op = branch->condition()->AsRelationalOp();
-  if ((rel_op != nullptr) && ((rel_op->operation_cid() == kSmiCid) ||
-                              (rel_op->operation_cid() == kMintCid))) {
+  if ((rel_op != nullptr) && !rel_op->IsFloatingPoint()) {
     // Found comparison of two integers. Constrain defn at true and false
     // successors using the other operand as a boundary.
     Definition* boundary;
@@ -221,15 +254,16 @@ bool RangeAnalysis::ConstrainValueAfterBranch(Value* use, Definition* defn) {
       op_kind = Token::FlipComparison(rel_op->kind());
     }
     RangeBoundary::RangeSize size;
-    if (rel_op->operation_cid() == kSmiCid) {
+    if (rel_op->input_representation() == kTagged) {
       size = RangeBoundary::kRangeBoundarySmi;
     } else {
-      ASSERT(rel_op->operation_cid() == kMintCid);
+      ASSERT(RepresentationUtils::IsUnboxedInteger(
+          rel_op->input_representation()));
       // Can only create symbolic boundaries based on Smi values.
       if (!Definition::IsLengthLoad(boundary)) {
         return false;
       }
-      size = RangeBoundary::kRangeBoundaryInt64;
+      size = RepresentationToRangeSize(rel_op->input_representation());
     }
 
     // Constrain definition at the true successor.
@@ -1452,14 +1486,29 @@ static void NarrowShiftInt64Op(ShiftIntegerOpInstr* int64_op) {
   }
 }
 
-void RangeAnalysis::NarrowMintToInt32() {
+#if defined(TARGET_ARCH_IS_32_BIT)
+static void NarrowInt64ComparisonInstr(ComparisonInstr* int64_op) {
+  if (RangeUtils::Fits(int64_op->left()->definition()->range(),
+                       RangeBoundary::kRangeBoundaryInt32) &&
+      RangeUtils::Fits(int64_op->right()->definition()->range(),
+                       RangeBoundary::kRangeBoundaryInt32)) {
+    int64_op->set_input_representation(kUnboxedInt32);
+  }
+}
+#endif
+
+void RangeAnalysis::NarrowInt64OperationsToInt32() {
   for (intptr_t i = 0; i < binary_int64_ops_.length(); i++) {
     NarrowBinaryInt64Op(binary_int64_ops_[i]);
   }
-
   for (intptr_t i = 0; i < shift_int64_ops_.length(); i++) {
     NarrowShiftInt64Op(shift_int64_ops_[i]);
   }
+#if defined(TARGET_ARCH_IS_32_BIT)
+  for (intptr_t i = 0; i < int64_comparisons_.length(); i++) {
+    NarrowInt64ComparisonInstr(int64_comparisons_[i]);
+  }
+#endif
 }
 
 IntegerInstructionSelector::IntegerInstructionSelector(FlowGraph* flow_graph)
@@ -1477,6 +1526,7 @@ void IntegerInstructionSelector::Select() {
   FindPotentialUint32Definitions();
   FindUint32NarrowingDefinitions();
   Propagate();
+  NarrowUint32Uses();
   ReplaceInstructions();
   if (FLAG_support_il_printer && FLAG_trace_integer_ir_selection) {
     THR_Print("---- after integer ir selection -------\n");
@@ -1490,7 +1540,6 @@ bool IntegerInstructionSelector::IsPotentialUint32Definition(Definition* def) {
   // & untagged of intermediate results.
   // TODO(johnmccutchan): Consider phis.
   return def->IsBoxInt64() || def->IsUnboxInt64() || def->IsShiftInt64Op() ||
-         def->IsSpeculativeShiftInt64Op() ||
          (def->IsBinaryInt64Op() && BinaryUint32OpInstr::IsSupported(
                                         def->AsBinaryInt64Op()->op_kind())) ||
          (def->IsUnaryInt64Op() &&
@@ -1587,7 +1636,7 @@ bool IntegerInstructionSelector::CanBecomeUint32(Definition* def) {
   }
   // A right shift with an input outside of Uint32 range cannot be converted
   // because we need the high bits.
-  if (def->IsShiftInt64Op() || def->IsSpeculativeShiftInt64Op()) {
+  if (def->IsShiftInt64Op()) {
     ShiftIntegerOpInstr* op = def->AsShiftIntegerOp();
     if ((op->op_kind() == Token::kSHR) || (op->op_kind() == Token::kUSHR)) {
       Definition* shift_input = op->left()->definition();
@@ -1673,6 +1722,45 @@ Definition* IntegerInstructionSelector::ConstructReplacementFor(
   }
   UNREACHABLE();
   return nullptr;
+}
+
+bool IntegerInstructionSelector::IsUint32Use(Value* use) {
+  Definition* defn = use->definition();
+  if (selected_uint32_defs_->Contains(defn->ssa_temp_index())) {
+    return true;
+  }
+  if (use->BindsToConstant() && use->BoundConstant().IsInteger()) {
+    const int64_t value = Integer::Cast(use->BoundConstant()).Value();
+    return (value >= 0) && (value <= kMaxUint32);
+  }
+  return false;
+}
+
+void IntegerInstructionSelector::NarrowUint32Uses() {
+  for (intptr_t i = 0; i < potential_uint32_defs_.length(); i++) {
+    Definition* defn = potential_uint32_defs_[i];
+    if (!selected_uint32_defs_->Contains(defn->ssa_temp_index())) {
+      continue;
+    }
+
+    for (Value::Iterator it(defn->input_use_list()); !it.Done(); it.Advance()) {
+      Instruction* instr = it.Current()->instruction();
+      // Convert Int64/Int32 comparisons to Uint32 if
+      // both operands are either converted to Uint32 or constants.
+      ComparisonInstr* comparison = nullptr;
+      if (auto branch = instr->AsBranch()) {
+        comparison = branch->condition()->AsComparison();
+      } else {
+        comparison = instr->AsComparison();
+      }
+      if ((comparison != nullptr) &&
+          ((comparison->input_representation() == kUnboxedInt64) ||
+           (comparison->input_representation() == kUnboxedInt32)) &&
+          IsUint32Use(comparison->left()) && IsUint32Use(comparison->right())) {
+        comparison->set_input_representation(kUnboxedUint32);
+      }
+    }
+  }
 }
 
 void IntegerInstructionSelector::ReplaceInstructions() {
@@ -2100,27 +2188,6 @@ RangeBoundary RangeBoundary::IntersectionMax(RangeBoundary a, RangeBoundary b) {
 int64_t RangeBoundary::ConstantValue() const {
   ASSERT(IsConstant());
   return value_;
-}
-
-static RangeBoundary::RangeSize RepresentationToRangeSize(Representation r) {
-  switch (r) {
-    case kTagged:
-      return RangeBoundary::kRangeBoundarySmi;
-    case kUnboxedInt8:
-      return RangeBoundary::kRangeBoundaryInt8;
-    case kUnboxedInt16:
-    case kUnboxedUint8:  // Overapproximate Uint8 as Int16.
-      return RangeBoundary::kRangeBoundaryInt16;
-    case kUnboxedInt32:
-    case kUnboxedUint16:  // Overapproximate Uint16 as Int32.
-      return RangeBoundary::kRangeBoundaryInt32;
-    case kUnboxedInt64:
-    case kUnboxedUint32:  // Overapproximate Uint32 as Int64.
-      return RangeBoundary::kRangeBoundaryInt64;
-    default:
-      UNREACHABLE();
-      return RangeBoundary::kRangeBoundarySmi;
-  }
 }
 
 Range Range::Full(Representation rep) {

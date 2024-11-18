@@ -459,7 +459,10 @@ class TypeSystemOperations
   @override
   TypeClassification classifyType(SharedTypeView<DartType> type) {
     DartType unwrapped = type.unwrapTypeView();
-    if (isSubtypeOfInternal(unwrapped, typeSystem.typeProvider.objectType)) {
+    if (type is InvalidType) {
+      return TypeClassification.potentiallyNullable;
+    } else if (isSubtypeOfInternal(
+        unwrapped, typeSystem.typeProvider.objectType)) {
       return TypeClassification.nonNullable;
     } else if (isSubtypeOfInternal(
         unwrapped, typeSystem.typeProvider.nullType)) {
@@ -520,7 +523,6 @@ class TypeSystemOperations
   @override
   DartType greatestClosureOfTypeInternal(DartType type,
       List<SharedTypeParameterStructure<DartType>> typeParametersToEliminate) {
-    typeParametersToEliminate.first;
     return typeSystem.greatestClosure(
         type, typeParametersToEliminate.cast<TypeParameterElement>());
   }
@@ -542,6 +544,12 @@ class TypeSystemOperations
   bool isDartCoreFunction(SharedTypeView<DartType> type) {
     return type.nullabilitySuffix == NullabilitySuffix.none &&
         type.unwrapTypeView().isDartCoreFunction;
+  }
+
+  @override
+  bool isDartCoreRecord(SharedTypeView<DartType> type) {
+    return type.nullabilitySuffix == NullabilitySuffix.none &&
+        type.unwrapTypeView().isDartCoreRecord;
   }
 
   @override
@@ -571,13 +579,18 @@ class TypeSystemOperations
   }
 
   @override
-  bool isNonNullable(SharedTypeSchemaView<DartType> typeSchema) {
-    return typeSystem.isNonNullable(typeSchema.unwrapTypeSchemaView());
+  bool isNonNullableInternal(DartType type) {
+    return typeSystem.isNonNullable(type);
   }
 
   @override
   bool isNull(SharedTypeView<DartType> type) {
     return type.unwrapTypeView().isDartCoreNull;
+  }
+
+  @override
+  bool isNullableInternal(DartType type) {
+    return typeSystem.isNullable(type);
   }
 
   @override
@@ -622,6 +635,13 @@ class TypeSystemOperations
       SharedTypeSchemaView<DartType> elementTypeSchema) {
     return SharedTypeSchemaView(typeSystem.typeProvider
         .iterableType(elementTypeSchema.unwrapTypeSchemaView()));
+  }
+
+  @override
+  DartType leastClosureOfTypeInternal(DartType type,
+      List<SharedTypeParameterStructure<DartType>> typeParametersToEliminate) {
+    return typeSystem.leastClosure(
+        type, typeParametersToEliminate.cast<TypeParameterElement>());
   }
 
   @override
@@ -719,6 +739,16 @@ class TypeSystemOperations
           typeDeclarationType: interfaceType,
           typeDeclaration: interfaceType.element,
           typeArguments: interfaceType.typeArguments);
+    } else {
+      return null;
+    }
+  }
+
+  @override
+  DartType? matchTypeParameterBoundInternal(DartType type) {
+    if (type is TypeParameterTypeImpl &&
+        type.nullabilitySuffix == NullabilitySuffix.none) {
+      return type.promotedBound ?? type.element.bound;
     } else {
       return null;
     }

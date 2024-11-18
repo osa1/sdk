@@ -21,8 +21,7 @@ class FindElement2 extends _FindElementBase {
     LibraryExport? result;
 
     for (var export in libraryFragment.libraryExports2) {
-      var exportedUri =
-          export.exportedLibrary2?.firstFragment.source.uri.toString();
+      var exportedUri = export.exportedLibrary2?.uri.toString();
       if (exportedUri == targetUri) {
         if (result != null) {
           throw StateError('Not unique: $targetUri');
@@ -55,8 +54,7 @@ class FindElement2 extends _FindElementBase {
 
     for (var libraryFragment in libraryFragment.withEnclosing2) {
       for (var import in libraryFragment.libraryImports2) {
-        var importedUri =
-            import.importedLibrary2?.firstFragment.source.uri.toString();
+        var importedUri = import.importedLibrary2?.uri.toString();
         if (importedUri == targetUri) {
           if (importElement == null) {
             importElement = import;
@@ -211,7 +209,7 @@ class FindElement2 extends _FindElementBase {
     unit.accept(
       FunctionAstVisitor(functionExpression: (node, local) {
         if (local) {
-          var functionElement = node.declaredElement2!;
+          var functionElement = node.declaredFragment!.element;
           findIn(functionElement.formalParameters);
         }
       }),
@@ -226,7 +224,7 @@ class FindElement2 extends _FindElementBase {
   LibraryFragment part(String targetUri) {
     LibraryFragment? result;
 
-    for (var partElement in libraryFragment.fragmentIncludes) {
+    for (var partElement in libraryFragment.partIncludes) {
       var uri = partElement.uri;
       if (uri is DirectiveUriWithUnit) {
         var unitElement = uri.libraryFragment;

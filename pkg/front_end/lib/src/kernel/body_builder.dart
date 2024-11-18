@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.body_builder;
-
 import 'package:_fe_analyzer_shared/src/messages/severity.dart' show Severity;
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show
@@ -694,11 +692,27 @@ class BodyBuilder extends StackListenerImpl
             <Statement>[]);
   }
 
-  Statement? popStatementIfNotNull(Object? value) {
-    return value == null ? null : popStatement();
+  Statement? popStatementIfNotNull(Token? token) {
+    return token == null ? null : popStatement(token);
   }
 
-  Statement popStatement() => forest.wrapVariables(pop() as Statement);
+  Statement popStatement(Token token) {
+    Object? element = pop();
+    if (element is Statement) {
+      return forest.wrapVariables(element);
+    } else if (element is ParserRecovery) {
+      return new Block(<Statement>[
+        forest.createExpressionStatement(
+            element.charOffset,
+            new ParserErrorGenerator(this, token, fasta.messageSyntheticToken)
+                .buildProblem())
+      ])
+        ..fileOffset = element.charOffset;
+    } else {
+      unhandled("expected statement is ${element.runtimeType}", "popStatement",
+          token.charOffset, uri);
+    }
+  }
 
   Statement? popNullableStatement() {
     Statement? statement = pop(NullValues.Block) as Statement?;
@@ -856,9 +870,10 @@ class BodyBuilder extends StackListenerImpl
             new Name(identifier.name, libraryBuilder.nameOrigin),
             unresolvedReadKind: UnresolvedKind.Unknown);
       }
-      if (name?.isNotEmpty ?? false) {
+
+      if ((name?.isNotEmpty ?? false) && expression is Generator) {
         Token period = periodBeforeName ?? beginToken.next!.next!;
-        Generator generator = expression as Generator;
+        Generator generator = expression;
         expression = generator.buildSelectorAccess(
             new PropertySelector(
                 this, period.next!, new Name(name!, libraryBuilder.nameOrigin)),
@@ -2519,8 +2534,8 @@ class BodyBuilder extends StackListenerImpl
         ValueKinds.ProblemBuilder,
       ]),
     ]));
-    bool isAnd = token.isA2(TokenType.AMPERSAND_AMPERSAND);
-    if (isAnd || token.isA2(TokenType.BAR_BAR)) {
+    bool isAnd = token.isA(TokenType.AMPERSAND_AMPERSAND);
+    if (isAnd || token.isA(TokenType.BAR_BAR)) {
       Expression lhs = popForValue();
       // This is matched by the call to [endNode] in
       // [doLogicalExpression].
@@ -2549,16 +2564,16 @@ class BodyBuilder extends StackListenerImpl
       ]),
     ]));
     debugEvent("BinaryExpression");
-    if (token.isA2(TokenType.PERIOD) ||
-        token.isA2(TokenType.PERIOD_PERIOD) ||
-        token.isA2(TokenType.QUESTION_PERIOD_PERIOD)) {
+    if (token.isA(TokenType.PERIOD) ||
+        token.isA(TokenType.PERIOD_PERIOD) ||
+        token.isA(TokenType.QUESTION_PERIOD_PERIOD)) {
       doDotOrCascadeExpression(token);
-    } else if (token.isA2(TokenType.AMPERSAND_AMPERSAND) ||
-        token.isA2(TokenType.BAR_BAR)) {
+    } else if (token.isA(TokenType.AMPERSAND_AMPERSAND) ||
+        token.isA(TokenType.BAR_BAR)) {
       doLogicalExpression(token);
-    } else if (token.isA2(TokenType.QUESTION_QUESTION)) {
+    } else if (token.isA(TokenType.QUESTION_QUESTION)) {
       doIfNull(token);
-    } else if (token.isA2(TokenType.QUESTION_PERIOD)) {
+    } else if (token.isA(TokenType.QUESTION_PERIOD)) {
       doIfNotNull(token);
     } else {
       doBinaryExpression(token);
@@ -3284,11 +3299,15 @@ class BodyBuilder extends StackListenerImpl
       return new ThisPropertyAccessGenerator(this, nameToken, n,
           thisVariable: inConstructorInitializer ? null : thisVariable);
     } else if (declaration.isExtensionInstanceMember) {
+      // TODO(johnniwinther): Better check for constantContext like below/above?
+      if (constantContext != ConstantContext.none && thisVariable == null) {
+        return new IncompleteErrorGenerator(
+            this, nameToken, fasta.messageNotAConstantExpression);
+      }
       ExtensionBuilder extensionBuilder =
           declaration.parent as ExtensionBuilder;
       MemberBuilder? setterBuilder =
           _getCorrespondingSetterBuilder(scope, declaration, name, nameOffset);
-      // TODO(johnniwinther): Check for constantContext like below?
       if (declaration.isField) {
         declaration = null;
       }
@@ -3666,15 +3685,17 @@ class BodyBuilder extends StackListenerImpl
   @override
   void endIfStatement(Token ifToken, Token? elseToken, Token endToken) {
     assert(checkState(ifToken, [
-      /* else = */ if (elseToken != null) ValueKinds.Statement,
+      /* else = */ if (elseToken != null)
+        unionOfKinds([ValueKinds.Statement, ValueKinds.ParserRecovery]),
       ValueKinds.AssignedVariablesNodeInfo,
-      /* then = */ ValueKinds.Statement,
+      /* then = */ unionOfKinds(
+          [ValueKinds.Statement, ValueKinds.ParserRecovery]),
       /* condition = */ ValueKinds.Condition,
     ]));
     Statement? elsePart = popStatementIfNotNull(elseToken);
     AssignedVariablesNodeInfo assignedVariablesInfo =
         pop() as AssignedVariablesNodeInfo;
-    Statement thenPart = popStatement();
+    Statement thenPart = popStatement(ifToken);
     Condition condition = pop() as Condition;
     PatternGuard? patternGuard = condition.patternGuard;
     Expression expression = condition.expression;
@@ -4179,7 +4200,7 @@ class BodyBuilder extends StackListenerImpl
       /* condition = */ ValueKinds.Statement,
     ]));
     List<Expression> updates = popListForEffect(updateExpressionCount);
-    Statement conditionStatement = popStatement(); // condition
+    Statement conditionStatement = popStatement(forToken); // condition
 
     if (constantContext != ConstantContext.none) {
       pop(); // Pop variable or expression.
@@ -4258,14 +4279,15 @@ class BodyBuilder extends StackListenerImpl
   @override
   void endForStatement(Token endToken) {
     assert(checkState(endToken, <ValueKind>[
-      /* body */ ValueKinds.Statement,
+      /* body */ unionOfKinds(
+          [ValueKinds.Statement, ValueKinds.ParserRecovery]),
       /* expression count */ ValueKinds.Integer,
       /* left separator */ ValueKinds.Token,
       /* left parenthesis */ ValueKinds.Token,
       /* for keyword */ ValueKinds.Token,
     ]));
     debugEvent("ForStatement");
-    Statement body = popStatement();
+    Statement body = popStatement(endToken);
 
     int updateExpressionCount = pop() as int;
     pop(); // Left separator.
@@ -4288,7 +4310,7 @@ class BodyBuilder extends StackListenerImpl
     ]));
 
     List<Expression> updates = popListForEffect(updateExpressionCount);
-    Statement conditionStatement = popStatement();
+    Statement conditionStatement = popStatement(forKeyword);
     // This is matched by the call to [beginNode] in
     // [handleForInitializerEmptyStatement],
     // [handleForInitializerPatternVariableAssignment],
@@ -5761,7 +5783,7 @@ class BodyBuilder extends StackListenerImpl
         }
       }
     }
-    Statement tryBlock = popStatement();
+    Statement tryBlock = popStatement(tryKeyword);
     int fileOffset = offsetForToken(tryKeyword);
     Statement result = forest.createTryStatement(
         fileOffset, tryBlock, catchBlocks, finallyBlock);
@@ -5825,9 +5847,11 @@ class BodyBuilder extends StackListenerImpl
       Name name = new Name(operator);
       if (receiver is Generator) {
         push(receiver.buildUnaryOperation(token, name));
+      } else if (receiver is Expression) {
+        push(forest.createUnary(fileOffset, name, receiver));
       } else {
-        assert(receiver is Expression);
-        push(forest.createUnary(fileOffset, name, receiver as Expression));
+        Expression value = toValue(receiver);
+        push(forest.createUnary(fileOffset, name, value));
       }
     }
   }
@@ -7322,7 +7346,7 @@ class BodyBuilder extends StackListenerImpl
   }
 
   void pushNamedFunction(Token token, bool isFunctionExpression) {
-    Statement body = popStatement();
+    Statement body = popStatement(token);
     AsyncMarker asyncModifier = pop() as AsyncMarker;
     exitLocalScope();
     FormalParameters formals = pop() as FormalParameters;
@@ -7477,7 +7501,7 @@ class BodyBuilder extends StackListenerImpl
     assert(condition.patternGuard == null,
         "Unexpected pattern in do statement: ${condition.patternGuard}.");
     Expression expression = condition.expression;
-    Statement body = popStatement();
+    Statement body = popStatement(doKeyword);
     JumpTarget continueTarget = exitContinueTarget()!;
     JumpTarget breakTarget = exitBreakTarget()!;
     List<BreakStatementImpl>? continueStatements;
@@ -7713,7 +7737,8 @@ class BodyBuilder extends StackListenerImpl
   void endForIn(Token endToken) {
     debugEvent("ForIn");
     assert(checkState(endToken, [
-      /* body= */ ValueKinds.Statement,
+      /* body= */ unionOfKinds(
+          [ValueKinds.Statement, ValueKinds.ParserRecovery]),
       /* inKeyword = */ ValueKinds.Token,
       /* forToken = */ ValueKinds.Token,
       /* awaitToken = */ ValueKinds.AwaitTokenOrNull,
@@ -7730,7 +7755,7 @@ class BodyBuilder extends StackListenerImpl
         ValueKinds.Statement,
       ]),
     ]));
-    Statement body = popStatement();
+    Statement body = popStatement(endToken);
 
     Token inKeyword = pop() as Token;
     Token forToken = pop() as Token;
@@ -7893,12 +7918,13 @@ class BodyBuilder extends StackListenerImpl
   void endWhileStatement(Token whileKeyword, Token endToken) {
     debugEvent("WhileStatement");
     assert(checkState(whileKeyword, [
-      /* body = */ ValueKinds.Statement,
+      /* body = */ unionOfKinds(
+          [ValueKinds.Statement, ValueKinds.ParserRecovery]),
       /* condition = */ ValueKinds.Condition,
       /* continue target = */ ValueKinds.ContinueTarget,
       /* break target = */ ValueKinds.BreakTarget,
     ]));
-    Statement body = popStatement();
+    Statement body = popStatement(whileKeyword);
     Condition condition = pop() as Condition;
     assert(condition.patternGuard == null,
         "Unexpected pattern in while statement: ${condition.patternGuard}.");

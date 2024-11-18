@@ -26,7 +26,6 @@ import 'package:analyzer/src/dart/analysis/byte_store.dart';
 import 'package:analyzer/src/dart/analysis/file_content_cache.dart';
 import 'package:analyzer/src/dart/analysis/session.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
-import 'package:analyzer/src/lint/analysis_rule_timers.dart';
 import 'package:analyzer/src/lint/linter.dart';
 import 'package:analyzer/src/lint/linter_visitor.dart';
 import 'package:analyzer/src/lint/registry.dart';
@@ -63,6 +62,9 @@ class PluginServer {
 
   String? _sdkPath;
 
+  /// Paths of priority files.
+  Set<String> _priorityPaths = {};
+
   final List<Plugin> _plugins;
 
   final _registry = PluginRegistryImpl();
@@ -81,6 +83,16 @@ class PluginServer {
     for (var plugin in plugins) {
       plugin.register(_registry);
     }
+  }
+
+  /// Handles an 'analysis.setPriorityFiles' request.
+  ///
+  /// Throws a [RequestFailure] if the request could not be handled.
+  Future<protocol.AnalysisSetPriorityFilesResult>
+      handleAnalysisSetPriorityFiles(
+          protocol.AnalysisSetPriorityFilesParams parameters) async {
+    _priorityPaths = parameters.files.toSet();
+    return protocol.AnalysisSetPriorityFilesResult();
   }
 
   /// Handles an 'edit.getFixes' request.
@@ -167,7 +179,7 @@ class PluginServer {
     _channel = channel;
     _channel.listen(_handleRequestZoned,
         // TODO(srawlins): Implement.
-        onError: () {},
+        onError: (_) {},
         // TODO(srawlins): Implement.
         onDone: () {});
   }
@@ -186,23 +198,43 @@ class PluginServer {
     });
   }
 
+  Future<void> _analyzeFile({
+    required AnalysisContext analysisContext,
+    required String path,
+  }) async {
+    var file = _resourceProvider.getFile(path);
+    var analysisOptions = analysisContext.getAnalysisOptionsForFile(file);
+    var lints = await _computeLints(
+      analysisContext,
+      path,
+      analysisOptions: analysisOptions as AnalysisOptionsImpl,
+    );
+    _channel.sendNotification(
+        protocol.AnalysisErrorsParams(path, lints).toNotification());
+  }
+
   /// Analyzes the files at the given [paths].
   Future<void> _analyzeFiles({
     required AnalysisContext analysisContext,
     required List<String> paths,
   }) async {
-    // TODO(srawlins): Implement "priority files" and analyze them first.
-    // TODO(srawlins): Analyze libraries instead of files, for efficiency.
-    for (var path in paths.toSet()) {
-      var file = _resourceProvider.getFile(path);
-      var analysisOptions = analysisContext.getAnalysisOptionsForFile(file);
-      var lints = await _computeLints(
-        analysisContext,
-        path,
-        analysisOptions: analysisOptions as AnalysisOptionsImpl,
+    var pathSet = paths.toSet();
+
+    // First analyze priority files.
+    for (var path in _priorityPaths) {
+      pathSet.remove(path);
+      await _analyzeFile(
+        analysisContext: analysisContext,
+        path: path,
       );
-      _channel.sendNotification(
-          protocol.AnalysisErrorsParams(path, lints).toNotification());
+    }
+
+    // Then analyze the remaining files.
+    for (var path in pathSet) {
+      await _analyzeFile(
+        analysisContext: analysisContext,
+        path: path,
+      );
     }
   }
 
@@ -240,8 +272,9 @@ class PluginServer {
         ),
     ];
 
-    var enableTiming = analysisOptions.enableTiming;
-    var nodeRegistry = NodeLintRegistry(enableTiming);
+    // TODO(srawlins): Enable timing similar to what the linter package's
+    // `benchhmark.dart` script does.
+    var nodeRegistry = NodeLintRegistry(enableTiming: false);
 
     var context = LinterContextWithResolvedResults(
       allUnits,
@@ -261,14 +294,14 @@ class PluginServer {
           Registry.ruleRegistry.enabled(configuration.diagnosticConfigs);
       for (var rule in rules) {
         rule.reporter = errorReporter;
-        var timer = enableTiming ? analysisRuleTimers.getTimer(rule) : null;
-        timer?.start();
+        // TODO(srawlins): Enable timing similar to what the linter package's
+        // `benchhmark.dart` script does.
         rule.registerNodeProcessors(nodeRegistry, context);
-        timer?.stop();
       }
     }
 
-    currentUnit.unit.accept(AnalysisRuleVisitor(nodeRegistry));
+    currentUnit.unit.accept(
+        AnalysisRuleVisitor(nodeRegistry, shouldPropagateExceptions: true));
     // The list of the `AnalysisError`s and their associated
     // `protocol.AnalysisError`s.
     var errorsAndProtocolErrors = [
@@ -294,12 +327,21 @@ class PluginServer {
     return errorsAndProtocolErrors.map((e) => e.protocolError).toList();
   }
 
-  /// Invokes [fn] for all analysis contexts.
+  /// Invokes [fn] first for priority analysis contexts, then for the rest.
   Future<void> _forAnalysisContexts(
     AnalysisContextCollection contextCollection,
     Future<void> Function(AnalysisContext analysisContext) fn,
   ) async {
+    var nonPriorityAnalysisContexts = <AnalysisContext>[];
     for (var analysisContext in contextCollection.contexts) {
+      if (_isPriorityAnalysisContext(analysisContext)) {
+        await fn(analysisContext);
+      } else {
+        nonPriorityAnalysisContexts.add(analysisContext);
+      }
+    }
+
+    for (var analysisContext in nonPriorityAnalysisContexts) {
       await fn(analysisContext);
     }
   }
@@ -494,6 +536,9 @@ class PluginServer {
       },
     );
   }
+
+  bool _isPriorityAnalysisContext(AnalysisContext analysisContext) =>
+      _priorityPaths.any(analysisContext.contextRoot.isAnalyzed);
 
   static protocol.Location _locationFor(
       CompilationUnit unit, String path, AnalysisError error) {

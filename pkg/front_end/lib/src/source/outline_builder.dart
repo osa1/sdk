@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.outline_builder;
-
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show
         Assert,
@@ -1110,11 +1108,14 @@ class OutlineBuilder extends StackListenerImpl {
         assert(checkState(token, [
           unionOfKinds([ValueKinds.ParserRecovery, ValueKinds.TypeBuilder])
         ]));
-
         Object? extensionThisType = peek();
-        // TODO(johnniwinther): Supply an invalid type as the extension on type.
-        _builderFactory.beginExtensionBody(
-            extensionThisType is TypeBuilder ? extensionThisType : null);
+        _builderFactory.beginExtensionBody(extensionThisType is TypeBuilder
+            ? extensionThisType
+            : new InvalidTypeBuilderImpl(
+                uri,
+                extensionThisType is ParserRecovery
+                    ? extensionThisType.charOffset
+                    : TreeNode.noOffset));
         break;
       case DeclarationKind.ExtensionType:
         declarationContext = DeclarationContext.ExtensionTypeBody;

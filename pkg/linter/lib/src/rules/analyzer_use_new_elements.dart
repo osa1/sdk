@@ -4,14 +4,13 @@
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/file_system/file_system.dart';
-import 'package:analyzer/src/dart/element/element.dart'; // ignore: implementation_imports
 import 'package:analyzer/src/dart/element/type_visitor.dart'; // ignore: implementation_imports
 
 import '../analyzer.dart';
+import '../extensions.dart';
 
 const _desc = r'Use new element model in opted-in files.';
 
@@ -20,17 +19,12 @@ bool _isOldModelElement(Element2? element) {
     return false;
   }
 
-  // Skip synthetic formal parameters.
-  if (element is FormalParameterElement && element.enclosingElement2 == null) {
-    return false;
-  }
-
   var firstFragment = element.firstFragment;
-  if (firstFragment == null) {
+  var libraryFragment = firstFragment.libraryFragment;
+  if (libraryFragment == null) {
     return false;
   }
 
-  var libraryFragment = firstFragment.libraryFragment;
   var uriStr = libraryFragment.source.uri.toString();
 
   if (element is InstanceElement2) {
@@ -61,6 +55,15 @@ bool _isOldModelElement(Element2? element) {
 }
 
 bool _isOldModelType(DartType? type) {
+  if (type is InterfaceType) {
+    if (type.element3.isExactly(
+        'FlowAnalysis',
+        Uri.parse(
+            'package:_fe_analyzer_shared/src/flow_analysis/flow_analysis.dart'))) {
+      return false;
+    }
+  }
+
   var visitor = _TypeVisitor();
   type?.accept(visitor);
   return visitor.result;
@@ -231,17 +234,5 @@ class _Visitor extends SimpleAstVisitor<void> {
     if (_isOldModelType(node.staticType)) {
       rule.reportLint(node);
     }
-  }
-}
-
-extension on Element2 {
-  Fragment? get firstFragment {
-    switch (this) {
-      case FragmentedElementMixin fragmented:
-        return fragmented.firstFragment;
-      case AugmentedInstanceElement fragmented:
-        return fragmented.firstFragment as Fragment;
-    }
-    return null;
   }
 }

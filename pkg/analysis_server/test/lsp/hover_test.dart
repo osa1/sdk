@@ -174,7 +174,7 @@ void f() {
 ''';
     var expected = '''
 ```dart
-MyEnum one
+MyEnum get one
 ```
 Type: `MyEnum`
 
@@ -209,7 +209,7 @@ class A {
 ''';
     var expected = '''
 ```dart
-int _
+int get _
 ```
 Type: `int`
 
@@ -415,6 +415,23 @@ print();
     /// This is a string.
     String [!a^bc!] = '';
     ''', contains('This is a string.'));
+
+  Future<void> test_method_mixin_onImplementation() async {
+    var content = '''
+abstract class A {
+  /// Documentation for [f].
+  void f();
+}
+
+abstract class B implements A {}
+
+mixin M on B {
+  @override
+  void [!f^!]() {}
+}
+''';
+    await assertStringContents(content, contains('Documentation for [f].'));
+  }
 
   Future<void> test_method_startOfParameterList() => assertStringContents('''
     class A {
@@ -729,7 +746,7 @@ final data = A<String?>().[!myF^ield!];
     var expectedHoverContent =
         '''
 ```dart
-T? myField
+String? get myField
 ```
 Type: `String?`
 
@@ -774,7 +791,7 @@ final data = A<String?>().[!myG^etter!];
     var expectedHoverContent =
         '''
 ```dart
-T? get myGetter
+String? get myGetter
 ```
 Type: `String?`
 
@@ -822,7 +839,7 @@ void f() {
     var expectedHoverContent =
         '''
 ```dart
-set mySetter(T value)
+set mySetter(String value)
 ```
 Type: `String`
 
@@ -914,7 +931,7 @@ int f() => [!^_!];
 ''';
     var expected = '''
 ```dart
-int _
+int get _
 ```
 Type: `int`
 

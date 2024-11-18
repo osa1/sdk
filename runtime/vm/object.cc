@@ -1039,7 +1039,8 @@ void Object::Init(IsolateGroup* isolate_group) {
   // at the start of the first entry.
   {
     const intptr_t array_size =
-        TypeArguments::Cache::kHeaderSize + TypeArguments::Cache::kEntrySize;
+        static_cast<intptr_t>(TypeArguments::Cache::kHeaderSize) +
+        static_cast<intptr_t>(TypeArguments::Cache::kEntrySize);
     uword address =
         heap->Allocate(thread, Array::InstanceSize(array_size), Heap::kOld);
     InitializeObjectVariant<Array>(address, kImmutableArrayCid, array_size);
@@ -18001,16 +18002,12 @@ void Code::set_num_variables(intptr_t num_variables) const {
 }
 #endif
 
-#if defined(DART_PRECOMPILED_RUNTIME) || defined(DART_PRECOMPILER)
 TypedDataPtr Code::catch_entry_moves_maps() const {
-  ASSERT(FLAG_precompiled_mode);
   return TypedData::RawCast(untag()->catch_entry());
 }
 void Code::set_catch_entry_moves_maps(const TypedData& maps) const {
-  ASSERT(FLAG_precompiled_mode);
   untag()->set_catch_entry(maps.ptr());
 }
-#endif
 
 void Code::set_deopt_info_array(const Array& array) const {
 #if defined(DART_PRECOMPILED_RUNTIME)

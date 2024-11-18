@@ -143,6 +143,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
         class B @17
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
@@ -150,6 +151,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
         class C @28
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
@@ -157,6 +159,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
         class D @39
           reference: <testLibraryFragment>::@class::D
           element: <testLibrary>::@class::D
@@ -164,6 +167,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::D::@constructor::new
               element: <testLibraryFragment>::@class::D::@constructor::new#element
+              typeName: D
       mixins
         mixin M @51
           reference: <testLibraryFragment>::@mixin::M
@@ -179,23 +183,23 @@ library
               element: <testLibraryFragment>::@mixin::M::@field::f#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::f
               setter2: <testLibraryFragment>::@mixin::M::@setter::f
-            <null-name>
+            synthetic g
               reference: <testLibraryFragment>::@mixin::M::@field::g
               element: <testLibraryFragment>::@mixin::M::@field::g#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::g
-            <null-name>
+            synthetic s
               reference: <testLibraryFragment>::@mixin::M::@field::s
               element: <testLibraryFragment>::@mixin::M::@field::s#element
               setter2: <testLibraryFragment>::@mixin::M::@setter::s
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@mixin::M::@getter::f
               element: <testLibraryFragment>::@mixin::M::@getter::f#element
             get g @112
               reference: <testLibraryFragment>::@mixin::M::@getter::g
               element: <testLibraryFragment>::@mixin::M::@getter::g#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@mixin::M::@setter::f
               element: <testLibraryFragment>::@mixin::M::@setter::f#element
               formalParameters
@@ -273,18 +277,19 @@ library
         get g
           firstFragment: <testLibraryFragment>::@mixin::M::@getter::g
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@mixin::M::@setter::f
           formalParameters
             requiredPositional _f
               type: T
-        set s=
+        set s
           firstFragment: <testLibraryFragment>::@mixin::M::@setter::s
           formalParameters
             requiredPositional v
               type: int
       methods
         m
+          reference: <testLibrary>::@mixin::M::@method::m
           firstFragment: <testLibraryFragment>::@mixin::M::@method::m
           formalParameters
             requiredPositional v
@@ -368,12 +373,12 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            x @18
+            hasInitializer x @18
               reference: <testLibraryFragment>::@mixin::M::@field::x
               element: <testLibraryFragment>::@mixin::M::@field::x#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::x
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@mixin::M::@getter::x
               element: <testLibraryFragment>::@mixin::M::@getter::x#element
   mixins
@@ -383,7 +388,7 @@ library
       superclassConstraints
         Object
       fields
-        final x
+        final hasInitializer x
           firstFragment: <testLibraryFragment>::@mixin::M::@field::x
           type: int
           getter: <testLibraryFragment>::@mixin::M::@getter::x#element
@@ -447,7 +452,7 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::M::@field::foo
               element: <testLibraryFragment>::@mixin::M::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::foo
@@ -514,7 +519,7 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::M::@field::foo
               element: <testLibraryFragment>::@mixin::M::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::foo
@@ -581,7 +586,7 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::M::@field::foo
               element: <testLibraryFragment>::@mixin::M::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::M::@getter::foo
@@ -705,6 +710,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
         class B @42
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
@@ -712,6 +718,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {T: int}
@@ -839,6 +846,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
         class B @20
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
@@ -849,6 +857,7 @@ library
             synthetic const new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               constantInitializers
                 SuperConstructorInvocation
                   superKeyword: super @0
@@ -864,6 +873,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               constantInitializers
                 SuperConstructorInvocation
                   superKeyword: super @0
@@ -1016,6 +1026,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A1::@constructor::new
               element: <testLibraryFragment>::@class::A1::@constructor::new#element
+              typeName: A1
         class A2 @21
           reference: <testLibraryFragment>::@class::A2
           element: <testLibrary>::@class::A2
@@ -1026,6 +1037,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A2::@constructor::new
               element: <testLibraryFragment>::@class::A2::@constructor::new#element
+              typeName: A2
         class B @36
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
@@ -1036,6 +1048,7 @@ library
             synthetic const new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               constantInitializers
                 SuperConstructorInvocation
                   superKeyword: super @0
@@ -1051,6 +1064,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::Base::@constructor::new
               element: <testLibraryFragment>::@class::Base::@constructor::new#element
+              typeName: Base
         class C @108
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
@@ -1058,6 +1072,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               constantInitializers
                 SuperConstructorInvocation
                   superKeyword: super @0
@@ -1182,6 +1197,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
         class C @57
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
@@ -1189,6 +1205,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {T: int Function(String)}
@@ -1295,6 +1312,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
         class C @57
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
@@ -1302,6 +1320,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {T: List<int>}
@@ -1424,6 +1443,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
         class A @66
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
@@ -1431,6 +1451,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
               constantInitializers
                 SuperConstructorInvocation
                   superKeyword: super @0
@@ -1572,6 +1593,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::S::@constructor::new
               element: <testLibraryFragment>::@class::S::@constructor::new#element
+              typeName: S
         class X @78
           reference: <testLibraryFragment>::@class::X
           element: <testLibrary>::@class::X
@@ -1579,6 +1601,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
+              typeName: X
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::S::@constructor::new
                 substitution: {T3: String}
@@ -1594,7 +1617,7 @@ library
       typeAliases
         M2 @34
           reference: <testLibraryFragment>::@typeAlias::M2
-          element: <testLibraryFragment>::@typeAlias::M2#element
+          element: <testLibrary>::@typeAlias::M2
           typeParameters
             T2 @37
               element: <not-implemented>
@@ -1728,6 +1751,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::S::@constructor::new
               element: <testLibraryFragment>::@class::S::@constructor::new#element
+              typeName: S
         class X @104
           reference: <testLibraryFragment>::@class::X
           element: <testLibrary>::@class::X
@@ -1735,6 +1759,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
+              typeName: X
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::S::@constructor::new
                 substitution: {T4: String}
@@ -1750,13 +1775,13 @@ library
       typeAliases
         M2 @34
           reference: <testLibraryFragment>::@typeAlias::M2
-          element: <testLibraryFragment>::@typeAlias::M2#element
+          element: <testLibrary>::@typeAlias::M2
           typeParameters
             T2 @37
               element: <not-implemented>
         M3 @64
           reference: <testLibraryFragment>::@typeAlias::M3
-          element: <testLibraryFragment>::@typeAlias::M3#element
+          element: <testLibrary>::@typeAlias::M3
           typeParameters
             T3 @67
               element: <not-implemented>
@@ -1879,7 +1904,7 @@ library
               element: <testLibraryFragment>::@extensionType::B::@field::it#element
               getter2: <testLibraryFragment>::@extensionType::B::@getter::it
           getters
-            get <null-name>
+            synthetic get it
               reference: <testLibraryFragment>::@extensionType::B::@getter::it
               element: <testLibraryFragment>::@extensionType::B::@getter::it#element
       mixins
@@ -1968,6 +1993,7 @@ library
         Object
       methods
         foo
+          reference: <testLibrary>::@mixin::M::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::M::@method::foo
 ''');
   }
@@ -2019,6 +2045,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
       mixins
         mixin B @17
           reference: <testLibraryFragment>::@mixin::B
@@ -2042,6 +2069,7 @@ library
         A
       methods
         A
+          reference: <testLibrary>::@mixin::B::@method::A
           firstFragment: <testLibraryFragment>::@mixin::B::@method::A
 ''');
   }
@@ -2127,7 +2155,7 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::M::@field::foo
               element: <testLibraryFragment>::@mixin::M::@field::foo#element
               setter2: <testLibraryFragment>::@mixin::M::@setter::foo
@@ -2150,7 +2178,7 @@ library
           type: int
           setter: <testLibraryFragment>::@mixin::M::@setter::foo#element
       setters
-        set foo=
+        set foo
           firstFragment: <testLibraryFragment>::@mixin::M::@setter::foo
           formalParameters
             requiredPositional _
@@ -2203,7 +2231,7 @@ library
           reference: <testLibraryFragment>::@mixin::M
           element: <testLibrary>::@mixin::M
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::M::@field::foo
               element: <testLibraryFragment>::@mixin::M::@field::foo#element
               setter2: <testLibraryFragment>::@mixin::M::@setter::foo
@@ -2226,7 +2254,7 @@ library
           type: int
           setter: <testLibraryFragment>::@mixin::M::@setter::foo#element
       setters
-        set foo=
+        set foo
           firstFragment: <testLibraryFragment>::@mixin::M::@setter::foo
           formalParameters
             requiredPositional _
@@ -2303,7 +2331,7 @@ library
               element: <testLibraryFragment>::@extensionType::B::@field::it#element
               getter2: <testLibraryFragment>::@extensionType::B::@getter::it
           getters
-            get <null-name>
+            synthetic get it
               reference: <testLibraryFragment>::@extensionType::B::@getter::it
               element: <testLibraryFragment>::@extensionType::B::@getter::it#element
       mixins
@@ -2756,6 +2784,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -2766,6 +2795,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @32
@@ -2870,6 +2900,7 @@ library
       nextFragment: <testLibrary>::@fragment::package:test/a.dart
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       classes
         class A @36
@@ -2879,6 +2910,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::0::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::0::@constructor::new#element
+              typeName: A
           methods
             foo1 @47
               reference: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::0::@method::foo1
@@ -2891,6 +2923,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::A::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::A::@constructor::new#element
+              typeName: A
           methods
             foo2 @77
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::A::@method::foo2
@@ -2912,6 +2945,7 @@ library
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::0::@constructor::new
       methods
         foo1
+          reference: <testLibrary>::@class::A::@def::0::@method::foo1
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::0::@method::foo1
     class A
       reference: <testLibrary>::@class::A::@def::1
@@ -2921,8 +2955,10 @@ library
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@class::A::@constructor::new
       methods
         foo2
+          reference: <testLibrary>::@class::A::@def::1::@method::foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@class::A::@method::foo2
         foo3
+          reference: <testLibrary>::@class::A::@def::1::@method::foo3
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@def::1::@method::foo3
 ''');
   }
@@ -3016,6 +3052,7 @@ library
           element: <testLibrary>::@mixin::B
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -3029,6 +3066,7 @@ library
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@method::foo1#element
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @32
@@ -3052,8 +3090,10 @@ library
         Object
       methods
         foo1
+          reference: <testLibrary>::@mixin::A::@method::foo1
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@method::foo1
         foo2
+          reference: <testLibrary>::@mixin::A::@method::foo2
           firstFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@method::foo2
 ''');
   }
@@ -3155,18 +3195,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @31
+            hasInitializer foo @31
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -3174,6 +3214,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -3181,7 +3222,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
@@ -3192,7 +3233,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -3201,7 +3242,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -3335,18 +3376,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @46
+            hasInitializer foo @46
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -3354,6 +3395,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -3363,13 +3405,14 @@ library
           previousFragment: <testLibraryFragment>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @35
@@ -3377,7 +3420,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
@@ -3388,7 +3431,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -3397,7 +3440,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -3531,19 +3574,19 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @46
+            hasInitializer foo @46
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getterAugmentation::foo
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -3551,6 +3594,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -3566,6 +3610,7 @@ library
               previousFragment: <testLibraryFragment>::@mixin::A::@getter::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @35
@@ -3573,7 +3618,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
@@ -3584,7 +3629,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -3593,7 +3638,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -3730,18 +3775,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @46
+            hasInitializer foo @46
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -3750,6 +3795,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setterAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -3768,6 +3814,7 @@ library
               previousFragment: <testLibraryFragment>::@mixin::A::@setter::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @35
@@ -3775,7 +3822,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
@@ -3786,7 +3833,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -3795,7 +3842,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -3900,18 +3947,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @31
+            hasInitializer foo @31
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -3919,6 +3966,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -3926,7 +3974,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            foo @56
+            augment hasInitializer foo @56
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
@@ -3937,7 +3985,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -3946,7 +3994,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -4041,7 +4089,7 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
@@ -4052,6 +4100,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4059,7 +4108,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            foo @53
+            augment hasInitializer foo @53
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@fieldAugmentation::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               previousFragment: <testLibraryFragment>::@mixin::A::@field::foo
@@ -4070,7 +4119,7 @@ library
       superclassConstraints
         Object
       fields
-        synthetic foo
+        synthetic hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -4196,17 +4245,17 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo1 @31
+            hasInitializer foo1 @31
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo1
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo1
           getters
-            get <null-name>
+            synthetic get foo1
               reference: <testLibraryFragment>::@mixin::A::@getter::foo1
               element: <testLibraryFragment>::@mixin::A::@getter::foo1#element
           setters
-            set <null-name>
+            synthetic set foo1
               reference: <testLibraryFragment>::@mixin::A::@setter::foo1
               element: <testLibraryFragment>::@mixin::A::@setter::foo1#element
               formalParameters
@@ -4214,6 +4263,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo1::@parameter::_foo1#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4221,17 +4271,17 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            foo2 @45
+            hasInitializer foo2 @45
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2#element
               getter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
               setter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
           getters
-            get <null-name>
+            synthetic get foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2#element
           setters
-            set <null-name>
+            synthetic set foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2#element
               formalParameters
@@ -4244,12 +4294,12 @@ library
       superclassConstraints
         Object
       fields
-        foo1
+        hasInitializer foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo1
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo1#element
           setter: <testLibraryFragment>::@mixin::A::@setter::foo1#element
-        foo2
+        hasInitializer foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2
           type: int
           getter: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2#element
@@ -4260,12 +4310,12 @@ library
         synthetic get foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
       setters
-        synthetic set foo1=
+        synthetic set foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo1
           formalParameters
             requiredPositional _foo1
               type: int
-        synthetic set foo2=
+        synthetic set foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
           formalParameters
             requiredPositional _foo2
@@ -4408,11 +4458,11 @@ library
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo1
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo1
           getters
-            get <null-name>
+            synthetic get foo1
               reference: <testLibraryFragment>::@mixin::A::@getter::foo1
               element: <testLibraryFragment>::@mixin::A::@getter::foo1#element
           setters
-            set <null-name>
+            synthetic set foo1
               reference: <testLibraryFragment>::@mixin::A::@setter::foo1
               element: <testLibraryFragment>::@mixin::A::@setter::foo1#element
               formalParameters
@@ -4420,6 +4470,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo1::@parameter::_foo1#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4436,11 +4487,11 @@ library
               getter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
               setter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
           getters
-            get <null-name>
+            synthetic get foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2#element
           setters
-            set <null-name>
+            synthetic set foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2#element
               formalParameters
@@ -4471,12 +4522,12 @@ library
         synthetic get foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
       setters
-        synthetic set foo1=
+        synthetic set foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo1
           formalParameters
             requiredPositional _foo1
               type: T1
-        synthetic set foo2=
+        synthetic set foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
           formalParameters
             requiredPositional _foo2
@@ -4576,7 +4627,7 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo1
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo1
@@ -4586,6 +4637,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@getter::foo1#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4593,7 +4645,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            <null-name>
+            synthetic foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2#element
               getter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
@@ -4729,7 +4781,7 @@ library
             T1 @23
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic foo1
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo1
@@ -4739,6 +4791,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@getter::foo1#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4749,7 +4802,7 @@ library
             T1 @37
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2#element
               getter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getter::foo2
@@ -4879,18 +4932,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @31
+            hasInitializer foo @31
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getterAugmentation::foo
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -4898,6 +4951,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -4916,7 +4970,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -4925,7 +4979,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -5059,18 +5113,18 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @46
+            hasInitializer foo @46
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getterAugmentation::foo
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -5078,6 +5132,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo::@parameter::_foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -5094,6 +5149,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@getterAugmentation::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @35
@@ -5112,7 +5168,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -5121,7 +5177,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -5229,11 +5285,11 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo1
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo1
-            <null-name>
+            synthetic foo2
               reference: <testLibraryFragment>::@mixin::A::@field::foo2
               element: <testLibraryFragment>::@mixin::A::@field::foo2#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo2
@@ -5247,6 +5303,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@getter::foo2#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -5395,7 +5452,7 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
@@ -5406,6 +5463,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@getterAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -5422,6 +5480,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@getterAugmentation::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @35
@@ -5530,6 +5589,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I1::@constructor::new
               element: <testLibraryFragment>::@class::I1::@constructor::new#element
+              typeName: I1
       mixins
         mixin A @21
           reference: <testLibraryFragment>::@mixin::A
@@ -5537,6 +5597,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       classes
         class I2 @60
@@ -5546,6 +5607,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new#element
+              typeName: I2
       mixins
         mixin A @35
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -5687,6 +5749,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I1::@constructor::new
               element: <testLibraryFragment>::@class::I1::@constructor::new#element
+              typeName: I1
       mixins
         mixin A @21
           reference: <testLibraryFragment>::@mixin::A
@@ -5694,6 +5757,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       classes
@@ -5704,6 +5768,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new#element
+              typeName: I2
       mixins
         mixin A @50
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -5712,6 +5777,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       classes
         class I3 @57
@@ -5721,6 +5787,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/b.dart::@class::I3::@constructor::new
               element: <testLibrary>::@fragment::package:test/b.dart::@class::I3::@constructor::new#element
+              typeName: I3
       mixins
         mixin A @32
           reference: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
@@ -5833,6 +5900,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@method::foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -5851,8 +5919,10 @@ library
         Object
       methods
         foo
+          reference: <testLibrary>::@mixin::A::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo
         bar
+          reference: <testLibrary>::@mixin::A::@method::bar
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@method::bar
 ''');
   }
@@ -5943,6 +6013,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@method::foo2#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -5961,10 +6032,12 @@ library
       superclassConstraints
         Object
       methods
-        foo2
-          firstFragment: <testLibraryFragment>::@mixin::A::@method::foo2
         foo1
+          reference: <testLibrary>::@mixin::A::@method::foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo1
+        foo2
+          reference: <testLibrary>::@mixin::A::@method::foo2
+          firstFragment: <testLibraryFragment>::@mixin::A::@method::foo2
 ''');
   }
 
@@ -6073,6 +6146,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@methodAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       mixins
@@ -6089,6 +6163,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A::@methodAugmentation::foo
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @32
@@ -6108,6 +6183,7 @@ library
         Object
       methods
         foo
+          reference: <testLibrary>::@mixin::A::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo
 ''');
   }
@@ -6198,6 +6274,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@method::foo#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6221,8 +6298,10 @@ library
         Object
       methods
         foo
+          reference: <testLibrary>::@mixin::A::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo
         bar
+          reference: <testLibrary>::@mixin::A::@method::bar
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@method::bar
 ''');
   }
@@ -6315,6 +6394,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@methodAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6339,6 +6419,7 @@ library
         Object
       methods
         foo
+          reference: <testLibrary>::@mixin::A::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo
 ''');
   }
@@ -6434,6 +6515,7 @@ library
               element: <testLibraryFragment>::@mixin::A::@method::bar#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6455,10 +6537,12 @@ library
       superclassConstraints
         Object
       methods
-        bar
-          firstFragment: <testLibraryFragment>::@mixin::A::@method::bar
         foo
+          reference: <testLibrary>::@mixin::A::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::A::@method::foo
+        bar
+          reference: <testLibrary>::@mixin::A::@method::bar
+          firstFragment: <testLibraryFragment>::@mixin::A::@method::bar
 ''');
   }
 
@@ -6560,7 +6644,7 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo1
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo1
@@ -6573,6 +6657,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo1::@parameter::_#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6580,7 +6665,7 @@ library
           element: <testLibrary>::@mixin::A
           previousFragment: <testLibraryFragment>::@mixin::A
           fields
-            <null-name>
+            synthetic foo2
               reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2
               element: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@field::foo2#element
               setter2: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
@@ -6607,12 +6692,12 @@ library
           type: int
           setter: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2#element
       setters
-        set foo1=
+        set foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo1
           formalParameters
             requiredPositional _
               type: int
-        set foo2=
+        set foo2
           firstFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setter::foo2
           formalParameters
             requiredPositional _
@@ -6720,17 +6805,17 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            foo @31
+            hasInitializer foo @31
               reference: <testLibraryFragment>::@mixin::A::@field::foo
               element: <testLibraryFragment>::@mixin::A::@field::foo#element
               getter2: <testLibraryFragment>::@mixin::A::@getter::foo
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: <testLibraryFragment>::@mixin::A::@getter::foo
               element: <testLibraryFragment>::@mixin::A::@getter::foo#element
           setters
-            set <null-name>
+            synthetic set foo
               reference: <testLibraryFragment>::@mixin::A::@setter::foo
               element: <testLibraryFragment>::@mixin::A::@setter::foo#element
               formalParameters
@@ -6739,6 +6824,7 @@ library
               nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A::@setterAugmentation::foo
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6760,7 +6846,7 @@ library
       superclassConstraints
         Object
       fields
-        foo
+        hasInitializer foo
           firstFragment: <testLibraryFragment>::@mixin::A::@field::foo
           type: int
           getter: <testLibraryFragment>::@mixin::A::@getter::foo#element
@@ -6769,7 +6855,7 @@ library
         synthetic get foo
           firstFragment: <testLibraryFragment>::@mixin::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -6886,11 +6972,11 @@ library
           element: <testLibrary>::@mixin::A
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
           fields
-            <null-name>
+            synthetic foo1
               reference: <testLibraryFragment>::@mixin::A::@field::foo1
               element: <testLibraryFragment>::@mixin::A::@field::foo1#element
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo1
-            <null-name>
+            synthetic foo2
               reference: <testLibraryFragment>::@mixin::A::@field::foo2
               element: <testLibraryFragment>::@mixin::A::@field::foo2#element
               setter2: <testLibraryFragment>::@mixin::A::@setter::foo2
@@ -6910,6 +6996,7 @@ library
                   element: <testLibraryFragment>::@mixin::A::@setter::foo2::@parameter::_#element
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35
@@ -6940,12 +7027,12 @@ library
           type: int
           setter: <testLibraryFragment>::@mixin::A::@setter::foo2#element
       setters
-        set foo2=
+        set foo2
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo2
           formalParameters
             requiredPositional _
               type: int
-        set foo1=
+        set foo1
           firstFragment: <testLibraryFragment>::@mixin::A::@setter::foo1
           formalParameters
             requiredPositional _
@@ -7029,6 +7116,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B1::@constructor::new
               element: <testLibraryFragment>::@class::B1::@constructor::new#element
+              typeName: B1
       mixins
         mixin A @21
           reference: <testLibraryFragment>::@mixin::A
@@ -7036,6 +7124,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       classes
         class B2 @52
@@ -7045,6 +7134,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::B2::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::B2::@constructor::new#element
+              typeName: B2
       mixins
         mixin A @35
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -7180,6 +7270,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I1::@constructor::new
               element: <testLibraryFragment>::@class::I1::@constructor::new#element
+              typeName: I1
       mixins
         mixin A @21
           reference: <testLibraryFragment>::@mixin::A
@@ -7187,6 +7278,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       classes
@@ -7197,6 +7289,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new#element
+              typeName: I2
       mixins
         mixin A @50
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -7205,6 +7298,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibrary>::@fragment::package:test/a.dart
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       classes
         class I3 @49
@@ -7214,6 +7308,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/b.dart::@class::I3::@constructor::new
               element: <testLibrary>::@fragment::package:test/b.dart::@class::I3::@constructor::new#element
+              typeName: I3
       mixins
         mixin A @32
           reference: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::A
@@ -7312,6 +7407,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       classes
         class B @51
@@ -7321,6 +7417,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::B::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::B::@constructor::new#element
+              typeName: B
       mixins
         mixin A @35
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -7427,6 +7524,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I1::@constructor::new
               element: <testLibraryFragment>::@class::I1::@constructor::new#element
+              typeName: I1
       mixins
         mixin A @21
           reference: <testLibraryFragment>::@mixin::A
@@ -7437,6 +7535,7 @@ library
               element: <not-implemented>
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       classes
         class I2 @60
@@ -7449,6 +7548,7 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@class::I2::@constructor::new#element
+              typeName: I2
       mixins
         mixin A @35
           reference: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
@@ -7556,6 +7656,7 @@ library
           element: <testLibrary>::@mixin::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       classes
@@ -7565,6 +7666,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@classAugmentation::A
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       classes
         class A @36
@@ -7659,6 +7761,7 @@ library
           element: <testLibrary>::@mixin::A::@def::0
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       nextFragment: <testLibrary>::@fragment::package:test/b.dart
       classes
@@ -7669,8 +7772,10 @@ library
             synthetic new
               reference: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@constructor::new
               element: <testLibrary>::@fragment::package:test/a.dart::@classAugmentation::A::@constructor::new#element
+              typeName: A
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibrary>::@fragment::package:test/a.dart
       mixins
         mixin A @36
@@ -7776,6 +7881,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::B
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin B @35
@@ -7797,6 +7903,7 @@ library
         A
       methods
         foo
+          reference: <testLibrary>::@mixin::B::@method::foo
           firstFragment: <testLibrary>::@fragment::package:test/b.dart::@mixinAugmentation::B::@method::foo
           formalParameters
             requiredPositional a
@@ -7892,6 +7999,7 @@ library
                   element: <testLibraryFragment>::@mixin::B::@method::foo::@parameter::a#element
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       libraryImports
         package:test/a.dart
@@ -7910,6 +8018,7 @@ library
         A
       methods
         foo
+          reference: <testLibrary>::@mixin::B::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::B::@method::foo
           formalParameters
             requiredPositional a
@@ -8001,6 +8110,7 @@ library
                   element: <testLibraryFragment>::@mixin::B::@method::foo::@parameter::a#element
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       libraryImports
         package:test/a.dart
@@ -8017,6 +8127,7 @@ library
         A
       methods
         foo
+          reference: <testLibrary>::@mixin::B::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::B::@method::foo
           formalParameters
             requiredPositional a
@@ -8123,6 +8234,7 @@ library
                   element: <testLibraryFragment>::@mixin::B::@method::foo::@parameter::a#element
     <testLibrary>::@fragment::package:test/b.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin B @35
@@ -8145,6 +8257,7 @@ library
         A
       methods
         foo
+          reference: <testLibrary>::@mixin::B::@method::foo
           firstFragment: <testLibraryFragment>::@mixin::B::@method::foo
           formalParameters
             requiredPositional a
@@ -8206,6 +8319,7 @@ library
           nextFragment: <testLibrary>::@fragment::package:test/a.dart::@mixinAugmentation::A
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @40
@@ -8273,6 +8387,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
       mixins
         mixin A @6
           reference: <testLibraryFragment>::@mixin::A
@@ -8343,6 +8458,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
       mixins
         mixin A @6
           reference: <testLibraryFragment>::@mixin::A
@@ -8428,6 +8544,7 @@ library
               element: <not-implemented>
     <testLibrary>::@fragment::package:test/a.dart
       element: <testLibrary>
+      enclosingFragment: <testLibraryFragment>
       previousFragment: <testLibraryFragment>
       mixins
         mixin A @35

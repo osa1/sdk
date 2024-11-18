@@ -180,6 +180,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       var reference = containerRef.getChild('new');
       reference.element = constructor;
       constructor.reference = reference;
+      constructor.typeName = classElement.name2;
       constructor.name2 = 'new';
 
       classElement.constructors = [constructor].toFixedList();
@@ -201,7 +202,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     for (var linkingUnit in units) {
       var elementBuilder = ElementBuilder(
         libraryBuilder: this,
-        unitReference: linkingUnit.reference,
         unitElement: linkingUnit.element,
       );
       elementBuilder.buildDirectiveElements(linkingUnit.node);
@@ -252,6 +252,7 @@ class LibraryBuilder with MacroApplicationsContainer {
       var reference = containerRef.getChild('new');
       reference.element = constructor;
       constructor.reference = reference;
+      constructor.typeName = enumElement.name2;
       constructor.name2 = 'new';
 
       enumElement.constructors = [
@@ -883,7 +884,6 @@ class LibraryBuilder with MacroApplicationsContainer {
     performance.run('elements + types', (performance) {
       ElementBuilder(
         libraryBuilder: this,
-        unitReference: macroLinkingUnit.reference,
         unitElement: macroLinkingUnit.element,
       ).buildDeclarationElements(macroLinkingUnit.node);
 

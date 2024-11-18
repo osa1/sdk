@@ -2,8 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library fasta.stack_listener_impl;
-
 import 'package:_fe_analyzer_shared/src/experiments/flags.dart' as shared
     show ExperimentalFlag;
 import 'package:_fe_analyzer_shared/src/parser/stack_listener.dart';
@@ -90,8 +88,8 @@ int offsetForToken(Token? token) {
 
 ProcedureKind computeProcedureKind(Token? token) {
   if (token == null) return ProcedureKind.Method;
-  if (token.isA2(Keyword.GET)) return ProcedureKind.Getter;
-  if (token.isA2(Keyword.SET)) return ProcedureKind.Setter;
+  if (token.isA(Keyword.GET)) return ProcedureKind.Getter;
+  if (token.isA(Keyword.SET)) return ProcedureKind.Setter;
   // Coverage-ignore-block(suite): Not run.
   throw new UnsupportedError("Unexpected get/set token $token.");
 }

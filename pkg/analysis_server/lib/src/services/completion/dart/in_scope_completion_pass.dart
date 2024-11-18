@@ -29,6 +29,7 @@ import 'package:analyzer/src/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/extensions.dart';
 import 'package:analyzer/src/dart/ast/token.dart';
 import 'package:analyzer/src/utilities/extensions/ast.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:analyzer/src/utilities/extensions/flutter.dart';
 
 /// A completion pass that will create candidate suggestions based on the
@@ -1840,9 +1841,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       collector.completionLocation = 'NullAwareElement_value';
     } else if (offset >= node.separator.end) {
       collector.completionLocation = 'MapLiteralEntry_value';
-      declarationHelper(
-        mustBeStatic: node.inStaticContext,
-      ).addLexicalDeclarations(node);
+      _forExpression(node, mustBeNonVoid: true);
     }
   }
 
@@ -3898,7 +3897,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
     }
     if (suggestOverrides && element != null) {
       overrideHelper.computeOverridesFor(
-        interfaceElement: element,
+        interfaceElement: element.asElement2,
         replacementRange: SourceRange(offset, 0),
         skipAt: skipAt,
       );

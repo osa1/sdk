@@ -29,7 +29,7 @@ ExtendsClause
   superclass: NamedType
     name: dynamic
     element: dynamic@-1
-    element2: dynamic@-1
+    element2: dynamic
     type: dynamic
 ''');
   }
@@ -157,7 +157,7 @@ ExtendsClause
   superclass: NamedType
     name: Never
     element: Never@-1
-    element2: Never@-1
+    element2: Never
     type: Never
 ''');
   }

@@ -82,6 +82,8 @@ library
               reference: dart:foo::<fragment>::@class::A::@constructor::named
               element: dart:foo::<fragment>::@class::A::@constructor::named#element
               sinceSdkVersion: 2.15.0
+              typeName: A
+              typeNameOffset: 53
               periodOffset: 54
         class B @73
           reference: dart:foo::<fragment>::@class::B
@@ -90,6 +92,8 @@ library
             named @81
               reference: dart:foo::<fragment>::@class::B::@constructor::named
               element: dart:foo::<fragment>::@class::B::@constructor::named#element
+              typeName: B
+              typeNameOffset: 79
               periodOffset: 80
   classes
     class A
@@ -162,18 +166,18 @@ library
           reference: dart:foo::<fragment>::@class::A
           element: dart:foo::@class::A
           fields
-            foo @57
+            hasInitializer foo @57
               reference: dart:foo::<fragment>::@class::A::@field::foo
               element: dart:foo::<fragment>::@class::A::@field::foo#element
               getter2: dart:foo::<fragment>::@class::A::@getter::foo
               setter2: dart:foo::<fragment>::@class::A::@setter::foo
           getters
-            get <null-name>
+            synthetic get foo
               reference: dart:foo::<fragment>::@class::A::@getter::foo
               element: dart:foo::<fragment>::@class::A::@getter::foo#element
               sinceSdkVersion: 2.15.0
           setters
-            set <null-name>
+            synthetic set foo
               reference: dart:foo::<fragment>::@class::A::@setter::foo
               element: dart:foo::<fragment>::@class::A::@setter::foo#element
               sinceSdkVersion: 2.15.0
@@ -186,7 +190,7 @@ library
       firstFragment: dart:foo::<fragment>::@class::A
       sinceSdkVersion: 2.15.0
       fields
-        foo
+        hasInitializer foo
           firstFragment: dart:foo::<fragment>::@class::A::@field::foo
           type: int
           getter: dart:foo::<fragment>::@class::A::@getter::foo#element
@@ -195,7 +199,7 @@ library
         synthetic get foo
           firstFragment: dart:foo::<fragment>::@class::A::@getter::foo
       setters
-        synthetic set foo=
+        synthetic set foo
           firstFragment: dart:foo::<fragment>::@class::A::@setter::foo
           formalParameters
             requiredPositional _foo
@@ -247,7 +251,7 @@ library
           reference: dart:foo::<fragment>::@class::A
           element: dart:foo::@class::A
           fields
-            <null-name>
+            synthetic foo
               reference: dart:foo::<fragment>::@class::A::@field::foo
               element: dart:foo::<fragment>::@class::A::@field::foo#element
               getter2: dart:foo::<fragment>::@class::A::@getter::foo
@@ -322,6 +326,7 @@ library
       sinceSdkVersion: 2.15.0
       methods
         foo
+          reference: dart:foo::@class::A::@method::foo
           firstFragment: dart:foo::<fragment>::@class::A::@method::foo
 ''');
   }
@@ -377,6 +382,7 @@ library
       sinceSdkVersion: 2.15.0
       methods
         foo
+          reference: dart:foo::@class::A::@method::foo
           firstFragment: dart:foo::<fragment>::@class::A::@method::foo
 ''');
   }
@@ -432,6 +438,7 @@ library
       sinceSdkVersion: 2.15.0
       methods
         foo
+          reference: dart:foo::@class::A::@method::foo
           firstFragment: dart:foo::<fragment>::@class::A::@method::foo
 ''');
   }
@@ -483,7 +490,7 @@ library
           reference: dart:foo::<fragment>::@class::A
           element: dart:foo::@class::A
           fields
-            <null-name>
+            synthetic foo
               reference: dart:foo::<fragment>::@class::A::@field::foo
               element: dart:foo::<fragment>::@class::A::@field::foo#element
               setter2: dart:foo::<fragment>::@class::A::@setter::foo
@@ -506,7 +513,7 @@ library
           type: int
           setter: dart:foo::<fragment>::@class::A::@setter::foo#element
       setters
-        set foo=
+        set foo
           firstFragment: dart:foo::<fragment>::@class::A::@setter::foo
           formalParameters
             requiredPositional _
@@ -578,27 +585,27 @@ library
           reference: dart:foo::<fragment>::@enum::E
           element: dart:foo::@enum::E
           fields
-            enumConstant v1 @37
+            hasInitializer v1 @37
               reference: dart:foo::<fragment>::@enum::E::@field::v1
               element: dart:foo::<fragment>::@enum::E::@field::v1#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::v1
-            enumConstant v2 @60
+            hasInitializer v2 @60
               reference: dart:foo::<fragment>::@enum::E::@field::v2
               element: dart:foo::<fragment>::@enum::E::@field::v2#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::v2
-            <null-name>
+            synthetic values
               reference: dart:foo::<fragment>::@enum::E::@field::values
               element: dart:foo::<fragment>::@enum::E::@field::values#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::values
           getters
-            get <null-name>
+            synthetic get v1
               reference: dart:foo::<fragment>::@enum::E::@getter::v1
               element: dart:foo::<fragment>::@enum::E::@getter::v1#element
-            get <null-name>
+            synthetic get v2
               reference: dart:foo::<fragment>::@enum::E::@getter::v2
               element: dart:foo::<fragment>::@enum::E::@getter::v2#element
               sinceSdkVersion: 2.15.0
-            get <null-name>
+            synthetic get values
               reference: dart:foo::<fragment>::@enum::E::@getter::values
               element: dart:foo::<fragment>::@enum::E::@getter::values#element
   enums
@@ -607,11 +614,11 @@ library
       firstFragment: dart:foo::<fragment>::@enum::E
       supertype: Enum
       fields
-        static const v1
+        static const enumConstant hasInitializer v1
           firstFragment: dart:foo::<fragment>::@enum::E::@field::v1
           type: E
           getter: dart:foo::<fragment>::@enum::E::@getter::v1#element
-        static const v2
+        static const enumConstant hasInitializer v2
           firstFragment: dart:foo::<fragment>::@enum::E::@field::v2
           type: E
           getter: dart:foo::<fragment>::@enum::E::@getter::v2#element
@@ -691,20 +698,20 @@ library
           reference: dart:foo::<fragment>::@enum::E
           element: dart:foo::@enum::E
           fields
-            enumConstant v @52
+            hasInitializer v @52
               reference: dart:foo::<fragment>::@enum::E::@field::v
               element: dart:foo::<fragment>::@enum::E::@field::v#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::v
-            <null-name>
+            synthetic values
               reference: dart:foo::<fragment>::@enum::E::@field::values
               element: dart:foo::<fragment>::@enum::E::@field::values#element
               getter2: dart:foo::<fragment>::@enum::E::@getter::values
           getters
-            get <null-name>
+            synthetic get v
               reference: dart:foo::<fragment>::@enum::E::@getter::v
               element: dart:foo::<fragment>::@enum::E::@getter::v#element
               sinceSdkVersion: 2.15.0
-            get <null-name>
+            synthetic get values
               reference: dart:foo::<fragment>::@enum::E::@getter::values
               element: dart:foo::<fragment>::@enum::E::@getter::values#element
           methods
@@ -719,7 +726,7 @@ library
       sinceSdkVersion: 2.15.0
       supertype: Enum
       fields
-        static const v
+        static const enumConstant hasInitializer v
           firstFragment: dart:foo::<fragment>::@enum::E::@field::v
           type: E
           getter: dart:foo::<fragment>::@enum::E::@getter::v#element
@@ -734,6 +741,7 @@ library
           firstFragment: dart:foo::<fragment>::@enum::E::@getter::values
       methods
         foo
+          reference: dart:foo::@enum::E::@method::foo
           firstFragment: dart:foo::<fragment>::@enum::E::@method::foo
 ''');
   }
@@ -789,6 +797,7 @@ library
       sinceSdkVersion: 2.15.0
       methods
         foo
+          reference: dart:foo::@extension::E::@method::foo
           firstFragment: dart:foo::<fragment>::@extension::E::@method::foo
 ''');
   }
@@ -847,6 +856,7 @@ library
         Object
       methods
         foo
+          reference: dart:foo::@mixin::M::@method::foo
           firstFragment: dart:foo::<fragment>::@mixin::M::@method::foo
 ''');
   }
@@ -1212,7 +1222,7 @@ library
       typeAliases
         A @49
           reference: dart:foo::<fragment>::@typeAlias::A
-          element: dart:foo::<fragment>::@typeAlias::A#element
+          element: dart:foo::@typeAlias::A
           sinceSdkVersion: 2.15.0
   typeAliases
     A
@@ -1256,18 +1266,19 @@ library
     dart:foo::<fragment>
       element: dart:foo
       topLevelVariables
-        final foo @47
+        hasInitializer foo @47
           reference: dart:foo::<fragment>::@topLevelVariable::foo
-          element: dart:foo::<fragment>::@topLevelVariable::foo#element
+          element: dart:foo::@topLevelVariable::foo
           sinceSdkVersion: 2.15.0
           getter2: dart:foo::<fragment>::@getter::foo
       getters
-        get <null-name>
+        synthetic get foo
           reference: dart:foo::<fragment>::@getter::foo
           element: dart:foo::<fragment>::@getter::foo#element
           sinceSdkVersion: 2.15.0
   topLevelVariables
-    final foo
+    final hasInitializer foo
+      reference: dart:foo::@topLevelVariable::foo
       firstFragment: dart:foo::<fragment>::@topLevelVariable::foo
       type: int
       getter: dart:foo::<fragment>::@getter::foo#element

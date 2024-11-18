@@ -31,7 +31,6 @@ import 'package:analyzer/source/error_processor.dart';
 import 'package:analyzer/source/file_source.dart';
 import 'package:analyzer/source/source.dart';
 import 'package:analyzer/source/source_range.dart';
-import 'package:analyzer/src/dart/ast/utilities.dart';
 import 'package:analyzer/src/dart/error/syntactic_errors.g.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/lint/linter.dart';
@@ -528,8 +527,8 @@ class BulkFixProcessor {
         if (library is NotLibraryButPartResult) {
           var unit = await context.currentSession.getResolvedUnit(path);
           if (unit is ResolvedUnitResult) {
-            library = await context.currentSession.getResolvedLibraryByElement(
-              unit.libraryElement,
+            library = await context.currentSession.getResolvedLibraryByElement2(
+              unit.libraryElement2,
             );
           }
         }
@@ -550,7 +549,7 @@ class BulkFixProcessor {
     LintRuleUnitContext currentUnit,
     List<LintRuleUnitContext> allUnits,
   ) {
-    var nodeRegistry = NodeLintRegistry(false);
+    var nodeRegistry = NodeLintRegistry(enableTiming: false);
     var context = LinterContextWithParsedResults(allUnits, currentUnit);
     var lintRules =
         _syntacticLintCodes
@@ -562,12 +561,7 @@ class BulkFixProcessor {
     }
 
     // Run lints that handle specific node types.
-    currentUnit.unit.accept(
-      AnalysisRuleVisitor(
-        nodeRegistry,
-        AnalysisRuleExceptionHandler(propagateExceptions: false).logException,
-      ),
-    );
+    currentUnit.unit.accept(AnalysisRuleVisitor(nodeRegistry));
   }
 
   /// Filters errors to only those that are in [_codes] and are not filtered out

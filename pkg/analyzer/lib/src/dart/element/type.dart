@@ -36,17 +36,14 @@ class DynamicTypeImpl extends TypeImpl
   /// The unique instance of this class.
   static final DynamicTypeImpl instance = DynamicTypeImpl._();
 
-  @override
-  final DynamicElementImpl element = DynamicElementImpl();
-
   /// Prevent the creation of instances of this class.
   DynamicTypeImpl._();
 
   @override
-  Element2? get element3 => switch (element) {
-        Fragment(:var element) => element,
-        _ => null,
-      };
+  DynamicElementImpl get element => DynamicElementImpl.instance;
+
+  @override
+  DynamicElementImpl2 get element3 => DynamicElementImpl2.instance;
 
   @override
   int get hashCode => 1;
@@ -186,7 +183,12 @@ class FunctionTypeImpl extends TypeImpl implements FunctionType {
 
   @override
   List<FormalParameterElement> get formalParameters => parameters
-      .map((fragment) => (fragment as FormalParameterFragment).element)
+      .map((parameter) => switch (parameter) {
+            FormalParameterFragment(:var element) => element,
+            ParameterMember(:var element) => element,
+            _ => throw UnsupportedError(
+                'Unsupported type ${parameter.runtimeType}'),
+          })
       .toList();
 
   @Deprecated('Check element, or use getDisplayString()')
@@ -1074,14 +1076,13 @@ class NeverTypeImpl extends TypeImpl implements NeverType {
   final NeverElementImpl element = NeverElementImpl.instance;
 
   @override
+  final NeverElementImpl2 element3 = NeverElementImpl2.instance;
+
+  @override
   final NullabilitySuffix nullabilitySuffix;
 
   /// Prevent the creation of instances of this class.
   NeverTypeImpl._(this.nullabilitySuffix);
-
-  @override
-  // TODO(augmentations): Implement this.
-  Element2? get element3 => throw UnimplementedError();
 
   @override
   int get hashCode => 0;
@@ -1200,8 +1201,10 @@ class RecordTypeImpl extends TypeImpl implements RecordType {
   @override
   String? get name => null;
 
-  @override
   List<SharedNamedTypeStructure<DartType>> get namedTypes => namedFields;
+
+  @override
+  List<SharedNamedTypeStructure<DartType>> get sortedNamedTypes => namedTypes;
 
   @override
   bool operator ==(Object other) {

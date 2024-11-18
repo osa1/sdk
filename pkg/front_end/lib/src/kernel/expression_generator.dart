@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// A library to help generate expression.
-library fasta.expression_generator;
+library;
 
 import 'package:_fe_analyzer_shared/src/parser/parser.dart'
     show lengthForToken, lengthOfSpan;
@@ -4416,7 +4416,6 @@ class ParserErrorGenerator extends Generator {
   }
 
   @override
-  // Coverage-ignore(suite): Not run.
   Expression buildSelectorAccess(
       Selector send, int operatorOffset, bool isNullAware) {
     return buildProblem();

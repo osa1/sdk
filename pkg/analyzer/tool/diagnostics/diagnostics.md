@@ -25993,6 +25993,77 @@ void f() {
 }
 ```
 
+### invalid_runtime_check_with_js_interop_types
+
+_Cast from '{0}' to '{1}' casts a Dart value to a JS interop type, which might
+not be platform-consistent._
+
+_Cast from '{0}' to '{1}' casts a JS interop value to a Dart type, which might
+not be platform-consistent._
+
+_Cast from '{0}' to '{1}' casts a JS interop value to an incompatible JS interop
+type, which might not be platform-consistent._
+
+_Runtime check between '{0}' and '{1}' checks whether a Dart value is a JS
+interop type, which might not be platform-consistent._
+
+_Runtime check between '{0}' and '{1}' checks whether a JS interop value is a
+Dart type, which might not be platform-consistent._
+
+_Runtime check between '{0}' and '{1}' involves a non-trivial runtime check
+between two JS interop types that might not be platform-consistent._
+
+_Runtime check between '{0}' and '{1}' involves a runtime check between a JS
+interop value and an unrelated JS interop type that will always be true and won't check the underlying type._
+
+#### Description
+
+The analyzer produces this diagnostic when an `is` test has either:
+- a JS interop type on the right-hand side, whether directly or as a type
+  argument to another type, or
+- a JS interop value on the left-hand side.
+
+#### Examples
+
+The following code produces this diagnostic because the JS interop type
+`JSBoolean` is on the right-hand side of an `is` test:
+
+```dart
+import 'dart:js_interop';
+
+bool f(Object b) => [!b is JSBoolean!];
+```
+
+The following code produces this diagnostic because the JS interop type
+`JSString` is used as a type argument on the right-hand side of an `is`
+test:
+
+```dart
+import 'dart:js_interop';
+
+bool f(List<Object> l) => [!l is List<JSString>!];
+```
+
+The following code produces this diagnostic because the JS interop value
+`a` is on the left-hand side of an `is` test:
+
+```dart
+import 'dart:js_interop';
+
+bool f(JSAny a) => [!a is String!];
+```
+
+#### Common fixes
+
+Use a JS interop helper, such as `isA`, to check the underlying type of
+JS interop values:
+
+```dart
+import 'dart:js_interop';
+
+void f(Object b) => b.jsify()?.isA<JSBoolean>();
+```
+
 ### invalid_use_of_do_not_submit_member
 
 _Uses of '{0}' should not be submitted to source control._
@@ -26044,6 +26115,43 @@ void emulateCrashWithOtherFunctionality() {
   emulateCrash();
   // do other things.
 }
+```
+
+### library_annotations
+
+_This annotation should be attached to a library directive._
+
+#### Description
+
+The analyzer produces this diagnostic when an annotation that applies to
+a whole library isn't associated with a `library` directive.
+
+#### Example
+
+The following code produces this diagnostic because the `TestOn`
+annotation, which applies to the whole library, is associated with an
+`import` directive rather than a `library` directive:
+
+```dart
+[!@TestOn('browser')!]
+
+import 'package:test/test.dart';
+
+void main() {}
+```
+
+#### Common fixes
+
+Associate the annotation with a `library` directive, adding one if
+necessary:
+
+```dart
+@TestOn('browser')
+library;
+
+import 'package:test/test.dart';
+
+void main() {}
 ```
 
 ### library_names
@@ -28251,6 +28359,59 @@ Future<void> f() async {
 Future<int> g() => Future.value(0);
 ```
 
+### unintended_html_in_doc_comment
+
+_Angle brackets will be interpreted as HTML._
+
+#### Description
+
+The analyzer produces this diagnostic when a documentation comment
+contains angle bracketed text (`<...>`) that isn't one of the allowed
+exceptions.
+
+Such text is interpreted by markdown to be an HTML tag, which is rarely
+what was intended.
+
+See the [lint rule description](https://dart.dev/tools/linter-rules/unintended_html_in_doc_comment)
+for the list of allowed exceptions.
+
+#### Example
+
+The following code produces this diagnostic because the documentation
+comment contains the text `<int>`, which isn't one of the allowed
+exceptions:
+
+```dart
+/// Converts a List[!<int>!] to a comma-separated String.
+String f(List<int> l) => '';
+```
+
+#### Common fixes
+
+If the text was intended to be part of a code span, then add backticks
+around the code:
+
+```dart
+/// Converts a `List<int>` to a comma-separated String.
+String f(List<int> l) => '';
+```
+
+If the text was intended to be part of a link, then add square brackets
+around the code:
+
+```dart
+/// Converts a [List<int>] to a comma-separated String.
+String f(List<int> l) => '';
+```
+
+If the text was intended to be printed as-is, including the angle
+brackets, then add backslash escapes before the angle brackets:
+
+```dart
+/// Converts a List\<int\> to a comma-separated String.
+String f(List<int> l) => '';
+```
+
 ### unnecessary_brace_in_string_interps
 
 _Unnecessary braces in a string interpolation._
@@ -28480,6 +28641,39 @@ class C {
   static String c = '';
 }
 ```
+
+### unnecessary_library_name
+
+_Library names are not necessary._
+
+#### Description
+
+The analyzer produces this diagnostic when a `library` directive specifies
+a name.
+
+#### Example
+
+The following code produces this diagnostic because the `library`
+directive includes a name:
+
+```dart
+library [!some.name!];
+
+class C {}
+```
+
+#### Common fixes
+
+Remove the name from the `library` directive:
+
+```dart
+library;
+
+class C {}
+```
+
+If the library has any parts, then any `part of` declarations that use
+the library name should be updated to use the URI of the library instead.
 
 ### unnecessary_new
 
@@ -28950,6 +29144,117 @@ operand:
 ```dart
 bool f(String s) {
   return s.length == 1;
+}
+```
+
+### unsafe_variance
+
+_This type is unsafe: a type parameter occurs in a non-covariant position._
+
+#### Description
+
+This lint warns against declaring non-covariant members.
+
+An instance variable whose type contains a type parameter of the
+enclosing class, mixin, or enum in a non-covariant position is
+likely to cause run-time failures due to failing type
+checks. For example, in `class C<X> {...}`, an instance variable
+of the form `void Function(X) myVariable;` may cause this kind
+of run-time failure.
+
+The same is true for a getter or method whose return type has a
+non-covariant occurrence of a type parameter of the enclosing
+declaration.
+
+This lint flags this kind of member declaration.
+
+#### Example
+
+**BAD:**
+```dart
+class C<X> {
+  final bool Function([!X!]) fun; // LINT
+  C(this.fun);
+}
+
+void main() {
+  C<num> c = C<int>((i) => i.isEven);
+  c.fun(10); // Throws.
+}
+```
+
+The problem is that `X` occurs as a parameter type in the type
+of `fun`.
+
+#### Common fixes
+
+One way to reduce the potential for run-time type errors is to
+ensure that the non-covariant member `fun` is _only_ used on
+`this`. We cannot strictly enforce this, but we can make it
+private and add a forwarding method `fun` such that we can check
+locally in the same library that this constraint is satisfied:
+
+**BETTER:**
+```dart
+class C<X> {
+  // ignore: unsafe_variance
+  final bool Function(X) _fun;
+  bool fun(X x) => _fun(x);
+  C(this._fun);
+}
+
+void main() {
+  C<num> c = C<int>((i) => i.isEven);
+  c.fun(10); // Succeeds.
+}
+```
+
+A fully safe approach requires a feature that Dart does not yet
+have, namely statically checked variance. With that, we could
+specify that the type parameter `X` is invariant (`inout X`).
+
+It is possible to emulate invariance without support for statically
+checked variance. This puts some restrictions on the creation of
+subtypes, but faithfully provides the typing that `inout` would
+give:
+
+**GOOD:**
+```dart
+typedef Inv<X> = X Function(X);
+typedef C<X> = _C<X, Inv<X>>;
+
+class _C<X, Invariance extends Inv<X>> {
+  // ignore: unsafe_variance
+  final bool Function(X) fun; // Safe!
+  _C(this.fun);
+}
+
+void main() {
+  C<int> c = C<int>((i) => i.isEven);
+  c.fun(10); // Succeeds.
+}
+```
+
+With this approach, `C<int>` is not a subtype of `C<num>`, so
+`c` must have a different declared type.
+
+Another possibility is to declare the variable to have a safe
+but more general type. It is then safe to use the variable
+itself, but every invocation will have to be checked at run
+time:
+
+**HONEST:**
+```dart
+class C<X> {
+  final bool Function(Never) fun;
+  C(this.fun);
+}
+
+void main() {
+  C<num> c = C<int>((int i) => i.isEven);
+  var cfun = c.fun; // Local variable, enables promotion.
+  if (cfun is bool Function(int)) cfun(10); // Succeeds.
+  if (cfun is bool Function(bool)) cfun(true); // Not called.
 }
 ```
 
@@ -29520,6 +29825,35 @@ class A {
 class B extends A {
   B({super.x, super.y});
 }
+```
+
+### use_truncating_division
+
+_Use truncating division._
+
+#### Description
+
+The analyzer produces this diagnostic when the result of dividing two
+numbers is converted to an integer using `toInt`.
+
+Dart has a built-in integer division operator that is both more efficient
+and more concise.
+
+#### Example
+
+The following code produces this diagnostic because the result of dividing
+`x` and `y` is converted to an integer using `toInt`:
+
+```dart
+int divide(int x, int y) => [!(x / y).toInt()!];
+```
+
+#### Common fixes
+
+Use the integer division operator (`~/`):
+
+```dart
+int divide(int x, int y) => x ~/ y;
 ```
 
 ### valid_regexps

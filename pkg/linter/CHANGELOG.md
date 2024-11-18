@@ -5,6 +5,8 @@
 - _(soon to be)_ deprecated lint: `unsafe_html`
 - new _(experimental)_ lint: `omit_obvious_property_types`
 - new _(experimental)_ lint: `specify_nonobvious_property_types`
+- removed lint: `unsafe_html`
+- new _(experimental)_ lint: `unsafe_variance`
 
 # 3.6.0
 

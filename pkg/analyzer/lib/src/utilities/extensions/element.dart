@@ -32,16 +32,34 @@ extension Element2OrNullExtension on Element2? {
   Element? get asElement {
     var self = this;
     switch (self) {
+      case ConstructorElementImpl2():
+        return self.firstFragment as Element;
       case DynamicElementImpl():
         return self;
-      case GetterElement():
+      case ExecutableMember():
+        return self.declaration as Element;
+      case FieldElementImpl2():
         return self.firstFragment as Element;
-      case MultiplyDefinedElement element2:
-        return element2;
-      case NeverElementImpl():
-        return self;
+      case FormalParameterElementImpl():
+        return self.firstFragment as Element;
+      case GetterElementImpl():
+        return self.firstFragment as Element;
+      case LibraryElementImpl():
+        return self as Element;
+      case LocalFunctionElementImpl():
+        return self.wrappedElement as Element;
+      case LocalVariableElementImpl2():
+        return self.wrappedElement as Element;
+      case MethodElementImpl2():
+        return self.firstFragment as Element;
+      case MultiplyDefinedElementImpl2 element2:
+        return element2.asElement;
+      case NeverElementImpl2():
+        return NeverElementImpl.instance;
       case PrefixElementImpl():
         return self;
+      case SetterElementImpl():
+        return self.firstFragment as Element;
       case TopLevelFunctionElementImpl():
         return self.firstFragment as Element;
       case TopLevelVariableElementImpl2():
@@ -135,9 +153,22 @@ extension ElementOrNullExtension on Element? {
     if (self == null) {
       return null;
     } else if (self is DynamicElementImpl) {
-      return self;
+      return DynamicElementImpl2.instance;
+    } else if (self is ExtensionElementImpl) {
+      return (self as ExtensionFragment).element;
+    } else if (self is ExecutableMember) {
+      return self as ExecutableElement2;
+    } else if (self is FieldMember) {
+      return self as FieldElement2;
+    } else if (self is FieldElementImpl) {
+      return (self as FieldFragment).element;
     } else if (self is FunctionElementImpl) {
-      return self.element;
+      if (self.enclosingElement3 is! CompilationUnitElement) {
+        // TODO(scheglov): update `FunctionElementImpl.element` return type?
+        return self.element;
+      } else {
+        return (self as Fragment).element;
+      }
     } else if (self is InterfaceElementImpl) {
       return self.element;
     } else if (self is LabelElementImpl) {
@@ -147,21 +178,53 @@ extension ElementOrNullExtension on Element? {
     } else if (self is LocalVariableElementImpl) {
       return self.element;
     } else if (self is MultiplyDefinedElementImpl) {
-      return self;
+      return MultiplyDefinedElementImpl2(
+        self.libraryFragment,
+        self.name,
+        self.conflictingElements.map((e) => e.asElement2).nonNulls.toList(),
+      );
     } else if (self is NeverElementImpl) {
-      return self;
+      return NeverElementImpl2.instance;
     } else if (self is ParameterMember) {
-      // TODO(scheglov): we lose types here
-      return self.declaration.asElement2;
+      return self;
     } else if (self is PrefixElementImpl) {
       return self.element2;
-    } else if (self is ExecutableMember) {
-      return self as ExecutableElement2;
-    } else if (self is FieldMember) {
-      return self as FieldElement2;
+    } else if (self is LibraryImportElementImpl ||
+        self is LibraryExportElementImpl ||
+        self is PartElementImpl) {
+      // There is no equivalent in the new element model.
+      return null;
     } else {
       return (self as Fragment?)?.element;
     }
+  }
+}
+
+extension ExecutableElement2Extension on ExecutableElement2 {
+  ExecutableElement get asElement {
+    return firstFragment as ExecutableElement;
+  }
+}
+
+extension ExecutableElement2OrNullExtension on ExecutableElement2? {
+  ExecutableElement? get asElement {
+    return this?.asElement;
+  }
+}
+
+extension ExecutableElementExtension on ExecutableElement {
+  ExecutableElement2 get asElement2 {
+    return switch (this) {
+      ExecutableFragment(:var element) => element,
+      ExecutableMember member => member,
+      _ => throw UnsupportedError('Unsupported type: $runtimeType'),
+    };
+  }
+}
+
+extension ExecutableElementOrNullExtension on ExecutableElement? {
+  ExecutableElement2? get asElement2 {
+    return this?.asElement2;
   }
 }
 
@@ -183,6 +246,18 @@ extension FormalParameterExtension on FormalParameterElement {
       buffer.write(' = ');
       buffer.write(defaultValueCode);
     }
+  }
+}
+
+extension InterfaceElement2Extension on InterfaceElement2 {
+  InterfaceElement get asElement {
+    return firstFragment as InterfaceElement;
+  }
+}
+
+extension InterfaceElementExtension on InterfaceElement {
+  InterfaceElement2 get asElement2 {
+    return (this as InterfaceElementImpl).element;
   }
 }
 
@@ -217,5 +292,11 @@ extension ListOfTypeParameterElementExtension on List<TypeParameterElement> {
 extension ParameterElementExtension on ParameterElement {
   ParameterElementImpl get declarationImpl {
     return declaration as ParameterElementImpl;
+  }
+}
+
+extension TypeParameterElement2Extension on TypeParameterElement2 {
+  TypeParameterElement get asElement {
+    return firstFragment as TypeParameterElement;
   }
 }

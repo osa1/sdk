@@ -507,157 +507,165 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vPlusIntInt @4
+        hasInitializer vPlusIntInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vPlusIntInt
-          element: <testLibraryFragment>::@topLevelVariable::vPlusIntInt#element
+          element: <testLibrary>::@topLevelVariable::vPlusIntInt
           getter2: <testLibraryFragment>::@getter::vPlusIntInt
           setter2: <testLibraryFragment>::@setter::vPlusIntInt
-        vPlusIntDouble @29
+        hasInitializer vPlusIntDouble @29
           reference: <testLibraryFragment>::@topLevelVariable::vPlusIntDouble
-          element: <testLibraryFragment>::@topLevelVariable::vPlusIntDouble#element
+          element: <testLibrary>::@topLevelVariable::vPlusIntDouble
           getter2: <testLibraryFragment>::@getter::vPlusIntDouble
           setter2: <testLibraryFragment>::@setter::vPlusIntDouble
-        vPlusDoubleInt @59
+        hasInitializer vPlusDoubleInt @59
           reference: <testLibraryFragment>::@topLevelVariable::vPlusDoubleInt
-          element: <testLibraryFragment>::@topLevelVariable::vPlusDoubleInt#element
+          element: <testLibrary>::@topLevelVariable::vPlusDoubleInt
           getter2: <testLibraryFragment>::@getter::vPlusDoubleInt
           setter2: <testLibraryFragment>::@setter::vPlusDoubleInt
-        vPlusDoubleDouble @89
+        hasInitializer vPlusDoubleDouble @89
           reference: <testLibraryFragment>::@topLevelVariable::vPlusDoubleDouble
-          element: <testLibraryFragment>::@topLevelVariable::vPlusDoubleDouble#element
+          element: <testLibrary>::@topLevelVariable::vPlusDoubleDouble
           getter2: <testLibraryFragment>::@getter::vPlusDoubleDouble
           setter2: <testLibraryFragment>::@setter::vPlusDoubleDouble
-        vMinusIntInt @124
+        hasInitializer vMinusIntInt @124
           reference: <testLibraryFragment>::@topLevelVariable::vMinusIntInt
-          element: <testLibraryFragment>::@topLevelVariable::vMinusIntInt#element
+          element: <testLibrary>::@topLevelVariable::vMinusIntInt
           getter2: <testLibraryFragment>::@getter::vMinusIntInt
           setter2: <testLibraryFragment>::@setter::vMinusIntInt
-        vMinusIntDouble @150
+        hasInitializer vMinusIntDouble @150
           reference: <testLibraryFragment>::@topLevelVariable::vMinusIntDouble
-          element: <testLibraryFragment>::@topLevelVariable::vMinusIntDouble#element
+          element: <testLibrary>::@topLevelVariable::vMinusIntDouble
           getter2: <testLibraryFragment>::@getter::vMinusIntDouble
           setter2: <testLibraryFragment>::@setter::vMinusIntDouble
-        vMinusDoubleInt @181
+        hasInitializer vMinusDoubleInt @181
           reference: <testLibraryFragment>::@topLevelVariable::vMinusDoubleInt
-          element: <testLibraryFragment>::@topLevelVariable::vMinusDoubleInt#element
+          element: <testLibrary>::@topLevelVariable::vMinusDoubleInt
           getter2: <testLibraryFragment>::@getter::vMinusDoubleInt
           setter2: <testLibraryFragment>::@setter::vMinusDoubleInt
-        vMinusDoubleDouble @212
+        hasInitializer vMinusDoubleDouble @212
           reference: <testLibraryFragment>::@topLevelVariable::vMinusDoubleDouble
-          element: <testLibraryFragment>::@topLevelVariable::vMinusDoubleDouble#element
+          element: <testLibrary>::@topLevelVariable::vMinusDoubleDouble
           getter2: <testLibraryFragment>::@getter::vMinusDoubleDouble
           setter2: <testLibraryFragment>::@setter::vMinusDoubleDouble
       getters
-        get <null-name>
+        synthetic get vPlusIntInt
           reference: <testLibraryFragment>::@getter::vPlusIntInt
           element: <testLibraryFragment>::@getter::vPlusIntInt#element
-        get <null-name>
+        synthetic get vPlusIntDouble
           reference: <testLibraryFragment>::@getter::vPlusIntDouble
           element: <testLibraryFragment>::@getter::vPlusIntDouble#element
-        get <null-name>
+        synthetic get vPlusDoubleInt
           reference: <testLibraryFragment>::@getter::vPlusDoubleInt
           element: <testLibraryFragment>::@getter::vPlusDoubleInt#element
-        get <null-name>
+        synthetic get vPlusDoubleDouble
           reference: <testLibraryFragment>::@getter::vPlusDoubleDouble
           element: <testLibraryFragment>::@getter::vPlusDoubleDouble#element
-        get <null-name>
+        synthetic get vMinusIntInt
           reference: <testLibraryFragment>::@getter::vMinusIntInt
           element: <testLibraryFragment>::@getter::vMinusIntInt#element
-        get <null-name>
+        synthetic get vMinusIntDouble
           reference: <testLibraryFragment>::@getter::vMinusIntDouble
           element: <testLibraryFragment>::@getter::vMinusIntDouble#element
-        get <null-name>
+        synthetic get vMinusDoubleInt
           reference: <testLibraryFragment>::@getter::vMinusDoubleInt
           element: <testLibraryFragment>::@getter::vMinusDoubleInt#element
-        get <null-name>
+        synthetic get vMinusDoubleDouble
           reference: <testLibraryFragment>::@getter::vMinusDoubleDouble
           element: <testLibraryFragment>::@getter::vMinusDoubleDouble#element
       setters
-        set <null-name>
+        synthetic set vPlusIntInt
           reference: <testLibraryFragment>::@setter::vPlusIntInt
           element: <testLibraryFragment>::@setter::vPlusIntInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vPlusIntInt::@parameter::_vPlusIntInt#element
-        set <null-name>
+        synthetic set vPlusIntDouble
           reference: <testLibraryFragment>::@setter::vPlusIntDouble
           element: <testLibraryFragment>::@setter::vPlusIntDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vPlusIntDouble::@parameter::_vPlusIntDouble#element
-        set <null-name>
+        synthetic set vPlusDoubleInt
           reference: <testLibraryFragment>::@setter::vPlusDoubleInt
           element: <testLibraryFragment>::@setter::vPlusDoubleInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vPlusDoubleInt::@parameter::_vPlusDoubleInt#element
-        set <null-name>
+        synthetic set vPlusDoubleDouble
           reference: <testLibraryFragment>::@setter::vPlusDoubleDouble
           element: <testLibraryFragment>::@setter::vPlusDoubleDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vPlusDoubleDouble::@parameter::_vPlusDoubleDouble#element
-        set <null-name>
+        synthetic set vMinusIntInt
           reference: <testLibraryFragment>::@setter::vMinusIntInt
           element: <testLibraryFragment>::@setter::vMinusIntInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMinusIntInt::@parameter::_vMinusIntInt#element
-        set <null-name>
+        synthetic set vMinusIntDouble
           reference: <testLibraryFragment>::@setter::vMinusIntDouble
           element: <testLibraryFragment>::@setter::vMinusIntDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMinusIntDouble::@parameter::_vMinusIntDouble#element
-        set <null-name>
+        synthetic set vMinusDoubleInt
           reference: <testLibraryFragment>::@setter::vMinusDoubleInt
           element: <testLibraryFragment>::@setter::vMinusDoubleInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMinusDoubleInt::@parameter::_vMinusDoubleInt#element
-        set <null-name>
+        synthetic set vMinusDoubleDouble
           reference: <testLibraryFragment>::@setter::vMinusDoubleDouble
           element: <testLibraryFragment>::@setter::vMinusDoubleDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMinusDoubleDouble::@parameter::_vMinusDoubleDouble#element
   topLevelVariables
-    vPlusIntInt
+    hasInitializer vPlusIntInt
+      reference: <testLibrary>::@topLevelVariable::vPlusIntInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vPlusIntInt
       type: int
       getter: <testLibraryFragment>::@getter::vPlusIntInt#element
       setter: <testLibraryFragment>::@setter::vPlusIntInt#element
-    vPlusIntDouble
+    hasInitializer vPlusIntDouble
+      reference: <testLibrary>::@topLevelVariable::vPlusIntDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vPlusIntDouble
       type: double
       getter: <testLibraryFragment>::@getter::vPlusIntDouble#element
       setter: <testLibraryFragment>::@setter::vPlusIntDouble#element
-    vPlusDoubleInt
+    hasInitializer vPlusDoubleInt
+      reference: <testLibrary>::@topLevelVariable::vPlusDoubleInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vPlusDoubleInt
       type: double
       getter: <testLibraryFragment>::@getter::vPlusDoubleInt#element
       setter: <testLibraryFragment>::@setter::vPlusDoubleInt#element
-    vPlusDoubleDouble
+    hasInitializer vPlusDoubleDouble
+      reference: <testLibrary>::@topLevelVariable::vPlusDoubleDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vPlusDoubleDouble
       type: double
       getter: <testLibraryFragment>::@getter::vPlusDoubleDouble#element
       setter: <testLibraryFragment>::@setter::vPlusDoubleDouble#element
-    vMinusIntInt
+    hasInitializer vMinusIntInt
+      reference: <testLibrary>::@topLevelVariable::vMinusIntInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMinusIntInt
       type: int
       getter: <testLibraryFragment>::@getter::vMinusIntInt#element
       setter: <testLibraryFragment>::@setter::vMinusIntInt#element
-    vMinusIntDouble
+    hasInitializer vMinusIntDouble
+      reference: <testLibrary>::@topLevelVariable::vMinusIntDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMinusIntDouble
       type: double
       getter: <testLibraryFragment>::@getter::vMinusIntDouble#element
       setter: <testLibraryFragment>::@setter::vMinusIntDouble#element
-    vMinusDoubleInt
+    hasInitializer vMinusDoubleInt
+      reference: <testLibrary>::@topLevelVariable::vMinusDoubleInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMinusDoubleInt
       type: double
       getter: <testLibraryFragment>::@getter::vMinusDoubleInt#element
       setter: <testLibraryFragment>::@setter::vMinusDoubleInt#element
-    vMinusDoubleDouble
+    hasInitializer vMinusDoubleDouble
+      reference: <testLibrary>::@topLevelVariable::vMinusDoubleDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMinusDoubleDouble
       type: double
       getter: <testLibraryFragment>::@getter::vMinusDoubleDouble#element
@@ -680,42 +688,42 @@ library
     synthetic static get vMinusDoubleDouble
       firstFragment: <testLibraryFragment>::@getter::vMinusDoubleDouble
   setters
-    synthetic static set vPlusIntInt=
+    synthetic static set vPlusIntInt
       firstFragment: <testLibraryFragment>::@setter::vPlusIntInt
       formalParameters
         requiredPositional _vPlusIntInt
           type: int
-    synthetic static set vPlusIntDouble=
+    synthetic static set vPlusIntDouble
       firstFragment: <testLibraryFragment>::@setter::vPlusIntDouble
       formalParameters
         requiredPositional _vPlusIntDouble
           type: double
-    synthetic static set vPlusDoubleInt=
+    synthetic static set vPlusDoubleInt
       firstFragment: <testLibraryFragment>::@setter::vPlusDoubleInt
       formalParameters
         requiredPositional _vPlusDoubleInt
           type: double
-    synthetic static set vPlusDoubleDouble=
+    synthetic static set vPlusDoubleDouble
       firstFragment: <testLibraryFragment>::@setter::vPlusDoubleDouble
       formalParameters
         requiredPositional _vPlusDoubleDouble
           type: double
-    synthetic static set vMinusIntInt=
+    synthetic static set vMinusIntInt
       firstFragment: <testLibraryFragment>::@setter::vMinusIntInt
       formalParameters
         requiredPositional _vMinusIntInt
           type: int
-    synthetic static set vMinusIntDouble=
+    synthetic static set vMinusIntDouble
       firstFragment: <testLibraryFragment>::@setter::vMinusIntDouble
       formalParameters
         requiredPositional _vMinusIntDouble
           type: double
-    synthetic static set vMinusDoubleInt=
+    synthetic static set vMinusDoubleInt
       firstFragment: <testLibraryFragment>::@setter::vMinusDoubleInt
       formalParameters
         requiredPositional _vMinusDoubleInt
           type: double
-    synthetic static set vMinusDoubleDouble=
+    synthetic static set vMinusDoubleDouble
       firstFragment: <testLibraryFragment>::@setter::vMinusDoubleDouble
       formalParameters
         requiredPositional _vMinusDoubleDouble
@@ -759,24 +767,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        V @4
+        hasInitializer V @4
           reference: <testLibraryFragment>::@topLevelVariable::V
-          element: <testLibraryFragment>::@topLevelVariable::V#element
+          element: <testLibrary>::@topLevelVariable::V
           getter2: <testLibraryFragment>::@getter::V
           setter2: <testLibraryFragment>::@setter::V
       getters
-        get <null-name>
+        synthetic get V
           reference: <testLibraryFragment>::@getter::V
           element: <testLibraryFragment>::@getter::V#element
       setters
-        set <null-name>
+        synthetic set V
           reference: <testLibraryFragment>::@setter::V
           element: <testLibraryFragment>::@setter::V#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::V::@parameter::_V#element
   topLevelVariables
-    V
+    hasInitializer V
+      reference: <testLibrary>::@topLevelVariable::V
       firstFragment: <testLibraryFragment>::@topLevelVariable::V
       type: num
       getter: <testLibraryFragment>::@getter::V#element
@@ -785,7 +794,7 @@ library
     synthetic static get V
       firstFragment: <testLibraryFragment>::@getter::V
   setters
-    synthetic static set V=
+    synthetic static set V
       firstFragment: <testLibraryFragment>::@setter::V
       formalParameters
         requiredPositional _V
@@ -863,62 +872,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        t1 @15
+        hasInitializer t1 @15
           reference: <testLibraryFragment>::@topLevelVariable::t1
-          element: <testLibraryFragment>::@topLevelVariable::t1#element
+          element: <testLibrary>::@topLevelVariable::t1
           getter2: <testLibraryFragment>::@getter::t1
           setter2: <testLibraryFragment>::@setter::t1
-        t2 @33
+        hasInitializer t2 @33
           reference: <testLibraryFragment>::@topLevelVariable::t2
-          element: <testLibraryFragment>::@topLevelVariable::t2#element
+          element: <testLibrary>::@topLevelVariable::t2
           getter2: <testLibraryFragment>::@getter::t2
           setter2: <testLibraryFragment>::@setter::t2
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get t1
           reference: <testLibraryFragment>::@getter::t1
           element: <testLibraryFragment>::@getter::t1#element
-        get <null-name>
+        synthetic get t2
           reference: <testLibraryFragment>::@getter::t2
           element: <testLibraryFragment>::@getter::t2#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set t1
           reference: <testLibraryFragment>::@setter::t1
           element: <testLibraryFragment>::@setter::t1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t1::@parameter::_t1#element
-        set <null-name>
+        synthetic set t2
           reference: <testLibraryFragment>::@setter::t2
           element: <testLibraryFragment>::@setter::t2#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t2::@parameter::_t2#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: int
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    t1
+    hasInitializer t1
+      reference: <testLibrary>::@topLevelVariable::t1
       firstFragment: <testLibraryFragment>::@topLevelVariable::t1
       type: int
       getter: <testLibraryFragment>::@getter::t1#element
       setter: <testLibraryFragment>::@setter::t1#element
-    t2
+    hasInitializer t2
+      reference: <testLibrary>::@topLevelVariable::t2
       firstFragment: <testLibraryFragment>::@topLevelVariable::t2
       type: int
       getter: <testLibraryFragment>::@getter::t2#element
@@ -931,17 +943,17 @@ library
     synthetic static get t2
       firstFragment: <testLibraryFragment>::@getter::t2
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: int
-    synthetic static set t1=
+    synthetic static set t1
       firstFragment: <testLibraryFragment>::@setter::t1
       formalParameters
         requiredPositional _t1
           type: int
-    synthetic static set t2=
+    synthetic static set t2
       firstFragment: <testLibraryFragment>::@setter::t2
       formalParameters
         requiredPositional _t2
@@ -1019,62 +1031,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        t1 @17
+        hasInitializer t1 @17
           reference: <testLibraryFragment>::@topLevelVariable::t1
-          element: <testLibraryFragment>::@topLevelVariable::t1#element
+          element: <testLibrary>::@topLevelVariable::t1
           getter2: <testLibraryFragment>::@getter::t1
           setter2: <testLibraryFragment>::@setter::t1
-        t2 @38
+        hasInitializer t2 @38
           reference: <testLibraryFragment>::@topLevelVariable::t2
-          element: <testLibraryFragment>::@topLevelVariable::t2#element
+          element: <testLibrary>::@topLevelVariable::t2
           getter2: <testLibraryFragment>::@getter::t2
           setter2: <testLibraryFragment>::@setter::t2
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get t1
           reference: <testLibraryFragment>::@getter::t1
           element: <testLibraryFragment>::@getter::t1#element
-        get <null-name>
+        synthetic get t2
           reference: <testLibraryFragment>::@getter::t2
           element: <testLibraryFragment>::@getter::t2#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set t1
           reference: <testLibraryFragment>::@setter::t1
           element: <testLibraryFragment>::@setter::t1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t1::@parameter::_t1#element
-        set <null-name>
+        synthetic set t2
           reference: <testLibraryFragment>::@setter::t2
           element: <testLibraryFragment>::@setter::t2#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t2::@parameter::_t2#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: List<int>
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    t1
+    hasInitializer t1
+      reference: <testLibrary>::@topLevelVariable::t1
       firstFragment: <testLibraryFragment>::@topLevelVariable::t1
       type: int
       getter: <testLibraryFragment>::@getter::t1#element
       setter: <testLibraryFragment>::@setter::t1#element
-    t2
+    hasInitializer t2
+      reference: <testLibrary>::@topLevelVariable::t2
       firstFragment: <testLibraryFragment>::@topLevelVariable::t2
       type: int
       getter: <testLibraryFragment>::@getter::t2#element
@@ -1087,17 +1102,17 @@ library
     synthetic static get t2
       firstFragment: <testLibraryFragment>::@getter::t2
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: List<int>
-    synthetic static set t1=
+    synthetic static set t1
       firstFragment: <testLibraryFragment>::@setter::t1
       formalParameters
         requiredPositional _t1
           type: int
-    synthetic static set t2=
+    synthetic static set t2
       firstFragment: <testLibraryFragment>::@setter::t2
       formalParameters
         requiredPositional _t2
@@ -1216,57 +1231,58 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::A::@getter::f
               element: <testLibraryFragment>::@class::A::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::A::@setter::f
               element: <testLibraryFragment>::@class::A::@setter::f#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::f::@parameter::_f#element
       topLevelVariables
-        a @25
+        hasInitializer a @25
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        t1 @42
+        hasInitializer t1 @42
           reference: <testLibraryFragment>::@topLevelVariable::t1
-          element: <testLibraryFragment>::@topLevelVariable::t1#element
+          element: <testLibrary>::@topLevelVariable::t1
           getter2: <testLibraryFragment>::@getter::t1
           setter2: <testLibraryFragment>::@setter::t1
-        t2 @62
+        hasInitializer t2 @62
           reference: <testLibraryFragment>::@topLevelVariable::t2
-          element: <testLibraryFragment>::@topLevelVariable::t2#element
+          element: <testLibrary>::@topLevelVariable::t2
           getter2: <testLibraryFragment>::@getter::t2
           setter2: <testLibraryFragment>::@setter::t2
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get t1
           reference: <testLibraryFragment>::@getter::t1
           element: <testLibraryFragment>::@getter::t1#element
-        get <null-name>
+        synthetic get t2
           reference: <testLibraryFragment>::@getter::t2
           element: <testLibraryFragment>::@getter::t2#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set t1
           reference: <testLibraryFragment>::@setter::t1
           element: <testLibraryFragment>::@setter::t1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t1::@parameter::_t1#element
-        set <null-name>
+        synthetic set t2
           reference: <testLibraryFragment>::@setter::t2
           element: <testLibraryFragment>::@setter::t2#element
           formalParameters
@@ -1289,23 +1305,26 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::A::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::A::@setter::f
           formalParameters
             requiredPositional _f
               type: int
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: A
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    t1
+    hasInitializer t1
+      reference: <testLibrary>::@topLevelVariable::t1
       firstFragment: <testLibraryFragment>::@topLevelVariable::t1
       type: int
       getter: <testLibraryFragment>::@getter::t1#element
       setter: <testLibraryFragment>::@setter::t1#element
-    t2
+    hasInitializer t2
+      reference: <testLibrary>::@topLevelVariable::t2
       firstFragment: <testLibraryFragment>::@topLevelVariable::t2
       type: int
       getter: <testLibraryFragment>::@getter::t2#element
@@ -1318,17 +1337,17 @@ library
     synthetic static get t2
       firstFragment: <testLibraryFragment>::@getter::t2
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: A
-    synthetic static set t1=
+    synthetic static set t1
       firstFragment: <testLibraryFragment>::@setter::t1
       formalParameters
         requiredPositional _t1
           type: int
-    synthetic static set t2=
+    synthetic static set t2
       firstFragment: <testLibraryFragment>::@setter::t2
       formalParameters
         requiredPositional _t2
@@ -1456,12 +1475,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::I::@getter::f
               element: <testLibraryFragment>::@class::I::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::I::@setter::f
               element: <testLibraryFragment>::@class::I::@setter::f#element
               formalParameters
@@ -1474,46 +1494,47 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
       topLevelVariables
         c @56
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
           setter2: <testLibraryFragment>::@setter::c
-        t1 @63
+        hasInitializer t1 @63
           reference: <testLibraryFragment>::@topLevelVariable::t1
-          element: <testLibraryFragment>::@topLevelVariable::t1#element
+          element: <testLibrary>::@topLevelVariable::t1
           getter2: <testLibraryFragment>::@getter::t1
           setter2: <testLibraryFragment>::@setter::t1
-        t2 @83
+        hasInitializer t2 @83
           reference: <testLibraryFragment>::@topLevelVariable::t2
-          element: <testLibraryFragment>::@topLevelVariable::t2#element
+          element: <testLibrary>::@topLevelVariable::t2
           getter2: <testLibraryFragment>::@getter::t2
           setter2: <testLibraryFragment>::@setter::t2
       getters
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
-        get <null-name>
+        synthetic get t1
           reference: <testLibraryFragment>::@getter::t1
           element: <testLibraryFragment>::@getter::t1#element
-        get <null-name>
+        synthetic get t2
           reference: <testLibraryFragment>::@getter::t2
           element: <testLibraryFragment>::@getter::t2#element
       setters
-        set <null-name>
+        synthetic set c
           reference: <testLibraryFragment>::@setter::c
           element: <testLibraryFragment>::@setter::c#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::c::@parameter::_c#element
-        set <null-name>
+        synthetic set t1
           reference: <testLibraryFragment>::@setter::t1
           element: <testLibraryFragment>::@setter::t1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t1::@parameter::_t1#element
-        set <null-name>
+        synthetic set t2
           reference: <testLibraryFragment>::@setter::t2
           element: <testLibraryFragment>::@setter::t2#element
           formalParameters
@@ -1536,7 +1557,7 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::I::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::I::@setter::f
           formalParameters
             requiredPositional _f
@@ -1551,16 +1572,19 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
   topLevelVariables
     c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: C
       getter: <testLibraryFragment>::@getter::c#element
       setter: <testLibraryFragment>::@setter::c#element
-    t1
+    hasInitializer t1
+      reference: <testLibrary>::@topLevelVariable::t1
       firstFragment: <testLibraryFragment>::@topLevelVariable::t1
       type: int
       getter: <testLibraryFragment>::@getter::t1#element
       setter: <testLibraryFragment>::@setter::t1#element
-    t2
+    hasInitializer t2
+      reference: <testLibrary>::@topLevelVariable::t2
       firstFragment: <testLibraryFragment>::@topLevelVariable::t2
       type: int
       getter: <testLibraryFragment>::@getter::t2#element
@@ -1573,17 +1597,17 @@ library
     synthetic static get t2
       firstFragment: <testLibraryFragment>::@getter::t2
   setters
-    synthetic static set c=
+    synthetic static set c
       firstFragment: <testLibraryFragment>::@setter::c
       formalParameters
         requiredPositional _c
           type: C
-    synthetic static set t1=
+    synthetic static set t1
       firstFragment: <testLibraryFragment>::@setter::t1
       formalParameters
         requiredPositional _t1
           type: int
-    synthetic static set t2=
+    synthetic static set t2
       firstFragment: <testLibraryFragment>::@setter::t2
       formalParameters
         requiredPositional _t2
@@ -1701,12 +1725,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::I::@getter::f
               element: <testLibraryFragment>::@class::I::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::I::@setter::f
               element: <testLibraryFragment>::@class::I::@setter::f#element
               formalParameters
@@ -1719,32 +1744,33 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
       topLevelVariables
-        t1 @76
+        hasInitializer t1 @76
           reference: <testLibraryFragment>::@topLevelVariable::t1
-          element: <testLibraryFragment>::@topLevelVariable::t1#element
+          element: <testLibrary>::@topLevelVariable::t1
           getter2: <testLibraryFragment>::@getter::t1
           setter2: <testLibraryFragment>::@setter::t1
-        t2 @101
+        hasInitializer t2 @101
           reference: <testLibraryFragment>::@topLevelVariable::t2
-          element: <testLibraryFragment>::@topLevelVariable::t2#element
+          element: <testLibrary>::@topLevelVariable::t2
           getter2: <testLibraryFragment>::@getter::t2
           setter2: <testLibraryFragment>::@setter::t2
       getters
-        get <null-name>
+        synthetic get t1
           reference: <testLibraryFragment>::@getter::t1
           element: <testLibraryFragment>::@getter::t1#element
-        get <null-name>
+        synthetic get t2
           reference: <testLibraryFragment>::@getter::t2
           element: <testLibraryFragment>::@getter::t2#element
       setters
-        set <null-name>
+        synthetic set t1
           reference: <testLibraryFragment>::@setter::t1
           element: <testLibraryFragment>::@setter::t1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::t1::@parameter::_t1#element
-        set <null-name>
+        synthetic set t2
           reference: <testLibraryFragment>::@setter::t2
           element: <testLibraryFragment>::@setter::t2#element
           formalParameters
@@ -1771,7 +1797,7 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::I::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::I::@setter::f
           formalParameters
             requiredPositional _f
@@ -1785,12 +1811,14 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
   topLevelVariables
-    t1
+    hasInitializer t1
+      reference: <testLibrary>::@topLevelVariable::t1
       firstFragment: <testLibraryFragment>::@topLevelVariable::t1
       type: int
       getter: <testLibraryFragment>::@getter::t1#element
       setter: <testLibraryFragment>::@setter::t1#element
-    t2
+    hasInitializer t2
+      reference: <testLibrary>::@topLevelVariable::t2
       firstFragment: <testLibraryFragment>::@topLevelVariable::t2
       type: int
       getter: <testLibraryFragment>::@getter::t2#element
@@ -1801,12 +1829,12 @@ library
     synthetic static get t2
       firstFragment: <testLibraryFragment>::@getter::t2
   setters
-    synthetic static set t1=
+    synthetic static set t1
       firstFragment: <testLibraryFragment>::@setter::t1
       formalParameters
         requiredPositional _t1
           type: int
-    synthetic static set t2=
+    synthetic static set t2
       firstFragment: <testLibraryFragment>::@setter::t2
       formalParameters
         requiredPositional _t2
@@ -1889,31 +1917,31 @@ library
       libraryImports
         dart:async
       topLevelVariables
-        uValue @80
+        hasInitializer uValue @80
           reference: <testLibraryFragment>::@topLevelVariable::uValue
-          element: <testLibraryFragment>::@topLevelVariable::uValue#element
+          element: <testLibrary>::@topLevelVariable::uValue
           getter2: <testLibraryFragment>::@getter::uValue
           setter2: <testLibraryFragment>::@setter::uValue
-        uFuture @121
+        hasInitializer uFuture @121
           reference: <testLibraryFragment>::@topLevelVariable::uFuture
-          element: <testLibraryFragment>::@topLevelVariable::uFuture#element
+          element: <testLibrary>::@topLevelVariable::uFuture
           getter2: <testLibraryFragment>::@getter::uFuture
           setter2: <testLibraryFragment>::@setter::uFuture
       getters
-        get <null-name>
+        synthetic get uValue
           reference: <testLibraryFragment>::@getter::uValue
           element: <testLibraryFragment>::@getter::uValue#element
-        get <null-name>
+        synthetic get uFuture
           reference: <testLibraryFragment>::@getter::uFuture
           element: <testLibraryFragment>::@getter::uFuture#element
       setters
-        set <null-name>
+        synthetic set uValue
           reference: <testLibraryFragment>::@setter::uValue
           element: <testLibraryFragment>::@setter::uValue#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::uValue::@parameter::_uValue#element
-        set <null-name>
+        synthetic set uFuture
           reference: <testLibraryFragment>::@setter::uFuture
           element: <testLibraryFragment>::@setter::uFuture#element
           formalParameters
@@ -1927,12 +1955,14 @@ library
           reference: <testLibraryFragment>::@function::fFuture
           element: <testLibrary>::@function::fFuture
   topLevelVariables
-    uValue
+    hasInitializer uValue
+      reference: <testLibrary>::@topLevelVariable::uValue
       firstFragment: <testLibraryFragment>::@topLevelVariable::uValue
       type: Future<int> Function()
       getter: <testLibraryFragment>::@getter::uValue#element
       setter: <testLibraryFragment>::@setter::uValue#element
-    uFuture
+    hasInitializer uFuture
+      reference: <testLibrary>::@topLevelVariable::uFuture
       firstFragment: <testLibraryFragment>::@topLevelVariable::uFuture
       type: Future<int> Function()
       getter: <testLibraryFragment>::@getter::uFuture#element
@@ -1943,12 +1973,12 @@ library
     synthetic static get uFuture
       firstFragment: <testLibraryFragment>::@getter::uFuture
   setters
-    synthetic static set uValue=
+    synthetic static set uValue
       firstFragment: <testLibraryFragment>::@setter::uValue
       formalParameters
         requiredPositional _uValue
           type: Future<int> Function()
-    synthetic static set uFuture=
+    synthetic static set uFuture
       firstFragment: <testLibraryFragment>::@setter::uFuture
       formalParameters
         requiredPositional _uFuture
@@ -2069,100 +2099,105 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vBitXor @4
+        hasInitializer vBitXor @4
           reference: <testLibraryFragment>::@topLevelVariable::vBitXor
-          element: <testLibraryFragment>::@topLevelVariable::vBitXor#element
+          element: <testLibrary>::@topLevelVariable::vBitXor
           getter2: <testLibraryFragment>::@getter::vBitXor
           setter2: <testLibraryFragment>::@setter::vBitXor
-        vBitAnd @25
+        hasInitializer vBitAnd @25
           reference: <testLibraryFragment>::@topLevelVariable::vBitAnd
-          element: <testLibraryFragment>::@topLevelVariable::vBitAnd#element
+          element: <testLibrary>::@topLevelVariable::vBitAnd
           getter2: <testLibraryFragment>::@getter::vBitAnd
           setter2: <testLibraryFragment>::@setter::vBitAnd
-        vBitOr @46
+        hasInitializer vBitOr @46
           reference: <testLibraryFragment>::@topLevelVariable::vBitOr
-          element: <testLibraryFragment>::@topLevelVariable::vBitOr#element
+          element: <testLibrary>::@topLevelVariable::vBitOr
           getter2: <testLibraryFragment>::@getter::vBitOr
           setter2: <testLibraryFragment>::@setter::vBitOr
-        vBitShiftLeft @66
+        hasInitializer vBitShiftLeft @66
           reference: <testLibraryFragment>::@topLevelVariable::vBitShiftLeft
-          element: <testLibraryFragment>::@topLevelVariable::vBitShiftLeft#element
+          element: <testLibrary>::@topLevelVariable::vBitShiftLeft
           getter2: <testLibraryFragment>::@getter::vBitShiftLeft
           setter2: <testLibraryFragment>::@setter::vBitShiftLeft
-        vBitShiftRight @94
+        hasInitializer vBitShiftRight @94
           reference: <testLibraryFragment>::@topLevelVariable::vBitShiftRight
-          element: <testLibraryFragment>::@topLevelVariable::vBitShiftRight#element
+          element: <testLibrary>::@topLevelVariable::vBitShiftRight
           getter2: <testLibraryFragment>::@getter::vBitShiftRight
           setter2: <testLibraryFragment>::@setter::vBitShiftRight
       getters
-        get <null-name>
+        synthetic get vBitXor
           reference: <testLibraryFragment>::@getter::vBitXor
           element: <testLibraryFragment>::@getter::vBitXor#element
-        get <null-name>
+        synthetic get vBitAnd
           reference: <testLibraryFragment>::@getter::vBitAnd
           element: <testLibraryFragment>::@getter::vBitAnd#element
-        get <null-name>
+        synthetic get vBitOr
           reference: <testLibraryFragment>::@getter::vBitOr
           element: <testLibraryFragment>::@getter::vBitOr#element
-        get <null-name>
+        synthetic get vBitShiftLeft
           reference: <testLibraryFragment>::@getter::vBitShiftLeft
           element: <testLibraryFragment>::@getter::vBitShiftLeft#element
-        get <null-name>
+        synthetic get vBitShiftRight
           reference: <testLibraryFragment>::@getter::vBitShiftRight
           element: <testLibraryFragment>::@getter::vBitShiftRight#element
       setters
-        set <null-name>
+        synthetic set vBitXor
           reference: <testLibraryFragment>::@setter::vBitXor
           element: <testLibraryFragment>::@setter::vBitXor#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vBitXor::@parameter::_vBitXor#element
-        set <null-name>
+        synthetic set vBitAnd
           reference: <testLibraryFragment>::@setter::vBitAnd
           element: <testLibraryFragment>::@setter::vBitAnd#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vBitAnd::@parameter::_vBitAnd#element
-        set <null-name>
+        synthetic set vBitOr
           reference: <testLibraryFragment>::@setter::vBitOr
           element: <testLibraryFragment>::@setter::vBitOr#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vBitOr::@parameter::_vBitOr#element
-        set <null-name>
+        synthetic set vBitShiftLeft
           reference: <testLibraryFragment>::@setter::vBitShiftLeft
           element: <testLibraryFragment>::@setter::vBitShiftLeft#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vBitShiftLeft::@parameter::_vBitShiftLeft#element
-        set <null-name>
+        synthetic set vBitShiftRight
           reference: <testLibraryFragment>::@setter::vBitShiftRight
           element: <testLibraryFragment>::@setter::vBitShiftRight#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vBitShiftRight::@parameter::_vBitShiftRight#element
   topLevelVariables
-    vBitXor
+    hasInitializer vBitXor
+      reference: <testLibrary>::@topLevelVariable::vBitXor
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBitXor
       type: int
       getter: <testLibraryFragment>::@getter::vBitXor#element
       setter: <testLibraryFragment>::@setter::vBitXor#element
-    vBitAnd
+    hasInitializer vBitAnd
+      reference: <testLibrary>::@topLevelVariable::vBitAnd
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBitAnd
       type: int
       getter: <testLibraryFragment>::@getter::vBitAnd#element
       setter: <testLibraryFragment>::@setter::vBitAnd#element
-    vBitOr
+    hasInitializer vBitOr
+      reference: <testLibrary>::@topLevelVariable::vBitOr
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBitOr
       type: int
       getter: <testLibraryFragment>::@getter::vBitOr#element
       setter: <testLibraryFragment>::@setter::vBitOr#element
-    vBitShiftLeft
+    hasInitializer vBitShiftLeft
+      reference: <testLibrary>::@topLevelVariable::vBitShiftLeft
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBitShiftLeft
       type: int
       getter: <testLibraryFragment>::@getter::vBitShiftLeft#element
       setter: <testLibraryFragment>::@setter::vBitShiftLeft#element
-    vBitShiftRight
+    hasInitializer vBitShiftRight
+      reference: <testLibrary>::@topLevelVariable::vBitShiftRight
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBitShiftRight
       type: int
       getter: <testLibraryFragment>::@getter::vBitShiftRight#element
@@ -2179,27 +2214,27 @@ library
     synthetic static get vBitShiftRight
       firstFragment: <testLibraryFragment>::@getter::vBitShiftRight
   setters
-    synthetic static set vBitXor=
+    synthetic static set vBitXor
       firstFragment: <testLibraryFragment>::@setter::vBitXor
       formalParameters
         requiredPositional _vBitXor
           type: int
-    synthetic static set vBitAnd=
+    synthetic static set vBitAnd
       firstFragment: <testLibraryFragment>::@setter::vBitAnd
       formalParameters
         requiredPositional _vBitAnd
           type: int
-    synthetic static set vBitOr=
+    synthetic static set vBitOr
       firstFragment: <testLibraryFragment>::@setter::vBitOr
       formalParameters
         requiredPositional _vBitOr
           type: int
-    synthetic static set vBitShiftLeft=
+    synthetic static set vBitShiftLeft
       firstFragment: <testLibraryFragment>::@setter::vBitShiftLeft
       formalParameters
         requiredPositional _vBitShiftLeft
           type: int
-    synthetic static set vBitShiftRight=
+    synthetic static set vBitShiftRight
       firstFragment: <testLibraryFragment>::@setter::vBitShiftRight
       formalParameters
         requiredPositional _vBitShiftRight
@@ -2324,12 +2359,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get a
               reference: <testLibraryFragment>::@class::A::@getter::a
               element: <testLibraryFragment>::@class::A::@getter::a#element
           setters
-            set <null-name>
+            synthetic set a
               reference: <testLibraryFragment>::@class::A::@setter::a
               element: <testLibraryFragment>::@class::A::@setter::a#element
               formalParameters
@@ -2340,45 +2376,45 @@ library
               reference: <testLibraryFragment>::@class::A::@method::m
               element: <testLibraryFragment>::@class::A::@method::m#element
       topLevelVariables
-        vSetField @39
+        hasInitializer vSetField @39
           reference: <testLibraryFragment>::@topLevelVariable::vSetField
-          element: <testLibraryFragment>::@topLevelVariable::vSetField#element
+          element: <testLibrary>::@topLevelVariable::vSetField
           getter2: <testLibraryFragment>::@getter::vSetField
           setter2: <testLibraryFragment>::@setter::vSetField
-        vInvokeMethod @71
+        hasInitializer vInvokeMethod @71
           reference: <testLibraryFragment>::@topLevelVariable::vInvokeMethod
-          element: <testLibraryFragment>::@topLevelVariable::vInvokeMethod#element
+          element: <testLibrary>::@topLevelVariable::vInvokeMethod
           getter2: <testLibraryFragment>::@getter::vInvokeMethod
           setter2: <testLibraryFragment>::@setter::vInvokeMethod
-        vBoth @105
+        hasInitializer vBoth @105
           reference: <testLibraryFragment>::@topLevelVariable::vBoth
-          element: <testLibraryFragment>::@topLevelVariable::vBoth#element
+          element: <testLibrary>::@topLevelVariable::vBoth
           getter2: <testLibraryFragment>::@getter::vBoth
           setter2: <testLibraryFragment>::@setter::vBoth
       getters
-        get <null-name>
+        synthetic get vSetField
           reference: <testLibraryFragment>::@getter::vSetField
           element: <testLibraryFragment>::@getter::vSetField#element
-        get <null-name>
+        synthetic get vInvokeMethod
           reference: <testLibraryFragment>::@getter::vInvokeMethod
           element: <testLibraryFragment>::@getter::vInvokeMethod#element
-        get <null-name>
+        synthetic get vBoth
           reference: <testLibraryFragment>::@getter::vBoth
           element: <testLibraryFragment>::@getter::vBoth#element
       setters
-        set <null-name>
+        synthetic set vSetField
           reference: <testLibraryFragment>::@setter::vSetField
           element: <testLibraryFragment>::@setter::vSetField#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vSetField::@parameter::_vSetField#element
-        set <null-name>
+        synthetic set vInvokeMethod
           reference: <testLibraryFragment>::@setter::vInvokeMethod
           element: <testLibraryFragment>::@setter::vInvokeMethod#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInvokeMethod::@parameter::_vInvokeMethod#element
-        set <null-name>
+        synthetic set vBoth
           reference: <testLibraryFragment>::@setter::vBoth
           element: <testLibraryFragment>::@setter::vBoth#element
           formalParameters
@@ -2401,26 +2437,30 @@ library
         synthetic get a
           firstFragment: <testLibraryFragment>::@class::A::@getter::a
       setters
-        synthetic set a=
+        synthetic set a
           firstFragment: <testLibraryFragment>::@class::A::@setter::a
           formalParameters
             requiredPositional _a
               type: int
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
   topLevelVariables
-    vSetField
+    hasInitializer vSetField
+      reference: <testLibrary>::@topLevelVariable::vSetField
       firstFragment: <testLibraryFragment>::@topLevelVariable::vSetField
       type: A
       getter: <testLibraryFragment>::@getter::vSetField#element
       setter: <testLibraryFragment>::@setter::vSetField#element
-    vInvokeMethod
+    hasInitializer vInvokeMethod
+      reference: <testLibrary>::@topLevelVariable::vInvokeMethod
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInvokeMethod
       type: A
       getter: <testLibraryFragment>::@getter::vInvokeMethod#element
       setter: <testLibraryFragment>::@setter::vInvokeMethod#element
-    vBoth
+    hasInitializer vBoth
+      reference: <testLibrary>::@topLevelVariable::vBoth
       firstFragment: <testLibraryFragment>::@topLevelVariable::vBoth
       type: A
       getter: <testLibraryFragment>::@getter::vBoth#element
@@ -2433,17 +2473,17 @@ library
     synthetic static get vBoth
       firstFragment: <testLibraryFragment>::@getter::vBoth
   setters
-    synthetic static set vSetField=
+    synthetic static set vSetField
       firstFragment: <testLibraryFragment>::@setter::vSetField
       formalParameters
         requiredPositional _vSetField
           type: A
-    synthetic static set vInvokeMethod=
+    synthetic static set vInvokeMethod
       firstFragment: <testLibraryFragment>::@setter::vInvokeMethod
       formalParameters
         requiredPositional _vInvokeMethod
           type: A
-    synthetic static set vBoth=
+    synthetic static set vBoth
       firstFragment: <testLibraryFragment>::@setter::vBoth
       formalParameters
         requiredPositional _vBoth
@@ -2790,7 +2830,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            f @16
+            hasInitializer f @16
               reference: <testLibraryFragment>::@class::A::@field::f
               element: <testLibraryFragment>::@class::A::@field::f#element
               getter2: <testLibraryFragment>::@class::A::@getter::f
@@ -2799,12 +2839,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::A::@getter::f
               element: <testLibraryFragment>::@class::A::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::A::@setter::f
               element: <testLibraryFragment>::@class::A::@setter::f#element
               formalParameters
@@ -2823,12 +2864,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get a
               reference: <testLibraryFragment>::@class::B::@getter::a
               element: <testLibraryFragment>::@class::B::@getter::a#element
           setters
-            set <null-name>
+            synthetic set a
               reference: <testLibraryFragment>::@class::B::@setter::a
               element: <testLibraryFragment>::@class::B::@setter::a#element
               formalParameters
@@ -2847,12 +2889,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::C::@getter::b
               element: <testLibraryFragment>::@class::C::@getter::b#element
           setters
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::C::@setter::b
               element: <testLibraryFragment>::@class::C::@setter::b#element
               formalParameters
@@ -2862,62 +2905,62 @@ library
           reference: <testLibraryFragment>::@class::X
           element: <testLibrary>::@class::X
           fields
-            a @77
+            hasInitializer a @77
               reference: <testLibraryFragment>::@class::X::@field::a
               element: <testLibraryFragment>::@class::X::@field::a#element
               getter2: <testLibraryFragment>::@class::X::@getter::a
               setter2: <testLibraryFragment>::@class::X::@setter::a
-            b @94
+            hasInitializer b @94
               reference: <testLibraryFragment>::@class::X::@field::b
               element: <testLibraryFragment>::@class::X::@field::b#element
               getter2: <testLibraryFragment>::@class::X::@getter::b
               setter2: <testLibraryFragment>::@class::X::@setter::b
-            c @111
+            hasInitializer c @111
               reference: <testLibraryFragment>::@class::X::@field::c
               element: <testLibraryFragment>::@class::X::@field::c#element
               getter2: <testLibraryFragment>::@class::X::@getter::c
               setter2: <testLibraryFragment>::@class::X::@setter::c
-            t01 @130
+            hasInitializer t01 @130
               reference: <testLibraryFragment>::@class::X::@field::t01
               element: <testLibraryFragment>::@class::X::@field::t01#element
               getter2: <testLibraryFragment>::@class::X::@getter::t01
               setter2: <testLibraryFragment>::@class::X::@setter::t01
-            t02 @147
+            hasInitializer t02 @147
               reference: <testLibraryFragment>::@class::X::@field::t02
               element: <testLibraryFragment>::@class::X::@field::t02#element
               getter2: <testLibraryFragment>::@class::X::@getter::t02
               setter2: <testLibraryFragment>::@class::X::@setter::t02
-            t03 @166
+            hasInitializer t03 @166
               reference: <testLibraryFragment>::@class::X::@field::t03
               element: <testLibraryFragment>::@class::X::@field::t03#element
               getter2: <testLibraryFragment>::@class::X::@getter::t03
               setter2: <testLibraryFragment>::@class::X::@setter::t03
-            t11 @187
+            hasInitializer t11 @187
               reference: <testLibraryFragment>::@class::X::@field::t11
               element: <testLibraryFragment>::@class::X::@field::t11#element
               getter2: <testLibraryFragment>::@class::X::@getter::t11
               setter2: <testLibraryFragment>::@class::X::@setter::t11
-            t12 @210
+            hasInitializer t12 @210
               reference: <testLibraryFragment>::@class::X::@field::t12
               element: <testLibraryFragment>::@class::X::@field::t12#element
               getter2: <testLibraryFragment>::@class::X::@getter::t12
               setter2: <testLibraryFragment>::@class::X::@setter::t12
-            t13 @235
+            hasInitializer t13 @235
               reference: <testLibraryFragment>::@class::X::@field::t13
               element: <testLibraryFragment>::@class::X::@field::t13#element
               getter2: <testLibraryFragment>::@class::X::@getter::t13
               setter2: <testLibraryFragment>::@class::X::@setter::t13
-            t21 @262
+            hasInitializer t21 @262
               reference: <testLibraryFragment>::@class::X::@field::t21
               element: <testLibraryFragment>::@class::X::@field::t21#element
               getter2: <testLibraryFragment>::@class::X::@getter::t21
               setter2: <testLibraryFragment>::@class::X::@setter::t21
-            t22 @284
+            hasInitializer t22 @284
               reference: <testLibraryFragment>::@class::X::@field::t22
               element: <testLibraryFragment>::@class::X::@field::t22#element
               getter2: <testLibraryFragment>::@class::X::@getter::t22
               setter2: <testLibraryFragment>::@class::X::@setter::t22
-            t23 @308
+            hasInitializer t23 @308
               reference: <testLibraryFragment>::@class::X::@field::t23
               element: <testLibraryFragment>::@class::X::@field::t23#element
               getter2: <testLibraryFragment>::@class::X::@getter::t23
@@ -2926,111 +2969,112 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::X::@constructor::new
               element: <testLibraryFragment>::@class::X::@constructor::new#element
+              typeName: X
           getters
-            get <null-name>
+            synthetic get a
               reference: <testLibraryFragment>::@class::X::@getter::a
               element: <testLibraryFragment>::@class::X::@getter::a#element
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::X::@getter::b
               element: <testLibraryFragment>::@class::X::@getter::b#element
-            get <null-name>
+            synthetic get c
               reference: <testLibraryFragment>::@class::X::@getter::c
               element: <testLibraryFragment>::@class::X::@getter::c#element
-            get <null-name>
+            synthetic get t01
               reference: <testLibraryFragment>::@class::X::@getter::t01
               element: <testLibraryFragment>::@class::X::@getter::t01#element
-            get <null-name>
+            synthetic get t02
               reference: <testLibraryFragment>::@class::X::@getter::t02
               element: <testLibraryFragment>::@class::X::@getter::t02#element
-            get <null-name>
+            synthetic get t03
               reference: <testLibraryFragment>::@class::X::@getter::t03
               element: <testLibraryFragment>::@class::X::@getter::t03#element
-            get <null-name>
+            synthetic get t11
               reference: <testLibraryFragment>::@class::X::@getter::t11
               element: <testLibraryFragment>::@class::X::@getter::t11#element
-            get <null-name>
+            synthetic get t12
               reference: <testLibraryFragment>::@class::X::@getter::t12
               element: <testLibraryFragment>::@class::X::@getter::t12#element
-            get <null-name>
+            synthetic get t13
               reference: <testLibraryFragment>::@class::X::@getter::t13
               element: <testLibraryFragment>::@class::X::@getter::t13#element
-            get <null-name>
+            synthetic get t21
               reference: <testLibraryFragment>::@class::X::@getter::t21
               element: <testLibraryFragment>::@class::X::@getter::t21#element
-            get <null-name>
+            synthetic get t22
               reference: <testLibraryFragment>::@class::X::@getter::t22
               element: <testLibraryFragment>::@class::X::@getter::t22#element
-            get <null-name>
+            synthetic get t23
               reference: <testLibraryFragment>::@class::X::@getter::t23
               element: <testLibraryFragment>::@class::X::@getter::t23#element
           setters
-            set <null-name>
+            synthetic set a
               reference: <testLibraryFragment>::@class::X::@setter::a
               element: <testLibraryFragment>::@class::X::@setter::a#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::a::@parameter::_a#element
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::X::@setter::b
               element: <testLibraryFragment>::@class::X::@setter::b#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::b::@parameter::_b#element
-            set <null-name>
+            synthetic set c
               reference: <testLibraryFragment>::@class::X::@setter::c
               element: <testLibraryFragment>::@class::X::@setter::c#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::c::@parameter::_c#element
-            set <null-name>
+            synthetic set t01
               reference: <testLibraryFragment>::@class::X::@setter::t01
               element: <testLibraryFragment>::@class::X::@setter::t01#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t01::@parameter::_t01#element
-            set <null-name>
+            synthetic set t02
               reference: <testLibraryFragment>::@class::X::@setter::t02
               element: <testLibraryFragment>::@class::X::@setter::t02#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t02::@parameter::_t02#element
-            set <null-name>
+            synthetic set t03
               reference: <testLibraryFragment>::@class::X::@setter::t03
               element: <testLibraryFragment>::@class::X::@setter::t03#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t03::@parameter::_t03#element
-            set <null-name>
+            synthetic set t11
               reference: <testLibraryFragment>::@class::X::@setter::t11
               element: <testLibraryFragment>::@class::X::@setter::t11#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t11::@parameter::_t11#element
-            set <null-name>
+            synthetic set t12
               reference: <testLibraryFragment>::@class::X::@setter::t12
               element: <testLibraryFragment>::@class::X::@setter::t12#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t12::@parameter::_t12#element
-            set <null-name>
+            synthetic set t13
               reference: <testLibraryFragment>::@class::X::@setter::t13
               element: <testLibraryFragment>::@class::X::@setter::t13#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t13::@parameter::_t13#element
-            set <null-name>
+            synthetic set t21
               reference: <testLibraryFragment>::@class::X::@setter::t21
               element: <testLibraryFragment>::@class::X::@setter::t21#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t21::@parameter::_t21#element
-            set <null-name>
+            synthetic set t22
               reference: <testLibraryFragment>::@class::X::@setter::t22
               element: <testLibraryFragment>::@class::X::@setter::t22#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::X::@setter::t22::@parameter::_t22#element
-            set <null-name>
+            synthetic set t23
               reference: <testLibraryFragment>::@class::X::@setter::t23
               element: <testLibraryFragment>::@class::X::@setter::t23#element
               formalParameters
@@ -3051,7 +3095,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        f
+        hasInitializer f
           firstFragment: <testLibraryFragment>::@class::A::@field::f
           type: int
           getter: <testLibraryFragment>::@class::A::@getter::f#element
@@ -3063,7 +3107,7 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::A::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::A::@setter::f
           formalParameters
             requiredPositional _f
@@ -3084,7 +3128,7 @@ library
         synthetic get a
           firstFragment: <testLibraryFragment>::@class::B::@getter::a
       setters
-        synthetic set a=
+        synthetic set a
           firstFragment: <testLibraryFragment>::@class::B::@setter::a
           formalParameters
             requiredPositional _a
@@ -3105,7 +3149,7 @@ library
         synthetic get b
           firstFragment: <testLibraryFragment>::@class::C::@getter::b
       setters
-        synthetic set b=
+        synthetic set b
           firstFragment: <testLibraryFragment>::@class::C::@setter::b
           formalParameters
             requiredPositional _b
@@ -3114,62 +3158,62 @@ library
       reference: <testLibrary>::@class::X
       firstFragment: <testLibraryFragment>::@class::X
       fields
-        a
+        hasInitializer a
           firstFragment: <testLibraryFragment>::@class::X::@field::a
           type: A
           getter: <testLibraryFragment>::@class::X::@getter::a#element
           setter: <testLibraryFragment>::@class::X::@setter::a#element
-        b
+        hasInitializer b
           firstFragment: <testLibraryFragment>::@class::X::@field::b
           type: B
           getter: <testLibraryFragment>::@class::X::@getter::b#element
           setter: <testLibraryFragment>::@class::X::@setter::b#element
-        c
+        hasInitializer c
           firstFragment: <testLibraryFragment>::@class::X::@field::c
           type: C
           getter: <testLibraryFragment>::@class::X::@getter::c#element
           setter: <testLibraryFragment>::@class::X::@setter::c#element
-        t01
+        hasInitializer t01
           firstFragment: <testLibraryFragment>::@class::X::@field::t01
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t01#element
           setter: <testLibraryFragment>::@class::X::@setter::t01#element
-        t02
+        hasInitializer t02
           firstFragment: <testLibraryFragment>::@class::X::@field::t02
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t02#element
           setter: <testLibraryFragment>::@class::X::@setter::t02#element
-        t03
+        hasInitializer t03
           firstFragment: <testLibraryFragment>::@class::X::@field::t03
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t03#element
           setter: <testLibraryFragment>::@class::X::@setter::t03#element
-        t11
+        hasInitializer t11
           firstFragment: <testLibraryFragment>::@class::X::@field::t11
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t11#element
           setter: <testLibraryFragment>::@class::X::@setter::t11#element
-        t12
+        hasInitializer t12
           firstFragment: <testLibraryFragment>::@class::X::@field::t12
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t12#element
           setter: <testLibraryFragment>::@class::X::@setter::t12#element
-        t13
+        hasInitializer t13
           firstFragment: <testLibraryFragment>::@class::X::@field::t13
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t13#element
           setter: <testLibraryFragment>::@class::X::@setter::t13#element
-        t21
+        hasInitializer t21
           firstFragment: <testLibraryFragment>::@class::X::@field::t21
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t21#element
           setter: <testLibraryFragment>::@class::X::@setter::t21#element
-        t22
+        hasInitializer t22
           firstFragment: <testLibraryFragment>::@class::X::@field::t22
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t22#element
           setter: <testLibraryFragment>::@class::X::@setter::t22#element
-        t23
+        hasInitializer t23
           firstFragment: <testLibraryFragment>::@class::X::@field::t23
           type: int
           getter: <testLibraryFragment>::@class::X::@getter::t23#element
@@ -3203,62 +3247,62 @@ library
         synthetic get t23
           firstFragment: <testLibraryFragment>::@class::X::@getter::t23
       setters
-        synthetic set a=
+        synthetic set a
           firstFragment: <testLibraryFragment>::@class::X::@setter::a
           formalParameters
             requiredPositional _a
               type: A
-        synthetic set b=
+        synthetic set b
           firstFragment: <testLibraryFragment>::@class::X::@setter::b
           formalParameters
             requiredPositional _b
               type: B
-        synthetic set c=
+        synthetic set c
           firstFragment: <testLibraryFragment>::@class::X::@setter::c
           formalParameters
             requiredPositional _c
               type: C
-        synthetic set t01=
+        synthetic set t01
           firstFragment: <testLibraryFragment>::@class::X::@setter::t01
           formalParameters
             requiredPositional _t01
               type: int
-        synthetic set t02=
+        synthetic set t02
           firstFragment: <testLibraryFragment>::@class::X::@setter::t02
           formalParameters
             requiredPositional _t02
               type: int
-        synthetic set t03=
+        synthetic set t03
           firstFragment: <testLibraryFragment>::@class::X::@setter::t03
           formalParameters
             requiredPositional _t03
               type: int
-        synthetic set t11=
+        synthetic set t11
           firstFragment: <testLibraryFragment>::@class::X::@setter::t11
           formalParameters
             requiredPositional _t11
               type: int
-        synthetic set t12=
+        synthetic set t12
           firstFragment: <testLibraryFragment>::@class::X::@setter::t12
           formalParameters
             requiredPositional _t12
               type: int
-        synthetic set t13=
+        synthetic set t13
           firstFragment: <testLibraryFragment>::@class::X::@setter::t13
           formalParameters
             requiredPositional _t13
               type: int
-        synthetic set t21=
+        synthetic set t21
           firstFragment: <testLibraryFragment>::@class::X::@setter::t21
           formalParameters
             requiredPositional _t21
               type: int
-        synthetic set t22=
+        synthetic set t22
           firstFragment: <testLibraryFragment>::@class::X::@setter::t22
           formalParameters
             requiredPositional _t22
               type: int
-        synthetic set t23=
+        synthetic set t23
           firstFragment: <testLibraryFragment>::@class::X::@setter::t23
           formalParameters
             requiredPositional _t23
@@ -3315,24 +3359,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        V @4
+        hasInitializer V @4
           reference: <testLibraryFragment>::@topLevelVariable::V
-          element: <testLibraryFragment>::@topLevelVariable::V#element
+          element: <testLibrary>::@topLevelVariable::V
           getter2: <testLibraryFragment>::@getter::V
           setter2: <testLibraryFragment>::@setter::V
       getters
-        get <null-name>
+        synthetic get V
           reference: <testLibraryFragment>::@getter::V
           element: <testLibraryFragment>::@getter::V#element
       setters
-        set <null-name>
+        synthetic set V
           reference: <testLibraryFragment>::@setter::V
           element: <testLibraryFragment>::@setter::V#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::V::@parameter::_V#element
   topLevelVariables
-    V
+    hasInitializer V
+      reference: <testLibrary>::@topLevelVariable::V
       firstFragment: <testLibraryFragment>::@topLevelVariable::V
       type: num
       getter: <testLibraryFragment>::@getter::V#element
@@ -3341,7 +3386,7 @@ library
     synthetic static get V
       firstFragment: <testLibraryFragment>::@getter::V
   setters
-    synthetic static set V=
+    synthetic static set V
       firstFragment: <testLibraryFragment>::@setter::V
       formalParameters
         requiredPositional _V
@@ -3402,43 +3447,45 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vEq @4
+        hasInitializer vEq @4
           reference: <testLibraryFragment>::@topLevelVariable::vEq
-          element: <testLibraryFragment>::@topLevelVariable::vEq#element
+          element: <testLibrary>::@topLevelVariable::vEq
           getter2: <testLibraryFragment>::@getter::vEq
           setter2: <testLibraryFragment>::@setter::vEq
-        vNotEq @22
+        hasInitializer vNotEq @22
           reference: <testLibraryFragment>::@topLevelVariable::vNotEq
-          element: <testLibraryFragment>::@topLevelVariable::vNotEq#element
+          element: <testLibrary>::@topLevelVariable::vNotEq
           getter2: <testLibraryFragment>::@getter::vNotEq
           setter2: <testLibraryFragment>::@setter::vNotEq
       getters
-        get <null-name>
+        synthetic get vEq
           reference: <testLibraryFragment>::@getter::vEq
           element: <testLibraryFragment>::@getter::vEq#element
-        get <null-name>
+        synthetic get vNotEq
           reference: <testLibraryFragment>::@getter::vNotEq
           element: <testLibraryFragment>::@getter::vNotEq#element
       setters
-        set <null-name>
+        synthetic set vEq
           reference: <testLibraryFragment>::@setter::vEq
           element: <testLibraryFragment>::@setter::vEq#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vEq::@parameter::_vEq#element
-        set <null-name>
+        synthetic set vNotEq
           reference: <testLibraryFragment>::@setter::vNotEq
           element: <testLibraryFragment>::@setter::vNotEq#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNotEq::@parameter::_vNotEq#element
   topLevelVariables
-    vEq
+    hasInitializer vEq
+      reference: <testLibrary>::@topLevelVariable::vEq
       firstFragment: <testLibraryFragment>::@topLevelVariable::vEq
       type: bool
       getter: <testLibraryFragment>::@getter::vEq#element
       setter: <testLibraryFragment>::@setter::vEq#element
-    vNotEq
+    hasInitializer vNotEq
+      reference: <testLibrary>::@topLevelVariable::vNotEq
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNotEq
       type: bool
       getter: <testLibraryFragment>::@getter::vNotEq#element
@@ -3449,12 +3496,12 @@ library
     synthetic static get vNotEq
       firstFragment: <testLibraryFragment>::@getter::vNotEq
   setters
-    synthetic static set vEq=
+    synthetic static set vEq
       firstFragment: <testLibraryFragment>::@setter::vEq
       formalParameters
         requiredPositional _vEq
           type: bool
-    synthetic static set vNotEq=
+    synthetic static set vNotEq
       firstFragment: <testLibraryFragment>::@setter::vNotEq
       formalParameters
         requiredPositional _vNotEq
@@ -3519,43 +3566,45 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        b @21
+        hasInitializer b @21
           reference: <testLibraryFragment>::@topLevelVariable::b
-          element: <testLibraryFragment>::@topLevelVariable::b#element
+          element: <testLibrary>::@topLevelVariable::b
           getter2: <testLibraryFragment>::@getter::b
           setter2: <testLibraryFragment>::@setter::b
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get b
           reference: <testLibraryFragment>::@getter::b
           element: <testLibraryFragment>::@getter::b#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set b
           reference: <testLibraryFragment>::@setter::b
           element: <testLibraryFragment>::@setter::b#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b::@parameter::_b#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: dynamic
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    b
+    hasInitializer b
+      reference: <testLibrary>::@topLevelVariable::b
       firstFragment: <testLibraryFragment>::@topLevelVariable::b
       type: dynamic
       getter: <testLibraryFragment>::@getter::b#element
@@ -3566,12 +3615,12 @@ library
     synthetic static get b
       firstFragment: <testLibraryFragment>::@getter::b
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: dynamic
-    synthetic static set b=
+    synthetic static set b
       firstFragment: <testLibraryFragment>::@setter::b
       formalParameters
         requiredPositional _b
@@ -3617,24 +3666,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: dynamic
       getter: <testLibraryFragment>::@getter::a#element
@@ -3643,7 +3693,7 @@ library
     synthetic static get a
       firstFragment: <testLibraryFragment>::@getter::a
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
@@ -3721,62 +3771,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        b0 @22
+        hasInitializer b0 @22
           reference: <testLibraryFragment>::@topLevelVariable::b0
-          element: <testLibraryFragment>::@topLevelVariable::b0#element
+          element: <testLibrary>::@topLevelVariable::b0
           getter2: <testLibraryFragment>::@getter::b0
           setter2: <testLibraryFragment>::@setter::b0
-        b1 @37
+        hasInitializer b1 @37
           reference: <testLibraryFragment>::@topLevelVariable::b1
-          element: <testLibraryFragment>::@topLevelVariable::b1#element
+          element: <testLibrary>::@topLevelVariable::b1
           getter2: <testLibraryFragment>::@getter::b1
           setter2: <testLibraryFragment>::@setter::b1
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get b0
           reference: <testLibraryFragment>::@getter::b0
           element: <testLibraryFragment>::@getter::b0#element
-        get <null-name>
+        synthetic get b1
           reference: <testLibraryFragment>::@getter::b1
           element: <testLibraryFragment>::@getter::b1#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set b0
           reference: <testLibraryFragment>::@setter::b0
           element: <testLibraryFragment>::@setter::b0#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b0::@parameter::_b0#element
-        set <null-name>
+        synthetic set b1
           reference: <testLibraryFragment>::@setter::b1
           element: <testLibraryFragment>::@setter::b1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b1::@parameter::_b1#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: List<num>
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    b0
+    hasInitializer b0
+      reference: <testLibrary>::@topLevelVariable::b0
       firstFragment: <testLibraryFragment>::@topLevelVariable::b0
       type: num
       getter: <testLibraryFragment>::@getter::b0#element
       setter: <testLibraryFragment>::@setter::b0#element
-    b1
+    hasInitializer b1
+      reference: <testLibrary>::@topLevelVariable::b1
       firstFragment: <testLibraryFragment>::@topLevelVariable::b1
       type: num
       getter: <testLibraryFragment>::@getter::b1#element
@@ -3789,17 +3842,17 @@ library
     synthetic static get b1
       firstFragment: <testLibraryFragment>::@getter::b1
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: List<num>
-    synthetic static set b0=
+    synthetic static set b0
       firstFragment: <testLibraryFragment>::@setter::b0
       formalParameters
         requiredPositional _b0
           type: num
-    synthetic static set b1=
+    synthetic static set b1
       firstFragment: <testLibraryFragment>::@setter::b1
       formalParameters
         requiredPositional _b1
@@ -3854,24 +3907,25 @@ library
       libraryImports
         package:test/a.dart
       topLevelVariables
-        x @21
+        hasInitializer x @21
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::x::@parameter::_x#element
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -3880,7 +3934,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -3957,7 +4011,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            f @16
+            hasInitializer f @16
               reference: <testLibraryFragment>::@class::C::@field::f
               element: <testLibraryFragment>::@class::C::@field::f#element
               getter2: <testLibraryFragment>::@class::C::@getter::f
@@ -3966,29 +4020,30 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::C::@getter::f
               element: <testLibraryFragment>::@class::C::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::C::@setter::f
               element: <testLibraryFragment>::@class::C::@setter::f#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::C::@setter::f::@parameter::_f#element
       topLevelVariables
-        x @29
+        hasInitializer x @29
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -3999,7 +4054,7 @@ library
       reference: <testLibrary>::@class::C
       firstFragment: <testLibraryFragment>::@class::C
       fields
-        f
+        hasInitializer f
           firstFragment: <testLibraryFragment>::@class::C::@field::f
           type: int
           getter: <testLibraryFragment>::@class::C::@getter::f#element
@@ -4011,13 +4066,14 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::C::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::C::@setter::f
           formalParameters
             requiredPositional _f
               type: int
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -4026,7 +4082,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4082,24 +4138,25 @@ library
       libraryImports
         package:test/a.dart
       topLevelVariables
-        x @21
+        hasInitializer x @21
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::x::@parameter::_x#element
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -4108,7 +4165,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4163,24 +4220,25 @@ library
       libraryImports
         package:test/a.dart
       topLevelVariables
-        x @21
+        hasInitializer x @21
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::x::@parameter::_x#element
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -4189,7 +4247,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4266,7 +4324,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            f @16
+            hasInitializer f @16
               reference: <testLibraryFragment>::@class::C::@field::f
               element: <testLibraryFragment>::@class::C::@field::f#element
               getter2: <testLibraryFragment>::@class::C::@getter::f
@@ -4275,29 +4333,30 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::C::@getter::f
               element: <testLibraryFragment>::@class::C::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::C::@setter::f
               element: <testLibraryFragment>::@class::C::@setter::f#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::C::@setter::f::@parameter::_f#element
       topLevelVariables
-        x @29
+        hasInitializer x @29
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -4308,7 +4367,7 @@ library
       reference: <testLibrary>::@class::C
       firstFragment: <testLibraryFragment>::@class::C
       fields
-        f
+        hasInitializer f
           firstFragment: <testLibraryFragment>::@class::C::@field::f
           type: int
           getter: <testLibraryFragment>::@class::C::@getter::f#element
@@ -4320,13 +4379,14 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::C::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::C::@setter::f
           formalParameters
             requiredPositional _f
               type: int
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -4335,7 +4395,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4391,24 +4451,25 @@ library
       libraryImports
         package:test/a.dart
       topLevelVariables
-        x @21
+        hasInitializer x @21
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::x::@parameter::_x#element
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -4417,7 +4478,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4511,12 +4572,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::A::@getter::f
               element: <testLibraryFragment>::@class::A::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::A::@setter::f
               element: <testLibraryFragment>::@class::A::@setter::f#element
               formalParameters
@@ -4526,7 +4588,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            t @44
+            hasInitializer t @44
               reference: <testLibraryFragment>::@class::B::@field::t
               element: <testLibraryFragment>::@class::B::@field::t#element
               getter2: <testLibraryFragment>::@class::B::@getter::t
@@ -4535,12 +4597,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get t
               reference: <testLibraryFragment>::@class::B::@getter::t
               element: <testLibraryFragment>::@class::B::@getter::t#element
           setters
-            set <null-name>
+            synthetic set t
               reference: <testLibraryFragment>::@class::B::@setter::t
               element: <testLibraryFragment>::@class::B::@setter::t#element
               formalParameters
@@ -4563,7 +4626,7 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::A::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::A::@setter::f
           formalParameters
             requiredPositional _f
@@ -4572,7 +4635,7 @@ library
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
       fields
-        static t
+        static hasInitializer t
           firstFragment: <testLibraryFragment>::@class::B::@field::t
           type: int
           getter: <testLibraryFragment>::@class::B::@getter::t#element
@@ -4584,7 +4647,7 @@ library
         synthetic static get t
           firstFragment: <testLibraryFragment>::@class::B::@getter::t
       setters
-        synthetic static set t=
+        synthetic static set t
           firstFragment: <testLibraryFragment>::@class::B::@setter::t
           formalParameters
             requiredPositional _t
@@ -4685,12 +4748,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::C::@getter::b
               element: <testLibraryFragment>::@class::C::@getter::b#element
           setters
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::C::@setter::b
               element: <testLibraryFragment>::@class::C::@setter::b#element
               formalParameters
@@ -4699,29 +4763,29 @@ library
       topLevelVariables
         c @24
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
           setter2: <testLibraryFragment>::@setter::c
-        x @31
+        hasInitializer x @31
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set c
           reference: <testLibraryFragment>::@setter::c
           element: <testLibraryFragment>::@setter::c#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::c::@parameter::_c#element
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -4744,18 +4808,20 @@ library
         synthetic get b
           firstFragment: <testLibraryFragment>::@class::C::@getter::b
       setters
-        synthetic set b=
+        synthetic set b
           firstFragment: <testLibraryFragment>::@class::C::@setter::b
           formalParameters
             requiredPositional _b
               type: bool
   topLevelVariables
     c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: C
       getter: <testLibraryFragment>::@getter::c#element
       setter: <testLibraryFragment>::@setter::c#element
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: bool
       getter: <testLibraryFragment>::@getter::x#element
@@ -4766,12 +4832,12 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set c=
+    synthetic static set c
       firstFragment: <testLibraryFragment>::@setter::c
       formalParameters
         requiredPositional _c
           type: C
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -4882,12 +4948,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
           getters
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::I::@getter::b
               element: <testLibraryFragment>::@class::I::@getter::b#element
           setters
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::I::@setter::b
               element: <testLibraryFragment>::@class::I::@setter::b#element
               formalParameters
@@ -4900,32 +4967,33 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
       topLevelVariables
         c @57
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
           setter2: <testLibraryFragment>::@setter::c
-        x @64
+        hasInitializer x @64
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set c
           reference: <testLibraryFragment>::@setter::c
           element: <testLibraryFragment>::@setter::c#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::c::@parameter::_c#element
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -4948,7 +5016,7 @@ library
         synthetic get b
           firstFragment: <testLibraryFragment>::@class::I::@getter::b
       setters
-        synthetic set b=
+        synthetic set b
           firstFragment: <testLibraryFragment>::@class::I::@setter::b
           formalParameters
             requiredPositional _b
@@ -4963,11 +5031,13 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
   topLevelVariables
     c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: C
       getter: <testLibraryFragment>::@getter::c#element
       setter: <testLibraryFragment>::@setter::c#element
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: bool
       getter: <testLibraryFragment>::@getter::x#element
@@ -4978,12 +5048,12 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set c=
+    synthetic static set c
       firstFragment: <testLibraryFragment>::@setter::c
       formalParameters
         requiredPositional _c
           type: C
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -5084,12 +5154,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::I::@constructor::new
               element: <testLibraryFragment>::@class::I::@constructor::new#element
+              typeName: I
           getters
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::I::@getter::b
               element: <testLibraryFragment>::@class::I::@getter::b#element
           setters
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::I::@setter::b
               element: <testLibraryFragment>::@class::I::@setter::b#element
               formalParameters
@@ -5102,18 +5173,19 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
       topLevelVariables
-        x @74
+        hasInitializer x @74
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -5140,7 +5212,7 @@ library
         synthetic get b
           firstFragment: <testLibraryFragment>::@class::I::@getter::b
       setters
-        synthetic set b=
+        synthetic set b
           firstFragment: <testLibraryFragment>::@class::I::@setter::b
           formalParameters
             requiredPositional _b
@@ -5154,7 +5226,8 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: bool
       getter: <testLibraryFragment>::@getter::x#element
@@ -5163,7 +5236,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -5269,6 +5342,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             foo @16
               reference: <testLibraryFragment>::@class::A::@method::foo
@@ -5280,37 +5354,38 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             foo @52
               reference: <testLibraryFragment>::@class::B::@method::foo
               element: <testLibraryFragment>::@class::B::@method::foo#element
       topLevelVariables
-        x @70
+        hasInitializer x @70
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
-        y @89
+        hasInitializer y @89
           reference: <testLibraryFragment>::@topLevelVariable::y
-          element: <testLibraryFragment>::@topLevelVariable::y#element
+          element: <testLibrary>::@topLevelVariable::y
           getter2: <testLibraryFragment>::@getter::y
           setter2: <testLibraryFragment>::@setter::y
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
-        get <null-name>
+        synthetic get y
           reference: <testLibraryFragment>::@getter::y
           element: <testLibraryFragment>::@getter::y#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::x::@parameter::_x#element
-        set <null-name>
+        synthetic set y
           reference: <testLibraryFragment>::@setter::y
           element: <testLibraryFragment>::@setter::y#element
           formalParameters
@@ -5325,6 +5400,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         foo
+          reference: <testLibrary>::@class::A::@method::foo
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
     class B
       reference: <testLibrary>::@class::B
@@ -5336,14 +5412,17 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         foo
+          reference: <testLibrary>::@class::B::@method::foo
           firstFragment: <testLibraryFragment>::@class::B::@method::foo
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
       setter: <testLibraryFragment>::@setter::x#element
-    y
+    hasInitializer y
+      reference: <testLibrary>::@topLevelVariable::y
       firstFragment: <testLibraryFragment>::@topLevelVariable::y
       type: int
       getter: <testLibraryFragment>::@getter::y#element
@@ -5354,12 +5433,12 @@ library
     synthetic static get y
       firstFragment: <testLibraryFragment>::@getter::y
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
           type: int
-    synthetic static set y=
+    synthetic static set y
       firstFragment: <testLibraryFragment>::@setter::y
       formalParameters
         requiredPositional _y
@@ -5494,119 +5573,125 @@ library
       libraryImports
         dart:async
       topLevelVariables
-        vFuture @25
+        hasInitializer vFuture @25
           reference: <testLibraryFragment>::@topLevelVariable::vFuture
-          element: <testLibraryFragment>::@topLevelVariable::vFuture#element
+          element: <testLibrary>::@topLevelVariable::vFuture
           getter2: <testLibraryFragment>::@getter::vFuture
           setter2: <testLibraryFragment>::@setter::vFuture
-        v_noParameters_inferredReturnType @60
+        hasInitializer v_noParameters_inferredReturnType @60
           reference: <testLibraryFragment>::@topLevelVariable::v_noParameters_inferredReturnType
-          element: <testLibraryFragment>::@topLevelVariable::v_noParameters_inferredReturnType#element
+          element: <testLibrary>::@topLevelVariable::v_noParameters_inferredReturnType
           getter2: <testLibraryFragment>::@getter::v_noParameters_inferredReturnType
           setter2: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType
-        v_hasParameter_withType_inferredReturnType @110
+        hasInitializer v_hasParameter_withType_inferredReturnType @110
           reference: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_inferredReturnType
-          element: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_inferredReturnType#element
+          element: <testLibrary>::@topLevelVariable::v_hasParameter_withType_inferredReturnType
           getter2: <testLibraryFragment>::@getter::v_hasParameter_withType_inferredReturnType
           setter2: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType
-        v_hasParameter_withType_returnParameter @177
+        hasInitializer v_hasParameter_withType_returnParameter @177
           reference: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_returnParameter
-          element: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_returnParameter#element
+          element: <testLibrary>::@topLevelVariable::v_hasParameter_withType_returnParameter
           getter2: <testLibraryFragment>::@getter::v_hasParameter_withType_returnParameter
           setter2: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter
-        v_async_returnValue @240
+        hasInitializer v_async_returnValue @240
           reference: <testLibraryFragment>::@topLevelVariable::v_async_returnValue
-          element: <testLibraryFragment>::@topLevelVariable::v_async_returnValue#element
+          element: <testLibrary>::@topLevelVariable::v_async_returnValue
           getter2: <testLibraryFragment>::@getter::v_async_returnValue
           setter2: <testLibraryFragment>::@setter::v_async_returnValue
-        v_async_returnFuture @282
+        hasInitializer v_async_returnFuture @282
           reference: <testLibraryFragment>::@topLevelVariable::v_async_returnFuture
-          element: <testLibraryFragment>::@topLevelVariable::v_async_returnFuture#element
+          element: <testLibrary>::@topLevelVariable::v_async_returnFuture
           getter2: <testLibraryFragment>::@getter::v_async_returnFuture
           setter2: <testLibraryFragment>::@setter::v_async_returnFuture
       getters
-        get <null-name>
+        synthetic get vFuture
           reference: <testLibraryFragment>::@getter::vFuture
           element: <testLibraryFragment>::@getter::vFuture#element
-        get <null-name>
+        synthetic get v_noParameters_inferredReturnType
           reference: <testLibraryFragment>::@getter::v_noParameters_inferredReturnType
           element: <testLibraryFragment>::@getter::v_noParameters_inferredReturnType#element
-        get <null-name>
+        synthetic get v_hasParameter_withType_inferredReturnType
           reference: <testLibraryFragment>::@getter::v_hasParameter_withType_inferredReturnType
           element: <testLibraryFragment>::@getter::v_hasParameter_withType_inferredReturnType#element
-        get <null-name>
+        synthetic get v_hasParameter_withType_returnParameter
           reference: <testLibraryFragment>::@getter::v_hasParameter_withType_returnParameter
           element: <testLibraryFragment>::@getter::v_hasParameter_withType_returnParameter#element
-        get <null-name>
+        synthetic get v_async_returnValue
           reference: <testLibraryFragment>::@getter::v_async_returnValue
           element: <testLibraryFragment>::@getter::v_async_returnValue#element
-        get <null-name>
+        synthetic get v_async_returnFuture
           reference: <testLibraryFragment>::@getter::v_async_returnFuture
           element: <testLibraryFragment>::@getter::v_async_returnFuture#element
       setters
-        set <null-name>
+        synthetic set vFuture
           reference: <testLibraryFragment>::@setter::vFuture
           element: <testLibraryFragment>::@setter::vFuture#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vFuture::@parameter::_vFuture#element
-        set <null-name>
+        synthetic set v_noParameters_inferredReturnType
           reference: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType
           element: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType::@parameter::_v_noParameters_inferredReturnType#element
-        set <null-name>
+        synthetic set v_hasParameter_withType_inferredReturnType
           reference: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType
           element: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType::@parameter::_v_hasParameter_withType_inferredReturnType#element
-        set <null-name>
+        synthetic set v_hasParameter_withType_returnParameter
           reference: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter
           element: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter::@parameter::_v_hasParameter_withType_returnParameter#element
-        set <null-name>
+        synthetic set v_async_returnValue
           reference: <testLibraryFragment>::@setter::v_async_returnValue
           element: <testLibraryFragment>::@setter::v_async_returnValue#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v_async_returnValue::@parameter::_v_async_returnValue#element
-        set <null-name>
+        synthetic set v_async_returnFuture
           reference: <testLibraryFragment>::@setter::v_async_returnFuture
           element: <testLibraryFragment>::@setter::v_async_returnFuture#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v_async_returnFuture::@parameter::_v_async_returnFuture#element
   topLevelVariables
-    vFuture
+    hasInitializer vFuture
+      reference: <testLibrary>::@topLevelVariable::vFuture
       firstFragment: <testLibraryFragment>::@topLevelVariable::vFuture
       type: Future<int>
       getter: <testLibraryFragment>::@getter::vFuture#element
       setter: <testLibraryFragment>::@setter::vFuture#element
-    v_noParameters_inferredReturnType
+    hasInitializer v_noParameters_inferredReturnType
+      reference: <testLibrary>::@topLevelVariable::v_noParameters_inferredReturnType
       firstFragment: <testLibraryFragment>::@topLevelVariable::v_noParameters_inferredReturnType
       type: int Function()
       getter: <testLibraryFragment>::@getter::v_noParameters_inferredReturnType#element
       setter: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType#element
-    v_hasParameter_withType_inferredReturnType
+    hasInitializer v_hasParameter_withType_inferredReturnType
+      reference: <testLibrary>::@topLevelVariable::v_hasParameter_withType_inferredReturnType
       firstFragment: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_inferredReturnType
       type: int Function(String)
       getter: <testLibraryFragment>::@getter::v_hasParameter_withType_inferredReturnType#element
       setter: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType#element
-    v_hasParameter_withType_returnParameter
+    hasInitializer v_hasParameter_withType_returnParameter
+      reference: <testLibrary>::@topLevelVariable::v_hasParameter_withType_returnParameter
       firstFragment: <testLibraryFragment>::@topLevelVariable::v_hasParameter_withType_returnParameter
       type: String Function(String)
       getter: <testLibraryFragment>::@getter::v_hasParameter_withType_returnParameter#element
       setter: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter#element
-    v_async_returnValue
+    hasInitializer v_async_returnValue
+      reference: <testLibrary>::@topLevelVariable::v_async_returnValue
       firstFragment: <testLibraryFragment>::@topLevelVariable::v_async_returnValue
       type: Future<int> Function()
       getter: <testLibraryFragment>::@getter::v_async_returnValue#element
       setter: <testLibraryFragment>::@setter::v_async_returnValue#element
-    v_async_returnFuture
+    hasInitializer v_async_returnFuture
+      reference: <testLibrary>::@topLevelVariable::v_async_returnFuture
       firstFragment: <testLibraryFragment>::@topLevelVariable::v_async_returnFuture
       type: Future<int> Function()
       getter: <testLibraryFragment>::@getter::v_async_returnFuture#element
@@ -5625,32 +5710,32 @@ library
     synthetic static get v_async_returnFuture
       firstFragment: <testLibraryFragment>::@getter::v_async_returnFuture
   setters
-    synthetic static set vFuture=
+    synthetic static set vFuture
       firstFragment: <testLibraryFragment>::@setter::vFuture
       formalParameters
         requiredPositional _vFuture
           type: Future<int>
-    synthetic static set v_noParameters_inferredReturnType=
+    synthetic static set v_noParameters_inferredReturnType
       firstFragment: <testLibraryFragment>::@setter::v_noParameters_inferredReturnType
       formalParameters
         requiredPositional _v_noParameters_inferredReturnType
           type: int Function()
-    synthetic static set v_hasParameter_withType_inferredReturnType=
+    synthetic static set v_hasParameter_withType_inferredReturnType
       firstFragment: <testLibraryFragment>::@setter::v_hasParameter_withType_inferredReturnType
       formalParameters
         requiredPositional _v_hasParameter_withType_inferredReturnType
           type: int Function(String)
-    synthetic static set v_hasParameter_withType_returnParameter=
+    synthetic static set v_hasParameter_withType_returnParameter
       firstFragment: <testLibraryFragment>::@setter::v_hasParameter_withType_returnParameter
       formalParameters
         requiredPositional _v_hasParameter_withType_returnParameter
           type: String Function(String)
-    synthetic static set v_async_returnValue=
+    synthetic static set v_async_returnValue
       firstFragment: <testLibraryFragment>::@setter::v_async_returnValue
       formalParameters
         requiredPositional _v_async_returnValue
           type: Future<int> Function()
-    synthetic static set v_async_returnFuture=
+    synthetic static set v_async_returnFuture
       firstFragment: <testLibraryFragment>::@setter::v_async_returnFuture
       formalParameters
         requiredPositional _v_async_returnFuture
@@ -5695,24 +5780,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        v @4
+        hasInitializer v @4
           reference: <testLibraryFragment>::@topLevelVariable::v
-          element: <testLibraryFragment>::@topLevelVariable::v#element
+          element: <testLibrary>::@topLevelVariable::v
           getter2: <testLibraryFragment>::@getter::v
           setter2: <testLibraryFragment>::@setter::v
       getters
-        get <null-name>
+        synthetic get v
           reference: <testLibraryFragment>::@getter::v
           element: <testLibraryFragment>::@getter::v#element
       setters
-        set <null-name>
+        synthetic set v
           reference: <testLibraryFragment>::@setter::v
           element: <testLibraryFragment>::@setter::v#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v::@parameter::_v#element
   topLevelVariables
-    v
+    hasInitializer v
+      reference: <testLibrary>::@topLevelVariable::v
       firstFragment: <testLibraryFragment>::@topLevelVariable::v
       type: int
       getter: <testLibraryFragment>::@getter::v#element
@@ -5721,7 +5807,7 @@ library
     synthetic static get v
       firstFragment: <testLibraryFragment>::@getter::v
   setters
-    synthetic static set v=
+    synthetic static set v
       firstFragment: <testLibraryFragment>::@setter::v
       formalParameters
         requiredPositional _v
@@ -5791,31 +5877,31 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vHasTypeArgument @22
+        hasInitializer vHasTypeArgument @22
           reference: <testLibraryFragment>::@topLevelVariable::vHasTypeArgument
-          element: <testLibraryFragment>::@topLevelVariable::vHasTypeArgument#element
+          element: <testLibrary>::@topLevelVariable::vHasTypeArgument
           getter2: <testLibraryFragment>::@getter::vHasTypeArgument
           setter2: <testLibraryFragment>::@setter::vHasTypeArgument
-        vNoTypeArgument @55
+        hasInitializer vNoTypeArgument @55
           reference: <testLibraryFragment>::@topLevelVariable::vNoTypeArgument
-          element: <testLibraryFragment>::@topLevelVariable::vNoTypeArgument#element
+          element: <testLibrary>::@topLevelVariable::vNoTypeArgument
           getter2: <testLibraryFragment>::@getter::vNoTypeArgument
           setter2: <testLibraryFragment>::@setter::vNoTypeArgument
       getters
-        get <null-name>
+        synthetic get vHasTypeArgument
           reference: <testLibraryFragment>::@getter::vHasTypeArgument
           element: <testLibraryFragment>::@getter::vHasTypeArgument#element
-        get <null-name>
+        synthetic get vNoTypeArgument
           reference: <testLibraryFragment>::@getter::vNoTypeArgument
           element: <testLibraryFragment>::@getter::vNoTypeArgument#element
       setters
-        set <null-name>
+        synthetic set vHasTypeArgument
           reference: <testLibraryFragment>::@setter::vHasTypeArgument
           element: <testLibraryFragment>::@setter::vHasTypeArgument#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vHasTypeArgument::@parameter::_vHasTypeArgument#element
-        set <null-name>
+        synthetic set vNoTypeArgument
           reference: <testLibraryFragment>::@setter::vNoTypeArgument
           element: <testLibraryFragment>::@setter::vNoTypeArgument#element
           formalParameters
@@ -5829,12 +5915,14 @@ library
             T @4
               element: <not-implemented>
   topLevelVariables
-    vHasTypeArgument
+    hasInitializer vHasTypeArgument
+      reference: <testLibrary>::@topLevelVariable::vHasTypeArgument
       firstFragment: <testLibraryFragment>::@topLevelVariable::vHasTypeArgument
       type: int
       getter: <testLibraryFragment>::@getter::vHasTypeArgument#element
       setter: <testLibraryFragment>::@setter::vHasTypeArgument#element
-    vNoTypeArgument
+    hasInitializer vNoTypeArgument
+      reference: <testLibrary>::@topLevelVariable::vNoTypeArgument
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNoTypeArgument
       type: dynamic
       getter: <testLibraryFragment>::@getter::vNoTypeArgument#element
@@ -5845,12 +5933,12 @@ library
     synthetic static get vNoTypeArgument
       firstFragment: <testLibraryFragment>::@getter::vNoTypeArgument
   setters
-    synthetic static set vHasTypeArgument=
+    synthetic static set vHasTypeArgument
       firstFragment: <testLibraryFragment>::@setter::vHasTypeArgument
       formalParameters
         requiredPositional _vHasTypeArgument
           type: int
-    synthetic static set vNoTypeArgument=
+    synthetic static set vNoTypeArgument
       firstFragment: <testLibraryFragment>::@setter::vNoTypeArgument
       formalParameters
         requiredPositional _vNoTypeArgument
@@ -5927,31 +6015,31 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vOkArgumentType @29
+        hasInitializer vOkArgumentType @29
           reference: <testLibraryFragment>::@topLevelVariable::vOkArgumentType
-          element: <testLibraryFragment>::@topLevelVariable::vOkArgumentType#element
+          element: <testLibrary>::@topLevelVariable::vOkArgumentType
           getter2: <testLibraryFragment>::@getter::vOkArgumentType
           setter2: <testLibraryFragment>::@setter::vOkArgumentType
-        vWrongArgumentType @57
+        hasInitializer vWrongArgumentType @57
           reference: <testLibraryFragment>::@topLevelVariable::vWrongArgumentType
-          element: <testLibraryFragment>::@topLevelVariable::vWrongArgumentType#element
+          element: <testLibrary>::@topLevelVariable::vWrongArgumentType
           getter2: <testLibraryFragment>::@getter::vWrongArgumentType
           setter2: <testLibraryFragment>::@setter::vWrongArgumentType
       getters
-        get <null-name>
+        synthetic get vOkArgumentType
           reference: <testLibraryFragment>::@getter::vOkArgumentType
           element: <testLibraryFragment>::@getter::vOkArgumentType#element
-        get <null-name>
+        synthetic get vWrongArgumentType
           reference: <testLibraryFragment>::@getter::vWrongArgumentType
           element: <testLibraryFragment>::@getter::vWrongArgumentType#element
       setters
-        set <null-name>
+        synthetic set vOkArgumentType
           reference: <testLibraryFragment>::@setter::vOkArgumentType
           element: <testLibraryFragment>::@setter::vOkArgumentType#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vOkArgumentType::@parameter::_vOkArgumentType#element
-        set <null-name>
+        synthetic set vWrongArgumentType
           reference: <testLibraryFragment>::@setter::vWrongArgumentType
           element: <testLibraryFragment>::@setter::vWrongArgumentType#element
           formalParameters
@@ -5965,12 +6053,14 @@ library
             p @13
               element: <testLibraryFragment>::@function::f::@parameter::p#element
   topLevelVariables
-    vOkArgumentType
+    hasInitializer vOkArgumentType
+      reference: <testLibrary>::@topLevelVariable::vOkArgumentType
       firstFragment: <testLibraryFragment>::@topLevelVariable::vOkArgumentType
       type: String
       getter: <testLibraryFragment>::@getter::vOkArgumentType#element
       setter: <testLibraryFragment>::@setter::vOkArgumentType#element
-    vWrongArgumentType
+    hasInitializer vWrongArgumentType
+      reference: <testLibrary>::@topLevelVariable::vWrongArgumentType
       firstFragment: <testLibraryFragment>::@topLevelVariable::vWrongArgumentType
       type: String
       getter: <testLibraryFragment>::@getter::vWrongArgumentType#element
@@ -5981,12 +6071,12 @@ library
     synthetic static get vWrongArgumentType
       firstFragment: <testLibraryFragment>::@getter::vWrongArgumentType
   setters
-    synthetic static set vOkArgumentType=
+    synthetic static set vOkArgumentType
       firstFragment: <testLibraryFragment>::@setter::vOkArgumentType
       formalParameters
         requiredPositional _vOkArgumentType
           type: String
-    synthetic static set vWrongArgumentType=
+    synthetic static set vWrongArgumentType
       firstFragment: <testLibraryFragment>::@setter::vWrongArgumentType
       formalParameters
         requiredPositional _vWrongArgumentType
@@ -6251,12 +6341,12 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            staticClassVariable @118
+            hasInitializer staticClassVariable @118
               reference: <testLibraryFragment>::@class::A::@field::staticClassVariable
               element: <testLibraryFragment>::@class::A::@field::staticClassVariable#element
               getter2: <testLibraryFragment>::@class::A::@getter::staticClassVariable
               setter2: <testLibraryFragment>::@class::A::@setter::staticClassVariable
-            <null-name>
+            synthetic staticGetter
               reference: <testLibraryFragment>::@class::A::@field::staticGetter
               element: <testLibraryFragment>::@class::A::@field::staticGetter#element
               getter2: <testLibraryFragment>::@class::A::@getter::staticGetter
@@ -6264,15 +6354,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get staticClassVariable
               reference: <testLibraryFragment>::@class::A::@getter::staticClassVariable
               element: <testLibraryFragment>::@class::A::@getter::staticClassVariable#element
             get staticGetter @160
               reference: <testLibraryFragment>::@class::A::@getter::staticGetter
               element: <testLibraryFragment>::@class::A::@getter::staticGetter#element
           setters
-            set <null-name>
+            synthetic set staticClassVariable
               reference: <testLibraryFragment>::@class::A::@setter::staticClassVariable
               element: <testLibraryFragment>::@class::A::@setter::staticClassVariable#element
               formalParameters
@@ -6292,136 +6383,136 @@ library
                 p @262
                   element: <testLibraryFragment>::@class::A::@method::instanceClassMethod::@parameter::p#element
       topLevelVariables
-        topLevelVariable @44
+        hasInitializer topLevelVariable @44
           reference: <testLibraryFragment>::@topLevelVariable::topLevelVariable
-          element: <testLibraryFragment>::@topLevelVariable::topLevelVariable#element
+          element: <testLibrary>::@topLevelVariable::topLevelVariable
           getter2: <testLibraryFragment>::@getter::topLevelVariable
           setter2: <testLibraryFragment>::@setter::topLevelVariable
-        r_topLevelFunction @280
+        hasInitializer r_topLevelFunction @280
           reference: <testLibraryFragment>::@topLevelVariable::r_topLevelFunction
-          element: <testLibraryFragment>::@topLevelVariable::r_topLevelFunction#element
+          element: <testLibrary>::@topLevelVariable::r_topLevelFunction
           getter2: <testLibraryFragment>::@getter::r_topLevelFunction
           setter2: <testLibraryFragment>::@setter::r_topLevelFunction
-        r_topLevelVariable @323
+        hasInitializer r_topLevelVariable @323
           reference: <testLibraryFragment>::@topLevelVariable::r_topLevelVariable
-          element: <testLibraryFragment>::@topLevelVariable::r_topLevelVariable#element
+          element: <testLibrary>::@topLevelVariable::r_topLevelVariable
           getter2: <testLibraryFragment>::@getter::r_topLevelVariable
           setter2: <testLibraryFragment>::@setter::r_topLevelVariable
-        r_topLevelGetter @366
+        hasInitializer r_topLevelGetter @366
           reference: <testLibraryFragment>::@topLevelVariable::r_topLevelGetter
-          element: <testLibraryFragment>::@topLevelVariable::r_topLevelGetter#element
+          element: <testLibrary>::@topLevelVariable::r_topLevelGetter
           getter2: <testLibraryFragment>::@getter::r_topLevelGetter
           setter2: <testLibraryFragment>::@setter::r_topLevelGetter
-        r_staticClassVariable @405
+        hasInitializer r_staticClassVariable @405
           reference: <testLibraryFragment>::@topLevelVariable::r_staticClassVariable
-          element: <testLibraryFragment>::@topLevelVariable::r_staticClassVariable#element
+          element: <testLibrary>::@topLevelVariable::r_staticClassVariable
           getter2: <testLibraryFragment>::@getter::r_staticClassVariable
           setter2: <testLibraryFragment>::@setter::r_staticClassVariable
-        r_staticGetter @456
+        hasInitializer r_staticGetter @456
           reference: <testLibraryFragment>::@topLevelVariable::r_staticGetter
-          element: <testLibraryFragment>::@topLevelVariable::r_staticGetter#element
+          element: <testLibrary>::@topLevelVariable::r_staticGetter
           getter2: <testLibraryFragment>::@getter::r_staticGetter
           setter2: <testLibraryFragment>::@setter::r_staticGetter
-        r_staticClassMethod @493
+        hasInitializer r_staticClassMethod @493
           reference: <testLibraryFragment>::@topLevelVariable::r_staticClassMethod
-          element: <testLibraryFragment>::@topLevelVariable::r_staticClassMethod#element
+          element: <testLibrary>::@topLevelVariable::r_staticClassMethod
           getter2: <testLibraryFragment>::@getter::r_staticClassMethod
           setter2: <testLibraryFragment>::@setter::r_staticClassMethod
-        instanceOfA @540
+        hasInitializer instanceOfA @540
           reference: <testLibraryFragment>::@topLevelVariable::instanceOfA
-          element: <testLibraryFragment>::@topLevelVariable::instanceOfA#element
+          element: <testLibrary>::@topLevelVariable::instanceOfA
           getter2: <testLibraryFragment>::@getter::instanceOfA
           setter2: <testLibraryFragment>::@setter::instanceOfA
-        r_instanceClassMethod @567
+        hasInitializer r_instanceClassMethod @567
           reference: <testLibraryFragment>::@topLevelVariable::r_instanceClassMethod
-          element: <testLibraryFragment>::@topLevelVariable::r_instanceClassMethod#element
+          element: <testLibrary>::@topLevelVariable::r_instanceClassMethod
           getter2: <testLibraryFragment>::@getter::r_instanceClassMethod
           setter2: <testLibraryFragment>::@setter::r_instanceClassMethod
-        synthetic <null-name>
+        synthetic topLevelGetter
           reference: <testLibraryFragment>::@topLevelVariable::topLevelGetter
-          element: <testLibraryFragment>::@topLevelVariable::topLevelGetter#element
+          element: <testLibrary>::@topLevelVariable::topLevelGetter
           getter2: <testLibraryFragment>::@getter::topLevelGetter
       getters
-        get <null-name>
+        synthetic get topLevelVariable
           reference: <testLibraryFragment>::@getter::topLevelVariable
           element: <testLibraryFragment>::@getter::topLevelVariable#element
-        get <null-name>
+        synthetic get r_topLevelFunction
           reference: <testLibraryFragment>::@getter::r_topLevelFunction
           element: <testLibraryFragment>::@getter::r_topLevelFunction#element
-        get <null-name>
+        synthetic get r_topLevelVariable
           reference: <testLibraryFragment>::@getter::r_topLevelVariable
           element: <testLibraryFragment>::@getter::r_topLevelVariable#element
-        get <null-name>
+        synthetic get r_topLevelGetter
           reference: <testLibraryFragment>::@getter::r_topLevelGetter
           element: <testLibraryFragment>::@getter::r_topLevelGetter#element
-        get <null-name>
+        synthetic get r_staticClassVariable
           reference: <testLibraryFragment>::@getter::r_staticClassVariable
           element: <testLibraryFragment>::@getter::r_staticClassVariable#element
-        get <null-name>
+        synthetic get r_staticGetter
           reference: <testLibraryFragment>::@getter::r_staticGetter
           element: <testLibraryFragment>::@getter::r_staticGetter#element
-        get <null-name>
+        synthetic get r_staticClassMethod
           reference: <testLibraryFragment>::@getter::r_staticClassMethod
           element: <testLibraryFragment>::@getter::r_staticClassMethod#element
-        get <null-name>
+        synthetic get instanceOfA
           reference: <testLibraryFragment>::@getter::instanceOfA
           element: <testLibraryFragment>::@getter::instanceOfA#element
-        get <null-name>
+        synthetic get r_instanceClassMethod
           reference: <testLibraryFragment>::@getter::r_instanceClassMethod
           element: <testLibraryFragment>::@getter::r_instanceClassMethod#element
         get topLevelGetter @74
           reference: <testLibraryFragment>::@getter::topLevelGetter
           element: <testLibraryFragment>::@getter::topLevelGetter#element
       setters
-        set <null-name>
+        synthetic set topLevelVariable
           reference: <testLibraryFragment>::@setter::topLevelVariable
           element: <testLibraryFragment>::@setter::topLevelVariable#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::topLevelVariable::@parameter::_topLevelVariable#element
-        set <null-name>
+        synthetic set r_topLevelFunction
           reference: <testLibraryFragment>::@setter::r_topLevelFunction
           element: <testLibraryFragment>::@setter::r_topLevelFunction#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_topLevelFunction::@parameter::_r_topLevelFunction#element
-        set <null-name>
+        synthetic set r_topLevelVariable
           reference: <testLibraryFragment>::@setter::r_topLevelVariable
           element: <testLibraryFragment>::@setter::r_topLevelVariable#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_topLevelVariable::@parameter::_r_topLevelVariable#element
-        set <null-name>
+        synthetic set r_topLevelGetter
           reference: <testLibraryFragment>::@setter::r_topLevelGetter
           element: <testLibraryFragment>::@setter::r_topLevelGetter#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_topLevelGetter::@parameter::_r_topLevelGetter#element
-        set <null-name>
+        synthetic set r_staticClassVariable
           reference: <testLibraryFragment>::@setter::r_staticClassVariable
           element: <testLibraryFragment>::@setter::r_staticClassVariable#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_staticClassVariable::@parameter::_r_staticClassVariable#element
-        set <null-name>
+        synthetic set r_staticGetter
           reference: <testLibraryFragment>::@setter::r_staticGetter
           element: <testLibraryFragment>::@setter::r_staticGetter#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_staticGetter::@parameter::_r_staticGetter#element
-        set <null-name>
+        synthetic set r_staticClassMethod
           reference: <testLibraryFragment>::@setter::r_staticClassMethod
           element: <testLibraryFragment>::@setter::r_staticClassMethod#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::r_staticClassMethod::@parameter::_r_staticClassMethod#element
-        set <null-name>
+        synthetic set instanceOfA
           reference: <testLibraryFragment>::@setter::instanceOfA
           element: <testLibraryFragment>::@setter::instanceOfA#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::instanceOfA::@parameter::_instanceOfA#element
-        set <null-name>
+        synthetic set r_instanceClassMethod
           reference: <testLibraryFragment>::@setter::r_instanceClassMethod
           element: <testLibraryFragment>::@setter::r_instanceClassMethod#element
           formalParameters
@@ -6439,7 +6530,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        static staticClassVariable
+        static hasInitializer staticClassVariable
           firstFragment: <testLibraryFragment>::@class::A::@field::staticClassVariable
           type: int
           getter: <testLibraryFragment>::@class::A::@getter::staticClassVariable#element
@@ -6457,69 +6548,81 @@ library
         static get staticGetter
           firstFragment: <testLibraryFragment>::@class::A::@getter::staticGetter
       setters
-        synthetic static set staticClassVariable=
+        synthetic static set staticClassVariable
           firstFragment: <testLibraryFragment>::@class::A::@setter::staticClassVariable
           formalParameters
             requiredPositional _staticClassVariable
               type: int
       methods
         static staticClassMethod
+          reference: <testLibrary>::@class::A::@method::staticClassMethod
           firstFragment: <testLibraryFragment>::@class::A::@method::staticClassMethod
           formalParameters
             requiredPositional p
               type: int
         instanceClassMethod
+          reference: <testLibrary>::@class::A::@method::instanceClassMethod
           firstFragment: <testLibraryFragment>::@class::A::@method::instanceClassMethod
           formalParameters
             requiredPositional p
               type: int
   topLevelVariables
-    topLevelVariable
+    hasInitializer topLevelVariable
+      reference: <testLibrary>::@topLevelVariable::topLevelVariable
       firstFragment: <testLibraryFragment>::@topLevelVariable::topLevelVariable
       type: int
       getter: <testLibraryFragment>::@getter::topLevelVariable#element
       setter: <testLibraryFragment>::@setter::topLevelVariable#element
-    r_topLevelFunction
+    hasInitializer r_topLevelFunction
+      reference: <testLibrary>::@topLevelVariable::r_topLevelFunction
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_topLevelFunction
       type: String Function(int)
       getter: <testLibraryFragment>::@getter::r_topLevelFunction#element
       setter: <testLibraryFragment>::@setter::r_topLevelFunction#element
-    r_topLevelVariable
+    hasInitializer r_topLevelVariable
+      reference: <testLibrary>::@topLevelVariable::r_topLevelVariable
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_topLevelVariable
       type: int
       getter: <testLibraryFragment>::@getter::r_topLevelVariable#element
       setter: <testLibraryFragment>::@setter::r_topLevelVariable#element
-    r_topLevelGetter
+    hasInitializer r_topLevelGetter
+      reference: <testLibrary>::@topLevelVariable::r_topLevelGetter
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_topLevelGetter
       type: int
       getter: <testLibraryFragment>::@getter::r_topLevelGetter#element
       setter: <testLibraryFragment>::@setter::r_topLevelGetter#element
-    r_staticClassVariable
+    hasInitializer r_staticClassVariable
+      reference: <testLibrary>::@topLevelVariable::r_staticClassVariable
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_staticClassVariable
       type: int
       getter: <testLibraryFragment>::@getter::r_staticClassVariable#element
       setter: <testLibraryFragment>::@setter::r_staticClassVariable#element
-    r_staticGetter
+    hasInitializer r_staticGetter
+      reference: <testLibrary>::@topLevelVariable::r_staticGetter
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_staticGetter
       type: int
       getter: <testLibraryFragment>::@getter::r_staticGetter#element
       setter: <testLibraryFragment>::@setter::r_staticGetter#element
-    r_staticClassMethod
+    hasInitializer r_staticClassMethod
+      reference: <testLibrary>::@topLevelVariable::r_staticClassMethod
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_staticClassMethod
       type: String Function(int)
       getter: <testLibraryFragment>::@getter::r_staticClassMethod#element
       setter: <testLibraryFragment>::@setter::r_staticClassMethod#element
-    instanceOfA
+    hasInitializer instanceOfA
+      reference: <testLibrary>::@topLevelVariable::instanceOfA
       firstFragment: <testLibraryFragment>::@topLevelVariable::instanceOfA
       type: A
       getter: <testLibraryFragment>::@getter::instanceOfA#element
       setter: <testLibraryFragment>::@setter::instanceOfA#element
-    r_instanceClassMethod
+    hasInitializer r_instanceClassMethod
+      reference: <testLibrary>::@topLevelVariable::r_instanceClassMethod
       firstFragment: <testLibraryFragment>::@topLevelVariable::r_instanceClassMethod
       type: String Function(int)
       getter: <testLibraryFragment>::@getter::r_instanceClassMethod#element
       setter: <testLibraryFragment>::@setter::r_instanceClassMethod#element
     synthetic topLevelGetter
+      reference: <testLibrary>::@topLevelVariable::topLevelGetter
       firstFragment: <testLibraryFragment>::@topLevelVariable::topLevelGetter
       type: int
       getter: <testLibraryFragment>::@getter::topLevelGetter#element
@@ -6545,47 +6648,47 @@ library
     static get topLevelGetter
       firstFragment: <testLibraryFragment>::@getter::topLevelGetter
   setters
-    synthetic static set topLevelVariable=
+    synthetic static set topLevelVariable
       firstFragment: <testLibraryFragment>::@setter::topLevelVariable
       formalParameters
         requiredPositional _topLevelVariable
           type: int
-    synthetic static set r_topLevelFunction=
+    synthetic static set r_topLevelFunction
       firstFragment: <testLibraryFragment>::@setter::r_topLevelFunction
       formalParameters
         requiredPositional _r_topLevelFunction
           type: String Function(int)
-    synthetic static set r_topLevelVariable=
+    synthetic static set r_topLevelVariable
       firstFragment: <testLibraryFragment>::@setter::r_topLevelVariable
       formalParameters
         requiredPositional _r_topLevelVariable
           type: int
-    synthetic static set r_topLevelGetter=
+    synthetic static set r_topLevelGetter
       firstFragment: <testLibraryFragment>::@setter::r_topLevelGetter
       formalParameters
         requiredPositional _r_topLevelGetter
           type: int
-    synthetic static set r_staticClassVariable=
+    synthetic static set r_staticClassVariable
       firstFragment: <testLibraryFragment>::@setter::r_staticClassVariable
       formalParameters
         requiredPositional _r_staticClassVariable
           type: int
-    synthetic static set r_staticGetter=
+    synthetic static set r_staticGetter
       firstFragment: <testLibraryFragment>::@setter::r_staticGetter
       formalParameters
         requiredPositional _r_staticGetter
           type: int
-    synthetic static set r_staticClassMethod=
+    synthetic static set r_staticClassMethod
       firstFragment: <testLibraryFragment>::@setter::r_staticClassMethod
       formalParameters
         requiredPositional _r_staticClassMethod
           type: String Function(int)
-    synthetic static set instanceOfA=
+    synthetic static set instanceOfA
       firstFragment: <testLibraryFragment>::@setter::instanceOfA
       formalParameters
         requiredPositional _instanceOfA
           type: A
-    synthetic static set r_instanceClassMethod=
+    synthetic static set r_instanceClassMethod
       firstFragment: <testLibraryFragment>::@setter::r_instanceClassMethod
       formalParameters
         requiredPositional _r_instanceClassMethod
@@ -6702,7 +6805,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            a @23
+            hasInitializer a @23
               reference: <testLibraryFragment>::@class::A::@field::a
               element: <testLibraryFragment>::@class::A::@field::a#element
               getter2: <testLibraryFragment>::@class::A::@getter::a
@@ -6711,12 +6814,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get a
               reference: <testLibraryFragment>::@class::A::@getter::a
               element: <testLibraryFragment>::@class::A::@getter::a#element
           setters
-            set <null-name>
+            synthetic set a
               reference: <testLibraryFragment>::@class::A::@setter::a
               element: <testLibraryFragment>::@class::A::@setter::a#element
               formalParameters
@@ -6726,7 +6830,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            b @57
+            hasInitializer b @57
               reference: <testLibraryFragment>::@class::B::@field::b
               element: <testLibraryFragment>::@class::B::@field::b#element
               getter2: <testLibraryFragment>::@class::B::@getter::b
@@ -6735,29 +6839,30 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get b
               reference: <testLibraryFragment>::@class::B::@getter::b
               element: <testLibraryFragment>::@class::B::@getter::b#element
           setters
-            set <null-name>
+            synthetic set b
               reference: <testLibraryFragment>::@class::B::@setter::b
               element: <testLibraryFragment>::@class::B::@setter::b#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::B::@setter::b::@parameter::_b#element
       topLevelVariables
-        c @72
+        hasInitializer c @72
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
           setter2: <testLibraryFragment>::@setter::c
       getters
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
       setters
-        set <null-name>
+        synthetic set c
           reference: <testLibraryFragment>::@setter::c
           element: <testLibraryFragment>::@setter::c#element
           formalParameters
@@ -6768,7 +6873,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        static a
+        static hasInitializer a
           firstFragment: <testLibraryFragment>::@class::A::@field::a
           type: dynamic
           getter: <testLibraryFragment>::@class::A::@getter::a#element
@@ -6780,7 +6885,7 @@ library
         synthetic static get a
           firstFragment: <testLibraryFragment>::@class::A::@getter::a
       setters
-        synthetic static set a=
+        synthetic static set a
           firstFragment: <testLibraryFragment>::@class::A::@setter::a
           formalParameters
             requiredPositional _a
@@ -6789,7 +6894,7 @@ library
       reference: <testLibrary>::@class::B
       firstFragment: <testLibraryFragment>::@class::B
       fields
-        static b
+        static hasInitializer b
           firstFragment: <testLibraryFragment>::@class::B::@field::b
           type: dynamic
           getter: <testLibraryFragment>::@class::B::@getter::b#element
@@ -6801,13 +6906,14 @@ library
         synthetic static get b
           firstFragment: <testLibraryFragment>::@class::B::@getter::b
       setters
-        synthetic static set b=
+        synthetic static set b
           firstFragment: <testLibraryFragment>::@class::B::@setter::b
           formalParameters
             requiredPositional _b
               type: dynamic
   topLevelVariables
-    c
+    hasInitializer c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: dynamic
       getter: <testLibraryFragment>::@getter::c#element
@@ -6816,7 +6922,7 @@ library
     synthetic static get c
       firstFragment: <testLibraryFragment>::@getter::c
   setters
-    synthetic static set c=
+    synthetic static set c
       firstFragment: <testLibraryFragment>::@setter::c
       formalParameters
         requiredPositional _c
@@ -6914,7 +7020,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            a @23
+            hasInitializer a @23
               reference: <testLibraryFragment>::@class::A::@field::a
               element: <testLibraryFragment>::@class::A::@field::a#element
               getter2: <testLibraryFragment>::@class::A::@getter::a
@@ -6923,43 +7029,44 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get a
               reference: <testLibraryFragment>::@class::A::@getter::a
               element: <testLibraryFragment>::@class::A::@getter::a#element
           setters
-            set <null-name>
+            synthetic set a
               reference: <testLibraryFragment>::@class::A::@setter::a
               element: <testLibraryFragment>::@class::A::@setter::a#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::a::@parameter::_a#element
       topLevelVariables
-        b @36
+        hasInitializer b @36
           reference: <testLibraryFragment>::@topLevelVariable::b
-          element: <testLibraryFragment>::@topLevelVariable::b#element
+          element: <testLibrary>::@topLevelVariable::b
           getter2: <testLibraryFragment>::@getter::b
           setter2: <testLibraryFragment>::@setter::b
-        c @49
+        hasInitializer c @49
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
           setter2: <testLibraryFragment>::@setter::c
       getters
-        get <null-name>
+        synthetic get b
           reference: <testLibraryFragment>::@getter::b
           element: <testLibraryFragment>::@getter::b#element
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
       setters
-        set <null-name>
+        synthetic set b
           reference: <testLibraryFragment>::@setter::b
           element: <testLibraryFragment>::@setter::b#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b::@parameter::_b#element
-        set <null-name>
+        synthetic set c
           reference: <testLibraryFragment>::@setter::c
           element: <testLibraryFragment>::@setter::c#element
           formalParameters
@@ -6970,7 +7077,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        static a
+        static hasInitializer a
           firstFragment: <testLibraryFragment>::@class::A::@field::a
           type: dynamic
           getter: <testLibraryFragment>::@class::A::@getter::a#element
@@ -6982,18 +7089,20 @@ library
         synthetic static get a
           firstFragment: <testLibraryFragment>::@class::A::@getter::a
       setters
-        synthetic static set a=
+        synthetic static set a
           firstFragment: <testLibraryFragment>::@class::A::@setter::a
           formalParameters
             requiredPositional _a
               type: dynamic
   topLevelVariables
-    b
+    hasInitializer b
+      reference: <testLibrary>::@topLevelVariable::b
       firstFragment: <testLibraryFragment>::@topLevelVariable::b
       type: dynamic
       getter: <testLibraryFragment>::@getter::b#element
       setter: <testLibraryFragment>::@setter::b#element
-    c
+    hasInitializer c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: dynamic
       getter: <testLibraryFragment>::@getter::c#element
@@ -7004,12 +7113,12 @@ library
     synthetic static get c
       firstFragment: <testLibraryFragment>::@getter::c
   setters
-    synthetic static set b=
+    synthetic static set b
       firstFragment: <testLibraryFragment>::@setter::b
       formalParameters
         requiredPositional _b
           type: dynamic
-    synthetic static set c=
+    synthetic static set c
       firstFragment: <testLibraryFragment>::@setter::c
       formalParameters
         requiredPositional _c
@@ -7082,49 +7191,53 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        final a @6
+        hasInitializer a @6
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
-        final b @19
+        hasInitializer b @19
           reference: <testLibraryFragment>::@topLevelVariable::b
-          element: <testLibraryFragment>::@topLevelVariable::b#element
+          element: <testLibrary>::@topLevelVariable::b
           getter2: <testLibraryFragment>::@getter::b
-        final c @32
+        hasInitializer c @32
           reference: <testLibraryFragment>::@topLevelVariable::c
-          element: <testLibraryFragment>::@topLevelVariable::c#element
+          element: <testLibrary>::@topLevelVariable::c
           getter2: <testLibraryFragment>::@getter::c
-        final d @45
+        hasInitializer d @45
           reference: <testLibraryFragment>::@topLevelVariable::d
-          element: <testLibraryFragment>::@topLevelVariable::d#element
+          element: <testLibrary>::@topLevelVariable::d
           getter2: <testLibraryFragment>::@getter::d
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get b
           reference: <testLibraryFragment>::@getter::b
           element: <testLibraryFragment>::@getter::b#element
-        get <null-name>
+        synthetic get c
           reference: <testLibraryFragment>::@getter::c
           element: <testLibraryFragment>::@getter::c#element
-        get <null-name>
+        synthetic get d
           reference: <testLibraryFragment>::@getter::d
           element: <testLibraryFragment>::@getter::d#element
   topLevelVariables
-    final a
+    final hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: dynamic
       getter: <testLibraryFragment>::@getter::a#element
-    final b
+    final hasInitializer b
+      reference: <testLibrary>::@topLevelVariable::b
       firstFragment: <testLibraryFragment>::@topLevelVariable::b
       type: dynamic
       getter: <testLibraryFragment>::@getter::b#element
-    final c
+    final hasInitializer c
+      reference: <testLibrary>::@topLevelVariable::c
       firstFragment: <testLibraryFragment>::@topLevelVariable::c
       type: dynamic
       getter: <testLibraryFragment>::@getter::c#element
-    final d
+    final hasInitializer d
+      reference: <testLibrary>::@topLevelVariable::d
       firstFragment: <testLibraryFragment>::@topLevelVariable::d
       type: dynamic
       getter: <testLibraryFragment>::@getter::d#element
@@ -7212,18 +7325,19 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
       topLevelVariables
-        a @15
+        hasInitializer a @15
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
@@ -7237,7 +7351,8 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: A
       getter: <testLibraryFragment>::@getter::a#element
@@ -7246,7 +7361,7 @@ library
     synthetic static get a
       firstFragment: <testLibraryFragment>::@getter::a
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
@@ -7313,31 +7428,31 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        s @25
+        hasInitializer s @25
           reference: <testLibraryFragment>::@topLevelVariable::s
-          element: <testLibraryFragment>::@topLevelVariable::s#element
+          element: <testLibrary>::@topLevelVariable::s
           getter2: <testLibraryFragment>::@getter::s
           setter2: <testLibraryFragment>::@setter::s
-        h @49
+        hasInitializer h @49
           reference: <testLibraryFragment>::@topLevelVariable::h
-          element: <testLibraryFragment>::@topLevelVariable::h#element
+          element: <testLibrary>::@topLevelVariable::h
           getter2: <testLibraryFragment>::@getter::h
           setter2: <testLibraryFragment>::@setter::h
       getters
-        get <null-name>
+        synthetic get s
           reference: <testLibraryFragment>::@getter::s
           element: <testLibraryFragment>::@getter::s#element
-        get <null-name>
+        synthetic get h
           reference: <testLibraryFragment>::@getter::h
           element: <testLibraryFragment>::@getter::h#element
       setters
-        set <null-name>
+        synthetic set s
           reference: <testLibraryFragment>::@setter::s
           element: <testLibraryFragment>::@setter::s#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::s::@parameter::_s#element
-        set <null-name>
+        synthetic set h
           reference: <testLibraryFragment>::@setter::h
           element: <testLibraryFragment>::@setter::h#element
           formalParameters
@@ -7348,12 +7463,14 @@ library
           reference: <testLibraryFragment>::@function::f
           element: <testLibrary>::@function::f
   topLevelVariables
-    s
+    hasInitializer s
+      reference: <testLibrary>::@topLevelVariable::s
       firstFragment: <testLibraryFragment>::@topLevelVariable::s
       type: String
       getter: <testLibraryFragment>::@getter::s#element
       setter: <testLibraryFragment>::@setter::s#element
-    h
+    hasInitializer h
+      reference: <testLibrary>::@topLevelVariable::h
       firstFragment: <testLibraryFragment>::@topLevelVariable::h
       type: int
       getter: <testLibraryFragment>::@getter::h#element
@@ -7364,12 +7481,12 @@ library
     synthetic static get h
       firstFragment: <testLibraryFragment>::@getter::h
   setters
-    synthetic static set s=
+    synthetic static set s
       firstFragment: <testLibraryFragment>::@setter::s
       formalParameters
         requiredPositional _s
           type: String
-    synthetic static set h=
+    synthetic static set h
       firstFragment: <testLibraryFragment>::@setter::h
       formalParameters
         requiredPositional _h
@@ -7453,43 +7570,43 @@ library
       topLevelVariables
         d @8
           reference: <testLibraryFragment>::@topLevelVariable::d
-          element: <testLibraryFragment>::@topLevelVariable::d#element
+          element: <testLibrary>::@topLevelVariable::d
           getter2: <testLibraryFragment>::@getter::d
           setter2: <testLibraryFragment>::@setter::d
-        s @15
+        hasInitializer s @15
           reference: <testLibraryFragment>::@topLevelVariable::s
-          element: <testLibraryFragment>::@topLevelVariable::s#element
+          element: <testLibrary>::@topLevelVariable::s
           getter2: <testLibraryFragment>::@getter::s
           setter2: <testLibraryFragment>::@setter::s
-        h @37
+        hasInitializer h @37
           reference: <testLibraryFragment>::@topLevelVariable::h
-          element: <testLibraryFragment>::@topLevelVariable::h#element
+          element: <testLibrary>::@topLevelVariable::h
           getter2: <testLibraryFragment>::@getter::h
           setter2: <testLibraryFragment>::@setter::h
       getters
-        get <null-name>
+        synthetic get d
           reference: <testLibraryFragment>::@getter::d
           element: <testLibraryFragment>::@getter::d#element
-        get <null-name>
+        synthetic get s
           reference: <testLibraryFragment>::@getter::s
           element: <testLibraryFragment>::@getter::s#element
-        get <null-name>
+        synthetic get h
           reference: <testLibraryFragment>::@getter::h
           element: <testLibraryFragment>::@getter::h#element
       setters
-        set <null-name>
+        synthetic set d
           reference: <testLibraryFragment>::@setter::d
           element: <testLibraryFragment>::@setter::d#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::d::@parameter::_d#element
-        set <null-name>
+        synthetic set s
           reference: <testLibraryFragment>::@setter::s
           element: <testLibraryFragment>::@setter::s#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::s::@parameter::_s#element
-        set <null-name>
+        synthetic set h
           reference: <testLibraryFragment>::@setter::h
           element: <testLibraryFragment>::@setter::h#element
           formalParameters
@@ -7497,16 +7614,19 @@ library
               element: <testLibraryFragment>::@setter::h::@parameter::_h#element
   topLevelVariables
     d
+      reference: <testLibrary>::@topLevelVariable::d
       firstFragment: <testLibraryFragment>::@topLevelVariable::d
       type: dynamic
       getter: <testLibraryFragment>::@getter::d#element
       setter: <testLibraryFragment>::@setter::d#element
-    s
+    hasInitializer s
+      reference: <testLibrary>::@topLevelVariable::s
       firstFragment: <testLibraryFragment>::@topLevelVariable::s
       type: String
       getter: <testLibraryFragment>::@getter::s#element
       setter: <testLibraryFragment>::@setter::s#element
-    h
+    hasInitializer h
+      reference: <testLibrary>::@topLevelVariable::h
       firstFragment: <testLibraryFragment>::@topLevelVariable::h
       type: int
       getter: <testLibraryFragment>::@getter::h#element
@@ -7519,17 +7639,17 @@ library
     synthetic static get h
       firstFragment: <testLibraryFragment>::@getter::h
   setters
-    synthetic static set d=
+    synthetic static set d
       firstFragment: <testLibraryFragment>::@setter::d
       formalParameters
         requiredPositional _d
           type: dynamic
-    synthetic static set s=
+    synthetic static set s
       firstFragment: <testLibraryFragment>::@setter::s
       formalParameters
         requiredPositional _s
           type: String
-    synthetic static set h=
+    synthetic static set h
       firstFragment: <testLibraryFragment>::@setter::h
       formalParameters
         requiredPositional _h
@@ -7590,43 +7710,45 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        b @17
+        hasInitializer b @17
           reference: <testLibraryFragment>::@topLevelVariable::b
-          element: <testLibraryFragment>::@topLevelVariable::b#element
+          element: <testLibrary>::@topLevelVariable::b
           getter2: <testLibraryFragment>::@getter::b
           setter2: <testLibraryFragment>::@setter::b
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get b
           reference: <testLibraryFragment>::@getter::b
           element: <testLibraryFragment>::@getter::b#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set b
           reference: <testLibraryFragment>::@setter::b
           element: <testLibraryFragment>::@setter::b#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b::@parameter::_b#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: double
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    b
+    hasInitializer b
+      reference: <testLibrary>::@topLevelVariable::b
       firstFragment: <testLibraryFragment>::@topLevelVariable::b
       type: bool
       getter: <testLibraryFragment>::@getter::b#element
@@ -7637,12 +7759,12 @@ library
     synthetic static get b
       firstFragment: <testLibraryFragment>::@getter::b
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: double
-    synthetic static set b=
+    synthetic static set b
       firstFragment: <testLibraryFragment>::@setter::b
       formalParameters
         requiredPositional _b
@@ -7765,81 +7887,85 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vObject @4
+        hasInitializer vObject @4
           reference: <testLibraryFragment>::@topLevelVariable::vObject
-          element: <testLibraryFragment>::@topLevelVariable::vObject#element
+          element: <testLibrary>::@topLevelVariable::vObject
           getter2: <testLibraryFragment>::@getter::vObject
           setter2: <testLibraryFragment>::@setter::vObject
-        vNum @37
+        hasInitializer vNum @37
           reference: <testLibraryFragment>::@topLevelVariable::vNum
-          element: <testLibraryFragment>::@topLevelVariable::vNum#element
+          element: <testLibrary>::@topLevelVariable::vNum
           getter2: <testLibraryFragment>::@getter::vNum
           setter2: <testLibraryFragment>::@setter::vNum
-        vNumEmpty @64
+        hasInitializer vNumEmpty @64
           reference: <testLibraryFragment>::@topLevelVariable::vNumEmpty
-          element: <testLibraryFragment>::@topLevelVariable::vNumEmpty#element
+          element: <testLibrary>::@topLevelVariable::vNumEmpty
           getter2: <testLibraryFragment>::@getter::vNumEmpty
           setter2: <testLibraryFragment>::@setter::vNumEmpty
-        vInt @89
+        hasInitializer vInt @89
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
       getters
-        get <null-name>
+        synthetic get vObject
           reference: <testLibraryFragment>::@getter::vObject
           element: <testLibraryFragment>::@getter::vObject#element
-        get <null-name>
+        synthetic get vNum
           reference: <testLibraryFragment>::@getter::vNum
           element: <testLibraryFragment>::@getter::vNum#element
-        get <null-name>
+        synthetic get vNumEmpty
           reference: <testLibraryFragment>::@getter::vNumEmpty
           element: <testLibraryFragment>::@getter::vNumEmpty#element
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
       setters
-        set <null-name>
+        synthetic set vObject
           reference: <testLibraryFragment>::@setter::vObject
           element: <testLibraryFragment>::@setter::vObject#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vObject::@parameter::_vObject#element
-        set <null-name>
+        synthetic set vNum
           reference: <testLibraryFragment>::@setter::vNum
           element: <testLibraryFragment>::@setter::vNum#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNum::@parameter::_vNum#element
-        set <null-name>
+        synthetic set vNumEmpty
           reference: <testLibraryFragment>::@setter::vNumEmpty
           element: <testLibraryFragment>::@setter::vNumEmpty#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNumEmpty::@parameter::_vNumEmpty#element
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
   topLevelVariables
-    vObject
+    hasInitializer vObject
+      reference: <testLibrary>::@topLevelVariable::vObject
       firstFragment: <testLibraryFragment>::@topLevelVariable::vObject
       type: List<Object>
       getter: <testLibraryFragment>::@getter::vObject#element
       setter: <testLibraryFragment>::@setter::vObject#element
-    vNum
+    hasInitializer vNum
+      reference: <testLibrary>::@topLevelVariable::vNum
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNum
       type: List<num>
       getter: <testLibraryFragment>::@getter::vNum#element
       setter: <testLibraryFragment>::@setter::vNum#element
-    vNumEmpty
+    hasInitializer vNumEmpty
+      reference: <testLibrary>::@topLevelVariable::vNumEmpty
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNumEmpty
       type: List<num>
       getter: <testLibraryFragment>::@getter::vNumEmpty#element
       setter: <testLibraryFragment>::@setter::vNumEmpty#element
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: List<int>
       getter: <testLibraryFragment>::@getter::vInt#element
@@ -7854,22 +7980,22 @@ library
     synthetic static get vInt
       firstFragment: <testLibraryFragment>::@getter::vInt
   setters
-    synthetic static set vObject=
+    synthetic static set vObject
       firstFragment: <testLibraryFragment>::@setter::vObject
       formalParameters
         requiredPositional _vObject
           type: List<Object>
-    synthetic static set vNum=
+    synthetic static set vNum
       firstFragment: <testLibraryFragment>::@setter::vNum
       formalParameters
         requiredPositional _vNum
           type: List<num>
-    synthetic static set vNumEmpty=
+    synthetic static set vNumEmpty
       firstFragment: <testLibraryFragment>::@setter::vNumEmpty
       formalParameters
         requiredPositional _vNumEmpty
           type: List<num>
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
@@ -7947,62 +8073,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vInt @4
+        hasInitializer vInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
-        vNum @26
+        hasInitializer vNum @26
           reference: <testLibraryFragment>::@topLevelVariable::vNum
-          element: <testLibraryFragment>::@topLevelVariable::vNum#element
+          element: <testLibrary>::@topLevelVariable::vNum
           getter2: <testLibraryFragment>::@getter::vNum
           setter2: <testLibraryFragment>::@setter::vNum
-        vObject @47
+        hasInitializer vObject @47
           reference: <testLibraryFragment>::@topLevelVariable::vObject
-          element: <testLibraryFragment>::@topLevelVariable::vObject#element
+          element: <testLibrary>::@topLevelVariable::vObject
           getter2: <testLibraryFragment>::@getter::vObject
           setter2: <testLibraryFragment>::@setter::vObject
       getters
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
-        get <null-name>
+        synthetic get vNum
           reference: <testLibraryFragment>::@getter::vNum
           element: <testLibraryFragment>::@getter::vNum#element
-        get <null-name>
+        synthetic get vObject
           reference: <testLibraryFragment>::@getter::vObject
           element: <testLibraryFragment>::@getter::vObject#element
       setters
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
-        set <null-name>
+        synthetic set vNum
           reference: <testLibraryFragment>::@setter::vNum
           element: <testLibraryFragment>::@setter::vNum#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNum::@parameter::_vNum#element
-        set <null-name>
+        synthetic set vObject
           reference: <testLibraryFragment>::@setter::vObject
           element: <testLibraryFragment>::@setter::vObject#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vObject::@parameter::_vObject#element
   topLevelVariables
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: List<int>
       getter: <testLibraryFragment>::@getter::vInt#element
       setter: <testLibraryFragment>::@setter::vInt#element
-    vNum
+    hasInitializer vNum
+      reference: <testLibrary>::@topLevelVariable::vNum
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNum
       type: List<num>
       getter: <testLibraryFragment>::@getter::vNum#element
       setter: <testLibraryFragment>::@setter::vNum#element
-    vObject
+    hasInitializer vObject
+      reference: <testLibrary>::@topLevelVariable::vObject
       firstFragment: <testLibraryFragment>::@topLevelVariable::vObject
       type: List<Object>
       getter: <testLibraryFragment>::@getter::vObject#element
@@ -8015,17 +8144,17 @@ library
     synthetic static get vObject
       firstFragment: <testLibraryFragment>::@getter::vObject
   setters
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
           type: List<int>
-    synthetic static set vNum=
+    synthetic static set vNum
       firstFragment: <testLibraryFragment>::@setter::vNum
       formalParameters
         requiredPositional _vNum
           type: List<num>
-    synthetic static set vObject=
+    synthetic static set vObject
       firstFragment: <testLibraryFragment>::@setter::vObject
       formalParameters
         requiredPositional _vObject
@@ -8149,100 +8278,105 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vObjectObject @4
+        hasInitializer vObjectObject @4
           reference: <testLibraryFragment>::@topLevelVariable::vObjectObject
-          element: <testLibraryFragment>::@topLevelVariable::vObjectObject#element
+          element: <testLibrary>::@topLevelVariable::vObjectObject
           getter2: <testLibraryFragment>::@getter::vObjectObject
           setter2: <testLibraryFragment>::@setter::vObjectObject
-        vComparableObject @50
+        hasInitializer vComparableObject @50
           reference: <testLibraryFragment>::@topLevelVariable::vComparableObject
-          element: <testLibraryFragment>::@topLevelVariable::vComparableObject#element
+          element: <testLibrary>::@topLevelVariable::vComparableObject
           getter2: <testLibraryFragment>::@getter::vComparableObject
           setter2: <testLibraryFragment>::@setter::vComparableObject
-        vNumString @109
+        hasInitializer vNumString @109
           reference: <testLibraryFragment>::@topLevelVariable::vNumString
-          element: <testLibraryFragment>::@topLevelVariable::vNumString#element
+          element: <testLibrary>::@topLevelVariable::vNumString
           getter2: <testLibraryFragment>::@getter::vNumString
           setter2: <testLibraryFragment>::@setter::vNumString
-        vNumStringEmpty @149
+        hasInitializer vNumStringEmpty @149
           reference: <testLibraryFragment>::@topLevelVariable::vNumStringEmpty
-          element: <testLibraryFragment>::@topLevelVariable::vNumStringEmpty#element
+          element: <testLibrary>::@topLevelVariable::vNumStringEmpty
           getter2: <testLibraryFragment>::@getter::vNumStringEmpty
           setter2: <testLibraryFragment>::@setter::vNumStringEmpty
-        vIntString @188
+        hasInitializer vIntString @188
           reference: <testLibraryFragment>::@topLevelVariable::vIntString
-          element: <testLibraryFragment>::@topLevelVariable::vIntString#element
+          element: <testLibrary>::@topLevelVariable::vIntString
           getter2: <testLibraryFragment>::@getter::vIntString
           setter2: <testLibraryFragment>::@setter::vIntString
       getters
-        get <null-name>
+        synthetic get vObjectObject
           reference: <testLibraryFragment>::@getter::vObjectObject
           element: <testLibraryFragment>::@getter::vObjectObject#element
-        get <null-name>
+        synthetic get vComparableObject
           reference: <testLibraryFragment>::@getter::vComparableObject
           element: <testLibraryFragment>::@getter::vComparableObject#element
-        get <null-name>
+        synthetic get vNumString
           reference: <testLibraryFragment>::@getter::vNumString
           element: <testLibraryFragment>::@getter::vNumString#element
-        get <null-name>
+        synthetic get vNumStringEmpty
           reference: <testLibraryFragment>::@getter::vNumStringEmpty
           element: <testLibraryFragment>::@getter::vNumStringEmpty#element
-        get <null-name>
+        synthetic get vIntString
           reference: <testLibraryFragment>::@getter::vIntString
           element: <testLibraryFragment>::@getter::vIntString#element
       setters
-        set <null-name>
+        synthetic set vObjectObject
           reference: <testLibraryFragment>::@setter::vObjectObject
           element: <testLibraryFragment>::@setter::vObjectObject#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vObjectObject::@parameter::_vObjectObject#element
-        set <null-name>
+        synthetic set vComparableObject
           reference: <testLibraryFragment>::@setter::vComparableObject
           element: <testLibraryFragment>::@setter::vComparableObject#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vComparableObject::@parameter::_vComparableObject#element
-        set <null-name>
+        synthetic set vNumString
           reference: <testLibraryFragment>::@setter::vNumString
           element: <testLibraryFragment>::@setter::vNumString#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNumString::@parameter::_vNumString#element
-        set <null-name>
+        synthetic set vNumStringEmpty
           reference: <testLibraryFragment>::@setter::vNumStringEmpty
           element: <testLibraryFragment>::@setter::vNumStringEmpty#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNumStringEmpty::@parameter::_vNumStringEmpty#element
-        set <null-name>
+        synthetic set vIntString
           reference: <testLibraryFragment>::@setter::vIntString
           element: <testLibraryFragment>::@setter::vIntString#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIntString::@parameter::_vIntString#element
   topLevelVariables
-    vObjectObject
+    hasInitializer vObjectObject
+      reference: <testLibrary>::@topLevelVariable::vObjectObject
       firstFragment: <testLibraryFragment>::@topLevelVariable::vObjectObject
       type: Map<Object, Object>
       getter: <testLibraryFragment>::@getter::vObjectObject#element
       setter: <testLibraryFragment>::@setter::vObjectObject#element
-    vComparableObject
+    hasInitializer vComparableObject
+      reference: <testLibrary>::@topLevelVariable::vComparableObject
       firstFragment: <testLibraryFragment>::@topLevelVariable::vComparableObject
       type: Map<Comparable<int>, Object>
       getter: <testLibraryFragment>::@getter::vComparableObject#element
       setter: <testLibraryFragment>::@setter::vComparableObject#element
-    vNumString
+    hasInitializer vNumString
+      reference: <testLibrary>::@topLevelVariable::vNumString
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNumString
       type: Map<num, String>
       getter: <testLibraryFragment>::@getter::vNumString#element
       setter: <testLibraryFragment>::@setter::vNumString#element
-    vNumStringEmpty
+    hasInitializer vNumStringEmpty
+      reference: <testLibrary>::@topLevelVariable::vNumStringEmpty
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNumStringEmpty
       type: Map<num, String>
       getter: <testLibraryFragment>::@getter::vNumStringEmpty#element
       setter: <testLibraryFragment>::@setter::vNumStringEmpty#element
-    vIntString
+    hasInitializer vIntString
+      reference: <testLibrary>::@topLevelVariable::vIntString
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIntString
       type: Map<int, String>
       getter: <testLibraryFragment>::@getter::vIntString#element
@@ -8259,27 +8393,27 @@ library
     synthetic static get vIntString
       firstFragment: <testLibraryFragment>::@getter::vIntString
   setters
-    synthetic static set vObjectObject=
+    synthetic static set vObjectObject
       firstFragment: <testLibraryFragment>::@setter::vObjectObject
       formalParameters
         requiredPositional _vObjectObject
           type: Map<Object, Object>
-    synthetic static set vComparableObject=
+    synthetic static set vComparableObject
       firstFragment: <testLibraryFragment>::@setter::vComparableObject
       formalParameters
         requiredPositional _vComparableObject
           type: Map<Comparable<int>, Object>
-    synthetic static set vNumString=
+    synthetic static set vNumString
       firstFragment: <testLibraryFragment>::@setter::vNumString
       formalParameters
         requiredPositional _vNumString
           type: Map<num, String>
-    synthetic static set vNumStringEmpty=
+    synthetic static set vNumStringEmpty
       firstFragment: <testLibraryFragment>::@setter::vNumStringEmpty
       formalParameters
         requiredPositional _vNumStringEmpty
           type: Map<num, String>
-    synthetic static set vIntString=
+    synthetic static set vIntString
       firstFragment: <testLibraryFragment>::@setter::vIntString
       formalParameters
         requiredPositional _vIntString
@@ -8357,62 +8491,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vIntString @4
+        hasInitializer vIntString @4
           reference: <testLibraryFragment>::@topLevelVariable::vIntString
-          element: <testLibraryFragment>::@topLevelVariable::vIntString#element
+          element: <testLibrary>::@topLevelVariable::vIntString
           getter2: <testLibraryFragment>::@getter::vIntString
           setter2: <testLibraryFragment>::@setter::vIntString
-        vNumString @39
+        hasInitializer vNumString @39
           reference: <testLibraryFragment>::@topLevelVariable::vNumString
-          element: <testLibraryFragment>::@topLevelVariable::vNumString#element
+          element: <testLibrary>::@topLevelVariable::vNumString
           getter2: <testLibraryFragment>::@getter::vNumString
           setter2: <testLibraryFragment>::@setter::vNumString
-        vIntObject @76
+        hasInitializer vIntObject @76
           reference: <testLibraryFragment>::@topLevelVariable::vIntObject
-          element: <testLibraryFragment>::@topLevelVariable::vIntObject#element
+          element: <testLibrary>::@topLevelVariable::vIntObject
           getter2: <testLibraryFragment>::@getter::vIntObject
           setter2: <testLibraryFragment>::@setter::vIntObject
       getters
-        get <null-name>
+        synthetic get vIntString
           reference: <testLibraryFragment>::@getter::vIntString
           element: <testLibraryFragment>::@getter::vIntString#element
-        get <null-name>
+        synthetic get vNumString
           reference: <testLibraryFragment>::@getter::vNumString
           element: <testLibraryFragment>::@getter::vNumString#element
-        get <null-name>
+        synthetic get vIntObject
           reference: <testLibraryFragment>::@getter::vIntObject
           element: <testLibraryFragment>::@getter::vIntObject#element
       setters
-        set <null-name>
+        synthetic set vIntString
           reference: <testLibraryFragment>::@setter::vIntString
           element: <testLibraryFragment>::@setter::vIntString#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIntString::@parameter::_vIntString#element
-        set <null-name>
+        synthetic set vNumString
           reference: <testLibraryFragment>::@setter::vNumString
           element: <testLibraryFragment>::@setter::vNumString#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNumString::@parameter::_vNumString#element
-        set <null-name>
+        synthetic set vIntObject
           reference: <testLibraryFragment>::@setter::vIntObject
           element: <testLibraryFragment>::@setter::vIntObject#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIntObject::@parameter::_vIntObject#element
   topLevelVariables
-    vIntString
+    hasInitializer vIntString
+      reference: <testLibrary>::@topLevelVariable::vIntString
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIntString
       type: Map<int, String>
       getter: <testLibraryFragment>::@getter::vIntString#element
       setter: <testLibraryFragment>::@setter::vIntString#element
-    vNumString
+    hasInitializer vNumString
+      reference: <testLibrary>::@topLevelVariable::vNumString
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNumString
       type: Map<num, String>
       getter: <testLibraryFragment>::@getter::vNumString#element
       setter: <testLibraryFragment>::@setter::vNumString#element
-    vIntObject
+    hasInitializer vIntObject
+      reference: <testLibrary>::@topLevelVariable::vIntObject
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIntObject
       type: Map<int, Object>
       getter: <testLibraryFragment>::@getter::vIntObject#element
@@ -8425,17 +8562,17 @@ library
     synthetic static get vIntObject
       firstFragment: <testLibraryFragment>::@getter::vIntObject
   setters
-    synthetic static set vIntString=
+    synthetic static set vIntString
       firstFragment: <testLibraryFragment>::@setter::vIntString
       formalParameters
         requiredPositional _vIntString
           type: Map<int, String>
-    synthetic static set vNumString=
+    synthetic static set vNumString
       firstFragment: <testLibraryFragment>::@setter::vNumString
       formalParameters
         requiredPositional _vNumString
           type: Map<num, String>
-    synthetic static set vIntObject=
+    synthetic static set vIntObject
       firstFragment: <testLibraryFragment>::@setter::vIntObject
       formalParameters
         requiredPositional _vIntObject
@@ -8559,100 +8696,105 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        b @18
+        hasInitializer b @18
           reference: <testLibraryFragment>::@topLevelVariable::b
-          element: <testLibraryFragment>::@topLevelVariable::b#element
+          element: <testLibrary>::@topLevelVariable::b
           getter2: <testLibraryFragment>::@getter::b
           setter2: <testLibraryFragment>::@setter::b
-        vEq @32
+        hasInitializer vEq @32
           reference: <testLibraryFragment>::@topLevelVariable::vEq
-          element: <testLibraryFragment>::@topLevelVariable::vEq#element
+          element: <testLibrary>::@topLevelVariable::vEq
           getter2: <testLibraryFragment>::@getter::vEq
           setter2: <testLibraryFragment>::@setter::vEq
-        vAnd @50
+        hasInitializer vAnd @50
           reference: <testLibraryFragment>::@topLevelVariable::vAnd
-          element: <testLibraryFragment>::@topLevelVariable::vAnd#element
+          element: <testLibrary>::@topLevelVariable::vAnd
           getter2: <testLibraryFragment>::@getter::vAnd
           setter2: <testLibraryFragment>::@setter::vAnd
-        vOr @69
+        hasInitializer vOr @69
           reference: <testLibraryFragment>::@topLevelVariable::vOr
-          element: <testLibraryFragment>::@topLevelVariable::vOr#element
+          element: <testLibrary>::@topLevelVariable::vOr
           getter2: <testLibraryFragment>::@getter::vOr
           setter2: <testLibraryFragment>::@setter::vOr
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get b
           reference: <testLibraryFragment>::@getter::b
           element: <testLibraryFragment>::@getter::b#element
-        get <null-name>
+        synthetic get vEq
           reference: <testLibraryFragment>::@getter::vEq
           element: <testLibraryFragment>::@getter::vEq#element
-        get <null-name>
+        synthetic get vAnd
           reference: <testLibraryFragment>::@getter::vAnd
           element: <testLibraryFragment>::@getter::vAnd#element
-        get <null-name>
+        synthetic get vOr
           reference: <testLibraryFragment>::@getter::vOr
           element: <testLibraryFragment>::@getter::vOr#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set b
           reference: <testLibraryFragment>::@setter::b
           element: <testLibraryFragment>::@setter::b#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::b::@parameter::_b#element
-        set <null-name>
+        synthetic set vEq
           reference: <testLibraryFragment>::@setter::vEq
           element: <testLibraryFragment>::@setter::vEq#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vEq::@parameter::_vEq#element
-        set <null-name>
+        synthetic set vAnd
           reference: <testLibraryFragment>::@setter::vAnd
           element: <testLibraryFragment>::@setter::vAnd#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vAnd::@parameter::_vAnd#element
-        set <null-name>
+        synthetic set vOr
           reference: <testLibraryFragment>::@setter::vOr
           element: <testLibraryFragment>::@setter::vOr#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vOr::@parameter::_vOr#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: bool
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    b
+    hasInitializer b
+      reference: <testLibrary>::@topLevelVariable::b
       firstFragment: <testLibraryFragment>::@topLevelVariable::b
       type: bool
       getter: <testLibraryFragment>::@getter::b#element
       setter: <testLibraryFragment>::@setter::b#element
-    vEq
+    hasInitializer vEq
+      reference: <testLibrary>::@topLevelVariable::vEq
       firstFragment: <testLibraryFragment>::@topLevelVariable::vEq
       type: bool
       getter: <testLibraryFragment>::@getter::vEq#element
       setter: <testLibraryFragment>::@setter::vEq#element
-    vAnd
+    hasInitializer vAnd
+      reference: <testLibrary>::@topLevelVariable::vAnd
       firstFragment: <testLibraryFragment>::@topLevelVariable::vAnd
       type: bool
       getter: <testLibraryFragment>::@getter::vAnd#element
       setter: <testLibraryFragment>::@setter::vAnd#element
-    vOr
+    hasInitializer vOr
+      reference: <testLibrary>::@topLevelVariable::vOr
       firstFragment: <testLibraryFragment>::@topLevelVariable::vOr
       type: bool
       getter: <testLibraryFragment>::@getter::vOr#element
@@ -8669,27 +8811,27 @@ library
     synthetic static get vOr
       firstFragment: <testLibraryFragment>::@getter::vOr
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: bool
-    synthetic static set b=
+    synthetic static set b
       firstFragment: <testLibraryFragment>::@setter::b
       formalParameters
         requiredPositional _b
           type: bool
-    synthetic static set vEq=
+    synthetic static set vEq
       firstFragment: <testLibraryFragment>::@setter::vEq
       formalParameters
         requiredPositional _vEq
           type: bool
-    synthetic static set vAnd=
+    synthetic static set vAnd
       firstFragment: <testLibraryFragment>::@setter::vAnd
       formalParameters
         requiredPositional _vAnd
           type: bool
-    synthetic static set vOr=
+    synthetic static set vOr
       firstFragment: <testLibraryFragment>::@setter::vOr
       formalParameters
         requiredPositional _vOr
@@ -8812,6 +8954,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -8820,45 +8963,45 @@ library
                 p @25
                   element: <testLibraryFragment>::@class::A::@method::m::@parameter::p#element
       topLevelVariables
-        instanceOfA @43
+        hasInitializer instanceOfA @43
           reference: <testLibraryFragment>::@topLevelVariable::instanceOfA
-          element: <testLibraryFragment>::@topLevelVariable::instanceOfA#element
+          element: <testLibrary>::@topLevelVariable::instanceOfA
           getter2: <testLibraryFragment>::@getter::instanceOfA
           setter2: <testLibraryFragment>::@setter::instanceOfA
-        v1 @70
+        hasInitializer v1 @70
           reference: <testLibraryFragment>::@topLevelVariable::v1
-          element: <testLibraryFragment>::@topLevelVariable::v1#element
+          element: <testLibrary>::@topLevelVariable::v1
           getter2: <testLibraryFragment>::@getter::v1
           setter2: <testLibraryFragment>::@setter::v1
-        v2 @96
+        hasInitializer v2 @96
           reference: <testLibraryFragment>::@topLevelVariable::v2
-          element: <testLibraryFragment>::@topLevelVariable::v2#element
+          element: <testLibrary>::@topLevelVariable::v2
           getter2: <testLibraryFragment>::@getter::v2
           setter2: <testLibraryFragment>::@setter::v2
       getters
-        get <null-name>
+        synthetic get instanceOfA
           reference: <testLibraryFragment>::@getter::instanceOfA
           element: <testLibraryFragment>::@getter::instanceOfA#element
-        get <null-name>
+        synthetic get v1
           reference: <testLibraryFragment>::@getter::v1
           element: <testLibraryFragment>::@getter::v1#element
-        get <null-name>
+        synthetic get v2
           reference: <testLibraryFragment>::@getter::v2
           element: <testLibraryFragment>::@getter::v2#element
       setters
-        set <null-name>
+        synthetic set instanceOfA
           reference: <testLibraryFragment>::@setter::instanceOfA
           element: <testLibraryFragment>::@setter::instanceOfA#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::instanceOfA::@parameter::_instanceOfA#element
-        set <null-name>
+        synthetic set v1
           reference: <testLibraryFragment>::@setter::v1
           element: <testLibraryFragment>::@setter::v1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::v1::@parameter::_v1#element
-        set <null-name>
+        synthetic set v2
           reference: <testLibraryFragment>::@setter::v2
           element: <testLibraryFragment>::@setter::v2#element
           formalParameters
@@ -8873,22 +9016,26 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional p
               type: int
   topLevelVariables
-    instanceOfA
+    hasInitializer instanceOfA
+      reference: <testLibrary>::@topLevelVariable::instanceOfA
       firstFragment: <testLibraryFragment>::@topLevelVariable::instanceOfA
       type: A
       getter: <testLibraryFragment>::@getter::instanceOfA#element
       setter: <testLibraryFragment>::@setter::instanceOfA#element
-    v1
+    hasInitializer v1
+      reference: <testLibrary>::@topLevelVariable::v1
       firstFragment: <testLibraryFragment>::@topLevelVariable::v1
       type: String
       getter: <testLibraryFragment>::@getter::v1#element
       setter: <testLibraryFragment>::@setter::v1#element
-    v2
+    hasInitializer v2
+      reference: <testLibrary>::@topLevelVariable::v2
       firstFragment: <testLibraryFragment>::@topLevelVariable::v2
       type: String
       getter: <testLibraryFragment>::@getter::v2#element
@@ -8901,17 +9048,17 @@ library
     synthetic static get v2
       firstFragment: <testLibraryFragment>::@getter::v2
   setters
-    synthetic static set instanceOfA=
+    synthetic static set instanceOfA
       firstFragment: <testLibraryFragment>::@setter::instanceOfA
       formalParameters
         requiredPositional _instanceOfA
           type: A
-    synthetic static set v1=
+    synthetic static set v1
       firstFragment: <testLibraryFragment>::@setter::v1
       formalParameters
         requiredPositional _v1
           type: String
-    synthetic static set v2=
+    synthetic static set v2
       firstFragment: <testLibraryFragment>::@setter::v2
       formalParameters
         requiredPositional _v2
@@ -9125,214 +9272,225 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vModuloIntInt @4
+        hasInitializer vModuloIntInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vModuloIntInt
-          element: <testLibraryFragment>::@topLevelVariable::vModuloIntInt#element
+          element: <testLibrary>::@topLevelVariable::vModuloIntInt
           getter2: <testLibraryFragment>::@getter::vModuloIntInt
           setter2: <testLibraryFragment>::@setter::vModuloIntInt
-        vModuloIntDouble @31
+        hasInitializer vModuloIntDouble @31
           reference: <testLibraryFragment>::@topLevelVariable::vModuloIntDouble
-          element: <testLibraryFragment>::@topLevelVariable::vModuloIntDouble#element
+          element: <testLibrary>::@topLevelVariable::vModuloIntDouble
           getter2: <testLibraryFragment>::@getter::vModuloIntDouble
           setter2: <testLibraryFragment>::@setter::vModuloIntDouble
-        vMultiplyIntInt @63
+        hasInitializer vMultiplyIntInt @63
           reference: <testLibraryFragment>::@topLevelVariable::vMultiplyIntInt
-          element: <testLibraryFragment>::@topLevelVariable::vMultiplyIntInt#element
+          element: <testLibrary>::@topLevelVariable::vMultiplyIntInt
           getter2: <testLibraryFragment>::@getter::vMultiplyIntInt
           setter2: <testLibraryFragment>::@setter::vMultiplyIntInt
-        vMultiplyIntDouble @92
+        hasInitializer vMultiplyIntDouble @92
           reference: <testLibraryFragment>::@topLevelVariable::vMultiplyIntDouble
-          element: <testLibraryFragment>::@topLevelVariable::vMultiplyIntDouble#element
+          element: <testLibrary>::@topLevelVariable::vMultiplyIntDouble
           getter2: <testLibraryFragment>::@getter::vMultiplyIntDouble
           setter2: <testLibraryFragment>::@setter::vMultiplyIntDouble
-        vMultiplyDoubleInt @126
+        hasInitializer vMultiplyDoubleInt @126
           reference: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleInt
-          element: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleInt#element
+          element: <testLibrary>::@topLevelVariable::vMultiplyDoubleInt
           getter2: <testLibraryFragment>::@getter::vMultiplyDoubleInt
           setter2: <testLibraryFragment>::@setter::vMultiplyDoubleInt
-        vMultiplyDoubleDouble @160
+        hasInitializer vMultiplyDoubleDouble @160
           reference: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleDouble
-          element: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleDouble#element
+          element: <testLibrary>::@topLevelVariable::vMultiplyDoubleDouble
           getter2: <testLibraryFragment>::@getter::vMultiplyDoubleDouble
           setter2: <testLibraryFragment>::@setter::vMultiplyDoubleDouble
-        vDivideIntInt @199
+        hasInitializer vDivideIntInt @199
           reference: <testLibraryFragment>::@topLevelVariable::vDivideIntInt
-          element: <testLibraryFragment>::@topLevelVariable::vDivideIntInt#element
+          element: <testLibrary>::@topLevelVariable::vDivideIntInt
           getter2: <testLibraryFragment>::@getter::vDivideIntInt
           setter2: <testLibraryFragment>::@setter::vDivideIntInt
-        vDivideIntDouble @226
+        hasInitializer vDivideIntDouble @226
           reference: <testLibraryFragment>::@topLevelVariable::vDivideIntDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDivideIntDouble#element
+          element: <testLibrary>::@topLevelVariable::vDivideIntDouble
           getter2: <testLibraryFragment>::@getter::vDivideIntDouble
           setter2: <testLibraryFragment>::@setter::vDivideIntDouble
-        vDivideDoubleInt @258
+        hasInitializer vDivideDoubleInt @258
           reference: <testLibraryFragment>::@topLevelVariable::vDivideDoubleInt
-          element: <testLibraryFragment>::@topLevelVariable::vDivideDoubleInt#element
+          element: <testLibrary>::@topLevelVariable::vDivideDoubleInt
           getter2: <testLibraryFragment>::@getter::vDivideDoubleInt
           setter2: <testLibraryFragment>::@setter::vDivideDoubleInt
-        vDivideDoubleDouble @290
+        hasInitializer vDivideDoubleDouble @290
           reference: <testLibraryFragment>::@topLevelVariable::vDivideDoubleDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDivideDoubleDouble#element
+          element: <testLibrary>::@topLevelVariable::vDivideDoubleDouble
           getter2: <testLibraryFragment>::@getter::vDivideDoubleDouble
           setter2: <testLibraryFragment>::@setter::vDivideDoubleDouble
-        vFloorDivide @327
+        hasInitializer vFloorDivide @327
           reference: <testLibraryFragment>::@topLevelVariable::vFloorDivide
-          element: <testLibraryFragment>::@topLevelVariable::vFloorDivide#element
+          element: <testLibrary>::@topLevelVariable::vFloorDivide
           getter2: <testLibraryFragment>::@getter::vFloorDivide
           setter2: <testLibraryFragment>::@setter::vFloorDivide
       getters
-        get <null-name>
+        synthetic get vModuloIntInt
           reference: <testLibraryFragment>::@getter::vModuloIntInt
           element: <testLibraryFragment>::@getter::vModuloIntInt#element
-        get <null-name>
+        synthetic get vModuloIntDouble
           reference: <testLibraryFragment>::@getter::vModuloIntDouble
           element: <testLibraryFragment>::@getter::vModuloIntDouble#element
-        get <null-name>
+        synthetic get vMultiplyIntInt
           reference: <testLibraryFragment>::@getter::vMultiplyIntInt
           element: <testLibraryFragment>::@getter::vMultiplyIntInt#element
-        get <null-name>
+        synthetic get vMultiplyIntDouble
           reference: <testLibraryFragment>::@getter::vMultiplyIntDouble
           element: <testLibraryFragment>::@getter::vMultiplyIntDouble#element
-        get <null-name>
+        synthetic get vMultiplyDoubleInt
           reference: <testLibraryFragment>::@getter::vMultiplyDoubleInt
           element: <testLibraryFragment>::@getter::vMultiplyDoubleInt#element
-        get <null-name>
+        synthetic get vMultiplyDoubleDouble
           reference: <testLibraryFragment>::@getter::vMultiplyDoubleDouble
           element: <testLibraryFragment>::@getter::vMultiplyDoubleDouble#element
-        get <null-name>
+        synthetic get vDivideIntInt
           reference: <testLibraryFragment>::@getter::vDivideIntInt
           element: <testLibraryFragment>::@getter::vDivideIntInt#element
-        get <null-name>
+        synthetic get vDivideIntDouble
           reference: <testLibraryFragment>::@getter::vDivideIntDouble
           element: <testLibraryFragment>::@getter::vDivideIntDouble#element
-        get <null-name>
+        synthetic get vDivideDoubleInt
           reference: <testLibraryFragment>::@getter::vDivideDoubleInt
           element: <testLibraryFragment>::@getter::vDivideDoubleInt#element
-        get <null-name>
+        synthetic get vDivideDoubleDouble
           reference: <testLibraryFragment>::@getter::vDivideDoubleDouble
           element: <testLibraryFragment>::@getter::vDivideDoubleDouble#element
-        get <null-name>
+        synthetic get vFloorDivide
           reference: <testLibraryFragment>::@getter::vFloorDivide
           element: <testLibraryFragment>::@getter::vFloorDivide#element
       setters
-        set <null-name>
+        synthetic set vModuloIntInt
           reference: <testLibraryFragment>::@setter::vModuloIntInt
           element: <testLibraryFragment>::@setter::vModuloIntInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vModuloIntInt::@parameter::_vModuloIntInt#element
-        set <null-name>
+        synthetic set vModuloIntDouble
           reference: <testLibraryFragment>::@setter::vModuloIntDouble
           element: <testLibraryFragment>::@setter::vModuloIntDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vModuloIntDouble::@parameter::_vModuloIntDouble#element
-        set <null-name>
+        synthetic set vMultiplyIntInt
           reference: <testLibraryFragment>::@setter::vMultiplyIntInt
           element: <testLibraryFragment>::@setter::vMultiplyIntInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMultiplyIntInt::@parameter::_vMultiplyIntInt#element
-        set <null-name>
+        synthetic set vMultiplyIntDouble
           reference: <testLibraryFragment>::@setter::vMultiplyIntDouble
           element: <testLibraryFragment>::@setter::vMultiplyIntDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMultiplyIntDouble::@parameter::_vMultiplyIntDouble#element
-        set <null-name>
+        synthetic set vMultiplyDoubleInt
           reference: <testLibraryFragment>::@setter::vMultiplyDoubleInt
           element: <testLibraryFragment>::@setter::vMultiplyDoubleInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMultiplyDoubleInt::@parameter::_vMultiplyDoubleInt#element
-        set <null-name>
+        synthetic set vMultiplyDoubleDouble
           reference: <testLibraryFragment>::@setter::vMultiplyDoubleDouble
           element: <testLibraryFragment>::@setter::vMultiplyDoubleDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vMultiplyDoubleDouble::@parameter::_vMultiplyDoubleDouble#element
-        set <null-name>
+        synthetic set vDivideIntInt
           reference: <testLibraryFragment>::@setter::vDivideIntInt
           element: <testLibraryFragment>::@setter::vDivideIntInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDivideIntInt::@parameter::_vDivideIntInt#element
-        set <null-name>
+        synthetic set vDivideIntDouble
           reference: <testLibraryFragment>::@setter::vDivideIntDouble
           element: <testLibraryFragment>::@setter::vDivideIntDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDivideIntDouble::@parameter::_vDivideIntDouble#element
-        set <null-name>
+        synthetic set vDivideDoubleInt
           reference: <testLibraryFragment>::@setter::vDivideDoubleInt
           element: <testLibraryFragment>::@setter::vDivideDoubleInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDivideDoubleInt::@parameter::_vDivideDoubleInt#element
-        set <null-name>
+        synthetic set vDivideDoubleDouble
           reference: <testLibraryFragment>::@setter::vDivideDoubleDouble
           element: <testLibraryFragment>::@setter::vDivideDoubleDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDivideDoubleDouble::@parameter::_vDivideDoubleDouble#element
-        set <null-name>
+        synthetic set vFloorDivide
           reference: <testLibraryFragment>::@setter::vFloorDivide
           element: <testLibraryFragment>::@setter::vFloorDivide#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vFloorDivide::@parameter::_vFloorDivide#element
   topLevelVariables
-    vModuloIntInt
+    hasInitializer vModuloIntInt
+      reference: <testLibrary>::@topLevelVariable::vModuloIntInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vModuloIntInt
       type: int
       getter: <testLibraryFragment>::@getter::vModuloIntInt#element
       setter: <testLibraryFragment>::@setter::vModuloIntInt#element
-    vModuloIntDouble
+    hasInitializer vModuloIntDouble
+      reference: <testLibrary>::@topLevelVariable::vModuloIntDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vModuloIntDouble
       type: double
       getter: <testLibraryFragment>::@getter::vModuloIntDouble#element
       setter: <testLibraryFragment>::@setter::vModuloIntDouble#element
-    vMultiplyIntInt
+    hasInitializer vMultiplyIntInt
+      reference: <testLibrary>::@topLevelVariable::vMultiplyIntInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMultiplyIntInt
       type: int
       getter: <testLibraryFragment>::@getter::vMultiplyIntInt#element
       setter: <testLibraryFragment>::@setter::vMultiplyIntInt#element
-    vMultiplyIntDouble
+    hasInitializer vMultiplyIntDouble
+      reference: <testLibrary>::@topLevelVariable::vMultiplyIntDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMultiplyIntDouble
       type: double
       getter: <testLibraryFragment>::@getter::vMultiplyIntDouble#element
       setter: <testLibraryFragment>::@setter::vMultiplyIntDouble#element
-    vMultiplyDoubleInt
+    hasInitializer vMultiplyDoubleInt
+      reference: <testLibrary>::@topLevelVariable::vMultiplyDoubleInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleInt
       type: double
       getter: <testLibraryFragment>::@getter::vMultiplyDoubleInt#element
       setter: <testLibraryFragment>::@setter::vMultiplyDoubleInt#element
-    vMultiplyDoubleDouble
+    hasInitializer vMultiplyDoubleDouble
+      reference: <testLibrary>::@topLevelVariable::vMultiplyDoubleDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vMultiplyDoubleDouble
       type: double
       getter: <testLibraryFragment>::@getter::vMultiplyDoubleDouble#element
       setter: <testLibraryFragment>::@setter::vMultiplyDoubleDouble#element
-    vDivideIntInt
+    hasInitializer vDivideIntInt
+      reference: <testLibrary>::@topLevelVariable::vDivideIntInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDivideIntInt
       type: double
       getter: <testLibraryFragment>::@getter::vDivideIntInt#element
       setter: <testLibraryFragment>::@setter::vDivideIntInt#element
-    vDivideIntDouble
+    hasInitializer vDivideIntDouble
+      reference: <testLibrary>::@topLevelVariable::vDivideIntDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDivideIntDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDivideIntDouble#element
       setter: <testLibraryFragment>::@setter::vDivideIntDouble#element
-    vDivideDoubleInt
+    hasInitializer vDivideDoubleInt
+      reference: <testLibrary>::@topLevelVariable::vDivideDoubleInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDivideDoubleInt
       type: double
       getter: <testLibraryFragment>::@getter::vDivideDoubleInt#element
       setter: <testLibraryFragment>::@setter::vDivideDoubleInt#element
-    vDivideDoubleDouble
+    hasInitializer vDivideDoubleDouble
+      reference: <testLibrary>::@topLevelVariable::vDivideDoubleDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDivideDoubleDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDivideDoubleDouble#element
       setter: <testLibraryFragment>::@setter::vDivideDoubleDouble#element
-    vFloorDivide
+    hasInitializer vFloorDivide
+      reference: <testLibrary>::@topLevelVariable::vFloorDivide
       firstFragment: <testLibraryFragment>::@topLevelVariable::vFloorDivide
       type: int
       getter: <testLibraryFragment>::@getter::vFloorDivide#element
@@ -9361,57 +9519,57 @@ library
     synthetic static get vFloorDivide
       firstFragment: <testLibraryFragment>::@getter::vFloorDivide
   setters
-    synthetic static set vModuloIntInt=
+    synthetic static set vModuloIntInt
       firstFragment: <testLibraryFragment>::@setter::vModuloIntInt
       formalParameters
         requiredPositional _vModuloIntInt
           type: int
-    synthetic static set vModuloIntDouble=
+    synthetic static set vModuloIntDouble
       firstFragment: <testLibraryFragment>::@setter::vModuloIntDouble
       formalParameters
         requiredPositional _vModuloIntDouble
           type: double
-    synthetic static set vMultiplyIntInt=
+    synthetic static set vMultiplyIntInt
       firstFragment: <testLibraryFragment>::@setter::vMultiplyIntInt
       formalParameters
         requiredPositional _vMultiplyIntInt
           type: int
-    synthetic static set vMultiplyIntDouble=
+    synthetic static set vMultiplyIntDouble
       firstFragment: <testLibraryFragment>::@setter::vMultiplyIntDouble
       formalParameters
         requiredPositional _vMultiplyIntDouble
           type: double
-    synthetic static set vMultiplyDoubleInt=
+    synthetic static set vMultiplyDoubleInt
       firstFragment: <testLibraryFragment>::@setter::vMultiplyDoubleInt
       formalParameters
         requiredPositional _vMultiplyDoubleInt
           type: double
-    synthetic static set vMultiplyDoubleDouble=
+    synthetic static set vMultiplyDoubleDouble
       firstFragment: <testLibraryFragment>::@setter::vMultiplyDoubleDouble
       formalParameters
         requiredPositional _vMultiplyDoubleDouble
           type: double
-    synthetic static set vDivideIntInt=
+    synthetic static set vDivideIntInt
       firstFragment: <testLibraryFragment>::@setter::vDivideIntInt
       formalParameters
         requiredPositional _vDivideIntInt
           type: double
-    synthetic static set vDivideIntDouble=
+    synthetic static set vDivideIntDouble
       firstFragment: <testLibraryFragment>::@setter::vDivideIntDouble
       formalParameters
         requiredPositional _vDivideIntDouble
           type: double
-    synthetic static set vDivideDoubleInt=
+    synthetic static set vDivideDoubleInt
       firstFragment: <testLibraryFragment>::@setter::vDivideDoubleInt
       formalParameters
         requiredPositional _vDivideDoubleInt
           type: double
-    synthetic static set vDivideDoubleDouble=
+    synthetic static set vDivideDoubleDouble
       firstFragment: <testLibraryFragment>::@setter::vDivideDoubleDouble
       formalParameters
         requiredPositional _vDivideDoubleDouble
           type: double
-    synthetic static set vFloorDivide=
+    synthetic static set vFloorDivide
       firstFragment: <testLibraryFragment>::@setter::vFloorDivide
       formalParameters
         requiredPositional _vFloorDivide
@@ -9489,62 +9647,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        a @4
+        hasInitializer a @4
           reference: <testLibraryFragment>::@topLevelVariable::a
-          element: <testLibraryFragment>::@topLevelVariable::a#element
+          element: <testLibrary>::@topLevelVariable::a
           getter2: <testLibraryFragment>::@getter::a
           setter2: <testLibraryFragment>::@setter::a
-        vEq @15
+        hasInitializer vEq @15
           reference: <testLibraryFragment>::@topLevelVariable::vEq
-          element: <testLibraryFragment>::@topLevelVariable::vEq#element
+          element: <testLibrary>::@topLevelVariable::vEq
           getter2: <testLibraryFragment>::@getter::vEq
           setter2: <testLibraryFragment>::@setter::vEq
-        vNotEq @46
+        hasInitializer vNotEq @46
           reference: <testLibraryFragment>::@topLevelVariable::vNotEq
-          element: <testLibraryFragment>::@topLevelVariable::vNotEq#element
+          element: <testLibrary>::@topLevelVariable::vNotEq
           getter2: <testLibraryFragment>::@getter::vNotEq
           setter2: <testLibraryFragment>::@setter::vNotEq
       getters
-        get <null-name>
+        synthetic get a
           reference: <testLibraryFragment>::@getter::a
           element: <testLibraryFragment>::@getter::a#element
-        get <null-name>
+        synthetic get vEq
           reference: <testLibraryFragment>::@getter::vEq
           element: <testLibraryFragment>::@getter::vEq#element
-        get <null-name>
+        synthetic get vNotEq
           reference: <testLibraryFragment>::@getter::vNotEq
           element: <testLibraryFragment>::@getter::vNotEq#element
       setters
-        set <null-name>
+        synthetic set a
           reference: <testLibraryFragment>::@setter::a
           element: <testLibraryFragment>::@setter::a#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::a::@parameter::_a#element
-        set <null-name>
+        synthetic set vEq
           reference: <testLibraryFragment>::@setter::vEq
           element: <testLibraryFragment>::@setter::vEq#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vEq::@parameter::_vEq#element
-        set <null-name>
+        synthetic set vNotEq
           reference: <testLibraryFragment>::@setter::vNotEq
           element: <testLibraryFragment>::@setter::vNotEq#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNotEq::@parameter::_vNotEq#element
   topLevelVariables
-    a
+    hasInitializer a
+      reference: <testLibrary>::@topLevelVariable::a
       firstFragment: <testLibraryFragment>::@topLevelVariable::a
       type: int
       getter: <testLibraryFragment>::@getter::a#element
       setter: <testLibraryFragment>::@setter::a#element
-    vEq
+    hasInitializer vEq
+      reference: <testLibrary>::@topLevelVariable::vEq
       firstFragment: <testLibraryFragment>::@topLevelVariable::vEq
       type: bool
       getter: <testLibraryFragment>::@getter::vEq#element
       setter: <testLibraryFragment>::@setter::vEq#element
-    vNotEq
+    hasInitializer vNotEq
+      reference: <testLibrary>::@topLevelVariable::vNotEq
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNotEq
       type: bool
       getter: <testLibraryFragment>::@getter::vNotEq#element
@@ -9557,17 +9718,17 @@ library
     synthetic static get vNotEq
       firstFragment: <testLibraryFragment>::@getter::vNotEq
   setters
-    synthetic static set a=
+    synthetic static set a
       firstFragment: <testLibraryFragment>::@setter::a
       formalParameters
         requiredPositional _a
           type: int
-    synthetic static set vEq=
+    synthetic static set vEq
       firstFragment: <testLibraryFragment>::@setter::vEq
       formalParameters
         requiredPositional _vEq
           type: bool
-    synthetic static set vNotEq=
+    synthetic static set vNotEq
       firstFragment: <testLibraryFragment>::@setter::vNotEq
       formalParameters
         requiredPositional _vNotEq
@@ -9611,24 +9772,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        V @4
+        hasInitializer V @4
           reference: <testLibraryFragment>::@topLevelVariable::V
-          element: <testLibraryFragment>::@topLevelVariable::V#element
+          element: <testLibrary>::@topLevelVariable::V
           getter2: <testLibraryFragment>::@getter::V
           setter2: <testLibraryFragment>::@setter::V
       getters
-        get <null-name>
+        synthetic get V
           reference: <testLibraryFragment>::@getter::V
           element: <testLibraryFragment>::@getter::V#element
       setters
-        set <null-name>
+        synthetic set V
           reference: <testLibraryFragment>::@setter::V
           element: <testLibraryFragment>::@setter::V#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::V::@parameter::_V#element
   topLevelVariables
-    V
+    hasInitializer V
+      reference: <testLibrary>::@topLevelVariable::V
       firstFragment: <testLibraryFragment>::@topLevelVariable::V
       type: int
       getter: <testLibraryFragment>::@getter::V#element
@@ -9637,7 +9799,7 @@ library
     synthetic static get V
       firstFragment: <testLibraryFragment>::@getter::V
   setters
-    synthetic static set V=
+    synthetic static set V
       firstFragment: <testLibraryFragment>::@setter::V
       formalParameters
         requiredPositional _V
@@ -9766,119 +9928,125 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vInt @4
+        hasInitializer vInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
-        vDouble @18
+        hasInitializer vDouble @18
           reference: <testLibraryFragment>::@topLevelVariable::vDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDouble#element
+          element: <testLibrary>::@topLevelVariable::vDouble
           getter2: <testLibraryFragment>::@getter::vDouble
           setter2: <testLibraryFragment>::@setter::vDouble
-        vIncInt @37
+        hasInitializer vIncInt @37
           reference: <testLibraryFragment>::@topLevelVariable::vIncInt
-          element: <testLibraryFragment>::@topLevelVariable::vIncInt#element
+          element: <testLibrary>::@topLevelVariable::vIncInt
           getter2: <testLibraryFragment>::@getter::vIncInt
           setter2: <testLibraryFragment>::@setter::vIncInt
-        vDecInt @59
+        hasInitializer vDecInt @59
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt#element
+          element: <testLibrary>::@topLevelVariable::vDecInt
           getter2: <testLibraryFragment>::@getter::vDecInt
           setter2: <testLibraryFragment>::@setter::vDecInt
-        vIncDouble @81
+        hasInitializer vIncDouble @81
           reference: <testLibraryFragment>::@topLevelVariable::vIncDouble
-          element: <testLibraryFragment>::@topLevelVariable::vIncDouble#element
+          element: <testLibrary>::@topLevelVariable::vIncDouble
           getter2: <testLibraryFragment>::@getter::vIncDouble
           setter2: <testLibraryFragment>::@setter::vIncDouble
-        vDecDouble @109
+        hasInitializer vDecDouble @109
           reference: <testLibraryFragment>::@topLevelVariable::vDecDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDecDouble#element
+          element: <testLibrary>::@topLevelVariable::vDecDouble
           getter2: <testLibraryFragment>::@getter::vDecDouble
           setter2: <testLibraryFragment>::@setter::vDecDouble
       getters
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
-        get <null-name>
+        synthetic get vDouble
           reference: <testLibraryFragment>::@getter::vDouble
           element: <testLibraryFragment>::@getter::vDouble#element
-        get <null-name>
+        synthetic get vIncInt
           reference: <testLibraryFragment>::@getter::vIncInt
           element: <testLibraryFragment>::@getter::vIncInt#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt
           element: <testLibraryFragment>::@getter::vDecInt#element
-        get <null-name>
+        synthetic get vIncDouble
           reference: <testLibraryFragment>::@getter::vIncDouble
           element: <testLibraryFragment>::@getter::vIncDouble#element
-        get <null-name>
+        synthetic get vDecDouble
           reference: <testLibraryFragment>::@getter::vDecDouble
           element: <testLibraryFragment>::@getter::vDecDouble#element
       setters
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
-        set <null-name>
+        synthetic set vDouble
           reference: <testLibraryFragment>::@setter::vDouble
           element: <testLibraryFragment>::@setter::vDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDouble::@parameter::_vDouble#element
-        set <null-name>
+        synthetic set vIncInt
           reference: <testLibraryFragment>::@setter::vIncInt
           element: <testLibraryFragment>::@setter::vIncInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncInt::@parameter::_vIncInt#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt
           element: <testLibraryFragment>::@setter::vDecInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@parameter::_vDecInt#element
-        set <null-name>
+        synthetic set vIncDouble
           reference: <testLibraryFragment>::@setter::vIncDouble
           element: <testLibraryFragment>::@setter::vIncDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncDouble::@parameter::_vIncDouble#element
-        set <null-name>
+        synthetic set vDecDouble
           reference: <testLibraryFragment>::@setter::vDecDouble
           element: <testLibraryFragment>::@setter::vDecDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecDouble::@parameter::_vDecDouble#element
   topLevelVariables
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: int
       getter: <testLibraryFragment>::@getter::vInt#element
       setter: <testLibraryFragment>::@setter::vInt#element
-    vDouble
+    hasInitializer vDouble
+      reference: <testLibrary>::@topLevelVariable::vDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDouble#element
       setter: <testLibraryFragment>::@setter::vDouble#element
-    vIncInt
+    hasInitializer vIncInt
+      reference: <testLibrary>::@topLevelVariable::vIncInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncInt
       type: int
       getter: <testLibraryFragment>::@getter::vIncInt#element
       setter: <testLibraryFragment>::@setter::vIncInt#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt
       type: int
       getter: <testLibraryFragment>::@getter::vDecInt#element
       setter: <testLibraryFragment>::@setter::vDecInt#element
-    vIncDouble
+    hasInitializer vIncDouble
+      reference: <testLibrary>::@topLevelVariable::vIncDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncDouble
       type: double
       getter: <testLibraryFragment>::@getter::vIncDouble#element
       setter: <testLibraryFragment>::@setter::vIncDouble#element
-    vDecDouble
+    hasInitializer vDecDouble
+      reference: <testLibrary>::@topLevelVariable::vDecDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDecDouble#element
@@ -9897,32 +10065,32 @@ library
     synthetic static get vDecDouble
       firstFragment: <testLibraryFragment>::@getter::vDecDouble
   setters
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
           type: int
-    synthetic static set vDouble=
+    synthetic static set vDouble
       firstFragment: <testLibraryFragment>::@setter::vDouble
       formalParameters
         requiredPositional _vDouble
           type: double
-    synthetic static set vIncInt=
+    synthetic static set vIncInt
       firstFragment: <testLibraryFragment>::@setter::vIncInt
       formalParameters
         requiredPositional _vIncInt
           type: int
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt
       formalParameters
         requiredPositional _vDecInt
           type: int
-    synthetic static set vIncDouble=
+    synthetic static set vIncDouble
       firstFragment: <testLibraryFragment>::@setter::vIncDouble
       formalParameters
         requiredPositional _vIncDouble
           type: double
-    synthetic static set vDecDouble=
+    synthetic static set vDecDouble
       firstFragment: <testLibraryFragment>::@setter::vDecDouble
       formalParameters
         requiredPositional _vDecDouble
@@ -10051,119 +10219,125 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vInt @4
+        hasInitializer vInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
-        vDouble @20
+        hasInitializer vDouble @20
           reference: <testLibraryFragment>::@topLevelVariable::vDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDouble#element
+          element: <testLibrary>::@topLevelVariable::vDouble
           getter2: <testLibraryFragment>::@getter::vDouble
           setter2: <testLibraryFragment>::@setter::vDouble
-        vIncInt @41
+        hasInitializer vIncInt @41
           reference: <testLibraryFragment>::@topLevelVariable::vIncInt
-          element: <testLibraryFragment>::@topLevelVariable::vIncInt#element
+          element: <testLibrary>::@topLevelVariable::vIncInt
           getter2: <testLibraryFragment>::@getter::vIncInt
           setter2: <testLibraryFragment>::@setter::vIncInt
-        vDecInt @66
+        hasInitializer vDecInt @66
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt#element
+          element: <testLibrary>::@topLevelVariable::vDecInt
           getter2: <testLibraryFragment>::@getter::vDecInt
           setter2: <testLibraryFragment>::@setter::vDecInt
-        vIncDouble @91
+        hasInitializer vIncDouble @91
           reference: <testLibraryFragment>::@topLevelVariable::vIncDouble
-          element: <testLibraryFragment>::@topLevelVariable::vIncDouble#element
+          element: <testLibrary>::@topLevelVariable::vIncDouble
           getter2: <testLibraryFragment>::@getter::vIncDouble
           setter2: <testLibraryFragment>::@setter::vIncDouble
-        vDecDouble @122
+        hasInitializer vDecDouble @122
           reference: <testLibraryFragment>::@topLevelVariable::vDecDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDecDouble#element
+          element: <testLibrary>::@topLevelVariable::vDecDouble
           getter2: <testLibraryFragment>::@getter::vDecDouble
           setter2: <testLibraryFragment>::@setter::vDecDouble
       getters
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
-        get <null-name>
+        synthetic get vDouble
           reference: <testLibraryFragment>::@getter::vDouble
           element: <testLibraryFragment>::@getter::vDouble#element
-        get <null-name>
+        synthetic get vIncInt
           reference: <testLibraryFragment>::@getter::vIncInt
           element: <testLibraryFragment>::@getter::vIncInt#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt
           element: <testLibraryFragment>::@getter::vDecInt#element
-        get <null-name>
+        synthetic get vIncDouble
           reference: <testLibraryFragment>::@getter::vIncDouble
           element: <testLibraryFragment>::@getter::vIncDouble#element
-        get <null-name>
+        synthetic get vDecDouble
           reference: <testLibraryFragment>::@getter::vDecDouble
           element: <testLibraryFragment>::@getter::vDecDouble#element
       setters
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
-        set <null-name>
+        synthetic set vDouble
           reference: <testLibraryFragment>::@setter::vDouble
           element: <testLibraryFragment>::@setter::vDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDouble::@parameter::_vDouble#element
-        set <null-name>
+        synthetic set vIncInt
           reference: <testLibraryFragment>::@setter::vIncInt
           element: <testLibraryFragment>::@setter::vIncInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncInt::@parameter::_vIncInt#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt
           element: <testLibraryFragment>::@setter::vDecInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@parameter::_vDecInt#element
-        set <null-name>
+        synthetic set vIncDouble
           reference: <testLibraryFragment>::@setter::vIncDouble
           element: <testLibraryFragment>::@setter::vIncDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncDouble::@parameter::_vIncDouble#element
-        set <null-name>
+        synthetic set vDecDouble
           reference: <testLibraryFragment>::@setter::vDecDouble
           element: <testLibraryFragment>::@setter::vDecDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecDouble::@parameter::_vDecDouble#element
   topLevelVariables
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: List<int>
       getter: <testLibraryFragment>::@getter::vInt#element
       setter: <testLibraryFragment>::@setter::vInt#element
-    vDouble
+    hasInitializer vDouble
+      reference: <testLibrary>::@topLevelVariable::vDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDouble
       type: List<double>
       getter: <testLibraryFragment>::@getter::vDouble#element
       setter: <testLibraryFragment>::@setter::vDouble#element
-    vIncInt
+    hasInitializer vIncInt
+      reference: <testLibrary>::@topLevelVariable::vIncInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncInt
       type: int
       getter: <testLibraryFragment>::@getter::vIncInt#element
       setter: <testLibraryFragment>::@setter::vIncInt#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt
       type: int
       getter: <testLibraryFragment>::@getter::vDecInt#element
       setter: <testLibraryFragment>::@setter::vDecInt#element
-    vIncDouble
+    hasInitializer vIncDouble
+      reference: <testLibrary>::@topLevelVariable::vIncDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncDouble
       type: double
       getter: <testLibraryFragment>::@getter::vIncDouble#element
       setter: <testLibraryFragment>::@setter::vIncDouble#element
-    vDecDouble
+    hasInitializer vDecDouble
+      reference: <testLibrary>::@topLevelVariable::vDecDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDecDouble#element
@@ -10182,32 +10356,32 @@ library
     synthetic static get vDecDouble
       firstFragment: <testLibraryFragment>::@getter::vDecDouble
   setters
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
           type: List<int>
-    synthetic static set vDouble=
+    synthetic static set vDouble
       firstFragment: <testLibraryFragment>::@setter::vDouble
       formalParameters
         requiredPositional _vDouble
           type: List<double>
-    synthetic static set vIncInt=
+    synthetic static set vIncInt
       firstFragment: <testLibraryFragment>::@setter::vIncInt
       formalParameters
         requiredPositional _vIncInt
           type: int
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt
       formalParameters
         requiredPositional _vDecInt
           type: int
-    synthetic static set vIncDouble=
+    synthetic static set vIncDouble
       firstFragment: <testLibraryFragment>::@setter::vIncDouble
       formalParameters
         requiredPositional _vIncDouble
           type: double
-    synthetic static set vDecDouble=
+    synthetic static set vDecDouble
       firstFragment: <testLibraryFragment>::@setter::vDecDouble
       formalParameters
         requiredPositional _vDecDouble
@@ -10336,119 +10510,125 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vInt @4
+        hasInitializer vInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
-        vDouble @18
+        hasInitializer vDouble @18
           reference: <testLibraryFragment>::@topLevelVariable::vDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDouble#element
+          element: <testLibrary>::@topLevelVariable::vDouble
           getter2: <testLibraryFragment>::@getter::vDouble
           setter2: <testLibraryFragment>::@setter::vDouble
-        vIncInt @37
+        hasInitializer vIncInt @37
           reference: <testLibraryFragment>::@topLevelVariable::vIncInt
-          element: <testLibraryFragment>::@topLevelVariable::vIncInt#element
+          element: <testLibrary>::@topLevelVariable::vIncInt
           getter2: <testLibraryFragment>::@getter::vIncInt
           setter2: <testLibraryFragment>::@setter::vIncInt
-        vDecInt @59
+        hasInitializer vDecInt @59
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0#element
+          element: <testLibrary>::@topLevelVariable::vDecInt::@def::0
           getter2: <testLibraryFragment>::@getter::vDecInt::@def::0
           setter2: <testLibraryFragment>::@setter::vDecInt::@def::0
-        vIncDouble @81
+        hasInitializer vIncDouble @81
           reference: <testLibraryFragment>::@topLevelVariable::vIncDouble
-          element: <testLibraryFragment>::@topLevelVariable::vIncDouble#element
+          element: <testLibrary>::@topLevelVariable::vIncDouble
           getter2: <testLibraryFragment>::@getter::vIncDouble
           setter2: <testLibraryFragment>::@setter::vIncDouble
-        vDecInt @109
+        hasInitializer vDecInt @109
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1#element
+          element: <testLibrary>::@topLevelVariable::vDecInt::@def::1
           getter2: <testLibraryFragment>::@getter::vDecInt::@def::1
           setter2: <testLibraryFragment>::@setter::vDecInt::@def::1
       getters
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
-        get <null-name>
+        synthetic get vDouble
           reference: <testLibraryFragment>::@getter::vDouble
           element: <testLibraryFragment>::@getter::vDouble#element
-        get <null-name>
+        synthetic get vIncInt
           reference: <testLibraryFragment>::@getter::vIncInt
           element: <testLibraryFragment>::@getter::vIncInt#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt::@def::0
           element: <testLibraryFragment>::@getter::vDecInt::@def::0#element
-        get <null-name>
+        synthetic get vIncDouble
           reference: <testLibraryFragment>::@getter::vIncDouble
           element: <testLibraryFragment>::@getter::vIncDouble#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt::@def::1
           element: <testLibraryFragment>::@getter::vDecInt::@def::1#element
       setters
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
-        set <null-name>
+        synthetic set vDouble
           reference: <testLibraryFragment>::@setter::vDouble
           element: <testLibraryFragment>::@setter::vDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDouble::@parameter::_vDouble#element
-        set <null-name>
+        synthetic set vIncInt
           reference: <testLibraryFragment>::@setter::vIncInt
           element: <testLibraryFragment>::@setter::vIncInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncInt::@parameter::_vIncInt#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt::@def::0
           element: <testLibraryFragment>::@setter::vDecInt::@def::0#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@def::0::@parameter::_vDecInt#element
-        set <null-name>
+        synthetic set vIncDouble
           reference: <testLibraryFragment>::@setter::vIncDouble
           element: <testLibraryFragment>::@setter::vIncDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncDouble::@parameter::_vIncDouble#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt::@def::1
           element: <testLibraryFragment>::@setter::vDecInt::@def::1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@def::1::@parameter::_vDecInt#element
   topLevelVariables
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: int
       getter: <testLibraryFragment>::@getter::vInt#element
       setter: <testLibraryFragment>::@setter::vInt#element
-    vDouble
+    hasInitializer vDouble
+      reference: <testLibrary>::@topLevelVariable::vDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDouble
       type: double
       getter: <testLibraryFragment>::@getter::vDouble#element
       setter: <testLibraryFragment>::@setter::vDouble#element
-    vIncInt
+    hasInitializer vIncInt
+      reference: <testLibrary>::@topLevelVariable::vIncInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncInt
       type: int
       getter: <testLibraryFragment>::@getter::vIncInt#element
       setter: <testLibraryFragment>::@setter::vIncInt#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt::@def::0
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0
       type: int
       getter: <testLibraryFragment>::@getter::vDecInt::@def::0#element
       setter: <testLibraryFragment>::@setter::vDecInt::@def::0#element
-    vIncDouble
+    hasInitializer vIncDouble
+      reference: <testLibrary>::@topLevelVariable::vIncDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncDouble
       type: double
       getter: <testLibraryFragment>::@getter::vIncDouble#element
       setter: <testLibraryFragment>::@setter::vIncDouble#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt::@def::1
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1
       type: double
       getter: <testLibraryFragment>::@getter::vDecInt::@def::1#element
@@ -10467,32 +10647,32 @@ library
     synthetic static get vDecInt
       firstFragment: <testLibraryFragment>::@getter::vDecInt::@def::1
   setters
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
           type: int
-    synthetic static set vDouble=
+    synthetic static set vDouble
       firstFragment: <testLibraryFragment>::@setter::vDouble
       formalParameters
         requiredPositional _vDouble
           type: double
-    synthetic static set vIncInt=
+    synthetic static set vIncInt
       firstFragment: <testLibraryFragment>::@setter::vIncInt
       formalParameters
         requiredPositional _vIncInt
           type: int
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt::@def::0
       formalParameters
         requiredPositional _vDecInt
           type: int
-    synthetic static set vIncDouble=
+    synthetic static set vIncDouble
       firstFragment: <testLibraryFragment>::@setter::vIncDouble
       formalParameters
         requiredPositional _vIncDouble
           type: double
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt::@def::1
       formalParameters
         requiredPositional _vDecInt
@@ -10639,119 +10819,125 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vInt @4
+        hasInitializer vInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vInt
-          element: <testLibraryFragment>::@topLevelVariable::vInt#element
+          element: <testLibrary>::@topLevelVariable::vInt
           getter2: <testLibraryFragment>::@getter::vInt
           setter2: <testLibraryFragment>::@setter::vInt
-        vDouble @20
+        hasInitializer vDouble @20
           reference: <testLibraryFragment>::@topLevelVariable::vDouble
-          element: <testLibraryFragment>::@topLevelVariable::vDouble#element
+          element: <testLibrary>::@topLevelVariable::vDouble
           getter2: <testLibraryFragment>::@getter::vDouble
           setter2: <testLibraryFragment>::@setter::vDouble
-        vIncInt @41
+        hasInitializer vIncInt @41
           reference: <testLibraryFragment>::@topLevelVariable::vIncInt
-          element: <testLibraryFragment>::@topLevelVariable::vIncInt#element
+          element: <testLibrary>::@topLevelVariable::vIncInt
           getter2: <testLibraryFragment>::@getter::vIncInt
           setter2: <testLibraryFragment>::@setter::vIncInt
-        vDecInt @66
+        hasInitializer vDecInt @66
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0#element
+          element: <testLibrary>::@topLevelVariable::vDecInt::@def::0
           getter2: <testLibraryFragment>::@getter::vDecInt::@def::0
           setter2: <testLibraryFragment>::@setter::vDecInt::@def::0
-        vIncDouble @91
+        hasInitializer vIncDouble @91
           reference: <testLibraryFragment>::@topLevelVariable::vIncDouble
-          element: <testLibraryFragment>::@topLevelVariable::vIncDouble#element
+          element: <testLibrary>::@topLevelVariable::vIncDouble
           getter2: <testLibraryFragment>::@getter::vIncDouble
           setter2: <testLibraryFragment>::@setter::vIncDouble
-        vDecInt @122
+        hasInitializer vDecInt @122
           reference: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1
-          element: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1#element
+          element: <testLibrary>::@topLevelVariable::vDecInt::@def::1
           getter2: <testLibraryFragment>::@getter::vDecInt::@def::1
           setter2: <testLibraryFragment>::@setter::vDecInt::@def::1
       getters
-        get <null-name>
+        synthetic get vInt
           reference: <testLibraryFragment>::@getter::vInt
           element: <testLibraryFragment>::@getter::vInt#element
-        get <null-name>
+        synthetic get vDouble
           reference: <testLibraryFragment>::@getter::vDouble
           element: <testLibraryFragment>::@getter::vDouble#element
-        get <null-name>
+        synthetic get vIncInt
           reference: <testLibraryFragment>::@getter::vIncInt
           element: <testLibraryFragment>::@getter::vIncInt#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt::@def::0
           element: <testLibraryFragment>::@getter::vDecInt::@def::0#element
-        get <null-name>
+        synthetic get vIncDouble
           reference: <testLibraryFragment>::@getter::vIncDouble
           element: <testLibraryFragment>::@getter::vIncDouble#element
-        get <null-name>
+        synthetic get vDecInt
           reference: <testLibraryFragment>::@getter::vDecInt::@def::1
           element: <testLibraryFragment>::@getter::vDecInt::@def::1#element
       setters
-        set <null-name>
+        synthetic set vInt
           reference: <testLibraryFragment>::@setter::vInt
           element: <testLibraryFragment>::@setter::vInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vInt::@parameter::_vInt#element
-        set <null-name>
+        synthetic set vDouble
           reference: <testLibraryFragment>::@setter::vDouble
           element: <testLibraryFragment>::@setter::vDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDouble::@parameter::_vDouble#element
-        set <null-name>
+        synthetic set vIncInt
           reference: <testLibraryFragment>::@setter::vIncInt
           element: <testLibraryFragment>::@setter::vIncInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncInt::@parameter::_vIncInt#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt::@def::0
           element: <testLibraryFragment>::@setter::vDecInt::@def::0#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@def::0::@parameter::_vDecInt#element
-        set <null-name>
+        synthetic set vIncDouble
           reference: <testLibraryFragment>::@setter::vIncDouble
           element: <testLibraryFragment>::@setter::vIncDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vIncDouble::@parameter::_vIncDouble#element
-        set <null-name>
+        synthetic set vDecInt
           reference: <testLibraryFragment>::@setter::vDecInt::@def::1
           element: <testLibraryFragment>::@setter::vDecInt::@def::1#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vDecInt::@def::1::@parameter::_vDecInt#element
   topLevelVariables
-    vInt
+    hasInitializer vInt
+      reference: <testLibrary>::@topLevelVariable::vInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vInt
       type: List<int>
       getter: <testLibraryFragment>::@getter::vInt#element
       setter: <testLibraryFragment>::@setter::vInt#element
-    vDouble
+    hasInitializer vDouble
+      reference: <testLibrary>::@topLevelVariable::vDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDouble
       type: List<double>
       getter: <testLibraryFragment>::@getter::vDouble#element
       setter: <testLibraryFragment>::@setter::vDouble#element
-    vIncInt
+    hasInitializer vIncInt
+      reference: <testLibrary>::@topLevelVariable::vIncInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncInt
       type: int
       getter: <testLibraryFragment>::@getter::vIncInt#element
       setter: <testLibraryFragment>::@setter::vIncInt#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt::@def::0
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::0
       type: int
       getter: <testLibraryFragment>::@getter::vDecInt::@def::0#element
       setter: <testLibraryFragment>::@setter::vDecInt::@def::0#element
-    vIncDouble
+    hasInitializer vIncDouble
+      reference: <testLibrary>::@topLevelVariable::vIncDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vIncDouble
       type: double
       getter: <testLibraryFragment>::@getter::vIncDouble#element
       setter: <testLibraryFragment>::@setter::vIncDouble#element
-    vDecInt
+    hasInitializer vDecInt
+      reference: <testLibrary>::@topLevelVariable::vDecInt::@def::1
       firstFragment: <testLibraryFragment>::@topLevelVariable::vDecInt::@def::1
       type: double
       getter: <testLibraryFragment>::@getter::vDecInt::@def::1#element
@@ -10770,32 +10956,32 @@ library
     synthetic static get vDecInt
       firstFragment: <testLibraryFragment>::@getter::vDecInt::@def::1
   setters
-    synthetic static set vInt=
+    synthetic static set vInt
       firstFragment: <testLibraryFragment>::@setter::vInt
       formalParameters
         requiredPositional _vInt
           type: List<int>
-    synthetic static set vDouble=
+    synthetic static set vDouble
       firstFragment: <testLibraryFragment>::@setter::vDouble
       formalParameters
         requiredPositional _vDouble
           type: List<double>
-    synthetic static set vIncInt=
+    synthetic static set vIncInt
       firstFragment: <testLibraryFragment>::@setter::vIncInt
       formalParameters
         requiredPositional _vIncInt
           type: int
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt::@def::0
       formalParameters
         requiredPositional _vDecInt
           type: int
-    synthetic static set vIncDouble=
+    synthetic static set vIncDouble
       firstFragment: <testLibraryFragment>::@setter::vIncDouble
       formalParameters
         requiredPositional _vIncDouble
           type: double
-    synthetic static set vDecInt=
+    synthetic static set vDecInt
       firstFragment: <testLibraryFragment>::@setter::vDecInt::@def::1
       formalParameters
         requiredPositional _vDecInt
@@ -10839,24 +11025,25 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vNot @4
+        hasInitializer vNot @4
           reference: <testLibraryFragment>::@topLevelVariable::vNot
-          element: <testLibraryFragment>::@topLevelVariable::vNot#element
+          element: <testLibrary>::@topLevelVariable::vNot
           getter2: <testLibraryFragment>::@getter::vNot
           setter2: <testLibraryFragment>::@setter::vNot
       getters
-        get <null-name>
+        synthetic get vNot
           reference: <testLibraryFragment>::@getter::vNot
           element: <testLibraryFragment>::@getter::vNot#element
       setters
-        set <null-name>
+        synthetic set vNot
           reference: <testLibraryFragment>::@setter::vNot
           element: <testLibraryFragment>::@setter::vNot#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNot::@parameter::_vNot#element
   topLevelVariables
-    vNot
+    hasInitializer vNot
+      reference: <testLibrary>::@topLevelVariable::vNot
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNot
       type: bool
       getter: <testLibraryFragment>::@getter::vNot#element
@@ -10865,7 +11052,7 @@ library
     synthetic static get vNot
       firstFragment: <testLibraryFragment>::@getter::vNot
   setters
-    synthetic static set vNot=
+    synthetic static set vNot
       firstFragment: <testLibraryFragment>::@setter::vNot
       formalParameters
         requiredPositional _vNot
@@ -10943,62 +11130,65 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vNegateInt @4
+        hasInitializer vNegateInt @4
           reference: <testLibraryFragment>::@topLevelVariable::vNegateInt
-          element: <testLibraryFragment>::@topLevelVariable::vNegateInt#element
+          element: <testLibrary>::@topLevelVariable::vNegateInt
           getter2: <testLibraryFragment>::@getter::vNegateInt
           setter2: <testLibraryFragment>::@setter::vNegateInt
-        vNegateDouble @25
+        hasInitializer vNegateDouble @25
           reference: <testLibraryFragment>::@topLevelVariable::vNegateDouble
-          element: <testLibraryFragment>::@topLevelVariable::vNegateDouble#element
+          element: <testLibrary>::@topLevelVariable::vNegateDouble
           getter2: <testLibraryFragment>::@getter::vNegateDouble
           setter2: <testLibraryFragment>::@setter::vNegateDouble
-        vComplement @51
+        hasInitializer vComplement @51
           reference: <testLibraryFragment>::@topLevelVariable::vComplement
-          element: <testLibraryFragment>::@topLevelVariable::vComplement#element
+          element: <testLibrary>::@topLevelVariable::vComplement
           getter2: <testLibraryFragment>::@getter::vComplement
           setter2: <testLibraryFragment>::@setter::vComplement
       getters
-        get <null-name>
+        synthetic get vNegateInt
           reference: <testLibraryFragment>::@getter::vNegateInt
           element: <testLibraryFragment>::@getter::vNegateInt#element
-        get <null-name>
+        synthetic get vNegateDouble
           reference: <testLibraryFragment>::@getter::vNegateDouble
           element: <testLibraryFragment>::@getter::vNegateDouble#element
-        get <null-name>
+        synthetic get vComplement
           reference: <testLibraryFragment>::@getter::vComplement
           element: <testLibraryFragment>::@getter::vComplement#element
       setters
-        set <null-name>
+        synthetic set vNegateInt
           reference: <testLibraryFragment>::@setter::vNegateInt
           element: <testLibraryFragment>::@setter::vNegateInt#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNegateInt::@parameter::_vNegateInt#element
-        set <null-name>
+        synthetic set vNegateDouble
           reference: <testLibraryFragment>::@setter::vNegateDouble
           element: <testLibraryFragment>::@setter::vNegateDouble#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vNegateDouble::@parameter::_vNegateDouble#element
-        set <null-name>
+        synthetic set vComplement
           reference: <testLibraryFragment>::@setter::vComplement
           element: <testLibraryFragment>::@setter::vComplement#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vComplement::@parameter::_vComplement#element
   topLevelVariables
-    vNegateInt
+    hasInitializer vNegateInt
+      reference: <testLibrary>::@topLevelVariable::vNegateInt
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNegateInt
       type: int
       getter: <testLibraryFragment>::@getter::vNegateInt#element
       setter: <testLibraryFragment>::@setter::vNegateInt#element
-    vNegateDouble
+    hasInitializer vNegateDouble
+      reference: <testLibrary>::@topLevelVariable::vNegateDouble
       firstFragment: <testLibraryFragment>::@topLevelVariable::vNegateDouble
       type: double
       getter: <testLibraryFragment>::@getter::vNegateDouble#element
       setter: <testLibraryFragment>::@setter::vNegateDouble#element
-    vComplement
+    hasInitializer vComplement
+      reference: <testLibrary>::@topLevelVariable::vComplement
       firstFragment: <testLibraryFragment>::@topLevelVariable::vComplement
       type: int
       getter: <testLibraryFragment>::@getter::vComplement#element
@@ -11011,17 +11201,17 @@ library
     synthetic static get vComplement
       firstFragment: <testLibraryFragment>::@getter::vComplement
   setters
-    synthetic static set vNegateInt=
+    synthetic static set vNegateInt
       firstFragment: <testLibraryFragment>::@setter::vNegateInt
       formalParameters
         requiredPositional _vNegateInt
           type: int
-    synthetic static set vNegateDouble=
+    synthetic static set vNegateDouble
       firstFragment: <testLibraryFragment>::@setter::vNegateDouble
       formalParameters
         requiredPositional _vNegateDouble
           type: double
-    synthetic static set vComplement=
+    synthetic static set vComplement
       firstFragment: <testLibraryFragment>::@setter::vComplement
       formalParameters
         requiredPositional _vComplement
@@ -11126,12 +11316,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get d
               reference: <testLibraryFragment>::@class::C::@getter::d
               element: <testLibraryFragment>::@class::C::@getter::d#element
           setters
-            set <null-name>
+            synthetic set d
               reference: <testLibraryFragment>::@class::C::@setter::d
               element: <testLibraryFragment>::@class::C::@setter::d#element
               formalParameters
@@ -11150,24 +11341,25 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::D::@constructor::new
               element: <testLibraryFragment>::@class::D::@constructor::new#element
+              typeName: D
           getters
-            get <null-name>
+            synthetic get i
               reference: <testLibraryFragment>::@class::D::@getter::i
               element: <testLibraryFragment>::@class::D::@getter::i#element
           setters
-            set <null-name>
+            synthetic set i
               reference: <testLibraryFragment>::@class::D::@setter::i
               element: <testLibraryFragment>::@class::D::@setter::i#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::D::@setter::i::@parameter::_i#element
       topLevelVariables
-        final x @53
+        hasInitializer x @53
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
   classes
@@ -11187,7 +11379,7 @@ library
         synthetic static get d
           firstFragment: <testLibraryFragment>::@class::C::@getter::d
       setters
-        synthetic static set d=
+        synthetic static set d
           firstFragment: <testLibraryFragment>::@class::C::@setter::d
           formalParameters
             requiredPositional _d
@@ -11208,13 +11400,14 @@ library
         synthetic get i
           firstFragment: <testLibraryFragment>::@class::D::@getter::i
       setters
-        synthetic set i=
+        synthetic set i
           firstFragment: <testLibraryFragment>::@class::D::@setter::i
           formalParameters
             requiredPositional _i
               type: int
   topLevelVariables
-    final x
+    final hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -11312,7 +11505,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic d
               reference: <testLibraryFragment>::@class::C::@field::d
               element: <testLibraryFragment>::@class::C::@field::d#element
               getter2: <testLibraryFragment>::@class::C::@getter::d
@@ -11320,6 +11513,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get d @25
               reference: <testLibraryFragment>::@class::C::@getter::d
@@ -11337,29 +11531,30 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::D::@constructor::new
               element: <testLibraryFragment>::@class::D::@constructor::new#element
+              typeName: D
           getters
-            get <null-name>
+            synthetic get i
               reference: <testLibraryFragment>::@class::D::@getter::i
               element: <testLibraryFragment>::@class::D::@getter::i#element
           setters
-            set <null-name>
+            synthetic set i
               reference: <testLibraryFragment>::@class::D::@setter::i
               element: <testLibraryFragment>::@class::D::@setter::i#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::D::@setter::i::@parameter::_i#element
       topLevelVariables
-        x @63
+        hasInitializer x @63
           reference: <testLibraryFragment>::@topLevelVariable::x
-          element: <testLibraryFragment>::@topLevelVariable::x#element
+          element: <testLibrary>::@topLevelVariable::x
           getter2: <testLibraryFragment>::@getter::x
           setter2: <testLibraryFragment>::@setter::x
       getters
-        get <null-name>
+        synthetic get x
           reference: <testLibraryFragment>::@getter::x
           element: <testLibraryFragment>::@getter::x#element
       setters
-        set <null-name>
+        synthetic set x
           reference: <testLibraryFragment>::@setter::x
           element: <testLibraryFragment>::@setter::x#element
           formalParameters
@@ -11396,13 +11591,14 @@ library
         synthetic get i
           firstFragment: <testLibraryFragment>::@class::D::@getter::i
       setters
-        synthetic set i=
+        synthetic set i
           firstFragment: <testLibraryFragment>::@class::D::@setter::i
           formalParameters
             requiredPositional _i
               type: int
   topLevelVariables
-    x
+    hasInitializer x
+      reference: <testLibrary>::@topLevelVariable::x
       firstFragment: <testLibraryFragment>::@topLevelVariable::x
       type: int
       getter: <testLibraryFragment>::@getter::x#element
@@ -11411,7 +11607,7 @@ library
     synthetic static get x
       firstFragment: <testLibraryFragment>::@getter::x
   setters
-    synthetic static set x=
+    synthetic static set x
       firstFragment: <testLibraryFragment>::@setter::x
       formalParameters
         requiredPositional _x
@@ -11506,81 +11702,85 @@ library
     <testLibraryFragment>
       element: <testLibrary>
       topLevelVariables
-        vLess @4
+        hasInitializer vLess @4
           reference: <testLibraryFragment>::@topLevelVariable::vLess
-          element: <testLibraryFragment>::@topLevelVariable::vLess#element
+          element: <testLibrary>::@topLevelVariable::vLess
           getter2: <testLibraryFragment>::@getter::vLess
           setter2: <testLibraryFragment>::@setter::vLess
-        vLessOrEqual @23
+        hasInitializer vLessOrEqual @23
           reference: <testLibraryFragment>::@topLevelVariable::vLessOrEqual
-          element: <testLibraryFragment>::@topLevelVariable::vLessOrEqual#element
+          element: <testLibrary>::@topLevelVariable::vLessOrEqual
           getter2: <testLibraryFragment>::@getter::vLessOrEqual
           setter2: <testLibraryFragment>::@setter::vLessOrEqual
-        vGreater @50
+        hasInitializer vGreater @50
           reference: <testLibraryFragment>::@topLevelVariable::vGreater
-          element: <testLibraryFragment>::@topLevelVariable::vGreater#element
+          element: <testLibrary>::@topLevelVariable::vGreater
           getter2: <testLibraryFragment>::@getter::vGreater
           setter2: <testLibraryFragment>::@setter::vGreater
-        vGreaterOrEqual @72
+        hasInitializer vGreaterOrEqual @72
           reference: <testLibraryFragment>::@topLevelVariable::vGreaterOrEqual
-          element: <testLibraryFragment>::@topLevelVariable::vGreaterOrEqual#element
+          element: <testLibrary>::@topLevelVariable::vGreaterOrEqual
           getter2: <testLibraryFragment>::@getter::vGreaterOrEqual
           setter2: <testLibraryFragment>::@setter::vGreaterOrEqual
       getters
-        get <null-name>
+        synthetic get vLess
           reference: <testLibraryFragment>::@getter::vLess
           element: <testLibraryFragment>::@getter::vLess#element
-        get <null-name>
+        synthetic get vLessOrEqual
           reference: <testLibraryFragment>::@getter::vLessOrEqual
           element: <testLibraryFragment>::@getter::vLessOrEqual#element
-        get <null-name>
+        synthetic get vGreater
           reference: <testLibraryFragment>::@getter::vGreater
           element: <testLibraryFragment>::@getter::vGreater#element
-        get <null-name>
+        synthetic get vGreaterOrEqual
           reference: <testLibraryFragment>::@getter::vGreaterOrEqual
           element: <testLibraryFragment>::@getter::vGreaterOrEqual#element
       setters
-        set <null-name>
+        synthetic set vLess
           reference: <testLibraryFragment>::@setter::vLess
           element: <testLibraryFragment>::@setter::vLess#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vLess::@parameter::_vLess#element
-        set <null-name>
+        synthetic set vLessOrEqual
           reference: <testLibraryFragment>::@setter::vLessOrEqual
           element: <testLibraryFragment>::@setter::vLessOrEqual#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vLessOrEqual::@parameter::_vLessOrEqual#element
-        set <null-name>
+        synthetic set vGreater
           reference: <testLibraryFragment>::@setter::vGreater
           element: <testLibraryFragment>::@setter::vGreater#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vGreater::@parameter::_vGreater#element
-        set <null-name>
+        synthetic set vGreaterOrEqual
           reference: <testLibraryFragment>::@setter::vGreaterOrEqual
           element: <testLibraryFragment>::@setter::vGreaterOrEqual#element
           formalParameters
             <null-name>
               element: <testLibraryFragment>::@setter::vGreaterOrEqual::@parameter::_vGreaterOrEqual#element
   topLevelVariables
-    vLess
+    hasInitializer vLess
+      reference: <testLibrary>::@topLevelVariable::vLess
       firstFragment: <testLibraryFragment>::@topLevelVariable::vLess
       type: bool
       getter: <testLibraryFragment>::@getter::vLess#element
       setter: <testLibraryFragment>::@setter::vLess#element
-    vLessOrEqual
+    hasInitializer vLessOrEqual
+      reference: <testLibrary>::@topLevelVariable::vLessOrEqual
       firstFragment: <testLibraryFragment>::@topLevelVariable::vLessOrEqual
       type: bool
       getter: <testLibraryFragment>::@getter::vLessOrEqual#element
       setter: <testLibraryFragment>::@setter::vLessOrEqual#element
-    vGreater
+    hasInitializer vGreater
+      reference: <testLibrary>::@topLevelVariable::vGreater
       firstFragment: <testLibraryFragment>::@topLevelVariable::vGreater
       type: bool
       getter: <testLibraryFragment>::@getter::vGreater#element
       setter: <testLibraryFragment>::@setter::vGreater#element
-    vGreaterOrEqual
+    hasInitializer vGreaterOrEqual
+      reference: <testLibrary>::@topLevelVariable::vGreaterOrEqual
       firstFragment: <testLibraryFragment>::@topLevelVariable::vGreaterOrEqual
       type: bool
       getter: <testLibraryFragment>::@getter::vGreaterOrEqual#element
@@ -11595,22 +11795,22 @@ library
     synthetic static get vGreaterOrEqual
       firstFragment: <testLibraryFragment>::@getter::vGreaterOrEqual
   setters
-    synthetic static set vLess=
+    synthetic static set vLess
       firstFragment: <testLibraryFragment>::@setter::vLess
       formalParameters
         requiredPositional _vLess
           type: bool
-    synthetic static set vLessOrEqual=
+    synthetic static set vLessOrEqual
       firstFragment: <testLibraryFragment>::@setter::vLessOrEqual
       formalParameters
         requiredPositional _vLessOrEqual
           type: bool
-    synthetic static set vGreater=
+    synthetic static set vGreater
       firstFragment: <testLibraryFragment>::@setter::vGreater
       formalParameters
         requiredPositional _vGreater
           type: bool
-    synthetic static set vGreaterOrEqual=
+    synthetic static set vGreaterOrEqual
       firstFragment: <testLibraryFragment>::@setter::vGreaterOrEqual
       formalParameters
         requiredPositional _vGreaterOrEqual
@@ -11708,12 +11908,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
@@ -11723,7 +11924,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -11731,6 +11932,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @59
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -11752,7 +11954,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
@@ -11771,7 +11973,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        set x=
+        set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
 ''');
   }
@@ -11834,7 +12036,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            f @16
+            hasInitializer f @16
               reference: <testLibraryFragment>::@class::A::@field::f
               element: <testLibraryFragment>::@class::A::@field::f#element
               getter2: <testLibraryFragment>::@class::A::@getter::f
@@ -11843,15 +12045,17 @@ library
             new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
+              typeNameOffset: 25
               formalParameters
                 default this.f @33
                   element: <testLibraryFragment>::@class::A::@constructor::new::@parameter::f#element
           getters
-            get <null-name>
+            synthetic get f
               reference: <testLibraryFragment>::@class::A::@getter::f
               element: <testLibraryFragment>::@class::A::@getter::f#element
           setters
-            set <null-name>
+            synthetic set f
               reference: <testLibraryFragment>::@class::A::@setter::f
               element: <testLibraryFragment>::@class::A::@setter::f#element
               formalParameters
@@ -11862,7 +12066,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        f
+        hasInitializer f
           firstFragment: <testLibraryFragment>::@class::A::@field::f
           type: int
           getter: <testLibraryFragment>::@class::A::@getter::f#element
@@ -11877,7 +12081,7 @@ library
         synthetic get f
           firstFragment: <testLibraryFragment>::@class::A::@getter::f
       setters
-        synthetic set f=
+        synthetic set f
           firstFragment: <testLibraryFragment>::@class::A::@setter::f
           formalParameters
             requiredPositional _f
@@ -12035,30 +12239,31 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
-            get <null-name>
+            synthetic get y
               reference: <testLibraryFragment>::@class::A::@getter::y
               element: <testLibraryFragment>::@class::A::@getter::y#element
-            get <null-name>
+            synthetic get z
               reference: <testLibraryFragment>::@class::A::@getter::z
               element: <testLibraryFragment>::@class::A::@getter::z#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::x::@parameter::_x#element
-            set <null-name>
+            synthetic set y
               reference: <testLibraryFragment>::@class::A::@setter::y
               element: <testLibraryFragment>::@class::A::@setter::y#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::y::@parameter::_y#element
-            set <null-name>
+            synthetic set z
               reference: <testLibraryFragment>::@class::A::@setter::z
               element: <testLibraryFragment>::@class::A::@setter::z#element
               formalParameters
@@ -12073,11 +12278,11 @@ library
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::B::@field::z
               element: <testLibraryFragment>::@class::B::@field::z#element
               setter2: <testLibraryFragment>::@class::B::@setter::z
@@ -12085,15 +12290,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
             get y @86
               reference: <testLibraryFragment>::@class::B::@getter::y
               element: <testLibraryFragment>::@class::B::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -12136,17 +12342,17 @@ library
         synthetic get z
           firstFragment: <testLibraryFragment>::@class::A::@getter::z
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
               type: int
-        synthetic set y=
+        synthetic set y
           firstFragment: <testLibraryFragment>::@class::A::@setter::y
           formalParameters
             requiredPositional _y
               type: int
-        synthetic set z=
+        synthetic set z
           firstFragment: <testLibraryFragment>::@class::A::@setter::z
           formalParameters
             requiredPositional _z
@@ -12179,12 +12385,12 @@ library
         get y
           firstFragment: <testLibraryFragment>::@class::B::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
               type: int
-        set z=
+        set z
           firstFragment: <testLibraryFragment>::@class::B::@setter::z
           formalParameters
             requiredPositional _
@@ -12280,12 +12486,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
@@ -12295,7 +12502,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            x @63
+            hasInitializer x @63
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -12304,12 +12511,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -12332,7 +12540,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
@@ -12343,7 +12551,7 @@ library
       interfaces
         A
       fields
-        x
+        hasInitializer x
           firstFragment: <testLibraryFragment>::@class::B::@field::x
           type: dynamic
           getter: <testLibraryFragment>::@class::B::@getter::x#element
@@ -12355,7 +12563,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::B::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
@@ -12522,30 +12730,31 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
-            get <null-name>
+            synthetic get y
               reference: <testLibraryFragment>::@class::A::@getter::y
               element: <testLibraryFragment>::@class::A::@getter::y#element
-            get <null-name>
+            synthetic get z
               reference: <testLibraryFragment>::@class::A::@getter::z
               element: <testLibraryFragment>::@class::A::@getter::z#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::x::@parameter::_x#element
-            set <null-name>
+            synthetic set y
               reference: <testLibraryFragment>::@class::A::@setter::y
               element: <testLibraryFragment>::@class::A::@setter::y#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::y::@parameter::_y#element
-            set <null-name>
+            synthetic set z
               reference: <testLibraryFragment>::@class::A::@setter::z
               element: <testLibraryFragment>::@class::A::@setter::z#element
               formalParameters
@@ -12563,11 +12772,11 @@ library
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::B::@field::z
               element: <testLibraryFragment>::@class::B::@field::z#element
               setter2: <testLibraryFragment>::@class::B::@setter::z
@@ -12575,15 +12784,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
             get y @89
               reference: <testLibraryFragment>::@class::B::@getter::y
               element: <testLibraryFragment>::@class::B::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -12628,17 +12838,17 @@ library
         synthetic get z
           firstFragment: <testLibraryFragment>::@class::A::@getter::z
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
               type: E
-        synthetic set y=
+        synthetic set y
           firstFragment: <testLibraryFragment>::@class::A::@setter::y
           formalParameters
             requiredPositional _y
               type: E
-        synthetic set z=
+        synthetic set z
           firstFragment: <testLibraryFragment>::@class::A::@setter::z
           formalParameters
             requiredPositional _z
@@ -12673,12 +12883,12 @@ library
         get y
           firstFragment: <testLibraryFragment>::@class::B::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
               type: T
-        set z=
+        set z
           firstFragment: <testLibraryFragment>::@class::B::@setter::z
           formalParameters
             requiredPositional _
@@ -12774,12 +12984,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
@@ -12789,7 +13000,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            x @59
+            hasInitializer x @59
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -12798,12 +13009,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -12826,7 +13038,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
@@ -12837,7 +13049,7 @@ library
       interfaces
         A
       fields
-        x
+        hasInitializer x
           firstFragment: <testLibraryFragment>::@class::B::@field::x
           type: dynamic
           getter: <testLibraryFragment>::@class::B::@getter::x#element
@@ -12849,7 +13061,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::B::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
@@ -12945,12 +13157,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::A::@getter::x
               element: <testLibraryFragment>::@class::A::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::A::@setter::x
               element: <testLibraryFragment>::@class::A::@setter::x#element
               formalParameters
@@ -12960,7 +13173,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            x @59
+            hasInitializer x @59
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -12969,12 +13182,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -12997,7 +13211,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _x
@@ -13008,7 +13222,7 @@ library
       interfaces
         A
       fields
-        x
+        hasInitializer x
           firstFragment: <testLibraryFragment>::@class::B::@field::x
           type: num
           getter: <testLibraryFragment>::@class::B::@getter::x#element
@@ -13020,7 +13234,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::B::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
@@ -13138,15 +13352,15 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::A::@field::y
               element: <testLibraryFragment>::@class::A::@field::y#element
               getter2: <testLibraryFragment>::@class::A::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::A::@field::z
               element: <testLibraryFragment>::@class::A::@field::z#element
               getter2: <testLibraryFragment>::@class::A::@getter::z
@@ -13154,6 +13368,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -13173,11 +13388,11 @@ library
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::B::@field::z
               element: <testLibraryFragment>::@class::B::@field::z#element
               setter2: <testLibraryFragment>::@class::B::@setter::z
@@ -13185,15 +13400,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
             get y @98
               reference: <testLibraryFragment>::@class::B::@getter::y
               element: <testLibraryFragment>::@class::B::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -13260,12 +13476,12 @@ library
         get y
           firstFragment: <testLibraryFragment>::@class::B::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
               type: int
-        set z=
+        set z
           firstFragment: <testLibraryFragment>::@class::B::@setter::z
           formalParameters
             requiredPositional _
@@ -13392,15 +13608,15 @@ library
             E @17
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::A::@field::y
               element: <testLibraryFragment>::@class::A::@field::y#element
               getter2: <testLibraryFragment>::@class::A::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::A::@field::z
               element: <testLibraryFragment>::@class::A::@field::z#element
               getter2: <testLibraryFragment>::@class::A::@getter::z
@@ -13408,6 +13624,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @30
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -13430,11 +13647,11 @@ library
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::B::@field::z
               element: <testLibraryFragment>::@class::B::@field::z#element
               setter2: <testLibraryFragment>::@class::B::@setter::z
@@ -13442,15 +13659,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
             get y @101
               reference: <testLibraryFragment>::@class::B::@getter::y
               element: <testLibraryFragment>::@class::B::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -13521,12 +13739,12 @@ library
         get y
           firstFragment: <testLibraryFragment>::@class::B::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
               type: T
-        set z=
+        set z
           firstFragment: <testLibraryFragment>::@class::B::@setter::z
           formalParameters
             requiredPositional _
@@ -13620,7 +13838,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -13628,6 +13846,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -13636,7 +13855,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -13644,6 +13863,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
             get x @66
               reference: <testLibraryFragment>::@class::B::@getter::x
@@ -13652,7 +13872,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -13660,6 +13880,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @103
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -13799,7 +14020,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -13807,6 +14028,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -13815,7 +14037,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -13823,6 +14045,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
             get x @67
               reference: <testLibraryFragment>::@class::B::@getter::x
@@ -13831,7 +14054,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -13839,6 +14062,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @104
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -13987,7 +14211,7 @@ library
             T @17
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -13995,6 +14219,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @30
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -14006,7 +14231,7 @@ library
             T @52
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -14014,6 +14239,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
             get x @65
               reference: <testLibraryFragment>::@class::B::@getter::x
@@ -14022,7 +14248,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -14030,6 +14256,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @115
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -14172,7 +14399,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -14180,6 +14407,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -14188,7 +14416,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
@@ -14196,6 +14424,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
             get x @63
               reference: <testLibraryFragment>::@class::B::@getter::x
@@ -14204,7 +14433,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -14212,6 +14441,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @100
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -14390,11 +14620,11 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::A::@field::y
               element: <testLibraryFragment>::@class::A::@field::y#element
               getter2: <testLibraryFragment>::@class::A::@getter::y
@@ -14402,6 +14632,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -14413,11 +14644,11 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               setter2: <testLibraryFragment>::@class::B::@setter::y
@@ -14425,6 +14656,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @77
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -14455,15 +14687,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::C::@getter::x
               element: <testLibraryFragment>::@class::C::@getter::x#element
-            get <null-name>
+            synthetic get y
               reference: <testLibraryFragment>::@class::C::@getter::y
               element: <testLibraryFragment>::@class::C::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::C::@setter::x
               element: <testLibraryFragment>::@class::C::@setter::x#element
               formalParameters
@@ -14506,12 +14739,12 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
               type: String
-        abstract set y=
+        abstract set y
           firstFragment: <testLibraryFragment>::@class::B::@setter::y
           formalParameters
             requiredPositional _
@@ -14541,7 +14774,7 @@ library
         synthetic get y
           firstFragment: <testLibraryFragment>::@class::C::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::C::@setter::x
           formalParameters
             requiredPositional _x
@@ -14637,7 +14870,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -14645,6 +14878,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -14653,7 +14887,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -14661,6 +14895,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @64
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -14672,7 +14907,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -14680,6 +14915,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @111
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -14711,7 +14947,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -14828,7 +15064,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -14836,6 +15072,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -14844,7 +15081,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -14852,6 +15089,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @64
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -14863,7 +15101,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               setter2: <testLibraryFragment>::@class::C::@setter::x
@@ -14871,6 +15109,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           setters
             set x @111
               reference: <testLibraryFragment>::@class::C::@setter::x
@@ -14905,7 +15144,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -14925,7 +15164,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::C::@setter::x
           formalParameters
             requiredPositional _
@@ -15028,7 +15267,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -15036,6 +15275,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -15044,7 +15284,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -15052,6 +15292,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @64
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -15072,12 +15313,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::C::@getter::x
               element: <testLibraryFragment>::@class::C::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::C::@setter::x
               element: <testLibraryFragment>::@class::C::@setter::x#element
               formalParameters
@@ -15110,7 +15352,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -15134,7 +15376,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::C::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::C::@setter::x
           formalParameters
             requiredPositional _x
@@ -15230,7 +15472,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -15238,6 +15480,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -15246,7 +15489,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -15254,6 +15497,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @64
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -15265,7 +15509,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -15273,6 +15517,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @108
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -15304,7 +15549,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -15420,7 +15665,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -15428,6 +15673,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -15436,7 +15682,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -15444,6 +15690,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @64
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -15455,7 +15702,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               setter2: <testLibraryFragment>::@class::C::@setter::x
@@ -15463,6 +15710,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           setters
             set x @108
               reference: <testLibraryFragment>::@class::C::@setter::x
@@ -15497,7 +15745,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -15517,7 +15765,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::C::@setter::x
           formalParameters
             requiredPositional _
@@ -15644,15 +15892,15 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               setter2: <testLibraryFragment>::@class::A::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::A::@field::y
               element: <testLibraryFragment>::@class::A::@field::y#element
               setter2: <testLibraryFragment>::@class::A::@setter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::A::@field::z
               element: <testLibraryFragment>::@class::A::@field::z#element
               setter2: <testLibraryFragment>::@class::A::@setter::z
@@ -15660,6 +15908,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           setters
             set x @30
               reference: <testLibraryFragment>::@class::A::@setter::x
@@ -15688,11 +15937,11 @@ library
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
               setter2: <testLibraryFragment>::@class::B::@setter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
-            <null-name>
+            synthetic z
               reference: <testLibraryFragment>::@class::B::@field::z
               element: <testLibraryFragment>::@class::B::@field::z#element
               setter2: <testLibraryFragment>::@class::B::@setter::z
@@ -15700,15 +15949,16 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
             get y @122
               reference: <testLibraryFragment>::@class::B::@getter::y
               element: <testLibraryFragment>::@class::B::@getter::y#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -15741,17 +15991,17 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _
               type: int
-        abstract set y=
+        abstract set y
           firstFragment: <testLibraryFragment>::@class::A::@setter::y
           formalParameters
             requiredPositional _
               type: int
-        abstract set z=
+        abstract set z
           firstFragment: <testLibraryFragment>::@class::A::@setter::z
           formalParameters
             requiredPositional _
@@ -15784,12 +16034,12 @@ library
         get y
           firstFragment: <testLibraryFragment>::@class::B::@getter::y
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _x
               type: int
-        set z=
+        set z
           firstFragment: <testLibraryFragment>::@class::B::@setter::z
           formalParameters
             requiredPositional _
@@ -15888,7 +16138,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               setter2: <testLibraryFragment>::@class::A::@setter::x
@@ -15896,6 +16146,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           setters
             set x @30
               reference: <testLibraryFragment>::@class::A::@setter::x
@@ -15907,7 +16158,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -15915,6 +16166,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @72
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -15926,7 +16178,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -15934,6 +16186,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @119
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -15951,7 +16204,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _
@@ -15968,7 +16221,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -16084,7 +16337,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               setter2: <testLibraryFragment>::@class::A::@setter::x
@@ -16092,6 +16345,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           setters
             set x @30
               reference: <testLibraryFragment>::@class::A::@setter::x
@@ -16103,7 +16357,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -16111,6 +16365,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @72
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -16122,7 +16377,7 @@ library
           reference: <testLibraryFragment>::@class::C
           element: <testLibrary>::@class::C
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::C::@field::x
               element: <testLibraryFragment>::@class::C::@field::x#element
               getter2: <testLibraryFragment>::@class::C::@getter::x
@@ -16130,6 +16385,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           getters
             get x @116
               reference: <testLibraryFragment>::@class::C::@getter::x
@@ -16147,7 +16403,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional _
@@ -16164,7 +16420,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional _
@@ -16303,11 +16559,11 @@ library
             T @25
               element: <not-implemented>
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::A::@field::y
               element: <testLibraryFragment>::@class::A::@field::y#element
               getter2: <testLibraryFragment>::@class::A::@getter::y
@@ -16315,6 +16571,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @41
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -16326,11 +16583,11 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               getter2: <testLibraryFragment>::@class::B::@getter::x
-            <null-name>
+            synthetic y
               reference: <testLibraryFragment>::@class::B::@field::y
               element: <testLibraryFragment>::@class::B::@field::y#element
               getter2: <testLibraryFragment>::@class::B::@getter::y
@@ -16338,6 +16595,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {T: int}
@@ -16351,7 +16609,7 @@ library
       typeAliases
         F @8
           reference: <testLibraryFragment>::@typeAlias::F
-          element: <testLibraryFragment>::@typeAlias::F#element
+          element: <testLibrary>::@typeAlias::F
           typeParameters
             T @10
               element: <not-implemented>
@@ -16494,7 +16752,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -16503,6 +16761,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -16527,12 +16786,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           getters
-            get <null-name>
+            synthetic get x
               reference: <testLibraryFragment>::@class::B::@getter::x
               element: <testLibraryFragment>::@class::B::@getter::x#element
           setters
-            set <null-name>
+            synthetic set x
               reference: <testLibraryFragment>::@class::B::@setter::x
               element: <testLibraryFragment>::@class::B::@setter::x#element
               formalParameters
@@ -16555,7 +16815,7 @@ library
         abstract get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional covariant _
@@ -16578,7 +16838,7 @@ library
         synthetic get x
           firstFragment: <testLibraryFragment>::@class::B::@getter::x
       setters
-        synthetic set x=
+        synthetic set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional covariant _x
@@ -16661,7 +16921,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::A::@field::x
               element: <testLibraryFragment>::@class::A::@field::x#element
               getter2: <testLibraryFragment>::@class::A::@getter::x
@@ -16670,6 +16930,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
             get x @29
               reference: <testLibraryFragment>::@class::A::@getter::x
@@ -16685,7 +16946,7 @@ library
           reference: <testLibraryFragment>::@class::B
           element: <testLibrary>::@class::B
           fields
-            <null-name>
+            synthetic x
               reference: <testLibraryFragment>::@class::B::@field::x
               element: <testLibraryFragment>::@class::B::@field::x#element
               setter2: <testLibraryFragment>::@class::B::@setter::x
@@ -16693,6 +16954,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           setters
             set x @94
               reference: <testLibraryFragment>::@class::B::@setter::x
@@ -16717,7 +16979,7 @@ library
         abstract get x
           firstFragment: <testLibraryFragment>::@class::A::@getter::x
       setters
-        abstract set x=
+        abstract set x
           firstFragment: <testLibraryFragment>::@class::A::@setter::x
           formalParameters
             requiredPositional covariant _
@@ -16736,7 +16998,7 @@ library
         synthetic new
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       setters
-        set x=
+        set x
           firstFragment: <testLibraryFragment>::@class::B::@setter::x
           formalParameters
             requiredPositional covariant _
@@ -16828,17 +17090,17 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            t1 @16
+            hasInitializer t1 @16
               reference: <testLibraryFragment>::@class::A::@field::t1
               element: <testLibraryFragment>::@class::A::@field::t1#element
               getter2: <testLibraryFragment>::@class::A::@getter::t1
               setter2: <testLibraryFragment>::@class::A::@setter::t1
-            t2 @30
+            hasInitializer t2 @30
               reference: <testLibraryFragment>::@class::A::@field::t2
               element: <testLibraryFragment>::@class::A::@field::t2#element
               getter2: <testLibraryFragment>::@class::A::@getter::t2
               setter2: <testLibraryFragment>::@class::A::@setter::t2
-            t3 @46
+            hasInitializer t3 @46
               reference: <testLibraryFragment>::@class::A::@field::t3
               element: <testLibraryFragment>::@class::A::@field::t3#element
               getter2: <testLibraryFragment>::@class::A::@getter::t3
@@ -16847,30 +17109,31 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get t1
               reference: <testLibraryFragment>::@class::A::@getter::t1
               element: <testLibraryFragment>::@class::A::@getter::t1#element
-            get <null-name>
+            synthetic get t2
               reference: <testLibraryFragment>::@class::A::@getter::t2
               element: <testLibraryFragment>::@class::A::@getter::t2#element
-            get <null-name>
+            synthetic get t3
               reference: <testLibraryFragment>::@class::A::@getter::t3
               element: <testLibraryFragment>::@class::A::@getter::t3#element
           setters
-            set <null-name>
+            synthetic set t1
               reference: <testLibraryFragment>::@class::A::@setter::t1
               element: <testLibraryFragment>::@class::A::@setter::t1#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::t1::@parameter::_t1#element
-            set <null-name>
+            synthetic set t2
               reference: <testLibraryFragment>::@class::A::@setter::t2
               element: <testLibraryFragment>::@class::A::@setter::t2#element
               formalParameters
                 <null-name>
                   element: <testLibraryFragment>::@class::A::@setter::t2::@parameter::_t2#element
-            set <null-name>
+            synthetic set t3
               reference: <testLibraryFragment>::@class::A::@setter::t3
               element: <testLibraryFragment>::@class::A::@setter::t3#element
               formalParameters
@@ -16881,17 +17144,17 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        t1
+        hasInitializer t1
           firstFragment: <testLibraryFragment>::@class::A::@field::t1
           type: int
           getter: <testLibraryFragment>::@class::A::@getter::t1#element
           setter: <testLibraryFragment>::@class::A::@setter::t1#element
-        t2
+        hasInitializer t2
           firstFragment: <testLibraryFragment>::@class::A::@field::t2
           type: double
           getter: <testLibraryFragment>::@class::A::@getter::t2#element
           setter: <testLibraryFragment>::@class::A::@setter::t2#element
-        t3
+        hasInitializer t3
           firstFragment: <testLibraryFragment>::@class::A::@field::t3
           type: dynamic
           getter: <testLibraryFragment>::@class::A::@getter::t3#element
@@ -16907,17 +17170,17 @@ library
         synthetic get t3
           firstFragment: <testLibraryFragment>::@class::A::@getter::t3
       setters
-        synthetic set t1=
+        synthetic set t1
           firstFragment: <testLibraryFragment>::@class::A::@setter::t1
           formalParameters
             requiredPositional _t1
               type: int
-        synthetic set t2=
+        synthetic set t2
           firstFragment: <testLibraryFragment>::@class::A::@setter::t2
           formalParameters
             requiredPositional _t2
               type: double
-        synthetic set t3=
+        synthetic set t3
           firstFragment: <testLibraryFragment>::@class::A::@setter::t3
           formalParameters
             requiredPositional _t3
@@ -16992,6 +17255,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @17
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17006,6 +17270,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @58
@@ -17025,6 +17290,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -17039,6 +17305,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -17132,6 +17399,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @17
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17146,6 +17414,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @48
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -17160,6 +17429,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @100
@@ -17177,6 +17447,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -17189,6 +17460,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -17205,6 +17477,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -17297,6 +17570,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             foo @25
               reference: <testLibraryFragment>::@class::A::@method::foo
@@ -17311,6 +17585,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             foo @68
               reference: <testLibraryFragment>::@class::B::@method::foo
@@ -17325,6 +17600,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           methods
             foo @126
               reference: <testLibraryFragment>::@class::C::@method::foo
@@ -17341,6 +17617,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         abstract foo
+          reference: <testLibrary>::@class::A::@method::foo
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
           formalParameters
             requiredPositional x
@@ -17353,6 +17630,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         abstract foo
+          reference: <testLibrary>::@class::B::@method::foo
           firstFragment: <testLibraryFragment>::@class::B::@method::foo
           formalParameters
             requiredPositional x
@@ -17368,6 +17646,7 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       methods
         abstract foo
+          reference: <testLibrary>::@class::C::@method::foo
           firstFragment: <testLibraryFragment>::@class::C::@method::foo
           formalParameters
             requiredPositional x
@@ -17451,6 +17730,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @16
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17462,6 +17742,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @44
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -17473,6 +17754,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @88
@@ -17487,6 +17769,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
     class B
       reference: <testLibrary>::@class::B
@@ -17496,6 +17779,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
     class C
       reference: <testLibrary>::@class::C
@@ -17509,6 +17793,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
 ''');
   }
@@ -17608,6 +17893,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17625,6 +17911,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @52
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -17639,6 +17926,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {T: int}
@@ -17660,6 +17948,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -17674,6 +17963,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -17690,6 +17980,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -17796,6 +18087,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17813,6 +18105,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @49
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -17827,6 +18120,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: int, V: String}
@@ -17849,6 +18143,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -17863,6 +18158,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -17879,6 +18175,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -17952,6 +18249,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @17
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -17966,6 +18264,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @53
@@ -17986,6 +18285,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18000,6 +18300,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18075,6 +18376,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @17
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -18089,6 +18391,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @53
@@ -18108,6 +18411,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18122,6 +18426,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18194,6 +18499,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @12
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -18208,6 +18514,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @44
@@ -18225,6 +18532,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18239,6 +18547,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18309,6 +18618,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             foo @16
               reference: <testLibraryFragment>::@class::A::@method::foo
@@ -18323,6 +18633,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @63
@@ -18340,6 +18651,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         foo
+          reference: <testLibrary>::@class::A::@method::foo
           firstFragment: <testLibraryFragment>::@class::A::@method::foo
           formalParameters
             requiredPositional a
@@ -18354,6 +18666,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18431,7 +18744,7 @@ library
           reference: <testLibraryFragment>::@class::A
           element: <testLibrary>::@class::A
           fields
-            m @16
+            hasInitializer m @16
               reference: <testLibraryFragment>::@class::A::@field::m
               element: <testLibraryFragment>::@class::A::@field::m#element
               getter2: <testLibraryFragment>::@class::A::@getter::m
@@ -18440,12 +18753,13 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           getters
-            get <null-name>
+            synthetic get m
               reference: <testLibraryFragment>::@class::A::@getter::m
               element: <testLibraryFragment>::@class::A::@getter::m#element
           setters
-            set <null-name>
+            synthetic set m
               reference: <testLibraryFragment>::@class::A::@setter::m
               element: <testLibraryFragment>::@class::A::@setter::m#element
               formalParameters
@@ -18458,6 +18772,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @48
@@ -18471,7 +18786,7 @@ library
       reference: <testLibrary>::@class::A
       firstFragment: <testLibraryFragment>::@class::A
       fields
-        m
+        hasInitializer m
           firstFragment: <testLibraryFragment>::@class::A::@field::m
           type: int
           getter: <testLibraryFragment>::@class::A::@getter::m#element
@@ -18483,7 +18798,7 @@ library
         synthetic get m
           firstFragment: <testLibraryFragment>::@class::A::@getter::m
       setters
-        synthetic set m=
+        synthetic set m
           firstFragment: <testLibraryFragment>::@class::A::@setter::m
           formalParameters
             requiredPositional _m
@@ -18498,6 +18813,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18595,6 +18911,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -18612,6 +18929,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: int, V: T}
@@ -18622,6 +18940,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::B::@constructor::new
                 substitution: {T: String}
@@ -18644,6 +18963,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18668,6 +18988,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -18758,6 +19079,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -18772,6 +19094,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @55
@@ -18787,6 +19110,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::B::@constructor::new
           methods
             m @87
@@ -18804,6 +19128,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18818,6 +19143,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18832,6 +19158,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -18922,6 +19249,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -18936,6 +19264,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @58
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -18950,6 +19279,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::B::@constructor::new
           methods
             m @90
@@ -18967,6 +19297,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -18981,6 +19312,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -18995,6 +19327,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -19086,6 +19419,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19100,6 +19434,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @67
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -19114,6 +19449,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::B::@constructor::new
           methods
             m @99
@@ -19131,6 +19467,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19146,6 +19483,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -19160,6 +19498,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -19246,6 +19585,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19262,6 +19602,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: int, V: String}
@@ -19286,6 +19627,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19302,6 +19644,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -19374,6 +19717,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19388,6 +19732,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @55
@@ -19405,6 +19750,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19419,6 +19765,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -19495,6 +19842,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19512,6 +19860,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @67
@@ -19532,6 +19881,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19549,6 +19899,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -19626,6 +19977,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19642,6 +19994,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @67
@@ -19661,6 +20014,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19677,6 +20031,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -19776,6 +20131,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19793,6 +20149,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: int, V: T}
@@ -19803,6 +20160,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::B::@constructor::new
                 substitution: {T: String}
@@ -19825,6 +20183,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19849,6 +20208,7 @@ library
           superConstructor: <testLibraryFragment>::@class::B::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -19929,6 +20289,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @29
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -19943,6 +20304,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @77
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -19962,6 +20324,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         abstract m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -19976,6 +20339,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -20046,6 +20410,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @28
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -20060,6 +20425,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @65
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -20076,6 +20442,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         abstract m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -20090,6 +20457,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -20187,6 +20555,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @29
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -20206,6 +20575,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: T2, V: T1}
@@ -20216,6 +20586,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
           methods
             m @123
               reference: <testLibraryFragment>::@class::C::@method::m
@@ -20235,6 +20606,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         abstract m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -20260,6 +20632,7 @@ library
           firstFragment: <testLibraryFragment>::@class::C::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -20334,6 +20707,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A1::@constructor::new
               element: <testLibraryFragment>::@class::A1::@constructor::new#element
+              typeName: A1
           methods
             _foo @38
               reference: <testLibraryFragment>::@class::A1::@method::_foo
@@ -20345,6 +20719,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A2::@constructor::new
               element: <testLibraryFragment>::@class::A2::@constructor::new#element
+              typeName: A2
               superConstructor: <testLibraryFragment>::@class::A1::@constructor::new
           methods
             _foo @77
@@ -20359,6 +20734,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A1::@constructor::new
       methods
         _foo
+          reference: <testLibrary>::@class::A1::@method::_foo
           firstFragment: <testLibraryFragment>::@class::A1::@method::_foo
     class A2
       reference: <testLibrary>::@class::A2
@@ -20370,6 +20746,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A1::@constructor::new#element
       methods
         _foo
+          reference: <testLibrary>::@class::A2::@method::_foo
           firstFragment: <testLibraryFragment>::@class::A2::@method::_foo
 ''');
   }
@@ -20438,6 +20815,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -20452,6 +20830,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @67
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -20468,6 +20847,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -20483,6 +20863,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -20588,6 +20969,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @20
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -20605,6 +20987,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @49
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -20619,6 +21002,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: ConstructorMember
                 base: <testLibraryFragment>::@class::A::@constructor::new
                 substitution: {K: int, V: String}
@@ -20641,6 +21025,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -20655,6 +21040,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -20671,6 +21057,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a
@@ -20761,6 +21148,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::A::@constructor::new
               element: <testLibraryFragment>::@class::A::@constructor::new#element
+              typeName: A
           methods
             m @19
               reference: <testLibraryFragment>::@class::A::@method::m
@@ -20775,6 +21163,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::B::@constructor::new
               element: <testLibraryFragment>::@class::B::@constructor::new#element
+              typeName: B
           methods
             m @52
               reference: <testLibraryFragment>::@class::B::@method::m
@@ -20789,6 +21178,7 @@ library
             synthetic new
               reference: <testLibraryFragment>::@class::C::@constructor::new
               element: <testLibraryFragment>::@class::C::@constructor::new#element
+              typeName: C
               superConstructor: <testLibraryFragment>::@class::A::@constructor::new
           methods
             m @101
@@ -20806,6 +21196,7 @@ library
           firstFragment: <testLibraryFragment>::@class::A::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::A::@method::m
           firstFragment: <testLibraryFragment>::@class::A::@method::m
           formalParameters
             requiredPositional a
@@ -20818,6 +21209,7 @@ library
           firstFragment: <testLibraryFragment>::@class::B::@constructor::new
       methods
         m
+          reference: <testLibrary>::@class::B::@method::m
           firstFragment: <testLibraryFragment>::@class::B::@method::m
           formalParameters
             requiredPositional a
@@ -20834,6 +21226,7 @@ library
           superConstructor: <testLibraryFragment>::@class::A::@constructor::new#element
       methods
         m
+          reference: <testLibrary>::@class::C::@method::m
           firstFragment: <testLibraryFragment>::@class::C::@method::m
           formalParameters
             requiredPositional a

@@ -72,7 +72,7 @@ abstract interface class SharedRecordTypeStructure<
         TypeStructure extends SharedTypeStructure<TypeStructure>>
     implements SharedTypeStructure<TypeStructure> {
   /// All the named fields, sorted by name.
-  List<SharedNamedTypeStructure<TypeStructure>> get namedTypes;
+  List<SharedNamedTypeStructure<TypeStructure>> get sortedNamedTypes;
 
   List<TypeStructure> get positionalTypes;
 }
@@ -83,6 +83,9 @@ abstract interface class SharedTypeParameterStructure<
     TypeStructure extends SharedTypeStructure<TypeStructure>> {
   /// The name of the type parameter, for display to the user.
   String get displayName;
+
+  /// The bound of the type parameter.
+  TypeStructure? get bound;
 }
 
 /// Common interface for data structures used by the implementations to
@@ -158,7 +161,7 @@ extension type SharedRecordTypeSchemaView<
         SharedRecordTypeStructure<TypeStructure> _typeStructure)
     implements SharedTypeSchemaView<TypeStructure> {
   List<SharedNamedTypeSchemaView<TypeStructure>> get namedTypes {
-    return _typeStructure.namedTypes
+    return _typeStructure.sortedNamedTypes
         as List<SharedNamedTypeSchemaView<TypeStructure>>;
   }
 
@@ -173,7 +176,7 @@ extension type SharedRecordTypeView<
         SharedRecordTypeStructure<TypeStructure> _typeStructure)
     implements SharedTypeView<TypeStructure> {
   List<SharedNamedTypeView<TypeStructure>> get namedTypes {
-    return _typeStructure.namedTypes
+    return _typeStructure.sortedNamedTypes
         as List<SharedNamedTypeView<TypeStructure>>;
   }
 

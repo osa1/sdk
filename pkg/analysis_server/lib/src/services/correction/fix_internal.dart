@@ -105,6 +105,7 @@ import 'package:analysis_server/src/services/correction/dart/import_library.dart
 import 'package:analysis_server/src/services/correction/dart/inline_invocation.dart';
 import 'package:analysis_server/src/services/correction/dart/inline_typedef.dart';
 import 'package:analysis_server/src/services/correction/dart/insert_body.dart';
+import 'package:analysis_server/src/services/correction/dart/insert_on_keyword.dart';
 import 'package:analysis_server/src/services/correction/dart/insert_semicolon.dart';
 import 'package:analysis_server/src/services/correction/dart/make_class_abstract.dart';
 import 'package:analysis_server/src/services/correction/dart/make_conditional_on_debug_mode.dart';
@@ -377,6 +378,7 @@ final _builtInLintProducers = <LintCode, List<ProducerGenerator>>{
   LinterLintCode.null_closures: [ReplaceNullWithClosure.new],
   LinterLintCode.omit_local_variable_types: [ReplaceWithVar.new],
   LinterLintCode.omit_obvious_local_variable_types: [ReplaceWithVar.new],
+  LinterLintCode.omit_obvious_property_types: [ReplaceWithVar.new],
   LinterLintCode.prefer_adjacent_string_concatenation: [RemoveOperator.new],
   LinterLintCode.prefer_collection_literals: [
     ConvertToMapLiteral.new,
@@ -457,6 +459,9 @@ final _builtInLintProducers = <LintCode, List<ProducerGenerator>>{
     SortUnnamedConstructorFirst.new,
   ],
   LinterLintCode.specify_nonobvious_local_variable_types: [
+    AddTypeAnnotation.bulkFixable,
+  ],
+  LinterLintCode.specify_nonobvious_property_types: [
     AddTypeAnnotation.bulkFixable,
   ],
   LinterLintCode.type_annotate_public_apis: [AddTypeAnnotation.bulkFixable],
@@ -1084,8 +1089,8 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
     //  updated so that only the appropriate subset is generated.
     QualifyReference.new,
   ],
-  CompileTimeErrorCode
-      .UNQUALIFIED_REFERENCE_TO_STATIC_MEMBER_OF_EXTENDED_TYPE: [
+  CompileTimeErrorCode.UNQUALIFIED_REFERENCE_TO_STATIC_MEMBER_OF_EXTENDED_TYPE:
+      [
     // TODO(brianwilkerson): Consider adding fixes to create a field, getter,
     //  method or setter. The existing producers would need to be updated so
     //  that only the appropriate subset is generated.
@@ -1134,7 +1139,11 @@ final _builtInNonLintProducers = <ErrorCode, List<ProducerGenerator>>{
   ParserErrorCode.EXPECTED_SWITCH_EXPRESSION_BODY: [InsertBody.new],
   ParserErrorCode.EXPECTED_SWITCH_STATEMENT_BODY: [InsertBody.new],
   ParserErrorCode.EXPECTED_TRY_STATEMENT_BODY: [InsertBody.new],
-  ParserErrorCode.EXPECTED_TOKEN: [InsertSemicolon.new, ReplaceWithArrow.new],
+  ParserErrorCode.EXPECTED_TOKEN: [
+    InsertSemicolon.new,
+    ReplaceWithArrow.new,
+    InsertOnKeyword.new,
+  ],
   ParserErrorCode.EXTENSION_AUGMENTATION_HAS_ON_CLAUSE: [RemoveOnClause.new],
   ParserErrorCode.EXTENSION_DECLARES_CONSTRUCTOR: [RemoveConstructor.new],
   ParserErrorCode.EXTERNAL_CLASS: [RemoveLexeme.modifier],

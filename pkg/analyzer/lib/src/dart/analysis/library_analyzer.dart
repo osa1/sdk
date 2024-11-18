@@ -84,12 +84,21 @@ class LibraryAnalyzer {
   final TestingData? _testingData;
   final TypeSystemOperations _typeSystemOperations;
 
-  LibraryAnalyzer(this._analysisOptions, this._declaredVariables,
-      this._libraryElement, this._inheritance, this._library,
-      {TestingData? testingData,
-      required TypeSystemOperations typeSystemOperations})
-      : _testingData = testingData,
-        _typeSystemOperations = typeSystemOperations {
+  /// Whether timing data should be gathered during lint rule execution.
+  final bool _enableLintRuleTiming;
+
+  LibraryAnalyzer(
+    this._analysisOptions,
+    this._declaredVariables,
+    this._libraryElement,
+    this._inheritance,
+    this._library, {
+    TestingData? testingData,
+    required TypeSystemOperations typeSystemOperations,
+    bool enableLintRuleTiming = false,
+  })  : _testingData = testingData,
+        _typeSystemOperations = typeSystemOperations,
+        _enableLintRuleTiming = enableLintRuleTiming {
     _libraryVerificationContext = LibraryVerificationContext(
       libraryKind: _library,
       constructorFieldsVerifier: ConstructorFieldsVerifier(
@@ -371,8 +380,7 @@ class LibraryAnalyzer {
     var allUnits = analysesToContextUnits.values.toList();
     definingContextUnit ??= allUnits.first;
 
-    var enableTiming = _analysisOptions.enableTiming;
-    var nodeRegistry = NodeLintRegistry(enableTiming);
+    var nodeRegistry = NodeLintRegistry(enableTiming: _enableLintRuleTiming);
     var context = LinterContextWithResolvedResults(
       allUnits,
       definingContextUnit,
@@ -383,15 +391,12 @@ class LibraryAnalyzer {
     );
 
     for (var linter in _analysisOptions.lintRules) {
-      var timer = enableTiming ? analysisRuleTimers.getTimer(linter) : null;
+      var timer =
+          _enableLintRuleTiming ? analysisRuleTimers.getTimer(linter) : null;
       timer?.start();
       linter.registerNodeProcessors(nodeRegistry, context);
       timer?.stop();
     }
-
-    var logException = AnalysisRuleExceptionHandler(
-      propagateExceptions: _analysisOptions.propagateLinterExceptions,
-    ).logException;
 
     for (var MapEntry(key: fileAnalysis, value: currentUnit)
         in analysesToContextUnits.entries) {
@@ -408,13 +413,19 @@ class LibraryAnalyzer {
 
       // Run lint rules that handle specific node types.
       unit.accept(
-        AnalysisRuleVisitor(nodeRegistry, logException),
+        AnalysisRuleVisitor(
+          nodeRegistry,
+          shouldPropagateExceptions: _analysisOptions.propagateLinterExceptions,
+        ),
       );
     }
 
     // Now that all lint rules have visited the code in each of the compilation
     // units, we can accept each lint rule's `afterLibrary` hook.
-    AnalysisRuleVisitor(nodeRegistry, logException).afterLibrary();
+    AnalysisRuleVisitor(
+      nodeRegistry,
+      shouldPropagateExceptions: _analysisOptions.propagateLinterExceptions,
+    ).afterLibrary();
   }
 
   void _computeVerifyErrors(FileAnalysis fileAnalysis) {
@@ -486,11 +497,12 @@ class LibraryAnalyzer {
       errorReporter,
     ));
 
-    unit.accept(RedeclareVerifier(
-      _inheritance,
-      _libraryElement,
-      errorReporter,
-    ));
+    unit.accept(
+      RedeclareVerifier(
+        _inheritance,
+        errorReporter,
+      ),
+    );
 
     TodoFinder(errorReporter).findIn(unit);
     LanguageVersionOverrideVerifier(errorReporter).verify(unit);

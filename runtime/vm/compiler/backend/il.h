@@ -503,7 +503,6 @@ struct InstrAttrs {
   M(CaseInsensitiveCompare, kNoGC)                                             \
   M(BinaryInt64Op, kNoGC)                                                      \
   M(ShiftInt64Op, kNoGC)                                                       \
-  M(SpeculativeShiftInt64Op, kNoGC)                                            \
   M(UnaryInt64Op, kNoGC)                                                       \
   M(CheckArrayBound, kNoGC)                                                    \
   M(GenericCheckBound, kNoGC)                                                  \
@@ -529,7 +528,6 @@ struct InstrAttrs {
   M(BoxLanes, _)                                                               \
   M(BinaryUint32Op, kNoGC)                                                     \
   M(ShiftUint32Op, kNoGC)                                                      \
-  M(SpeculativeShiftUint32Op, kNoGC)                                           \
   M(UnaryUint32Op, kNoGC)                                                      \
   M(BoxUint32, _)                                                              \
   M(UnboxUint32, kNoGC)                                                        \
@@ -3864,28 +3862,21 @@ class ConditionInstr : public Definition {
 
   void SetDeoptId(const Instruction& instr) { CopyDeoptIdFrom(instr); }
 
-  // Operation class id is computed from collected ICData.
-  void set_operation_cid(intptr_t value) { operation_cid_ = value; }
-  intptr_t operation_cid() const { return operation_cid_; }
-
+  virtual bool CanBeNegated() const { return true; }
   void NegateCondition() { kind_ = Token::NegateComparison(kind_); }
 
   virtual bool CanBecomeDeoptimizationTarget() const { return true; }
   virtual intptr_t DeoptimizationTarget() const { return GetDeoptId(); }
 
   virtual bool AttributesEqual(const Instruction& other) const {
-    auto const other_condition = other.AsCondition();
-    return kind() == other_condition->kind() &&
-           (operation_cid() == other_condition->operation_cid());
+    return kind() == other.AsCondition()->kind();
   }
 
   DECLARE_ABSTRACT_INSTRUCTION(Condition)
 
 #define FIELD_LIST(F)                                                          \
   F(const TokenPosition, token_pos_)                                           \
-  F(Token::Kind, kind_)                                                        \
-  /* Set by optimizer. */                                                      \
-  F(intptr_t, operation_cid_)
+  F(Token::Kind, kind_)
 
   DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(ConditionInstr,
                                           Definition,
@@ -3898,8 +3889,7 @@ class ConditionInstr : public Definition {
                  intptr_t deopt_id = DeoptId::kNone)
       : Definition(source, deopt_id),
         token_pos_(source.token_pos),
-        kind_(kind),
-        operation_cid_(kIllegalCid) {}
+        kind_(kind) {}
 
   void set_kind(Token::Kind value) { kind_ = value; }
 
@@ -3952,6 +3942,26 @@ class ComparisonInstr : public TemplateCondition<2, NoThrow, Pure> {
   Value* left() const { return InputAt(0); }
   Value* right() const { return InputAt(1); }
 
+  Representation input_representation() const { return input_representation_; }
+  void set_input_representation(Representation value) {
+    input_representation_ = value;
+  }
+
+  bool IsFloatingPoint() const {
+    return input_representation_ == kUnboxedDouble;
+  }
+
+  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
+    ASSERT((idx == 0) || (idx == 1));
+    return input_representation_;
+  }
+
+  virtual bool AttributesEqual(const Instruction& other) const {
+    return ConditionInstr::AttributesEqual(other) &&
+           (input_representation_ ==
+            other.AsComparison()->input_representation_);
+  }
+
   // Detects comparison with a constant and returns constant and the other
   // operand.
   bool IsComparisonWithConstant(Value** other_operand,
@@ -3971,15 +3981,28 @@ class ComparisonInstr : public TemplateCondition<2, NoThrow, Pure> {
   void MoveConstantOperandToTheRight();
 
   DECLARE_ABSTRACT_INSTRUCTION(Comparison)
-  DECLARE_EMPTY_SERIALIZATION(ComparisonInstr, TemplateCondition)
+
+#define FIELD_LIST(F) F(Representation, input_representation_)
+
+  DECLARE_INSTRUCTION_SERIALIZABLE_FIELDS(ComparisonInstr,
+                                          TemplateCondition,
+                                          FIELD_LIST)
+#undef FIELD_LIST
 
  protected:
   ComparisonInstr(const InstructionSource& source,
                   Token::Kind kind,
                   Value* left,
                   Value* right,
+                  Representation input_representation,
                   intptr_t deopt_id)
-      : TemplateCondition(source, kind, deopt_id) {
+      : TemplateCondition(source, kind, deopt_id),
+        input_representation_(input_representation) {
+    ASSERT((input_representation == kTagged) ||
+           (input_representation == kUnboxedInt64) ||
+           (input_representation == kUnboxedInt32) ||
+           (input_representation == kUnboxedUint32) ||
+           (input_representation == kUnboxedDouble));
     SetInputAt(0, left);
     SetInputAt(1, right);
   }
@@ -5278,13 +5301,18 @@ class EqualityCompareInstr : public ComparisonInstr {
                        Token::Kind kind,
                        Value* left,
                        Value* right,
-                       intptr_t cid,
+                       Representation input_representation,
                        intptr_t deopt_id,
                        bool null_aware)
-      : ComparisonInstr(source, kind, left, right, deopt_id),
+      : ComparisonInstr(source,
+                        kind,
+                        left,
+                        right,
+                        input_representation,
+                        deopt_id),
         null_aware_(null_aware) {
     ASSERT(Token::IsEqualityOperator(kind));
-    set_operation_cid(cid);
+    ASSERT(!null_aware || (input_representation == kTagged));
   }
 
   DECLARE_COMPARISON_INSTRUCTION(EqualityCompare)
@@ -5298,17 +5326,8 @@ class EqualityCompareInstr : public ComparisonInstr {
   bool is_null_aware() const { return null_aware_; }
   void set_null_aware(bool value) { null_aware_ = value; }
 
-  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
-    ASSERT((idx == 0) || (idx == 1));
-    if (is_null_aware()) return kTagged;
-    if (operation_cid() == kDoubleCid) return kUnboxedDouble;
-    if (operation_cid() == kMintCid) return kUnboxedInt64;
-    if (operation_cid() == kIntegerCid) return kUnboxedUword;
-    return kTagged;
-  }
-
   virtual bool AttributesEqual(const Instruction& other) const {
-    return ConditionInstr::AttributesEqual(other) &&
+    return ComparisonInstr::AttributesEqual(other) &&
            (null_aware_ == other.AsEqualityCompare()->null_aware_);
   }
 
@@ -5333,12 +5352,15 @@ class RelationalOpInstr : public ComparisonInstr {
                     Token::Kind kind,
                     Value* left,
                     Value* right,
-                    intptr_t cid,
+                    Representation input_representation,
                     intptr_t deopt_id)
-      : ComparisonInstr(source, kind, left, right, deopt_id) {
+      : ComparisonInstr(source,
+                        kind,
+                        left,
+                        right,
+                        input_representation,
+                        deopt_id) {
     ASSERT(Token::IsRelationalOperator(kind));
-    ASSERT((cid == kSmiCid) || (cid == kMintCid) || (cid == kDoubleCid));
-    set_operation_cid(cid);
   }
 
   DECLARE_COMPARISON_INSTRUCTION(RelationalOp)
@@ -5349,14 +5371,13 @@ class RelationalOpInstr : public ComparisonInstr {
 
   virtual bool ComputeCanDeoptimize() const { return false; }
 
-  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
-    ASSERT((idx == 0) || (idx == 1));
-    if (operation_cid() == kDoubleCid) return kUnboxedDouble;
-    if (operation_cid() == kMintCid) return kUnboxedInt64;
-    return kTagged;
-  }
-
   virtual Definition* Canonicalize(FlowGraph* flow_graph);
+
+  virtual bool CanBeNegated() const {
+    // Negating floating-point comparisons would affect
+    // NaN semantics.
+    return !IsFloatingPoint();
+  }
 
   PRINT_OPERANDS_TO_SUPPORT
 
@@ -8716,8 +8737,7 @@ class UnboxInt64Instr : public UnboxIntegerInstr {
 
 bool Definition::IsInt64Definition() {
   return (Type()->ToCid() == kMintCid) || IsBinaryInt64Op() ||
-         IsUnaryInt64Op() || IsShiftInt64Op() || IsSpeculativeShiftInt64Op() ||
-         IsBoxInt64() || IsUnboxInt64();
+         IsUnaryInt64Op() || IsShiftInt64Op() || IsBoxInt64() || IsUnboxInt64();
 }
 
 // Calls into the runtime and performs a case-insensitive comparison of the
@@ -9472,6 +9492,9 @@ class ShiftInt64OpInstr : public ShiftIntegerOpInstr {
       : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
 
   virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
+    return !CompilerState::Current().is_aot();
+  }
   virtual bool MayThrow() const { return !IsShiftCountInRange(); }
 
   virtual Representation representation() const { return kUnboxedInt64; }
@@ -9489,37 +9512,6 @@ class ShiftInt64OpInstr : public ShiftIntegerOpInstr {
   DISALLOW_COPY_AND_ASSIGN(ShiftInt64OpInstr);
 };
 
-// Speculative int64 shift. Takes unboxed int64 and smi.
-// Deoptimizes if right operand is negative or greater than kShiftCountLimit.
-class SpeculativeShiftInt64OpInstr : public ShiftIntegerOpInstr {
- public:
-  SpeculativeShiftInt64OpInstr(Token::Kind op_kind,
-                               Value* left,
-                               Value* right,
-                               intptr_t deopt_id,
-                               Range* right_range = nullptr)
-      : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
-
-  virtual bool ComputeCanDeoptimize() const {
-    ASSERT(!can_overflow());
-    return !IsShiftCountInRange();
-  }
-
-  virtual Representation representation() const { return kUnboxedInt64; }
-
-  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
-    ASSERT((idx == 0) || (idx == 1));
-    return (idx == 0) ? kUnboxedInt64 : kTagged;
-  }
-
-  DECLARE_INSTRUCTION(SpeculativeShiftInt64Op)
-
-  DECLARE_EMPTY_SERIALIZATION(SpeculativeShiftInt64OpInstr, ShiftIntegerOpInstr)
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(SpeculativeShiftInt64OpInstr);
-};
-
 // Non-speculative uint32 shift. Takes unboxed uint32 and unboxed int64.
 // Throws if right operand is negative.
 class ShiftUint32OpInstr : public ShiftIntegerOpInstr {
@@ -9532,6 +9524,9 @@ class ShiftUint32OpInstr : public ShiftIntegerOpInstr {
       : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
 
   virtual bool ComputeCanDeoptimize() const { return false; }
+  virtual bool ComputeCanDeoptimizeAfterCall() const {
+    return !CompilerState::Current().is_aot();
+  }
   virtual bool MayThrow() const {
     return !IsShiftCountInRange(kUint32ShiftCountLimit);
   }
@@ -9551,37 +9546,6 @@ class ShiftUint32OpInstr : public ShiftIntegerOpInstr {
   static constexpr intptr_t kUint32ShiftCountLimit = 31;
 
   DISALLOW_COPY_AND_ASSIGN(ShiftUint32OpInstr);
-};
-
-// Speculative uint32 shift. Takes unboxed uint32 and smi.
-// Deoptimizes if right operand is negative.
-class SpeculativeShiftUint32OpInstr : public ShiftIntegerOpInstr {
- public:
-  SpeculativeShiftUint32OpInstr(Token::Kind op_kind,
-                                Value* left,
-                                Value* right,
-                                intptr_t deopt_id,
-                                Range* right_range = nullptr)
-      : ShiftIntegerOpInstr(op_kind, left, right, deopt_id, right_range) {}
-
-  virtual bool ComputeCanDeoptimize() const { return !IsShiftCountInRange(); }
-
-  virtual Representation representation() const { return kUnboxedUint32; }
-
-  virtual Representation RequiredInputRepresentation(intptr_t idx) const {
-    ASSERT((idx == 0) || (idx == 1));
-    return (idx == 0) ? kUnboxedUint32 : kTagged;
-  }
-
-  DECLARE_INSTRUCTION(SpeculativeShiftUint32Op)
-
-  DECLARE_EMPTY_SERIALIZATION(SpeculativeShiftUint32OpInstr,
-                              ShiftIntegerOpInstr)
-
- private:
-  static constexpr intptr_t kUint32ShiftCountLimit = 31;
-
-  DISALLOW_COPY_AND_ASSIGN(SpeculativeShiftUint32OpInstr);
 };
 
 class UnaryDoubleOpInstr : public TemplateDefinition<1, NoThrow, Pure> {

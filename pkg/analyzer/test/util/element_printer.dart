@@ -83,6 +83,10 @@ class ElementPrinter {
     switch (element) {
       case null:
         _sink.write('<null>');
+      case TypeAliasElementImpl2 element:
+        writeReference(element.reference);
+      case TopLevelVariableElementImpl2 element:
+        writeReference(element.reference);
       case TypeParameterElementImpl2():
         // TODO(scheglov): update when implemented
         _sink.write('<not-implemented>');
@@ -91,8 +95,8 @@ class ElementPrinter {
         var reference = firstFragment.reference;
         writeReference(reference!);
         _sink.write('#element');
-      case DynamicElementImpl():
-        _sink.write('dynamic@-1');
+      case DynamicElementImpl2():
+        _sink.write('dynamic');
       case FormalParameterElementImpl():
         var firstFragment = element.firstFragment;
         var referenceStr = _elementToReferenceString(firstFragment as Element);
@@ -125,6 +129,8 @@ class ElementPrinter {
       case LocalVariableElementImpl2():
         // TODO(scheglov): nameOffset2 can be `null`
         _sink.write('${element.name3}@${element.firstFragment.nameOffset2}');
+      case NeverElementImpl2():
+        _sink.write('Never');
       case ClassElementImpl2 element:
         writeReference(element.reference);
       case EnumElementImpl2 element:
@@ -140,10 +146,15 @@ class ElementPrinter {
         var reference = firstFragment.reference;
         writeReference(reference!);
         _sink.write('#element');
-      case MultiplyDefinedElementImpl():
+      case MultiplyDefinedElementImpl2():
         _sink.write('<null>');
       case NeverElementImpl():
         _sink.write('Never@-1');
+      case ParameterMember():
+        var firstFragment = element.firstFragment;
+        var referenceStr = _elementToReferenceString(firstFragment as Element);
+        _sink.write(referenceStr);
+        _sink.write('#element');
       case PrefixElementImpl2 element:
         writeReference(element.reference);
       case SetterElement element:

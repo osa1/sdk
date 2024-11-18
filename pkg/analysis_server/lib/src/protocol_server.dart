@@ -219,8 +219,8 @@ AnalysisError newAnalysisError_fromEngine(
   errorSeverity ??= errorCode.errorSeverity;
 
   // done
-  var severity = AnalysisErrorSeverity(errorSeverity.name);
-  var type = AnalysisErrorType(errorCode.type.name);
+  var severity = AnalysisErrorSeverity.values.byName(errorSeverity.name);
+  var type = AnalysisErrorType.values.byName(errorCode.type.name);
   var message = error.message;
   var code = errorCode.name.toLowerCase();
   List<DiagnosticMessage>? contextMessages;
@@ -302,16 +302,15 @@ Location? newLocation_fromElement2(engine.Element2? element) {
   if (element == null) {
     return null;
   }
-  if (element is engine.FragmentedElement) {
-    var fragment = (element as engine.FragmentedElement).firstFragment;
+    if (element is engine.FormalParameterElement &&
+        element.enclosingElement2 == null) {
+      return null;
+    }
+    var fragment = element.firstFragment;
     var offset = fragment.nameOffset2 ?? 0;
     var length = fragment.name2?.length ?? 0;
     var range = engine.SourceRange(offset, length);
     return _locationForArgs2(fragment, range);
-  } else {
-    assert(false, 'Could not convert ${element.runtimeType} to Location.');
-    return null;
-  }
 }
 
 /// Create a Location based on an [engine.SearchMatch].
@@ -456,7 +455,7 @@ Location _locationForArgs(
 
 /// Creates a new [Location].
 Location _locationForArgs2(engine.Fragment fragment, engine.SourceRange range) {
-  var lineInfo = fragment.libraryFragment.lineInfo;
+  var lineInfo = fragment.libraryFragment!.lineInfo;
 
   var startLocation = lineInfo.getLocation(range.offset);
   var endLocation = lineInfo.getLocation(range.end);
@@ -467,7 +466,7 @@ Location _locationForArgs2(engine.Fragment fragment, engine.SourceRange range) {
   var endColumn = endLocation.columnNumber;
 
   return Location(
-    fragment.libraryFragment.source.fullName,
+    fragment.libraryFragment!.source.fullName,
     range.offset,
     range.length,
     startLine,

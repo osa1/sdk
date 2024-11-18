@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "abef8c3392aeb04a59e94a467d9b08f16401852f",
+  "co19_rev": "886cdf17954f843fb01a6058fbcc8a561c688059",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "3bd6bc6d207dfb7cf687537e819863cf9a8f2470",
@@ -71,12 +71,12 @@ vars = {
   # self-service update these by following the go/dart-engprod/browsers.md
   # instructions. d8, the V8 shell, is always checked out.
   "checkout_javascript_engines": False,
-  "d8_tag": "version:13.2.70",
-  "jsshell_tag": "version:131.0.3",
-  "jsc_tag": "version:285702",
+  "d8_tag": "version:13.3.33",
+  "jsshell_tag": "version:132.0.2",
+  "jsc_tag": "version:286531",
 
   # https://chrome-infra-packages.appspot.com/p/fuchsia/third_party/clang
-  "clang_version": "git_revision:e6549b8036089f20c6ac01e644a544aa2b231ca8",
+  "clang_version": "git_revision:388d7f144880dcd85ff31f06793304405a9f44b6",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
   "gn_version": "git_revision:feafd1012a32c05ec6095f69ddc3850afb621f3a",
@@ -102,7 +102,7 @@ vars = {
   "boringssl_rev": "2db0eb3f96a5756298dcd7f9319e56a98585bd10",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "f7091d2c0d037f7daf91315ec3da00294d380a8d",
+  "devtools_rev": "3642846c465888b0c56271fe9265a0901f1803f6",
   "icu_rev": "43953f57b037778a1b8005564afabe214834f7bd",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -120,7 +120,7 @@ vars = {
   # EOL comment after a dependency to disable this and pin it at its current
   # revision.
 
-  "core_rev": "4b6279294026f71697f28d4958a7c7a6fdb991e1",
+  "core_rev": "6af0821dd8c0ecc5c30d5e67b3c8e16e8d79cda6",
   # Note: Updates to dart_style have to be coordinated with the infrastructure
   # team so that the internal formatter `tools/sdks/dart-sdk/bin/dart format`
   # matches the version here. Please follow this process to make updates:
@@ -131,12 +131,12 @@ vars = {
   #   and land the review.
   #
   # For more details, see https://github.com/dart-lang/sdk/issues/30164.
-  "dart_style_rev": "dc13a2f8e667825980cbc1a06ed645620f9bed70", # disable tools/rev_sdk_deps.dart
-  "dartdoc_rev": "5168f81a7d774effd7f8520cd170ffcb180f7c39",
+  "dart_style_rev": "f6d020e48cc531a0967c91fa88028c086fedfbf9", # disable tools/rev_sdk_deps.dart
+  "dartdoc_rev": "6bbd3d7b535ee4ed889beaeea68d66e54b196aee",
   "ecosystem_rev": "52e4ceb6f0715bab5c47495429c4a2b7ce708a66",
   "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
   "glob_rev": "b6319d6c2880b44039e75dfed80f7ce150f76d51",
-  "http_rev": "8db0d0ae3e8dece7cf56c025e30ecb1082cf9c5d",
+  "http_rev": "2f954e13948201f2c1df2b722e5583d0ae85b738",
   "http_multi_server_rev": "c8aabe36268aa38c906eae46728c10d883b9aced",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "leak_tracker_rev": "f5620600a5ce1c44f65ddaa02001e200b096e14c", # manually rolled
@@ -150,10 +150,10 @@ vars = {
   "protobuf_rev": "ccf104dbc36929c0f8708285d5f3a8fae206343e",
   "pub_rev": "8c2e621c2403cb503cc9959be387d1061a16846a", # disable tools/rev_sdk_deps.dart
   "pub_semver_rev": "ab3eab50cc9f3df650ba7f5571aa2a1ea715dcc8",
-  "shelf_rev": "1a141c71e201ed361aabc1d89a21181667f0b39c",
+  "shelf_rev": "0bb44cb7b54f856c4c20ff00eed7f006d865bb3e",
   "source_maps_rev": "b20b97003a48d78a1ecba7e46d932ea4b480dd94",
   "source_span_rev": "f147469ba02108c1ade3680de548b7b447de8c72",
-  "sse_rev": "1b020116af2be83a572b168b8b9d7ad9ed6232b1",
+  "sse_rev": "befbd6d35118f59525903242db3888942ac34180",
   "stack_trace_rev": "63e79f584567f7c73e7f5739c7cfd8e748f51f16",
   "stream_channel_rev": "9bfc2a8dec202bcd07332f39df0f905c670092c6",
   "string_scanner_rev": "255d67111e3ed67caedba2789269b6344bf62638",
@@ -164,7 +164,7 @@ vars = {
   "test_descriptor_rev": "71195671e00f2d330a9ebda0bd48f99364bb30f2",
   "test_process_rev": "7c76f470173366ec90525e49961f2ce1fcf516d3",
   "test_reflective_loader_rev": "30a552df6421e1f68cdc33c98c2512984b6f42b9",
-  "tools_rev": "b028012c0da60d903055d124f4a6f1ba0c63c6d9",
+  "tools_rev": "a6603a45374fc2ed9de4cf0297bde003f141dc9b",
   "vector_math_rev": "ec5080d5e6731bef4deffae78eb778ae787ba92f",
   "watcher_rev": "7a15a903f7ce0737cce7d08ff30402d41b9f7b62",
   "web_rev": "8d243766b45c163a9d18a89de059eba24398d163",
@@ -176,15 +176,15 @@ vars = {
   "yaml_edit_rev": "3d1421b928ec62cf866ec3487940e560852c5c3b",
 
   # Windows deps
-  "crashpad_rev": "bf327d8ceb6a669607b0dbab5a83a275d03f99ed",
-  "minichromium_rev": "8d641e30a8b12088649606b912c2bc4947419ccc",
+  "crashpad_rev": "d256de317164c0eb362bdd9cbb4d259fe6d086f3",
+  "minichromium_rev": "203a01130fac64bfdcc8cab2e1798c7b2c0619bf",
   "googletest_rev": "f854f1d27488996dc8a6db3c9453f80b02585e12",
 
   # Pinned browser versions used by the testing infrastructure. These are not
   # meant to be downloaded by users for local testing. You can self-service
   # update these by following the go/dart-engprod/browsers.md instructions.
   "download_chrome": False,
-  "chrome_tag": "131.0.6778.24",
+  "chrome_tag": "132.0.6834.6",
   "download_firefox": False,
   "firefox_tag": "132.0",
 
@@ -641,7 +641,7 @@ deps = {
     "dep_type": "cipd",
   },
 
-  Var("dart_root") + "/pkg/front_end/test/fasta/types/benchmark_data": {
+  Var("dart_root") + "/pkg/front_end/test/types/benchmark_data": {
     "packages": [
       {
         "package": "dart/cfe/benchmark_data",
