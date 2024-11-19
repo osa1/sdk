@@ -4,6 +4,7 @@
 
 import "package:expect/expect.dart";
 import 'dart:convert';
+import 'int_list_utils.dart';
 import 'unicode_tests.dart';
 
 String decode(List<int> bytes, int chunkSize) {
@@ -27,11 +28,15 @@ String decode(List<int> bytes, int chunkSize) {
 
 main() {
   for (var test in UNICODE_TESTS) {
-    var bytes = test[0];
+    print(test);
+    var bytesList = test[0];
     var expected = test[1];
-    Expect.stringEquals(expected, decode(bytes, 1));
-    Expect.stringEquals(expected, decode(bytes, 2));
-    Expect.stringEquals(expected, decode(bytes, 3));
-    Expect.stringEquals(expected, decode(bytes, 4));
+    for (var bytes in makeIntLists(bytesList)) {
+      print(bytes.runtimeType);
+      Expect.stringEquals(expected, decode(bytes, 1));
+      Expect.stringEquals(expected, decode(bytes, 2));
+      Expect.stringEquals(expected, decode(bytes, 3));
+      Expect.stringEquals(expected, decode(bytes, 4));
+    }
   }
 }

@@ -6,6 +6,7 @@ library utf8_test;
 
 import "package:expect/expect.dart";
 import 'dart:convert';
+import 'int_list_utils.dart';
 
 String decode(List<int> bytes, int chunkSize) {
   StringBuffer buffer = new StringBuffer();
@@ -278,16 +279,18 @@ main() {
   });
 
   for (var test in []..addAll(allTests)..addAll(allTests2)) {
-    List<int> bytes = test[0];
-    Expect.throwsFormatException(() => decode(bytes, 1));
-    Expect.throwsFormatException(() => decode(bytes, 2));
-    Expect.throwsFormatException(() => decode(bytes, 3));
-    Expect.throwsFormatException(() => decode(bytes, 4));
+    List<int> bytesList = test[0];
+    for (var bytes in makeIntLists(bytesList)) {
+      Expect.throwsFormatException(() => decode(bytes, 1));
+      Expect.throwsFormatException(() => decode(bytes, 2));
+      Expect.throwsFormatException(() => decode(bytes, 3));
+      Expect.throwsFormatException(() => decode(bytes, 4));
 
-    String expected = test[1];
-    Expect.equals(expected, decodeAllowMalformed(bytes, 1));
-    Expect.equals(expected, decodeAllowMalformed(bytes, 2));
-    Expect.equals(expected, decodeAllowMalformed(bytes, 3));
-    Expect.equals(expected, decodeAllowMalformed(bytes, 4));
+      String expected = test[1];
+      Expect.equals(expected, decodeAllowMalformed(bytes, 1));
+      Expect.equals(expected, decodeAllowMalformed(bytes, 2));
+      Expect.equals(expected, decodeAllowMalformed(bytes, 3));
+      Expect.equals(expected, decodeAllowMalformed(bytes, 4));
+    }
   }
 }
