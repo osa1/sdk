@@ -6,6 +6,7 @@ import 'dart:collection' show LinkedHashMap;
 
 import 'package:kernel/ast.dart';
 import 'package:kernel/type_environment.dart';
+import 'package:vm/metadata/direct_call.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
 import 'async.dart';
@@ -2386,6 +2387,12 @@ abstract class AstCodeGenerator
           DynamicInvocation(DynamicAccessKind.Dynamic, node.receiver, node.name,
               node.arguments),
           expectedType);
+    }
+
+    final (Member, int)? directClosureCall = translator.directCallMetadata[node]?.targetClosure;
+    if (directClosureCall != null) {
+      print("Direct closure invocation at ${node.location}:");
+      print("    member ${directClosureCall.$1} closure ${directClosureCall.$2}");
     }
 
     final Expression receiver = node.receiver;

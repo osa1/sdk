@@ -39,6 +39,8 @@ class DirectCallMetadata {
   bool get checkReceiverForNull => (_flags & flagCheckReceiverForNull) != 0;
   bool get isClosure => (_flags & flagClosure) != 0;
 
+  (Member, int)? get targetClosure => isClosure ? (_member, _closureId) : null;
+
   @override
   String toString() => isClosure
       ? 'closure ${_closureId} in ${_member.toText(astTextStrategyForTesting)}'
