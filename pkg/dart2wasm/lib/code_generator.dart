@@ -2391,8 +2391,23 @@ abstract class AstCodeGenerator
 
     final (Member, int)? directClosureCall = translator.directCallMetadata[node]?.targetClosure;
     if (directClosureCall != null) {
-      print("Direct closure invocation at ${node.location}:");
-      print("    member ${directClosureCall.$1} closure ${directClosureCall.$2}");
+      final member = directClosureCall.$1;
+      final closureId = directClosureCall.$2;
+
+      if (closureId == 0) {
+        // The member itself is called as a closuore, we don't need the member's
+        // `Closures`.
+      } else {
+        // A closure in the member is called.
+        final memberClosures = translator.memberClosures[member];
+        if (memberClosures == null) {
+          print("Closures of member $member not available in a call site");
+        } else {
+          final actualClosureId = closureId - 1;
+          print("Converting closure call to direct call at ${node.location}");
+          print("    $member.$closureId");
+        }
+      }
     }
 
     final Expression receiver = node.receiver;

@@ -1146,6 +1146,7 @@ class Closures {
       : _nullableThisType = _member is Constructor || _member.isInstanceMember
             ? translator.preciseThisFor(_member, nullable: true) as w.RefType
             : null {
+    translator.memberClosures[_member] = this;
     if (findCaptures) {
       _findCaptures();
       _collectContexts();
