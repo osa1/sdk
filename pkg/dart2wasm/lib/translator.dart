@@ -726,7 +726,13 @@ class Translator with KernelNodes {
 
   ClosureImplementation getClosure(FunctionNode functionNode,
       w.BaseFunction target, ParameterInfo paramInfo, String name) {
-    assert(!closureImplementations.containsKey(functionNode));
+    // We compile a block multiple times in try-catch, to catch Dart exceptions
+    // and then again to catch JS exceptions. Avoid recompiling the closures in
+    // these cases.
+    final existingImplementation = closureImplementations[functionNode];
+    if (existingImplementation != null) {
+      return existingImplementation;
+    }
 
     final targetModule = target.enclosingModule;
     // The target function takes an extra initial parameter if it's a function
