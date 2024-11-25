@@ -2389,27 +2389,6 @@ abstract class AstCodeGenerator
           expectedType);
     }
 
-    final (Member, int)? directClosureCall = translator.directCallMetadata[node]?.targetClosure;
-    if (directClosureCall != null) {
-      final member = directClosureCall.$1;
-      final closureId = directClosureCall.$2;
-
-      if (closureId == 0) {
-        // The member itself is called as a closuore, we don't need the member's
-        // `Closures`.
-      } else {
-        // A closure in the member is called.
-        final memberClosures = translator.memberClosures[member];
-        if (memberClosures == null) {
-          print("Closures of member $member not available in a call site");
-        } else {
-          final actualClosureId = closureId - 1;
-          print("Converting closure call to direct call at ${node.location}");
-          print("    $member.$closureId");
-        }
-      }
-    }
-
     final Expression receiver = node.receiver;
     final Arguments arguments = node.arguments;
 
@@ -2425,9 +2404,54 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
+    w.BaseFunction? directCallTarget;
+
+    final (Member, int)? directClosureCall =
+        translator.directCallMetadata[node]?.targetClosure;
+    if (directClosureCall != null) {
+      final member = directClosureCall.$1;
+      final closureId = directClosureCall.$2;
+
+      if (closureId == 0) {
+        // The member itself is called as a closure, we don't need the member's
+        // `Closures`.
+        print("Converting closure call to direct call at ${node.location}");
+        print("    $member");
+      } else {
+        // A closure in the member is called.
+        final Closures? memberClosures = translator.memberClosures[member];
+        if (memberClosures == null) {
+          print("Closures of member $member not available in a call site");
+        } else {
+          final actualClosureId = closureId - 1;
+          print("Converting closure call to direct call at ${node.location}");
+          print("    $member.$actualClosureId");
+          final Lambda lambda = memberClosures.lambdas.values
+              .firstWhere((lambda) => lambda.index == actualClosureId);
+          final ClosureImplementation? lambdaImplementation =
+              translator.closureImplementations[lambda.functionNode];
+          if (lambdaImplementation == null) {
+            print("        Implementation is NOT available");
+          } else {
+            int vtableFieldIndex =
+                representation.fieldIndexForSignature(posArgCount, argNames);
+            print("        Vtable index = $vtableFieldIndex");
+            final offset = typeCount == 0 ? 1 : 4;
+            w.BaseFunction vtableFunction =
+                lambdaImplementation.functions[vtableFieldIndex - offset];
+            print("        Vtable function = $vtableFunction");
+            directCallTarget = vtableFunction;
+          }
+        }
+      }
+    }
+
     // Evaluate receiver
     w.StructType struct = representation.closureStruct;
     w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
+
+    // closure, closure context, args
+
     translateExpression(receiver, closureLocal.type);
     b.local_tee(closureLocal);
     b.struct_get(struct, FieldIndex.closureContext);
@@ -2454,15 +2478,22 @@ abstract class AstCodeGenerator
       b.local_get(namedLocals[name]!);
     }
 
-    // Call entry point in vtable
-    int vtableFieldIndex =
+    final int vtableFieldIndex =
         representation.fieldIndexForSignature(posArgCount, argNames);
-    w.FunctionType functionType =
+    final w.FunctionType functionType =
         representation.getVtableFieldType(vtableFieldIndex);
-    b.local_get(closureLocal);
-    b.struct_get(struct, FieldIndex.closureVtable);
-    b.struct_get(representation.vtableStruct, vtableFieldIndex);
-    b.call_ref(functionType);
+
+    if (directCallTarget == null) {
+      // Call entry point in vtable
+      b.local_get(closureLocal);
+      b.struct_get(struct, FieldIndex.closureVtable);
+      b.struct_get(representation.vtableStruct, vtableFieldIndex);
+      b.call_ref(functionType);
+    } else {
+      assert(functionType.isStructurallyEqualTo(directCallTarget.type));
+      final returnType = translator.callFunction(directCallTarget, b).single;
+      translator.convertType(b, returnType, translator.topInfo.nullableType);
+    }
     return translator.topInfo.nullableType;
   }
 

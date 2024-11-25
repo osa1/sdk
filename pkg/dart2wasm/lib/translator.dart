@@ -160,6 +160,8 @@ class Translator with KernelNodes {
   final Map<w.BaseFunction, w.Global> functionRefCache = {};
   final Map<Procedure, ClosureImplementation> tearOffFunctionCache = {};
 
+  final Map<FunctionNode, ClosureImplementation> closureImplementations = {};
+
   // Some convenience accessors for commonly used values.
   late final ClassInfo topInfo = classes[0];
   late final ClassInfo objectInfo = classInfo[coreTypes.objectClass]!;
@@ -724,6 +726,8 @@ class Translator with KernelNodes {
 
   ClosureImplementation getClosure(FunctionNode functionNode,
       w.BaseFunction target, ParameterInfo paramInfo, String name) {
+    assert(!closureImplementations.containsKey(functionNode));
+
     final targetModule = target.enclosingModule;
     // The target function takes an extra initial parameter if it's a function
     // expression / local function (which takes a context) or a tear-off of an
@@ -856,8 +860,10 @@ class Translator with KernelNodes {
     ib.struct_new(representation.vtableStruct);
     ib.end();
 
-    return ClosureImplementation(
+    final implementation = ClosureImplementation(
         representation, functions, dynamicCallEntry, vtable, targetModule);
+    closureImplementations[functionNode] = implementation;
+    return implementation;
   }
 
   w.ValueType outputOrVoid(List<w.ValueType> outputs) {
