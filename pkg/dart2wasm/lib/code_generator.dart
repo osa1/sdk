@@ -6,7 +6,6 @@ import 'dart:collection' show LinkedHashMap;
 
 import 'package:kernel/ast.dart';
 import 'package:kernel/type_environment.dart';
-import 'package:vm/metadata/direct_call.dart';
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
 import 'async.dart';
