@@ -2420,21 +2420,15 @@ abstract class AstCodeGenerator
       ClosureImplementation? closureImplementation;
       final Closures? memberClosures = translator.memberClosures[member];
 
-      print("Converting closure call to direct call at ${node.location}");
-
-      if (memberClosures == null) {
-        print("  Closures of $member is not available");
-      } else {
+      if (memberClosures != null) {
         if (closureId == 0) {
           // The member itself is called as a closure, we don't need the member's
           // `Closures`.
-          print("  $member");
           closureImplementation =
               translator.getTearOffClosure(member as Procedure);
         } else {
           // A closure in the member is called.
           final actualClosureId = closureId - 1;
-          print("  $member.$actualClosureId");
           final lambda = memberClosures.lambdas.values
               .firstWhere((lambda) => lambda.index == actualClosureId);
           closureImplementation =
@@ -2455,7 +2449,6 @@ abstract class AstCodeGenerator
     // Evaluate receiver
     w.StructType struct = representation.closureStruct;
     w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
-
     translateExpression(receiver, closureLocal.type);
     b.local_tee(closureLocal);
     b.struct_get(struct, FieldIndex.closureContext);
@@ -2494,11 +2487,6 @@ abstract class AstCodeGenerator
       b.struct_get(representation.vtableStruct, vtableFieldIndex);
       b.call_ref(functionType);
     } else {
-      if (!functionType.isStructurallyEqualTo(directCallTarget.type)) {
-        print("Direct call target type = ${directCallTarget.type}");
-        print("Vtable target type      = ${functionType}");
-        throw "ahoy";
-      }
       assert(functionType.isStructurallyEqualTo(directCallTarget.type));
       final returnType = translator.callFunction(directCallTarget, b).single;
       translator.convertType(b, returnType, translator.topInfo.nullableType);
