@@ -2328,16 +2328,21 @@ abstract class AstCodeGenerator
   }
 
   w.StructType _instantiateClosure(FunctionNode functionNode) {
-    Lambda lambda = closures.lambdas[functionNode]!;
-    ClosureImplementation closure = translator.getClosure(
-        functionNode,
-        lambda.function,
-        ParameterInfo.fromLocalFunction(functionNode),
-        "closure wrapper at ${functionNode.location}");
+    final lambda = closures.lambdas[functionNode]!;
+    final closure = _getClosureImplementation(lambda, functionNode);
     return _pushClosure(
         closure,
         functionNode.computeFunctionType(Nullability.nonNullable),
         () => _pushContext(functionNode));
+  }
+
+  ClosureImplementation _getClosureImplementation(
+      Lambda lambda, FunctionNode functionNode) {
+    return translator.getClosure(
+        functionNode,
+        lambda.function,
+        ParameterInfo.fromLocalFunction(functionNode),
+        "closure wrapper at ${functionNode.location}");
   }
 
   w.StructType _pushClosure(ClosureImplementation closure,
@@ -2413,34 +2418,32 @@ abstract class AstCodeGenerator
       final closureId = directClosureCall.$2;
 
       ClosureImplementation? closureImplementation;
+      final Closures? memberClosures = translator.memberClosures[member];
 
       print("Converting closure call to direct call at ${node.location}");
 
-      if (closureId == 0) {
-        // The member itself is called as a closure, we don't need the member's
-        // `Closures`.
-        print("    $member");
-        closureImplementation =
-            translator.closureImplementations[(member as Procedure).function];
+      if (memberClosures == null) {
+        print("  Closures of $member is not available");
       } else {
-        // A closure in the member is called.
-        final actualClosureId = closureId - 1;
-        final Closures? memberClosures = translator.memberClosures[member];
-        print("    $member.$actualClosureId");
-        if (memberClosures == null) {
-          print("    Closures of member $member not available in a call site");
+        if (closureId == 0) {
+          // The member itself is called as a closure, we don't need the member's
+          // `Closures`.
+          print("  $member");
+          closureImplementation =
+              translator.getTearOffClosure(member as Procedure);
         } else {
-          final Lambda lambda = memberClosures.lambdas.values
+          // A closure in the member is called.
+          final actualClosureId = closureId - 1;
+          print("  $member.$actualClosureId");
+          final lambda = memberClosures.lambdas.values
               .firstWhere((lambda) => lambda.index == actualClosureId);
           closureImplementation =
-              translator.closureImplementations[lambda.functionNode];
+              _getClosureImplementation(lambda, lambda.functionNode);
         }
       }
 
-      if (closureImplementation == null) {
-        print("        Implementation is NOT available");
-      } else {
-        int vtableFieldIndex =
+      if (closureImplementation != null) {
+        final vtableFieldIndex =
             representation.fieldIndexForSignature(posArgCount, argNames);
         final offset = typeCount == 0 ? 1 : 4;
         w.BaseFunction vtableFunction =
