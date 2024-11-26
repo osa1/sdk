@@ -2412,17 +2412,16 @@ abstract class AstCodeGenerator
 
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
+
     if (directClosureCall != null) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
-
-      ClosureImplementation? closureImplementation;
       final Closures? memberClosures = translator.memberClosures[member];
-
       if (memberClosures != null) {
+        final ClosureImplementation closureImplementation;
+
         if (closureId == 0) {
-          // The member itself is called as a closure, we don't need the member's
-          // `Closures`.
+          // The member itself is called as a closure.
           closureImplementation =
               translator.getTearOffClosure(member as Procedure);
         } else {
@@ -2433,13 +2432,11 @@ abstract class AstCodeGenerator
           closureImplementation =
               _getClosureImplementation(lambda, lambda.functionNode);
         }
-      }
 
-      if (closureImplementation != null) {
         final vtableFieldIndex =
             representation.fieldIndexForSignature(posArgCount, argNames);
         final offset = typeCount == 0 ? 1 : 4;
-        w.BaseFunction vtableFunction =
+        final vtableFunction =
             closureImplementation.functions[vtableFieldIndex - offset];
         directCallTarget = vtableFunction;
       }

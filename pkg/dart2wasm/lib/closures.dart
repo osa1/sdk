@@ -1004,6 +1004,9 @@ class Lambda {
   final FunctionNode functionNode;
   final w.FunctionBuilder function;
   final Source functionNodeSource;
+
+  /// Index of the function within the enclosing member, based on pre-order
+  /// traversal of the member body.
   final int index;
 
   Lambda(this.functionNode, this.function, this.functionNodeSource, this.index);
