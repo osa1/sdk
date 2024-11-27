@@ -58,6 +58,7 @@ mixin KernelNodes {
       index.getClass("dart:core", "_JavaScriptError");
 
   // dart:core runtime type classes
+  late final Class nullClass = index.getClass("dart:core", "Null");
   late final Class typeClass = index.getClass("dart:core", "_Type");
   late final Field typeIsDeclaredNullableField =
       index.getField("dart:core", "_Type", "isDeclaredNullable");
