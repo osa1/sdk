@@ -2443,12 +2443,11 @@ abstract class AstCodeGenerator
       }
 
       if (closureImplementation != null) {
+        assert(closureImplementation.representation == representation);
         final vtableFieldIndex =
-            representation.fieldIndexForSignature(posArgCount, argNames);
-        final offset = typeCount == 0 ? 1 : 4;
-        final vtableFunction =
-            closureImplementation.functions[vtableFieldIndex - offset];
-        directCallTarget = vtableFunction;
+            representation.fieldIndexForSignature(posArgCount, argNames) -
+                representation.vtableBaseIndex;
+        directCallTarget = closureImplementation.functions[vtableFieldIndex];
       }
     }
 
