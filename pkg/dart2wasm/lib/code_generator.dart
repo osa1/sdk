@@ -2443,7 +2443,10 @@ abstract class AstCodeGenerator
       }
 
       if (closureImplementation != null) {
-        assert(closureImplementation.representation == representation);
+        // Note: closure representation obtained from the devirtualized member
+        // (`closureImplementation.representation`) won't be the same as the
+        // non-devirtualized closure's representation (`representation`), but it
+        // will be a subtype of it.
         final vtableFieldIndex =
             representation.fieldIndexForSignature(posArgCount, argNames) -
                 representation.vtableBaseIndex;
