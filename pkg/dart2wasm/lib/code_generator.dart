@@ -2399,13 +2399,7 @@ abstract class AstCodeGenerator
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
 
-    // Do not devirtualize to `Null` members: we don't use the `Null` class
-    // anywhere else and don't mark it as an entry point (which means selector
-    // types are not adjusted for `Null`), and don't support converting null
-    // Wasm references to `Null`. Devirtualizing to `Null` should not happen in
-    // practice, only in tests.
-    if (directClosureCall != null &&
-        directClosureCall.$1.enclosingClass != translator.nullClass) {
+    if (directClosureCall != null) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
       ClosureImplementation? closureImplementation;
