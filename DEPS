@@ -54,7 +54,7 @@ vars = {
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
-  "co19_rev": "886cdf17954f843fb01a6058fbcc8a561c688059",
+  "co19_rev": "991e2f1664c64d455e0b22f0d5de45e384d5a90f",
 
   # The internal benchmarks to use. See go/dart-benchmarks-internal
   "benchmarks_internal_rev": "3bd6bc6d207dfb7cf687537e819863cf9a8f2470",
@@ -79,7 +79,7 @@ vars = {
   "clang_version": "git_revision:388d7f144880dcd85ff31f06793304405a9f44b6",
 
   # https://chrome-infra-packages.appspot.com/p/gn/gn
-  "gn_version": "git_revision:feafd1012a32c05ec6095f69ddc3850afb621f3a",
+  "gn_version": "git_revision:468c6128db7fabe32a29d4753460ef53594406fc",
 
   "reclient_version": "git_revision:c7349324c93c6e0d85bc1e00b5d7526771006ea0",
   "download_reclient": True,
@@ -98,11 +98,11 @@ vars = {
 
   # Prefer to use hashes of binaryen that have been reviewed & rolled into g3.
   "binaryen_rev" : "93883fde36ac158fd415dcd6dbd387dcfd928d3c",
-  "boringssl_gen_rev": "fef055e8d2749b82c79c8f043be1cbe5e8e4b40c",
-  "boringssl_rev": "2db0eb3f96a5756298dcd7f9319e56a98585bd10",
+  "boringssl_gen_rev": "b67a5fe651e1618baa311e452e3c188d96db2021",
+  "boringssl_rev": "cd95210465496ac2337b313cf49f607762abe286",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
-  "devtools_rev": "3642846c465888b0c56271fe9265a0901f1803f6",
+  "devtools_rev": "3e5327a02693b1405359dc5322d7f0a40151b9b7",
   "icu_rev": "43953f57b037778a1b8005564afabe214834f7bd",
   "jinja2_rev": "2222b31554f03e62600cd7e383376a7c187967a1",
   "libcxx_rev": "44079a4cc04cdeffb9cfe8067bfb3c276fb2bab0",
@@ -184,9 +184,9 @@ vars = {
   # meant to be downloaded by users for local testing. You can self-service
   # update these by following the go/dart-engprod/browsers.md instructions.
   "download_chrome": False,
-  "chrome_tag": "132.0.6834.6",
+  "chrome_tag": "132.0.6834.15",
   "download_firefox": False,
-  "firefox_tag": "132.0",
+  "firefox_tag": "133.0",
 
   # Emscripten is used in dart2wasm tests.
   "download_emscripten": False,
@@ -634,7 +634,7 @@ deps = {
     "packages": [
       {
       "package": "chromium/fuchsia/gn-sdk",
-      "version": "ArgKhW3O86dFu3jHY4iET_azMrJygzWdDTdvE_AAS2AC",
+      "version": "v8vZJSz3FfEj00WMGMtDrZaN7ATe_tU3i7zgQMrT5_wC",
       }
     ],
     "condition": 'download_fuchsia_deps',
