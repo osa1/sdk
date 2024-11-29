@@ -21,6 +21,7 @@ part of dart.core;
 /// [...? e6] // spreads e6 into the list literal, unless e6 is null.
 /// ```
 @pragma("vm:entry-point")
+@pragma("wasm:entry-point")
 final class Null {
   factory Null._uninstantiable() {
     throw UnsupportedError('class Null cannot be instantiated');
@@ -29,5 +30,6 @@ final class Null {
   external int get hashCode;
 
   /// Returns the string `"null"`.
+  @pragma("wasm:entry-point")
   String toString() => "null";
 }

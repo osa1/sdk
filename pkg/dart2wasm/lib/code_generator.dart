@@ -2196,40 +2196,26 @@ abstract class AstCodeGenerator
     Member target = node.interfaceTarget;
 
     if (node.kind == InstanceAccessKind.Object) {
-      late w.Label doneLabel;
-      w.ValueType resultType =
-          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
-        doneLabel = b.block(const [], signature.outputs);
+      return _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
+        w.Label doneLabel = b.block(const [], [signature.inputs[0]]);
         w.Label nullLabel = b.block();
         translateExpression(node.receiver, translator.topInfo.nullableType);
         b.br_on_null(nullLabel);
         translator.convertType(
             b, translator.topInfo.nullableType, signature.inputs[0]);
+        b.br(doneLabel);
+        b.end(); // nullLabel
+        translateExpression(
+            ConstantExpression(
+              InstanceConstant(
+                  translator.coreTypes.deprecatedNullClass.reference, [], {}),
+              InterfaceType(translator.coreTypes.deprecatedNullClass,
+                  Nullability.nonNullable, []),
+            ),
+            signature.inputs[0]);
+        b.end(); // doneLabel
       }, (_, __) {});
-      b.br(doneLabel);
-      b.end(); // nullLabel
-      switch (target.name.text) {
-        case "toString":
-          translateExpression(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullToString)),
-              resultType);
-          break;
-        case "noSuchMethod":
-          translateExpression(
-              ConstantExpression(
-                  StaticTearOffConstant(translator.nullNoSuchMethod)),
-              resultType);
-          break;
-        default:
-          unimplemented(
-              node, "Nullable tear-off of ${target.name.text}", [resultType]);
-          break;
-      }
-      b.end(); // doneLabel
-      return resultType;
     }
-
     return _virtualCall(
         node,
         target,
@@ -2425,6 +2411,10 @@ abstract class AstCodeGenerator
       ClosureImplementation? closureImplementation;
       if (closureId == 0) {
         // The member itself is called as a closure.
+
+        print("Devirtualizing closure call at ${node.location}");
+        print("  member = $member");
+
         closureImplementation =
             translator.getTearOffClosure(member as Procedure);
       } else {
@@ -2437,6 +2427,10 @@ abstract class AstCodeGenerator
           final actualClosureId = closureId - 1;
           final lambda = memberClosures.lambdas.values
               .firstWhere((lambda) => lambda.index == actualClosureId);
+
+          print("Devirtualizing closure call at ${node.location}");
+          print("  member = $member, closure id = $actualClosureId");
+
           closureImplementation =
               _getClosureImplementation(lambda, lambda.functionNode);
         }
