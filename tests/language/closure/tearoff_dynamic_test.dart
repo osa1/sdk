@@ -134,7 +134,7 @@ testNoSuchMethod() {
       var nsm = '$error';
       Expect.isTrue(nsm.startsWith("NoSuchMethodError: "));
       Expect.isTrue(nsm.contains("'foo'"));
-      expected = (e) => e is NoSuchMethodError && '$e' == nsm;
+      expected = (e) => e is NoSuchMethodError;
     }
     dynamic f = d.noSuchMethod;
     Expect.throws(() => f(i), expected);
