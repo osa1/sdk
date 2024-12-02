@@ -2196,26 +2196,40 @@ abstract class AstCodeGenerator
     Member target = node.interfaceTarget;
 
     if (node.kind == InstanceAccessKind.Object) {
-      return _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
-        w.Label doneLabel = b.block(const [], [signature.inputs[0]]);
+      late w.Label doneLabel;
+      w.ValueType resultType =
+          _virtualCall(node, target, _VirtualCallKind.Get, (signature) {
+        doneLabel = b.block(const [], signature.outputs);
         w.Label nullLabel = b.block();
         translateExpression(node.receiver, translator.topInfo.nullableType);
         b.br_on_null(nullLabel);
         translator.convertType(
             b, translator.topInfo.nullableType, signature.inputs[0]);
-        b.br(doneLabel);
-        b.end(); // nullLabel
-        translateExpression(
-            ConstantExpression(
-              InstanceConstant(
-                  translator.coreTypes.deprecatedNullClass.reference, [], {}),
-              InterfaceType(translator.coreTypes.deprecatedNullClass,
-                  Nullability.nonNullable, []),
-            ),
-            signature.inputs[0]);
-        b.end(); // doneLabel
       }, (_, __) {});
+      b.br(doneLabel);
+      b.end(); // nullLabel
+      switch (target.name.text) {
+        case "toString":
+          translateExpression(
+              ConstantExpression(
+                  StaticTearOffConstant(translator.nullToString)),
+              resultType);
+          break;
+        case "noSuchMethod":
+          translateExpression(
+              ConstantExpression(
+                  StaticTearOffConstant(translator.nullNoSuchMethod)),
+              resultType);
+          break;
+        default:
+          unimplemented(
+              node, "Nullable tear-off of ${target.name.text}", [resultType]);
+          break;
+      }
+      b.end(); // doneLabel
+      return resultType;
     }
+
     return _virtualCall(
         node,
         target,
