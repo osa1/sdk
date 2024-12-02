@@ -278,7 +278,7 @@ class _FunctionTypeGenerator extends MemberVisitor1<w.FunctionType, Reference> {
     // context argument if context must be shared between them. Generate the
     // contexts the first time we visit a constructor.
     translator.constructorClosures[node.reference] ??=
-        Closures(translator, node);
+        translator.getClosures(node);
 
     if (target.isInitializerReference) {
       return _getInitializerType(node, target, arguments);

@@ -2421,36 +2421,30 @@ abstract class AstCodeGenerator
         directClosureCall.$1 != translator.objectNoSuchMethod) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
-      ClosureImplementation? closureImplementation;
+      final ClosureImplementation closureImplementation;
       if (closureId == 0) {
         // The member itself is called as a closure.
         closureImplementation =
             translator.getTearOffClosure(member as Procedure);
       } else {
-        // Find the closure being called in the member's `Closures`.
-        // The `Closures` won't be available if we haven't compiled the member
-        // yet.
-        final Closures? memberClosures = translator.memberClosures[member];
-        if (memberClosures != null) {
-          // A closure in the member is called.
-          final actualClosureId = closureId - 1;
-          final lambda = memberClosures.lambdas.values
-              .firstWhere((lambda) => lambda.index == actualClosureId);
-          closureImplementation =
-              _getClosureImplementation(lambda, lambda.functionNode);
-        }
+        // A closure in the member is called.
+        final Closures memberClosures =
+            translator.getClosures(member, findCaptures: true);
+        final actualClosureId = closureId - 1;
+        final lambda = memberClosures.lambdas.values
+            .firstWhere((lambda) => lambda.index == actualClosureId);
+        closureImplementation =
+            _getClosureImplementation(lambda, lambda.functionNode);
       }
 
-      if (closureImplementation != null) {
-        // Note: closure representation obtained from the devirtualized member
-        // (`closureImplementation.representation`) won't be the same as the
-        // non-devirtualized closure's representation (`representation`), but it
-        // will be a subtype of it.
-        final vtableFieldIndex =
-            representation.fieldIndexForSignature(posArgCount, argNames) -
-                representation.vtableBaseIndex;
-        directCallTarget = closureImplementation.functions[vtableFieldIndex];
-      }
+      // Note: closure representation obtained from the devirtualized member
+      // (`closureImplementation.representation`) won't be the same as the
+      // non-devirtualized closure's representation (`representation`), but it
+      // will be a subtype of it.
+      final vtableFieldIndex =
+          representation.fieldIndexForSignature(posArgCount, argNames) -
+              representation.vtableBaseIndex;
+      directCallTarget = closureImplementation.functions[vtableFieldIndex];
     }
 
     // Evaluate receiver
@@ -3239,7 +3233,7 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
       return;
     }
 
-    closures = Closures(translator, member);
+    closures = translator.getClosures(member);
 
     setupParametersAndContexts(member, useUncheckedEntry: useUncheckedEntry);
 
@@ -3267,7 +3261,7 @@ class TearOffCodeGenerator extends AstCodeGenerator {
     // used by `makeType` below, when generating runtime types of type
     // parameters of the function type, but the type parameters are not
     // captured, always loaded from the `this` struct.
-    closures = Closures(translator, member, findCaptures: false);
+    closures = translator.getClosures(member, findCaptures: false);
 
     _initializeThis(member.reference);
     Procedure procedure = member as Procedure;
@@ -3300,7 +3294,7 @@ class TypeCheckerCodeGenerator extends AstCodeGenerator {
     // Initialize [Closures] without [Closures.captures]: Similar to
     // [TearOffCodeGenerator], type parameters will be loaded from the `this`
     // struct.
-    closures = Closures(translator, member, findCaptures: false);
+    closures = translator.getClosures(member, findCaptures: false);
     if (member is Field ||
         (member is Procedure && (member as Procedure).isSetter)) {
       _generateFieldSetterTypeCheckerMethod();
@@ -3906,7 +3900,7 @@ class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
     setSourceMapSourceAndFileOffset(source, field.fileOffset);
 
     // Static field initializer function
-    closures = Closures(translator, field);
+    closures = translator.getClosures(field);
 
     w.Global global = translator.globals.getGlobalForStaticField(field);
     w.Global? flag = translator.globals.getGlobalInitializedFlag(field);
@@ -4002,7 +3996,7 @@ class ImplicitFieldAccessorCodeGenerator extends AstCodeGenerator {
     // that instantiates types uses closure information to see whether a type
     // parameter was captured (and loads it from context chain) or not (and
     // loads it directly from `this`).
-    closures = Closures(translator, field, findCaptures: false);
+    closures = translator.getClosures(field, findCaptures: false);
 
     final source = field.enclosingComponent!.uriToSource[field.fileUri]!;
     setSourceMapSourceAndFileOffset(source, field.fileOffset);

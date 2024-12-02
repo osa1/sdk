@@ -1145,12 +1145,10 @@ class Closures {
   /// does not populate [lambdas], [contexts], [captures], and
   /// [closurizedFunctions]. This mode is useful in the code generators that
   /// always have direct access to variables (instead of via a context).
-  Closures(this.translator, this._member, {bool findCaptures = true})
+  Closures(this.translator, this._member, {required bool findCaptures})
       : _nullableThisType = _member is Constructor || _member.isInstanceMember
             ? translator.preciseThisFor(_member, nullable: true) as w.RefType
             : null {
-    translator.memberClosures[_member] = this;
-
     if (findCaptures) {
       _findCaptures();
       _collectContexts();

@@ -144,10 +144,6 @@ class Translator with KernelNodes {
   final Set<Member> membersBeingGenerated = {};
   final Map<Reference, Closures> constructorClosures = {};
 
-  /// Maps compiled members to their [Closures], to allow devirtualization of
-  /// closure calls.
-  final Map<Member, Closures> memberClosures = {};
-
   late final w.FunctionBuilder initFunction;
   late final w.ValueType voidMarker;
   // Lazily import FFI memory if used.
@@ -330,6 +326,24 @@ class Translator with KernelNodes {
       _builderToOutput[module]!.moduleImportName;
 
   bool isMainModule(w.ModuleBuilder module) => _builderToOutput[module]!.isMain;
+
+  /// Maps compiled members to their [Closures], with capture information.
+  final Map<Member, Closures> _memberClosures = {};
+
+  Closures getClosures(Member member, {bool findCaptures = true}) {
+    if (findCaptures) {
+      final existingClosures = _memberClosures[member];
+      if (existingClosures != null) {
+        return existingClosures;
+      }
+
+      final newClosures = Closures(this, member, findCaptures: true);
+      _memberClosures[member] = newClosures;
+      return newClosures;
+    }
+
+    return Closures(this, member, findCaptures: false);
+  }
 
   Translator(this.component, this.coreTypes, this.index, this.recordClasses,
       this._moduleOutputData, this.options)
