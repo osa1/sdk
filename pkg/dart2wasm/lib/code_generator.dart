@@ -2413,18 +2413,17 @@ abstract class AstCodeGenerator
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
 
+    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
+    // `noSuchMethod` is also not allowed as `Null` inherits it.
     if (directClosureCall != null &&
-        directClosureCall.$1.enclosingClass != translator.nullClass &&
+        directClosureCall.$1.enclosingClass !=
+            translator.coreTypes.deprecatedNullClass &&
         directClosureCall.$1 != translator.objectNoSuchMethod) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
       ClosureImplementation? closureImplementation;
       if (closureId == 0) {
         // The member itself is called as a closure.
-
-        print("Devirtualizing closure call at ${node.location}");
-        print("  member = $member");
-
         closureImplementation =
             translator.getTearOffClosure(member as Procedure);
       } else {
@@ -2437,10 +2436,6 @@ abstract class AstCodeGenerator
           final actualClosureId = closureId - 1;
           final lambda = memberClosures.lambdas.values
               .firstWhere((lambda) => lambda.index == actualClosureId);
-
-          print("Devirtualizing closure call at ${node.location}");
-          print("  member = $member, closure id = $actualClosureId");
-
           closureImplementation =
               _getClosureImplementation(lambda, lambda.functionNode);
         }
