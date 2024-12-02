@@ -330,20 +330,11 @@ class Translator with KernelNodes {
   /// Maps compiled members to their [Closures], with capture information.
   final Map<Member, Closures> _memberClosures = {};
 
-  Closures getClosures(Member member, {bool findCaptures = true}) {
-    if (findCaptures) {
-      final existingClosures = _memberClosures[member];
-      if (existingClosures != null) {
-        return existingClosures;
-      }
-
-      final newClosures = Closures(this, member, findCaptures: true);
-      _memberClosures[member] = newClosures;
-      return newClosures;
-    }
-
-    return Closures(this, member, findCaptures: false);
-  }
+  Closures getClosures(Member member, {bool findCaptures = true}) =>
+      findCaptures
+          ? _memberClosures.putIfAbsent(
+              member, () => Closures(this, member, findCaptures: true))
+          : Closures(this, member, findCaptures: false);
 
   Translator(this.component, this.coreTypes, this.index, this.recordClasses,
       this._moduleOutputData, this.options)
