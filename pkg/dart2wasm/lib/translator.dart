@@ -143,7 +143,6 @@ class Translator with KernelNodes {
   final Set<Member> membersContainingInnerFunctions = {};
   final Set<Member> membersBeingGenerated = {};
   final Map<Reference, Closures> constructorClosures = {};
-
   late final w.FunctionBuilder initFunction;
   late final w.ValueType voidMarker;
   // Lazily import FFI memory if used.
