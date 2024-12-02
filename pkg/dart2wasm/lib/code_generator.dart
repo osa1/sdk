@@ -2413,7 +2413,9 @@ abstract class AstCodeGenerator
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
 
-    if (directClosureCall != null) {
+    if (directClosureCall != null &&
+        directClosureCall.$1.enclosingClass != translator.nullClass &&
+        directClosureCall.$1 != translator.objectNoSuchMethod) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
       ClosureImplementation? closureImplementation;
