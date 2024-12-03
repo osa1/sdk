@@ -1132,7 +1132,7 @@ class Closures {
   /// In the `Closures` for `f`, `g` will be in this set.
   final Set<FunctionDeclaration> closurizedFunctions = {};
 
-  final Member _member;
+  final Member member;
 
   /// Whether the member captures `this`. Set by [_CaptureFinder].
   bool _isThisCaptured = false;
@@ -1145,9 +1145,9 @@ class Closures {
   /// does not populate [lambdas], [contexts], [captures], and
   /// [closurizedFunctions]. This mode is useful in the code generators that
   /// always have direct access to variables (instead of via a context).
-  Closures(this.translator, this._member, {required bool findCaptures})
-      : _nullableThisType = _member is Constructor || _member.isInstanceMember
-            ? translator.preciseThisFor(_member, nullable: true) as w.RefType
+  Closures(this.translator, this.member, {required bool findCaptures})
+      : _nullableThisType = member is Constructor || member.isInstanceMember
+            ? translator.preciseThisFor(member, nullable: true) as w.RefType
             : null {
     if (findCaptures) {
       _findCaptures();
@@ -1159,7 +1159,7 @@ class Closures {
   w.RefType get typeType => translator.types.nonNullableTypeType;
 
   void _findCaptures() {
-    final member = _member;
+    final member = this.member;
     final find = _CaptureFinder(this, member);
     if (member is Constructor) {
       Class cls = member.enclosingClass;
@@ -1174,7 +1174,7 @@ class Closures {
 
   void _collectContexts() {
     if (captures.isNotEmpty || _isThisCaptured) {
-      _member.accept(_ContextCollector(this, translator.options.enableAsserts));
+      member.accept(_ContextCollector(this, translator.options.enableAsserts));
     }
   }
 
@@ -1209,7 +1209,7 @@ class Closures {
             .add(w.FieldType(w.RefType.def(parent.struct, nullable: true)));
       }
       if (context.containsThis) {
-        assert(_member.enclosingClass != null);
+        assert(member.enclosingClass != null);
         struct.fields.add(w.FieldType(_nullableThisType!));
       }
       for (VariableDeclaration variable in context.variables) {
