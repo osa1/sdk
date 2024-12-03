@@ -2430,9 +2430,6 @@ abstract class AstCodeGenerator
         // A closure in the member is called.
         final Closures memberClosures =
             translator.getClosures(member, findCaptures: true);
-        // Add the closure's enclosing member to the compilation queue if it's
-        // not already in the queue or compiled.
-        translator.functions.getFunction(memberClosures.member.reference);
         final actualClosureId = closureId - 1;
         final lambda = memberClosures.lambdas.values
             .firstWhere((lambda) => lambda.index == actualClosureId);
