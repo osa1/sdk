@@ -5,6 +5,7 @@
 import 'dart:collection';
 import 'dart:math' show min;
 
+import 'package:collection/collection.dart';
 import 'package:kernel/ast.dart';
 import 'package:vm/metadata/procedure_attributes.dart';
 import 'package:vm/transformations/type_flow/utils.dart' show UnionFind;
@@ -157,7 +158,9 @@ class ClosureRepresentation {
 class NameCombination implements Comparable<NameCombination> {
   final List<String> names;
 
-  NameCombination(this.names);
+  NameCombination(this.names) {
+    assert(names.isSorted(Comparable.compare));
+  }
 
   @override
   int compareTo(NameCombination other) {
