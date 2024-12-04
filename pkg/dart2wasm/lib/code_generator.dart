@@ -2324,8 +2324,8 @@ abstract class AstCodeGenerator
   }
 
   w.StructType _instantiateClosure(FunctionNode functionNode) {
-    final lambda = closures.lambdas[functionNode]!;
-    final closure = translator.getClosure(
+    Lambda lambda = closures.lambdas[functionNode]!;
+    ClosureImplementation closure = translator.getClosure(
         functionNode,
         lambda.function,
         ParameterInfo.fromLocalFunction(functionNode),
