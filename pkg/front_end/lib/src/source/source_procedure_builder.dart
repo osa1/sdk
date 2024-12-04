@@ -7,6 +7,7 @@ import 'package:kernel/type_algebra.dart';
 import 'package:kernel/type_environment.dart';
 
 import '../base/modifiers.dart';
+import '../base/name_space.dart';
 import '../builder/builder.dart';
 import '../builder/declaration_builders.dart';
 import '../builder/formal_parameter_builder.dart';
@@ -68,8 +69,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   /// these have been built.
   Map<VariableDeclaration, VariableDeclaration>? _extensionTearOffParameterMap;
 
-  @override
-  final ProcedureKind kind;
+  final ProcedureKind _kind;
 
   /// The builder for the original declaration.
   SourceProcedureBuilder? _origin;
@@ -96,7 +96,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       required String name,
       required List<NominalParameterBuilder>? typeParameters,
       required List<FormalParameterBuilder>? formals,
-      required this.kind,
+      required ProcedureKind kind,
       required this.libraryBuilder,
       required this.declarationBuilder,
       required this.fileUri,
@@ -111,12 +111,13 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       String? nativeMethodName,
       bool isSynthetic = false})
       : assert(kind != ProcedureKind.Factory),
-        _tearOffReference = tearOffReference,
+        this._tearOffReference = tearOffReference,
+        this._kind = kind,
         this.isExtensionInstanceMember =
             nameScheme.isInstanceMember && nameScheme.isExtensionMember,
         this.isExtensionTypeInstanceMember =
             nameScheme.isInstanceMember && nameScheme.isExtensionTypeMember,
-        _memberName = nameScheme.getDeclaredName(name),
+        this._memberName = nameScheme.getDeclaredName(name),
         super(metadata, modifiers, name, typeParameters, formals,
             nativeMethodName) {
     _procedure = new Procedure(
@@ -236,7 +237,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
 
   @override
   Member? get readTarget {
-    switch (kind) {
+    switch (_kind) {
       case ProcedureKind.Method:
         return extensionTearOff ?? procedure;
       case ProcedureKind.Getter:
@@ -252,7 +253,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
 
   @override
   Member? get writeTarget {
-    switch (kind) {
+    switch (_kind) {
       case ProcedureKind.Setter:
         return procedure;
       case ProcedureKind.Method:
@@ -268,7 +269,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
 
   @override
   Member? get invokeTarget {
-    switch (kind) {
+    switch (_kind) {
       case ProcedureKind.Method:
       case ProcedureKind.Getter:
       case ProcedureKind.Operator:
@@ -286,7 +287,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   void buildOutlineNodes(BuildNodesCallback f) {
     _build();
     if (isExtensionMethod) {
-      switch (kind) {
+      switch (_kind) {
         case ProcedureKind.Method:
           f(
               member: _procedure,
@@ -308,10 +309,10 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
         // Coverage-ignore(suite): Not run.
         case ProcedureKind.Factory:
           throw new UnsupportedError(
-              'Unexpected extension method kind ${kind}');
+              'Unexpected extension method kind ${_kind}');
       }
     } else if (isExtensionTypeMethod) {
-      switch (kind) {
+      switch (_kind) {
         case ProcedureKind.Method:
           f(
               member: _procedure,
@@ -592,7 +593,7 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
     Member? readTarget;
     Member? invokeTarget;
     Member? writeTarget;
-    switch (kind) {
+    switch (_kind) {
       case ProcedureKind.Method:
         readTarget = extensionTearOff ?? augmentedProcedure;
         invokeTarget = augmentedProcedure;
@@ -672,13 +673,29 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
   }
 
   @override
-  void checkTypes(
-      SourceLibraryBuilder library, TypeEnvironment typeEnvironment) {
-    library.checkTypesInFunctionBuilder(this, typeEnvironment);
+  void checkTypes(SourceLibraryBuilder libraryBuilder, NameSpace nameSpace,
+      TypeEnvironment typeEnvironment) {
+    List<TypeParameterBuilder>? typeParameters = this.typeParameters;
+    if (typeParameters != null && typeParameters.isNotEmpty) {
+      libraryBuilder.checkTypeParameterDependencies(typeParameters);
+    }
+    libraryBuilder.checkTypesInFunctionBuilder(this, typeEnvironment);
     List<SourceProcedureBuilder>? augmentations = _augmentations;
     if (augmentations != null) {
       for (SourceProcedureBuilder augmentation in augmentations) {
-        augmentation.checkTypes(library, typeEnvironment);
+        augmentation.checkTypes(libraryBuilder, nameSpace, typeEnvironment);
+      }
+    }
+    if (isGetter) {
+      if (!isClassMember) {
+        // Getter/setter type conflict for class members is handled in the class
+        // hierarchy builder.
+        Builder? setterDeclaration =
+            nameSpace.lookupLocalMember(name, setter: true);
+        if (setterDeclaration != null) {
+          libraryBuilder.checkGetterSetterTypes(
+              this, setterDeclaration as ProcedureBuilder, typeEnvironment);
+        }
       }
     }
   }
@@ -714,6 +731,24 @@ class SourceProcedureBuilder extends SourceFunctionBuilderImpl
       return _augmentations != null;
     }
   }
+
+  @override
+  bool get isRegularMethod => identical(ProcedureKind.Method, _kind);
+
+  @override
+  bool get isGetter => identical(ProcedureKind.Getter, _kind);
+
+  @override
+  bool get isSetter => identical(ProcedureKind.Setter, _kind);
+
+  @override
+  bool get isOperator => identical(ProcedureKind.Operator, _kind);
+
+  @override
+  bool get isFactory => identical(ProcedureKind.Factory, _kind);
+
+  @override
+  bool get isProperty => isGetter || isSetter;
 }
 
 class SourceProcedureMember extends BuilderClassMember {

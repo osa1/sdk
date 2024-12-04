@@ -376,7 +376,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
         for (var parameter in availableNamedParameters) {
           var matcherScore = state.matcher.score(parameter.displayName);
           if (matcherScore != -1) {
-            var isWidget = isFlutterWidgetParameter(parameter);
+            var isWidget = isFlutterWidgetParameter(parameter.asElement2);
             collector.addSuggestion(
               NamedArgumentSuggestion(
                 parameter: parameter.asElement2,
@@ -741,7 +741,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
       if (constructorElement == null) {
         return;
       }
-      var libraryElement = state.libraryElement.asElement as LibraryElement;
+      var libraryElement = state.libraryElement.asElement;
       declarationHelper(
         mustBeConstant: constructorElement.isConst,
       ).addPossibleRedirectionsInLibrary(constructorElement, libraryElement);
@@ -2017,7 +2017,7 @@ class InScopeCompletionPass extends SimpleAstVisitor<void> {
                 if (!usedNames.contains(parameter.name)) {
                   var matcherScore = state.matcher.score(parameter.displayName);
                   if (matcherScore != -1) {
-                    var isWidget = isFlutterWidgetParameter(parameter);
+                    var isWidget = isFlutterWidgetParameter(parameter.asElement2);
                     collector.addSuggestion(
                       NamedArgumentSuggestion(
                         parameter:

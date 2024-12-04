@@ -186,7 +186,8 @@ final class ConstructorSuggestion extends ExecutableSuggestion
 
     var className = enclosingClass.displayName;
 
-    var completion = element.displayName;
+    // TODO(scheglov): Wrong, if no name, should be no completion.
+    var completion = element.name3 ?? '';
     if (suggestUnnamedAsNew) {
       if (completion.isEmpty) {
         completion = 'new';
@@ -783,7 +784,7 @@ final class NamedArgumentSuggestion extends CandidateSuggestion
     // Optionally add Flutter child widget details.
     // TODO(pq): revisit this special casing; likely it can be generalized away.
     if (isWidget && appendColon) {
-      var defaultValue = getDefaultStringParameterValue2(
+      var defaultValue = getDefaultStringParameterValue(
         parameter,
         preferredQuoteForStrings,
       );
