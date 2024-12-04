@@ -2325,20 +2325,15 @@ abstract class AstCodeGenerator
 
   w.StructType _instantiateClosure(FunctionNode functionNode) {
     final lambda = closures.lambdas[functionNode]!;
-    final closure = _getClosureImplementation(lambda, functionNode);
-    return _pushClosure(
-        closure,
-        functionNode.computeFunctionType(Nullability.nonNullable),
-        () => _pushContext(functionNode));
-  }
-
-  ClosureImplementation _getClosureImplementation(
-      Lambda lambda, FunctionNode functionNode) {
-    return translator.getClosure(
+    final closure = translator.getClosure(
         functionNode,
         lambda.function,
         ParameterInfo.fromLocalFunction(functionNode),
         "closure wrapper at ${functionNode.location}");
+    return _pushClosure(
+        closure,
+        functionNode.computeFunctionType(Nullability.nonNullable),
+        () => _pushContext(functionNode));
   }
 
   w.StructType _pushClosure(ClosureImplementation closure,
@@ -2405,46 +2400,8 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
-    w.BaseFunction? directCallTarget;
-
-    final (Member, int)? directClosureCall =
-        translator.directCallMetadata[node]?.targetClosure;
-
-    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
-    // `noSuchMethod` is also not allowed as `Null` inherits it.
-    if (directClosureCall != null &&
-        directClosureCall.$1.enclosingClass !=
-            translator.coreTypes.deprecatedNullClass &&
-        directClosureCall.$1 != translator.objectNoSuchMethod) {
-      final member = directClosureCall.$1;
-      final closureId = directClosureCall.$2;
-      final ClosureImplementation closureImplementation;
-      if (closureId == 0) {
-        // The member itself is called as a closure.
-        closureImplementation =
-            translator.getTearOffClosure(member as Procedure);
-      } else {
-        // A closure in the member is called.
-        final Closures memberClosures =
-            translator.getClosures(member, findCaptures: true);
-        final actualClosureId = closureId - 1;
-        final lambda = memberClosures.lambdas.values
-            .firstWhere((lambda) => lambda.index == actualClosureId);
-        // Add the closure to the compilation queue.
-        translator.functions.getLambdaFunction(lambda, member, memberClosures);
-        closureImplementation =
-            _getClosureImplementation(lambda, lambda.functionNode);
-      }
-
-      // Note: closure representation obtained from the devirtualized member
-      // (`closureImplementation.representation`) won't be the same as the
-      // non-devirtualized closure's representation (`representation`), but it
-      // will be a subtype of it.
-      final vtableFieldIndex =
-          representation.fieldIndexForSignature(posArgCount, argNames) -
-              representation.vtableBaseIndex;
-      directCallTarget = closureImplementation.functions[vtableFieldIndex];
-    }
+    w.BaseFunction? directCallTarget =
+        translator.singleClosureTarget(node, representation);
 
     // Evaluate receiver
     w.StructType struct = representation.closureStruct;

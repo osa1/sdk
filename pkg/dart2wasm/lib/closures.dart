@@ -131,6 +131,8 @@ class ClosureRepresentation {
   /// The field index in the vtable struct for the function entry to use when
   /// calling the closure with the given number of positional arguments and the
   /// given set of named arguments.
+  ///
+  /// `argNames` should be sorted.
   int fieldIndexForSignature(int posArgCount, List<String> argNames) {
     if (argNames.isEmpty) {
       return vtableBaseIndex + posArgCount;
@@ -363,6 +365,8 @@ class ClosureLayouter extends RecursiveVisitor {
   /// Get the representation for closures with a specific signature, described
   /// by the number of type parameters, the maximum number of positional
   /// parameters and the names of named parameters.
+  ///
+  /// `names` should be sorted.
   ClosureRepresentation? getClosureRepresentation(
       int typeCount, int positionalCount, List<String> names) {
     final representations =
@@ -1002,7 +1006,12 @@ class ClosureRepresentationCluster {
 /// A local function or function expression.
 class Lambda {
   final FunctionNode functionNode;
+
+  // Note: creating a `Lambda` does not add this function to the compilation
+  // queue. Make sure to get it with `Functions.getLambdaFunction` to add it
+  // to the compilation queue.
   final w.FunctionBuilder function;
+
   final Source functionNodeSource;
 
   /// Index of the function within the enclosing member, based on pre-order
