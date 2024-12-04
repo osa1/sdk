@@ -20,6 +20,8 @@ class FunctionCollector {
 
   // Wasm function for each Dart function
   final Map<Reference, w.BaseFunction> _functions = {};
+  // Wasm function for each function expression and local function.
+  final Map<Lambda, w.BaseFunction> _lambdas = {};
   // Names of exported functions
   final Map<Reference, String> _exports = {};
   // Selector IDs that are invoked via GDT.
@@ -126,6 +128,17 @@ class FunctionCollector {
       translator.compilationQueue.add(AstCompilationTask(function,
           getMemberCodeGenerator(translator, function, target), target));
       return function;
+    });
+  }
+
+  w.BaseFunction getLambdaFunction(
+      Lambda lambda, Member enclosingMember, Closures enclosingMemberClosures) {
+    return _lambdas.putIfAbsent(lambda, () {
+      translator.compilationQueue.add(CompilationTask(
+          lambda.function,
+          getLambdaCodeGenerator(
+              translator, lambda, enclosingMember, enclosingMemberClosures)));
+      return lambda.function;
     });
   }
 

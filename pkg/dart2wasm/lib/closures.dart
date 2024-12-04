@@ -1009,7 +1009,8 @@ class Lambda {
   /// traversal of the member body.
   final int index;
 
-  Lambda(this.functionNode, this.function, this.functionNodeSource, this.index);
+  Lambda._(
+      this.functionNode, this.function, this.functionNodeSource, this.index);
 }
 
 /// The context for one or more closures, containing their captured variables.
@@ -1390,7 +1391,7 @@ class _CaptureFinder extends RecursiveVisitor {
     }
     final function = module.functions.define(type, functionName);
     closures.lambdas[node] =
-        Lambda(node, function, _currentSource, closures.lambdas.length);
+        Lambda._(node, function, _currentSource, closures.lambdas.length);
 
     functionIsSyncStarOrAsync.add(node.asyncMarker == AsyncMarker.SyncStar ||
         node.asyncMarker == AsyncMarker.Async);

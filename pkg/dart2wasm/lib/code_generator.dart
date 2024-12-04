@@ -215,10 +215,7 @@ abstract class AstCodeGenerator
 
   void addNestedClosuresToCompilationQueue() {
     for (Lambda lambda in closures.lambdas.values) {
-      translator.compilationQueue.add(CompilationTask(
-          lambda.function,
-          getLambdaCodeGenerator(
-              translator, lambda, enclosingMember, closures)));
+      translator.functions.getLambdaFunction(lambda, enclosingMember, closures);
     }
   }
 
@@ -2430,12 +2427,11 @@ abstract class AstCodeGenerator
         // A closure in the member is called.
         final Closures memberClosures =
             translator.getClosures(member, findCaptures: true);
-        // Add the closure's enclosing member to the compilation queue if it's
-        // not already in the queue or compiled.
-        translator.functions.getFunction(member.reference);
         final actualClosureId = closureId - 1;
         final lambda = memberClosures.lambdas.values
             .firstWhere((lambda) => lambda.index == actualClosureId);
+        // Add the closure to the compilation queue.
+        translator.functions.getLambdaFunction(lambda, member, memberClosures);
         closureImplementation =
             _getClosureImplementation(lambda, lambda.functionNode);
       }
