@@ -46,9 +46,6 @@ abstract class SourceFunctionBuilder
   List<FormalParameterBuilder>? get formals;
 
   @override
-  ProcedureKind? get kind;
-
-  @override
   bool get isAbstract;
 
   @override
@@ -143,11 +140,6 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
   SourceFunctionBuilderImpl(this.metadata, this.modifiers, this.name,
       this.typeParameters, this.formals, this.nativeMethodName) {
     returnType.registerInferredTypeListener(this);
-    if (formals != null) {
-      for (int i = 0; i < formals!.length; i++) {
-        formals![i].parent = this;
-      }
-    }
   }
 
   @override
@@ -176,21 +168,6 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
 
   @override
   bool get isConstructor => false;
-
-  @override
-  bool get isRegularMethod => identical(ProcedureKind.Method, kind);
-
-  @override
-  bool get isGetter => identical(ProcedureKind.Getter, kind);
-
-  @override
-  bool get isSetter => identical(ProcedureKind.Setter, kind);
-
-  @override
-  bool get isOperator => identical(ProcedureKind.Operator, kind);
-
-  @override
-  bool get isFactory => identical(ProcedureKind.Factory, kind);
 
   @override
   // Coverage-ignore(suite): Not run.
@@ -512,7 +489,9 @@ abstract class SourceFunctionBuilderImpl extends SourceMemberBuilderImpl
         // buildOutlineExpressions to clear initializerToken to prevent
         // consuming too much memory.
         for (FormalParameterBuilder formal in formals!) {
-          formal.buildOutlineExpressions(libraryBuilder);
+          formal.buildOutlineExpressions(libraryBuilder, declarationBuilder,
+              buildDefaultValue: FormalParameterBuilder
+                  .needsDefaultValuesBuiltAsOutlineExpressions(this));
         }
       }
       hasBuiltOutlineExpressions = true;

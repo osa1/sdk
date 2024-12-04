@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:analysis_server/lsp_protocol/protocol.dart' hide Element;
 import 'package:analysis_server/src/lsp/constants.dart';
 import 'package:analysis_server/src/lsp/error_or.dart';
+import 'package:analysis_server/src/lsp/handlers/custom/editable_arguments/editable_arguments_mixin.dart';
 import 'package:analysis_server/src/lsp/handlers/handlers.dart';
 import 'package:analysis_server/src/lsp/mapping.dart';
 import 'package:analyzer/dart/analysis/results.dart';
@@ -15,21 +16,15 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
-import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/lint/constants.dart';
-import 'package:analyzer/src/utilities/extensions/ast.dart';
-import 'package:analyzer/src/utilities/extensions/flutter.dart';
-
-/// Information about the arguments and parameters for an invocation.
-typedef _InvocationInfo = (List<FormalParameterElement>?, ArgumentList?);
 
 /// Information about the values for a parameter/argument.
 typedef _Values =
     ({bool isDefault, DartObject? parameterValue, DartObject? argumentValue});
 
 class EditableArgumentsHandler
-    extends
-        SharedMessageHandler<TextDocumentPositionParams, EditableArguments?> {
+    extends SharedMessageHandler<TextDocumentPositionParams, EditableArguments?>
+    with EditableArgumentsMixin {
   EditableArgumentsHandler(super.server);
 
   @override
@@ -92,61 +87,50 @@ class EditableArgumentsHandler
     TextDocumentIdentifier textDocument,
     int offset,
   ) {
-    var (parameters, argumentList) = _getInvocationInfo(result, offset);
-    if (parameters == null || argumentList == null) {
+    var invocation = getInvocationInfo(result, offset);
+    if (invocation == null) {
       return null;
     }
 
     var textDocument = server.getVersionedDocumentIdentifier(result.path);
 
-    // Build a map of the parameters that have matching arguments.
-    var parametersWithArguments = {
-      for (var argument in argumentList.arguments)
-        argument.correspondingParameter: argument,
-    };
+    var (
+      :parameters,
+      :positionalParameterIndexes,
+      :parameterArguments,
+      :argumentList,
+      :numPositionals,
+      :numSuppliedPositionals,
+    ) = invocation;
 
+    // Build the complete list of editable arguments.
     var editableArguments = [
-      // First include the arguments in the order they were specified.
+      // First arguments that exist in the order they were specified.
       for (var MapEntry(key: parameter, value: argument)
-          in parametersWithArguments.entries)
-        if (parameter != null) _toEditableArgument(parameter, argument),
-      // Then the remaining parameters.
+          in parameterArguments.entries)
+        _toEditableArgument(
+          parameter,
+          argument,
+          numPositionals: numPositionals,
+          numSuppliedPositionals: numSuppliedPositionals,
+        ),
+      // Then the remaining parameters that don't have existing arguments.
       for (var parameter in parameters.where(
-        (p) => !parametersWithArguments.containsKey(p),
+        (p) => !parameterArguments.containsKey(p),
       ))
-        _toEditableArgument(parameter, null),
+        _toEditableArgument(
+          parameter,
+          null,
+          positionalIndex: positionalParameterIndexes[parameter],
+          numPositionals: numPositionals,
+          numSuppliedPositionals: numSuppliedPositionals,
+        ),
     ];
 
     return EditableArguments(
       textDocument: textDocument,
       arguments: editableArguments.nonNulls.toList(),
     );
-  }
-
-  /// Gets the argument list at [offset] that can be edited.
-  _InvocationInfo _getInvocationInfo(ResolvedUnitResult result, int offset) {
-    var node = result.unit.nodeCovering(offset: offset);
-    // Walk up to find an invocation that is widget creation.
-    var invocation = node?.thisOrAncestorMatching((node) {
-      return switch (node) {
-        InstanceCreationExpression() => node.isWidgetCreation,
-        InvocationExpressionImpl() => node.isWidgetFactory,
-        _ => false,
-      };
-    });
-
-    // Return the related argument list.
-    return switch (invocation) {
-      InstanceCreationExpression() => (
-        invocation.constructorName.element?.formalParameters,
-        invocation.argumentList,
-      ),
-      MethodInvocation(
-        methodName: Identifier(element: ExecutableElement2 element),
-      ) =>
-        (element.formalParameters, invocation.argumentList),
-      _ => (null, null),
-    };
   }
 
   /// Computes the values for a parameter and argument and returns them along
@@ -171,19 +155,15 @@ class EditableArgumentsHandler
     );
   }
 
-  /// Returns the name of an enum constant prefixed with the enum name.
-  String? _qualifiedEnumConstant(FieldElement2 enumConstant) {
-    var enumName = enumConstant.enclosingElement2.name3;
-    var name = enumConstant.name3;
-    return enumName != null && name != null ? '$enumName.$name' : null;
-  }
-
   /// Converts a [parameter]/[argument] pair into an [EditableArgument] if it
   /// is an argument that can be edited.
   EditableArgument? _toEditableArgument(
     FormalParameterElement parameter,
-    Expression? argument,
-  ) {
+    Expression? argument, {
+    int? positionalIndex,
+    required int numPositionals,
+    required int numSuppliedPositionals,
+  }) {
     var valueExpression =
         argument is NamedExpression ? argument.expression : argument;
 
@@ -193,6 +173,14 @@ class EditableArgumentsHandler
     String? type;
     Object? value;
     List<String>? options;
+
+    // Determine whether a value for this parameter is editable.
+    var notEditableReason = getNotEditableReason(
+      argument: valueExpression,
+      positionalIndex: positionalIndex,
+      numPositionals: numPositionals,
+      numSuppliedPositionals: numSuppliedPositionals,
+    );
 
     if (parameter.type.isDartCoreDouble) {
       type = 'double';
@@ -210,8 +198,7 @@ class EditableArgumentsHandler
       value = (values.argumentValue ?? values.parameterValue)?.toStringValue();
     } else if (parameter.type case InterfaceType(:EnumElement2 element3)) {
       type = 'enum';
-      options =
-          element3.constants2.map(_qualifiedEnumConstant).nonNulls.toList();
+      options = getQualifiedEnumConstantNames(element3);
 
       // Try to match the argument value up with the enum.
       var valueObject = values.argumentValue ?? values.parameterValue;
@@ -222,7 +209,7 @@ class EditableArgumentsHandler
         if (index != null) {
           var enumConstant = element3.constants2.elementAtOrNull(index);
           if (enumConstant != null) {
-            value = _qualifiedEnumConstant(enumConstant);
+            value = getQualifiedEnumConstantName(enumConstant);
           }
         }
       }
@@ -232,11 +219,22 @@ class EditableArgumentsHandler
       return null;
     }
 
-    // If the value is not a literal, include the source as displayValue.
-    var displayValue =
-        valueExpression is! Literal ? valueExpression?.toSource() : null;
-    // Unless it turns out to match the value (converted to string).
-    if (displayValue != null && displayValue == value?.toString()) {
+    var isEditable = notEditableReason == null;
+
+    // Compute a displayValue.
+    String? displayValue;
+    if (!isEditable) {
+      // Not editable, so show the value or source in displayValue.
+      displayValue = value?.toString() ?? valueExpression?.toSource();
+      // And remove the value.
+      value = null;
+    } else if (valueExpression is! Literal) {
+      // Also provide the source if it was not a literal.
+      displayValue = valueExpression?.toSource();
+    }
+
+    // Never provide a displayValue if it's the same as value.
+    if (displayValue == value) {
       displayValue = null;
     }
 
@@ -251,31 +249,8 @@ class EditableArgumentsHandler
       isRequired: parameter.isRequired,
       isNullable:
           parameter.type.nullabilitySuffix == NullabilitySuffix.question,
+      isEditable: notEditableReason == null,
+      notEditableReason: notEditableReason,
     );
-  }
-}
-
-extension on InvocationExpressionImpl {
-  /// Whether this is an invocation for an extension method that has the
-  /// `@widgetFactory` annotation.
-  bool get isWidgetFactory {
-    // Only consider functions that return widgets.
-    if (!staticType.isWidgetType) {
-      return false;
-    }
-
-    // We only support @widgetFactory on extension methods.
-    var element = switch (function) {
-      Identifier(:var element)
-          when element?.enclosingElement2 is ExtensionElement2 =>
-        element,
-      _ => null,
-    };
-
-    return switch (element) {
-      FragmentedAnnotatableElementMixin(:var metadata2) =>
-        metadata2.hasWidgetFactory,
-      _ => false,
-    };
   }
 }

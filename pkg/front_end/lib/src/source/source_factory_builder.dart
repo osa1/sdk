@@ -16,6 +16,7 @@ import '../base/messages.dart'
         templateRedirectingFactoryIncompatibleTypeArgument,
         templateTypeArgumentMismatch;
 import '../base/modifiers.dart';
+import '../base/name_space.dart';
 import '../base/problems.dart' show unexpected, unhandled;
 import '../base/scope.dart';
 import '../builder/builder.dart';
@@ -161,7 +162,25 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
   SourceFactoryBuilder get origin => actualOrigin ?? this;
 
   @override
-  ProcedureKind get kind => ProcedureKind.Factory;
+  // Coverage-ignore(suite): Not run.
+  bool get isRegularMethod => false;
+
+  @override
+  bool get isGetter => false;
+
+  @override
+  bool get isSetter => false;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isOperator => false;
+
+  @override
+  bool get isFactory => true;
+
+  @override
+  // Coverage-ignore(suite): Not run.
+  bool get isProperty => false;
 
   Procedure get _procedure =>
       isAugmenting ? origin._procedure : _procedureInternal;
@@ -318,13 +337,13 @@ class SourceFactoryBuilder extends SourceFunctionBuilderImpl {
       SourceClassBuilder sourceClassBuilder, TypeEnvironment typeEnvironment) {}
 
   @override
-  void checkTypes(
-      SourceLibraryBuilder library, TypeEnvironment typeEnvironment) {
+  void checkTypes(SourceLibraryBuilder library, NameSpace nameSpace,
+      TypeEnvironment typeEnvironment) {
     library.checkTypesInFunctionBuilder(this, typeEnvironment);
     List<SourceFactoryBuilder>? augmentations = _augmentations;
     if (augmentations != null) {
       for (SourceFactoryBuilder augmentation in augmentations) {
-        augmentation.checkTypes(library, typeEnvironment);
+        augmentation.checkTypes(library, nameSpace, typeEnvironment);
       }
     }
   }
@@ -655,8 +674,8 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
       SourceClassBuilder sourceClassBuilder, TypeEnvironment typeEnvironment) {}
 
   @override
-  void checkTypes(
-      SourceLibraryBuilder library, TypeEnvironment typeEnvironment) {
+  void checkTypes(SourceLibraryBuilder library, NameSpace nameSpace,
+      TypeEnvironment typeEnvironment) {
     library.checkTypesInRedirectingFactoryBuilder(this, typeEnvironment);
   }
 
@@ -871,14 +890,16 @@ class RedirectingFactoryBuilder extends SourceFactoryBuilder {
         (redirectionTarget.target?.isConstructor ?? false) &&
         redirectingTargetParentIsEnum)) {
       // Check whether [redirecteeType] <: [factoryType].
+      FunctionType factoryTypeWithoutTypeParameters =
+          factoryType.withoutTypeParameters;
       if (!typeEnvironment.isSubtypeOf(
           redirecteeType,
-          factoryType.withoutTypeParameters,
+          factoryTypeWithoutTypeParameters,
           SubtypeCheckMode.withNullabilities)) {
         libraryBuilder.addProblemForRedirectingFactory(
             this,
             templateIncompatibleRedirecteeFunctionType.withArguments(
-                redirecteeType, factoryType.withoutTypeParameters),
+                redirecteeType, factoryTypeWithoutTypeParameters),
             redirectionTarget.charOffset,
             noLength,
             redirectionTarget.fileUri);
