@@ -957,6 +957,15 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   String get identifier => '${source.uri}';
 
   @override
+  List<LibraryElement2> get importedLibraries2 {
+    return libraryImports2
+        .map((import) => import.importedLibrary2)
+        .nonNulls
+        .toSet()
+        .toList();
+  }
+
+  @override
   ElementKind get kind => ElementKind.COMPILATION_UNIT;
 
   @override
@@ -3093,6 +3102,13 @@ abstract class ElementImpl implements Element, Element2 {
     return "$shortName (${source?.fullName})";
   }
 
+  @override
+  String getExtendedDisplayName2({String? shortName}) {
+    shortName ??= displayName;
+    var source = this.source;
+    return "$shortName (${source?.fullName})";
+  }
+
   /// Return `true` if this element has the given [modifier] associated with it.
   bool hasModifier(Modifier modifier) => _modifiers[modifier];
 
@@ -3341,7 +3357,7 @@ abstract class ElementImpl2 implements Element2 {
   }
 
   @override
-  String getExtendedDisplayName(String? shortName) {
+  String getExtendedDisplayName2({String? shortName}) {
     shortName ??= displayName;
     var source = firstFragment.libraryFragment?.source;
     return "$shortName (${source?.fullName})";
@@ -3832,6 +3848,12 @@ abstract class ExecutableElementImpl2 extends FunctionTypedElementImpl2
     var firstFragment = this.firstFragment as ExecutableElementImpl;
     return firstFragment.hasModifier(Modifier.INVOKES_SUPER_SELF);
   }
+
+  @override
+  LibraryElement2 get library2 {
+    var firstFragment = this.firstFragment as ExecutableElementImpl;
+    return firstFragment.library2!;
+  }
 }
 
 /// A concrete implementation of an [ExtensionElement].
@@ -4265,6 +4287,11 @@ class FieldElementImpl2 extends PropertyInducingElementImpl2
 
   @override
   ElementKind get kind => ElementKind.FIELD;
+
+  @override
+  LibraryElement2 get library2 {
+    return firstFragment.library2!;
+  }
 
   @override
   String? get name3 => firstFragment.name2;
@@ -4834,15 +4861,6 @@ mixin FragmentedElementMixin<E extends Fragment> implements _Fragmented<E> {
     return false;
   }
 
-  LibraryElement2? get library2 {
-    if (firstFragment is ElementImpl) {
-      return (firstFragment as ElementImpl).library2;
-    }
-    // We should never get to this point.
-    assert(false, 'Fragment does not implement ElementImpl');
-    return null;
-  }
-
   /// A list of all of the fragments from which this element is composed.
   List<E> get _fragments {
     var result = <E>[];
@@ -5006,13 +5024,15 @@ class FunctionElementImpl extends ExecutableElementImpl
 
   @override
   Fragment? get enclosingFragment {
-    if (enclosingElement3 is CompilationUnitElement) {
-      // TODO(augmentations): Support the fragment chain.
-      return enclosingElement3 as LibraryFragment;
-    } else {
-      // Local functions cannot be augmented.
-      throw UnsupportedError('This is not a fragment');
+    switch (enclosingElement3) {
+      case LibraryFragment libraryFragment:
+        // TODO(augmentations): Support the fragment chain.
+        return libraryFragment;
+      case ExecutableFragment executableFragment:
+        return executableFragment;
     }
+    // Local functions cannot be augmented.
+    throw UnsupportedError('This is not a fragment');
   }
 
   @override
@@ -6306,10 +6326,10 @@ abstract class InterfaceElementImpl2 extends InstanceElementImpl2
           typeArguments: typeArguments, nullabilitySuffix: nullabilitySuffix);
 
   @override
-  MethodElement2? lookUpInheritedMethod2(
-    String methodName,
-    LibraryElement2 library,
-  ) {
+  MethodElement2? lookUpInheritedMethod2({
+    required String methodName,
+    required LibraryElement2 library,
+  }) {
     return inheritanceManager
         .getInherited4(
           this,
@@ -6448,6 +6468,11 @@ class LabelElementImpl extends ElementImpl
   ElementKind get kind => ElementKind.LABEL;
 
   @override
+  LibraryElement2 get library2 {
+    return libraryFragment.element;
+  }
+
+  @override
   LibraryFragment get libraryFragment => enclosingUnit as LibraryFragment;
 
   @override
@@ -6489,7 +6514,9 @@ class LabelElementImpl2 extends ElementImpl2
   LabelFragment get firstFragment => _wrappedElement;
 
   @override
-  LibraryElement2 get library2 => super.library2!;
+  LibraryElement2 get library2 {
+    return _wrappedElement.library2;
+  }
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
@@ -6748,16 +6775,6 @@ class LibraryElementImpl extends ElementImpl
     return fragments
         .expand((fragment) => fragment.libraryImports)
         .map((import) => import.importedLibrary)
-        .nonNulls
-        .toSet()
-        .toList();
-  }
-
-  @override
-  List<LibraryElement2> get importedLibraries2 {
-    return fragments
-        .expand((fragment) => fragment.libraryImports2)
-        .map((import) => import.importedLibrary2)
         .nonNulls
         .toSet()
         .toList();
@@ -7307,8 +7324,7 @@ class LocalVariableElementImpl extends NonParameterVariableElementImpl
   LocalVariableElement2 get element => _element2;
 
   @override
-  ExecutableFragment get enclosingFragment =>
-      enclosingElement3 as ExecutableFragment;
+  Fragment get enclosingFragment => enclosingElement3 as Fragment;
 
   @override
   String get identifier {
@@ -7322,6 +7338,11 @@ class LocalVariableElementImpl extends NonParameterVariableElementImpl
 
   @override
   ElementKind get kind => ElementKind.LOCAL_VARIABLE;
+
+  @override
+  LibraryElement2 get library2 {
+    return libraryFragment.element;
+  }
 
   @override
   LibraryFragment get libraryFragment => enclosingUnit as LibraryFragment;
@@ -7376,6 +7397,11 @@ class LocalVariableElementImpl2 extends PromotableElementImpl2
 
   @override
   bool get isStatic => _wrappedElement.isStatic;
+
+  @override
+  LibraryElement2 get library2 {
+    return _wrappedElement.library2;
+  }
 
   @override
   DartType get type => _wrappedElement.type;
@@ -7929,9 +7955,6 @@ class MethodElementImpl2 extends ExecutableElementImpl2
 
   @override
   ElementKind get kind => ElementKind.METHOD;
-
-  @override
-  LibraryElement2 get library2 => super.library2!;
 
   @override
   String? get lookupName {
@@ -8847,8 +8870,7 @@ class ParameterElementImpl extends VariableElementImpl
   set element(FormalParameterElement element) => _element = element;
 
   @override
-  ExecutableFragment? get enclosingFragment =>
-      enclosingElement3 as ExecutableFragment?;
+  Fragment? get enclosingFragment => enclosingElement3 as Fragment?;
 
   @override
   bool get hasDefaultValue {
@@ -10091,7 +10113,9 @@ class TopLevelFunctionElementImpl extends ExecutableElementImpl2
   ElementKind get kind => ElementKind.FUNCTION;
 
   @override
-  LibraryElement2 get library2 => super.library2!;
+  LibraryElement2 get library2 {
+    return firstFragment.library2!;
+  }
 
   @override
   String? get name3 => firstFragment.name;
@@ -10198,6 +10222,11 @@ class TopLevelVariableElementImpl2 extends PropertyInducingElementImpl2
 
   @override
   ElementKind get kind => ElementKind.TOP_LEVEL_VARIABLE;
+
+  @override
+  LibraryElement2 get library2 {
+    return firstFragment.libraryFragment.element;
+  }
 
   @override
   String? get name3 => firstFragment.name2;
@@ -10504,6 +10533,11 @@ class TypeAliasElementImpl2 extends TypeDefiningElementImpl2
   ElementKind get kind => ElementKind.TYPE_ALIAS;
 
   @override
+  LibraryElement2 get library2 {
+    return firstFragment.library2!;
+  }
+
+  @override
   String? get name3 => firstFragment.name2;
 
   @override
@@ -10764,7 +10798,7 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
   ElementKind get kind => ElementKind.TYPE_PARAMETER;
 
   @override
-  LibraryElement2 get library2 => super.library2!;
+  LibraryElement2? get library2 => firstFragment.library2;
 
   @override
   Element? get _enclosingFunction => firstFragment._enclosingElement3;
@@ -11010,9 +11044,6 @@ mixin WrappedElementMixin implements ElementImpl2 {
 
   @override
   ElementKind get kind => _wrappedElement.kind;
-
-  @override
-  LibraryElement2? get library2 => _wrappedElement.library2;
 
   @override
   String? get name3 => _wrappedElement.name3;
