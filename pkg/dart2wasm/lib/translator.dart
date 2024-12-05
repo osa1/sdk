@@ -878,8 +878,8 @@ class Translator with KernelNodes {
     ib.struct_new(representation.vtableStruct);
     ib.end();
 
-    final implementation = ClosureImplementation(
-        representation, functions, dynamicCallEntry, vtable, targetModule);
+    final implementation = ClosureImplementation(representation, functions,
+        dynamicCallEntry, vtable, targetModule, paramInfo);
     closureImplementations[functionNode] = implementation;
     return implementation;
   }
@@ -1042,51 +1042,6 @@ class Translator with KernelNodes {
 
   Member? singleTarget(TreeNode node) {
     return directCallMetadata[node]?.targetMember;
-  }
-
-  w.BaseFunction? singleClosureTarget(
-      FunctionInvocation node, ClosureRepresentation representation) {
-    final (Member, int)? directClosureCall =
-        directCallMetadata[node]?.targetClosure;
-
-    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
-    // `noSuchMethod` is also not allowed as `Null` inherits it.
-    if (directClosureCall != null &&
-        directClosureCall.$1.enclosingClass != coreTypes.deprecatedNullClass &&
-        directClosureCall.$1 != objectNoSuchMethod) {
-      final member = directClosureCall.$1;
-      final closureId = directClosureCall.$2;
-      final ClosureImplementation closureImplementation;
-      if (closureId == 0) {
-        // The member itself is called as a closure.
-        closureImplementation = getTearOffClosure(member as Procedure);
-      } else {
-        // A closure in the member is called.
-        final Closures memberClosures = getClosures(member, findCaptures: true);
-        final actualClosureId = closureId - 1;
-        final lambda = memberClosures.lambdas.values
-            .firstWhere((lambda) => lambda.index == actualClosureId);
-        // Add the closure to the compilation queue.
-        functions.getLambdaFunction(lambda, member, memberClosures);
-        closureImplementation = getClosure(
-            lambda.functionNode,
-            lambda.function,
-            ParameterInfo.fromLocalFunction(lambda.functionNode),
-            "closure wrapper at ${lambda.functionNode.location}");
-      }
-
-      // Note: closure representation obtained from the devirtualized member
-      // (`closureImplementation.representation`) won't be the same as the
-      // non-devirtualized closure's representation (`representation`), but it
-      // will be a subtype of it.
-      final vtableFieldIndex = representation.fieldIndexForSignature(
-              node.arguments.positional.length,
-              node.arguments.named.map((a) => a.name).toList()..sort()) -
-          representation.vtableBaseIndex;
-      return closureImplementation.functions[vtableFieldIndex];
-    }
-
-    return null;
   }
 
   bool canSkipImplicitCheck(VariableDeclaration node) {

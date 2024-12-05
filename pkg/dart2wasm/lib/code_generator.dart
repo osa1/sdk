@@ -2400,8 +2400,62 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
-    w.BaseFunction? directCallTarget =
-        translator.singleClosureTarget(node, representation);
+    final (Member, int)? directClosureCall =
+        translator.directCallMetadata[node]?.targetClosure;
+
+    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
+    // `noSuchMethod` is also not allowed as `Null` inherits it.
+    if (directClosureCall != null &&
+        directClosureCall.$1.enclosingClass !=
+            translator.coreTypes.deprecatedNullClass &&
+        directClosureCall.$1 != translator.objectNoSuchMethod) {
+      final member = directClosureCall.$1;
+      final closureId = directClosureCall.$2;
+      if (closureId == 0) {
+        // The member itself is called.
+        final paramInfo = translator.paramInfoForDirectCall(member.reference);
+        final signature = translator.signatureForDirectCall(member.reference);
+
+        if (member.isInstanceMember) {
+          // Evaluate receiver
+          w.StructType struct = representation.closureStruct;
+          translateExpression(receiver, w.RefType.def(struct, nullable: false));
+          b.struct_get(struct, FieldIndex.closureContext);
+          translator.convertType(
+              b,
+              struct.fields[FieldIndex.closureContext].type.unpacked,
+              signature.inputs[0]);
+
+          _visitArguments(node.arguments, signature, paramInfo, 1);
+        } else {
+          _visitArguments(node.arguments, signature, paramInfo, 0);
+        }
+        return translator.outputOrVoid(call(member.reference));
+      } else {
+        // // A closure in the member is called.
+        // final Closures memberClosures =
+        //     translator.getClosures(member, findCaptures: true);
+        // final actualClosureId = closureId - 1;
+        // final lambda = memberClosures.lambdas.values
+        //     .firstWhere((lambda) => lambda.index == actualClosureId);
+        // final lambdaFunction = translator.functions
+        //     .getLambdaFunction(lambda, member, memberClosures);
+        // final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
+        // final signature = lambdaFunction.type;
+
+        // // Evaluate receiver
+        // w.StructType struct = representation.closureStruct;
+        // w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
+        // translateExpression(receiver, closureLocal.type);
+        // b.local_tee(closureLocal);
+        // b.struct_get(struct, FieldIndex.closureContext);
+
+        // _visitArguments(node.arguments, signature, paramInfo, 1);
+
+        // b.call(lambdaFunction);
+        // return translator.outputOrVoid(signature.outputs);
+      }
+    }
 
     // Evaluate receiver
     w.StructType struct = representation.closureStruct;
@@ -2437,17 +2491,12 @@ abstract class AstCodeGenerator
     final w.FunctionType functionType =
         representation.getVtableFieldType(vtableFieldIndex);
 
-    if (directCallTarget == null) {
-      // Call entry point in vtable
-      b.local_get(closureLocal);
-      b.struct_get(struct, FieldIndex.closureVtable);
-      b.struct_get(representation.vtableStruct, vtableFieldIndex);
-      b.call_ref(functionType);
-    } else {
-      assert(functionType.isStructurallyEqualTo(directCallTarget.type));
-      final returnType = translator.callFunction(directCallTarget, b).single;
-      translator.convertType(b, returnType, translator.topInfo.nullableType);
-    }
+    // Call entry point in vtable
+    b.local_get(closureLocal);
+    b.struct_get(struct, FieldIndex.closureVtable);
+    b.struct_get(representation.vtableStruct, vtableFieldIndex);
+    b.call_ref(functionType);
+
     return translator.topInfo.nullableType;
   }
 

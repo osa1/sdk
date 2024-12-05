@@ -12,6 +12,7 @@ import 'package:vm/transformations/type_flow/utils.dart' show UnionFind;
 import 'package:wasm_builder/wasm_builder.dart' as w;
 
 import 'class_info.dart';
+import 'param_info.dart';
 import 'translator.dart';
 
 /// Describes the implementation of a concrete closure, including its vtable
@@ -35,8 +36,16 @@ class ClosureImplementation {
   /// The module this closure is implemented in.
   final w.ModuleBuilder module;
 
-  ClosureImplementation(this.representation, this.functions,
-      this.dynamicCallEntry, this.vtable, this.module);
+  /// [ParameterInfo] to be used when directly calling the closure.
+  final ParameterInfo directCallParamInfo;
+
+  ClosureImplementation(
+      this.representation,
+      this.functions,
+      this.dynamicCallEntry,
+      this.vtable,
+      this.module,
+      this.directCallParamInfo);
 }
 
 /// Describes the representation of closures for a particular function
