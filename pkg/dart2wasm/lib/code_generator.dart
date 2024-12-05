@@ -2455,8 +2455,8 @@ abstract class AstCodeGenerator
           _visitArguments(node.arguments, signature, paramInfo, 0);
         }
 
-        b.call(lambdaFunction);
-        return translator.outputOrVoid(signature.outputs);
+        return translator
+            .outputOrVoid(translator.callFunction(lambdaFunction, b));
       }
     }
 
