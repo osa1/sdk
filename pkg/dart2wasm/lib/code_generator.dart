@@ -2400,6 +2400,8 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
+    final w.StructType closureStruct = representation.closureStruct;
+
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
 
@@ -2416,14 +2418,14 @@ abstract class AstCodeGenerator
         final paramInfo = translator.paramInfoForDirectCall(member.reference);
         final signature = translator.signatureForDirectCall(member.reference);
 
-        if (member.isInstanceMember) {
+        if (paramInfo.takesContextOrReceiver) {
           // Evaluate receiver
-          w.StructType struct = representation.closureStruct;
-          translateExpression(receiver, w.RefType.def(struct, nullable: false));
-          b.struct_get(struct, FieldIndex.closureContext);
+          translateExpression(
+              receiver, w.RefType.def(closureStruct, nullable: false));
+          b.struct_get(closureStruct, FieldIndex.closureContext);
           translator.convertType(
               b,
-              struct.fields[FieldIndex.closureContext].type.unpacked,
+              closureStruct.fields[FieldIndex.closureContext].type.unpacked,
               signature.inputs[0]);
 
           _visitArguments(node.arguments, signature, paramInfo, 1);
@@ -2432,37 +2434,38 @@ abstract class AstCodeGenerator
         }
         return translator.outputOrVoid(call(member.reference));
       } else {
-        // // A closure in the member is called.
-        // final Closures memberClosures =
-        //     translator.getClosures(member, findCaptures: true);
-        // final actualClosureId = closureId - 1;
-        // final lambda = memberClosures.lambdas.values
-        //     .firstWhere((lambda) => lambda.index == actualClosureId);
-        // final lambdaFunction = translator.functions
-        //     .getLambdaFunction(lambda, member, memberClosures);
-        // final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
-        // final signature = lambdaFunction.type;
+        // A closure in the member is called.
+        final Closures memberClosures =
+            translator.getClosures(member, findCaptures: true);
+        final actualClosureId = closureId - 1;
+        final lambda = memberClosures.lambdas.values
+            .firstWhere((lambda) => lambda.index == actualClosureId);
+        final w.BaseFunction lambdaFunction = translator.functions
+            .getLambdaFunction(lambda, member, memberClosures);
+        final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
+        final signature = lambdaFunction.type;
 
-        // // Evaluate receiver
-        // w.StructType struct = representation.closureStruct;
-        // w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
-        // translateExpression(receiver, closureLocal.type);
-        // b.local_tee(closureLocal);
-        // b.struct_get(struct, FieldIndex.closureContext);
+        // Evaluate receiver
+        if (paramInfo.takesContextOrReceiver) {
+          translateExpression(
+              receiver, w.RefType.def(closureStruct, nullable: false));
+          b.struct_get(closureStruct, FieldIndex.closureContext);
+          _visitArguments(node.arguments, signature, paramInfo, 1);
+        } else {
+          _visitArguments(node.arguments, signature, paramInfo, 0);
+        }
 
-        // _visitArguments(node.arguments, signature, paramInfo, 1);
-
-        // b.call(lambdaFunction);
-        // return translator.outputOrVoid(signature.outputs);
+        b.call(lambdaFunction);
+        return translator.outputOrVoid(signature.outputs);
       }
     }
 
     // Evaluate receiver
-    w.StructType struct = representation.closureStruct;
-    w.Local closureLocal = addLocal(w.RefType.def(struct, nullable: false));
+    w.Local closureLocal =
+        addLocal(w.RefType.def(closureStruct, nullable: false));
     translateExpression(receiver, closureLocal.type);
     b.local_tee(closureLocal);
-    b.struct_get(struct, FieldIndex.closureContext);
+    b.struct_get(closureStruct, FieldIndex.closureContext);
 
     // Type arguments
     for (DartType typeArg in arguments.types) {
@@ -2493,7 +2496,7 @@ abstract class AstCodeGenerator
 
     // Call entry point in vtable
     b.local_get(closureLocal);
-    b.struct_get(struct, FieldIndex.closureVtable);
+    b.struct_get(closureStruct, FieldIndex.closureVtable);
     b.struct_get(representation.vtableStruct, vtableFieldIndex);
     b.call_ref(functionType);
 
