@@ -2413,26 +2413,35 @@ abstract class AstCodeGenerator
         directClosureCall.$1 != translator.objectNoSuchMethod) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
+      final receiverDartType = dartTypeOf(node.receiver);
+
       if (closureId == 0) {
         // The member itself is called.
-        final paramInfo = translator.paramInfoForDirectCall(member.reference);
-        final signature = translator.signatureForDirectCall(member.reference);
 
-        if (paramInfo.takesContextOrReceiver) {
-          // Evaluate receiver
-          translateExpression(
-              receiver, w.RefType.def(closureStruct, nullable: false));
-          b.struct_get(closureStruct, FieldIndex.closureContext);
-          translator.convertType(
-              b,
-              closureStruct.fields[FieldIndex.closureContext].type.unpacked,
-              signature.inputs[0]);
+        final lambdaDartType =
+            member.function!.computeFunctionType(Nullability.nonNullable);
 
-          _visitArguments(node.arguments, signature, paramInfo, 1);
-        } else {
-          _visitArguments(node.arguments, signature, paramInfo, 0);
+        if (translator.typeEnvironment.isSubtypeOf(lambdaDartType,
+            receiverDartType, SubtypeCheckMode.withNullabilities)) {
+          final paramInfo = translator.paramInfoForDirectCall(member.reference);
+          final signature = translator.signatureForDirectCall(member.reference);
+
+          if (paramInfo.takesContextOrReceiver) {
+            // Evaluate receiver
+            translateExpression(
+                receiver, w.RefType.def(closureStruct, nullable: false));
+            b.struct_get(closureStruct, FieldIndex.closureContext);
+            translator.convertType(
+                b,
+                closureStruct.fields[FieldIndex.closureContext].type.unpacked,
+                signature.inputs[0]);
+
+            _visitArguments(node.arguments, signature, paramInfo, 1);
+          } else {
+            _visitArguments(node.arguments, signature, paramInfo, 0);
+          }
+          return translator.outputOrVoid(call(member.reference));
         }
-        return translator.outputOrVoid(call(member.reference));
       } else {
         // A closure in the member is called.
         final Closures memberClosures =
@@ -2440,23 +2449,31 @@ abstract class AstCodeGenerator
         final actualClosureId = closureId - 1;
         final lambda = memberClosures.lambdas.values
             .firstWhere((lambda) => lambda.index == actualClosureId);
-        final w.BaseFunction lambdaFunction = translator.functions
-            .getLambdaFunction(lambda, member, memberClosures);
-        final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
-        final signature = lambdaFunction.type;
 
-        // Evaluate receiver
-        if (paramInfo.takesContextOrReceiver) {
-          translateExpression(
-              receiver, w.RefType.def(closureStruct, nullable: false));
-          b.struct_get(closureStruct, FieldIndex.closureContext);
-          _visitArguments(node.arguments, signature, paramInfo, 1);
-        } else {
-          _visitArguments(node.arguments, signature, paramInfo, 0);
+        final lambdaDartType =
+            lambda.functionNode.computeFunctionType(Nullability.nonNullable);
+
+        if (translator.typeEnvironment.isSubtypeOf(lambdaDartType,
+            receiverDartType, SubtypeCheckMode.withNullabilities)) {
+          final w.BaseFunction lambdaFunction = translator.functions
+              .getLambdaFunction(lambda, member, memberClosures);
+          final paramInfo =
+              ParameterInfo.fromLocalFunction(lambda.functionNode);
+          final signature = lambdaFunction.type;
+
+          // Evaluate receiver
+          if (paramInfo.takesContextOrReceiver) {
+            translateExpression(
+                receiver, w.RefType.def(closureStruct, nullable: false));
+            b.struct_get(closureStruct, FieldIndex.closureContext);
+            _visitArguments(node.arguments, signature, paramInfo, 1);
+          } else {
+            _visitArguments(node.arguments, signature, paramInfo, 0);
+          }
+
+          return translator
+              .outputOrVoid(translator.callFunction(lambdaFunction, b));
         }
-
-        return translator
-            .outputOrVoid(translator.callFunction(lambdaFunction, b));
       }
     }
 
