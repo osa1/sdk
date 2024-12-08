@@ -2379,14 +2379,11 @@ abstract class AstCodeGenerator
           expectedType);
     }
 
-    final Expression receiver = node.receiver;
-    final Arguments arguments = node.arguments;
-
-    int typeCount = arguments.types.length;
-    int posArgCount = arguments.positional.length;
-    List<String> argNames = arguments.named.map((a) => a.name).toList()..sort();
+    List<String> argNames = node.arguments.named.map((a) => a.name).toList()
+      ..sort();
     ClosureRepresentation? representation = translator.closureLayouter
-        .getClosureRepresentation(typeCount, posArgCount, argNames);
+        .getClosureRepresentation(node.arguments.types.length,
+            node.arguments.positional.length, argNames);
     if (representation == null) {
       // This is a dynamic function call with a signature that matches no
       // functions in the program.
@@ -2410,87 +2407,129 @@ abstract class AstCodeGenerator
       final receiverDartType = dartTypeOf(node.receiver);
 
       if (closureId == 0) {
-        // The member itself is called.
-
-        final lambdaDartType =
-            member.function!.computeFunctionType(Nullability.nonNullable);
-
-        if (translator.typeEnvironment.isSubtypeOf(lambdaDartType,
-            receiverDartType, SubtypeCheckMode.withNullabilities)) {
-          final paramInfo = translator.paramInfoForDirectCall(member.reference);
-          final signature = translator.signatureForDirectCall(member.reference);
-
-          if (paramInfo.takesContextOrReceiver) {
-            // Evaluate receiver
-            translateExpression(
-                receiver, w.RefType.def(closureStruct, nullable: false));
-            b.struct_get(closureStruct, FieldIndex.closureContext);
-            translator.convertType(
-                b,
-                closureStruct.fields[FieldIndex.closureContext].type.unpacked,
-                signature.inputs[0]);
-
-            _visitArguments(node.arguments, signature, paramInfo, 1);
-          } else {
-            _visitArguments(node.arguments, signature, paramInfo, 0);
-          }
-          return translator.outputOrVoid(call(member.reference));
+        // The member itself is called as closure.
+        final returnType =
+            _tryGenerateMemberClosureInvocation(node, member, representation);
+        if (returnType != null) {
+          return returnType;
         }
       } else {
         // A closure in the member is called.
-        final Closures memberClosures =
-            translator.getClosures(member, findCaptures: true);
-        final actualClosureId = closureId - 1;
-        final lambda = memberClosures.lambdas.values
-            .firstWhere((lambda) => lambda.index == actualClosureId);
-
-        final lambdaDartType =
-            lambda.functionNode.computeFunctionType(Nullability.nonNullable);
-
-        if (translator.typeEnvironment.isSubtypeOf(lambdaDartType,
-            receiverDartType, SubtypeCheckMode.withNullabilities)) {
-          final w.BaseFunction lambdaFunction = translator.functions
-              .getLambdaFunction(lambda, member, memberClosures);
-          final paramInfo =
-              ParameterInfo.fromLocalFunction(lambda.functionNode);
-          final signature = lambdaFunction.type;
-
-          // Evaluate receiver
-          if (paramInfo.takesContextOrReceiver) {
-            translateExpression(
-                receiver, w.RefType.def(closureStruct, nullable: false));
-            b.struct_get(closureStruct, FieldIndex.closureContext);
-            _visitArguments(node.arguments, signature, paramInfo, 1);
-          } else {
-            _visitArguments(node.arguments, signature, paramInfo, 0);
-          }
-
-          return translator
-              .outputOrVoid(translator.callFunction(lambdaFunction, b));
+        final returnType = _tryGenerateDirectClosureInvocation(
+            node, member, representation, closureId - 1);
+        if (returnType != null) {
+          return returnType;
         }
       }
     }
 
+    return _generateClosureInvocation(node, representation);
+  }
+
+  /// Compile a function invocation calling a closurized member.
+  ///
+  /// Returns `null` when the call cannot be made because of a type mismatch
+  /// between the arguments and member parameters. This happens after TFA when
+  /// the code is unreachable.
+  w.ValueType? _tryGenerateMemberClosureInvocation(FunctionInvocation node,
+      Member member, ClosureRepresentation representation) {
+    final lambdaDartType =
+        member.function!.computeFunctionType(Nullability.nonNullable);
+
+    if (!translator.typeEnvironment.isSubtypeOf(lambdaDartType,
+        dartTypeOf(node.receiver), SubtypeCheckMode.withNullabilities)) {
+      return null;
+    }
+
+    final paramInfo = translator.paramInfoForDirectCall(member.reference);
+    final signature = translator.signatureForDirectCall(member.reference);
+    final closureStruct = representation.closureStruct;
+
+    if (paramInfo.takesContextOrReceiver) {
+      // Evaluate receiver
+      translateExpression(
+          node.receiver, w.RefType.def(closureStruct, nullable: false));
+      b.struct_get(closureStruct, FieldIndex.closureContext);
+      translator.convertType(
+          b,
+          closureStruct.fields[FieldIndex.closureContext].type.unpacked,
+          signature.inputs[0]);
+
+      _visitArguments(node.arguments, signature, paramInfo, 1);
+    } else {
+      _visitArguments(node.arguments, signature, paramInfo, 0);
+    }
+    return translator.outputOrVoid(call(member.reference));
+  }
+
+  /// Compile a function invocation calling a closure in a member.
+  ///
+  /// Returns `null` when the call cannot be made because of a type mismatch
+  /// between the arguments and function parameters. This happens after TFA when
+  /// the code is unreachable.
+  w.ValueType? _tryGenerateDirectClosureInvocation(
+      FunctionInvocation node,
+      Member enclosingMember,
+      ClosureRepresentation representation,
+      int closureId) {
+    final Closures enclosingMemberClosures =
+        translator.getClosures(enclosingMember, findCaptures: true);
+    final lambda = enclosingMemberClosures.lambdas.values
+        .firstWhere((lambda) => lambda.index == closureId);
+
+    final lambdaDartType =
+        lambda.functionNode.computeFunctionType(Nullability.nonNullable);
+
+    if (!translator.typeEnvironment.isSubtypeOf(lambdaDartType,
+        dartTypeOf(node.receiver), SubtypeCheckMode.withNullabilities)) {
+      return null;
+    }
+
+    final w.BaseFunction lambdaFunction = translator.functions
+        .getLambdaFunction(lambda, enclosingMember, enclosingMemberClosures);
+    final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
+    final signature = lambdaFunction.type;
+    final closureStruct = representation.closureStruct;
+
+    // Evaluate receiver
+    if (paramInfo.takesContextOrReceiver) {
+      translateExpression(
+          node.receiver, w.RefType.def(closureStruct, nullable: false));
+      b.struct_get(closureStruct, FieldIndex.closureContext);
+      _visitArguments(node.arguments, signature, paramInfo, 1);
+    } else {
+      _visitArguments(node.arguments, signature, paramInfo, 0);
+    }
+
+    return translator.outputOrVoid(translator.callFunction(lambdaFunction, b));
+  }
+
+  w.ValueType _generateClosureInvocation(
+      FunctionInvocation node, ClosureRepresentation representation) {
+    final closureStruct = representation.closureStruct;
+
     // Evaluate receiver
     w.Local closureLocal =
         addLocal(w.RefType.def(closureStruct, nullable: false));
-    translateExpression(receiver, closureLocal.type);
+    translateExpression(node.receiver, closureLocal.type);
     b.local_tee(closureLocal);
     b.struct_get(closureStruct, FieldIndex.closureContext);
 
     // Type arguments
-    for (DartType typeArg in arguments.types) {
+    for (DartType typeArg in node.arguments.types) {
       types.makeType(this, typeArg);
     }
 
     // Positional arguments
-    for (Expression arg in arguments.positional) {
+    for (Expression arg in node.arguments.positional) {
       translateExpression(arg, translator.topInfo.nullableType);
     }
 
     // Named arguments
+    final List<String> argNames =
+        node.arguments.named.map((a) => a.name).toList()..sort();
     final Map<String, w.Local> namedLocals = {};
-    for (final namedArg in arguments.named) {
+    for (final namedArg in node.arguments.named) {
       final w.Local namedLocal = addLocal(translator.topInfo.nullableType);
       namedLocals[namedArg.name] = namedLocal;
       translateExpression(namedArg.value, namedLocal.type);
@@ -2500,8 +2539,8 @@ abstract class AstCodeGenerator
       b.local_get(namedLocals[name]!);
     }
 
-    final int vtableFieldIndex =
-        representation.fieldIndexForSignature(posArgCount, argNames);
+    final int vtableFieldIndex = representation.fieldIndexForSignature(
+        node.arguments.positional.length, argNames);
     final w.FunctionType functionType =
         representation.getVtableFieldType(vtableFieldIndex);
 
