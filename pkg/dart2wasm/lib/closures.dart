@@ -1167,6 +1167,9 @@ class Closures {
   /// does not populate [lambdas], [contexts], [captures], and
   /// [closurizedFunctions]. This mode is useful in the code generators that
   /// always have direct access to variables (instead of via a context).
+  ///
+  /// When `findCaptures` is `true`, the created [Lambda]s are also added to the
+  /// compilation queue.
   Closures(this.translator, this._member, {required bool findCaptures})
       : _nullableThisType = _member is Constructor || _member.isInstanceMember
             ? translator.preciseThisFor(_member, nullable: true) as w.RefType
@@ -1411,8 +1414,10 @@ class _CaptureFinder extends RecursiveVisitor {
       functionName = "$member closure $functionNodeName at ${node.location}";
     }
     final function = module.functions.define(type, functionName);
-    closures.lambdas[node] =
+    final lambda =
         Lambda._(node, function, _currentSource, closures.lambdas.length);
+    closures.lambdas[node] = lambda;
+    translator.functions.getLambdaFunction(lambda, member, closures);
 
     functionIsSyncStarOrAsync.add(node.asyncMarker == AsyncMarker.SyncStar ||
         node.asyncMarker == AsyncMarker.Async);
