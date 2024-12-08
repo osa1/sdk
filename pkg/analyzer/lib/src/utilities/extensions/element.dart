@@ -61,6 +61,68 @@ extension ConstructorElementExtension on ConstructorElement {
 }
 
 extension Element2Extension on Element2 {
+  List<Fragment> get fragments {
+    return [
+      for (Fragment? fragment = firstFragment;
+          fragment != null;
+          fragment = fragment.nextFragment)
+        fragment,
+    ];
+  }
+
+  /// Whether the element is effectively [internal].
+  bool get isInternal {
+    if (this case Annotatable annotatable) {
+      if (annotatable.metadata2.hasInternal) {
+        return true;
+      }
+    }
+    if (this case PropertyAccessorElement2 accessor) {
+      var variable = accessor.variable3;
+      if (variable != null && variable.metadata2.hasInternal) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Whether the element is effectively [protected].
+  bool get isProtected {
+    var self = this;
+    if (self is PropertyAccessorElement2 &&
+        self.enclosingElement2 is InterfaceElement2) {
+      if (self.metadata2.hasProtected) {
+        return true;
+      }
+      var variable = self.variable3;
+      if (variable != null && variable.metadata2.hasProtected) {
+        return true;
+      }
+    }
+    if (self is MethodElement2 &&
+        self.enclosingElement2 is InterfaceElement2 &&
+        self.metadata2.hasProtected) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Whether the element is effectively [visibleForTesting].
+  bool get isVisibleForTesting {
+    if (this case Annotatable annotatable) {
+      if (annotatable.metadata2.hasVisibleForTesting) {
+        return true;
+      }
+    }
+    if (this case PropertyAccessorElement2 accessor) {
+      var variable = accessor.variable3;
+      if (variable != null && variable.metadata2.hasVisibleForTesting) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   List<ElementAnnotation> get metadata {
     if (this case Annotatable annotatable) {
       return annotatable.metadata2.annotations;
@@ -128,55 +190,6 @@ extension ElementExtension on Element {
       return augmentable.augmentation;
     }
     return null;
-  }
-
-  /// Whether the element is effectively [internal].
-  bool get isInternal {
-    if (hasInternal) {
-      return true;
-    }
-    if (this case PropertyAccessorElement accessor) {
-      var variable = accessor.variable2;
-      if (variable != null && variable.hasInternal) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// Whether the element is effectively [protected].
-  bool get isProtected {
-    var self = this;
-    if (self is PropertyAccessorElement &&
-        self.enclosingElement3 is InterfaceElement) {
-      if (self.hasProtected) {
-        return true;
-      }
-      var variable = self.variable2;
-      if (variable != null && variable.hasProtected) {
-        return true;
-      }
-    }
-    if (self is MethodElement &&
-        self.enclosingElement3 is InterfaceElement &&
-        self.hasProtected) {
-      return true;
-    }
-    return false;
-  }
-
-  /// Whether the element is effectively [visibleForTesting].
-  bool get isVisibleForTesting {
-    if (hasVisibleForTesting) {
-      return true;
-    }
-    if (this case PropertyAccessorElement accessor) {
-      var variable = accessor.variable2;
-      if (variable != null && variable.hasVisibleForTesting) {
-        return true;
-      }
-    }
-    return false;
   }
 
   List<Element> get withAugmentations {
@@ -249,6 +262,12 @@ extension ElementOrNullExtension on Element? {
   }
 }
 
+extension EnumElement2Extension on EnumElement2 {
+  EnumElement get asElement {
+    return firstFragment as EnumElement;
+  }
+}
+
 extension EnumElementExtension on EnumElement {
   EnumElement2 get asElement2 {
     return (this as EnumElementImpl).element;
@@ -283,9 +302,27 @@ extension ExecutableElementOrNullExtension on ExecutableElement? {
   }
 }
 
+extension ExtensionElement2Extension on ExtensionElement2 {
+  ExtensionElement get asElement {
+    return firstFragment as ExtensionElement;
+  }
+}
+
 extension ExtensionElementExtension on ExtensionElement {
   ExtensionElement2 get asElement2 {
     return (this as ExtensionElementImpl).element;
+  }
+}
+
+extension ExtensionTypeElement2Extension on ExtensionTypeElement2 {
+  ExtensionTypeElement get asElement {
+    return firstFragment as ExtensionTypeElement;
+  }
+}
+
+extension FieldElement2Extension on FieldElement2 {
+  FieldElement get asElement {
+    return firstFragment as FieldElement;
   }
 }
 
@@ -418,6 +455,12 @@ extension MethodElementExtension on MethodElement {
   }
 }
 
+extension MixinElement2Extension on MixinElement2 {
+  MixinElement get asElement {
+    return firstFragment as MixinElement;
+  }
+}
+
 extension MixinElementExtension on MixinElement {
   MixinElement2 get asElement2 {
     return (this as MixinElementImpl).element;
@@ -450,6 +493,12 @@ extension PrefixElementExtension on PrefixElement {
   }
 }
 
+extension PropertyAccessorElement2Extension on PropertyAccessorElement2 {
+  PropertyAccessorElement get asElement {
+    return firstFragment as PropertyAccessorElement;
+  }
+}
+
 extension PropertyAccessorElementExtension on PropertyAccessorElement {
   PropertyAccessorElement2 get asElement2 {
     return switch (this) {
@@ -457,6 +506,12 @@ extension PropertyAccessorElementExtension on PropertyAccessorElement {
       PropertyAccessorMember member => member,
       _ => throw UnsupportedError('Unsupported type: $runtimeType'),
     };
+  }
+}
+
+extension TopLevelFunctionElementExtension on TopLevelFunctionElement {
+  FunctionElement get asElement {
+    return firstFragment as FunctionElement;
   }
 }
 
@@ -469,6 +524,18 @@ extension TopLevelVariableElement2Extension on TopLevelVariableElement2 {
 extension TopLevelVariableElementExtension on TopLevelVariableElement {
   TopLevelVariableElement2 get asElement2 {
     return (this as TopLevelVariableElementImpl).element;
+  }
+}
+
+extension TypeAliasElement2Extension on TypeAliasElement2 {
+  TypeAliasElement get asElement {
+    return firstFragment as TypeAliasElement;
+  }
+}
+
+extension TypeAliasElementExtension on TypeAliasElement {
+  TypeAliasElement2 get asElement2 {
+    return (this as TypeAliasElementImpl).element;
   }
 }
 

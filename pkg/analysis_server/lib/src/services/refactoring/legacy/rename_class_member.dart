@@ -221,13 +221,13 @@ class _BaseClassMemberValidator {
 
   void _checkClassAlreadyDeclares() {
     // check if there is a member with "newName" in the same ClassElement
-    for (var newNameMember in getChildren2(interfaceElement, name)) {
+    for (var newNameMember in getChildren(interfaceElement, name)) {
       result.addError(
         format(
           "{0} '{1}' already declares {2} with name '{3}'.",
           capitalize(interfaceElement.kind.displayName),
           interfaceElement.displayName,
-          getElementKindName2(newNameMember),
+          getElementKindName(newNameMember),
           name,
         ),
         newLocation_fromElement2(newNameMember),
@@ -244,7 +244,7 @@ class _BaseClassMemberValidator {
     // check shadowing in the hierarchy
     var declarations = await searchEngine.searchMemberDeclarations(name);
     for (var declaration in declarations) {
-      var nameElement = getSyntheticAccessorVariable2(declaration.element2);
+      var nameElement = getSyntheticAccessorVariable(declaration.element2);
       var nameClass = nameElement.enclosingElement2;
       // the renamed Element shadows a member of a superclass
       if (superClasses.contains(nameClass)) {
@@ -254,8 +254,8 @@ class _BaseClassMemberValidator {
                 ? "Renamed {0} will shadow {1} '{2}'."
                 : "Created {0} will shadow {1} '{2}'.",
             elementKind.displayName,
-            getElementKindName2(nameElement),
-            getElementQualifiedName2(nameElement),
+            getElementKindName(nameElement),
+            getElementQualifiedName(nameElement),
           ),
           newLocation_fromElement2(nameElement),
         );
@@ -266,8 +266,8 @@ class _BaseClassMemberValidator {
           format(
             "Renamed {0} will be shadowed by {1} '{2}'.",
             elementKind.displayName,
-            getElementKindName2(nameElement),
-            getElementQualifiedName2(nameElement),
+            getElementKindName(nameElement),
+            getElementQualifiedName(nameElement),
           ),
           newLocation_fromElement2(nameElement),
         );
@@ -411,7 +411,7 @@ class _RenameClassMemberValidator extends _BaseClassMemberValidator {
           format(
             "Usage of renamed {0} will be shadowed by {1} '{2}'.",
             elementKind.displayName,
-            getElementKindName2(localElement),
+            getElementKindName(localElement),
             localElement.displayName,
           ),
           newLocation_fromMatch(conflict.match),
@@ -479,7 +479,7 @@ class _RenameClassMemberValidator extends _BaseClassMemberValidator {
   Future<void> _prepareElements() async {
     var element = this.element;
     if (element is FieldElement2 || element is MethodElement2) {
-      elements = await getHierarchyMembers2(searchEngine, element);
+      elements = await getHierarchyMembers(searchEngine, element);
     } else {
       elements = {element};
     }
@@ -505,8 +505,8 @@ class _RenameClassMemberValidator extends _BaseClassMemberValidator {
       if (refLibrary != library) {
         var message = format(
           "Renamed {0} will be invisible in '{1}'.",
-          getElementKindName2(element),
-          getElementQualifiedName2(refLibrary),
+          getElementKindName(element),
+          getElementQualifiedName(refLibrary),
         );
         result.addError(message, newLocation_fromMatch(reference));
       }

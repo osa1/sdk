@@ -17,6 +17,7 @@ import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/source/source_range.dart';
 import 'package:analyzer/src/dart/element/element.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
 
 class ConflictValidatorVisitor extends RecursiveAstVisitor<void> {
   final RefactoringStatus result;
@@ -55,9 +56,10 @@ class ConflictValidatorVisitor extends RecursiveAstVisitor<void> {
           targetRange.contains(node.offset) &&
           !node.isQualified &&
           !_isNamedExpressionName(node)) {
-        nodeElement = getSyntheticAccessorVariable(nodeElement);
+        nodeElement =
+            getSyntheticAccessorVariable(nodeElement.asElement2!).asElement!;
         var nodeKind = nodeElement.kind.displayName;
-        var nodeName = getElementQualifiedName(nodeElement);
+        var nodeName = getElementQualifiedName(nodeElement.asElement2!);
         var nameElementSourceName = nodeElement.source!.shortName;
         var refKind = target.kind.displayName;
         var message =

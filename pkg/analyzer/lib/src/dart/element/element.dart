@@ -42,6 +42,7 @@ import 'package:analyzer/src/dart/element/type_provider.dart';
 import 'package:analyzer/src/dart/element/type_system.dart';
 import 'package:analyzer/src/dart/resolver/scope.dart'
     show Namespace, NamespaceBuilder;
+import 'package:analyzer/src/error/inference_error.dart';
 import 'package:analyzer/src/generated/engine.dart' show AnalysisContext;
 import 'package:analyzer/src/generated/source.dart' show DartUriResolver;
 import 'package:analyzer/src/generated/utilities_collection.dart';
@@ -52,7 +53,6 @@ import 'package:analyzer/src/summary2/export.dart';
 import 'package:analyzer/src/summary2/macro.dart';
 import 'package:analyzer/src/summary2/macro_application_error.dart';
 import 'package:analyzer/src/summary2/reference.dart';
-import 'package:analyzer/src/task/inference_error.dart';
 import 'package:analyzer/src/util/file_paths.dart' as file_paths;
 import 'package:analyzer/src/utilities/extensions/collection.dart';
 import 'package:analyzer/src/utilities/extensions/element.dart';
@@ -5594,14 +5594,14 @@ abstract class InstanceElementImpl2 extends ElementImpl2
   }
 
   @override
-  PropertyAccessorElement2? lookUpGetter2({
+  GetterElement? lookUpGetter2({
     required String name,
     required LibraryElement2 library,
   }) {
     return lookUpGetter(
       name: name,
       library: library.asElement,
-    )?.asElement2;
+    )?.asElement2 as GetterElement?;
   }
 
   @override
@@ -5631,6 +5631,17 @@ abstract class InstanceElementImpl2 extends ElementImpl2
   }) {
     return _implementationsOfSetter(name).firstWhereOrNull(
         (PropertyAccessorElement setter) => setter.isAccessibleIn(library));
+  }
+
+  @override
+  SetterElement? lookUpSetter2({
+    required String name,
+    required LibraryElement2 library,
+  }) {
+    return lookUpSetter(
+      name: name,
+      library: library.asElement,
+    )?.asElement2 as SetterElement?;
   }
 
   @override
@@ -10076,6 +10087,14 @@ class SuperFormalParameterElementImpl2 extends FormalParameterElementImpl
   FormalParameterElement? get superConstructorParameter2 {
     return firstFragment.superConstructorParameter?.asElement2;
   }
+
+  /// Return the index of this super-formal parameter among other super-formals.
+  int indexIn(ConstructorElementImpl2 enclosingElement) {
+    return enclosingElement.formalParameters
+        .whereType<SuperFormalParameterElementImpl2>()
+        .toList()
+        .indexOf(this);
+  }
 }
 
 class TopLevelFunctionElementImpl extends ExecutableElementImpl2
@@ -10513,8 +10532,13 @@ class TypeAliasElementImpl2 extends TypeDefiningElementImpl2
   }
 
   @override
-  Element2? get aliasedElement2 =>
-      (firstFragment.aliasedElement as Fragment?)?.element;
+  Element2? get aliasedElement2 {
+    switch (firstFragment.aliasedElement) {
+      case InstanceFragment instance:
+        return instance.element;
+    }
+    return null;
+  }
 
   @override
   DartType get aliasedType => firstFragment.aliasedType;
