@@ -2391,8 +2391,6 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
-    final w.StructType closureStruct = representation.closureStruct;
-
     final (Member, int)? directClosureCall =
         translator.directCallMetadata[node]?.targetClosure;
 
@@ -2404,7 +2402,6 @@ abstract class AstCodeGenerator
         directClosureCall.$1 != translator.objectNoSuchMethod) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
-      final receiverDartType = dartTypeOf(node.receiver);
 
       if (closureId == 0) {
         // The member itself is called as closure.
