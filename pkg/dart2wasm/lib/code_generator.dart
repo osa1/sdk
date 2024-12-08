@@ -213,12 +213,6 @@ abstract class AstCodeGenerator
     translator.membersBeingGenerated.remove(enclosingMember);
   }
 
-  void addNestedClosuresToCompilationQueue() {
-    for (Lambda lambda in closures.lambdas.values) {
-      translator.functions.getLambdaFunction(lambda, enclosingMember, closures);
-    }
-  }
-
   // Generate the body.
   void generateInternal();
 
@@ -3268,7 +3262,6 @@ class SynchronousProcedureCodeGenerator extends AstCodeGenerator {
 
     _implicitReturn();
     b.end();
-    addNestedClosuresToCompilationQueue();
   }
 }
 
@@ -3558,7 +3551,6 @@ class InitializerListCodeGenerator extends AstCodeGenerator {
       generateInitializerList();
     }
     b.end();
-    addNestedClosuresToCompilationQueue();
   }
 
   // Generates a constructor's initializer list method, and returns:
@@ -3937,7 +3929,6 @@ class StaticFieldInitializerCodeGenerator extends AstCodeGenerator {
     b.global_get(global);
     translator.convertType(b, global.type.type, outputs.single);
     b.end();
-    addNestedClosuresToCompilationQueue();
   }
 }
 

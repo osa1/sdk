@@ -605,7 +605,6 @@ abstract class ProcedureStateMachineEntryCodeGenerator
     if (context != null && context.isEmpty) context = context.parent;
 
     generateOuter(member.function, context, source);
-    addNestedClosuresToCompilationQueue();
   }
 }
 
