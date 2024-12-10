@@ -1271,9 +1271,6 @@ void Object::Init(IsolateGroup* isolate_group) {
   error_str = String::New("Branch offset overflow", Heap::kOld);
   *branch_offset_error_ =
       LanguageError::New(error_str, Report::kBailout, Heap::kOld);
-  error_str = String::New("Speculative inlining failed", Heap::kOld);
-  *speculative_inlining_error_ =
-      LanguageError::New(error_str, Report::kBailout, Heap::kOld);
   error_str = String::New("Background Compilation Failed", Heap::kOld);
   *background_compilation_error_ =
       LanguageError::New(error_str, Report::kBailout, Heap::kOld);
@@ -1397,8 +1394,6 @@ void Object::Init(IsolateGroup* isolate_group) {
   ASSERT(snapshot_writer_error_->IsLanguageError());
   ASSERT(!branch_offset_error_->IsSmi());
   ASSERT(branch_offset_error_->IsLanguageError());
-  ASSERT(!speculative_inlining_error_->IsSmi());
-  ASSERT(speculative_inlining_error_->IsLanguageError());
   ASSERT(!background_compilation_error_->IsSmi());
   ASSERT(background_compilation_error_->IsLanguageError());
   ASSERT(!out_of_memory_error_->IsSmi());
@@ -14212,7 +14207,7 @@ ObjectPtr Library::GetMetadata(const Object& declaration) const {
   }
   if (!value.IsSmi()) {
     // Metadata is already evaluated.
-    ASSERT(value.IsArray());
+    ASSERT(value.IsArray() || value.IsLanguageError());
     return value.ptr();
   }
   const auto& smi_value = Smi::Cast(value);
@@ -14223,7 +14218,8 @@ ObjectPtr Library::GetMetadata(const Object& declaration) const {
                 *this, kernel_offset,
                 /* is_annotations_offset = */ declaration.IsLibrary() ||
                     declaration.IsNamespace()));
-  if (evaluated_value.IsArray() || evaluated_value.IsNull()) {
+  if (evaluated_value.IsArray() || evaluated_value.IsNull() ||
+      evaluated_value.IsLanguageError()) {
     ASSERT(evaluated_value.ptr() != Object::empty_array().ptr());
     SafepointWriteRwLocker ml(thread, thread->isolate_group()->program_lock());
     MetadataMap map(metadata());
@@ -15148,6 +15144,7 @@ LibraryPtr Library::LookupLibrary(Thread* thread, const String& url) {
 
   // Use the libraries map to lookup the library by URL.
   Library& lib = Library::Handle(zone);
+  SafepointReadRwLocker ml(thread, thread->isolate_group()->program_lock());
   if (object_store->libraries_map() == Array::null()) {
     return Library::null();
   } else {
@@ -15280,6 +15277,7 @@ void Library::Register(Thread* thread) const {
   const String& lib_url = String::Handle(zone, url());
   ASSERT(Library::LookupLibrary(thread, lib_url) == Library::null());
   ASSERT(lib_url.HasHash());
+  SafepointWriteRwLocker ml(thread, isolate_group->program_lock());
   GrowableObjectArray& libs =
       GrowableObjectArray::Handle(zone, object_store->libraries());
   ASSERT(!libs.IsNull());
