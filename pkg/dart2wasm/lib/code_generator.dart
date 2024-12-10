@@ -2399,9 +2399,10 @@ abstract class AstCodeGenerator
       final closureId = directClosureCall.$2;
 
       if (closureId == 0) {
-        // The member itself is called as closure.
+        // The member is called as a closure (tear-off). Call the member
+        // directly.
         final returnType =
-            _tryGenerateMemberClosureInvocation(node, member, representation);
+            _tryGenerateTearOffClosureInvocation(node, member, representation);
         if (returnType != null) {
           return returnType;
         }
@@ -2423,7 +2424,7 @@ abstract class AstCodeGenerator
   /// Returns `null` when the call cannot be made because of a type mismatch
   /// between the arguments and member parameters. This happens after TFA when
   /// the code is unreachable.
-  w.ValueType? _tryGenerateMemberClosureInvocation(FunctionInvocation node,
+  w.ValueType? _tryGenerateTearOffClosureInvocation(FunctionInvocation node,
       Member member, ClosureRepresentation representation) {
     final lambdaDartType =
         member.function!.computeFunctionType(Nullability.nonNullable);
@@ -2484,14 +2485,11 @@ abstract class AstCodeGenerator
     final closureStruct = representation.closureStruct;
 
     // Evaluate receiver
-    if (paramInfo.takesContextOrReceiver) {
-      translateExpression(
-          node.receiver, w.RefType.def(closureStruct, nullable: false));
-      b.struct_get(closureStruct, FieldIndex.closureContext);
-      _visitArguments(node.arguments, signature, paramInfo, 1);
-    } else {
-      _visitArguments(node.arguments, signature, paramInfo, 0);
-    }
+    assert(paramInfo.takesContextOrReceiver);
+    translateExpression(
+        node.receiver, w.RefType.def(closureStruct, nullable: false));
+    b.struct_get(closureStruct, FieldIndex.closureContext);
+    _visitArguments(node.arguments, signature, paramInfo, 1);
 
     return translator.outputOrVoid(translator.callFunction(lambdaFunction, b));
   }
