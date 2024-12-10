@@ -2392,14 +2392,9 @@ abstract class AstCodeGenerator
     }
 
     final (Member, int)? directClosureCall =
-        translator.directCallMetadata[node]?.targetClosure;
+        translator.singleClosureTarget(node);
 
-    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
-    // `noSuchMethod` is also not allowed as `Null` inherits it.
-    if (directClosureCall != null &&
-        directClosureCall.$1.enclosingClass !=
-            translator.coreTypes.deprecatedNullClass &&
-        directClosureCall.$1 != translator.objectNoSuchMethod) {
+    if (directClosureCall != null) {
       final member = directClosureCall.$1;
       final closureId = directClosureCall.$2;
 

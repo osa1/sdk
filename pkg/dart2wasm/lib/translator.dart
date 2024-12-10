@@ -1044,6 +1044,24 @@ class Translator with KernelNodes {
     return directCallMetadata[node]?.targetMember;
   }
 
+  (Member, int)? singleClosureTarget(TreeNode node) {
+    final (Member, int)? directClosureCall =
+        directCallMetadata[node]?.targetClosure;
+
+    if (directClosureCall == null) {
+      return null;
+    }
+
+    // To avoid using the `Null` class, avoid devirtualizing to `Null` members.
+    // `noSuchMethod` is also not allowed as `Null` inherits it.
+    if (directClosureCall.$1.enclosingClass == coreTypes.deprecatedNullClass ||
+        directClosureCall.$1 == objectNoSuchMethod) {
+      return null;
+    }
+
+    return directClosureCall;
+  }
+
   bool canSkipImplicitCheck(VariableDeclaration node) {
     return inferredArgTypeMetadata[node]?.skipCheck ?? false;
   }
