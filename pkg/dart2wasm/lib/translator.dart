@@ -1110,8 +1110,6 @@ class Translator with KernelNodes {
         lambdaFunction,
       );
     }
-
-    return null;
   }
 
   bool canSkipImplicitCheck(VariableDeclaration node) {
