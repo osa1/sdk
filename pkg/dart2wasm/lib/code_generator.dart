@@ -2391,107 +2391,47 @@ abstract class AstCodeGenerator
       return translator.topInfo.nullableType;
     }
 
-    final (Member, int)? directClosureCall =
-        translator.singleClosureTarget(node);
+    final SingleClosureTarget? directClosureCall =
+        translator.singleClosureTarget(node, representation, typeContext);
 
     if (directClosureCall != null) {
-      final member = directClosureCall.$1;
-      final closureId = directClosureCall.$2;
-
-      if (closureId == 0) {
-        // The member is called as a closure (tear-off). Call the member
-        // directly.
-        final returnType =
-            _tryGenerateTearOffClosureInvocation(node, member, representation);
-        if (returnType != null) {
-          return returnType;
-        }
-      } else {
-        // A closure in the member is called.
-        final returnType = _tryGenerateDirectClosureInvocation(
-            node, member, representation, closureId - 1);
-        if (returnType != null) {
-          return returnType;
-        }
-      }
+      return _generateDirectClosureCall(
+          node, representation, directClosureCall);
     }
 
     return _generateClosureInvocation(node, representation);
   }
 
-  /// Compile a function invocation calling a closurized member.
-  ///
-  /// Returns `null` when the call cannot be made because of a type mismatch
-  /// between the arguments and member parameters. This happens after TFA when
-  /// the code is unreachable.
-  w.ValueType? _tryGenerateTearOffClosureInvocation(FunctionInvocation node,
-      Member member, ClosureRepresentation representation) {
-    final lambdaDartType =
-        member.function!.computeFunctionType(Nullability.nonNullable);
-
-    if (!translator.typeEnvironment.isSubtypeOf(lambdaDartType,
-        dartTypeOf(node.receiver), SubtypeCheckMode.withNullabilities)) {
-      return null;
-    }
-
-    final paramInfo = translator.paramInfoForDirectCall(member.reference);
-    final signature = translator.signatureForDirectCall(member.reference);
+  w.ValueType _generateDirectClosureCall(FunctionInvocation node,
+      ClosureRepresentation representation, SingleClosureTarget closureTarget) {
     final closureStruct = representation.closureStruct;
+    final closureStructRef = w.RefType.def(closureStruct, nullable: false);
+    final signature = closureTarget.signature;
+    final paramInfo = closureTarget.paramInfo;
+    final member = closureTarget.member;
+    final lambdaFunction = closureTarget.lambdaFunction;
 
-    if (paramInfo.takesContextOrReceiver) {
-      // Evaluate receiver
-      translateExpression(
-          node.receiver, w.RefType.def(closureStruct, nullable: false));
-      b.struct_get(closureStruct, FieldIndex.closureContext);
-      translator.convertType(
-          b,
-          closureStruct.fields[FieldIndex.closureContext].type.unpacked,
-          signature.inputs[0]);
-
-      _visitArguments(node.arguments, signature, paramInfo, 1);
+    if (lambdaFunction == null) {
+      if (paramInfo.takesContextOrReceiver) {
+        translateExpression(node.receiver, closureStructRef);
+        b.struct_get(closureStruct, FieldIndex.closureContext);
+        translator.convertType(
+            b,
+            closureStruct.fields[FieldIndex.closureContext].type.unpacked,
+            signature.inputs[0]);
+        _visitArguments(node.arguments, signature, paramInfo, 1);
+      } else {
+        _visitArguments(node.arguments, signature, paramInfo, 0);
+      }
+      return translator.outputOrVoid(call(member.reference));
     } else {
-      _visitArguments(node.arguments, signature, paramInfo, 0);
+      assert(paramInfo.takesContextOrReceiver);
+      translateExpression(node.receiver, closureStructRef);
+      b.struct_get(closureStruct, FieldIndex.closureContext);
+      _visitArguments(node.arguments, signature, paramInfo, 1);
+      return translator
+          .outputOrVoid(translator.callFunction(lambdaFunction, b));
     }
-    return translator.outputOrVoid(call(member.reference));
-  }
-
-  /// Compile a function invocation calling a closure in a member.
-  ///
-  /// Returns `null` when the call cannot be made because of a type mismatch
-  /// between the arguments and function parameters. This happens after TFA when
-  /// the code is unreachable.
-  w.ValueType? _tryGenerateDirectClosureInvocation(
-      FunctionInvocation node,
-      Member enclosingMember,
-      ClosureRepresentation representation,
-      int closureId) {
-    final Closures enclosingMemberClosures =
-        translator.getClosures(enclosingMember, findCaptures: true);
-    final lambda = enclosingMemberClosures.lambdas.values
-        .firstWhere((lambda) => lambda.index == closureId);
-
-    final lambdaDartType =
-        lambda.functionNode.computeFunctionType(Nullability.nonNullable);
-
-    if (!translator.typeEnvironment.isSubtypeOf(lambdaDartType,
-        dartTypeOf(node.receiver), SubtypeCheckMode.withNullabilities)) {
-      return null;
-    }
-
-    final w.BaseFunction lambdaFunction = translator.functions
-        .getLambdaFunction(lambda, enclosingMember, enclosingMemberClosures);
-    final paramInfo = ParameterInfo.fromLocalFunction(lambda.functionNode);
-    final signature = lambdaFunction.type;
-    final closureStruct = representation.closureStruct;
-
-    // Evaluate receiver
-    assert(paramInfo.takesContextOrReceiver);
-    translateExpression(
-        node.receiver, w.RefType.def(closureStruct, nullable: false));
-    b.struct_get(closureStruct, FieldIndex.closureContext);
-    _visitArguments(node.arguments, signature, paramInfo, 1);
-
-    return translator.outputOrVoid(translator.callFunction(lambdaFunction, b));
   }
 
   w.ValueType _generateClosureInvocation(

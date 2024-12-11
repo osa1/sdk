@@ -1044,7 +1044,10 @@ class Translator with KernelNodes {
     return directCallMetadata[node]?.targetMember;
   }
 
-  (Member, int)? singleClosureTarget(TreeNode node) {
+  /// Direct call information of a [FunctionInvocation] based on TFA's direct
+  /// call metadata.
+  SingleClosureTarget? singleClosureTarget(FunctionInvocation node,
+      ClosureRepresentation representation, StaticTypeContext typeContext) {
     final (Member, int)? directClosureCall =
         directCallMetadata[node]?.targetClosure;
 
@@ -1059,7 +1062,56 @@ class Translator with KernelNodes {
       return null;
     }
 
-    return directClosureCall;
+    final member = directClosureCall.$1;
+    final closureId = directClosureCall.$2;
+
+    if (closureId == 0) {
+      // The member is called as a closure (tear-off). We'll generate a direct
+      // call to the member.
+      final lambdaDartType =
+          member.function!.computeFunctionType(Nullability.nonNullable);
+
+      // Check that type of the receiver is a subtype of
+      if (!typeEnvironment.isSubtypeOf(
+          lambdaDartType,
+          node.receiver.getStaticType(typeContext),
+          SubtypeCheckMode.withNullabilities)) {
+        return null;
+      }
+
+      return SingleClosureTarget._(
+        member,
+        paramInfoForDirectCall(member.reference),
+        signatureForDirectCall(member.reference),
+        null,
+      );
+    } else {
+      // A closure in the member is called.
+      final Closures enclosingMemberClosures =
+          getClosures(member, findCaptures: true);
+      final Lambda lambda = enclosingMemberClosures.lambdas.values
+          .firstWhere((lambda) => lambda.index == closureId - 1);
+      final FunctionType lambdaDartType =
+          lambda.functionNode.computeFunctionType(Nullability.nonNullable);
+      final w.BaseFunction lambdaFunction =
+          functions.getLambdaFunction(lambda, member, enclosingMemberClosures);
+
+      if (!typeEnvironment.isSubtypeOf(
+          lambdaDartType,
+          node.receiver.getStaticType(typeContext),
+          SubtypeCheckMode.withNullabilities)) {
+        return null;
+      }
+
+      return SingleClosureTarget._(
+        member,
+        ParameterInfo.fromLocalFunction(lambda.functionNode),
+        lambdaFunction.type,
+        lambdaFunction,
+      );
+    }
+
+    return null;
   }
 
   bool canSkipImplicitCheck(VariableDeclaration node) {
@@ -2132,4 +2184,25 @@ class WasmTagImporter extends _WasmImporter<w.Tag> {
       String moduleName, String importName) {
     return importingModule.tags.import(moduleName, importName, definition.type);
   }
+}
+
+class SingleClosureTarget {
+  /// When `lambdaFunction` is null, the member being directly called. Otherwise
+  /// the enclosing member of the closure being called.
+  final Member member;
+
+  /// [ParameterInfo] specifying how to compile arguments to the closure or
+  /// member.
+  final ParameterInfo paramInfo;
+
+  /// Wasm function type that goes along with the [paramInfo] for compiling
+  /// arguments.
+  final w.FunctionType signature;
+
+  /// If the callee is a local function or function expression (intead of a
+  /// member), this Wasm function for it.
+  final w.BaseFunction? lambdaFunction;
+
+  SingleClosureTarget._(
+      this.member, this.paramInfo, this.signature, this.lambdaFunction);
 }
