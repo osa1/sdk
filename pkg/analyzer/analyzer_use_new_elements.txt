@@ -56,7 +56,6 @@ lib/src/dart/element/type_provider.dart
 lib/src/dart/element/type_schema.dart
 lib/src/dart/element/type_system.dart
 lib/src/dart/element/type_visitor.dart
-lib/src/dart/element/well_bounded.dart
 lib/src/dart/micro/analysis_context.dart
 lib/src/dart/micro/resolve_file.dart
 lib/src/dart/micro/utils.dart
@@ -84,7 +83,6 @@ lib/src/dart/resolver/postfix_expression_resolver.dart
 lib/src/dart/resolver/prefix_expression_resolver.dart
 lib/src/dart/resolver/prefixed_identifier_resolver.dart
 lib/src/dart/resolver/property_element_resolver.dart
-lib/src/dart/resolver/record_type_annotation_resolver.dart
 lib/src/dart/resolver/resolution_result.dart
 lib/src/dart/resolver/resolution_visitor.dart
 lib/src/dart/resolver/scope.dart
@@ -94,7 +92,6 @@ lib/src/dart/resolver/this_lookup.dart
 lib/src/dart/resolver/type_property_resolver.dart
 lib/src/dart/resolver/typed_literal_resolver.dart
 lib/src/dart/resolver/variable_declaration_resolver.dart
-lib/src/dart/resolver/yield_statement_resolver.dart
 lib/src/diagnostic/diagnostic_factory.dart
 lib/src/error/best_practices_verifier.dart
 lib/src/error/correct_override.dart

@@ -50,7 +50,7 @@ vars = {
   # Checked-in SDK version. The checked-in SDK is a Dart SDK distribution
   # in a cipd package used to run Dart scripts in the build and test
   # infrastructure, which is automatically built on the release commits.
-  "sdk_tag": "git_revision:7fce3544047c41018b8c00b4453c0262f463dd74",
+  "sdk_tag": "git_revision:c7e47c6c5df6ffa16d92704d5291b3387f974648",
 
   # co19 is a cipd package automatically generated for each co19 commit.
   # Use tests/co19/update.sh to update this hash.
@@ -98,7 +98,7 @@ vars = {
 
   # Prefer to use hashes of binaryen that have been reviewed & rolled into g3.
   "binaryen_rev" : "93883fde36ac158fd415dcd6dbd387dcfd928d3c",
-  "boringssl_rev": "bb13a96931dd90d6570fa6151e19ef426d5c641f",
+  "boringssl_rev": "57f525e425a95e7c89fa2df926fa93273bd47311",
   "browser-compat-data_tag": "ac8cae697014da1ff7124fba33b0b4245cc6cd1b", # v1.0.22
   "cpu_features_rev": "936b9ab5515dead115606559502e3864958f7f6e",
   "devtools_rev": "3e5327a02693b1405359dc5322d7f0a40151b9b7",
@@ -133,7 +133,7 @@ vars = {
   "dart_style_rev": "1de89eb3bd340315f9ff5f2afc319cc1d6131b8d", # disable tools/rev_sdk_deps.dart
   "dartdoc_rev": "c7f11603effa88ddacabfd555993f322fca8b3fe",
   "ecosystem_rev": "b4b2a438ff40cbbdf245b2854567316c1d24a394",
-  "flute_rev": "a531c96a8b43d015c6bfbbfe3ab54867b0763b8b",
+  "flute_rev": "e4ea0459a7debae5e9592c85141707b01fac86c9",
   "glob_rev": "994191a107b99a1911a3ef52ca238cd9305c8d37",
   "http_rev": "79470d014b467f01b0e7c5b63ab6c86b22dec8db",
   "http_multi_server_rev": "f6a748819139b8cbf513d5fc36b10676b0cb066f",
@@ -143,7 +143,7 @@ vars = {
   "markdown_rev": "4d5dbc659955973902f2585c54e94d453532db70",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   # dart-native-interop-team@ is rolling breaking changes manually while the assets features are in experimental.
-  "native_rev": "8ea1a9db0af42933eb22334c4506ca464d7237e9", # disable tools/rev_sdk_deps.dart
+  "native_rev": "da5dc148a0430b6c4224b59178db5385d79b2298", # disable tools/rev_sdk_deps.dart
   "package_config_rev": "76f2f6c245451da1fa24d7bbb00251b909e729a5",
   "pool_rev": "f85209d83cb0aa3c5612ed80de32df51ba580abd",
   "protobuf_rev": "da7279c56734cffed4deb1e3a6f93bdcefccf6b8",
