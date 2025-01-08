@@ -58,9 +58,6 @@ class Lists {
 // Base class for any wasm-backed typed data implementation class.
 abstract class WasmTypedDataBase {}
 
-// Base class for any wasm-backed string implementation class.
-abstract class WasmStringBase implements String {}
-
 // This function can be used to skip implicit or explicit checked down casts in
 // the parts of the core library implementation where we know by construction
 // the type of a value.
@@ -226,8 +223,4 @@ external void pushWasmArray<T>(
 );
 
 /// Similar to `pushWasmArray`, but for popping.
-///
-/// Note that when [T] is not nullable, this does not clear the popped element
-/// slot in the array, which may cause memory leaks. Callers should manually
-/// clear non-nullable reference element slots in the array when popping.
-external T popWasmArray<T>(WasmArray<T> array, int length);
+external T? popWasmArray<T>(WasmArray<T?> array, int length);

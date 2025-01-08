@@ -60,7 +60,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
       final s = o.toString();
       final jsString =
           s is JSStringImpl ? js.JSValue.boxT<JSAny?>(s.toExternRef) : s.toJS;
-      array[i] = jsString;
+      array.setUnchecked(i, jsString);
     }
     return JSStringImpl(
       js.JS<WasmExternRef?>("a => a.join('')", array.toExternRef),
@@ -105,15 +105,12 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   @override
   String operator +(String other) {
-    if (other is JSStringImpl) {
-      return JSStringImpl(
-        _jsStringConcatImport(toExternRef, other.toExternRef),
-      );
-    }
-
-    // TODO(joshualitt): Refactor `string_patch.dart` so we can directly
-    // allocate a string of the right size.
-    return js.jsStringToDartString(this) + other;
+    return JSStringImpl(
+      _jsStringConcatImport(
+        toExternRef,
+        unsafeCast<JSStringImpl>(other).toExternRef,
+      ),
+    );
   }
 
   @override
@@ -121,7 +118,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
     final otherLength = other.length;
     final length = this.length;
     if (otherLength > length) return false;
-    return other == substring(length - otherLength);
+    return other == _substringUnchecked(length - otherLength, length);
   }
 
   String _replaceJS(js.JSNativeRegExp jsRegExp, String replacement) =>
@@ -150,17 +147,15 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
           }
           return result.toString();
         }
-      } else if (from is JSStringImpl && to is JSStringImpl) {
+      } else {
         return JSStringImpl(
           js.JS<WasmExternRef?>(
             '(o, p, r) => o.split(p).join(r)',
             toExternRef,
-            from.toExternRef,
-            to.toExternRef,
+            unsafeCast<JSStringImpl>(from).toExternRef,
+            unsafeCast<JSStringImpl>(to).toExternRef,
           ),
         );
-      } else {
-        return split(from).join(to);
       }
     } else if (from is js.JSSyntaxRegExp) {
       return _replaceJS(js.regExpGetGlobalNative(from), _escapeReplacement(to));
@@ -732,45 +727,19 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
       return true;
     }
 
-    if (other is JSStringImpl) {
-      return _jsEquals(toExternRef, other.toExternRef);
-    }
-
-    final length = this.length;
-    if (other is String && length == other.length) {
-      for (int i = 0; i < length; i++) {
-        if (_codeUnitAtUnchecked(i) != other.codeUnitAt(i)) {
-          return false;
-        }
-      }
-      return true;
+    if (other is String) {
+      return _jsEquals(
+        toExternRef,
+        unsafeCast<JSStringImpl>(other).toExternRef,
+      );
     }
 
     return false;
   }
 
   @override
-  int compareTo(String other) {
-    if (other is JSStringImpl) {
-      return _jsCompare(toExternRef, other.toExternRef);
-    }
-    final otherLength = other.length;
-    final length = this.length;
-    final len = (length < otherLength) ? length : otherLength;
-    for (int i = 0; i < len; i++) {
-      int thisCodeUnit = _codeUnitAtUnchecked(i);
-      int otherCodeUnit = other.codeUnitAt(i);
-      if (thisCodeUnit < otherCodeUnit) {
-        return -1;
-      }
-      if (thisCodeUnit > otherCodeUnit) {
-        return 1;
-      }
-    }
-    if (length < otherLength) return -1;
-    if (length > otherLength) return 1;
-    return 0;
-  }
+  int compareTo(String other) =>
+      _jsCompare(toExternRef, unsafeCast<JSStringImpl>(other).toExternRef);
 
   @override
   String toString() => this;
