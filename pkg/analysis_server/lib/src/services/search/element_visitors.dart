@@ -2,10 +2,13 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/visitor.dart';
 import 'package:analyzer/dart/element/visitor2.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
 
 /// Return the [Element] that is either [root], or one of its direct or
 /// indirect children, and has the given [nameOffset].
@@ -21,6 +24,11 @@ Element? findElementByNameOffset(Element? root, int nameOffset) {
   }
   return null;
 }
+
+/// Return the [Element2] that is either [root], or one of its direct or
+/// indirect children, and has the given [nameOffset].
+Element2? findElementByNameOffset2(Element2? root, int nameOffset) =>
+    findElementByNameOffset(root.asElement, nameOffset).asElement2;
 
 /// Uses [processor] to visit all of the children of [element].
 /// If [processor] returns `true`, then children of a child are visited too.

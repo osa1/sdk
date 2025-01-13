@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/src/dart/ast/ast.dart';
@@ -24,7 +26,19 @@ Element? getElementOfNode(AstNode? node) {
   if (node is StringLiteral && node.parent is UriBasedDirective) {
     return null;
   }
-  var element = ElementLocator.locate(node);
+
+  Element? element;
+  switch (node) {
+    case ExportDirective():
+      element = node.element;
+    case ImportDirective():
+      element = node.element;
+    case PartOfDirective():
+      element = node.element;
+    default:
+      element = ElementLocator.locate2(node).asElement;
+  }
+
   if (node is SimpleIdentifier && element is PrefixElement) {
     var parent = node.parent;
     if (parent is ImportDirective) {
@@ -33,6 +47,7 @@ Element? getElementOfNode(AstNode? node) {
       element = _getImportElementInfo(node);
     }
   }
+
   return element;
 }
 

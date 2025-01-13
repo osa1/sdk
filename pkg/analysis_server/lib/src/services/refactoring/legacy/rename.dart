@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'package:analysis_server/src/protocol_server.dart' hide Element;
 import 'package:analysis_server/src/services/correction/status.dart';
 import 'package:analysis_server/src/services/correction/util.dart';
@@ -29,14 +31,6 @@ class RenameProcessor {
     this.change,
     this.newName,
   );
-
-  /// Add the edit that updates the [element] declaration.
-  void addDeclarationEdit(Element? element) {
-    if (element != null && workspace.containsElement(element)) {
-      var edit = newSourceEdit_range(range.elementName(element), newName);
-      doSourceChange_addElementEdit(change, element, edit);
-    }
-  }
 
   /// Add the edit that updates the [element] declaration.
   void addDeclarationEdit2(Element2? element) {
@@ -70,14 +64,6 @@ class RenameProcessor {
       }
       reference.addEdit(change, newName);
     }
-  }
-
-  /// Update the [element] declaration and reference to it.
-  Future<void> renameElement(Element element) {
-    addDeclarationEdit(element);
-    return workspace.searchEngine
-        .searchReferences(element.asElement2!)
-        .then(addReferenceEdits);
   }
 
   /// Update the [element] declaration and references to it.

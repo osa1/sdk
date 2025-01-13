@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'dart:collection';
 import 'dart:typed_data';
 
@@ -561,11 +563,11 @@ class ClassElementImpl extends ClassOrMixinElementImpl
       var hasMixinWithInstanceVariables = mixins.any(typeHasInstanceVariables);
       implicitConstructor.isConst =
           superclassConstructor.isConst && !hasMixinWithInstanceVariables;
-      List<ParameterElement> superParameters = superclassConstructor.parameters;
+      var superParameters = superclassConstructor.parameters;
       int count = superParameters.length;
       var argumentsForSuperInvocation = <ExpressionImpl>[];
       if (count > 0) {
-        var implicitParameters = <ParameterElement>[];
+        var implicitParameters = <ParameterElementImpl>[];
         for (int i = 0; i < count; i++) {
           ParameterElement superParameter = superParameters[i];
           ParameterElementImpl implicitParameter;
@@ -1189,7 +1191,7 @@ class CompilationUnitElementImpl extends UriReferencedElementImpl
   }
 
   @override
-  ClassElement? getClass(String className) {
+  ClassElementImpl? getClass(String className) {
     for (var class_ in classes) {
       if (class_.name == className) {
         return class_;
@@ -3466,39 +3468,6 @@ class ElementLocationImpl implements ElementLocation {
     _components = _decode(encoding);
   }
 
-  /// Initialize a newly created location from the given [components].
-  ElementLocationImpl.con3(List<String> components) {
-    _components = components;
-  }
-
-  /// Initialize a newly created location to represent the given [element].
-  ElementLocationImpl.fromElement(Element2 element) {
-    List<String> components = <String>[];
-    Element2? ancestor = element;
-    while (ancestor != null) {
-      if (ancestor is! ElementImpl2) {
-        if (ancestor is LibraryElementImpl) {
-          components.insert(0, ancestor.identifier);
-        } else if (ancestor is AugmentableElement) {
-          components.insert(0, ancestor.identifier);
-        } else {
-          throw '${ancestor.runtimeType} is not an ElementImpl2';
-        }
-        ancestor = ancestor.enclosingElement2;
-      } else {
-        components.insert(0, ancestor.identifier);
-        if (ancestor is LocalFunctionElementImpl) {
-          ancestor = (ancestor.wrappedElement._enclosingElement3
-                  as ExecutableElementImpl)
-              .element;
-        } else {
-          ancestor = ancestor.enclosingElement2;
-        }
-      }
-    }
-    _components = components.toFixedList();
-  }
-
   @override
   List<String> get components => _components;
 
@@ -3682,7 +3651,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
     implements ExecutableElement, ExecutableFragment {
   /// A list containing all of the parameters defined by this executable
   /// element.
-  List<ParameterElement> _parameters = const [];
+  List<ParameterElementImpl> _parameters = const [];
 
   /// The inferred return type of this executable element.
   DartType? _returnType;
@@ -3710,8 +3679,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   }
 
   @override
-  List<FormalParameterFragment> get formalParameters =>
-      parameters.cast<FormalParameterFragment>();
+  List<ParameterElementImpl> get formalParameters => parameters;
 
   @override
   bool get hasImplicitReturnType {
@@ -3805,16 +3773,16 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   }
 
   @override
-  List<ParameterElement> get parameters {
+  List<ParameterElementImpl> get parameters {
     linkedData?.read(this);
     return _parameters;
   }
 
   /// Set the parameters defined by this executable element to the given
   /// [parameters].
-  set parameters(List<ParameterElement> parameters) {
-    for (ParameterElement parameter in parameters) {
-      (parameter as ParameterElementImpl).enclosingElement3 = this;
+  set parameters(List<ParameterElementImpl> parameters) {
+    for (var parameter in parameters) {
+      parameter.enclosingElement3 = this;
     }
     _parameters = parameters;
   }
@@ -4417,6 +4385,7 @@ class FormalParameterElementImpl extends PromotableElementImpl2
     with
         FragmentedAnnotatableElementMixin<FormalParameterFragment>,
         FragmentedElementMixin<FormalParameterFragment>,
+        FormalParameterElementMixin,
         _NonTopLevelVariableOrParameter
     implements FormalParameterElementOrMember {
   final ParameterElementImpl wrappedElement;
@@ -4509,9 +4478,7 @@ class FormalParameterElementImpl extends PromotableElementImpl2
   ElementKind get kind => ElementKind.PARAMETER;
 
   @override
-  LibraryElement2 get library2 =>
-      wrappedElement.thisOrAncestorOfType<LibraryElementImpl>()
-          as LibraryElement2;
+  LibraryElement2? get library2 => wrappedElement.library2;
 
   @override
   String? get name3 => wrappedElement.name;
@@ -4528,17 +4495,14 @@ class FormalParameterElementImpl extends PromotableElementImpl2
   List<TypeParameterElement2> get typeParameters2 => const [];
 
   @override
+  DartType get typeShared => type;
+
+  @override
   Element? get _enclosingFunction => wrappedElement._enclosingElement3;
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
     return visitor.visitFormalParameterElement(this);
-  }
-
-  @override
-  void appendToWithoutDelimiters2(StringBuffer buffer) {
-    // TODO(augmentations): Implement the merge of formal parameters.
-    wrappedElement.appendToWithoutDelimiters(buffer);
   }
 
   @override
@@ -4554,6 +4518,23 @@ class FormalParameterElementImpl extends PromotableElementImpl2
   // firstFragment.typeParameters
   //     .map((fragment) => (fragment as TypeParameterElementImpl).element)
   //     .toList();
+}
+
+/// A mixin that provides a common implementation for methods defined in
+/// [FormalParameterElement].
+mixin FormalParameterElementMixin implements FormalParameterElement {
+  @override
+  void appendToWithoutDelimiters2(StringBuffer buffer) {
+    buffer.write(
+      type.getDisplayString(),
+    );
+    buffer.write(' ');
+    buffer.write(displayName);
+    if (defaultValueCode != null) {
+      buffer.write(' = ');
+      buffer.write(defaultValueCode);
+    }
+  }
 }
 
 abstract class FormalParameterElementOrMember
@@ -4892,8 +4873,10 @@ mixin FragmentedAnnotatableElementMixin<E extends Fragment>
       -1, metadata.cast<ElementAnnotationImpl>(), () => sinceSdkVersion);
 
   Version? get sinceSdkVersion {
-    var annotations = metadata.cast<ElementAnnotationImpl>();
-    return SinceSdkVersionComputer.fromAnnotations(annotations);
+    if (this is Element2) {
+      return SinceSdkVersionComputer().compute2(this as Element2);
+    }
+    return null;
   }
 }
 
@@ -5619,7 +5602,7 @@ abstract class InstanceElementImpl2 extends ElementImpl2
   @override
   List<TypeParameterElementImpl2> get typeParameters2 =>
       firstFragment.typeParameters
-          .map((fragment) => (fragment as TypeParameterElementImpl).element)
+          .map((fragment) => fragment.element)
           .toList();
 
   @override
@@ -5917,11 +5900,11 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
 
   /// The non-nullable instance of this element, without alias.
   /// Should be used only when the element has no type parameters.
-  InterfaceType? _nonNullableInstance;
+  InterfaceTypeImpl? _nonNullableInstance;
 
   /// The nullable instance of this element, without alias.
   /// Should be used only when the element has no type parameters.
-  InterfaceType? _nullableInstance;
+  InterfaceTypeImpl? _nullableInstance;
 
   List<ConstructorElementImpl> _constructors = _Sentinel.constructorElement;
 
@@ -6094,7 +6077,7 @@ abstract class InterfaceElementImpl extends InstanceElementImpl
   }
 
   @override
-  InterfaceType instantiate({
+  InterfaceTypeImpl instantiate({
     required List<DartType> typeArguments,
     required NullabilitySuffix nullabilitySuffix,
   }) {
@@ -7107,7 +7090,7 @@ class LibraryElementImpl extends ElementImpl
   }
 
   @override
-  ClassElement? getClass(String name) {
+  ClassElementImpl? getClass(String name) {
     for (var unitElement in units) {
       var element = unitElement.getClass(name);
       if (element != null) {
@@ -9877,7 +9860,7 @@ class PropertyAccessorElementImpl_ImplicitSetter
   Element get nonSynthetic => variable2;
 
   @override
-  List<ParameterElement> get parameters {
+  List<ParameterElementImpl> get parameters {
     if (_parameters.isNotEmpty) {
       return _parameters;
     }
@@ -10872,7 +10855,7 @@ class TypeParameterElementImpl extends ElementImpl
     // chain will have their `_element` set to the newly created element.
     return TypeParameterElementImpl2(
       firstFragment: firstFragment,
-      name3: firstFragment.name,
+      name3: firstFragment.name.nullIfEmpty,
       bound: firstFragment.bound,
     );
   }
@@ -10992,7 +10975,7 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
   final TypeParameterElementImpl firstFragment;
 
   @override
-  final String name3;
+  final String? name3;
 
   @override
   DartType? bound;
@@ -11011,6 +10994,9 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
 
   @override
   TypeParameterElement2 get baseElement => this;
+
+  @override
+  DartType? get boundShared => bound;
 
   bool get isLegacyCovariant => firstFragment.isLegacyCovariant;
 
@@ -11056,7 +11042,7 @@ mixin TypeParameterizedElementMixin on ElementImpl
         _ExistingElementImpl,
         TypeParameterizedElement,
         TypeParameterizedFragment {
-  List<TypeParameterElement> _typeParameters = const [];
+  List<TypeParameterElementImpl> _typeParameters = const [];
 
   @override
   List<Fragment> get children3 => children.whereType<Fragment>().toList();
@@ -11070,14 +11056,14 @@ mixin TypeParameterizedElementMixin on ElementImpl
   ElementLinkedData? get linkedData;
 
   @override
-  List<TypeParameterElement> get typeParameters {
+  List<TypeParameterElementImpl> get typeParameters {
     linkedData?.read(this);
     return _typeParameters;
   }
 
-  set typeParameters(List<TypeParameterElement> typeParameters) {
+  set typeParameters(List<TypeParameterElementImpl> typeParameters) {
     for (var typeParameter in typeParameters) {
-      (typeParameter as TypeParameterElementImpl).enclosingElement3 = this;
+      typeParameter.enclosingElement3 = this;
     }
     _typeParameters = typeParameters;
   }

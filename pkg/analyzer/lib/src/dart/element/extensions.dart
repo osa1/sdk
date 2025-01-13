@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
@@ -203,9 +205,9 @@ extension LibraryExtension2 on LibraryElement2? {
       this?.featureSet.isEnabled(Feature.wildcard_variables) ?? false;
 }
 
-extension ParameterElementExtensions on ParameterElement {
+extension ParameterElementExtension on ParameterElement {
   /// Return [ParameterElement] with the specified properties replaced.
-  ParameterElement copyWith({
+  ParameterElementImpl copyWith({
     DartType? type,
     ParameterKind? kind,
     bool? isCovariant,
@@ -216,6 +218,15 @@ extension ParameterElementExtensions on ParameterElement {
       // ignore: deprecated_member_use_from_same_package
       kind ?? parameterKind,
     )..isExplicitlyCovariant = isCovariant ?? this.isCovariant;
+  }
+
+  /// Returns `this`, converted to a [ParameterElementImpl] if it isn't one
+  /// already.
+  ParameterElementImpl toImpl() {
+    return switch (this) {
+      ParameterElementImpl p => p,
+      _ => copyWith(),
+    };
   }
 }
 
@@ -264,5 +275,11 @@ extension RecordTypeExtension on RecordType {
       if (position != null) return position - 1;
     }
     return null;
+  }
+}
+
+extension TypeParameterElementImplExtension on TypeParameterElementImpl {
+  bool get isWildcardVariable {
+    return name == '_' && library.hasWildcardVariablesFeatureEnabled;
   }
 }

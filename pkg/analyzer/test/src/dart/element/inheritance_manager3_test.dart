@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// ignore_for_file: analyzer_use_new_elements
+
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
@@ -2398,6 +2400,28 @@ abstract class B extends A {}
     var T = foo.typeParameters.single;
     var returnType = foo.returnType;
     expect(returnType.element, same(T));
+  }
+
+  test_getMember_method_covariantAfterSubstitutedParameter_merged() async {
+    await resolveTestCode(r'''
+class A<T> {
+  void foo<U>(covariant Object a, U b, int c) {}
+}
+
+class B extends A<int> implements C {}
+
+class C {
+  void foo<U>(Object a, U b, covariant Object c) {}
+}
+''');
+    var member = manager.getMember2(
+      findElement.classOrMixin('B'),
+      Name(null, 'foo'),
+      concrete: true,
+    )!;
+    expect(member.parameters[0].isCovariant, isTrue);
+    expect(member.parameters[1].isCovariant, isFalse);
+    expect(member.parameters[2].isCovariant, isTrue);
   }
 
   test_getMember_method_covariantByDeclaration_inherited() async {
