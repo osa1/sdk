@@ -2056,13 +2056,14 @@ class _Utf8Decoder {
       end = length;
     }
 
+    final offsetInBytes = bytes.offsetInBytes;
     final actualStart = start;
 
     // Skip initial BOM.
-    start = skipBomSingle(
+    start += skipBomSingle(
       bytes.data,
-      bytes.offsetInBytes + start,
-      bytes.offsetInBytes + end,
+      offsetInBytes + start,
+      offsetInBytes + end,
     );
 
     // Special case empty input.
@@ -2071,8 +2072,8 @@ class _Utf8Decoder {
     // Scan input to determine size and appropriate decoder.
     final int size = scan(
       bytes.data,
-      bytes.offsetInBytes + start,
-      bytes.offsetInBytes + end,
+      offsetInBytes + start,
+      offsetInBytes + end,
     );
     final int flags = _scanFlags;
 
@@ -2082,7 +2083,7 @@ class _Utf8Decoder {
       OneByteString result = OneByteString.withLength(size);
       oneByteStringArray(
         result,
-      ).copy(0, bytes.data, bytes.offsetInBytes + start, size);
+      ).copy(0, bytes.data, offsetInBytes + start, size);
       return result;
     }
 
@@ -2146,22 +2147,20 @@ class _Utf8Decoder {
       start = 0;
     }
 
+    final offsetInBytes = bytes.offsetInBytes;
+
     // Skip initial BOM.
-    start = skipBomChunked(
+    start += skipBomChunked(
       bytes.data,
-      bytes.offsetInBytes + start,
-      bytes.offsetInBytes + end,
+      offsetInBytes + start,
+      offsetInBytes + end,
     );
 
     // Special case empty input.
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    int size = scan(
-      bytes.data,
-      bytes.offsetInBytes + start,
-      bytes.offsetInBytes + end,
-    );
+    int size = scan(bytes.data, offsetInBytes + start, offsetInBytes + end);
     int flags = _scanFlags;
 
     // Adjust scan flags and size based on carry-over state.
@@ -2259,9 +2258,9 @@ class _Utf8Decoder {
         bytes.readUnsigned(start) == 0xEF &&
         bytes.readUnsigned(start + 1) == 0xBB &&
         bytes.readUnsigned(start + 2) == 0xBF) {
-      return start + 3;
+      return 3;
     }
-    return start;
+    return 0;
   }
 
   @pragma("wasm:prefer-inline")
@@ -2269,20 +2268,20 @@ class _Utf8Decoder {
     assert(start <= end);
     int bomIndex = _bomIndex;
     // Already skipped?
-    if (bomIndex == -1) return start;
+    if (bomIndex == -1) return 0;
 
     const bomValues = <int>[0xEF, 0xBB, 0xBF];
-    int i = start;
+    int i = 0;
     while (bomIndex < 3) {
-      if (i == end) {
+      if (start + i == end) {
         // Unfinished BOM.
         _bomIndex = bomIndex;
-        return start;
+        return 0;
       }
-      if (bytes.readUnsigned(i++) != bomValues[bomIndex++]) {
+      if (bytes.readUnsigned(start + i++) != bomValues[bomIndex++]) {
         // No BOM.
         _bomIndex = -1;
-        return start;
+        return 0;
       }
     }
     // Complete BOM.
