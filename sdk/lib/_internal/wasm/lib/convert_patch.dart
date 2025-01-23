@@ -1989,11 +1989,12 @@ class _Utf8Decoder {
     _bomIndex = -1;
   }
 
-  int scan(U8List bytes, int start, int end) {
+  @pragma("wasm:prefer-inline")
+  int scan(WasmArray<WasmI8> bytes, int start, int end) {
     int size = 0;
     int flags = 0;
     for (int i = start; i < end; i++) {
-      int t = scanTable.readUnsigned(bytes.getUnchecked(i));
+      int t = scanTable.readUnsigned(bytes.readUnsigned(i));
       size += t & sizeMask;
       flags |= t;
     }
@@ -2058,13 +2059,21 @@ class _Utf8Decoder {
     final actualStart = start;
 
     // Skip initial BOM.
-    start = skipBomSingle(bytes, start, end);
+    start = skipBomSingle(
+      bytes.data,
+      bytes.offsetInBytes + start,
+      bytes.offsetInBytes + end,
+    );
 
     // Special case empty input.
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    final int size = scan(bytes, start, end);
+    final int size = scan(
+      bytes.data,
+      bytes.offsetInBytes + start,
+      bytes.offsetInBytes + end,
+    );
     final int flags = _scanFlags;
 
     if (flags == 0) {
@@ -2080,10 +2089,20 @@ class _Utf8Decoder {
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(bytes, start, end, size);
+      result = decode8(
+        bytes.data,
+        bytes.offsetInElements + start,
+        bytes.offsetInElements + end,
+        size,
+      );
     } else {
       // Arbitrary Unicode.
-      result = decode16(bytes, start, end, size);
+      result = decode16(
+        bytes.data,
+        bytes.offsetInElements + start,
+        bytes.offsetInElements + end,
+        size,
+      );
     }
     if (_state == accept) {
       return result;
@@ -2128,13 +2147,21 @@ class _Utf8Decoder {
     }
 
     // Skip initial BOM.
-    start = skipBomChunked(bytes, start, end);
+    start = skipBomChunked(
+      bytes.data,
+      bytes.offsetInBytes + start,
+      bytes.offsetInBytes + end,
+    );
 
     // Special case empty input.
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    int size = scan(bytes, start, end);
+    int size = scan(
+      bytes.data,
+      bytes.offsetInBytes + start,
+      bytes.offsetInBytes + end,
+    );
     int flags = _scanFlags;
 
     // Adjust scan flags and size based on carry-over state.
@@ -2178,12 +2205,13 @@ class _Utf8Decoder {
     // Do not include any final, incomplete character in size.
     int extensionCount = 0;
     int i = end - 1;
-    while (i >= start && (bytes[i] & 0xC0) == 0x80) {
+    while (i >= start && (bytes.getUnchecked(i) & 0xC0) == 0x80) {
       extensionCount++;
       i--;
     }
-    if (i >= start && bytes[i] >= ((~0x3F >> extensionCount) & 0xFF)) {
-      size -= bytes[i] >= 0xF0 ? 2 : 1;
+    if (i >= start &&
+        bytes.getUnchecked(i) >= ((~0x3F >> extensionCount) & 0xFF)) {
+      size -= bytes.getUnchecked(i) >= 0xF0 ? 2 : 1;
     }
 
     final int carryOverState = _state;
@@ -2191,10 +2219,20 @@ class _Utf8Decoder {
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(bytes, start, end, size);
+      result = decode8(
+        bytes.data,
+        bytes.offsetInElements + start,
+        bytes.offsetInElements + end,
+        size,
+      );
     } else {
       // Arbitrary Unicode.
-      result = decode16(bytes, start, end, size);
+      result = decode16(
+        bytes.data,
+        bytes.offsetInElements + start,
+        bytes.offsetInElements + end,
+        size,
+      );
     }
     if (!isErrorState(_state)) {
       return result;
@@ -2215,17 +2253,19 @@ class _Utf8Decoder {
     return result;
   }
 
-  int skipBomSingle(U8List bytes, int start, int end) {
+  @pragma("wasm:prefer-inline")
+  int skipBomSingle(WasmArray<WasmI8> bytes, int start, int end) {
     if (end - start >= 3 &&
-        bytes.getUnchecked(start) == 0xEF &&
-        bytes.getUnchecked(start + 1) == 0xBB &&
-        bytes.getUnchecked(start + 2) == 0xBF) {
+        bytes.readUnsigned(start) == 0xEF &&
+        bytes.readUnsigned(start + 1) == 0xBB &&
+        bytes.readUnsigned(start + 2) == 0xBF) {
       return start + 3;
     }
     return start;
   }
 
-  int skipBomChunked(U8List bytes, int start, int end) {
+  @pragma("wasm:prefer-inline")
+  int skipBomChunked(WasmArray<WasmI8> bytes, int start, int end) {
     assert(start <= end);
     int bomIndex = _bomIndex;
     // Already skipped?
@@ -2239,7 +2279,7 @@ class _Utf8Decoder {
         _bomIndex = bomIndex;
         return start;
       }
-      if (bytes.getUnchecked(i++) != bomValues[bomIndex++]) {
+      if (bytes.readUnsigned(i++) != bomValues[bomIndex++]) {
         // No BOM.
         _bomIndex = -1;
         return start;
@@ -2251,26 +2291,26 @@ class _Utf8Decoder {
     return i;
   }
 
-  String decode8(U8List bytes, int start, int end, int size) {
+  String decode8(WasmArray<WasmI8> bytes, int start, int end, int size) {
     assert(start < end);
-    OneByteString result = OneByteString.withLength(size);
+    WasmArray<WasmI8> result = WasmArray(size);
     int i = start;
     int j = 0;
     if (_state == X1) {
       // Half-way though 2-byte sequence
       assert(_charOrIndex == 2 || _charOrIndex == 3);
-      final int e = bytes.getUnchecked(i++) ^ 0x80;
+      final int e = bytes.readUnsigned(i++) ^ 0x80;
       if (e >= 0x40) {
         _state = errorMissingExtension;
         _charOrIndex = i - 1;
         return "";
       }
-      result.setUnchecked(j++, (_charOrIndex << 6) | e);
+      result.write(j++, (_charOrIndex << 6) | e);
       _state = accept;
     }
     assert(_state == accept);
     while (i < end) {
-      int byte = bytes.getUnchecked(i++);
+      int byte = bytes.readUnsigned(i++);
       if (byte >= 0x80) {
         if (byte < 0xC0) {
           _state = errorUnexpectedExtension;
@@ -2283,7 +2323,7 @@ class _Utf8Decoder {
           _charOrIndex = byte & 0x1F;
           break;
         }
-        final int e = bytes.getUnchecked(i++) ^ 0x80;
+        final int e = bytes.readUnsigned(i++) ^ 0x80;
         if (e >= 0x40) {
           _state = errorMissingExtension;
           _charOrIndex = i - 1;
@@ -2291,7 +2331,7 @@ class _Utf8Decoder {
         }
         byte = (byte << 6) | e;
       }
-      result.setUnchecked(j++, byte);
+      result.write(j++, byte);
     }
     // Output size must match, unless we are doing single conversion and are
     // inside an unfinished sequence (which will trigger an error later).
@@ -2300,18 +2340,45 @@ class _Utf8Decoder {
           ? (j == size - 1 || j == size - 2)
           : (j == size),
     );
-    return result;
+    return OneByteString.withData(result);
   }
 
-  String decode16(U8List bytes, int start, int end, int size) {
+  // This table is the Wasm array version of `_Utf8Decoder.transitionTable`,
+  // refer to the original type for documentation of the values.
+  static const _transitionTable = const ImmutableWasmArray<WasmI8>.literal([
+    32, 0, 48, 58, 88, 69, 67, 67, 67, 67, 67, 78, 58, 108, 68, 98, 32, 0, //
+    48, 58, 88, 69, 67, 67, 67, 67, 67, 78, 118, 108, 68, 98, 32, 0, 48, 58, //
+    88, 69, 67, 67, 67, 67, 67, 78, 58, 108, 68, 98, 32, 65, 65, 65, 65, 65, //
+    0, 0, 0, 0, 0, 65, 65, 65, 65, 65, 48, 48, 48, 48, 48, 65, 65, 65, 65, //
+    65, 58, 58, 58, 58, 58, 65, 65, 65, 65, 65, 71, 71, 48, 48, 48, 65, 65, //
+    65, 65, 65, 48, 48, 75, 75, 75, 65, 65, 65, 65, 65, 71, 58, 58, 58, 58, //
+    65, 65, 65, 65, 65, 58, 73, 73, 73, 73, 65, 65, 65, 65, 65, 48, 48, 48, //
+    128, 48, 65, 65, 65, 65, 65, 0, 0, 0, 0, 32, 65, 65, 65, 65, 65,
+  ]);
+
+  // This table is the Wasm array version of `_Utf8Decoder.typeTable`,
+  // refer to the original type for documentation of the values.
+  static const _typeTable = const ImmutableWasmArray<WasmI8>.literal([
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, //
+    65, 65, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, 70, //
+    71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 71, 72, 72, //
+    72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, 72, //
+    72, 72, 72, 72, 72, 72, 72, 73, 72, 72, 72, 74, 69, 69, 66, 66, 66, 66, //
+    66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //
+    66, 66, 66, 66, 66, 66, 66, 66, 75, 67, 67, 67, 67, 67, 67, 67, 67, 67, //
+    67, 67, 67, 68, 67, 76, 79, 78, 78, 78, 77, 69, 69, 69, 69, 69, 69, 69, //
+    69, 69, 69, 69,
+  ]);
+
+  String decode16(WasmArray<WasmI8> bytes, int start, int end, int size) {
     assert(start < end);
-    final OneByteString transitionTable = unsafeCast<OneByteString>(
-      _Utf8Decoder.transitionTable,
-    );
-    final OneByteString typeTable = unsafeCast<OneByteString>(
-      _Utf8Decoder.typeTable,
-    );
-    TwoByteString result = TwoByteString.withLength(size);
+    WasmArray<WasmI16> result = WasmArray(size);
     int i = start;
     int j = 0;
     int state = _state;
@@ -2319,36 +2386,36 @@ class _Utf8Decoder {
 
     // First byte
     assert(!isErrorState(state));
-    final int byte = bytes.getUnchecked(i++);
-    final int type = typeTable.codeUnitAtUnchecked(byte) & typeMask;
+    final int byte = bytes.readUnsigned(i++);
+    final int type = _typeTable.readUnsigned(byte) & typeMask;
     if (state == accept) {
       char = byte & (shiftedByteMask >> type);
-      state = transitionTable.codeUnitAtUnchecked(type);
+      state = _transitionTable.readUnsigned(type);
     } else {
       char = (byte & 0x3F) | (_charOrIndex << 6);
-      state = transitionTable.codeUnitAtUnchecked(state + type);
+      state = _transitionTable.readUnsigned(state + type);
     }
 
     while (i < end) {
-      final int byte = bytes.getUnchecked(i++);
-      final int type = typeTable.codeUnitAtUnchecked(byte) & typeMask;
+      final int byte = bytes.readUnsigned(i++);
+      final int type = _typeTable.readUnsigned(byte) & typeMask;
       if (state == accept) {
         if (char >= 0x10000) {
           assert(char < 0x110000);
-          result.setUnchecked(j++, 0xD7C0 + (char >> 10));
-          result.setUnchecked(j++, 0xDC00 + (char & 0x3FF));
+          result.write(j++, 0xD7C0 + (char >> 10));
+          result.write(j++, 0xDC00 + (char & 0x3FF));
         } else {
-          result.setUnchecked(j++, char);
+          result.write(j++, char);
         }
         char = byte & (shiftedByteMask >> type);
-        state = transitionTable.codeUnitAtUnchecked(type);
+        state = _transitionTable.readUnsigned(type);
       } else if (isErrorState(state)) {
         _state = state;
         _charOrIndex = i - 2;
         return "";
       } else {
         char = (byte & 0x3F) | (char << 6);
-        state = transitionTable.codeUnitAtUnchecked(state + type);
+        state = _transitionTable.readUnsigned(state + type);
       }
     }
 
@@ -2356,10 +2423,10 @@ class _Utf8Decoder {
     if (state == accept) {
       if (char >= 0x10000) {
         assert(char < 0x110000);
-        result.setUnchecked(j++, 0xD7C0 + (char >> 10));
-        result.setUnchecked(j++, 0xDC00 + (char & 0x3FF));
+        result.write(j++, 0xD7C0 + (char >> 10));
+        result.write(j++, 0xDC00 + (char & 0x3FF));
       } else {
-        result.setUnchecked(j++, char);
+        result.write(j++, char);
       }
     } else if (isErrorState(state)) {
       _state = state;
@@ -2376,7 +2443,7 @@ class _Utf8Decoder {
           ? (j == size - 1 || j == size - 2)
           : (j == size),
     );
-    return result;
+    return TwoByteString.withData(result);
   }
 }
 
