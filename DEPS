@@ -135,20 +135,20 @@ vars = {
   "ecosystem_rev": "efe4ee4af6ac2e4c90aa525fae213b65c97295a9",
   "flute_rev": "e4ea0459a7debae5e9592c85141707b01fac86c9",
   "glob_rev": "eee18d1a577d5f965f6afbbd251798e065dced43",
-  "http_rev": "6ecd13a88b82c2fdc8a555f218bafb0ad0370f51",
+  "http_rev": "6d99ff5755d3581f44ce5c18bb029a2fa1ef0eaf",
   "intl_rev": "5d65e3808ce40e6282e40881492607df4e35669f",
   "leak_tracker_rev": "f5620600a5ce1c44f65ddaa02001e200b096e14c", # manually rolled
   "markdown_rev": "19aaded4300d24bedcbf52ade792b203ddf030b0",
   "material_color_utilities_rev": "799b6ba2f3f1c28c67cc7e0b4f18e0c7d7f3c03e",
   # dart-native-interop-team@ is rolling breaking changes manually while the assets features are in experimental.
-  "native_rev": "fe6ba55d16fe2354d90c73e7a8e7a021b77a884a", # disable tools/rev_sdk_deps.dart
+  "native_rev": "c817a5e41220de370cbea6e6445e63cdc7087544", # disable tools/rev_sdk_deps.dart
   "protobuf_rev": "b7dd58cdbd879beee4c3fbf8ee80fce8e97bad26",
   "pub_rev": "710265bae23ad5860f33287fba10b5c369f19a93", # disable tools/rev_sdk_deps.dart
   "shelf_rev": "bf799519cda2898a7c5af06dcfdd5fe6443afd79",
   "sync_http_rev": "47e6b264a209d0d806cfe9cdad8b6c69ce231986",
   "tar_rev": "5a1ea943e70cdf3fa5e1102cdbb9418bd9b4b81a",
   "test_rev": "f364fc8291d668d85c702a5b9f9a4f2e5c1ade0e",
-  "tools_rev": "3bdef2043af9244b804adc08896bf96d51bb49ba",
+  "tools_rev": "92114ab8a16eef77be1cd7bad3f5af28b5b1dc63",
   "vector_math_rev": "bd4b574b2a457a3955d223694f1a979a0c0f38c9",
   "web_rev": "af5de5e8548060c0795713ee7129ba6d5ff9f1b2",
   "web_socket_channel_rev": "a937243563e8ee75d11fb23610297d4f6e5cb2b9",

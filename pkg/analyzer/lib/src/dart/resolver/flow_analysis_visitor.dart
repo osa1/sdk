@@ -561,7 +561,7 @@ class TypeSystemOperations
   }
 
   @override
-  DartType glbInternal(DartType type1, DartType type2) {
+  DartType glbInternal(TypeImpl type1, TypeImpl type2) {
     return typeSystem.greatestLowerBound(type1, type2);
   }
 
@@ -692,7 +692,7 @@ class TypeSystemOperations
   }
 
   @override
-  DartType lubInternal(DartType type1, DartType type2) {
+  DartType lubInternal(TypeImpl type1, TypeImpl type2) {
     return typeSystem.leastUpperBound(type1, type2);
   }
 
@@ -1214,8 +1214,8 @@ class _LocalVariableTypeProvider implements LocalVariableTypeProvider {
   _LocalVariableTypeProvider(this._manager);
 
   @override
-  DartType getType(SimpleIdentifierImpl node, {required bool isRead}) {
-    var variable = node.element as VariableElement2;
+  TypeImpl getType(SimpleIdentifierImpl node, {required bool isRead}) {
+    var variable = node.element as VariableElement2OrMember;
     if (variable is PromotableElementImpl2) {
       var promotedType = isRead
           ? _manager.flow?.variableRead(node, variable)

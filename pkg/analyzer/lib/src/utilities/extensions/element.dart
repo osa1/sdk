@@ -358,7 +358,7 @@ extension FieldElementExtension on FieldElement {
   }
 }
 
-extension FormalParameterExtension on FormalParameterElement {
+extension FormalParameterElementExtension on FormalParameterElement {
   ParameterElement get asElement {
     if (this case ParameterMember member) {
       return member;
@@ -383,6 +383,12 @@ extension FormalParameterExtension on FormalParameterElement {
       buffer.write(' = ');
       buffer.write(defaultValueCode);
     }
+  }
+}
+
+extension FormalParameterElementImplExtension on FormalParameterElementImpl {
+  ParameterElementImpl get asElement {
+    return firstFragment;
   }
 }
 
@@ -502,9 +508,9 @@ extension MixinElementExtension on MixinElement {
 }
 
 extension ParameterElementExtension on ParameterElement {
-  FormalParameterElement get asElement2 {
+  FormalParameterElementMixin get asElement2 {
     return switch (this) {
-      FormalParameterFragment(:var element) => element,
+      ParameterElementImpl(:var element) => element,
       ParameterMember member => member,
       _ => throw UnsupportedError('Unsupported type: $runtimeType'),
     };

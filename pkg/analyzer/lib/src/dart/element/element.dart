@@ -1592,7 +1592,7 @@ class ConstructorElementImpl extends ExecutableElementImpl
   }
 
   @override
-  FunctionType get type {
+  FunctionTypeImpl get type {
     // TODO(scheglov): Remove "element" in the breaking changes branch.
     return _type ??= FunctionTypeImpl(
       typeFormals: typeParameters,
@@ -1746,7 +1746,8 @@ class ConstructorElementImpl2 extends ExecutableElementImpl2
 }
 
 /// Common implementation for methods defined in [ConstructorElement].
-mixin ConstructorElementMixin implements ConstructorElement {
+mixin ConstructorElementMixin
+    implements ConstructorElement, ExecutableElementOrMember {
   @override
   bool get isDefaultConstructor {
     // unnamed
@@ -3723,7 +3724,7 @@ class EnumElementImpl2 extends InterfaceElementImpl2
 /// A base class for concrete implementations of an [ExecutableElement].
 abstract class ExecutableElementImpl extends _ExistingElementImpl
     with TypeParameterizedElementMixin, MacroTargetElement
-    implements ExecutableElement, ExecutableFragment {
+    implements ExecutableElementOrMember, ExecutableFragment {
   /// A list containing all of the parameters defined by this executable
   /// element.
   List<ParameterElementImpl> _parameters = const [];
@@ -3732,7 +3733,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   TypeImpl? _returnType;
 
   /// The type of function defined by this executable element.
-  FunctionType? _type;
+  FunctionTypeImpl? _type;
 
   @override
   ElementLinkedData? linkedData;
@@ -3887,7 +3888,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
   }
 
   @override
-  FunctionType get type {
+  FunctionTypeImpl get type {
     if (_type != null) return _type!;
 
     return _type = FunctionTypeImpl(
@@ -3898,7 +3899,7 @@ abstract class ExecutableElementImpl extends _ExistingElementImpl
     );
   }
 
-  set type(FunctionType type) {
+  set type(FunctionTypeImpl type) {
     _type = type;
   }
 
@@ -3948,6 +3949,16 @@ abstract class ExecutableElementImpl2 extends FunctionTypedElementImpl2
     var firstFragment = this.firstFragment as ExecutableElementImpl;
     return firstFragment.library2!;
   }
+}
+
+/// Common base class for all analyzer-internal classes that implement
+/// `ExecutableElement`.
+abstract class ExecutableElementOrMember implements ExecutableElement {
+  @override
+  TypeImpl get returnType;
+
+  @override
+  FunctionTypeImpl get type;
 }
 
 /// A concrete implementation of an [ExtensionElement].
@@ -4046,7 +4057,7 @@ class ExtensionElementImpl extends InstanceElementImpl
   }
 
   @override
-  PropertyAccessorElement? getGetter(String getterName) {
+  PropertyAccessorElementOrMember? getGetter(String getterName) {
     for (var accessor in augmented.accessors) {
       if (accessor.isGetter && accessor.name == getterName) {
         return accessor;
@@ -4056,7 +4067,7 @@ class ExtensionElementImpl extends InstanceElementImpl
   }
 
   @override
-  MethodElement? getMethod(String methodName) {
+  MethodElementOrMember? getMethod(String methodName) {
     for (var method in augmented.methods) {
       if (method.name == methodName) {
         return method;
@@ -4084,7 +4095,7 @@ class ExtensionElementImpl2 extends InstanceElementImpl2
   final ExtensionElementImpl firstFragment;
 
   @override
-  DartType extendedType = InvalidTypeImpl.instance;
+  TypeImpl extendedType = InvalidTypeImpl.instance;
 
   ExtensionElementImpl2(this.reference, this.firstFragment) {
     reference.element2 = this;
@@ -4426,7 +4437,7 @@ class FieldElementImpl2 extends PropertyInducingElementImpl2
   SetterElement? get setter2 => firstFragment.setter?.element as SetterElement?;
 
   @override
-  DartType get type => firstFragment.type;
+  TypeImpl get type => firstFragment.type;
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
@@ -4626,6 +4637,11 @@ class FormalParameterElementImpl extends PromotableElementImpl2
   String get nameShared => wrappedElement.name;
 
   @override
+  ParameterKind get parameterKind {
+    return firstFragment.parameterKind;
+  }
+
+  @override
   // TODO(augmentations): Implement the merge of formal parameters.
   TypeImpl get type => wrappedElement.type;
 
@@ -4654,6 +4670,7 @@ class FormalParameterElementImpl extends PromotableElementImpl2
       child.accept2(visitor);
     }
   }
+
   // firstFragment.typeParameters
   //     .map((fragment) => (fragment as TypeParameterElementImpl).element)
   //     .toList();
@@ -4662,7 +4679,15 @@ class FormalParameterElementImpl extends PromotableElementImpl2
 /// A mixin that provides a common implementation for methods defined in
 /// [FormalParameterElement].
 mixin FormalParameterElementMixin
-    implements FormalParameterElement, SharedNamedFunctionParameter {
+    implements
+        FormalParameterElement,
+        SharedNamedFunctionParameter,
+        VariableElement2OrMember {
+  ParameterKind get parameterKind;
+
+  @override
+  TypeImpl get type;
+
   @override
   void appendToWithoutDelimiters2(StringBuffer buffer) {
     buffer.write(
@@ -5116,7 +5141,7 @@ mixin FragmentedFunctionTypedElementMixin<E extends ExecutableFragment>
   // TODO(augmentations): This is wrong. The function type needs to be a merge
   //  of the function types of all of the fragments, but I don't know how to
   //  perform that merge.
-  FunctionType get type {
+  FunctionTypeImpl get type {
     if (firstFragment is ExecutableElementImpl) {
       return (firstFragment as ExecutableElementImpl).type;
     } else if (firstFragment is FunctionTypedElementImpl) {
@@ -5154,7 +5179,8 @@ class FunctionElementImpl extends ExecutableElementImpl
         FunctionElement,
         FunctionTypedElementImpl,
         LocalFunctionFragment,
-        TopLevelFunctionFragment {
+        TopLevelFunctionFragment,
+        ExecutableElementOrMember {
   @override
   String? name2;
 
@@ -5246,6 +5272,9 @@ class FunctionElementImpl extends ExecutableElementImpl
 abstract class FunctionTypedElementImpl
     implements _ExistingElementImpl, FunctionTypedElement {
   set returnType(DartType returnType);
+
+  @override
+  FunctionTypeImpl get type;
 }
 
 abstract class FunctionTypedElementImpl2 extends TypeParameterizedElementImpl2
@@ -5277,7 +5306,7 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
   bool isNullable = false;
 
   /// The type defined by this element.
-  FunctionType? _type;
+  FunctionTypeImpl? _type;
 
   late final GenericFunctionTypeElementImpl2 _element2 =
       GenericFunctionTypeElementImpl2(this);
@@ -5361,7 +5390,7 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
   }
 
   @override
-  FunctionType get type {
+  FunctionTypeImpl get type {
     if (_type != null) return _type!;
 
     return _type = FunctionTypeImpl(
@@ -5375,7 +5404,7 @@ class GenericFunctionTypeElementImpl extends _ExistingElementImpl
 
   /// Set the function type defined by this function type element to the given
   /// [type].
-  set type(FunctionType type) {
+  set type(FunctionTypeImpl type) {
     _type = type;
   }
 
@@ -5692,10 +5721,10 @@ abstract class InstanceElementImpl2 extends ElementImpl2
   List<FieldElement> fields = [];
 
   @override
-  List<PropertyAccessorElement> accessors = [];
+  List<PropertyAccessorElementOrMember> accessors = [];
 
   @override
-  List<MethodElement> methods = [];
+  List<MethodElementOrMember> methods = [];
 
   final List<MethodElementImpl2> internal_methods2 = [];
 
@@ -7728,7 +7757,10 @@ class LocalFunctionElementImpl extends ExecutableElementImpl2
 
 /// A concrete implementation of a [LocalVariableElement].
 class LocalVariableElementImpl extends NonParameterVariableElementImpl
-    implements LocalVariableElement, LocalVariableFragment {
+    implements
+        LocalVariableElement,
+        LocalVariableFragment,
+        VariableElementOrMember {
   late LocalVariableElementImpl2 _element2 = switch (this) {
     BindPatternVariableElementImpl() => BindPatternVariableElementImpl2(this),
     JoinPatternVariableElementImpl() => JoinPatternVariableElementImpl2(this),
@@ -8262,10 +8294,17 @@ final class MetadataImpl implements Metadata {
   }
 }
 
+/// Common base class for all analyzer-internal classes that implement
+/// `MethodElement2`.
+abstract class MethodElement2OrMember implements MethodElement2 {
+  @override
+  FunctionTypeImpl get type;
+}
+
 /// A concrete implementation of a [MethodElement].
 class MethodElementImpl extends ExecutableElementImpl
     with AugmentableElement<MethodElementImpl>
-    implements MethodElement, MethodFragment {
+    implements MethodElementOrMember, MethodFragment {
   @override
   late MethodElementImpl2 element;
 
@@ -8365,7 +8404,7 @@ class MethodElementImpl2 extends ExecutableElementImpl2
         FragmentedAnnotatableElementMixin<MethodFragment>,
         FragmentedElementMixin<MethodFragment>,
         _HasSinceSdkVersionMixin
-    implements MethodElement2 {
+    implements MethodElement2OrMember {
   @override
   final Reference reference;
 
@@ -8420,6 +8459,17 @@ class MethodElementImpl2 extends ExecutableElementImpl2
   T? accept2<T>(ElementVisitor2<T> visitor) {
     return visitor.visitMethodElement(this);
   }
+}
+
+/// Common base class for all analyzer-internal classes that implement
+/// `MethodElement`.
+abstract class MethodElementOrMember
+    implements MethodElement, ExecutableElementOrMember {
+  @override
+  TypeImpl get returnType;
+
+  @override
+  FunctionTypeImpl get type;
 }
 
 /// A [ClassElementImpl] representing a mixin declaration.
@@ -9506,7 +9556,8 @@ class ParameterElementImpl_ofImplicitSetter extends ParameterElementImpl {
 
 /// A mixin that provides a common implementation for methods defined in
 /// [ParameterElement].
-mixin ParameterElementMixin implements ParameterElement {
+mixin ParameterElementMixin
+    implements ParameterElement, VariableElementOrMember {
   @override
   bool get isNamed => parameterKind.isNamed;
 
@@ -9534,6 +9585,9 @@ mixin ParameterElementMixin implements ParameterElement {
   @override
   // Overridden to remove the 'deprecated' annotation.
   ParameterKind get parameterKind;
+
+  @override
+  TypeImpl get type;
 
   @override
   void appendToWithoutDelimiters(
@@ -9874,7 +9928,7 @@ abstract class PromotableElementImpl2 extends VariableElementImpl2
 class PropertyAccessorElementImpl extends ExecutableElementImpl
     with AugmentableElement<PropertyAccessorElementImpl>
     implements
-        PropertyAccessorElement,
+        PropertyAccessorElementOrMember,
         PropertyAccessorFragment,
         GetterFragment,
         SetterFragment {
@@ -10141,7 +10195,7 @@ class PropertyAccessorElementImpl_ImplicitGetter
   Version? get sinceSdkVersion => variable2.sinceSdkVersion;
 
   @override
-  FunctionType get type {
+  FunctionTypeImpl get type {
     return _type ??= FunctionTypeImpl(
       typeFormals: const <TypeParameterElement>[],
       parameters: const <ParameterElement>[],
@@ -10207,7 +10261,7 @@ class PropertyAccessorElementImpl_ImplicitSetter
   Version? get sinceSdkVersion => variable2.sinceSdkVersion;
 
   @override
-  FunctionType get type {
+  FunctionTypeImpl get type {
     return _type ??= FunctionTypeImpl(
       typeFormals: const <TypeParameterElement>[],
       parameters: parameters,
@@ -10225,11 +10279,22 @@ class PropertyAccessorElementImpl_ImplicitSetter
   PropertyInducingElementImpl get variable2 => super.variable2!;
 }
 
+/// Common base class for all analyzer-internal classes that implement
+/// `PropertyAccessorElement`.
+abstract class PropertyAccessorElementOrMember
+    implements PropertyAccessorElement, ExecutableElementOrMember {
+  @override
+  TypeImpl get returnType;
+
+  @override
+  PropertyInducingElementOrMember? get variable2;
+}
+
 /// A concrete implementation of a [PropertyInducingElement].
 abstract class PropertyInducingElementImpl
     extends NonParameterVariableElementImpl
     with MacroTargetElement
-    implements PropertyInducingElement, PropertyInducingFragment {
+    implements PropertyInducingElementOrMember, PropertyInducingFragment {
   @override
   String? name2;
 
@@ -10428,6 +10493,14 @@ abstract class PropertyInducingElementImpl2 extends VariableElementImpl2
   }
 
   List<PropertyInducingElementImpl> get _fragments;
+}
+
+/// Common base class for all analyzer-internal classes that implement
+/// `PropertyInducingElement`.
+abstract class PropertyInducingElementOrMember
+    implements PropertyInducingElement, VariableElementOrMember {
+  @override
+  TypeImpl get type;
 }
 
 /// Instances of this class are set for fields and top-level variables
@@ -10825,7 +10898,7 @@ class TopLevelVariableElementImpl2 extends PropertyInducingElementImpl2
       firstFragment.setter2?.element as SetterElement?;
 
   @override
-  DartType get type => firstFragment.type;
+  TypeImpl get type => firstFragment.type;
 
   @override
   T? accept2<T>(ElementVisitor2<T> visitor) {
@@ -11116,7 +11189,7 @@ class TypeAliasElementImpl2 extends TypeDefiningElementImpl2
   }
 
   @override
-  DartType get aliasedType => firstFragment.aliasedType;
+  TypeImpl get aliasedType => firstFragment.aliasedType;
 
   @override
   TypeAliasElementImpl2 get baseElement => this;
@@ -11425,6 +11498,11 @@ class TypeParameterElementImpl2 extends TypeDefiningElementImpl2
   }
 
   @override
+  void appendTo(ElementDisplayStringBuilder builder) {
+    builder.writeTypeParameter2(this);
+  }
+
+  @override
   TypeParameterType instantiate({
     required NullabilitySuffix nullabilitySuffix,
   }) {
@@ -11534,9 +11612,16 @@ abstract class UriReferencedElementImpl extends _ExistingElementImpl
   }
 }
 
+/// Common base class for all analyzer-internal classes that implement
+/// `VariableElement2`.
+abstract class VariableElement2OrMember implements VariableElement2 {
+  @override
+  TypeImpl get type;
+}
+
 /// A concrete implementation of a [VariableElement].
 abstract class VariableElementImpl extends ElementImpl
-    implements VariableElement {
+    implements VariableElementOrMember {
   /// The type of this variable.
   TypeImpl? _type;
 
@@ -11646,13 +11731,20 @@ abstract class VariableElementImpl extends ElementImpl
 }
 
 abstract class VariableElementImpl2 extends ElementImpl2
-    implements VariableElement2 {
+    implements VariableElement2OrMember {
   @override
   void visitChildren2<T>(ElementVisitor2<T> visitor) {
     for (var child in children2) {
       child.accept2(visitor);
     }
   }
+}
+
+/// Common base class for all analyzer-internal classes that implement
+/// `VariableElement`.
+abstract class VariableElementOrMember implements VariableElement {
+  @override
+  TypeImpl get type;
 }
 
 mixin WrappedElementMixin implements ElementImpl2 {

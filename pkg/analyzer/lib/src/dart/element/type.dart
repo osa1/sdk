@@ -96,7 +96,7 @@ class FunctionTypeImpl extends TypeImpl
   final TypeImpl returnType;
 
   @override
-  final List<TypeParameterElement> typeFormals;
+  final List<TypeParameterElementImpl> typeFormals;
 
   @override
   final List<ParameterElement> parameters;
@@ -160,7 +160,9 @@ class FunctionTypeImpl extends TypeImpl
           firstNamedParameterIndex!, parameters.length, sortedNamedParameters);
     }
     return FunctionTypeImpl._(
-        typeFormals: typeFormals,
+        // TODO(paulberry): eliminate this cast by changing the type of the
+        // `typeFormals` parameter.
+        typeFormals: typeFormals.cast(),
         parameters: parameters,
         // TODO(paulberry): eliminate this cast by changing the type of
         // `returnType`.
@@ -183,7 +185,9 @@ class FunctionTypeImpl extends TypeImpl
   }) {
     return FunctionTypeImpl(
       typeFormals: typeParameters.map((e) => e.asElement).toList(),
-      parameters: formalParameters.map((e) => e.asElement).toList(),
+      parameters: formalParameters is List<FormalParameterElementImpl>
+          ? formalParameters.map((e) => e.asElement).toList()
+          : formalParameters.map((e) => e.asElement).toList(),
       returnType: returnType,
       nullabilitySuffix: nullabilitySuffix,
       alias: alias,
@@ -208,7 +212,7 @@ class FunctionTypeImpl extends TypeImpl
   Null get element3 => null;
 
   @override
-  List<FormalParameterElement> get formalParameters {
+  List<FormalParameterElementMixin> get formalParameters {
     return parameters.map((p) => p.asElement2).toList(growable: false);
   }
 
@@ -241,14 +245,11 @@ class FunctionTypeImpl extends TypeImpl
   // `List<FormalParameterElementImpl>`. See
   // https://dart-review.googlesource.com/c/sdk/+/402341/comment/b1669e20_15938fcd/.
   List<FormalParameterElementMixin> get sortedNamedParametersShared =>
-      sortedNamedParameters
-          .map((p) => p.asElement2 as FormalParameterElementMixin)
-          .toList();
+      sortedNamedParameters.map((p) => p.asElement2).toList();
 
   @override
-  List<TypeParameterElementImpl2> get typeParameters => typeFormals
-      .map((fragment) => (fragment as TypeParameterElementImpl).element)
-      .toList();
+  List<TypeParameterElementImpl2> get typeParameters =>
+      typeFormals.map((fragment) => fragment.element).toList();
 
   @override
   List<TypeParameterElementImpl2> get typeParametersShared => typeParameters;
@@ -328,15 +329,14 @@ class FunctionTypeImpl extends TypeImpl
   @override
   bool referencesAny(Set<TypeParameterElement> parameters) {
     if (typeFormals.any((element) {
-      var elementImpl = element as TypeParameterElementImpl;
-      assert(!parameters.contains(elementImpl));
+      assert(!parameters.contains(element));
 
-      var bound = elementImpl.bound;
+      var bound = element.bound;
       if (bound != null && bound.referencesAny(parameters)) {
         return true;
       }
 
-      var defaultType = elementImpl.defaultType as TypeImpl;
+      var defaultType = element.defaultType as TypeImpl;
       return defaultType.referencesAny(parameters);
     })) {
       return true;
@@ -355,15 +355,14 @@ class FunctionTypeImpl extends TypeImpl
   @override
   bool referencesAny2(Set<TypeParameterElementImpl2> parameters) {
     if (typeFormals.any((element) {
-      var elementImpl = element as TypeParameterElementImpl;
-      assert(!parameters.contains(elementImpl.asElement2));
+      assert(!parameters.contains(element.asElement2));
 
-      var bound = elementImpl.bound;
+      var bound = element.bound;
       if (bound != null && bound.referencesAny2(parameters)) {
         return true;
       }
 
-      var defaultType = elementImpl.defaultType as TypeImpl;
+      var defaultType = element.defaultType as TypeImpl;
       return defaultType.referencesAny2(parameters);
     })) {
       return true;
@@ -561,6 +560,16 @@ class InstantiatedTypeAliasElementImpl implements InstantiatedTypeAliasElement {
     required this.element,
     required this.typeArguments,
   });
+
+  factory InstantiatedTypeAliasElementImpl.v2({
+    required TypeAliasElement2 element,
+    required List<DartType> typeArguments,
+  }) {
+    return InstantiatedTypeAliasElementImpl(
+      element: element.asElement,
+      typeArguments: typeArguments,
+    );
+  }
 
   @override
   TypeAliasElement2 get element2 => (element as TypeAliasFragment).element;
@@ -945,7 +954,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
       PropertyAccessorMember.from(element.getGetter(getterName), this);
 
   @override
-  MethodElement? getMethod(String methodName) =>
+  MethodElementOrMember? getMethod(String methodName) =>
       MethodMember.from(element.getMethod(methodName), this);
 
   @override
@@ -992,7 +1001,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     if (inherited) {
       if (concrete) {
         var result = inheritance.getMember(this, nameObj, forSuper: inherited);
-        if (result is PropertyAccessorElement) {
+        if (result is PropertyAccessorElementOrMember) {
           return result;
         }
       } else {
@@ -1005,7 +1014,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     }
 
     var result = inheritance.getMember(this, nameObj, concrete: concrete);
-    if (result is PropertyAccessorElement) {
+    if (result is PropertyAccessorElementOrMember) {
       return result;
     }
 
@@ -1047,7 +1056,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     if (inherited) {
       if (concrete) {
         var result = inheritance.getMember(this, nameObj, forSuper: inherited);
-        if (result is MethodElement) {
+        if (result is MethodElementOrMember) {
           return result;
         }
       } else {
@@ -1060,7 +1069,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     }
 
     var result = inheritance.getMember(this, nameObj, concrete: concrete);
-    if (result is MethodElement) {
+    if (result is MethodElementOrMember) {
       return result;
     }
 
@@ -1102,7 +1111,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     if (inherited) {
       if (concrete) {
         var result = inheritance.getMember(this, nameObj, forSuper: inherited);
-        if (result is PropertyAccessorElement) {
+        if (result is PropertyAccessorElementOrMember) {
           return result;
         }
       } else {
@@ -1115,7 +1124,7 @@ class InterfaceTypeImpl extends TypeImpl implements InterfaceType {
     }
 
     var result = inheritance.getMember(this, nameObj, concrete: concrete);
-    if (result is PropertyAccessorElement) {
+    if (result is PropertyAccessorElementOrMember) {
       return result;
     }
 

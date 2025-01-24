@@ -17,6 +17,7 @@ import 'package:analyzer/src/dart/element/element.dart';
 import 'package:analyzer/src/dart/element/generic_inferrer.dart';
 import 'package:analyzer/src/dart/element/inheritance_manager3.dart';
 import 'package:analyzer/src/dart/element/member.dart';
+import 'package:analyzer/src/dart/element/type.dart';
 import 'package:analyzer/src/dart/element/type_algebra.dart';
 import 'package:analyzer/src/dart/element/type_constraint_gatherer.dart';
 import 'package:analyzer/src/dart/element/type_schema.dart';
@@ -26,6 +27,7 @@ import 'package:analyzer/src/dart/resolver/resolution_result.dart';
 import 'package:analyzer/src/error/codes.dart';
 import 'package:analyzer/src/generated/inference_log.dart';
 import 'package:analyzer/src/generated/resolver.dart';
+import 'package:analyzer/src/utilities/extensions/element.dart';
 import 'package:analyzer/src/utilities/extensions/string.dart';
 
 class ExtensionMemberResolver {
@@ -88,13 +90,13 @@ class ExtensionMemberResolver {
   /// If the match is ambiguous, reports an error on the [nameEntity], and
   /// returns [ExtensionResolutionError.ambiguous].
   ExtensionResolutionResult findExtension(
-      DartType type, SyntacticEntity nameEntity, Name name) {
-    var extensions = _resolver.libraryFragment.accessibleExtensions
-        .havingMemberWithBaseName(name)
-        .applicableTo(
-          targetLibrary: _resolver.definingLibrary,
-          targetType: type,
-        );
+      TypeImpl type, SyntacticEntity nameEntity, Name name) {
+    var aaa = _resolver.libraryFragment.accessibleExtensions2;
+    var bbb = aaa.havingMemberWithBaseName(name).toList();
+    var extensions = bbb.applicableTo(
+      targetLibrary: _resolver.definingLibrary,
+      targetType: type,
+    );
 
     if (extensions.isEmpty) {
       return ExtensionResolutionError.none;
@@ -103,7 +105,7 @@ class ExtensionMemberResolver {
     if (extensions.length == 1) {
       var instantiated = extensions[0];
       _resolver.libraryFragment.scope.notifyExtensionUsed(
-        instantiated.extension,
+        instantiated.extension.asElement,
       );
       return instantiated.asResolutionResult;
     }
@@ -112,7 +114,7 @@ class ExtensionMemberResolver {
     if (mostSpecific.length == 1) {
       var instantiated = mostSpecific.first;
       _resolver.libraryFragment.scope.notifyExtensionUsed(
-        instantiated.extension,
+        instantiated.extension.asElement,
       );
       return instantiated.asResolutionResult;
     }
@@ -135,7 +137,7 @@ class ExtensionMemberResolver {
         arguments: [
           name.name,
           mostSpecific.map((e) {
-            var name = e.extension.name;
+            var name = e.extension.name3;
             if (name != null) {
               return "extension '$name'";
             }
@@ -181,7 +183,9 @@ class ExtensionMemberResolver {
         setter != null ? ExecutableMember.from2(setter, substitution) : null;
 
     return SingleExtensionResolutionResult(
-        getter: getterMember, setter: setterMember);
+      getter2: getterMember?.asElement2,
+      setter2: setterMember?.asElement2,
+    );
   }
 
   /// Perform upward inference for the override.
@@ -338,7 +342,7 @@ class ExtensionMemberResolver {
   /// of extension's type parameters, or inference fails, returns `dynamic`
   /// for all type parameters.
   List<DartType>? _inferTypeArguments(
-      ExtensionOverride node, DartType receiverType,
+      ExtensionOverrideImpl node, TypeImpl receiverType,
       {required TypeConstraintGenerationDataForTesting? dataForTesting,
       required AstNodeImpl? nodeForTesting}) {
     var element = node.element2;
@@ -393,6 +397,7 @@ class ExtensionMemberResolver {
   /// Instantiate the extended type of the [extension] to the bounds of the
   /// type formals of the extension.
   DartType _instantiateToBounds(ExtensionElement extension) {
+    extension as ExtensionElementImpl;
     var typeParameters = extension.typeParameters;
     return Substitution.fromPairs(
       typeParameters,
@@ -402,13 +407,15 @@ class ExtensionMemberResolver {
 
   /// Return `true` is [e1] is more specific than [e2].
   bool _isMoreSpecific(
-      InstantiatedExtensionWithMember e1, InstantiatedExtensionWithMember e2) {
+    InstantiatedExtensionWithMember e1,
+    InstantiatedExtensionWithMember e2,
+  ) {
     // 1. The latter extension is declared in a platform library, and the
     //    former extension is not.
     // 2. They are both declared in platform libraries, or both declared in
     //    non-platform libraries.
-    var e1_isInSdk = e1.extension.library.isInSdk;
-    var e2_isInSdk = e2.extension.library.isInSdk;
+    var e1_isInSdk = e1.extension.library2.isInSdk;
+    var e2_isInSdk = e2.extension.library2.isInSdk;
     if (e1_isInSdk && !e2_isInSdk) {
       return false;
     } else if (!e1_isInSdk && e2_isInSdk) {
@@ -433,8 +440,8 @@ class ExtensionMemberResolver {
     // 5. ...the instantiate-to-bounds type of T1 is a subtype of the
     //    instantiate-to-bounds type of T2 and not vice versa.
     // TODO(scheglov): store instantiated types
-    var extendedTypeBound1 = _instantiateToBounds(e1.extension);
-    var extendedTypeBound2 = _instantiateToBounds(e2.extension);
+    var extendedTypeBound1 = _instantiateToBounds(e1.extension.asElement);
+    var extendedTypeBound2 = _instantiateToBounds(e2.extension.asElement);
     return _isSubtypeOf(extendedTypeBound1, extendedTypeBound2) &&
         !_isSubtypeOf(extendedTypeBound2, extendedTypeBound1);
   }
@@ -496,6 +503,6 @@ sealed class ExtensionResolutionResult implements SimpleResolutionResult {}
 class SingleExtensionResolutionResult extends SimpleResolutionResult
     implements ExtensionResolutionResult {
   SingleExtensionResolutionResult(
-      {required super.getter, required super.setter})
-      : assert(getter != null || setter != null);
+      {required super.getter2, required super.setter2})
+      : assert(getter2 != null || setter2 != null);
 }
