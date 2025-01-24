@@ -305,10 +305,8 @@ class _NumberBuffer {
     this.array = newArray;
   }
 
-  String getString() {
-    String result = createOneByteStringFromCharactersArray(array, 0, length);
-    return result;
-  }
+  String getString() =>
+      createOneByteStringFromCharactersArray(array, 0, length);
 
   // TODO(lrn): See if parsing of numbers can be abstracted to something
   // not only working on strings, but also on char-code lists, without losing
@@ -2025,17 +2023,20 @@ class _Utf8Decoder {
       if (decoded != null) return decoded;
     }
 
-    final U8List bytes;
+    final WasmArray<WasmI8> bytes;
+    final offsetInBytes;
     if (codeUnits is U8List) {
-      bytes = unsafeCast<U8List>(codeUnits);
+      final u8list = unsafeCast<U8List>(codeUnits);
+      bytes = u8list.data;
+      offsetInBytes = u8list.offsetInBytes;
     } else {
       // If we're passed a `List<int>` other than `U8List` or a JS typed array,
       // it means the performance is not too important. Convert the input to
       // `U8List` to avoid shipping another UTF-8 decoder for `List<int>`.
       final length = end - start;
-      bytes = U8List(length);
-      final u8listData = bytes.data;
-      int u8listIdx = 0;
+      bytes = WasmArray(length);
+      offsetInBytes = 0;
+      int bytesIdx = 0;
       for (int codeUnitsIdx = start; codeUnitsIdx < end; codeUnitsIdx += 1) {
         int byte = codeUnits[codeUnitsIdx];
         // byte < 0 || byte > 255
@@ -2050,56 +2051,42 @@ class _Utf8Decoder {
             );
           }
         }
-        u8listData.write(u8listIdx++, byte);
+        bytes.write(bytesIdx++, byte);
       }
       start = 0;
       end = length;
     }
 
-    final offsetInBytes = bytes.offsetInBytes;
     final actualStart = start;
 
     // Skip initial BOM.
-    start += skipBomSingle(
-      bytes.data,
-      offsetInBytes + start,
-      offsetInBytes + end,
-    );
+    start += skipBomSingle(bytes, offsetInBytes + start, offsetInBytes + end);
 
     // Special case empty input.
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    final int size = scan(
-      bytes.data,
-      offsetInBytes + start,
-      offsetInBytes + end,
-    );
+    final int size = scan(bytes, offsetInBytes + start, offsetInBytes + end);
     final int flags = _scanFlags;
 
     if (flags == 0) {
       // Pure ASCII.
       assert(size == end - start);
-      OneByteString result = OneByteString.withLength(size);
-      oneByteStringArray(
-        result,
-      ).copy(0, bytes.data, offsetInBytes + start, size);
-      return result;
+      return createOneByteStringFromCharactersArray(
+        bytes,
+        offsetInBytes + start,
+        offsetInBytes + start + size,
+      );
     }
 
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(
-        bytes.data,
-        offsetInBytes + start,
-        offsetInBytes + end,
-        size,
-      );
+      result = decode8(bytes, offsetInBytes + start, offsetInBytes + end, size);
     } else {
       // Arbitrary Unicode.
       result = decode16(
-        bytes.data,
+        bytes,
         offsetInBytes + start,
         offsetInBytes + end,
         size,
@@ -2121,7 +2108,12 @@ class _Utf8Decoder {
 
     // Start over on slow path.
     _state = initial;
-    result = decodeGeneral(bytes, start, end, true);
+    result = _decodeGeneral(
+      bytes,
+      offsetInBytes + start,
+      offsetInBytes + end,
+      true,
+    );
     assert(!isErrorState(_state));
     return result;
   }
@@ -2135,36 +2127,30 @@ class _Utf8Decoder {
     );
     if (start == end) return "";
 
-    final U8List bytes;
+    final WasmArray<WasmI8> bytes;
+    final offsetInBytes;
     int errorOffset;
     if (codeUnits is U8List) {
-      bytes = unsafeCast<U8List>(codeUnits);
+      final u8list = unsafeCast<U8List>(codeUnits);
+      bytes = u8list.data;
+      offsetInBytes = u8list.offsetInBytes;
       errorOffset = 0;
     } else {
-      bytes = U8List.withData(
-        _makeI8Array(codeUnits, start, end),
-        0,
-        end - start,
-      );
+      bytes = _makeI8Array(codeUnits, start, end);
+      offsetInBytes = 0;
       errorOffset = start;
       end -= start;
       start = 0;
     }
 
-    final offsetInBytes = bytes.offsetInBytes;
-
     // Skip initial BOM.
-    start += skipBomChunked(
-      bytes.data,
-      offsetInBytes + start,
-      offsetInBytes + end,
-    );
+    start += skipBomChunked(bytes, offsetInBytes + start, offsetInBytes + end);
 
     // Special case empty input.
     if (start == end) return "";
 
     // Scan input to determine size and appropriate decoder.
-    int size = scan(bytes.data, offsetInBytes + start, offsetInBytes + end);
+    int size = scan(bytes, offsetInBytes + start, offsetInBytes + end);
     int flags = _scanFlags;
 
     // Adjust scan flags and size based on carry-over state.
@@ -2200,21 +2186,25 @@ class _Utf8Decoder {
       // Pure ASCII.
       assert(_state == accept);
       assert(size == end - start);
-      OneByteString result = OneByteString.withLength(size);
-      copyRangeFromUint8ListToOneByteString(bytes, result, start, 0, size);
-      return result;
+      return createOneByteStringFromCharactersArray(
+        bytes,
+        offsetInBytes + start,
+        offsetInBytes + start + size,
+      );
     }
 
     // Do not include any final, incomplete character in size.
     int extensionCount = 0;
     int i = end - 1;
-    while (i >= start && (bytes.getUnchecked(i) & 0xC0) == 0x80) {
+    while (i >= start &&
+        (bytes.readUnsigned(offsetInBytes + i) & 0xC0) == 0x80) {
       extensionCount++;
       i--;
     }
     if (i >= start &&
-        bytes.getUnchecked(i) >= ((~0x3F >> extensionCount) & 0xFF)) {
-      size -= bytes.getUnchecked(i) >= 0xF0 ? 2 : 1;
+        bytes.readUnsigned(offsetInBytes + i) >=
+            ((~0x3F >> extensionCount) & 0xFF)) {
+      size -= bytes.readUnsigned(offsetInBytes + i) >= 0xF0 ? 2 : 1;
     }
 
     final int carryOverState = _state;
@@ -2222,16 +2212,11 @@ class _Utf8Decoder {
     String result;
     if (flags == (flagLatin1 | flagExtension)) {
       // Latin1.
-      result = decode8(
-        bytes.data,
-        offsetInBytes + start,
-        offsetInBytes + end,
-        size,
-      );
+      result = decode8(bytes, offsetInBytes + start, offsetInBytes + end, size);
     } else {
       // Arbitrary Unicode.
       result = decode16(
-        bytes.data,
+        bytes,
         offsetInBytes + start,
         offsetInBytes + end,
         size,
@@ -2251,7 +2236,12 @@ class _Utf8Decoder {
     // Start over on slow path.
     _state = carryOverState;
     _charOrIndex = carryOverChar;
-    result = decodeGeneral(bytes, start, end, false);
+    result = _decodeGeneral(
+      bytes,
+      offsetInBytes + start,
+      offsetInBytes + end,
+      false,
+    );
     assert(!isErrorState(_state));
     return result;
   }
@@ -2447,6 +2437,104 @@ class _Utf8Decoder {
           : (j == size),
     );
     return TwoByteString.withData(result);
+  }
+
+  String _decodeGeneral(
+    WasmArray<WasmI8> bytes,
+    int start,
+    int end,
+    bool single,
+  ) {
+    int state = _state;
+    int char = _charOrIndex;
+    final StringBuffer buffer = StringBuffer();
+    int i = start;
+    int byte = bytes.readUnsigned(i++);
+    loop:
+    while (true) {
+      multibyte:
+      while (true) {
+        int type = _typeTable.readUnsigned(byte) & typeMask;
+        char =
+            (state <= afterBom)
+                ? byte & (shiftedByteMask >> type)
+                : (byte & 0x3F) | (char << 6);
+        state = _transitionTable.readUnsigned(state + type);
+        if (state == accept) {
+          buffer.writeCharCode(char);
+          if (i == end) break loop;
+          break multibyte;
+        } else if (isErrorState(state)) {
+          if (allowMalformed) {
+            switch (state) {
+              case errorInvalid:
+              case errorUnexpectedExtension:
+                // A single byte that can't start a sequence.
+                buffer.writeCharCode(unicodeReplacementCharacterRune);
+                break;
+              case errorMissingExtension:
+                // Unfinished sequence followed by a byte that can start a
+                // sequence.
+                buffer.writeCharCode(unicodeReplacementCharacterRune);
+                // Re-parse offending byte.
+                i -= 1;
+                break;
+              default:
+                // Unfinished sequence followed by a byte that can't start a
+                // sequence.
+                buffer.writeCharCode(unicodeReplacementCharacterRune);
+                buffer.writeCharCode(unicodeReplacementCharacterRune);
+                break;
+            }
+            state = initial;
+          } else {
+            _state = state;
+            _charOrIndex = i - 1;
+            return "";
+          }
+        }
+        if (i == end) break loop;
+        byte = bytes.readUnsigned(i++);
+      }
+
+      final int markStart = i;
+      byte = bytes.readUnsigned(i++);
+      if (byte < 128) {
+        int markEnd = end;
+        while (i < end) {
+          byte = bytes.readUnsigned(i++);
+          if (byte >= 128) {
+            markEnd = i - 1;
+            break;
+          }
+        }
+        assert(markStart < markEnd);
+        if (markEnd - markStart < 20) {
+          for (int m = markStart; m < markEnd; m++) {
+            buffer.writeCharCode(bytes.readUnsigned(m));
+          }
+        } else {
+          buffer.write(
+            createOneByteStringFromCharactersArray(bytes, markStart, markEnd),
+          );
+        }
+        if (markEnd == end) break loop;
+      }
+    }
+
+    if (single && state > afterBom) {
+      // Unfinished sequence.
+      if (allowMalformed) {
+        buffer.writeCharCode(unicodeReplacementCharacterRune);
+      } else {
+        _state = errorUnfinished;
+        _charOrIndex = end;
+        return "";
+      }
+    }
+    _state = state;
+    _charOrIndex = char;
+    return buffer.toString();
   }
 }
 
