@@ -2092,16 +2092,16 @@ class _Utf8Decoder {
       // Latin1.
       result = decode8(
         bytes.data,
-        bytes.offsetInElements + start,
-        bytes.offsetInElements + end,
+        offsetInBytes + start,
+        offsetInBytes + end,
         size,
       );
     } else {
       // Arbitrary Unicode.
       result = decode16(
         bytes.data,
-        bytes.offsetInElements + start,
-        bytes.offsetInElements + end,
+        offsetInBytes + start,
+        offsetInBytes + end,
         size,
       );
     }
@@ -2220,16 +2220,16 @@ class _Utf8Decoder {
       // Latin1.
       result = decode8(
         bytes.data,
-        bytes.offsetInElements + start,
-        bytes.offsetInElements + end,
+        offsetInBytes + start,
+        offsetInBytes + end,
         size,
       );
     } else {
       // Arbitrary Unicode.
       result = decode16(
         bytes.data,
-        bytes.offsetInElements + start,
-        bytes.offsetInElements + end,
+        offsetInBytes + start,
+        offsetInBytes + end,
         size,
       );
     }
