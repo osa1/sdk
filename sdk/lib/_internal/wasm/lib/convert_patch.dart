@@ -2024,7 +2024,7 @@ class _Utf8Decoder {
     }
 
     final WasmArray<WasmI8> bytes;
-    final offsetInBytes;
+    int offsetInBytes = 0;
     if (codeUnits is U8List) {
       final u8list = unsafeCast<U8List>(codeUnits);
       bytes = u8list.data;
@@ -2035,7 +2035,6 @@ class _Utf8Decoder {
       // `U8List` to avoid shipping another UTF-8 decoder for `List<int>`.
       final length = end - start;
       bytes = WasmArray(length);
-      offsetInBytes = 0;
       int bytesIdx = 0;
       for (int codeUnitsIdx = start; codeUnitsIdx < end; codeUnitsIdx += 1) {
         int byte = codeUnits[codeUnitsIdx];
@@ -2128,16 +2127,14 @@ class _Utf8Decoder {
     if (start == end) return "";
 
     final WasmArray<WasmI8> bytes;
-    final offsetInBytes;
-    int errorOffset;
+    int offsetInBytes = 0;
+    int errorOffset = 0;
     if (codeUnits is U8List) {
       final u8list = unsafeCast<U8List>(codeUnits);
       bytes = u8list.data;
       offsetInBytes = u8list.offsetInBytes;
-      errorOffset = 0;
     } else {
       bytes = _makeI8Array(codeUnits, start, end);
-      offsetInBytes = 0;
       errorOffset = start;
       end -= start;
       start = 0;
