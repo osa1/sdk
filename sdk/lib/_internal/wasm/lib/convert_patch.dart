@@ -2141,7 +2141,11 @@ class _Utf8Decoder {
       bytes = unsafeCast<U8List>(codeUnits);
       errorOffset = 0;
     } else {
-      bytes = _makeU8List(codeUnits, start, end);
+      bytes = U8List.withData(
+        _makeI8Array(codeUnits, start, end),
+        0,
+        end - start,
+      );
       errorOffset = start;
       end -= start;
       start = 0;
@@ -2446,9 +2450,9 @@ class _Utf8Decoder {
   }
 }
 
-U8List _makeU8List(List<int> codeUnits, int start, int end) {
+WasmArray<WasmI8> _makeI8Array(List<int> codeUnits, int start, int end) {
   if (codeUnits is WasmListBase) {
-    return _makeU8ListFromWasmListBase(
+    return _makeI8ArrayFromWasmListBase(
       unsafeCast<WasmListBase<int>>(codeUnits),
       start,
       end,
@@ -2456,7 +2460,7 @@ U8List _makeU8List(List<int> codeUnits, int start, int end) {
   }
 
   if (codeUnits is WasmI8ArrayBase) {
-    return _makeU8ListFromWasmI8ArrayBase(
+    return _makeI8ArrayFromWasmI8ArrayBase(
       unsafeCast<WasmI8ArrayBase>(codeUnits),
       start,
       end,
@@ -2464,55 +2468,53 @@ U8List _makeU8List(List<int> codeUnits, int start, int end) {
   }
 
   final int length = end - start;
-  final U8List bytes = U8List(length);
+  final WasmArray<WasmI8> bytes = WasmArray(length);
   for (int i = 0; i < length; i++) {
     int b = codeUnits[start + i];
     if ((b & ~0xFF) != 0) {
       // Replace invalid byte values by FF, which is also invalid.
       b = 0xFF;
     }
-    bytes.setUnchecked(i, b);
+    bytes.write(i, b);
   }
   return bytes;
 }
 
-U8List _makeU8ListFromWasmListBase(
+WasmArray<WasmI8> _makeI8ArrayFromWasmListBase(
   WasmListBase<int> codeUnits,
   int start,
   int end,
 ) {
   final int length = end - start;
-  final U8List bytes = U8List(length);
+  final WasmArray<WasmI8> bytes = WasmArray(length);
   final WasmArray<Object?> listData = codeUnits.data;
-  final WasmArray<WasmI8> bytesData = bytes.data;
   for (int i = 0; i < length; i++) {
     int b = unsafeCast<int>(listData[start + i]);
     if ((b & ~0xFF) != 0) {
       // Replace invalid byte values by FF, which is also invalid.
       b = 0xFF;
     }
-    bytesData.write(i, b);
+    bytes.write(i, b);
   }
   return bytes;
 }
 
-U8List _makeU8ListFromWasmI8ArrayBase(
+WasmArray<WasmI8> _makeI8ArrayFromWasmI8ArrayBase(
   WasmI8ArrayBase codeUnits,
   int start,
   int end,
 ) {
   final int length = end - start;
-  final U8List bytes = U8List(length);
+  final WasmArray<WasmI8> bytes = WasmArray(length);
   final WasmArray<WasmI8> listData = codeUnits.data;
   final listDataOffset = codeUnits.offsetInBytes;
-  final WasmArray<WasmI8> bytesData = bytes.data;
   for (int i = 0; i < length; i++) {
     int b = listData.readSigned(listDataOffset + start + i);
     if ((b & ~0xFF) != 0) {
       // Replace invalid byte values by FF, which is also invalid.
       b = 0xFF;
     }
-    bytesData.write(i, b);
+    bytes.write(i, b);
   }
   return bytes;
 }
