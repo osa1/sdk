@@ -1,10 +1,14 @@
-// Copyright (c) 2022, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2023, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import "dart:_error_utils" show RangeErrorUtils;
-import "dart:_internal" show patch, unsafeCast;
-import "dart:_string";
+import 'dart:_internal' show EfficientLengthIterable, patch, unsafeCast;
+import 'dart:_js_helper' as js;
+import 'dart:_js_types';
+import 'dart:_string';
+import 'dart:_wasm';
+import 'dart:js_interop';
+import 'dart:typed_data';
 
 @patch
 class String {
@@ -14,53 +18,100 @@ class String {
     int start = 0,
     int? end,
   ]) {
-    RangeErrorUtils.checkNotNegative(start, "start");
-    if (end != null && end < start) {
-      throw RangeError.range(end, start, null, "end");
+    RangeError.checkNotNegative(start, "start");
+    if (end != null) {
+      if (end < start) {
+        throw RangeError.range(end, start, null, "end");
+      }
+      if (end == start) return "";
     }
-    return StringBase.createFromCharCodes(charCodes, start, end);
+
+    final length = charCodes.length;
+
+    // Skip until `start`.
+    final it = charCodes.iterator;
+    for (int i = 0; i < start; i++) {
+      it.moveNext();
+    }
+
+    // The part of the iterable converted to string is collected in a JS typed
+    // array, to be able to effciently get subarrays, to pass to
+    // `String.fromCharCode.apply`.
+    final charCodesLength = (end ?? length) - start;
+    if (charCodesLength <= 0) return "";
+    final typedArrayLength = charCodesLength * 2;
+    final WasmArray<WasmI16> list = WasmArray(typedArrayLength);
+    int index = 0; // index in `list`.
+    end ??= start + charCodesLength;
+    for (int i = start; i < end; i++) {
+      if (!it.moveNext()) {
+        break;
+      }
+      final charCode = it.current;
+      if (charCode >= 0 && charCode <= 0xffff) {
+        list.write(index++, charCode);
+      } else if (charCode >= 0 && charCode <= 0x10ffff) {
+        list.write(index++, 0xd800 + ((((charCode - 0x10000) >> 10) & 0x3ff)));
+        list.write(index++, 0xdc00 + (charCode & 0x3ff));
+      } else {
+        throw RangeError.range(charCode, 0, 0x10ffff);
+      }
+    }
+
+    return JSStringImpl(
+      jsStringFromCharCodeArray(list, const WasmI32(0), WasmI32.fromInt(index)),
+    );
   }
 
   @patch
-  factory String.fromCharCode(int charCode) {
-    RangeErrorUtils.checkValueBetweenZeroAndPositiveMax(charCode, 0x10ffff);
-    if (charCode <= 0xff) {
-      final string = OneByteString.withLength(1);
-      string.setUnchecked(0, charCode);
-      return string;
+  factory String.fromCharCode(int charCode) => _fromCharCode(charCode);
+
+  static String _fromOneByteCharCode(int charCode) => JSStringImpl(
+    js.JS<WasmExternRef?>('c => String.fromCharCode(c)', charCode.toDouble()),
+  );
+
+  static String _fromTwoByteCharCode(int low, int high) => JSStringImpl(
+    js.JS<WasmExternRef?>(
+      '(l, h) => String.fromCharCode(h, l)',
+      low.toDouble(),
+      high.toDouble(),
+    ),
+  );
+
+  static String _fromCharCode(int charCode) {
+    if (0 <= charCode) {
+      if (charCode <= 0xffff) {
+        return _fromOneByteCharCode(charCode);
+      }
+      if (charCode <= 0x10ffff) {
+        var bits = charCode - 0x10000;
+        var low = 0xDC00 | (bits & 0x3ff);
+        var high = 0xD800 | (bits >> 10);
+        return _fromTwoByteCharCode(low, high);
+      }
     }
-    if (charCode <= 0xffff) {
-      final string = TwoByteString.withLength(1);
-      string.setUnchecked(0, charCode);
-      return string;
-    }
-    assert(charCode <= 0x10ffff);
-    int low = 0xDC00 | (charCode & 0x3ff);
-    int bits = charCode - 0x10000;
-    int high = 0xD800 | (bits >> 10);
-    final string = TwoByteString.withLength(2);
-    string.setUnchecked(0, high);
-    string.setUnchecked(1, low);
-    return string;
+    throw RangeError.range(charCode, 0, 0x10ffff);
   }
 
-  @patch
-  external const factory String.fromEnvironment(
-    String name, {
-    String defaultValue = "",
-  });
+  static String _fromCharCodeApplySubarray(
+    JSUint32ArrayImpl charCodes,
+    int index,
+    int end,
+  ) {
+    return JSStringImpl(
+      js.JS<WasmExternRef?>(
+        '(c, i, e) => String.fromCharCode.apply(null, new Uint32Array(c.buffer, c.byteOffset + i, e))',
+        charCodes.toExternRef,
+        WasmI32.fromInt(index * 4),
+        WasmI32.fromInt(end - index),
+      ),
+    );
+  }
 }
 
 extension _StringExt on String {
-  int firstNonWhitespace() {
-    final value = this;
-    if (value is StringBase) return value.firstNonWhitespace();
-    return unsafeCast<JSStringImpl>(value).firstNonWhitespace();
-  }
+  int firstNonWhitespace() =>
+      unsafeCast<JSStringImpl>(this).firstNonWhitespace();
 
-  int lastNonWhitespace() {
-    final value = this;
-    if (value is StringBase) return value.lastNonWhitespace();
-    return unsafeCast<JSStringImpl>(value).lastNonWhitespace();
-  }
+  int lastNonWhitespace() => unsafeCast<JSStringImpl>(this).lastNonWhitespace();
 }

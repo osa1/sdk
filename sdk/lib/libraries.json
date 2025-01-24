@@ -168,8 +168,7 @@
         "patches": "_internal/wasm/lib/boxed_int_to_string.dart"
       },
       "_string": {
-        "uri": "_internal/wasm/lib/js_string.dart",
-        "patches": "_internal/wasm/lib/string.dart"
+        "uri": "_internal/wasm/lib/js_string.dart"
       },
       "_typed_data": {
         "uri": "_internal/wasm/lib/typed_data.dart"
@@ -208,10 +207,10 @@
           "_internal/wasm/lib/date_patch_patch.dart",
           "_internal/wasm/lib/int_common_patch.dart",
           "_internal/wasm/lib/int_patch.dart",
+          "_internal/wasm/lib/string_patch.dart",
           "_internal/wasm/lib/sync_star_patch.dart",
           "_internal/wasm/lib/weak_patch.dart",
-          "_internal/wasm_js_compatibility/lib/string_buffer_patch.dart",
-          "_internal/wasm_js_compatibility/lib/string_patch.dart"
+          "_internal/wasm_js_compatibility/lib/string_buffer_patch.dart"
         ]
       },
       "typed_data": {

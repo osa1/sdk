@@ -14,7 +14,7 @@ import 'dart:js_interop';
 /// Implements `_Utf8Decoder.convertSingle` hook for JS array inputs. Does not
 /// do bounds checking.
 JSStringImpl? decodeUtf8JS(
-  JSUint8ArrayImpl codeUnits,
+  JSArrayBase codeUnits,
   int start,
   int end,
   bool allowMalformed,

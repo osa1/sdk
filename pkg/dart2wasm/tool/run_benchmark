@@ -42,6 +42,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --d8)
       SHELL_BIN="$D8_BIN"
+      SHELL_OPTIONS+=("--experimental-wasm-imported-strings")
       SHELL_ARG_SEPERATOR="--"
       shift
       ;;

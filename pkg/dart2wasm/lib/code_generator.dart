@@ -880,9 +880,7 @@ abstract class AstCodeGenerator
         b.ref_null(w.HeapType.none);
       }
       final Location? location = node.location;
-      final stringClass = translator.options.jsCompatibility
-          ? translator.jsStringClass
-          : translator.stringBaseClass;
+      final stringClass = translator.jsStringClass;
       final w.RefType stringRefType =
           translator.classInfo[stringClass]!.nullableType;
       if (location != null) {
@@ -2663,33 +2661,10 @@ abstract class AstCodeGenerator
       return visitStringLiteral(expr, expectedType);
     }
 
-    late final Procedure target;
-
     final expressions = node.expressions;
-    // We have special cases for 1/2/3/4 arguments in non-JSCM mode.
-    if (!translator.options.jsCompatibility && expressions.length <= 4) {
-      final nullableObjectType =
-          translator.translateType(translator.coreTypes.objectNullableRawType);
-      for (final expression in expressions) {
-        translateExpression(expression, nullableObjectType);
-      }
-      if (expressions.length == 1) {
-        target = translator.stringInterpolate1;
-      } else if (expressions.length == 2) {
-        target = translator.stringInterpolate2;
-      } else if (expressions.length == 3) {
-        target = translator.stringInterpolate3;
-      } else {
-        assert(expressions.length == 4);
-        target = translator.stringInterpolate4;
-      }
-    } else {
-      final nullableObjectType = translator.coreTypes.objectNullableRawType;
-      makeArrayFromExpressions(node.expressions, nullableObjectType);
-      target = translator.options.jsCompatibility
-          ? translator.jsStringInterpolate
-          : translator.stringInterpolate;
-    }
+    final nullableObjectType = translator.coreTypes.objectNullableRawType;
+    makeArrayFromExpressions(node.expressions, nullableObjectType);
+    final target = translator.jsStringInterpolate;
 
     return translator.outputOrVoid(call(target.reference));
   }
@@ -4177,9 +4152,7 @@ class SwitchInfo {
       } else if (check<IntLiteral, IntConstant>()) {
         equalsMember = translator.boxedIntEquals;
       } else if (check<StringLiteral, StringConstant>()) {
-        equalsMember = translator.options.jsCompatibility
-            ? translator.jsStringEquals
-            : translator.stringEquals;
+        equalsMember = translator.jsStringEquals;
       } else {
         equalsMember = translator.coreTypes.identicalProcedure;
       }
@@ -4242,9 +4215,7 @@ class SwitchInfo {
       compare = (switchExprLocal, pushCaseExpr) {
         codeGen.b.local_get(switchExprLocal);
         pushCaseExpr();
-        codeGen.call(translator.options.jsCompatibility
-            ? translator.jsStringEquals.reference
-            : translator.stringEquals.reference);
+        codeGen.call(translator.jsStringEquals.reference);
       };
     } else {
       // Object identity switch

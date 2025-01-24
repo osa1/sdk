@@ -10,7 +10,10 @@ const jsRuntimeBlobPart1 = r'''
 // `source` needs to be a `Response` object (or promise thereof) e.g. created
 // via the `fetch()` JS API.
 export async function compileStreaming(source) {
-  const builtins = {builtins: ['js-string']};
+  const builtins = {
+    builtins: ['js-string'],
+    importedStringConstants: 'S',
+  };
   return new CompiledApp(
       await WebAssembly.compileStreaming(source, builtins), builtins);
 }
@@ -18,7 +21,10 @@ export async function compileStreaming(source) {
 // Compiles a dart2wasm-generated wasm modules from `bytes` which is then
 // instantiatable via the `instantiate` method.
 export async function compile(bytes) {
-  const builtins = {builtins: ['js-string']};
+  const builtins = {
+    builtins: ['js-string'],
+    importedStringConstants: 'S',
+  };
   return new CompiledApp(await WebAssembly.compile(bytes, builtins), builtins);
 }
 
@@ -118,17 +124,17 @@ const jsRuntimeBlobPart3 = r'''
     };
 
     const jsStringPolyfill = {
-      "charCodeAt": (s, i) => s.charCodeAt(i),
+      "charCodeAt": Function.prototype.call.bind(String.prototype.charCodeAt),
+      "concat": Function.prototype.call.bind(String.prototype.concat),
+      "fromCharCode": Function.prototype.call.bind(String.prototype.fromCharCode),
+      "substring": Function.prototype.call.bind(String.prototype.substring),
       "compare": (s1, s2) => {
         if (s1 < s2) return -1;
         if (s1 > s2) return 1;
         return 0;
       },
-      "concat": (s1, s2) => s1 + s2,
       "equals": (s1, s2) => s1 === s2,
-      "fromCharCode": (i) => String.fromCharCode(i),
       "length": (s) => s.length,
-      "substring": (s, a, b) => s.substring(a, b),
       "fromCharCodeArray": (a, start, end) => {
         if (end <= start) return '';
 

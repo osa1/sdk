@@ -505,20 +505,8 @@ class WasmTarget extends Target {
 
   @override
   Class concreteStringLiteralClass(CoreTypes coreTypes, String value) {
-    // In JSCM all strings are JS strings.
-    if (mode == Mode.jsCompatibility) {
-      return _jsString ??=
-          coreTypes.index.getClass("dart:_string", "JSStringImpl");
-    }
-    const int maxLatin1 = 0xff;
-    for (int i = 0; i < value.length; ++i) {
-      if (value.codeUnitAt(i) > maxLatin1) {
-        return _twoByteString ??=
-            coreTypes.index.getClass('dart:_string', 'TwoByteString');
-      }
-    }
-    return _oneByteString ??=
-        coreTypes.index.getClass('dart:_string', 'OneByteString');
+    return _jsString ??=
+        coreTypes.index.getClass("dart:_string", "JSStringImpl");
   }
 
   // In dart2wasm we can't assume that `x == "hello"` means `x`'s class is
