@@ -17,7 +17,16 @@ export 'tables.dart' show TablesBuilder;
 export 'table.dart' show TableBuilder;
 export 'tags.dart' show TagsBuilder;
 export 'types.dart' show TypesBuilder;
-export 'instructions.dart' show InstructionsBuilder, Label, ValidationError;
+export 'instructions.dart'
+    show
+        InstructionsBuilder,
+        Label,
+        ValidationError,
+        TryTableCatch,
+        Catch_,
+        CatchAll_,
+        CatchRef,
+        CatchAllRef;
 
 mixin Builder<T> {
   T? _built;

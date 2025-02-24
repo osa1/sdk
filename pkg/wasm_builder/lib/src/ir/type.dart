@@ -278,6 +278,12 @@ abstract class HeapType implements Serializable {
   /// The `nofunc` heap type.
   static const nofunc = NoFuncHeapType._();
 
+  /// The `exn` heap type.
+  static const exn = ExnHeapType._();
+
+  /// The `noexn` heap type.
+  static const noexn = NoExnHeapType._();
+
   /// Whether this heap type is nullable by default, i.e. when written with the
   /// -`ref` shorthand. A `null` value here means the heap type has no default
   /// nullability, so the nullability of a reference has to be specified
@@ -659,6 +665,60 @@ abstract class DefType extends HeapType {
 
   // Serialize the type for the type section, excluding supertype references.
   void serializeDefinitionInner(Serializer s);
+}
+
+/// The `exn` heap type.
+class ExnHeapType extends HeapType {
+  const ExnHeapType._();
+
+  static const defaultNullability = true;
+
+  @override
+  bool? get nullableByDefault => defaultNullability;
+
+  @override
+  HeapType get topType => HeapType.exn;
+
+  @override
+  HeapType get bottomType => HeapType.noexn;
+
+  @override
+  bool isSubtypeOf(HeapType other) =>
+      other == HeapType.common || other == HeapType.exn;
+
+  @override
+  void serialize(Serializer s) => s.writeByte(0x69); // -0x17
+
+  @override
+  String toString() => "exn";
+}
+
+/// The `noexn` heap type.
+class NoExnHeapType extends HeapType {
+  const NoExnHeapType._();
+
+  static const defaultNullability = true;
+
+  @override
+  bool? get nullableByDefault => defaultNullability;
+
+  @override
+  HeapType get topType => HeapType.exn;
+
+  @override
+  HeapType get bottomType => HeapType.noexn;
+
+  @override
+  bool isSubtypeOf(HeapType other) =>
+      other == HeapType.common ||
+      other == HeapType.exn ||
+      other == HeapType.noexn;
+
+  @override
+  void serialize(Serializer s) => s.writeByte(0x74); // -0x0c
+
+  @override
+  String toString() => "noexn";
 }
 
 /// A custom function type.

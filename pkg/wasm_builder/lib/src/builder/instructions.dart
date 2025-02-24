@@ -91,6 +91,55 @@ class Try extends Label {
   List<ir.ValueType> get targetTypes => outputs;
 }
 
+class TryTable extends Label {
+  final List<TryTableCatch> catches;
+
+  TryTable(super.inputs, super.outputs, this.catches) : super._();
+
+  @override
+  List<ir.ValueType> get targetTypes => outputs;
+}
+
+abstract class TryTableCatch {
+  final Label label;
+
+  TryTableCatch(this.label);
+
+  ir.TryTableCatch toIr(int labelIndex);
+}
+
+class Catch_ extends TryTableCatch {
+  final ir.Tag tag;
+
+  Catch_(this.tag, super.label);
+
+  @override
+  ir.TryTableCatch toIr(int labelIndex) => ir.Catch_(tag, labelIndex);
+}
+
+class CatchRef extends TryTableCatch {
+  final ir.Tag tag;
+
+  CatchRef(this.tag, super.label);
+
+  @override
+  ir.TryTableCatch toIr(int labelIndex) => ir.CatchRef(tag, labelIndex);
+}
+
+class CatchAll_ extends TryTableCatch {
+  CatchAll_(super.label);
+
+  @override
+  ir.TryTableCatch toIr(int labelIndex) => ir.CatchAll_(labelIndex);
+}
+
+class CatchAllRef extends TryTableCatch {
+  CatchAllRef(super.label);
+
+  @override
+  ir.TryTableCatch toIr(int labelIndex) => ir.CatchAllRef(labelIndex);
+}
+
 /// A sequence of Wasm instructions.
 ///
 /// Instructions can be added to the sequence by calling the corresponding
@@ -585,6 +634,11 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     _reachable = false;
   }
 
+  /// Emit a `throw_ref` instruction.
+  void throw_ref() {
+    _add(ir.ThrowRef());
+  }
+
   /// Emit an `end` instruction.
   void end() {
     assert(_verifyEndOfBlock(_topOfLabelStack.outputs,
@@ -630,6 +684,22 @@ class InstructionsBuilder with Builder<ir.Instructions> {
     _add(ir.BrTable(
         labels.map(_labelIndex).toList(), _labelIndex(defaultLabel)));
     _reachable = false;
+  }
+
+  /// Emit a `try_table` instruction.
+  Label try_table(List<TryTableCatch> catches,
+      [List<ir.ValueType> inputs = const [],
+      List<ir.ValueType> outputs = const []]) {
+    // TODO: Validation?
+    final label = _pushLabel(TryTable(inputs, outputs, catches),
+        trace: const ['try_table']);
+    final List<ir.TryTableCatch> irCatches =
+        catches.map((c) => c.toIr(_labelIndex(c.label))).toList();
+    return _beginBlock(
+        label,
+        () => ir.BeginNoEffectTryTable(irCatches),
+        (ty) => ir.BeginOneOutputTryTable(ty, irCatches),
+        (ty) => ir.BeginFunctionTryTable(ty, irCatches));
   }
 
   /// Emit a `return` instruction.
