@@ -129,6 +129,8 @@ class CoreTypesUtil {
     coreTypes.functionClass: jsifyFunction,
   };
 
+  // These conversion functions should all have `WasmExternRef?` as the
+  // only argument.
   late final Map<Class, Procedure> _dartifyMap = {
     coreTypes.boolClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartBool'),
@@ -367,6 +369,9 @@ class CoreTypesUtil {
       );
 
   /// Cast the [invocation] if needed to conform to the expected [expectedType].
+  ///
+  /// [expectedType] is the return type of the interop function, as written by
+  /// the user.
   Expression castInvocationForReturn(
       Expression invocation, DartType expectedType) {
     Expression expression;
@@ -381,9 +386,6 @@ class CoreTypesUtil {
     }
 
     if (isJSValueType(expectedType)) {
-      // TODO(joshualitt): Expose boxed `JSNull` and `JSUndefined` to Dart
-      // code after migrating existing users of js interop on Dart2Wasm.
-      // expression = _createJSValue(invocation);
       // Casts are expensive, so we stick to a null-assertion if needed. If
       // the nullability can't be determined, cast.
       expression = invokeOneArg(jsValueBoxTarget, invocation);
@@ -404,19 +406,20 @@ class CoreTypesUtil {
           initializer: invocation,
           type: nullableWasmExternRefType,
           isSynthesized: true);
-      expression = Let(
-        invocationValueVar,
-        ConditionalExpression(
+      expression =
+          invokeOneArg(conversionProcedure, VariableGet(invocationValueVar));
+      if (expectNullable) {
+        expression = ConditionalExpression(
           StaticInvocation(
               isDartNullTarget, Arguments([VariableGet(invocationValueVar)])),
-          expectNullable
-              ? NullLiteral()
-              : StaticInvocation(throwArgumentNullErrorTarget, Arguments([])),
-          invokeOneArg(conversionProcedure, VariableGet(invocationValueVar)),
+          NullLiteral(),
+          expression,
           expectedType,
-        ),
-      );
+        );
+      }
+      expression = Let(invocationValueVar, expression);
     }
+
     return expression;
   }
 
