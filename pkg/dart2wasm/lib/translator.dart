@@ -758,11 +758,17 @@ class Translator with KernelNodes {
     if (callTarget.supportsInlining && callTarget.shouldInline) {
       return b.inlineCallTo(callTarget);
     }
-    return callFunction(functions.getFunction(reference), b);
+    final function = functions.getFunction(reference);
+    if (isPure(reference)) {
+      print("FUNCTION IS PUREEEEE: $reference");
+      return callPureFunction(function, b);
+    }
+    return callFunction(function, b);
   }
 
   late final WasmFunctionImporter _importedFunctions =
       WasmFunctionImporter(this, 'func');
+
   late final WasmMemoryImporter _importedMemories =
       WasmMemoryImporter(this, 'memory');
 
@@ -787,6 +793,37 @@ class Translator with KernelNodes {
       b.call_ref(function.type);
     }
     return b.emitUnreachableIfNoResult(function.type.outputs);
+  }
+
+  List<w.ValueType> callPureFunction(
+      w.BaseFunction function, w.InstructionsBuilder b) {
+    // import "call.without.effects" from "binaryen-intrinsics" with the same
+    // type as the callee's type.
+    pushFunRef(function, b);
+    final intrinsicFunctionType = b.moduleBuilder.types.defineFunction(
+      [...function.type.inputs, w.RefType.func(nullable: false)],
+      function.type.outputs,
+    );
+    final callWithoutEffects = b.moduleBuilder.functions.import(
+        "binaryen-intrinsics", "call.without.effects", intrinsicFunctionType);
+    b.call(callWithoutEffects);
+    return b.emitUnreachableIfNoResult(function.type.outputs);
+  }
+
+  void pushFunRef(w.BaseFunction function, w.InstructionsBuilder b) {
+    final targetModuleBuilder = moduleToBuilder[function.enclosingModule]!;
+    if (targetModuleBuilder == b.moduleBuilder) {
+      b.ref_func(function);
+    } else if (isMainModule(targetModuleBuilder)) {
+      final importedFunction =
+          _importedFunctions.get(function, b.moduleBuilder);
+      b.ref_func(importedFunction);
+    } else {
+      final staticTable = staticTablesPerType.getTableForType(function.type);
+      b.i32_const(staticTable.indexForFunction(function));
+      b.table_get(staticTable.getWasmTable(b.moduleBuilder));
+      b.ref_as_non_null();
+    }
   }
 
   void declareMainAppFunctionExportWithName(
@@ -1920,6 +1957,7 @@ class Translator with KernelNodes {
 
   bool shouldInline(Reference target, w.FunctionType signature) {
     if (!options.inlining) return false;
+
     if (isDynamicSubmodule && moduleForReference(target) == mainModule) {
       // We avoid inlining code from the main module into dynamic submodules
       // so that we can avoid needing to export more code.
@@ -1934,12 +1972,15 @@ class Translator with KernelNodes {
     if (target.isUncheckedEntryReference) return true;
 
     final member = target.asMember;
+
     if (getPragma<bool>(member, "wasm:never-inline", true) == true) {
       return false;
     }
+
     if (getPragma<bool>(member, "wasm:prefer-inline", true) == true) {
       return true;
     }
+
     if (member is Field) {
       // Implicit getter/setter for instance fields are just loads/stores.
       if (member.isInstanceMember) return true;
@@ -1955,13 +1996,14 @@ class Translator with KernelNodes {
       }
       return false;
     }
+
     if (target.isInitializerReference) return true;
 
     final function = member.function!;
     if (function.body == null) return false;
 
     // We never want to inline throwing functions (as they are slow paths).
-    if (member is Procedure && member.function.returnType is NeverType) {
+    if (member is Procedure && function.returnType is NeverType) {
       return false;
     }
 
@@ -2000,6 +2042,10 @@ class Translator with KernelNodes {
     if (nodeCount <= signature.inputs.length) return true;
 
     return nodeCount <= options.inliningLimit;
+  }
+
+  bool isPure(Reference target) {
+    return getPragma<bool>(target.asMember, "wasm:pure", true) == true;
   }
 
   bool supportsInlining(Reference target) {
