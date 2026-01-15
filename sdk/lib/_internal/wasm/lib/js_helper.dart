@@ -158,17 +158,33 @@ bool isJSRegExp(WasmExternRef? o) => JS<bool>("o => o instanceof RegExp", o);
 bool areEqualInJS(WasmExternRef? l, WasmExternRef? r) =>
     JS<bool>("(l, r) => l === r", l, r);
 
-// The JS runtime will run helpful conversion routines between refs and bool /
-// double. In the longer term hopefully we can find a way to avoid the round
-// trip.
-double toDartNumber(WasmExternRef? o) {
+bool isNumber(WasmExternRef? ref) {
+  if (ref.isNull) return false;
+  return JS<WasmI32>("o => typeof o === 'number'", ref).toBool();
+}
+
+double toDartDouble(WasmExternRef? o) {
   if (!isNumber(o)) {
     throw ArgumentError('JS value is not a number');
   }
-  return _toDartNumberUnchecked(o);
+  return _toDartDoubleUnchecked(o);
 }
 
-double _toDartNumberUnchecked(WasmExternRef? o) => JS<double>("o => o", o);
+double _toDartDoubleUnchecked(WasmExternRef? o) => JS<double>("o => o", o);
+
+@pragma('wasm:entry-point')
+int toDartInt(WasmExternRef? ref) {
+  if (isNumber(ref)) {
+    final dartDouble = _toDartDoubleUnchecked(ref);
+    if (dartDouble.isFinite) {
+      final dartInt = dartDouble.toInt();
+      if (dartInt.toDouble() == dartDouble) {
+        return dartInt;
+      }
+    }
+  }
+  throw ArgumentError('JS value is not integer');
+}
 
 @pragma('wasm:entry-point')
 WasmExternRef? toJSNumber(double o) => JS<WasmExternRef?>("o => o", o);
@@ -557,7 +573,7 @@ Object? dartifyRaw(WasmExternRef? ref, [int? refType]) {
   return switch (refType) {
     ExternRefType.null_ || ExternRefType.undefined => null,
     ExternRefType.boolean => _toDartBoolUnchecked(ref),
-    ExternRefType.number => _toDartNumberUnchecked(ref),
+    ExternRefType.number => _toDartDoubleUnchecked(ref),
     ExternRefType.string => JSStringImpl.fromRefUnchecked(ref),
     ExternRefType.array => toDartList(ref),
     ExternRefType.int8Array => js_types.JSInt8ArrayImpl.fromArrayRefUnchecked(
@@ -600,25 +616,6 @@ Object? dartifyRaw(WasmExternRef? ref, [int? refType]) {
   };
 }
 
-bool isNumber(WasmExternRef? ref) {
-  if (ref.isNull) return false;
-  return JS<WasmI32>("o => typeof o === 'number'", ref).toBool();
-}
-
-@pragma('wasm:entry-point')
-int toDartInt(WasmExternRef? ref) {
-  if (isNumber(ref)) {
-    final dartDouble = _toDartNumberUnchecked(ref);
-    if (dartDouble.isFinite) {
-      final dartInt = dartDouble.toInt();
-      if (dartInt.toDouble() == dartDouble) {
-        return dartInt;
-      }
-    }
-  }
-  throw ArgumentError('JS value is not integer');
-}
-
 List<double> jsFloatTypedArrayToDartFloatTypedData(
   WasmExternRef? ref,
   List<double> makeTypedData(int size),
@@ -626,7 +623,7 @@ List<double> jsFloatTypedArrayToDartFloatTypedData(
   int length = objectLength(ref);
   List<double> list = makeTypedData(length);
   for (int i = 0; i < length; i++) {
-    list[i] = toDartNumber(objectReadIndex(ref, i));
+    list[i] = toDartDouble(objectReadIndex(ref, i));
   }
   return list;
 }
@@ -638,7 +635,7 @@ List<int> jsIntTypedArrayToDartIntTypedData(
   int length = objectLength(ref);
   List<int> list = makeTypedData(length);
   for (int i = 0; i < length; i++) {
-    list[i] = toDartNumber(objectReadIndex(ref, i)).toInt();
+    list[i] = toDartDouble(objectReadIndex(ref, i)).toInt();
   }
   return list;
 }

@@ -138,9 +138,9 @@ class CoreTypesUtil {
     coreTypes.intClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartInt'),
     coreTypes.doubleClass:
-        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartNumber'),
+        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartDouble'),
     coreTypes.numClass:
-        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartNumber'),
+        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartDouble'),
     coreTypes.stringClass:
         coreTypes.index.getProcedure('dart:_string', 'JSStringImpl', 'fromRef'),
     coreTypes.listClass:

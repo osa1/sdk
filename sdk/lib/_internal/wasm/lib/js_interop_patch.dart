@@ -610,18 +610,10 @@ extension ListToJSArray<T extends JSAny?> on List<T> {
 @patch
 extension JSNumberToNumber on JSNumber {
   @patch
-  double get toDartDouble => toDartNumber(toExternRef);
+  double get toDartDouble => js_helper.toDartDouble(toExternRef);
 
   @patch
-  int get toDartInt {
-    final number = toDartNumber(toExternRef);
-    final intVal = number.toInt();
-    if (number == intVal) {
-      return intVal;
-    } else {
-      throw 'Expected integer value, but was not integer.';
-    }
-  }
+  int get toDartInt => js_helper.toDartInt(toExternRef);
 }
 
 @patch
