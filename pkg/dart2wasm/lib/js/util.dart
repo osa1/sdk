@@ -129,8 +129,9 @@ class CoreTypesUtil {
     coreTypes.functionClass: jsifyFunction,
   };
 
-  // These conversion functions should all have `WasmExternRef?` as the
-  // only argument.
+  // These conversion functions should all have `WasmExternRef?` as the only
+  // argument, and they should check for nulls to prevent nulls from flowing
+  // into non-nullable Dart values.
   late final Map<Class, Procedure> _dartifyMap = {
     coreTypes.boolClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartBool'),

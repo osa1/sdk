@@ -161,7 +161,14 @@ bool areEqualInJS(WasmExternRef? l, WasmExternRef? r) =>
 // The JS runtime will run helpful conversion routines between refs and bool /
 // double. In the longer term hopefully we can find a way to avoid the round
 // trip.
-double toDartNumber(WasmExternRef? o) => JS<double>("o => o", o);
+double toDartNumber(WasmExternRef? o) {
+  if (!isNumber(o)) {
+    throw ArgumentError('JS value is not a number');
+  }
+  return toDartNumberUnchecked(o);
+}
+
+double toDartNumberUnchecked(WasmExternRef? o) => JS<double>("o => o", o);
 
 @pragma('wasm:entry-point')
 WasmExternRef? toJSNumber(double o) => JS<WasmExternRef?>("o => o", o);
@@ -581,13 +588,20 @@ Object? dartifyRaw(WasmExternRef? ref, [int? refType]) {
   };
 }
 
+bool isNumber(WasmExternRef? ref) {
+  if (ref.isNull) return false;
+  return JS<WasmI32>("o => typeof o === 'number'", ref).toBool();
+}
+
 @pragma('wasm:entry-point')
 int dartifyInt(WasmExternRef? ref) {
-  final dartDouble = toDartNumber(ref);
-  if (dartDouble.isFinite) {
-    final dartInt = dartDouble.toInt();
-    if (dartInt.toDouble() == dartDouble) {
-      return dartInt;
+  if (isNumber(ref)) {
+    final dartDouble = toDartNumberUnchecked(ref);
+    if (dartDouble.isFinite) {
+      final dartInt = dartDouble.toInt();
+      if (dartInt.toDouble() == dartDouble) {
+        return dartInt;
+      }
     }
   }
   throw ArgumentError('JS value is not integer');
