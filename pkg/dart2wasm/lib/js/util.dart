@@ -136,7 +136,7 @@ class CoreTypesUtil {
     coreTypes.boolClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartBool'),
     coreTypes.intClass:
-        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'dartifyInt'),
+        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartInt'),
     coreTypes.doubleClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartNumber'),
     coreTypes.numClass:

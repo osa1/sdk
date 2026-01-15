@@ -165,16 +165,28 @@ double toDartNumber(WasmExternRef? o) {
   if (!isNumber(o)) {
     throw ArgumentError('JS value is not a number');
   }
-  return toDartNumberUnchecked(o);
+  return _toDartNumberUnchecked(o);
 }
 
-double toDartNumberUnchecked(WasmExternRef? o) => JS<double>("o => o", o);
+double _toDartNumberUnchecked(WasmExternRef? o) => JS<double>("o => o", o);
 
 @pragma('wasm:entry-point')
 WasmExternRef? toJSNumber(double o) => JS<WasmExternRef?>("o => o", o);
 
+bool isBool(WasmExternRef? ref) {
+  if (ref.isNull) return false;
+  return JS<WasmI32>("o => typeof o === 'boolean'", ref).toBool();
+}
+
 @pragma('wasm:entry-point')
-bool toDartBool(WasmExternRef? o) => JS<bool>("o => o", o);
+bool toDartBool(WasmExternRef? o) {
+  if (!isBool(o)) {
+    throw ArgumentError('JS value is not a boolean');
+  }
+  return _toDartBoolUnchecked(o);
+}
+
+bool _toDartBoolUnchecked(WasmExternRef? o) => JS<bool>("o => o", o);
 
 WasmExternRef? toJSBoolean(bool b) => JS<WasmExternRef?>("b => !!b", b);
 
@@ -544,8 +556,8 @@ Object? dartifyRaw(WasmExternRef? ref, [int? refType]) {
   refType ??= externRefType(ref);
   return switch (refType) {
     ExternRefType.null_ || ExternRefType.undefined => null,
-    ExternRefType.boolean => toDartBool(ref),
-    ExternRefType.number => toDartNumber(ref),
+    ExternRefType.boolean => _toDartBoolUnchecked(ref),
+    ExternRefType.number => _toDartNumberUnchecked(ref),
     ExternRefType.string => JSStringImpl.fromRefUnchecked(ref),
     ExternRefType.array => toDartList(ref),
     ExternRefType.int8Array => js_types.JSInt8ArrayImpl.fromArrayRefUnchecked(
@@ -594,9 +606,9 @@ bool isNumber(WasmExternRef? ref) {
 }
 
 @pragma('wasm:entry-point')
-int dartifyInt(WasmExternRef? ref) {
+int toDartInt(WasmExternRef? ref) {
   if (isNumber(ref)) {
-    final dartDouble = toDartNumberUnchecked(ref);
+    final dartDouble = _toDartNumberUnchecked(ref);
     if (dartDouble.isFinite) {
       final dartInt = dartDouble.toInt();
       if (dartInt.toDouble() == dartDouble) {
