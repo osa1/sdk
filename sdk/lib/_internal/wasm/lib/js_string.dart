@@ -66,6 +66,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   bool get isNotEmpty => !isEmpty;
 
   @pragma("wasm:entry-point")
+  @pragma("wasm:pure")
   static String _interpolate(WasmArray<Object?> values) {
     final valuesLength = values.length;
     String result = '';
@@ -76,11 +77,13 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @pragma("wasm:entry-point", "call")
+  @pragma("wasm:pure")
   static String _interpolate1(Object? value) {
     return value is String ? value : value.toString();
   }
 
   @pragma("wasm:entry-point", "call")
+  @pragma("wasm:pure")
   static String _interpolate2(Object? value1, Object? value2) {
     final String string1 = value1 is String ? value1 : value1.toString();
     final String string2 = value2 is String ? value2 : value2.toString();
@@ -93,6 +96,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @pragma("wasm:entry-point", "call")
+  @pragma("wasm:pure")
   static String _interpolate3(Object? value1, Object? value2, Object? value3) {
     final String string1 = value1 is String ? value1 : value1.toString();
     final String string2 = value2 is String ? value2 : value2.toString();
@@ -109,6 +113,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @pragma("wasm:entry-point", "call")
+  @pragma("wasm:pure")
   static String _interpolate4(
     Object? value1,
     Object? value2,
