@@ -156,7 +156,6 @@ const List<String> _binaryenEssentialFlags = [
   '--enable-reference-types',
   '--enable-sign-ext',
   '--enable-threads',
-  '--intrinsic-lowering',
   '--no-inline=*<noInline>*',
   '--traps-never-happen',
 ];
@@ -173,11 +172,13 @@ final List<String> _binaryenSingleModuleOptFlags = [
   '-Os',
   '--type-finalizing',
   '--minimize-rec-groups',
+  '--intrinsic-lowering',
 ];
 
 final List<String> _binaryenMultiModuleOptFlags = [
   ..._binaryenEssentialFlags,
   '-Os',
+  '--intrinsic-lowering',
 ];
 
 /// Compile a Dart file into a Wasm module.
