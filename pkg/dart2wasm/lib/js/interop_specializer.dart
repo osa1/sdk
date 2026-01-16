@@ -110,14 +110,17 @@ abstract class _Specializer {
 
     // Create Dart procedure stub for JS method.
     String jsMethodName = _methodCollector.generateMethodName();
+    final returnType = function.returnType;
     final dartProcedure = _methodCollector.addInteropProcedure(
       '|$jsMethodName',
       'dart2wasm.$jsMethodName',
       FunctionNode(null,
           positionalParameters: dartPositionalParameters,
-          returnType: function.returnType is VoidType
+          returnType: returnType is VoidType
               ? VoidType()
-              : _util.nullableWasmExternRefType),
+              : returnType == _util.coreTypes.doubleNonNullableRawType
+                  ? _util.coreTypes.doubleNonNullableRawType
+                  : _util.nullableWasmExternRefType),
       fileUri,
       AnnotationType.import,
       library: interopMethod.enclosingLibrary,

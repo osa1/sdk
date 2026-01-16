@@ -620,6 +620,7 @@ w.FunctionType _makeFunctionType(
   w.ValueType translateType(DartType type) => isImportOrExport
       ? translator.translateExternalType(type)
       : translator.translateType(type);
+
   w.ValueType translateReturnType(DartType type) => isImportOrExport
       ? translator.translateExternalType(type)
       : translator.translateReturnType(type);
@@ -639,7 +640,7 @@ w.FunctionType _makeFunctionType(
   } else {
     final DartType returnType = translator.typeOfReturnValue(member);
     outputs =
-        !isVoidType(returnType) ? [translateReturnType(returnType)] : const [];
+        isVoidType(returnType) ? const [] : [translateReturnType(returnType)];
   }
 
   return translator.typesBuilder.defineFunction(inputs, outputs);

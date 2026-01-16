@@ -164,6 +164,9 @@ bool areEqualInJS(WasmExternRef? l, WasmExternRef? r) =>
 double toDartNumber(WasmExternRef? o) => JS<double>("o => o", o);
 
 @pragma('wasm:entry-point')
+double doubleToDouble(double o) => o;
+
+@pragma('wasm:entry-point')
 WasmExternRef? toJSNumber(double o) => JS<WasmExternRef?>("o => o", o);
 
 @pragma('wasm:entry-point')

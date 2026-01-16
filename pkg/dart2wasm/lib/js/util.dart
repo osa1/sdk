@@ -134,8 +134,8 @@ class CoreTypesUtil {
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartBool'),
     coreTypes.intClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'dartifyInt'),
-    coreTypes.doubleClass:
-        coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartNumber'),
+    coreTypes.doubleClass: coreTypes.index
+        .getTopLevelProcedure('dart:_js_helper', 'doubleToDouble'),
     coreTypes.numClass:
         coreTypes.index.getTopLevelProcedure('dart:_js_helper', 'toDartNumber'),
     coreTypes.stringClass:
