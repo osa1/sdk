@@ -3,7 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:io' show File, Directory;
+import 'dart:io' show Directory, File, Platform;
 
 import 'package:compiler/compiler_api.dart' as api show OutputType;
 import 'package:compiler/compiler_api.dart';
@@ -16,14 +16,16 @@ import 'package:test/test.dart';
 
 /// Options to pass to the compiler such as
 /// `Flags.disableTypeInference` or `Flags.disableInlining`
-const List<String> compilerOptions = [Flags.writeRecordedUses];
+const List<String> compilerOptions = [Flags.writeRecordedUses, Flags.testMode];
 
 /// Run `dart --define=updateExpectations=true pkg/compiler/test/record_use/record_use_test.dart`
 /// to update.
+/// Run `dart -DupdateExpectations=true pkg/vm/test/transformations/record_use_test.dart`
+/// to update the shared expectations to the VM output.
 Future<void> main() async {
   final vmTestCases = Directory('pkg/vm/testcases/transformations/record_use');
-  final testFiles = vmTestCases
-      .listSync()
+  final jsTestCases = Directory.fromUri(Platform.script.resolve('data'));
+  final testFiles = [...jsTestCases.listSync(), ...vmTestCases.listSync()]
       .whereType<File>()
       .where((file) => file.path.endsWith('.dart'))
       .map(
@@ -57,9 +59,6 @@ Future<void> main() async {
           final semanticEquals = actual.semanticEquals(
             golden,
             allowMetadataMismatch: true,
-            // Definition loading units are not working in dart2js backend.
-            // https://github.com/dart-lang/native/issues/2890
-            allowDefinitionLoadingUnitNull: true,
             allowMoreConstArguments: true,
             // Ensure test coverage of tear offs, add pragmas to prevent
             // optimiations if necessary.
@@ -136,10 +135,4 @@ const dart2jsNotSupported = {
   'nested.dart',
   'record_enum.dart',
   'record_instance_constant_empty.dart',
-  // Named arguments are converted to positional arguments.
-  // https://github.com/dart-lang/native/issues/2883
-  'named_and_positional.dart',
-  'named_both.dart',
-  'named_optional.dart',
-  'named_required.dart',
 };
