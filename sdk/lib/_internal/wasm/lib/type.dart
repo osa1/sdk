@@ -813,6 +813,7 @@ abstract class _TypeUniverse {
   }
 
   @pragma("wasm:entry-point")
+  @pragma("wasm:pure")
   static _FunctionType substituteFunctionTypeArgument(
     _FunctionType functionType,
     WasmArray<_Type> substitutions,
@@ -832,6 +833,7 @@ abstract class _TypeUniverse {
   /// are being substituted, or `null` when inside a nested function type that
   /// is guaranteed not to contain any type parameter types that are to be
   /// substituted.
+  @pragma("wasm:pure")
   static _Type substituteTypeArgument(
     _Type type,
     WasmArray<_Type> substitutions,
@@ -973,6 +975,7 @@ abstract class _TypeUniverse {
     }
   }
 
+  @pragma("wasm:pure")
   static _Type createNormalizedFutureOrType(
     bool isDeclaredNullable,
     _Type typeArgument,
@@ -996,6 +999,7 @@ abstract class _TypeUniverse {
     return _FutureOrType(declaredNullability, typeArgument);
   }
 
+  @pragma("wasm:pure")
   static bool isInterfaceSubtype(
     _InterfaceType s,
     _Environment? sEnv,
@@ -1027,11 +1031,13 @@ abstract class _TypeUniverse {
     );
   }
 
+  @pragma("wasm:pure")
   static bool isObjectInterfaceSubtype0(Object o, WasmI32 tId) {
     final WasmI32 sId = ClassID.getID(o);
     return _checkSubclassRelationship(sId, tId) != (-1).toWasmI32();
   }
 
+  @pragma("wasm:pure")
   static bool isObjectInterfaceSubtype1(
     Object o,
     WasmI32 tId,
@@ -1055,6 +1061,7 @@ abstract class _TypeUniverse {
     );
   }
 
+  @pragma("wasm:pure")
   static bool isObjectInterfaceSubtype2(
     Object o,
     WasmI32 tId,
@@ -1080,6 +1087,7 @@ abstract class _TypeUniverse {
     );
   }
 
+  @pragma("wasm:pure")
   static bool isObjectInterfaceSubtypeN(
     Object o,
     WasmI32 tId,
@@ -1131,6 +1139,7 @@ abstract class _TypeUniverse {
     return isSubtype(sArgForClassT, null, tTypeArgument0, null);
   }
 
+  @pragma("wasm:pure")
   static bool areTypeArgumentsSubtypes2(
     WasmArray<_Type> sTypeArguments,
     _Type tTypeArgument0,
@@ -1202,6 +1211,7 @@ abstract class _TypeUniverse {
   /// Returns `null` if [sId] does not have [tId] in its transitive
   /// extends/implements chain or
   @pragma('wasm:prefer-inline')
+  @pragma("wasm:pure")
   static WasmI32 _checkSubclassRelationship(WasmI32 sId, WasmI32 tId) {
     // Caller should ensure that the target cannot be a top type (which is
     // usually the case as callers have an [_InterfaceType].
@@ -1213,6 +1223,7 @@ abstract class _TypeUniverse {
     return _checkSubclassRelationshipViaTable(sId, tId);
   }
 
+  @pragma("wasm:pure")
   static WasmI32 _checkSubclassRelationshipViaTable(WasmI32 sId, WasmI32 tId) {
     final sModuleId = classIdToModuleId(sId);
     final tModuleId = classIdToModuleId(tId);
@@ -1234,6 +1245,7 @@ abstract class _TypeUniverse {
     return (-1).toWasmI32();
   }
 
+  @pragma("wasm:pure")
   static bool isFunctionSubtype(
     _FunctionType s,
     _Environment? sEnv,
@@ -1344,6 +1356,7 @@ abstract class _TypeUniverse {
     return true;
   }
 
+  @pragma("wasm:pure")
   static bool isRecordSubtype(
     _RecordType s,
     _Environment? sEnv,
@@ -1373,6 +1386,7 @@ abstract class _TypeUniverse {
 
   // Subtype check based off of sdk/lib/_internal/js_runtime/lib/rti.dart.
   // Returns true if [s] is a subtype of [t], false otherwise.
+  @pragma("wasm:pure")
   static bool isSubtype(
     _Type s,
     _Environment? sEnv,
@@ -1494,6 +1508,7 @@ abstract class _TypeUniverse {
   }
 
   // Check whether two types are both subtypes of each other.
+  @pragma("wasm:pure")
   static bool areEquivalent(
     _Type s,
     _Environment? sEnv,
@@ -1506,6 +1521,7 @@ abstract class _TypeUniverse {
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isSubtype(Object? o, _Type t) {
   // With this function being inlined, Binaryen is often able to optimize parts
   // of it away, for instance:
@@ -1520,6 +1536,7 @@ bool _isSubtype(Object? o, _Type t) {
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isNullabilityCheck(Object? o, bool isDeclaredNullable) {
   if (o == null) return isDeclaredNullable;
   return true;
@@ -1527,6 +1544,7 @@ bool _isNullabilityCheck(Object? o, bool isDeclaredNullable) {
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isInterfaceSubtype(
   Object? o,
   bool isDeclaredNullable,
@@ -1540,6 +1558,7 @@ bool _isInterfaceSubtype(
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isInterfaceSubtype0(Object? o, bool isDeclaredNullable, WasmI32 tId) {
   if (o == null) return isDeclaredNullable;
   return _TypeUniverse.isObjectInterfaceSubtype0(o, tId);
@@ -1547,6 +1566,7 @@ bool _isInterfaceSubtype0(Object? o, bool isDeclaredNullable, WasmI32 tId) {
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isInterfaceSubtype1(
   Object? o,
   bool isDeclaredNullable,
@@ -1559,6 +1579,7 @@ bool _isInterfaceSubtype1(
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isInterfaceSubtype2(
   Object? o,
   bool isDeclaredNullable,
@@ -1577,6 +1598,7 @@ bool _isInterfaceSubtype2(
 
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _isTypeSubtype(_Type s, _Type t) {
   return _TypeUniverse.isSubtype(s, null, t, null);
 }
@@ -1951,6 +1973,7 @@ void _checkClosureType(
   }
 }
 
+@pragma("wasm:pure")
 _Type _getActualRuntimeType(Object object) {
   final WasmI32 classId = ClassID.getID(object);
 
@@ -1965,11 +1988,13 @@ _Type _getActualRuntimeType(Object object) {
 }
 
 @pragma("wasm:prefer-inline")
-@pragma('dyn-module:callable')
+@pragma("dyn-module:callable")
+@pragma("wasm:pure")
 _Type _getActualRuntimeTypeNullable(Object? object) =>
     object == null ? _literal<Null>() : _getActualRuntimeType(object);
 
 @pragma("wasm:entry-point")
+@pragma("wasm:pure")
 _Type _getMasqueradedRuntimeType(Object object) {
   final WasmI32 classId = ClassID.getID(object);
 
@@ -2063,13 +2088,16 @@ const bool _isJsCompatibility = bool.fromEnvironment(
 );
 
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 _Type _getMasqueradedRuntimeTypeNullable(Object? object) =>
     object == null ? _literal<Null>() : _getMasqueradedRuntimeType(object);
 
 @pragma("wasm:intrinsic")
 external bool _isObjectClassId(WasmI32 classId);
+
 @pragma("wasm:intrinsic")
 external bool _isClosureClassId(WasmI32 classId);
+
 @pragma("wasm:intrinsic")
 external bool _isRecordClassId(WasmI32 classId);
 
@@ -2079,9 +2107,11 @@ external bool _isRecordClassId(WasmI32 classId);
 // call to `_Type.==` directly in the generated code.
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 bool _runtimeTypeEquals(_Type t1, _Type t2) => t1 == t2;
 
 // Same as [_RuntimeTypeEquals], but for `Object.hashCode`.
 @pragma("wasm:entry-point")
 @pragma("wasm:prefer-inline")
+@pragma("wasm:pure")
 int _runtimeTypeHashCode(_Type t) => t.hashCode;

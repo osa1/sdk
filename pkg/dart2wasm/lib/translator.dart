@@ -760,7 +760,7 @@ class Translator with KernelNodes {
     }
     final function = functions.getFunction(reference);
     if (isPure(reference)) {
-      print("FUNCTION IS PUREEEEE: $reference");
+      // print("FUNCTION IS PUREEEEE: $reference");
       return callPureFunction(function, b);
     }
     return callFunction(function, b);
@@ -797,6 +797,10 @@ class Translator with KernelNodes {
 
   List<w.ValueType> callPureFunction(
       w.BaseFunction function, w.InstructionsBuilder b) {
+    if (options.optimizationLevel == 0) {
+      return callFunction(function, b);
+    }
+
     // import "call.without.effects" from "binaryen-intrinsics" with the same
     // type as the callee's type.
     pushFunRef(function, b);

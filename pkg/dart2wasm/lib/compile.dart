@@ -146,18 +146,24 @@ const List<String> _librariesToIndex = [
   "dart:typed_data",
 ];
 
-const List<String> _binaryenFlags = [
-  '--enable-gc',
-  '--enable-reference-types',
-  '--enable-multivalue',
-  '--enable-exception-handling',
-  '--enable-nontrapping-float-to-int',
-  '--enable-sign-ext',
+/// These flags must be passed to all wasm-opt invocations.
+const List<String> _binaryenEssentialFlags = [
   '--enable-bulk-memory',
+  '--enable-exception-handling',
+  '--enable-gc',
+  '--enable-multivalue',
+  '--enable-nontrapping-float-to-int',
+  '--enable-reference-types',
+  '--enable-sign-ext',
   '--enable-threads',
+  '--intrinsic-lowering',
   '--no-inline=*<noInline>*',
-  '--closed-world',
   '--traps-never-happen',
+];
+
+final List<String> _binaryenSingleModuleOptFlags = [
+  ..._binaryenEssentialFlags,
+  '--closed-world',
   '--type-unfinalizing',
   '-Os',
   '--type-ssa',
@@ -169,17 +175,8 @@ const List<String> _binaryenFlags = [
   '--minimize-rec-groups',
 ];
 
-const List<String> _binaryenFlagsMultiModule = [
-  '--enable-gc',
-  '--enable-reference-types',
-  '--enable-multivalue',
-  '--enable-exception-handling',
-  '--enable-nontrapping-float-to-int',
-  '--enable-sign-ext',
-  '--enable-bulk-memory',
-  '--enable-threads',
-  '--no-inline=*<noInline>*',
-  '--traps-never-happen',
+final List<String> _binaryenMultiModuleOptFlags = [
+  ..._binaryenEssentialFlags,
   '-Os',
 ];
 
@@ -706,8 +703,8 @@ Future<CompilationResult> _runOptPhase(
             codegenResult.mainWasmFile,
             moduleId,
             options.useMultiModuleOpt
-                ? _binaryenFlagsMultiModule
-                : _binaryenFlags)
+                ? _binaryenMultiModuleOptFlags
+                : _binaryenSingleModuleOptFlags)
         .then((_) => resource.release());
   }
   await optPool.close();
