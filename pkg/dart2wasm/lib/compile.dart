@@ -160,6 +160,10 @@ const List<String> _binaryenEssentialFlags = [
   '--traps-never-happen',
 ];
 
+// Note: `--intrinsic-lowering` removes the `call.without.effects` calls, it
+// doesn't optimize them. We need an optimization pass before it to optimize
+// based on the intrinsics, and another optimization pass after it to clean up
+// the imports.
 final List<String> _binaryenSingleModuleOptFlags = [
   ..._binaryenEssentialFlags,
   '--closed-world',
@@ -169,16 +173,17 @@ final List<String> _binaryenSingleModuleOptFlags = [
   '--gufa',
   '-Os',
   '--type-merging',
+  '--intrinsic-lowering',
   '-Os',
   '--type-finalizing',
   '--minimize-rec-groups',
-  '--intrinsic-lowering',
 ];
 
 final List<String> _binaryenMultiModuleOptFlags = [
   ..._binaryenEssentialFlags,
   '-Os',
   '--intrinsic-lowering',
+  '-Os',
 ];
 
 /// Compile a Dart file into a Wasm module.
