@@ -19,14 +19,14 @@ abstract class StringUncheckedOperationsBase {
 
 extension StringUncheckedOperations on String {
   @pragma('wasm:prefer-inline')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int codeUnitAtUnchecked(int index) =>
       unsafeCast<StringUncheckedOperationsBase>(
         this,
       )._codeUnitAtUnchecked(index);
 
   @pragma('wasm:prefer-inline')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String substringUnchecked(int start, int end) =>
       unsafeCast<StringUncheckedOperationsBase>(
         this,
@@ -36,15 +36,15 @@ extension StringUncheckedOperations on String {
 final class JSStringImpl implements String, StringUncheckedOperationsBase {
   final WasmExternRef? _ref;
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static bool _checkRefType(WasmExternRef? ref) => jsStringTest(ref).toBool();
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   JSStringImpl.fromRefUnchecked(this._ref) {
     assert(_checkRefType(_ref));
   }
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   factory JSStringImpl.fromRef(WasmExternRef? ref) {
     if (!_checkRefType(ref)) {
       throw minify
@@ -55,23 +55,23 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @pragma("wasm:prefer-inline")
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static String? box(WasmExternRef? ref) =>
       js.isDartNull(ref) ? null : JSStringImpl.fromRefUnchecked(ref);
 
   @override
   @pragma("wasm:prefer-inline")
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int get length => _jsLength(toExternRef);
 
   @override
   @pragma("wasm:prefer-inline")
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   bool get isEmpty => length == 0;
 
   @override
   @pragma("wasm:prefer-inline")
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   bool get isNotEmpty => !isEmpty;
 
   @pragma("wasm:entry-point")
@@ -172,7 +172,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
     return fromCharCodeArray(array, 0, length);
   }
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static JSStringImpl fromCharCodeArray(
     WasmArray<WasmI16> source,
     int start,
@@ -186,14 +186,14 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   @pragma("wasm:initialize-at-startup")
   static final _stringFromCodePointBuffer = WasmArray<WasmI16>(2);
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static JSStringImpl fromCharCode(int charCode) {
     final array = _stringFromCodePointBuffer;
     array.write(0, charCode);
     return JSStringImpl.fromCharCodeArray(array, 0, 1);
   }
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static JSStringImpl fromCodePoint(int codePoint) {
     final array = _stringFromCodePointBuffer;
     if (codePoint <= 0xffff) {
@@ -245,7 +245,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   @override
   @pragma('dyn-module:callable')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String operator +(String other) {
     return JSStringImpl.fromRefUnchecked(
       _jsStringConcatImport(
@@ -256,7 +256,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   bool endsWith(String other) {
     final otherLength = other.length;
     final length = this.length;
@@ -265,7 +265,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String replaceAll(Pattern from, String to) {
     if (from is String) {
       if (from.isEmpty) {
@@ -498,12 +498,12 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   @override
   @pragma('wasm:prefer-inline')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String _substringUnchecked(int start, int end) =>
       JSStringImpl.fromRefUnchecked(_jsSubstring(toExternRef, start, end));
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String toLowerCase() {
     final thisRef = toExternRef;
     final lowerCaseRef = _jsStringToLowerCase(thisRef);
@@ -513,7 +513,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String toUpperCase() {
     final thisRef = toExternRef;
     final upperCaseRef = _jsStringToUpperCase(thisRef);
@@ -536,7 +536,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   // 3000          ; White_Space # Zs       IDEOGRAPHIC SPACE
   //
   // BOM: 0xFEFF
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static bool _isWhitespace(int codeUnit) {
     // Most codeUnits should be less than 256. Special case with a smaller
     // switch.
@@ -586,7 +586,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   /// Finds the index of the first non-whitespace character, or the
   /// end of the string. Start looking at position [index].
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static int _skipLeadingWhitespace(JSStringImpl string, int index) {
     final stringLength = string.length;
     while (index < stringLength) {
@@ -603,7 +603,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   /// Finds the index after the last non-whitespace character, or 0.
   /// Start looking at position [index - 1].
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   static int _skipTrailingWhitespace(JSStringImpl string, int index) {
     while (index > 0) {
       int codeUnit = string._codeUnitAtUnchecked(index - 1);
@@ -620,7 +620,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   // dart2wasm can't use JavaScript trim directly, because JavaScript does not
   // trim the NEXT LINE (NEL) character (0x85).
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String trim() {
     final length = this.length;
     if (length == 0) return this;
@@ -658,7 +658,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   // dart2wasm can't use JavaScript trimLeft directly because it does not trim
   // the NEXT LINE (NEL) character (0x85).
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String trimLeft() {
     final length = this.length;
     if (length == 0) return this;
@@ -688,7 +688,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   // dart2wasm can't use JavaScript trimRight directly because it does not trim
   // the NEXT LINE (NEL) character (0x85).
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String trimRight() {
     final length = this.length;
     if (length == 0) return this;
@@ -727,7 +727,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String padLeft(int width, [String padding = ' ']) {
     int delta = width - length;
     if (delta <= 0) return this;
@@ -735,7 +735,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   String padRight(int width, [String padding = ' ']) {
     int delta = width - length;
     if (delta <= 0) return this;
@@ -743,11 +743,11 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   List<int> get codeUnits => CodeUnits(this);
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   Runes get runes => Runes(this);
 
   @override
@@ -808,7 +808,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   @override
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int get hashCode {
     int hash = getIdentityHashField(this);
     if (hash != 0) return hash;
@@ -818,7 +818,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
   }
 
   /// This must be kept in sync with `StringBase.hashCode` in string_patch.dart.
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int _computeHashCode() {
     int hash = 0;
     final length = this.length;
@@ -837,13 +837,13 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
 
   @override
   @pragma('wasm:prefer-inline')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   bool operator ==(Object other) =>
       other is JSStringImpl && _jsEquals(toExternRef, other.toExternRef);
 
   @override
   @pragma('wasm:prefer-inline')
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int compareTo(String other) =>
       _jsCompare(toExternRef, unsafeCast<JSStringImpl>(other).toExternRef);
 
@@ -861,7 +861,7 @@ final class JSStringImpl implements String, StringUncheckedOperationsBase {
     return first;
   }
 
-  @pragma('wasm:pure')
+  @pragma("wasm:pure")
   int lastNonWhitespace() {
     int last = length - 1;
     for (; last >= 0; last--) {
@@ -981,7 +981,7 @@ List<String> _jsStringSplitToDart(
     .map((JSAny? a) => (a as JSString).toDart)
     .toList();
 
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 WasmExternRef? _jsStringSplit(WasmExternRef? string, WasmExternRef? token) =>
     js.JS<WasmExternRef?>(
       '(string, token) => string.split(token)',
@@ -989,12 +989,12 @@ WasmExternRef? _jsStringSplit(WasmExternRef? string, WasmExternRef? token) =>
       token,
     );
 
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 bool _jsIdentical(WasmExternRef? ref1, WasmExternRef? ref2) =>
     js.JS<bool>('Object.is', ref1, ref2);
 
 @pragma("wasm:prefer-inline")
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 int jsCharCodeAt(WasmExternRef? stringRef, int index) =>
     _jsStringCharCodeAtImport(
       stringRef,
@@ -1002,7 +1002,7 @@ int jsCharCodeAt(WasmExternRef? stringRef, int index) =>
     ).toIntUnsigned();
 
 @pragma("wasm:prefer-inline")
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 WasmExternRef _jsSubstring(
   WasmExternRef? stringRef,
   int startIndex,
@@ -1014,42 +1014,45 @@ WasmExternRef _jsSubstring(
 );
 
 @pragma("wasm:prefer-inline")
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 int _jsLength(WasmExternRef? stringRef) =>
     _jsStringLengthImport(stringRef).toIntUnsigned();
 
 @pragma("wasm:prefer-inline")
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 bool _jsEquals(WasmExternRef? s1, WasmExternRef? s2) =>
     _jsStringEqualsImport(s1, s2).toBool();
 
 @pragma("wasm:prefer-inline")
-@pragma('wasm:pure')
+@pragma("wasm:pure")
 int _jsCompare(WasmExternRef? s1, WasmExternRef? s2) =>
     _jsStringCompareImport(s1, s2).toIntSigned();
 
 @pragma("wasm:import", "wasm:js-string.charCodeAt")
+@pragma("wasm:pure")
 external WasmI32 _jsStringCharCodeAtImport(WasmExternRef? s, WasmI32 index);
 
 @pragma("wasm:import", "wasm:js-string.compare")
+@pragma("wasm:pure")
 external WasmI32 _jsStringCompareImport(WasmExternRef? s1, WasmExternRef? s2);
 
 @pragma("wasm:import", "wasm:js-string.concat")
+@pragma("wasm:pure")
 external WasmExternRef _jsStringConcatImport(
   WasmExternRef? s1,
   WasmExternRef? s2,
 );
 
 @pragma("wasm:import", "wasm:js-string.equals")
+@pragma("wasm:pure")
 external WasmI32 _jsStringEqualsImport(WasmExternRef? s1, WasmExternRef? s2);
 
-@pragma("wasm:import", "wasm:js-string.fromCharCode")
-external WasmExternRef _jsStringFromCharCodeImport(WasmI32 c);
-
 @pragma("wasm:import", "wasm:js-string.length")
+@pragma("wasm:pure")
 external WasmI32 _jsStringLengthImport(WasmExternRef? s);
 
 @pragma("wasm:import", "wasm:js-string.substring")
+@pragma("wasm:pure")
 external WasmExternRef _jsStringSubstringImport(
   WasmExternRef? s,
   WasmI32 startIndex,
@@ -1057,6 +1060,7 @@ external WasmExternRef _jsStringSubstringImport(
 );
 
 @pragma("wasm:import", "wasm:js-string.fromCharCodeArray")
+@pragma("wasm:pure")
 external WasmExternRef jsStringFromCharCodeArray(
   WasmArray<WasmI16>? array,
   WasmI32 start,
@@ -1064,6 +1068,7 @@ external WasmExternRef jsStringFromCharCodeArray(
 );
 
 @pragma("wasm:import", "wasm:js-string.intoCharCodeArray")
+@pragma("wasm:pure")
 external WasmI32 jsStringIntoCharCodeArray(
   WasmExternRef? s,
   WasmArray<WasmI16>? array,
@@ -1071,4 +1076,5 @@ external WasmI32 jsStringIntoCharCodeArray(
 );
 
 @pragma("wasm:import", "wasm:js-string.test")
+@pragma("wasm:pure")
 external WasmI32 jsStringTest(WasmExternRef? s);
