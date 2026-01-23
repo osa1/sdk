@@ -176,19 +176,26 @@ const List<String> _binaryenFlags = [
   '--minimize-rec-groups',
 ];
 
-const List<String> _binaryenFlagsMultiModule = [
-  '--enable-gc',
-  '--enable-reference-types',
-  '--enable-multivalue',
-  '--enable-exception-handling',
-  '--enable-nontrapping-float-to-int',
-  '--enable-sign-ext',
-  '--enable-bulk-memory',
-  '--enable-threads',
-  '--no-inline=*<noInline>*',
-  '--traps-never-happen',
-  '-Os',
-];
+List<String> _binaryenFlagsMultiModule(int wasmOptIterations) {
+  final List<String> flags = [
+    '--enable-gc',
+    '--enable-reference-types',
+    '--enable-multivalue',
+    '--enable-exception-handling',
+    '--enable-nontrapping-float-to-int',
+    '--enable-sign-ext',
+    '--enable-bulk-memory',
+    '--enable-threads',
+    '--no-inline=*<noInline>*',
+    '--traps-never-happen',
+  ];
+
+  for (int i = 0; i < wasmOptIterations; i += 1) {
+    flags.add('-Os');
+  }
+
+  return flags;
+}
 
 /// Compile a Dart file into a Wasm module.
 ///
@@ -715,7 +722,7 @@ Future<CompilationResult> _runOptPhase(
             codegenResult.mainWasmFile,
             moduleId,
             options.useMultiModuleOpt
-                ? _binaryenFlagsMultiModule
+                ? _binaryenFlagsMultiModule(options.wasmOptIterations)
                 : _binaryenFlags);
       }),
   ]);

@@ -68,6 +68,7 @@ class WasmCompilerOptions {
     CompilerPhase.tfa,
     CompilerPhase.codegen
   ];
+  int wasmOptIterations = 1;
 
   factory WasmCompilerOptions.defaultOptions() =>
       WasmCompilerOptions(mainUri: Uri(), outputFile: '');

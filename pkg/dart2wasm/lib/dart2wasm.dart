@@ -87,6 +87,7 @@ final List<Option> options = [
       (o, values) =>
           o.feExperimentalFlags = processFeExperimentalFlags(values)),
   StringOption("multi-root-scheme", (o, value) => o.multiRootScheme = value),
+  IntOption("wasm-opt-iterations", (o, value) => o.wasmOptIterations = value),
   UriMultiOption("multi-root", (o, values) => o.multiRoots = values),
   StringMultiOption("delete-tostring-package-uri",
       (o, values) => o.deleteToStringPackageUri = values),
