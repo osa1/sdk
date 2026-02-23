@@ -786,10 +786,6 @@ class Translator with KernelNodes {
   /// beneficial.
   List<w.ValueType> callReference(
       Reference reference, w.InstructionsBuilder b) {
-    final callTarget = directCallTarget(reference);
-    if (callTarget.supportsInlining && callTarget.shouldInline) {
-      return b.inlineCallTo(callTarget);
-    }
     return callFunction(functions.getFunction(reference), b);
   }
 
@@ -1990,90 +1986,6 @@ class Translator with KernelNodes {
     return InterfaceType(concreteClass, nullability, typeArguments);
   }
 
-  bool shouldInline(Reference target, w.FunctionType signature) {
-    if (!options.inlining) return false;
-    if (isDynamicSubmodule && moduleForReference(target) == mainModule) {
-      // We avoid inlining code from the main module into dynamic submodules
-      // so that we can avoid needing to export more code.
-      return false;
-    }
-
-    // Unchecked entry point functions perform very little, mainly optional
-    // parameter handling and then call the real body function.
-    //
-    // By inlining them we can often avoid downcasts and sometimes boxing. The
-    // force inlining here seem to even lead to overall size decreases.
-    if (target.isUncheckedEntryReference) return true;
-
-    final member = target.asMember;
-    if (getPragma<bool>(member, "wasm:never-inline", true) == true) {
-      return false;
-    }
-    if (getPragma<bool>(member, "wasm:prefer-inline", true) == true) {
-      return true;
-    }
-    if (member is Field) {
-      // Implicit getter/setter for instance fields are just loads/stores.
-      if (member.isInstanceMember) return true;
-
-      // Implicit setter for static fields are just stores.
-      if (target == member.setterReference) return true;
-
-      // Implicit getter for static fields may invoke lazy static initializer.
-      if (dartGlobals.getConstantInitializer(member) != null) {
-        // This global will get it's initializer eagerly set, so no lazy init
-        // function to be called.
-        return true;
-      }
-      return false;
-    }
-    if (target.isInitializerReference) return true;
-
-    final function = member.function!;
-    if (function.body == null) return false;
-
-    // We never want to inline throwing functions (as they are slow paths).
-    if (member is Procedure && member.function.returnType is NeverType) {
-      return false;
-    }
-
-    final nodeCount = NodeCounter(
-            options.omitImplicitTypeChecks || target.isUncheckedEntryReference)
-        .countNodes(member);
-
-    // Special cases for iterator inlining:
-    //   class ... implements Iterable<T> {
-    //     Iterator<T> get iterator => FooIterator(...)
-    //   }
-    //   class ... implements Iterator<T> {
-    //     T get current => _current as E;
-    //   }
-    final klass = member.enclosingClass;
-    if (klass != null) {
-      final name = member.name.text;
-      if (name == 'iterator' && nodeCount <= 20) {
-        if (typeEnvironment.isSubtypeOf(
-            klass.getThisType(coreTypes, Nullability.nonNullable),
-            coreTypes.iterableRawType(Nullability.nonNullable))) {
-          return true;
-        }
-      }
-      if (name == 'current' && nodeCount <= 5) {
-        if (typeEnvironment.isSubtypeOf(
-            klass.getThisType(coreTypes, Nullability.nonNullable),
-            coreTypes.iteratorRawType(Nullability.nonNullable))) {
-          return true;
-        }
-      }
-    }
-
-    // If we think the overhead of pushing arguments is around the same as the
-    // body itself, we always inline.
-    if (nodeCount <= signature.inputs.length) return true;
-
-    return nodeCount <= options.inliningLimit;
-  }
-
   bool supportsInlining(Reference target) {
     final Member member = target.asMember;
     if (membersContainingInnerFunctions.contains(member)) return false;
@@ -3160,17 +3072,6 @@ class PolymorphicDispatcherCallTarget extends CallTarget {
 
   @override
   String get name => '${selector.name} (polymorphic dispatcher)';
-
-  @override
-  bool get supportsInlining => true;
-
-  @override
-  bool get shouldInline =>
-      selector
-          .targets(unchecked: useUncheckedEntry)
-          .staticDispatchRanges
-          .length <=
-      1;
 
   @override
   CodeGenerator get inliningCodeGen => PolymorphicDispatcherCodeGenerator(

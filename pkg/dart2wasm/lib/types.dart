@@ -742,13 +742,10 @@ class IsCheckerCallTarget extends CallTarget {
     final typeArgumentsName = checkArguments
         ? '<${[for (int i = 0; i < argumentCount; ++i) 'T$i'].join(', ')}>'
         : '';
-    return '<obj> is ${testedAgainstType.classNode.name}$typeArgumentsName';
+    final inlinePostfix = shouldInline ? ' <alwaysInline>' : '';
+    return '<obj> is ${testedAgainstType.classNode.name}$typeArgumentsName$inlinePostfix';
   }
 
-  @override
-  bool get supportsInlining => true;
-
-  @override
   bool get shouldInline {
     if (checkArguments) return false;
 
@@ -770,10 +767,6 @@ class IsCheckerCallTarget extends CallTarget {
   }
 
   @override
-  CodeGenerator get inliningCodeGen => IsCheckerCodeGenerator(translator,
-      testedAgainstType, operandIsNullable, checkArguments, argumentCount);
-
-  @override
   late final w.BaseFunction function = (() {
     final function = callingModule.functions.define(
         translator.typesBuilder.defineFunction(
@@ -781,7 +774,9 @@ class IsCheckerCallTarget extends CallTarget {
           signature.outputs,
         ),
         name);
-    translator.compilationQueue.add(CompilationTask(function, inliningCodeGen));
+    final codeGen = IsCheckerCodeGenerator(translator, testedAgainstType,
+        operandIsNullable, checkArguments, argumentCount);
+    translator.compilationQueue.add(CompilationTask(function, codeGen));
     return function;
   })();
 }
@@ -824,12 +819,11 @@ class IsCheckerCodeGenerator implements CodeGenerator {
       // => Inline the argument checking code here as it will not cause
       // meaningful increases in code size for application but will be good for
       // performance.
-      const bool forceInline = true;
       b.invoke(
-          translator.types
-              .isCheckersForModule(b.moduleBuilder)
-              .generateIsChecker(testedAgainstType, false, false),
-          forceInline: forceInline);
+        translator.types
+            .isCheckersForModule(b.moduleBuilder)
+            .generateIsChecker(testedAgainstType, false, false),
+      );
       b.local_set(boolTemp);
 
       // If cid ranges fail, we fail
@@ -1012,11 +1006,10 @@ class AsCheckerCodeGenerator implements CodeGenerator {
     // => Inline the is checking code here as it will not cause meaningful
     // increases in code size for the application but will be good for
     // performance.
-    const bool forceInline = true;
     b.invoke(
-        translator.types.isCheckersForModule(b.moduleBuilder).generateIsChecker(
-            testedAgainstType, checkArguments, operandIsNullable),
-        forceInline: forceInline);
+      translator.types.isCheckersForModule(b.moduleBuilder).generateIsChecker(
+          testedAgainstType, checkArguments, operandIsNullable),
+    );
     b.br_if(asCheckBlock);
     if (translator.options.minify) {
       translator.callReference(

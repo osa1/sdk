@@ -5119,25 +5119,9 @@ extension MacroAssembler on w.InstructionsBuilder {
     return destContext;
   }
 
-  List<w.ValueType> invoke(CallTarget target, {bool forceInline = false}) {
-    if (target.supportsInlining && (target.shouldInline || forceInline)) {
-      return inlineCallTo(target);
-    }
+  List<w.ValueType> invoke(CallTarget target) {
     comment('Direct call to ${target.name}');
     call(target.function);
-    return emitUnreachableIfNoResult(target.signature.outputs);
-  }
-
-  List<w.ValueType> inlineCallTo(CallTarget target) {
-    assert(target.supportsInlining);
-    final List<w.Local> inlinedLocals =
-        target.signature.inputs.map((t) => addLocal(t)).toList();
-    for (w.Local local in inlinedLocals.reversed) {
-      local_set(local);
-    }
-    final w.Label callBlock = block(const [], target.signature.outputs);
-    comment('Inlined ${target.name}');
-    target.inliningCodeGen.generate(this, inlinedLocals, callBlock);
     return emitUnreachableIfNoResult(target.signature.outputs);
   }
 
@@ -5191,17 +5175,6 @@ abstract class CallTarget {
 
   CallTarget(this.signature);
 
-  /// Whether this call target supports inlining.
-  bool get supportsInlining => false;
-
-  /// Whether we should inline (different call targets may have semantic
-  /// knowledge about how big the body would be and whether we should inline or
-  /// not).
-  bool get shouldInline => false;
-
-  /// The code generator to use for inlining the body.
-  CodeGenerator get inliningCodeGen => throw 'No inlining support (yet).';
-
   /// The name of this target
   ///
   /// The inliner can use this to emit comments for the inlined target.
@@ -5222,16 +5195,6 @@ class AstCallTarget extends CallTarget {
 
   @override
   String get name => _translator.functions.getFunctionName(_reference);
-
-  @override
-  bool get supportsInlining => _translator.supportsInlining(_reference);
-
-  @override
-  bool get shouldInline => _translator.shouldInline(_reference, signature);
-
-  @override
-  CodeGenerator get inliningCodeGen => getInlinableMemberCodeGenerator(
-      _translator, AsyncMarker.Sync, signature, _reference)!;
 
   @override
   w.BaseFunction get function => _translator.functions.getFunction(_reference);
