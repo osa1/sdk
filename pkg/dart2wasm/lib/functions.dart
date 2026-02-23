@@ -245,13 +245,22 @@ class FunctionCollector {
     final noInline =
         translator.getPragma<bool>(member, "wasm:never-inline", true);
 
+    final preferInline =
+        translator.getPragma<bool>(member, "wasm:prefer-inline", true);
+
+    assert(!(noInline == true && preferInline == true));
+
     // We add "<noInline>" to the function name. When we invoke `wasm-opt` we
     // then pass the `--no-inline=*<noInline>*` flag, which will prevent
     // binaryen from inlining those functions.
     //
     // => Effectively we make `@pragma('wasm:never-inline')` work for binaryen
     // as well.
-    final inlinePostfix = noInline == true ? ' <noInline>' : '';
+    final inlinePostfix = noInline == true
+        ? ' <noInline>'
+        : preferInline == true
+            ? ' <alwaysInline>'
+            : '';
 
     if (target.isBodyReference) {
       return "$memberName (body)$inlinePostfix";

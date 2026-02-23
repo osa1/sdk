@@ -169,6 +169,7 @@ const List<String> _binaryenFlags = [
   '--enable-threads',
   '--enable-simd',
   '--no-inline=*<noInline>*',
+  '--inline=*<alwaysInline>*',
   '--closed-world',
   '--traps-never-happen',
   '--type-unfinalizing',
@@ -193,6 +194,7 @@ const List<String> _binaryenFlagsMultiModule = [
   '--enable-threads',
   '--enable-simd',
   '--no-inline=*<noInline>*',
+  '--inline=*<alwaysInline>*',
   '--traps-never-happen',
   '-Os',
 ];
